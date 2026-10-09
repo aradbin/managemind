@@ -2,7 +2,7 @@
 // context returns zero store B rows"). Generated from the catalog: every
 // table in the store schema is checked, so new tables join automatically.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FIXTURES } from './fixtures';
+import { FIXTURES } from '../src/testing';
 import {
   APP_ROLE,
   appUrl,
