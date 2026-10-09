@@ -129,7 +129,7 @@ Tooling:
 - Current versions, to be pinned exactly when the scaffold PR lands: wrangler 4.149, hono 4.13, @hono/zod-openapi 1.6, zod 4.6, drizzle-orm 0.45 / drizzle-kit 0.31, better-auth 1.7, astro 7.3 / @astrojs/cloudflare 14.3, biome 2.5, turbo 2.11, vitest 5, @sentry/cloudflare 11.6, vite 8, react 19.3.
 - TypeScript 6.0. Decided in PR 1 (ADR 0012): `@astrojs/check` does not accept TypeScript 7 yet.
 - Playwright uses the preinstalled Chromium (`executablePath: '/opt/pw-browsers/chromium'` if versions differ).
-- SessionStart hook (`.claude/hooks/session-start.sh`, ADR 0008): installs Postgres 18 from the PGDG apt repository if it is missing, creates and starts the Debian cluster `18/main` on port 5432 (moving the image's Postgres 16 cluster off that port), creates the `managemind` and `managemind_test` databases, exports `DATABASE_URL` and `TEST_DATABASE_URL`, and runs `pnpm install`. It is idempotent and safe on resume. Mailpit is added to it with the auth spike, which is the first thing that sends email.
+- SessionStart hook (`.claude/hooks/session-start.sh`, ADR 0008): installs Postgres 18 from the PGDG apt repository if it is missing, creates and starts the Debian cluster `18/main` on port 5432 (moving the image's Postgres 16 cluster off that port), creates the `managemind` and `managemind_test` databases, exports `DATABASE_URL` and `TEST_DATABASE_URL`, and runs `pnpm install`. It is idempotent and safe on resume. Mailpit (the local mail catcher) moves to Phase 1, with the first real email sending; the auth spike read sign-in codes from the database instead (ADR 0005).
 - Renovate config and `pnpm audit` in CI.
 
 ### 4.1 Names and domains are configuration
