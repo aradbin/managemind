@@ -1,0 +1,19 @@
+// The API Worker. Values here are for local development; preview and
+// production settings are added with the deploy workflows (PRs 17 and 18).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  // Next to Neon in Singapore (ADR 0002).
+  "placement": { "region": "aws:ap-southeast-1" },
+  "observability": { "enabled": true },
+  "vars": {
+    "ENVIRONMENT": "development",
+    "PLATFORM_NAME": "managemind",
+    "PLATFORM_DOMAIN": "localhost",
+    "STORE_DOMAIN": "localhost",
+    "LOG_SAMPLE_RATE": "1"
+  }
+}
