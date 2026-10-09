@@ -21,6 +21,8 @@ pnpm check       # all of the above
 
 # Apply database migrations (uses DATABASE_URL_MIGRATIONS or DATABASE_URL)
 pnpm --filter @managemind/db db:migrate
+# Add the two demo stores (demo-fashion, demo-grocery); safe to rerun
+pnpm --filter @managemind/db db:seed
 # After changing packages/db/src/schema: generate a migration, then review the SQL
 pnpm --filter @managemind/db db:generate --name <change>
 ```
