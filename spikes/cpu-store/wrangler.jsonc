@@ -1,0 +1,11 @@
+// Spike Worker for ADRs 0003 and 0004. Deleted after Phase 1 (plan Q7).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-spike-cpu-store",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-09-15",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  "services": [{ "binding": "API", "service": "managemind-spike-cpu-api" }]
+}
