@@ -4,7 +4,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./money": "./src/money.ts"
+    "./money": "./src/money.ts",
+    "./i18n": "./src/i18n/index.ts",
+    "./config": "./src/config.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -14,5 +16,8 @@
     "@cloudflare/workers-types": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   }
 }
