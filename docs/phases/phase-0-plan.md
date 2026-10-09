@@ -22,7 +22,7 @@ Checked from this session on Oct 9, 2026.
 | Platform name | `managemind` for now (Oct 9); see §4.1 for how a later rename stays cheap |
 | Part 5 answers (pilots, providers, who onboards, merge rights) | **Missing** |
 | Uptime monitor | Not needed until the end of Phase 0 (`/health` URL given then) |
-| A zone (domain) for the cache-purge spike | Owner offered temporary subdomains (Oct 9); details pending, see §3.6 |
+| A zone (domain) for the cache-purge spike | Owner will provide the real main domain (Oct 9); see §3.6 |
 
 Things the session found that the owner should know:
 
@@ -100,13 +100,7 @@ The Cache API only works for Workers on a custom domain, and the purge API is pe
 - purge by `Cache-Tag` (`tenant:<id>`, `tenant:<id>:product:<id>`) and purge by hostname. Both are on the free plan, limited to 5 requests a minute with a bucket of 25 — a limit that matters for bulk changes.
 - the fallback: a per-store catalog version in the cache key, kept in KV and bumped with a debounce.
 
-Plan (Q2, Oct 9): the owner provides temporary subdomains of a domain they already own. The parent domain must be an active zone in this Cloudflare account, and the session token needs **Zone: Read**, **DNS: Edit**, **Workers Routes: Edit** and **Cache Purge: Purge** for it. The spike runs on one throwaway hostname, attached as a Workers Custom Domain, which gets its own certificate even at deeper subdomain levels.
-
-What temporary subdomains can and cannot cover:
-
-- **Phases 0–1 (fixed hostnames: spike, admin, api):** fine. Each is a Workers Custom Domain with its own free certificate.
-- **Phase 3 (wildcard `{slug}.<store domain>`):** not free under a subdomain. Universal SSL covers only one level below the apex, so `*.stores.example.com` needs Advanced Certificate Manager (paid). Before Phase 3, either the real store domain is bought, or test stores each get an exact hostname as a Custom Domain.
-- **Before the pilot (Phase 5B):** both real domains must be in place. Stores under the owner's existing domain would share its registrable domain, so an abuse flag on a store would hit the whole domain, and store pages would be same-site with the admin, which weakens `SameSite=Lax` cookie protection.
+Plan (Q2, decided Oct 9): the owner buys the main domain now, as PLAN.md already recommends, adds it to this Cloudflare account, and adds **Zone: Read** and **Cache Purge: Purge** to the session token for that zone. The spike runs on a throwaway hostname. Until the domain arrives, this spike waits and the other spikes go ahead.
 
 ## 4. Repository layout and tooling
 
@@ -140,11 +134,10 @@ Tooling:
 
 ### 4.1 Names and domains are configuration
 
-So that the domains and the brand name can change later without code changes:
+So that the brand name (and, if ever needed, a domain) can change later without code changes:
 
 - `PLATFORM_DOMAIN`, `STORE_DOMAIN` and `PLATFORM_NAME` (shown name, email sender name) are validated config values per environment. No hostname or brand string appears in code, templates, emails or tests; tests use `example.test` values.
 - `managemind` is the internal code name for resources that are hard or pointless to rename: Worker scripts, R2 buckets, queues, the Neon project, package scope `@managemind/*` and database roles (`mm_*`). A brand change later touches only the config values and the i18n strings.
-- Switching a domain means: change the config value, deploy, attach the new hostnames, keep the old domain registered and redirecting. Staff and shoppers sign in again once, because cookies belong to the old host.
 
 ## 5. Data model
 
@@ -393,7 +386,7 @@ ADR 0012 records the dependency choices (driver, zod-openapi, home-grown i18n an
 ## 13. Open questions for the owner
 
 - **Q1 — Preview database for unlabeled PRs. Decided (Oct 9):** a single shared Neon `preview` branch, reseeded when migrations change; it sleeps when unused but shares the project's 100 CU-hours.
-- **Q2 — A zone for the cache spike. Decided (Oct 9):** temporary subdomains of an existing domain (§3.6). Pending: which parent domain, whether it is already an active zone in this Cloudflare account, and the token's zone permissions.
+- **Q2 — A zone for the cache spike. Decided (Oct 9):** the owner provides the real main domain (§3.6).
 - **Q3 — Throwaway Neon spike branch. Decided (Oct 9):** yes. The agent creates the `spike` branch through the API and uses its connection string from the session; the branch is empty and deleted after the spikes. Production credentials never enter the session.
 - **Q4 — Bangladesh latency.** Can you open a spike URL a few times from a Bangladeshi mobile network and from broadband during spike week?
 - **Q5 — `managemind-communication` Worker. Decided (Oct 9):** the owner moves it to another account later. Until then, measurements filter it out.
