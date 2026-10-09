@@ -18,4 +18,9 @@ pnpm lint        # Biome lint and format check
 pnpm typecheck   # TypeScript in every package
 pnpm test        # Vitest in every package
 pnpm check       # all of the above
+
+# Apply database migrations (uses DATABASE_URL_MIGRATIONS or DATABASE_URL)
+pnpm --filter @managemind/db db:migrate
+# After changing packages/db/src/schema: generate a migration, then review the SQL
+pnpm --filter @managemind/db db:generate --name <change>
 ```

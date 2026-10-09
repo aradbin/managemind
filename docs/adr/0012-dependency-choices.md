@@ -18,6 +18,8 @@
 | Vitest | 5.0 | Packages (dev) | Unit and integration tests, as the plan specifies | — |
 | pg (node-postgres) | 8.23 | `packages/db` (dev, tests only for now) | Test client for the local database check. The runtime driver for Workers is decided by the database-path spike (ADR 0002) | postgres.js |
 | (none) for money and UUIDv7 | — | `packages/shared` | Money is about 140 lines on integers and BigInt, and UUIDv7 about 40 lines on `crypto.getRandomValues`. Both are small, fully tested and free of runtime dependencies, which keeps Worker bundles lean | dinero.js; the `uuidv7` package |
+| drizzle-orm, drizzle-kit | 0.45, 0.31 | `packages/db` | Typed SQL and generated migrations, as the plan specifies. drizzle-kit generates tables and RLS policies; `FORCE RLS`, roles and grants are hand-written custom migrations (ADR 0009) | Kysely; raw SQL migrations only |
+| tsx | 4.23 | `packages/db` (dev) | Runs TypeScript scripts (migrate, seed) in Node without a build step | Node's type stripping (needs `.ts` import extensions throughout) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 
