@@ -1,8 +1,13 @@
 // Worker bindings and the validated configuration derived from them.
+import type { OutboxEvent } from '@managemind/core';
 import { baseConfig, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
 
 export interface Env {
+  /** Neon through Hyperdrive, as the mm_app role (ADR 0002, ADR 0009). */
+  HYPERDRIVE: Hyperdrive;
+  /** Outbox events, relayed after commit (ADR 0010). */
+  OUTBOX: Queue<OutboxEvent>;
   ENVIRONMENT: string;
   PLATFORM_NAME: string;
   PLATFORM_DOMAIN: string;

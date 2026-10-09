@@ -7,6 +7,8 @@ import { problemResponse, validationError } from './errors';
 import { accessLog } from './middleware/access-log';
 import { context } from './middleware/context';
 import { registerHealth } from './routes/health';
+import { registerDeepHealth } from './routes/health-deep';
+import { registerStoreContext } from './routes/store-context';
 
 export function createApp(): OpenAPIHono<AppEnv> {
   const app = new OpenAPIHono<AppEnv>({
@@ -22,6 +24,8 @@ export function createApp(): OpenAPIHono<AppEnv> {
   app.use('*', secureHeaders({ crossOriginResourcePolicy: 'same-site' }));
 
   registerHealth(app);
+  registerDeepHealth(app);
+  registerStoreContext(app);
 
   app.doc31('/openapi.json', {
     openapi: '3.1.0',

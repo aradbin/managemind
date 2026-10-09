@@ -23,6 +23,10 @@ pnpm check       # all of the above
 pnpm --filter @managemind/db db:migrate
 # Add the two demo stores (demo-fashion, demo-grocery); safe to rerun
 pnpm --filter @managemind/db db:seed
+# Local database for wrangler dev (migrate, seed, app login role with RLS on)
+pnpm --filter @managemind/db db:dev-setup
+# Run the API locally on :8787 (add --test-scheduled to trigger the cron at /__scheduled)
+pnpm --filter @managemind/api dev
 # After changing packages/db/src/schema: generate a migration, then review the SQL
 pnpm --filter @managemind/db db:generate --name <change>
 ```

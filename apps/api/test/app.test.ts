@@ -2,14 +2,9 @@ import { AppError } from '@managemind/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 import type { Env } from '../src/env';
+import { makeEnv } from './support';
 
-const env: Env = {
-  ENVIRONMENT: 'preview',
-  PLATFORM_NAME: 'managemind',
-  PLATFORM_DOMAIN: 'platform.example.test',
-  STORE_DOMAIN: 'stores.example.test',
-  COMMIT_SHA: 'abc1234',
-};
+const env: Env = makeEnv();
 
 function appWithTestRoutes() {
   const app = createApp();
