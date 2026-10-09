@@ -16,16 +16,17 @@ Checked from this session on Oct 9, 2026.
 | Neon project `managemind`: `aws-ap-southeast-1` (Singapore), Postgres 18, fixed 0.25 CU, branch `production` | Verified via API |
 | Session env vars `CLOUDFLARE_ACCOUNT_ID`, `NEON_PROJECT_ID`, `WRANGLER_SEND_METRICS`, `BASH_DEFAULT_TIMEOUT_MS` | Verified |
 | Network: Cloudflare API, `*.workers.dev`, Sentry, docs sites, npm, PostgreSQL apt repository | Reachable (the network looks like **Full** rather than the Custom list) |
-| GitHub Actions secrets (4), variables (3), workflow permissions | **Cannot check from the session** — owner to confirm |
+| GitHub Actions secrets (4), variables (3), workflow permissions | Owner confirmed Oct 9; the first CI run verifies them |
 | Sentry organization and slug | **Cannot check** — owner to confirm |
 | Sentry projects and DSNs (api, admin, storefront) | **Missing** — needed by PR 15 (§11) |
-| Platform name and Part 5 answers (pilots, providers, who onboards, merge rights) | **Missing** |
+| Platform name | `managemind` for now (Oct 9); see §4.1 for how a later rename stays cheap |
+| Part 5 answers (pilots, providers, who onboards, merge rights) | **Missing** |
 | Uptime monitor | Not needed until the end of Phase 0 (`/health` URL given then) |
-| A zone (domain) for the cache-purge spike | **Decision needed** — see §3.6 |
+| A zone (domain) for the cache-purge spike | Owner offered temporary subdomains (Oct 9); details pending, see §3.6 |
 
 Things the session found that the owner should know:
 
-- An existing Worker, `managemind-communication`, is on the account and has served about 3,100 requests since Oct 1. It shares the free plan's 100,000 requests a day and its 5 Cron Triggers. Measurements filter it out by script name.
+- An existing Worker, `managemind-communication`, is on the account and has served about 3,100 requests since Oct 1. It shares the free plan's 100,000 requests a day and its 5 Cron Triggers. Measurements filter it out by script name. The owner will move it to another account later (Oct 9).
 - The session has no Docker daemon, so the "Postgres in Docker" local environment becomes native Postgres 18 from the PostgreSQL apt repository, installed by the SessionStart hook (ADR 0008). CI still uses a `postgres:18` service container.
 - Postgres 18 is also needed locally because it has a built-in `uuidv7()`, which the schema uses as its default. The preinstalled Postgres 16 does not have it.
 
@@ -99,10 +100,13 @@ The Cache API only works for Workers on a custom domain, and the purge API is pe
 - purge by `Cache-Tag` (`tenant:<id>`, `tenant:<id>:product:<id>`) and purge by hostname. Both are on the free plan, limited to 5 requests a minute with a bucket of 25 — a limit that matters for bulk changes.
 - the fallback: a per-store catalog version in the cache key, kept in KV and bumped with a debounce.
 
-Options (Q2):
+Plan (Q2, Oct 9): the owner provides temporary subdomains of a domain they already own. The parent domain must be an active zone in this Cloudflare account, and the session token needs **Zone: Read**, **DNS: Edit**, **Workers Routes: Edit** and **Cache Purge: Purge** for it. The spike runs on one throwaway hostname, attached as a Workers Custom Domain, which gets its own certificate even at deeper subdomain levels.
 
-- **(a) Recommended:** buy the main domain now, as PLAN.md already recommends, and add **Zone → Cache Purge: Purge** and **Zone: Read** to the session token for that zone. The spike runs on a throwaway hostname.
-- **(b)** Defer this spike to Phase 1, when the main domain is due, and design Phase 3 against the version-key fallback until then.
+What temporary subdomains can and cannot cover:
+
+- **Phases 0–1 (fixed hostnames: spike, admin, api):** fine. Each is a Workers Custom Domain with its own free certificate.
+- **Phase 3 (wildcard `{slug}.<store domain>`):** not free under a subdomain. Universal SSL covers only one level below the apex, so `*.stores.example.com` needs Advanced Certificate Manager (paid). Before Phase 3, either the real store domain is bought, or test stores each get an exact hostname as a Custom Domain.
+- **Before the pilot (Phase 5B):** both real domains must be in place. Stores under the owner's existing domain would share its registrable domain, so an abuse flag on a store would hit the whole domain, and store pages would be same-site with the admin, which weakens `SameSite=Lax` cookie protection.
 
 ## 4. Repository layout and tooling
 
@@ -133,6 +137,14 @@ Tooling:
 - Playwright uses the preinstalled Chromium (`executablePath: '/opt/pw-browsers/chromium'` if versions differ).
 - SessionStart hook (`.claude/settings.json`): installs Postgres 18 from the PGDG apt repository if it is missing, `initdb` into `.local/pg` (gitignored), starts it on port 5432, creates the `managemind` and `managemind_test` databases, runs `pnpm install --frozen-lockfile`, and starts Mailpit if it is present. It is idempotent and safe on resume.
 - Renovate config and `pnpm audit` in CI.
+
+### 4.1 Names and domains are configuration
+
+So that the domains and the brand name can change later without code changes:
+
+- `PLATFORM_DOMAIN`, `STORE_DOMAIN` and `PLATFORM_NAME` (shown name, email sender name) are validated config values per environment. No hostname or brand string appears in code, templates, emails or tests; tests use `example.test` values.
+- `managemind` is the internal code name for resources that are hard or pointless to rename: Worker scripts, R2 buckets, queues, the Neon project, package scope `@managemind/*` and database roles (`mm_*`). A brand change later touches only the config values and the i18n strings.
+- Switching a domain means: change the config value, deploy, attach the new hostnames, keep the old domain registered and redirecting. Staff and shoppers sign in again once, because cookies belong to the old host.
 
 ## 5. Data model
 
@@ -243,7 +255,7 @@ Every table has `created_at` and `updated_at` (`timestamptz`, default `now()`; `
   - Every operation asserts `Number.isSafeInteger`. No floats; a test checks that no division leaves the helpers.
 - **uuidv7:** a generator of about 30 lines on `crypto.getRandomValues`, so no dependency. It is monotonic within a millisecond and has a test against RFC 9562 vectors.
 - **state machine:** `defineMachine({ initial, states, transitions: { [from]: { [event]: { to, guard?, effects? } } } })`, with `can()`, `transition()` (returns `{ from, to, event, effects }` or throws `illegal_transition`), and `toMermaid()` for docs.
-- **errors:** `AppError(code, status, detail, fields?)`, a registry of stable codes (`validation_failed`, `not_found`, `tenant_context_missing`, `illegal_transition`, `idempotency_key_reused`, `idempotency_request_in_progress`, `rate_limited`, `internal`), and `toProblem()` (RFC 9457: `type` set to `https://errors.managemind.dev/<code>` (the placeholder is replaced once the domain exists), `title`, `status`, `detail`, `instance` = request ID, `code`, `errors[]`).
+- **errors:** `AppError(code, status, detail, fields?)`, a registry of stable codes (`validation_failed`, `not_found`, `tenant_context_missing`, `illegal_transition`, `idempotency_key_reused`, `idempotency_request_in_progress`, `rate_limited`, `internal`), and `toProblem()` (RFC 9457: `type` set to `https://<PLATFORM_DOMAIN>/errors/<code>`, built from config, `title`, `status`, `detail`, `instance` = request ID, `code`, `errors[]`).
 - **i18n:** typed message catalogs `bn.ts` and `en.ts`. `t(key, params)` interpolates safely and uses `Intl.PluralRules`; `bn` falls back to `en`. A CI test fails if a key is missing from either catalog. No i18n dependency.
 - **config:** zod schemas for each Worker's env, validated once per isolate. A bad config fails every request with a clear 500 in the logs, not a crash later on.
 
@@ -381,9 +393,9 @@ ADR 0012 records the dependency choices (driver, zod-openapi, home-grown i18n an
 ## 13. Open questions for the owner
 
 - **Q1 — Preview database for unlabeled PRs. Decided (Oct 9):** a single shared Neon `preview` branch, reseeded when migrations change; it sleeps when unused but shares the project's 100 CU-hours.
-- **Q2 — A zone for the cache spike:** option (a) buy the main domain now, or (b) defer the spike (§3.6).
+- **Q2 — A zone for the cache spike. Decided (Oct 9):** temporary subdomains of an existing domain (§3.6). Pending: which parent domain, whether it is already an active zone in this Cloudflare account, and the token's zone permissions.
 - **Q3 — Throwaway Neon spike branch. Decided (Oct 9):** yes. The agent creates the `spike` branch through the API and uses its connection string from the session; the branch is empty and deleted after the spikes. Production credentials never enter the session.
 - **Q4 — Bangladesh latency.** Can you open a spike URL a few times from a Bangladeshi mobile network and from broadband during spike week?
-- **Q5 — `managemind-communication` Worker.** What is it, and should it stay on this account? It shares the free daily request and Cron Trigger allowances.
+- **Q5 — `managemind-communication` Worker. Decided (Oct 9):** the owner moves it to another account later. Until then, measurements filter it out.
 - **Q6 — Merge rights:** may the agent merge its own PRs once every check is green, or will you merge each one?
 - **Q7 — Spike code. Decided (Oct 9):** keep `spikes/` until Phase 1 ends, then delete it.
