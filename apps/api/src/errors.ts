@@ -1,0 +1,37 @@
+// Every error leaves as RFC 9457 problem details (packages/shared). Unknown
+// errors are logged with their stack and returned as `internal`, with nothing
+// from the message.
+import { AppError, type FieldError, toProblem } from '@managemind/shared';
+import type { Context } from 'hono';
+import type { ZodError } from 'zod';
+import type { AppEnv } from './env';
+import { log } from './log';
+
+export function problemResponse(c: Context<AppEnv>, error: unknown): Response {
+  const config = c.var.config;
+  const problem = toProblem(error, {
+    errorBaseUrl: config ? `https://${config.PLATFORM_DOMAIN}/errors` : 'about:blank',
+    requestId: c.var.requestId,
+  });
+  if (problem.status >= 500) {
+    log('error', 'unhandled error', {
+      request_id: c.var.requestId,
+      route: c.req.routePath,
+      error:
+        error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : String(error),
+    });
+  }
+  return c.json(problem, problem.status as 400, { 'Content-Type': 'application/problem+json' });
+}
+
+/** Maps zod issues to field errors for a validation_failed problem. */
+export function validationError(error: ZodError): AppError {
+  const fields: FieldError[] = error.issues.map((i) => ({
+    path: i.path.join('.'),
+    code: i.code,
+    message: i.message,
+  }));
+  return new AppError('validation_failed', { fields });
+}

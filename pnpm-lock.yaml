@@ -84,6 +84,46 @@ importers:
         specifier: 'catalog:'
         version: 6.0.3
 
+  apps/api:
+    dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.6.3(hono@4.13.13)(zod@4.6.5)
+      '@managemind/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@managemind/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@managemind/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.13
+      pg:
+        specifier: 'catalog:'
+        version: 8.23.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20261009.1
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.23.1
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@22.20.5)(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.149.0(@cloudflare/workers-types@5.20261009.1)(@types/node@22.20.5)
+
   packages/core:
     dependencies:
       '@managemind/db':
