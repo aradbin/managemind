@@ -28,10 +28,10 @@ All requests came from one client in one Cloudflare location (EWR).
 | Durable Object counter, limit 5 per 60 s | **Exact.** Calls 1–5 allowed, calls 6–10 refused |
 | Queue, no delay | Delivered after 2 s |
 | Queue, `delaySeconds: 30` | Delivered after 37 s |
-| Queue, `delaySeconds: 120` | DELAY_120 |
-| Queue, `delaySeconds: 1800` (the plan's 30-minute payment re-check) | DELAY_1800 |
+| Queue, `delaySeconds: 120` | Delivered after 127 s |
+| Queue, `delaySeconds: 1800` (the plan's 30-minute payment re-check) | Delivered after 1,801 s |
 | Message that always fails | Delivered 3 times (first attempt plus 2 retries, about 6 s apart), then moved to the dead-letter queue, whose consumer received it after 18 s |
-| Cron Trigger | Registered (`17 * * * *`); the account has 5 cron triggers and no other Worker uses any |
+| Cron Trigger (`17 * * * *`) | Ran once on schedule (handler started at 18:17:53 UTC, within a minute of the scheduled time). The account has 5 cron triggers and no other Worker uses any |
 
 The binding's documentation calls it "permissive, eventually consistent" and "intentionally designed to not be used as an accurate accounting system". Others report the same heavy overshoot. On this setup it did not enforce at all.
 

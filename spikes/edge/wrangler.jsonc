@@ -22,5 +22,7 @@
       { "queue": "managemind-spike-edge-dlq", "max_batch_size": 10, "max_batch_timeout": 1 }
     ]
   },
-  "triggers": { "crons": ["17 * * * *"] }
+  // The cron ("17 * * * *") was verified on 2026-10-09 and then removed, to
+  // keep the account's five cron triggers free.
+  "triggers": { "crons": [] }
 }
