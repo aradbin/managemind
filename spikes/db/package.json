@@ -1,0 +1,22 @@
+{
+  "name": "@managemind/spike-db",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "deploy": "wrangler deploy",
+    "deploy:placed": "wrangler deploy --env placed"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "catalog:",
+    "drizzle-orm": "catalog:",
+    "pg": "catalog:",
+    "postgres": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@types/pg": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}
