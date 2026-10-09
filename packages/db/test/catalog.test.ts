@@ -1,7 +1,7 @@
 // Structural rules for every store table, read from the Postgres catalog.
 // A table that skips any of them fails CI before it can leak data.
 import { afterAll, describe, expect, it } from 'vitest';
-import { FIXTURES } from './fixtures';
+import { FIXTURES } from '../src/testing';
 import { connect, ownerUrl, storeTables } from './helpers';
 
 /** Indexes allowed not to start with tenant_id, with the reason. */

@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Core runs on Workers; tests run in Node but use only shared Web APIs.
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}
