@@ -20,7 +20,7 @@ Checked from this session on Oct 9, 2026.
 | Sentry organization and slug | **Cannot check** — owner to confirm |
 | Sentry projects and DSNs (api, admin, storefront) | **Missing** — needed by PR 15 (§11) |
 | Platform name | `managemind` for now (Oct 9); see §4.1 for how a later rename stays cheap |
-| Part 5 answers (pilots, providers, who onboards, merge rights) | **Missing** |
+| Part 5 answers | Merge rights decided (Q6). Pilots, providers and who onboards are still missing; they shape Phase 1+ but don't block Phase 0 code |
 | Uptime monitor | Not needed until the end of Phase 0 (`/health` URL given then) |
 | A zone (domain) for the cache-purge spike | Owner will provide the real main domain (Oct 9); see §3.6 |
 
@@ -388,7 +388,7 @@ ADR 0012 records the dependency choices (driver, zod-openapi, home-grown i18n an
 - **Q1 — Preview database for unlabeled PRs. Decided (Oct 9):** a single shared Neon `preview` branch, reseeded when migrations change; it sleeps when unused but shares the project's 100 CU-hours.
 - **Q2 — A zone for the cache spike. Decided (Oct 9):** the owner provides the real main domain (§3.6).
 - **Q3 — Throwaway Neon spike branch. Decided (Oct 9):** yes. The agent creates the `spike` branch through the API and uses its connection string from the session; the branch is empty and deleted after the spikes. Production credentials never enter the session.
-- **Q4 — Bangladesh latency.** Can you open a spike URL a few times from a Bangladeshi mobile network and from broadband during spike week?
+- **Q4 — Bangladesh latency. Decided (Oct 9):** yes. The owner opens the spike URL from a Bangladeshi mobile network and from broadband during spike week.
 - **Q5 — `managemind-communication` Worker. Decided (Oct 9):** the owner moves it to another account later. Until then, measurements filter it out.
-- **Q6 — Merge rights:** may the agent merge its own PRs once every check is green, or will you merge each one?
+- **Q6 — Merge rights. Decided (Oct 9):** the agent may merge its own PRs in this session once every check is green. Nothing is pushed to `main` directly.
 - **Q7 — Spike code. Decided (Oct 9):** keep `spikes/` until Phase 1 ends, then delete it.
