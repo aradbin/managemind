@@ -66,7 +66,7 @@ How measurements are taken:
 
 - The "typical API request": a Hono route that validates a cookie session (a Better Auth session lookup), runs 3–5 queries in one tenant transaction, validates output with zod, and returns JSON (about 5 KB).
 - The "typical page": an Astro server-rendered product page with layout, i18n strings and about 20 product fields, data fetched over a service binding.
-- **Pass:** p99 under 10 ms CPU for both. If either fails, the ADR names what to cache (for example storefront HTML at the edge, OpenAPI schema objects built once per isolate, lazy route registration) or the cost of moving to the paid plan.
+- **Changed on Oct 9 (ADR 0013):** signed-in requests will exceed 10 ms whatever we optimise, so this spike no longer tunes requests under the limit. It measures both, then runs a sustained load at pilot-like traffic for about 30 minutes to see whether the free plan terminates anything (`exceededCpu`). The result sets the alarm thresholds; the first termination in production is the trigger to move to Workers Paid.
 
 ### 3.3 Bundle size (ADR 0004)
 
@@ -337,6 +337,7 @@ Neon compute stays fixed at 0.25 CU (already set). Cloudflare bot protection wai
 ## 9. Monitoring
 
 - Workers Logs (observability on, head sampling for 2xx), plus Workers Analytics for CPU and requests. The agent reads both through the API, since `wrangler tail` needs WebSockets.
+- An alert on any `exceededCpu` outcome and on p99 CPU, for both Workers (ADR 0013). The first CPU termination in production is the trigger to move to Workers Paid.
 - Sentry for the API (`@sentry/cloudflare`), the storefront (the same SDK in the Astro Worker entry) and the admin (`@sentry/react`). Source maps are uploaded from CI with `SENTRY_AUTH_TOKEN`. Errors are sampled at 100% and traces at 0% on the free plan.
 - External uptime check on `https://managemind-api.aradworkspace.workers.dev/health`. The owner sets it up at the end of the phase.
 

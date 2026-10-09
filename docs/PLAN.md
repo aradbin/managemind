@@ -607,7 +607,7 @@ Each of these starts only when pilot clients need it, in this default order; the
 
 | Item | Trigger | Approach |
 | --- | --- | --- |
-| Workers Paid ($5/month) | Any free limit above 70% for a week | Upgrade; no code change |
+| Workers Paid ($5/month) | The first CPU termination (`exceededCpu`) in production, the first serious client, or any free limit above 70% for a week | Upgrade, then follow the switch checklist in ADR 0013 (alerts, optional staff passwords); no refactor |
 | Neon paid plan | Storage near 0.5 GB or compute hours near the free limit | Upgrade; no code change |
 | Price lists, customer-group pricing | Client demand | Already supported by the promotion and pricing models |
 | Better search | Catalogs above roughly 10,000 variants or Bangla search complaints | Dedicated search service behind a `SearchProvider` interface |
