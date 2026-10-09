@@ -1,6 +1,6 @@
 # ADR 0002: Database path from Workers to Neon
 
-- Status: Proposed (waiting for the Bangladesh measurements, see "Still to measure")
+- Status: Accepted
 - Date: 2026-10-09
 - Spike code: `spikes/db/` (deleted after Phase 1)
 
@@ -85,7 +85,7 @@ Transaction-local settings never leaked: Postgres reverts them at `COMMIT`.
 2. **Neon serverless driver over HTTP.** One round trip per batch and the lowest CPU (2.5 ms at p50). Not interactive: statements in a batch cannot depend on earlier results except through SQL. It does not count against Hyperdrive's 100,000 queries a day.
 3. **postgres.js or the Neon WebSocket driver.** Slower than node-postgres in every measurement and more CPU. Rejected.
 
-## Decision (proposed)
+## Decision
 
 1. **Driver:** node-postgres over Hyperdrive, with Drizzle as the query builder, for every tenant transaction. Neon HTTP stays as a candidate for read-only requests if the CPU budget spike (ADR 0003) shows that the TCP path does not fit. Whether to have one path or two is decided there, not here.
 2. **One round trip to start a transaction.** `withTenant` sends `BEGIN` and `set_config` together as a single simple-query message, then runs Drizzle on the same client. The message contains the tenant UUID as a literal, so `withTenant` must validate it against a strict UUID pattern first; nothing else is ever interpolated.
@@ -99,13 +99,27 @@ Transaction-local settings never leaked: Postgres reverts them at `COMMIT`.
    ```
 
    `withTenant` sets both `app.tenant_id` and `app.tenant_at = now()::text`, transaction-local. `now()` is the transaction's start time, so a value left on a pooled connection by an earlier transaction never matches, and the policy returns zero rows. The function is wrapped in `select` so Postgres evaluates it once per statement rather than once per row.
-4. **Placement:** the API Worker uses `placement.region = "aws:ap-southeast-1"`. To be confirmed by the Bangladesh measurements.
+4. **Placement:** the API Worker uses `placement.region = "aws:ap-southeast-1"`, confirmed from Bangladesh: about 90–125 ms for a tenant transaction instead of 275–360 ms. The storefront Worker is not placed, because it serves cached pages from the colo nearest the shopper. Cloudflare documents that placement applies to `fetch` handlers and not to RPC methods, but it does not say whether a `fetch` arriving over a service binding is placed. The CPU budget spike (ADR 0003) builds the storefront-to-API path and checks this through the `cf-placement` header.
 5. **Hyperdrive query caching off.** The cache knows nothing about RLS context. Tenant reads run inside transactions anyway, and the plan's edge cache sits in front of the API.
 6. **App role:** `mm_app` is created with SQL, so it is not a member of `neon_superuser` (confirmed: `rolbypassrls = false`, member only of `app_rw`). Roles created through the Neon console or API would be members and would bypass RLS.
 
-## Still to measure
+### From Bangladesh (2026-10-09, owner's phone, 3 rounds per row)
 
-- **From Bangladesh:** the owner runs the spike page from a mobile network and from broadband. The results go here and confirm or change the placement decision. Expected: with default placement, a Bangladeshi request runs at DAC and pays the DAC-to-Singapore round-trip time on every database round trip; placed next to Neon, it pays that once.
+The owner ran the spike page on Grameenphone mobile data, whose requests entered Cloudflare at CGP (Chittagong), and on Link3 broadband, which entered at DAC (Dhaka). Every request succeeded (81 of 81). The times below are database time measured inside the Worker, p50 in ms.
+
+| Driver | Mobile, default (runs in CGP) | Mobile, near-db (CGP → SIN) | Broadband, default (runs in DAC) | Broadband, near-db (DAC → SIN) |
+| --- | --- | --- | --- | --- |
+| pg | 360 | 44 | 331 | 65 |
+| pg-packed | 317 | **32** | 274 | **40** |
+| drizzle-pg | 342 | 55 | 306 | 49 |
+| postgresjs | 433 | 56 | 458 | 46 |
+| neon-http | 179 | 51 | 156 | 34 |
+| neon-ws | 497 | 1,231 | 509 | 152 |
+
+- Without placement, each database round trip from Bangladesh costs about 55 ms (DAC) to 63 ms (CGP), so a 5–6 round-trip transaction spends about 275–360 ms waiting on the database.
+- With placement, the request crosses to Singapore once, about one 55–63 ms round trip, and then pays 5–8 ms per database round trip. The estimated total for a Bangladeshi shopper is therefore about 90–125 ms with placement, against 275–360 ms without. Placement is about three times faster for every interactive driver.
+- Even Neon HTTP's single round trip is faster placed (34–51 ms plus the one crossing) than not placed (156–179 ms), because the HTTP request itself is slower over the long path.
+- Neon's WebSocket driver was slow and erratic from both networks, which confirms its rejection.
 
 ## Consequences
 
