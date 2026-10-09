@@ -24,8 +24,8 @@ Create these on free plans. Use one email you control long term (ideally a compa
    - Open **R2** and enable it. Cloudflare may ask for a payment card even for the free tier; nothing is charged inside the free limits.
    - Copy the **Account ID**, shown on the account home page and in the right sidebar of Workers & Pages. It is not a secret.
 3. **Neon:** sign up at console.neon.tech (Free plan).
-   - Create a project named `managemind`, Postgres version **17**, region **AWS Asia Pacific (Singapore)**, the closest to Bangladesh.
-   - **Branches → main → Computes → Edit**: set a fixed size of **0.25 CU** (autoscaling off) and keep scale-to-zero on.
+   - Create a project named `managemind`, Postgres version **18**, region **AWS Asia Pacific (Singapore)**, the closest to Bangladesh.
+   - **Branches → production** (the default branch; older projects call it `main`) **→ Computes → Edit**: set a fixed size of **0.25 CU** (autoscaling off) and keep scale-to-zero on.
    - Copy the **Project ID** from project Settings. It is not a secret.
 4. **Sentry:** sign up at sentry.io (Developer, free plan). Create one organization; the agent creates the projects later.
 5. **Password manager** (Bitwarden, 1Password or similar): create a vault entry for every token below. Later it also holds the backup and credential encryption keys.
@@ -65,7 +65,7 @@ Optional shortcut for the CI key: Neon console → your project → **Integratio
 
 ### Neon production connection string (for migrations)
 
-Neon console → project → **Connect** → branch `main`, role `neondb_owner`, **pooling off** (migrations need a direct connection) → copy the connection string into the password manager. It goes only into GitHub. The agent creates the restricted app role through a migration in Phase 0.
+Neon console → project → **Connect** → the default branch (`production`), role `neondb_owner`, **pooling off** (migrations need a direct connection) → copy the connection string into the password manager. It goes only into GitHub. The agent creates the restricted app role through a migration in Phase 0.
 
 ### Sentry auth token
 
@@ -204,7 +204,7 @@ Reply in the session with:
 ## Checklist
 
 - [ ] Cloudflare account, `workers.dev` subdomain chosen, R2 enabled, account ID copied
-- [ ] Neon project (Singapore, Postgres 17, 0.25 CU fixed), project ID copied
+- [ ] Neon project (Singapore, Postgres 18, 0.25 CU fixed), project ID copied
 - [ ] Sentry organization created
 - [ ] Two Cloudflare tokens, two Neon keys, Neon owner connection string, Sentry token, all in the password manager
 - [ ] GitHub Actions: 4 secrets and 3 variables added; workflow permissions set to read and write
