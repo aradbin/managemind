@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+  - spikes/*
+
+# One version of each shared dependency across the workspace.
+# Packages reference these with "catalog:".
+catalog:
+  "@biomejs/biome": 2.5.15
+  "@types/node": 22.20.5
+  "@types/pg": 8.23.1
+  pg: 8.23.1
+  turbo: 2.11.7
+  typescript: 6.0.3
+  vitest: 5.0.3

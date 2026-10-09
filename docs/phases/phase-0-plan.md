@@ -127,9 +127,9 @@ Tooling:
 - Biome for lint and format. TypeScript strict, with a shared `tsconfig.base.json` (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`).
 - Node 22 and pnpm 10, pinned through `packageManager` and `.nvmrc`.
 - Current versions, to be pinned exactly when the scaffold PR lands: wrangler 4.149, hono 4.13, @hono/zod-openapi 1.6, zod 4.6, drizzle-orm 0.45 / drizzle-kit 0.31, better-auth 1.7, astro 7.3 / @astrojs/cloudflare 14.3, biome 2.5, turbo 2.11, vitest 5, @sentry/cloudflare 11.6, vite 8, react 19.3.
-- TypeScript 7.0 (the native compiler) if Astro's and Drizzle's type tooling work with it; otherwise the latest 6.x. This is decided in the scaffold PR.
+- TypeScript 6.0. Decided in PR 1 (ADR 0012): `@astrojs/check` does not accept TypeScript 7 yet.
 - Playwright uses the preinstalled Chromium (`executablePath: '/opt/pw-browsers/chromium'` if versions differ).
-- SessionStart hook (`.claude/settings.json`): installs Postgres 18 from the PGDG apt repository if it is missing, `initdb` into `.local/pg` (gitignored), starts it on port 5432, creates the `managemind` and `managemind_test` databases, runs `pnpm install --frozen-lockfile`, and starts Mailpit if it is present. It is idempotent and safe on resume.
+- SessionStart hook (`.claude/hooks/session-start.sh`, ADR 0008): installs Postgres 18 from the PGDG apt repository if it is missing, creates and starts the Debian cluster `18/main` on port 5432 (moving the image's Postgres 16 cluster off that port), creates the `managemind` and `managemind_test` databases, exports `DATABASE_URL` and `TEST_DATABASE_URL`, and runs `pnpm install`. It is idempotent and safe on resume. Mailpit is added to it with the auth spike, which is the first thing that sends email.
 - Renovate config and `pnpm audit` in CI.
 
 ### 4.1 Names and domains are configuration
