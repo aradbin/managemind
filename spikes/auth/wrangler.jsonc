@@ -1,0 +1,13 @@
+// Spike Worker for ADR 0005. Deleted after Phase 1 (plan Q7).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-spike-auth",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "placement": { "region": "aws:ap-southeast-1" },
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "f2fced25d85f494ab0e9fd813a9a7534" }],
+  "vars": { "PBKDF2_ITERATIONS": "100000" }
+}
