@@ -87,8 +87,8 @@ How measurements are taken:
 ### 3.5 Edge state on the free plan (ADR 0006)
 
 - Deploy the Workers rate-limiting binding on the free account and confirm that it enforces limits. The docs don't state which plans include it. It is per colo and eventually consistent, which is fine for login and OTP throttling. Fallback: a SQLite-backed Durable Object counter, which is on the free plan.
-- KV only for the domain-to-store map and cache versions. Astro `session: false`, so no KV session binding.
-- Astro `imageService: 'passthrough'`, so the adapter's default Cloudflare Images binding (`cloudflare-binding`) is never used. Images are already resized in the browser.
+- KV only for the domain-to-store map and cache versions. The Astro Cloudflare adapter stays (it is what runs Astro on Workers); only its session feature is turned off with `session: false`, so there is no KV session binding and no KV write per session change. Cart and shopper login state live in the API (Postgres) behind first-party cookies instead.
+- Astro `imageService: 'passthrough'`, so the adapter's default Cloudflare Images binding (`cloudflare-binding`) is never used. Images are already resized in the browser at fixed widths, and the storefront builds `srcset` from those stored sizes.
 - Queues: confirm on the free plan that delayed messages (`delaySeconds`, needed for the 30-minute payment re-check in Phase 5A), a dead-letter queue and consumer retries all work.
 - Cron: one trigger per Worker. The account allows 5, and `managemind-communication` may use some of them.
 
@@ -309,7 +309,7 @@ A Vite + React page at `/admin` with a Bangla and English title, `/health` statu
 | --- | --- | --- | --- |
 | Local | `wrangler dev` (API on :8787, storefront on :4321) | Native Postgres 18, through Hyperdrive `localConnectionString` | Mailpit for codes |
 | CI tests | — | `postgres:18` service container | Migrations run as `postgres`, tests as `mm_app` |
-| Preview | Preview versions with alias `pr-<n>` on `managemind-api-preview` and `managemind-storefront-preview` | Shared Neon `preview` branch; its own branch when labeled `db-branch` | See Q1 |
+| Preview | Preview versions with alias `pr-<n>` on `managemind-api-preview` and `managemind-storefront-preview` | Shared Neon `preview` branch; its own branch when labeled `db-branch` | Q1 decided |
 | Production | `managemind-api` and `managemind-storefront` on `workers.dev` until the domains arrive | Neon `production` | |
 
 Workflows:
@@ -380,10 +380,10 @@ ADR 0012 records the dependency choices (driver, zod-openapi, home-grown i18n an
 
 ## 13. Open questions for the owner
 
-- **Q1 — Preview database for unlabeled PRs.** Preview Workers on `workers.dev` can't reach the CI Postgres container. **Recommended:** a single shared Neon `preview` branch, reseeded when migrations change; it sleeps when unused but shares the project's 100 CU-hours. **Alternative:** unlabeled previews run without a database (health, static pages and "store not found" only).
+- **Q1 — Preview database for unlabeled PRs. Decided (Oct 9):** a single shared Neon `preview` branch, reseeded when migrations change; it sleeps when unused but shares the project's 100 CU-hours.
 - **Q2 — A zone for the cache spike:** option (a) buy the main domain now, or (b) defer the spike (§3.6).
-- **Q3 — Throwaway Neon spike branch.** May the agent create the `spike` Neon branch through the API and use its connection string from the session? That credential only reaches an empty, throwaway branch deleted after the spikes. Production credentials never enter the session.
+- **Q3 — Throwaway Neon spike branch. Decided (Oct 9):** yes. The agent creates the `spike` branch through the API and uses its connection string from the session; the branch is empty and deleted after the spikes. Production credentials never enter the session.
 - **Q4 — Bangladesh latency.** Can you open a spike URL a few times from a Bangladeshi mobile network and from broadband during spike week?
 - **Q5 — `managemind-communication` Worker.** What is it, and should it stay on this account? It shares the free daily request and Cron Trigger allowances.
 - **Q6 — Merge rights:** may the agent merge its own PRs once every check is green, or will you merge each one?
-- **Q7 — Spike code:** delete the `spikes/` folder after the phase report (recommended: keep it until Phase 1 ends, then delete it), or keep it permanently for re-measuring?
+- **Q7 — Spike code. Decided (Oct 9):** keep `spikes/` until Phase 1 ends, then delete it.
