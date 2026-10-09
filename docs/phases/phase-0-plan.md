@@ -360,7 +360,7 @@ Each PR is under about 400 changed lines, excluding lockfile and generated migra
 | 1 | Monorepo scaffold, Biome, tsconfig, Turborepo, SessionStart hook, ADR 0001 (ADR format) and ADR 0008 (local Postgres) | |
 | 2 | Spike: database path → ADR 0002 | Needs Q3, and Q4 for the Bangladesh numbers |
 | 3 | Spike: auth → ADR 0005 | |
-| 4 | Spike: CPU and bundle → ADRs 0003 and 0004 | Reuses the spike Workers |
+| 4 | Spike: CPU and bundle → ADRs 0003 and 0004 | Shipped together with PR 5, since both spikes share one lockfile change |
 | 5 | Spike: edge state → ADR 0006 | |
 | 6 | Spike: cache invalidation → ADR 0007 | Needs Q2 (a zone) |
 | 7–8 | `packages/shared` (money, uuidv7, errors; then state machine, i18n, config) | |

@@ -1,6 +1,6 @@
 # ADR 0002: Database path from Workers to Neon
 
-- Status: Accepted. The second-driver question (decision 1) is settled by ADR 0013: one driver.
+- Status: Accepted. The second-driver question (decision 1) is settled by ADR 0013: one driver. Placement over the service binding (decision 4) is confirmed by ADR 0003.
 - Date: 2026-10-09
 - Spike code: `spikes/db/` (deleted after Phase 1)
 
