@@ -1,0 +1,12 @@
+// Spike Worker for ADRs 0003 and 0004. Deleted after Phase 1 (plan Q7).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-spike-cpu-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "placement": { "region": "aws:ap-southeast-1" },
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "f2fced25d85f494ab0e9fd813a9a7534" }]
+}
