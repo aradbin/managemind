@@ -6,6 +6,7 @@ export const ERROR_CODES = {
   unauthorized: { status: 401, title: 'Unauthorized' },
   forbidden: { status: 403, title: 'Forbidden' },
   not_found: { status: 404, title: 'Not found' },
+  store_not_found: { status: 404, title: 'Store not found' },
   conflict: { status: 409, title: 'Conflict' },
   illegal_transition: { status: 409, title: 'Illegal state transition' },
   idempotency_key_reused: { status: 422, title: 'Idempotency key reused with a different request' },
