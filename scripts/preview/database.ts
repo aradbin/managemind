@@ -10,16 +10,14 @@
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
 //    the config does not exist yet. The password is generated here and stored
 //    only in the role and the Hyperdrive config.
-import { randomBytes } from 'node:crypto';
 import { runMigrations } from '@managemind/db/migrate';
 import { seed } from '@managemind/db/seed';
 import pg from 'pg';
 import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib/actions';
+import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
 import { type Branch, DATABASE, Neon } from '../lib/neon';
 import { branchName, DATABASE_LOCK, hyperdriveName, parseDatabase } from './names';
-
-const APP_ROLE = 'mm_app';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -61,18 +59,8 @@ try {
 
   let config = await cf.findHyperdrive(configName);
   if (!config) {
-    const password = randomBytes(24).toString('base64url');
-    mask(password);
-    const literal = owner.escapeLiteral(password);
-    await owner.query(`
-      do $$ begin
-        if exists (select from pg_roles where rolname = '${APP_ROLE}') then
-          alter role ${APP_ROLE} login password ${literal};
-        else
-          create role ${APP_ROLE} login password ${literal};
-        end if;
-      end $$`);
-    await owner.query(`grant app_rw to ${APP_ROLE}`);
+    const password = newPassword();
+    await setAppRole(owner, password);
     config = await cf.createHyperdrive(configName, {
       host: await neon.host(branch.id),
       database: DATABASE,

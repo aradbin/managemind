@@ -324,11 +324,11 @@ Workflows:
    - deploys the PR's own API and storefront Workers against the shared `preview` branch, or against the Neon branch `pr-<n>` (created from `production`, migrated, with its own Hyperdrive config) while the PR has the `db-branch` label;
    - runs the Playwright smoke test against them, then posts the URLs in a single PR comment;
    - when the label is removed: deletes `pr-<n>`. When the PR closes: deletes its Workers, `pr-<n>` and its Hyperdrive config.
-3. **`deploy.yml`** (push to `main`): `needs: ci`. Migrations with `DATABASE_URL_MIGRATIONS`, then deploy the API, then the storefront, then a smoke test of `/health`. Rollback with `wrangler rollback` (documented in `docs/runbooks/rollback.md`).
-4. **`provision.yml`** (manual, idempotent):
-   - create the `mm_app` password and the production Hyperdrive config (preview ones come from `preview.yml`, ADR 0011).
-   - create the Queues and DLQs, the KV namespace, and the R2 buckets `managemind-files` and `managemind-files-preview`, with lifecycle rules: `exports/` 7 days, `tmp-uploads/` 1 day, `backups/daily/` 8 days, `backups/weekly/` 35 days.
-   - Source: `scripts/provision/*.ts`, which calls the Cloudflare and Neon APIs.
+3. **`deploy.yml`** (after `ci.yml` passes on a push to `master`, through `workflow_run`; also manual): provisioning and migrations with `DATABASE_URL_MIGRATIONS`, then deploy the API, then the storefront, then a smoke test of `/health`, `/health/deep` and the storefront. One production change at a time. Rollback with `wrangler rollback` (documented in `docs/runbooks/rollback.md`).
+4. **`provision.yml`** (manual, idempotent; `deploy.yml` runs the same script before every deploy):
+   - the migrations, then the `mm_app` login role (with SQL) and the production Hyperdrive config; with *rotate*, a new `mm_app` password with Hyperdrive updated to match. Preview databases come from `preview.yml` (ADR 0011).
+   - the outbox queue and its DLQ, the KV namespace `managemind-edge`, and the R2 buckets `managemind-files` and `managemind-files-preview` (near Singapore), with lifecycle rules: `exports/` 7 days, `tmp-uploads/` 1 day, `backups/daily/` 8 days, `backups/weekly/` 35 days, and incomplete multipart uploads aborted after 1 day.
+   - Source: `scripts/production/provision.ts`, which calls the Cloudflare API and connects to Neon as the migration role.
 
 Neon compute stays fixed at 0.25 CU (already set). Cloudflare bot protection waits for each domain to be added (Phases 1 and 3), since there is no zone yet.
 
@@ -369,7 +369,7 @@ Each PR is under about 400 changed lines, excluding lockfile and generated migra
 | 15 | Sentry wiring (needs DSNs) | |
 | 16 | `ci.yml` and the bundle check | |
 | 17 | Previews, Playwright smoke, ADR 0011 (preview Workers and databases) | One `preview.yml` with per-PR Workers instead of version aliases plus `db-branch.yml` (ADR 0011) |
-| 18 | `provision.yml`, `deploy.yml`, rollback runbook | Needs the GitHub secrets |
+| 18 | `provision.yml`, `deploy.yml`, rollback runbook | Needs the GitHub secrets. The first production deploy runs when it merges |
 | 19 | `docs/phases/phase-0-report.md` | |
 
 ADR 0012 records the dependency choices (driver, zod-openapi, home-grown i18n and uuidv7, Mailpit) and lands with the PR that first adds each dependency.
