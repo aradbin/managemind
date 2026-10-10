@@ -1,0 +1,33 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "timezone": "Asia/Dhaka",
+  "schedule": ["before 9am on monday"],
+  "minimumReleaseAge": "3 days",
+  "ignorePaths": ["**/node_modules/**", "spikes/**"],
+  "lockFileMaintenance": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "One weekly PR for non-major updates of stable packages.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "groupName": "non-major dependencies"
+    },
+    {
+      "description": "Workers types and wrangler release almost daily; group them.",
+      "matchPackageNames": ["wrangler", "@cloudflare/workers-types"],
+      "groupName": "Cloudflare tooling"
+    },
+    {
+      "description": "@astrojs/check does not accept TypeScript 7 yet (ADR 0012).",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "Node follows .nvmrc and engines; majors are a deliberate decision.",
+      "matchDepNames": ["node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
