@@ -1,0 +1,80 @@
+# Checks every pull request and every push to master (phase-0-plan §8).
+# Preview uploads and the Playwright smoke test join the build job in PR 17.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+  WRANGLER_SEND_METRICS: false
+
+jobs:
+  check:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Server-level URL as the migration role; each package's tests create
+      # and rebuild their own database on it (ADR 0008).
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/managemind_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint and format (Biome)
+        run: pnpm exec biome ci .
+      - name: Migrations match the schema
+        run: |
+          pnpm --filter @managemind/db exec drizzle-kit check
+          pnpm --filter @managemind/db exec drizzle-kit generate
+          if [ -n "$(git status --porcelain packages/db/migrations)" ]; then
+            git status --porcelain packages/db/migrations
+            echo "::error title=Migrations::schema changes without a migration; run pnpm --filter @managemind/db db:generate --name <change>"
+            exit 1
+          fi
+      - name: Typecheck and test (unit, integration, isolation)
+        run: pnpm turbo run typecheck test
+      - name: Dependency audit
+        run: pnpm audit --audit-level high
+
+  build:
+    name: Build and bundle size
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=./apps/*
+      - name: Bundle size (warn at 2.5 MiB, fail at 3 MiB gzip)
+        run: node scripts/bundle-size.mjs apps/api apps/storefront
