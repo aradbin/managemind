@@ -35,3 +35,9 @@ CREATE TRIGGER tenants_set_updated_at BEFORE UPDATE ON platform.tenants
 --> statement-breakpoint
 CREATE TRIGGER idempotency_keys_set_updated_at BEFORE UPDATE ON store.idempotency_keys
   FOR EACH ROW EXECUTE FUNCTION app.set_updated_at();
+
+--> statement-breakpoint
+-- TEMPORARY (PR 16 acceptance check): a store table with no RLS, no FORCE and no policy. Must make CI fail; reverted in the next commit.
+CREATE TABLE store.broken (id uuid PRIMARY KEY, tenant_id uuid NOT NULL);
+--> statement-breakpoint
+GRANT SELECT, INSERT ON store.broken TO app_rw;
