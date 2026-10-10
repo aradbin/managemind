@@ -1,6 +1,6 @@
 # Phase 0 plan — Foundations
 
-Oct 9, 2026 · Status: **draft, awaiting approval** · Source: `docs/PLAN.md` § Phase 0
+Oct 9, 2026 · Status: **approved Oct 9; done Oct 10** (see [`phase-0-report.md`](phase-0-report.md)) · Source: `docs/PLAN.md` § Phase 0
 
 Phase 0 has two goals. The first is to prove the six risky technical assumptions with spikes, each ending in an ADR. The second is to build a deployable skeleton: a monorepo, the base database with RLS, shared utilities, an API Worker, a storefront Worker, CI/CD with previews, and monitoring. No commerce features are built. Estimate: 1–2 weeks, with about half of that on the spikes.
 
