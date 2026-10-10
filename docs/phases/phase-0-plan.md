@@ -314,21 +314,19 @@ A Vite + React page at `/admin` with a Bangla and English title, `/health` statu
 | --- | --- | --- | --- |
 | Local | `wrangler dev` (API on :8787, storefront on :4321) | Native Postgres 18, through Hyperdrive `localConnectionString` | Mailpit for codes |
 | CI tests | — | `postgres:18` service container | Migrations run as `postgres`, tests as `mm_app` |
-| Preview | Preview versions with alias `pr-<n>` on `managemind-api-preview` and `managemind-storefront-preview` | Shared Neon `preview` branch; its own branch when labeled `db-branch` | Q1 decided |
+| Preview | `managemind-api-pr-<n>` and `managemind-storefront-pr-<n>`, deleted when the PR closes (ADR 0011; changed from version aliases in PR 17) | Shared Neon `preview` branch; its own branch when labeled `db-branch` | Q1 decided |
 | Production | `managemind-api` and `managemind-storefront` on `workers.dev` until the domains arrive | Neon `production` | |
 
 Workflows:
 
-1. **`ci.yml`** (pull requests):
-   - install with the pnpm cache, then `biome ci`, typecheck, and unit plus integration tests against `postgres:18`, including the isolation suite.
-   - build, the bundle-size check, and `wrangler versions upload --preview-alias pr-<n>` for both preview Workers.
-   - Playwright smoke tests against the preview URLs, then the URLs commented on the PR.
-2. **`db-branch.yml`** (label `db-branch` added, or a push while the label is on):
-   - create the Neon branch `pr-<n>` from `production`, run the migrations, create the Hyperdrive config `pr-<n>` and upload the preview bound to it.
-   - when the PR closes: delete the branch and the Hyperdrive config.
+1. **`ci.yml`** (pull requests and pushes to `master`): install with the pnpm cache, then `biome ci`, the migration drift check, typecheck, unit plus integration tests against `postgres:18` (including the isolation suite), `pnpm audit`, the build and the bundle-size check (PR 16).
+2. **`preview.yml`** (pull requests; replaces the planned preview steps in `ci.yml` and `db-branch.yml`, ADR 0011):
+   - deploys the PR's own API and storefront Workers against the shared `preview` branch, or against the Neon branch `pr-<n>` (created from `production`, migrated, with its own Hyperdrive config) while the PR has the `db-branch` label;
+   - runs the Playwright smoke test against them, then posts the URLs in a single PR comment;
+   - when the label is removed: deletes `pr-<n>`. When the PR closes: deletes its Workers, `pr-<n>` and its Hyperdrive config.
 3. **`deploy.yml`** (push to `main`): `needs: ci`. Migrations with `DATABASE_URL_MIGRATIONS`, then deploy the API, then the storefront, then a smoke test of `/health`. Rollback with `wrangler rollback` (documented in `docs/runbooks/rollback.md`).
 4. **`provision.yml`** (manual, idempotent):
-   - create the `mm_app` password and the Hyperdrive configs (production, preview).
+   - create the `mm_app` password and the production Hyperdrive config (preview ones come from `preview.yml`, ADR 0011).
    - create the Queues and DLQs, the KV namespace, and the R2 buckets `managemind-files` and `managemind-files-preview`, with lifecycle rules: `exports/` 7 days, `tmp-uploads/` 1 day, `backups/daily/` 8 days, `backups/weekly/` 35 days.
    - Source: `scripts/provision/*.ts`, which calls the Cloudflare and Neon APIs.
 
@@ -370,7 +368,7 @@ Each PR is under about 400 changed lines, excluding lockfile and generated migra
 | 14 | `apps/admin` placeholder and `apps/storefront` placeholder with host resolution | |
 | 15 | Sentry wiring (needs DSNs) | |
 | 16 | `ci.yml` and the bundle check | |
-| 17 | Previews, Playwright smoke, `db-branch.yml`, ADR 0011 (preview databases) | |
+| 17 | Previews, Playwright smoke, ADR 0011 (preview Workers and databases) | One `preview.yml` with per-PR Workers instead of version aliases plus `db-branch.yml` (ADR 0011) |
 | 18 | `provision.yml`, `deploy.yml`, rollback runbook | Needs the GitHub secrets |
 | 19 | `docs/phases/phase-0-report.md` | |
 

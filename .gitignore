@@ -11,3 +11,6 @@ coverage/
 .dev.vars
 .dev.vars.*
 .DS_Store
+wrangler.preview.json
+test-results/
+playwright-report/

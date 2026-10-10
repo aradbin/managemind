@@ -27,6 +27,8 @@ pnpm --filter @managemind/db db:seed
 pnpm --filter @managemind/db db:dev-setup
 # Run the API locally on :8787 (add --test-scheduled to trigger the cron at /__scheduled)
 pnpm --filter @managemind/api dev
+# Run the storefront on :4321, calling the local API (start the API first)
+pnpm --filter @managemind/storefront dev
 # After changing packages/db/src/schema: generate a migration, then review the SQL
 pnpm --filter @managemind/db db:generate --name <change>
 ```
@@ -39,3 +41,17 @@ pnpm --filter @managemind/db db:generate --name <change>
 - **Build and bundle size:** builds the apps, then `node scripts/bundle-size.mjs apps/api apps/storefront` reads wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md)).
 
 Dependency updates come from Renovate (`renovate.json`): one weekly group for minor and patch updates, held for 3 days after release.
+
+## Previews
+
+`.github/workflows/preview.yml` gives every pull request its own Workers, `managemind-api-pr-<n>` and `managemind-storefront-pr-<n>` on workers.dev. It runs the Playwright smoke test (`e2e/`) against them and posts the URLs in a PR comment. Open a demo store with `?store=demo-fashion` or `?store=demo-grocery`.
+
+- **Database:** the shared Neon branch `preview`. Add the `db-branch` label for the PR's own branch `pr-<n>`, which you need when the PR changes migrations.
+- **Cleanup:** closing the PR deletes its Workers and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
+
+Run the smoke test against local Workers (both `wrangler dev` servers running):
+
+```sh
+API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRONMENT=development \
+  pnpm --filter @managemind/e2e e2e
+```
