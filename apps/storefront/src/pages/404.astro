@@ -1,0 +1,11 @@
+---
+import { t } from '@managemind/shared/i18n';
+import Base from '../layouts/Base.astro';
+
+const { locale } = Astro.locals;
+---
+
+<Base title={t(locale, 'error.not_found')}>
+  <h1>{t(locale, 'error.not_found')}</h1>
+  <p><a href="/">{Astro.locals.store?.name ?? '/'}</a></p>
+</Base>

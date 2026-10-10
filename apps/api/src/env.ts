@@ -8,6 +8,8 @@ export interface Env {
   HYPERDRIVE: Hyperdrive;
   /** Outbox events, relayed after commit (ADR 0010). */
   OUTBOX: Queue<OutboxEvent>;
+  /** Static assets: the admin SPA under /admin. */
+  ASSETS?: Fetcher;
   ENVIRONMENT: string;
   PLATFORM_NAME: string;
   PLATFORM_DOMAIN: string;

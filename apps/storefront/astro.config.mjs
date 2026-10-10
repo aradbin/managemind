@@ -1,0 +1,10 @@
+import cloudflare from '@astrojs/cloudflare';
+import { defineConfig } from 'astro/config';
+
+export default defineConfig({
+  output: 'server',
+  // No KV sessions (1,000 writes a day on the free plan) and no Cloudflare
+  // Images; photos are resized in the admin before upload (ADR 0006).
+  session: false,
+  adapter: cloudflare({ imageService: 'passthrough' }),
+});

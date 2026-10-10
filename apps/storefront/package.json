@@ -1,0 +1,23 @@
+{
+  "name": "@managemind/storefront",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro build && wrangler dev --port 4321",
+    "typecheck": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "catalog:",
+    "@managemind/shared": "workspace:*",
+    "astro": "catalog:"
+  },
+  "devDependencies": {
+    "@astrojs/check": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

@@ -1,0 +1,36 @@
+---
+import { t } from '@managemind/shared/i18n';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+const { locale, devStore, store } = Astro.locals;
+const other = locale === 'bn' ? 'en' : 'bn';
+const switchUrl = new URL(Astro.url);
+switchUrl.searchParams.set('lang', other);
+switchUrl.searchParams.delete('store');
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; color: #1a1a1a; }
+      header, main { max-width: 720px; margin: 0 auto; padding: 12px 16px; }
+      header { display: flex; justify-content: space-between; align-items: center; }
+      .dev { background: #fff4ce; padding: 8px 16px; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    {devStore && store && <p class="dev" role="note">{t(locale, 'store.devBanner', { store: store.name })}</p>}
+    <header>
+      <strong>{store?.name ?? ''}</strong>
+      <a href={`${switchUrl.pathname}${switchUrl.search}`} lang={other}>{t(other, `common.language.${other}`)}</a>
+    </header>
+    <main><slot /></main>
+  </body>
+</html>

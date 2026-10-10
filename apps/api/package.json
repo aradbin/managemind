@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "pnpm --filter @managemind/admin build && wrangler dev",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

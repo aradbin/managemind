@@ -1,0 +1,17 @@
+// The storefront Worker. Values here are for local development; preview and
+// production settings come with the deploy workflows (PRs 17 and 18).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-storefront",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-09-15",
+  "observability": { "enabled": true },
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  // Not placed: shopper pages are served from the location nearest the
+  // shopper; the API it calls is placed next to Neon (ADRs 0002, 0003).
+  "services": [{ "binding": "API", "service": "managemind-api" }],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "STORE_DOMAIN": "localhost"
+  }
+}
