@@ -135,6 +135,52 @@ export class Cloudflare {
     );
   }
 
+  /** GraphQL Analytics, scoped to this account (`$acct` is filled in). */
+  async analytics<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+    const res = await this.api.request<{ data: T | null; errors?: { message: string }[] }>(
+      'POST',
+      '/graphql',
+      { query, variables: { acct: this.accountId, ...variables } },
+    );
+    if (res.errors?.length || !res.data) {
+      throw new Error(`Cloudflare GraphQL: ${res.errors?.map((e) => e.message).join('; ')}`);
+    }
+    return res.data;
+  }
+
+  /** Workers Logs aggregates for one Worker over [from, to] (epoch ms). */
+  async workerLogStats(
+    service: string,
+    from: number,
+    to: number,
+    calculations: { operator: string; key?: string; alias: string }[],
+    groupBy?: string,
+  ): Promise<
+    { alias: string; aggregates: { groupKey?: string; value: number; count: number }[] }[]
+  > {
+    const res = await this.api.request<
+      Envelope<{
+        calculations?: {
+          alias: string;
+          aggregates: { groupKey?: string; value: number; count: number }[];
+        }[];
+      }>
+    >('POST', `${this.account}/workers/observability/telemetry/query`, {
+      queryId: 'usage-alarm',
+      timeframe: { from, to },
+      view: 'calculations',
+      parameters: {
+        calculations: calculations.map((c) => ({
+          ...c,
+          ...(c.key ? { keyType: 'number' } : {}),
+        })),
+        ...(groupBy ? { groupBys: [{ type: 'string', value: groupBy }] } : {}),
+        filters: [{ key: '$metadata.service', operation: 'eq', value: service, type: 'string' }],
+      },
+    });
+    return res.result.calculations ?? [];
+  }
+
   private async ignore404(fn: () => Promise<unknown>): Promise<void> {
     try {
       await fn();

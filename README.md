@@ -67,3 +67,14 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 - **Without deploying:** `provision.yml` runs step 1 by hand, and can rotate the `mm_app` password.
 - **Domains:** both Workers are on workers.dev until the `PLATFORM_DOMAIN` and `STORE_DOMAIN` repository variables are set.
 - **When a deploy goes wrong:** follow [docs/runbooks/rollback.md](docs/runbooks/rollback.md).
+
+## Usage alarm
+
+`.github/workflows/monitor.yml` runs every day at 02:07 UTC (08:07 in Dhaka). `scripts/monitor/usage.ts` checks the last 24 hours:
+
+- **CPU:**
+  - any request stopped for CPU or memory on `managemind-api` or `managemind-storefront` (the trigger to move to Workers Paid, ADR 0013);
+  - API p99 CPU above 50 ms, and storefront p90 above 10 ms. These are judged only on days with at least 200 requests (ADR 0003).
+- **Free-plan limits:** Worker requests, Hyperdrive queries, queue operations, KV writes, and Neon compute and storage, each above 70%.
+
+On an alarm the run fails and opens (or comments on) a **Usage alarm** issue assigned to the repository owner. Close the issue once it's handled. To check the notification, run the workflow by hand with *test* checked.
