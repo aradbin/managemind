@@ -10,6 +10,8 @@ export { FIXTURES } from './fixtures';
 
 /** A login role in app_rw, standing in for mm_app. */
 export const APP_ROLE = 'mm_app_test';
+/** Advisory lock key that serializes test database setup across packages. */
+const SETUP_LOCK = 72_616_001;
 export const [TENANT_A, TENANT_B] = DEMO_TENANTS.map((t) => t.id) as [string, string];
 
 /** Connection strings for one test database: as the owner, and as the app role. */
@@ -69,30 +71,34 @@ export async function prepareTestDatabase(database: string): Promise<void> {
   const { ownerUrl } = testUrls(database);
   const server = await connect(process.env.TEST_DATABASE_URL as string);
   try {
+    // Roles are server-wide, and turbo runs every package's setup at once. On
+    // a fresh server (CI) their CREATE ROLEs would race, so setups take turns;
+    // the tests themselves still run in parallel.
+    await server.query('select pg_advisory_lock($1)', [SETUP_LOCK]);
     const exists = await server.query('select 1 from pg_database where datname = $1', [database]);
     if (exists.rowCount === 0) await server.query(`create database ${database}`);
-    // Roles are server-wide; parallel test runs may race to create it.
     await server.query(`
       do $$ begin
         create role ${APP_ROLE} login password '${APP_ROLE}';
       exception when duplicate_object then null;
       end $$`);
-  } finally {
-    await server.end();
-  }
-  const owner = await connect(ownerUrl);
-  try {
-    await owner.query('set client_min_messages = warning');
-    await owner.query('drop schema if exists store, platform, app, drizzle cascade');
-    await runMigrations(ownerUrl);
-    await owner.query(`grant app_rw to ${APP_ROLE}`);
-    await seed(ownerUrl);
-    for (const tenant of [TENANT_A, TENANT_B]) {
-      await inTenant(owner, tenant, async () => {
-        for (const insert of Object.values(FIXTURES)) await owner.query(insert('default'));
-      });
+    const owner = await connect(ownerUrl);
+    try {
+      await owner.query('set client_min_messages = warning');
+      await owner.query('drop schema if exists store, platform, app, drizzle cascade');
+      await runMigrations(ownerUrl);
+      await owner.query(`grant app_rw to ${APP_ROLE}`);
+      await seed(ownerUrl);
+      for (const tenant of [TENANT_A, TENANT_B]) {
+        await inTenant(owner, tenant, async () => {
+          for (const insert of Object.values(FIXTURES)) await owner.query(insert('default'));
+        });
+      }
+    } finally {
+      await owner.end();
     }
   } finally {
-    await owner.end();
+    // Ending the session releases the advisory lock.
+    await server.end();
   }
 }
