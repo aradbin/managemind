@@ -1,0 +1,85 @@
+// The few Cloudflare API calls the preview workflow needs.
+import { type ApiClient, apiClient, HttpError } from './http';
+
+interface Envelope<T> {
+  result: T;
+}
+export interface HyperdriveConfig {
+  id: string;
+  name: string;
+}
+export interface Origin {
+  host: string;
+  database: string;
+  user: string;
+  password: string;
+}
+
+export class Cloudflare {
+  private readonly api: ApiClient;
+  constructor(
+    token: string,
+    private readonly accountId: string,
+  ) {
+    this.api = apiClient('https://api.cloudflare.com/client/v4', token, 'Cloudflare');
+  }
+
+  private get account() {
+    return `/accounts/${this.accountId}`;
+  }
+
+  private async get<T>(path: string): Promise<T> {
+    return (await this.api.request<Envelope<T>>('GET', `${this.account}${path}`)).result;
+  }
+
+  /** The account's workers.dev subdomain, e.g. "example" in example.workers.dev. */
+  async workersSubdomain(): Promise<string> {
+    return (await this.get<{ subdomain: string }>('/workers/subdomain')).subdomain;
+  }
+
+  async findHyperdrive(name: string): Promise<HyperdriveConfig | undefined> {
+    return (await this.get<HyperdriveConfig[]>('/hyperdrive/configs')).find((c) => c.name === name);
+  }
+
+  /** Caching off: every query must see the current row-level security context (ADR 0002). */
+  async createHyperdrive(name: string, origin: Origin): Promise<HyperdriveConfig> {
+    const res = await this.api.request<Envelope<HyperdriveConfig>>(
+      'POST',
+      `${this.account}/hyperdrive/configs`,
+      {
+        name,
+        origin: { ...origin, port: 5432, scheme: 'postgres' },
+        caching: { disabled: true },
+      },
+    );
+    return res.result;
+  }
+
+  async deleteHyperdrive(id: string): Promise<void> {
+    await this.ignore404(() =>
+      this.api.request('DELETE', `${this.account}/hyperdrive/configs/${id}`),
+    );
+  }
+
+  async ensureQueue(name: string): Promise<void> {
+    const queues = await this.get<{ queue_name: string }[]>(
+      `/queues?name=${encodeURIComponent(name)}`,
+    );
+    if (queues.some((q) => q.queue_name === name)) return;
+    await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
+  }
+
+  async deleteWorker(name: string): Promise<void> {
+    await this.ignore404(() =>
+      this.api.request('DELETE', `${this.account}/workers/scripts/${name}?force=true`),
+    );
+  }
+
+  private async ignore404(fn: () => Promise<unknown>): Promise<void> {
+    try {
+      await fn();
+    } catch (e) {
+      if (!(e instanceof HttpError && e.status === 404)) throw e;
+    }
+  }
+}

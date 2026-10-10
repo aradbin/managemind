@@ -1,0 +1,139 @@
+# A preview of every pull request (phase-0-plan §8, ADR 0011): its own API and
+# storefront Workers on workers.dev, a smoke test, and the URLs in a PR
+# comment. The database is the shared Neon `preview` branch, or the PR's own
+# branch `pr-<n>` while it has the `db-branch` label. Closing the PR deletes
+# its Workers and its own branch.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, closed]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+  WRANGLER_SEND_METRICS: false
+  PR: ${{ github.event.pull_request.number }}
+  COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  deploy:
+    name: Deploy and smoke test
+    # Secrets are not available to forks; other labels change nothing.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action) ||
+        github.event.label.name == 'db-branch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Choose the database
+        id: choice
+        env:
+          LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'db-branch') }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$LABELED" = true ]; then
+            echo "database=own" >> "$GITHUB_OUTPUT"
+            echo "describe=own Neon branch pr-$PR (db-branch label)" >> "$GITHUB_OUTPUT"
+          else
+            echo "database=shared" >> "$GITHUB_OUTPUT"
+            echo "describe=shared Neon branch preview" >> "$GITHUB_OUTPUT"
+            # The shared branch follows master; a PR's new migrations need its own branch.
+            if ! git diff --quiet "origin/$BASE...HEAD" -- packages/db/migrations; then
+              echo "flags=--skip-migrations" >> "$GITHUB_OUTPUT"
+              echo "describe=shared Neon branch preview, WITHOUT this PR's migrations (add the db-branch label)" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - run: pnpm turbo run build --filter=./apps/*
+
+      - name: Database (Neon branch, migrations, seed, Hyperdrive)
+        id: database
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/database.ts
+          --pr "$PR" --database ${{ steps.choice.outputs.database }} ${{ steps.choice.outputs.flags }}
+
+      - name: Worker configs
+        id: workers
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/workers.ts
+          --pr "$PR" --hyperdrive ${{ steps.database.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
+
+      - name: Deploy the API
+        run: pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json
+      - name: Deploy the storefront
+        id: deployed
+        run: pnpm --filter @managemind/storefront exec wrangler deploy
+
+      - name: Remove the PR's own database (label removed)
+        if: steps.choice.outputs.database == 'shared'
+        run: pnpm --filter @managemind/scripts exec tsx preview/teardown.ts --pr "$PR" --database-only
+
+      - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
+      - name: Smoke test
+        id: smoke
+        env:
+          API_URL: ${{ steps.workers.outputs.api_url }}
+          STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
+        run: pnpm --filter @managemind/e2e e2e
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.smoke.outcome == 'failure'
+        with:
+          name: playwright-traces
+          path: e2e/test-results
+          retention-days: 7
+
+      - name: Comment the preview URLs
+        if: ${{ !cancelled() && steps.choice.outcome == 'success' }}
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/comment.ts --pr "$PR"
+          --status ${{ steps.deployed.outcome == 'success' && 'deployed' || 'failed' }}
+          --api-url "${{ steps.workers.outputs.api_url }}"
+          --storefront-url "${{ steps.workers.outputs.storefront_url }}"
+          --database "${{ steps.choice.outputs.describe }}"
+          --smoke ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+
+  teardown:
+    name: Remove the preview
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @managemind/scripts exec tsx preview/teardown.ts --pr "$PR"
+      - run: pnpm --filter @managemind/scripts exec tsx preview/comment.ts --pr "$PR" --status removed
