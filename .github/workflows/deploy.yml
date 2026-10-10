@@ -70,19 +70,29 @@ jobs:
           API_URL: ${{ steps.workers.outputs.api_url }}
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
         run: |
+          # A just-created workers.dev Worker is not on every edge at once: for
+          # about a minute some requests get Cloudflare's own 404. Retry each
+          # check for up to 2 minutes.
+          retry() {
+            for i in $(seq 1 30); do "$1" && return 0; sleep 4; done
+            echo "::error::smoke check $1 failed"; return 1
+          }
           # The new version is live once /health reports this commit.
-          for i in $(seq 1 30); do
-            commit=$(curl -fsS "$API_URL/health" | jq -r .commit || true)
-            [ "$commit" = "$COMMIT_SHA" ] && break
-            sleep 4
-          done
-          if [ "$commit" != "$COMMIT_SHA" ]; then
-            echo "::error::/health reports ${commit:-nothing}, expected $COMMIT_SHA"; exit 1
-          fi
-          curl -fsS "$API_URL/health/deep" | jq -e '.status == "ok"'
-          # No stores are live yet, so the storefront answers 404 with its own page.
-          status=$(curl -sS -o /dev/null -w '%{http_code}' "$STOREFRONT_URL/")
-          case "$status" in 200|404) ;; *) echo "::error::storefront answered $status"; exit 1 ;; esac
+          live() { [ "$(curl -fsS "$API_URL/health" | jq -r .commit)" = "$COMMIT_SHA" ]; }
+          database() { curl -fsS "$API_URL/health/deep" | jq -e '.status == "ok"' > /dev/null; }
+          # No stores are live yet, so the storefront answers its own 404 page
+          # (Cloudflare's 404 is a short text/plain body).
+          storefront() {
+            body=$(curl -sS -w '\n%{http_code}' "$STOREFRONT_URL/")
+            case "${body##*$'\n'}" in
+              200) return 0 ;;
+              404) grep -q 'Store not found' <<< "$body" ;;
+              *) return 1 ;;
+            esac
+          }
+          retry live
+          retry database
+          retry storefront
           echo "### Deployed $COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "- API: $API_URL/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Storefront: $STOREFRONT_URL" >> "$GITHUB_STEP_SUMMARY"
