@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["node"]
   },
-  "include": ["lib", "preview", "production"]
+  "include": ["lib", "monitor", "preview", "production"]
 }

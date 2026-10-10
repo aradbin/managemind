@@ -129,8 +129,7 @@ The plan's own checks (phase-0-plan §10):
 
 ### Not built yet
 
-6. **The daily usage alarm (ADR 0013, phase-0-plan §9).** No job yet checks for any `exceededCpu`, API p99 CPU above 50 ms, storefront p90 above 10 ms, or Neon compute above 70% of the month. Proposed as a small scheduled workflow that fails, and so emails the owner, when a threshold is crossed.
-   - **Implementation note:** Workers Analytics reports Workers created since Oct 9 under the script name `__unknown__`, so the job should read Workers Logs (the telemetry API, which has each invocation's outcome and CPU time) rather than group analytics by script.
+6. **The daily usage alarm** (ADR 0013, phase-0-plan §9) was missing when this report was written. It is now built (`monitor.yml`, after this report): it runs daily at 08:07 Dhaka time. On an alarm it fails and opens or comments on a `Usage alarm` issue assigned to the owner. It reads Workers Logs rather than Analytics, because Analytics reports Workers created since Oct 9 as `__unknown__`.
 7. **Bot protection** waits for each domain, as planned (Phases 1 and 3). Webhook paths must be exempt from browser-signature checks (ADR 0002, consequences).
 8. **The local mail catcher (Mailpit)** moved to Phase 1, together with the first real email.
 9. **Order-size capacity estimate** (PLAN.md storage section): there are no orders yet, so this is measured when checkout lands (Phase 5A).
@@ -157,6 +156,5 @@ The plan's own checks (phase-0-plan §10):
 Phase 1 (platform core) can start once its prerequisites in PLAN.md are in hand: the main domain, and the email provider account (the Phase 1 plan will propose free options).
 
 These Phase 0 items should land before or early in Phase 1:
-- the usage alarm (item 6);
 - Sentry, once its DSNs arrive;
 - the cache spike, once the domain is on Cloudflare.

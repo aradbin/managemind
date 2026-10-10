@@ -33,6 +33,22 @@ export class Neon {
     return `/projects/${this.projectId}`;
   }
 
+  /** This billing period's compute (CU-seconds) and the project's branches with their sizes. */
+  async usage(): Promise<{ computeSeconds: number; periodStart: string; branchBytes: number }> {
+    const { project } = await this.api.request<{
+      project: { compute_time_seconds: number; consumption_period_start: string };
+    }>('GET', this.project);
+    const { branches } = await this.api.request<{ branches: { logical_size?: number }[] }>(
+      'GET',
+      `${this.project}/branches`,
+    );
+    return {
+      computeSeconds: project.compute_time_seconds,
+      periodStart: project.consumption_period_start,
+      branchBytes: branches.reduce((sum, b) => sum + (b.logical_size ?? 0), 0),
+    };
+  }
+
   async branches(): Promise<Branch[]> {
     const { branches } = await this.api.request<{ branches: Branch[] }>(
       'GET',

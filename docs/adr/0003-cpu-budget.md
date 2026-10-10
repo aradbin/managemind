@@ -1,6 +1,6 @@
 # ADR 0003: CPU budget on the Workers Free plan
 
-- Status: Accepted
+- Status: Accepted. The daily check (decision 2) reads Workers Logs rather than Workers Analytics, and judges the percentiles only on days with at least 200 requests (`scripts/monitor/usage.ts`).
 - Date: 2026-10-09
 - Spike code: `spikes/cpu-api/`, `spikes/cpu-store/` (deleted after Phase 1)
 - Related: ADR 0013 (free plan first; the first CPU termination triggers Workers Paid)
