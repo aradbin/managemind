@@ -38,7 +38,7 @@ Also carried over from Phase 0:
 | Concern | How others do it | What we take | What we simplify, and why |
 | --- | --- | --- | --- |
 | Store as tenant | Vendure: a `Channel` scopes everything and has its own token, and roles are assigned per channel. Medusa v2: `Store` plus sales channels. Shopify: one shop per tenant; an organization groups shops | One `platform.tenants` row per store. Everything tenant-owned hangs off it (already true since Phase 0) | No sales channels. One store is one storefront, which is all the MVP sells |
-| Domains | Shopify: a store has many domains, one primary, and the others redirect to it. Saleor: one domain per site | `tenant_domains` with a `kind`, a `status` and one primary per tenant | Custom domains arrive in Phase 3; Phase 1 creates only the platform subdomain |
+| Domains | Shopify: a store has many domains, one primary, and the others redirect to it. Saleor: one domain per site | `tenant_domains` with a `status` and one primary per tenant | The default subdomain is derived from the slug, not stored (§3.1); custom domains arrive in Phase 3 |
 | Permissions | Vendure: permissions as data (`CreateCatalog`, `ReadCatalog` … `SuperAdmin`); a role is a named set of them, scoped to channels. Saleor: permission groups such as `MANAGE_ORDERS` and `MANAGE_STAFF`, and a staff member may not grant permissions they lack | Vendure's `resource.action` permissions defined in code as data, with roles as named sets. Saleor's **no-escalation rule**: you can only give a role whose permissions you hold yourself | Four fixed roles for now. Custom roles per store are a later, additive change: a table of role → permissions, with the same checks |
 | Store owner | Shopify: exactly one store owner, who can't be removed, only transferred | At least one Owner per store at all times, enforced in the service ("last owner" guard) | Several Owners are allowed (family businesses share it). Ownership transfer is just "promote, then step down" |
 | Agency staff | Shopify: collaborator accounts, one login across many stores, with permissions granted per store. Shopify organizations: a user with roles in several stores | One staff user with a membership (and a role) in each store, and a store switcher | — |
@@ -50,15 +50,18 @@ Also carried over from Phase 0:
 
 These change or refine earlier ADRs, so they are called out before the details. Each one becomes an ADR in the PR that builds it.
 
-### 3.1 Tenant domains are the only way to resolve a host (ADR 0014)
+### 3.1 Default addresses come from the slug; custom domains are rows (ADR 0014)
 
-Today `/v1/store/context` turns `{slug}.<STORE_DOMAIN>` into a slug. From Phase 1 on, every host is a row in `platform.tenant_domains`:
+*Changed Oct 11, while building PR 2.* The first draft stored `{slug}.<STORE_DOMAIN>` as a row per store. Two things argue against it:
 
-- `tenant:create` adds `{slug}.<STORE_DOMAIN>` as the primary domain;
-- custom domains (Phase 3) are more rows in the same table;
-- renaming the store domain (PLAN.md's "if the store domain is ever flagged") means adding new subdomain rows, while the old ones keep working.
+- **Previews share one database** but each has its own `STORE_DOMAIN` (ADR 0011), so stored subdomain rows would match only one environment.
+- **PLAN.md's domain rotation** ("change `STORE_DOMAIN` and deploy; default store addresses move") is a config change only if default addresses are derived, not stored.
 
-Lookups read KV first (§4.3) and fall back to the database.
+So:
+
+- the default address `{slug}.<STORE_DOMAIN>` is derived from the slug, as in Phase 0;
+- `platform.tenant_domains` holds **custom domains** (Phase 3), each with a status and at most one primary. Without a primary custom domain, the default address is canonical;
+- host resolution checks the KV map first (§4.3), then a custom domain row, then the slug.
 
 ### 3.2 Two kinds of KV keys
 
@@ -158,8 +161,7 @@ Grants for `app_rw`:
 | `id` | uuid PK | |
 | `tenant_id` | uuid not null FK → tenants, `ON DELETE RESTRICT` | |
 | `hostname` | text, **unique**, lowercase, no port | CHECK on hostname format |
-| `kind` | text CHECK in (`platform_subdomain`, `custom`) | |
-| `status` | text CHECK in (`pending`, `active`, `failed`, `removed`) | Platform subdomains are created `active` |
+| `status` | text CHECK in (`pending`, `active`, `failed`, `removed`) | Custom domains only (§3.1) |
 | `is_primary` | boolean | Partial unique index `(tenant_id) WHERE is_primary AND status = 'active'` |
 | `verified_at` | timestamptz null | |
 | `provider_ref` | text null | The Cloudflare for SaaS hostname ID, from Phase 3 |
@@ -248,12 +250,13 @@ Phase 5B's purge job reads this list and nothing else.
 **KV `managemind-edge`** (provisioned in Phase 0, bound now to both Workers):
 
 - `host:<hostname>` → `{ tenantId, slug, name, defaultLocale, status, primaryHost }`.
+- Keys exist for each store's default address under the current `STORE_DOMAIN` and for its active custom domains. Previews have no queue consumer, so they always use the fallback.
 - It is written only by the outbox consumer, on `tenant.created`, `tenant.updated`, `tenant.status_changed` and `tenant_domain.*`, and by a `kv:sync` CLI command for backfill.
 - Each change costs one or two KV writes, against 1,000 a day.
 
 **Storefront resolution:**
 
-- The storefront reads KV directly. On a miss it calls `/v1/store/context`, which reads `tenant_domains` and never writes KV. Random hosts therefore can't burn KV writes.
+- The storefront reads KV directly. On a miss it calls `/v1/store/context`, which reads the database and never writes KV. Random hosts therefore can't burn KV writes.
 - This removes an API invocation from most storefront requests.
 - Phase 3's page cache is keyed by URL, so cached pages skip this lookup entirely.
 
@@ -445,7 +448,7 @@ The rules, enforced in `core` and tested as a matrix:
 
 | Module | Commands and queries |
 | --- | --- |
-| `tenancy` | `createTenant(input)`: in **one transaction**, it inserts the tenant and its primary subdomain, creates or reuses the owner's user, adds the Owner membership, fills default settings, and writes `tenant.created` plus audit entries. `getStore`, `updateStoreProfile`, `transitionTenant` (suspend and reactivate), `resolveHost` |
+| `tenancy` | `createTenant(input)`: in **one transaction**, it inserts the tenant, creates or reuses the owner's user, adds the Owner membership, fills default settings, and writes `tenant.created` plus audit entries. `getStore`, `updateStoreProfile`, `transitionTenant` (suspend and reactivate), `resolveHost` |
 | `identity` | `listMyStores`, `setActiveStore` (membership or live support grant), `listMembers`, `changeRole`, `removeMember`, `leaveStore`, `invite`, `resendInvitation`, `revokeInvitation`, `acceptInvitation`, `grantSupportAccess`, `revokeSupportAccess`, `setPlatformRole` |
 | `access` | `Actor` (user, platform role, active tenant, store role or support grant, permission set) and `authorize(actor, permission)` |
 
@@ -530,7 +533,7 @@ Rate-limit middleware sits in front of the send and verify endpoints. Better Aut
 | `PUT /staff/{userId}/role` | super_admin | Set or clear `platform_role` |
 | `GET /audit-log` | super_admin | Platform audit, cursor-paginated |
 
-**Store** (`/v1/store/*`): `GET /v1/store/context` now resolves through `tenant_domains` (and KV) instead of parsing the slug. Its response gains `status`.
+**Store** (`/v1/store/*`): `GET /v1/store/context` resolves through KV, then custom domains in `tenant_domains`, then the slug. Its response gains `status`.
 
 **Dev** (`/v1/_dev/*`): `GET /v1/_dev/mailbox?to=` reads captured emails. It exists only when `ENVIRONMENT !== 'production'`, requires the `DEV_TOKEN` header, and a production build test asserts that the route isn't registered.
 
@@ -618,7 +621,7 @@ All of these go into the existing `app.cleanup_expired`.
 | --- | --- |
 | `tenant:create --slug --name --owner-email [--owner-name] [--locale bn\|en]` | Calls `createTenant` as the migration role, prints the admin URL and the store URL, then relays the outbox events through the Queues REST API so KV fills at once |
 | `platform:grant-role --email --role super_admin\|support\|none` | Creates the user if needed; audited |
-| `kv:sync [--tenant]` | Rebuilds the `host:` keys from `tenant_domains` |
+| `kv:sync [--tenant]` | Rebuilds the `host:` keys from the tenants and `tenant_domains` |
 
 - **Locally** it uses `DATABASE_URL`.
 - **For production**, `platform.yml` (`workflow_dispatch`, with the command and its inputs) runs the same CLI with `DATABASE_URL_MIGRATIONS`, so production credentials never enter a session (Phase 0 Q3).
