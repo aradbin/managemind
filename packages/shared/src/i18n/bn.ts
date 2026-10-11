@@ -14,6 +14,13 @@ export const bn: Messages = {
   'cart.items': { one: '{count}টি পণ্য', other: '{count}টি পণ্য' },
   'error.validation_failed': 'চিহ্নিত ঘরগুলো আবার দেখুন।',
   'error.not_found': 'পাতাটি খুঁজে পাওয়া যায়নি।',
+  'error.slug_taken': 'এই দোকানের ঠিকানাটি আগেই নেওয়া হয়েছে।',
+  'error.slug_reserved': 'এই ঠিকানাটি সংরক্ষিত। অন্য একটি বেছে নিন।',
+  'error.tenant_suspended': 'এই দোকানটি স্থগিত আছে, তাই এখন কোনো পরিবর্তন করা যাবে না।',
+  'error.two_factor_required': 'চালিয়ে যেতে অথেনটিকেটর অ্যাপের কোডটি দিন।',
+  'error.last_owner': 'প্রতিটি দোকানে অন্তত একজন মালিক থাকতে হবে।',
+  'error.role_not_allowed': 'আপনি এই ভূমিকা দিতে বা বদলাতে পারবেন না।',
+  'error.invitation_invalid': 'এই আমন্ত্রণটি আর বৈধ নয়। নতুন একটি আমন্ত্রণ চেয়ে নিন।',
   'error.rate_limited': 'অনেকবার চেষ্টা করা হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।',
   'error.internal': 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
 };

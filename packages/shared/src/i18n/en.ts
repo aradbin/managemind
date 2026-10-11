@@ -13,6 +13,13 @@ export const en = {
   'cart.items': { one: '{count} item', other: '{count} items' },
   'error.validation_failed': 'Please check the highlighted fields.',
   'error.not_found': 'We could not find that page.',
+  'error.slug_taken': 'This store address is already taken.',
+  'error.slug_reserved': 'This store address is reserved. Please choose another.',
+  'error.tenant_suspended': 'This store is suspended, so changes are not allowed right now.',
+  'error.two_factor_required': 'Enter the code from your authenticator app to continue.',
+  'error.last_owner': 'A store needs at least one owner.',
+  'error.role_not_allowed': 'You cannot give or change this role.',
+  'error.invitation_invalid': 'This invitation is no longer valid. Ask for a new one.',
   'error.rate_limited': 'Too many attempts. Please wait a minute and try again.',
   'error.internal': 'Something went wrong. Please try again.',
 } as const;

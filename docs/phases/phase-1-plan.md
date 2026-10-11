@@ -308,14 +308,14 @@ Permissions are defined once as data in `packages/shared/src/permissions.ts`. Th
 
 The later permissions are declared now so the role matrix is reviewed once. A permission with no route yet does nothing.
 
-### 5.2 Store roles (proposed; Q2)
+### 5.2 Store roles (approved Oct 11; Q2)
 
 | Role | Gets | Doesn't get |
 | --- | --- | --- |
 | **Owner** | Everything | — |
 | **Manager** | Everything except `staff.manage_owners` and `billing.read` | Can't add, remove or change Owners or other Managers |
 | **Staff** | `catalog.*`, `inventory.*`, `orders.read`, `orders.write`, `customers.read`, `customers.write`, `promotions.read`, `payments.read`, `settings.read` | Exports, refunds, promotions writes, reports, staff, settings writes, billing |
-| **Viewer** | Every `*.read`, except `customers.read` (shoppers' personal data) | Any write or export |
+| **Viewer** | Every `*.read`, except `customers.read` (shoppers' personal data) and `billing.read` (Owners only, like for Managers) | Any write or export |
 
 The rules, enforced in `core` and tested as a matrix:
 
@@ -432,7 +432,7 @@ The rules, enforced in `core` and tested as a matrix:
 - **`permissions.ts`**: the catalog and role matrix (§5.1, §5.2), `can(role, permission)` and `isSubset(roleA, roleB)`.
 - **`tenant-settings.ts`**: the zod schema `tenantSettings`, version 1:
   - `profile`: contact email, contact phone (E.164) and address lines;
-  - `locale`: the default locale and, for Phase 3, the numeral style;
+  - `display`: the numeral style for Phase 3 (the default locale stays a column);
   - unknown keys rejected, defaults filled.
 - **`slug.ts`**:
   - the slug pattern, shared with the database CHECK;
@@ -715,7 +715,7 @@ The PLAN.md items without their own criterion are covered by §9: PWA installabi
 ## 14. Open questions for the owner
 
 - **Q1 — Email provider. Decided (Oct 11):** Resend's free plan, with `notify.managemind.site` as the verified domain (setup in §5.7); the store domain's sender is decided in Phase 4. Original question: Cloudflare Email Service can't send to arbitrary recipients on Workers Free. **Recommended: Resend's free plan**: 3,000 emails a month and 100 a day, with an HTTP API that fits Workers. It may allow only one domain on the free plan, so shopper email from the store domain (Phase 4) is decided in that phase's plan, possibly together with the Workers Paid switch, after which Cloudflare Email Service includes 3,000 emails a month. Alternative: Brevo's free plan (300 a day; free-plan API and domain limits need checking). Please create the account, send an API key limited to sending, and confirm the provider.
-- **Q2 — Roles.** Is the matrix in §5.2 right? In particular: Viewer without customer data, Staff without refunds and exports, Manager unable to manage Owners or other Managers.
+- **Q2 — Roles. Decided (Oct 11):** fixed roles as proposed; custom roles per store later if a client needs them (§2). Original question: is the matrix in §5.2 right? In particular: Viewer without customer data, Staff without refunds and exports, Manager unable to manage Owners or other Managers.
 - **Q3 — First super admins.** Which email addresses get `super_admin`? Should anyone get `support` now?
 - **Q4 — Memberships outside Better Auth's organization plugin** (§3.3). This changes ADR 0005 decision 1. **Decided (Oct 11):** the agent's call, as proposed.
 - **Q5 — Support access.** Proposed: support users can give themselves read-only (Viewer) access for up to 4 hours with a written reason; Manager-level access needs a super admin; the store's Owners get an email each time. Is that right, or should Owners approve first? Approval would make the pilot's onboarding slower.
