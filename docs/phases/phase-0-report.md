@@ -1,10 +1,10 @@
 # Phase 0 report — Foundations
 
-Oct 10, 2026 · Plan: [`phase-0-plan.md`](phase-0-plan.md) · Source: `docs/PLAN.md` § Phase 0
+Oct 10, 2026, updated Oct 11 (Phase 0 closed) · Plan: [`phase-0-plan.md`](phase-0-plan.md) · Source: `docs/PLAN.md` § Phase 0
 
 ## Summary
 
-The skeleton is built and running in production, and every Phase 0 acceptance criterion is met and verified.
+The skeleton is built and running in production, and every Phase 0 acceptance criterion is met and verified. On Oct 11 the last items closed: the cache invalidation spike, Sentry, the uptime monitor and Renovate.
 
 **What exists:**
 - the monorepo;
@@ -18,13 +18,16 @@ The skeleton is built and running in production, and every Phase 0 acceptance cr
 - staff sign in with email codes, not passwords, until Workers Paid (ADR 0005);
 - rate limits need a Durable Object, because the rate-limiting binding never limited anything (ADR 0006).
 
-**Three items wait on the owner:**
+**Closed on Oct 11, once the owner's items arrived:**
 
-| Item | Waiting for |
+| Item | Status |
 | --- | --- |
-| Sentry wiring (PR 15) | The Sentry organization slug and three DSNs |
-| Per-store cache invalidation spike (ADR 0007, PR 6) | The main domain on Cloudflare, and Zone: Read plus Cache Purge: Purge on the session token |
-| External uptime check | An uptime monitor on `https://managemind-api.aradworkspace.workers.dev/health` (§5) |
+| Sentry wiring (PR 15) | Done in #23: errors from the API, storefront and admin, with source maps from production deploys |
+| Per-store cache invalidation spike (ADR 0007, PR 6) | Done in #23, on `managemind.site` |
+| External uptime check | UptimeRobot checks `https://managemind-api.aradworkspace.workers.dev/health`; its requests show in Workers Logs |
+| Renovate | Installed; it keeps the Dependency Dashboard in #17 |
+
+One owner item is still open, by the owner's choice: resetting the `neondb_owner` password (§5).
 
 ## 1. What was built
 
@@ -43,7 +46,9 @@ The skeleton is built and running in production, and every Phase 0 acceptance cr
 | 16 | #16 | `ci.yml`, bundle-size check, Renovate config, `pnpm audit` |
 | 17 | #18 | `preview.yml`: per-PR Workers, preview databases, Playwright smoke (ADR 0011) |
 | 18 | #19, #20 | `provision.yml`, `deploy.yml`, rollback runbook; then a fix to the deploy smoke test |
-| 19 | this PR | This report |
+| 19 | #21 | This report |
+| — | #22 | Daily usage alarm (`monitor.yml`) |
+| 6, 15 | #23 | Cache invalidation spike (ADR 0007); Sentry wiring; this report's Oct 11 update |
 
 **`apps/api` in detail:**
 - Hono with zod-openapi;
@@ -75,7 +80,7 @@ The production storefront answers its "Store not found" page, because stores are
 | --- | --- |
 | A pull request gets its own preview API and storefront automatically, and a database branch when labeled for it | **Met.** On #18, the first preview deploy created the shared Neon branch `preview`, deployed `managemind-api-pr-18` and `managemind-storefront-pr-18`, passed the smoke test, and commented the URLs. Adding `db-branch` created Neon branch `pr-18` and Hyperdrive config `managemind-pr-18`, and the preview moved to them (`/health/deep` 19 ms). Merging deleted the branch, the config and both Workers; I checked each through the Neon and Cloudflare APIs. #19 and #20 cleaned up the same way |
 | The isolation test harness exists and runs in CI | **Met.** The isolation suite and the catalog test run in `ci.yml` on every PR. A temporary commit on #16 added a store table without RLS, and [CI run 38028396386](https://github.com/aradbin/managemind/actions/runs/38028396386) failed 6 tests on it (FORCE RLS, `tenant_isolation` policy, `tenant_id` column, grant and fixture, own-rows visibility, cross-tenant insert). The revert was green |
-| Spike ADRs record the measured CPU time, latency and bundle sizes | **Met** for ADRs 0002–0006, each with the method, raw numbers and date (§3). ADR 0007 (cache invalidation) waits for the domain |
+| Spike ADRs record the measured CPU time, latency and bundle sizes | **Met.** ADRs 0002–0007 each have the method, raw numbers and date (§3) |
 
 The plan's own checks (phase-0-plan §10):
 
@@ -97,6 +102,7 @@ The plan's own checks (phase-0-plan §10):
 | Bundle size (gzip) | Spikes: API 645 KiB (21% of 3 MiB), storefront 175 KiB. Today's real Workers: API **241 KiB (8%)**, storefront **178 KiB (6%)**. CI warns at 2.5 MiB and fails at 3 MiB | 0004 |
 | Auth | Two Better Auth instances keep same-email shoppers in two stores fully apart (19 checks). Password hashing costs **89 ms** (scrypt) or **36.5 ms** (PBKDF2 at 100k, the Workers maximum) per sign-in, so staff use email codes until Workers Paid. The cookie cache allowed cross-store replay, so it stays off | 0005 |
 | Edge state | The rate-limiting binding **never limited** (70 of 70 allowed at limit 5). A Durable Object counter was exact. Queues, delayed messages up to 30 minutes, the DLQ and the cron all work on the free plan | 0006 |
+| Cache invalidation | Pages cached with the Cache API on a custom domain. Purging by product tag, store tag, hostname, prefix or URL made only the target miss, within **0.4 s** (one location). The Free plan's purge bucket is **25 calls, refilling at 5 a minute, shared by the whole account**; one call takes up to 100 tags. The KV version-in-key fallback works but costs a KV read per page view | 0007 |
 
 ## 4. Free-tier usage (Oct 1–10, from the Cloudflare and Neon APIs)
 
@@ -121,11 +127,11 @@ The plan's own checks (phase-0-plan §10):
 
 ### Waiting on the owner
 
-1. **Sentry (PR 15):** the organization slug and DSNs for the API, admin and storefront.
-2. **Cache invalidation spike (ADR 0007):** the main domain on this Cloudflare account, and Zone: Read and Cache Purge: Purge for it on the session token.
-3. **Uptime monitor:** an external check on `https://managemind-api.aradworkspace.workers.dev/health`, for example UptimeRobot's free plan at 5 minutes. `/health` never touches the database, so it doesn't keep Neon awake.
-4. **Install the Renovate GitHub app.** `renovate.json` is in place but does nothing until then. It would also move `pnpm/action-setup` off Node 20, which Actions now flags as deprecated.
-5. **Rotate `neondb_owner` on `production`.** The `spike` branch was created from `production` during the spikes, before ADR 0011's reset rule, so it may share production's owner password. Reset it in the Neon console, then update `DATABASE_URL_MIGRATIONS`.
+1. ~~**Sentry (PR 15)**~~: done Oct 11 (#23).
+2. ~~**Cache invalidation spike (ADR 0007)**~~: done Oct 11 (#23).
+3. ~~**Uptime monitor**~~: UptimeRobot, set up Oct 11. `/health` never touches the database, so it doesn't keep Neon awake.
+4. ~~**Install the Renovate GitHub app**~~: installed Oct 10 (Dependency Dashboard #17). Its update PRs wait for their weekly schedule.
+5. **Rotate `neondb_owner` on `production`** (still open; the owner will do it later). The `spike` branch was created from `production` during the spikes, before ADR 0011's reset rule, so it may share production's owner password. Reset it in the Neon console, then update `DATABASE_URL_MIGRATIONS`.
 
 ### Not built yet
 
@@ -149,12 +155,27 @@ The plan's own checks (phase-0-plan §10):
 
 - **Deploy smoke checks retry.** A just-created workers.dev Worker answered Cloudflare's own 404 on some requests for about a minute. The first production deploy succeeded but its smoke test failed for that reason; #20 retries every check and tells the storefront's 404 page apart from Cloudflare's.
 - **Fresh databases catch what local ones hide.** The first CI runs found that the per-package test setups raced on `CREATE ROLE`, which never showed locally because the roles already existed.
+- **The SessionStart hook needs a full `apt-get update` on some images.** On Oct 11 the session image had no Ubuntu package lists, so Postgres 18's dependency `liburing2` was not installable. The hook now falls back to a full update (#23).
+- **Cache API on workers.dev:** pages cached there too, although the documentation says they shouldn't. There is no zone to purge them, so previews must not cache pages (ADR 0007).
 - **Session tooling:** Node's `fetch` in the cloud session needs `NODE_USE_ENV_PROXY=1` to reach the credential proxy, and Python needs a browser-like `User-Agent` for the Cloudflare API (error 1010).
 
 ## 6. Ready for Phase 1
 
-Phase 1 (platform core) can start once its prerequisites in PLAN.md are in hand: the main domain, and the email provider account (the Phase 1 plan will propose free options).
+Phase 0 is complete.
 
-These Phase 0 items should land before or early in Phase 1:
-- Sentry, once its DSNs arrive;
-- the cache spike, once the domain is on Cloudflare.
+**Already in hand for Phase 1 (Oct 11):**
+- **Domains:** `managemind.site` is the main domain and `managemind.store` the store domain. Both are active on this Cloudflare account (Free plan).
+  - Both Cloudflare tokens have Zone Read, DNS Edit, Workers Routes Edit and Cache Purge for both zones. The session token was verified by deploying the spike's custom domains and purging.
+  - `managemind.store` still has the registrar's parking and email-forwarding records. The owner doesn't use them; they are replaced in Phase 3.
+- **Pilot:** one retail seller of multi-brand gadgets and appliances, taking orders through Facebook and Messenger.
+  - It has no SMS or email provider yet, and ships with Pathao.
+  - The owner onboards and supports clients for now.
+
+**Still needed before or during Phase 1** (PLAN.md, prerequisites):
+- Google Search Console for `managemind.site`;
+- a transactional email provider with the domain verified (the Phase 1 plan proposes free options);
+- confirmation of the Owner, Manager, Staff and Viewer roles;
+- the first super-admin email addresses;
+- the auth secret and credential encryption key.
+
+The spike Workers, including `managemind-spike-cache` with its two `spike-cache*.managemind.site` hostnames and its KV namespace, are deleted when Phase 1 ends (Q7).
