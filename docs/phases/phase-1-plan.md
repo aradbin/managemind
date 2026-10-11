@@ -50,7 +50,7 @@ Also carried over from Phase 0:
 
 These change or refine earlier ADRs, so they are called out before the details. Each one becomes an ADR in the PR that builds it.
 
-### 3.1 Default addresses come from the slug; custom domains are rows (ADR 0014)
+### 3.1 Default addresses come from the slug; custom domains are rows (ADR 0015)
 
 *Changed Oct 11, while building PR 2.* The first draft stored `{slug}.<STORE_DOMAIN>` as a row per store. Two things argue against it:
 
@@ -400,11 +400,11 @@ The rules, enforced in `core` and tested as a matrix:
 
 ### 5.7 Email
 
-**`packages/providers` is created now**, with an `EmailProvider` interface (`send({ to, from, replyTo, subject, html, text, tags })` → `{ id }`) and three adapters:
+**`packages/providers` is created now**, with an `EmailProvider` interface (`send({ to, from, replyTo, subject, html, text, tags, idempotencyKey })` → `{ id }`) and two adapters:
 
 - `resend` (HTTP API, production; Q1);
 - `capture` (non-production, §3.8);
-- `cloudflare`: prepared but unused. Cloudflare Email Service needs Workers Paid to send to arbitrary recipients, so it becomes the obvious choice at the switch (ADR 0013 checklist).
+- a `cloudflare` adapter is written only at the Workers Paid switch: Cloudflare Email Service needs Workers Paid to send to arbitrary recipients (ADR 0014).
 
 **Sender:** `PLATFORM_NAME <no-reply@notify.managemind.site>` from a sending subdomain, so the apex keeps its own reputation (Q8). `Reply-To` is the support address once it exists (Phase 5B).
 
@@ -676,10 +676,10 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | 1 | `packages/shared`: permissions and roles, tenant settings, slugs and reserved names, phone normalization, error codes | Uses the §5.2 matrix as proposed until Q2 is answered |
 | 2 | `packages/db`: platform tables (§4.1), grants, slug trigger, cleanup additions | Updates the catalog and grant tests |
 | 3 | `packages/db`: tenant table registry and the purge-order test; KV and R2 key helpers | |
-| 4 | `packages/providers`: `EmailProvider`, `capture`, `resend`; templates; ADR 0012 rows; ADR 0015 (email provider) | Needs Q1 for the `resend` adapter; `capture` doesn't |
+| 4 | `packages/providers`: `EmailProvider`, `capture`, `resend`; templates; ADR 0012 rows; ADR 0014 (email provider) | Needs Q1 for the `resend` adapter; `capture` doesn't |
 | 5 | `apps/api`: rate-limiter Durable Object, lockout, email quota counter | |
 | 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | Needs `AUTH_SECRET` before it deploys to production |
-| 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0014 | |
+| 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | |
 | 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | |
 | 9 | `apps/api`: `/v1/admin/*` routes and the generated API isolation suite | |
 | 10 | `apps/api`: `/v1/platform/*` routes, dev mailbox; storefront KV resolution and maintenance page | |
