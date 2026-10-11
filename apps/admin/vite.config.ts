@@ -6,5 +6,11 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: '/admin/',
   plugins: [react()],
-  build: { outDir: 'dist/admin', emptyOutDir: true },
+  build: {
+    outDir: 'dist/admin',
+    emptyOutDir: true,
+    // Source maps only for production deploys, which upload them to Sentry
+    // and delete them before deploying; they are never served.
+    sourcemap: process.env.SENTRY_SOURCEMAPS ? 'hidden' : false,
+  },
 });

@@ -1,8 +1,14 @@
 import { AppError } from '@managemind/shared';
+import { captureException } from '@sentry/cloudflare';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 import type { Env } from '../src/env';
 import { makeEnv } from './support';
+
+vi.mock('@sentry/cloudflare', async (original) => ({
+  ...(await original<typeof import('@sentry/cloudflare')>()),
+  captureException: vi.fn(),
+}));
 
 const env: Env = makeEnv();
 
@@ -70,6 +76,19 @@ describe('api skeleton', () => {
     expect(JSON.stringify(body)).not.toContain('store.orders');
     const crash = logLines(errors).find((l) => l.message === 'unhandled error');
     expect(JSON.stringify(crash)).toContain('store.orders');
+  });
+
+  it('reports 5xx errors to Sentry, but not 4xx problems', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(captureException).mockClear();
+    const app = appWithTestRoutes();
+    await app.request('/test/app-error', {}, env);
+    expect(captureException).not.toHaveBeenCalled();
+    const res = await app.request('/test/crash', {}, env);
+    expect(captureException).toHaveBeenCalledOnce();
+    expect(vi.mocked(captureException).mock.calls[0]?.[1]).toEqual({
+      tags: { request_id: res.headers.get('x-request-id') },
+    });
   });
 
   it('fails cleanly on bad configuration without logging values', async () => {

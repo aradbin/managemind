@@ -1,0 +1,16 @@
+// Spike Worker for ADR 0007 (per-store cache invalidation). Deleted after Phase 1.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "managemind-spike-cache",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-15",
+  // workers.dev too, to confirm the Cache API does nothing there.
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  // Two throwaway hostnames stand in for two stores' hostnames.
+  "routes": [
+    { "pattern": "spike-cache.managemind.site", "custom_domain": true },
+    { "pattern": "spike-cache-b.managemind.site", "custom_domain": true }
+  ],
+  "kv_namespaces": [{ "binding": "KV", "id": "16f1f4888fc54312b95d145c02c35bde" }]
+}

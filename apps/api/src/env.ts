@@ -18,6 +18,8 @@ export interface Env {
   COMMIT_SHA?: string;
   /** Share of successful requests to log, 0 to 1 (errors are always logged). */
   LOG_SAMPLE_RATE?: string;
+  /** Sentry project DSN, set by CI; Sentry is off without it. */
+  SENTRY_DSN?: string;
 }
 
 export const apiConfig = baseConfig.extend({

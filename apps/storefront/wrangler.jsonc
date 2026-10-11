@@ -3,8 +3,11 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "managemind-storefront",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  // Astro's handler, wrapped with Sentry.
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-09-15",
+  // Sentry needs AsyncLocalStorage.
+  "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
   "assets": { "directory": "./dist", "binding": "ASSETS" },
   // Not placed: shopper pages are served from the location nearest the

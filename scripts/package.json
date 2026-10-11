@@ -10,6 +10,7 @@
     "pg": "catalog:"
   },
   "devDependencies": {
+    "@sentry/cli": "catalog:",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "tsx": "catalog:",

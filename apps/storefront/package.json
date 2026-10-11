@@ -11,6 +11,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "catalog:",
     "@managemind/shared": "workspace:*",
+    "@sentry/cloudflare": "catalog:",
     "astro": "catalog:"
   },
   "devDependencies": {

@@ -37,6 +37,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       PLATFORM_DOMAIN: ${{ vars.PLATFORM_DOMAIN }}
       STORE_DOMAIN: ${{ vars.STORE_DOMAIN }}
     steps:
@@ -49,7 +50,14 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Sentry settings for the admin build
+        run: |
+          echo "VITE_SENTRY_DSN=$(jq -r .projects.admin.dsn scripts/sentry.json)" >> "$GITHUB_ENV"
+          echo "VITE_SENTRY_ENVIRONMENT=production" >> "$GITHUB_ENV"
+          echo "VITE_SENTRY_RELEASE=$COMMIT_SHA" >> "$GITHUB_ENV"
       - run: pnpm turbo run build --filter=./apps/*
+        env:
+          SENTRY_SOURCEMAPS: 1
 
       - name: Provision and migrate
         id: provision
@@ -60,8 +68,23 @@ jobs:
           pnpm --filter @managemind/scripts exec tsx production/workers.ts
           --hyperdrive ${{ steps.provision.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
 
+      # The API is bundled first, so the source maps uploaded to Sentry match
+      # the exact file that is deployed (scripts/production/sourcemaps.ts).
+      - name: Bundle the API
+        run: >-
+          pnpm --filter @managemind/api exec wrangler deploy -c wrangler.production.json
+          --dry-run --outdir dist/worker --upload-source-maps
+      - name: Source maps to Sentry
+        # Missing source maps only make stack traces harder to read.
+        continue-on-error: true
+        run: pnpm --filter @managemind/scripts exec tsx production/sourcemaps.ts --release "$COMMIT_SHA"
+      - name: Keep source maps out of the admin's public files
+        run: find apps/admin/dist -name '*.map' -delete
+
       - name: Deploy the API
-        run: pnpm --filter @managemind/api exec wrangler deploy -c wrangler.production.json
+        run: >-
+          pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle
+          -c wrangler.production.json
       - name: Deploy the storefront
         run: pnpm --filter @managemind/storefront exec wrangler deploy
 

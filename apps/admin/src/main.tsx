@@ -3,6 +3,9 @@
 import { type Locale, t } from '@managemind/shared/i18n';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { initSentry, rootErrorHandlers } from './sentry';
+
+initSentry();
 
 const PLATFORM = 'managemind';
 
@@ -37,7 +40,7 @@ function App() {
 
 const root = document.getElementById('root');
 if (root) {
-  createRoot(root).render(
+  createRoot(root, rootErrorHandlers).render(
     <StrictMode>
       <App />
     </StrictMode>,

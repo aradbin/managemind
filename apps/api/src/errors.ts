@@ -1,7 +1,8 @@
 // Every error leaves as RFC 9457 problem details (packages/shared). Unknown
-// errors are logged with their stack and returned as `internal`, with nothing
-// from the message.
+// errors are logged with their stack, reported to Sentry, and returned as
+// `internal`, with nothing from the message.
 import { AppError, type FieldError, toProblem } from '@managemind/shared';
+import { captureException } from '@sentry/cloudflare';
 import type { Context } from 'hono';
 import type { ZodError } from 'zod';
 import type { AppEnv } from './env';
@@ -14,6 +15,7 @@ export function problemResponse(c: Context<AppEnv>, error: unknown): Response {
     requestId: c.var.requestId,
   });
   if (problem.status >= 500) {
+    captureException(error, { tags: { request_id: c.var.requestId } });
     log('error', 'unhandled error', {
       request_id: c.var.requestId,
       route: c.req.routePath,
