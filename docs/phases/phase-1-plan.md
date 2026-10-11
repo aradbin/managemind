@@ -1,6 +1,6 @@
 # Phase 1 plan — Platform core
 
-Oct 11, 2026 · Status: **draft, awaiting approval** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
+Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
 
 Phase 1 builds what every later module stands on, before any commerce data exists:
 
@@ -20,7 +20,7 @@ PLAN.md says no phase starts until its prerequisites are in. Checked Oct 11, 202
 | --- | --- | --- |
 | Main domain registered, nameservers on Cloudflare | **Done.** `managemind.site`, active on this account (Free plan). Both tokens have Zone Read, DNS Edit, Workers Routes Edit and Cache Purge | — |
 | Google Search Console for `managemind.site` | **Missing.** The owner adds the property. If the owner sends the TXT value, the agent can add the DNS record | Only PR 17's "Search Console alerts on" |
-| Transactional email provider, main domain verified (SPF, DKIM, DMARC) | **Missing.** The plan proposes Resend's free plan (Q1). The owner creates the account and an API key restricted to sending. The agent adds the DNS records through the API | PRs 6, 14 and 18 (real sign-in). Everything before them uses the capture provider (§6.3) |
+| Transactional email provider, main domain verified (SPF, DKIM, DMARC) | **Provider chosen (Q1, Oct 11): Resend, free plan**, domain `notify.managemind.site` (§5.7). Still missing: the account, the verified domain and the API key | PRs 6, 14 and 18 (real sign-in). Everything before them uses the capture provider (§6.3) |
 | Confirmation of Owner, Manager, Staff and Viewer, and what each may do | **Missing.** A proposed matrix is in §5.2 (Q2) | PR 1 (the permission catalog) |
 | First super-admin email addresses | **Missing** (Q3) | Production bootstrap (PR 11) |
 | Staff auth secret | **Missing.** The owner generates it, keeps a copy in a password manager, and sets it as the GitHub secret `AUTH_SECRET` (Q10). A lost secret logs everyone out *and* makes TOTP secrets unreadable, so it cannot just be regenerated in CI like the `mm_app` password | PR 6 in production |
@@ -86,6 +86,7 @@ Staff sign in with email codes (ADR 0005). Better Auth's `twoFactor` plugin enfo
 
 - **Plan A:** a Better Auth `after` hook on `/sign-in/email-otp` that hands a user with `twoFactorEnabled` to the plugin's own challenge: the session cookie is dropped, a two-factor cookie is set, and `verifyTotp` or `verifyBackupCode` then creates the session. This keeps trusted devices and backup codes as the plugin implements them.
 - **Plan B**, if A needs plugin internals: a session field `two_factor_pending`, set when the session is created for a user with 2FA. Our auth middleware rejects pending sessions everywhere except the verify route, which checks the TOTP with Better Auth's exported helpers.
+- Nothing here needs an owner decision. The only effect on people: platform users must set up an authenticator app (§5.3).
 - The PR records which one works and why, with tests for both directions: no session without the code, and the code is never asked twice on a trusted device. ADR 0005 is updated to match.
 
 **2FA is required** for platform roles (§5.3) and optional for store staff. An owner can require it for their store's staff later (not in Phase 1).
@@ -412,7 +413,17 @@ The rules, enforced in `core` and tested as a matrix:
 
 **Templates:** plain HTML and text built from the i18n catalogs, in the recipient's locale. Editable templates arrive in Phase 5A.
 
-**Volume:** Resend's free plan allows 100 emails a day. A Durable Object counts sends per day and logs a warning at 70%. The Phase 5A delivery log and alert build on that count.
+**Resend setup (owner, Q1):**
+
+1. Create the Resend account (free plan).
+2. Add the domain **`notify.managemind.site`**, not the apex: the sender domain is then separate from the domain people visit, and a deliverability problem never touches `managemind.site` itself. Pick the **Tokyo (`ap-northeast-1`)** region if the free plan offers it, otherwise North Virginia. The region changes only where mail leaves from.
+3. Let Resend's Cloudflare auto-configure add the DNS records (DKIM, plus SPF and MX on its `send.notify.managemind.site` bounce subdomain), or send the agent the record values to add through the API.
+4. Create an API key with **sending access** limited to that domain, and add it as the GitHub Actions secret `RESEND_API_KEY`. Never paste it into chat.
+
+**Volume:** Resend's free plan allows 100 emails a day and 3,000 a month. A Durable Object counts sends per day and logs a warning at 70%. The Phase 5A delivery log and alert build on that count.
+
+- **Phases 1–3:** staff emails only (sign-in codes, invitations, support notices), tens a day at most. The free plan is plenty.
+- **From Phase 4:** shopper emails (order updates) share the same 100 a day and must come from the store domain, which may need a second domain. At the pilot estimate (about 20 orders a day, email optional for phone-first shoppers) that is roughly 40–80 a day, so it gets tight. The Phase 4 plan decides between Workers Paid with Cloudflare Email Service (3,000 a month included) and a paid Resend plan, using Phase 1–3's measured volume.
 
 ## 6. Packages and services
 
@@ -703,14 +714,14 @@ The PLAN.md items without their own criterion are covered by §9: PWA installabi
 
 ## 14. Open questions for the owner
 
-- **Q1 — Email provider.** Cloudflare Email Service can't send to arbitrary recipients on Workers Free. **Recommended: Resend's free plan**: 3,000 emails a month and 100 a day, with an HTTP API that fits Workers. It may allow only one domain on the free plan, so shopper email from the store domain (Phase 4) is decided in that phase's plan, possibly together with the Workers Paid switch, after which Cloudflare Email Service includes 3,000 emails a month. Alternative: Brevo's free plan (300 a day; free-plan API and domain limits need checking). Please create the account, send an API key limited to sending, and confirm the provider.
+- **Q1 — Email provider. Decided (Oct 11):** Resend's free plan, with `notify.managemind.site` as the verified domain (setup in §5.7); the store domain's sender is decided in Phase 4. Original question: Cloudflare Email Service can't send to arbitrary recipients on Workers Free. **Recommended: Resend's free plan**: 3,000 emails a month and 100 a day, with an HTTP API that fits Workers. It may allow only one domain on the free plan, so shopper email from the store domain (Phase 4) is decided in that phase's plan, possibly together with the Workers Paid switch, after which Cloudflare Email Service includes 3,000 emails a month. Alternative: Brevo's free plan (300 a day; free-plan API and domain limits need checking). Please create the account, send an API key limited to sending, and confirm the provider.
 - **Q2 — Roles.** Is the matrix in §5.2 right? In particular: Viewer without customer data, Staff without refunds and exports, Manager unable to manage Owners or other Managers.
 - **Q3 — First super admins.** Which email addresses get `super_admin`? Should anyone get `support` now?
-- **Q4 — Memberships outside Better Auth's organization plugin** (§3.3). This changes ADR 0005 decision 1. Approve?
+- **Q4 — Memberships outside Better Auth's organization plugin** (§3.3). This changes ADR 0005 decision 1. **Decided (Oct 11):** the agent's call, as proposed.
 - **Q5 — Support access.** Proposed: support users can give themselves read-only (Viewer) access for up to 4 hours with a written reason; Manager-level access needs a super admin; the store's Owners get an email each time. Is that right, or should Owners approve first? Approval would make the pilot's onboarding slower.
-- **Q6 — Bot protection** (§3.6). No Bot Fight Mode on `managemind.site`, because it can't exempt webhooks on the Free plan. Instead: "Block AI bots", one WAF rule and the Worker's rate limits. Approve?
-- **Q7 — Store subdomains from Phase 1** (§3.7). The wildcard route on `managemind.store` moves up from Phase 3, so the acceptance criterion holds. Approve?
-- **Q8 — Sender address.** `no-reply@notify.managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. Is there a support address for `Reply-To` yet?
-- **Q9 — Mailpit dropped** (§3.8) for the capture provider and dev mailbox. Approve?
+- **Q6 — Bot protection** (§3.6). No Bot Fight Mode on `managemind.site`, because it can't exempt webhooks on the Free plan. Instead: "Block AI bots", one WAF rule and the Worker's rate limits. **Decided (Oct 11):** as proposed.
+- **Q7 — Store subdomains from Phase 1** (§3.7). The wildcard route on `managemind.store` moves up from Phase 3, so the acceptance criterion holds. **Decided (Oct 11):** as proposed.
+- **Q8 — Sender address.** `no-reply@notify.managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. The address follows from Q1. Still open: is there a support address for `Reply-To` yet?
+- **Q9 — Mailpit dropped** (§3.8) for the capture provider and dev mailbox. **Decided (Oct 11):** as proposed.
 - **Q10 — `AUTH_SECRET`.** Please generate 32 random bytes (for example `openssl rand -base64 32`), keep a copy in your password manager, and add it as a GitHub Actions secret. Previews use a separate `AUTH_SECRET_PREVIEW`, which the agent can create.
 - **Q11 — Session length.** 7 days for store staff (refreshed while used) and 12 hours for platform users. Is that right for staff who mostly use phones?
