@@ -2,12 +2,15 @@
 import type { OutboxEvent } from '@managemind/core';
 import { baseConfig, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
+import type { RateLimiter } from './rate-limit/durable-object';
 
 export interface Env {
   /** Neon through Hyperdrive, as the mm_app role (ADR 0002, ADR 0009). */
   HYPERDRIVE: Hyperdrive;
   /** Outbox events, relayed after commit (ADR 0010). */
   OUTBOX: Queue<OutboxEvent>;
+  /** Rate limits and the daily email count, one object per key (ADR 0006). */
+  RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
   /** Static assets: the admin SPA under /admin. */
   ASSETS?: Fetcher;
   ENVIRONMENT: string;

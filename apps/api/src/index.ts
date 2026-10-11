@@ -5,6 +5,9 @@ import { createApp } from './app';
 import type { Env } from './env';
 import { handleQueue, runDailyJobs } from './jobs';
 
+// Durable Object classes must be exported from the Worker's entry point.
+export { RateLimiter } from './rate-limit/durable-object';
+
 const app = createApp();
 
 // Sentry reports what escapes the handlers (queue and cron failures); the
