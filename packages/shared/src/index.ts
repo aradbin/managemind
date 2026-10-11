@@ -7,4 +7,5 @@ export * from './permissions';
 export * from './phone';
 export * from './slug';
 export * from './state-machine';
+export * from './storage-keys';
 export * from './uuid';
