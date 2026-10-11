@@ -26,7 +26,12 @@ if [ ! -x "/usr/lib/postgresql/${PG_MAJOR}/bin/postgres" ]; then
     > /etc/apt/sources.list.d/pgdg.list
   apt-get update -qq -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/pgdg.list \
     -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "postgresql-${PG_MAJOR}"
+  # Some images ship without Ubuntu's package lists, so dependencies such as
+  # liburing2 are not installable until a full update.
+  if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "postgresql-${PG_MAJOR}"; then
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends "postgresql-${PG_MAJOR}"
+  fi
 fi
 
 # 2. Move any older preinstalled cluster off our port and stop it from auto-starting.
