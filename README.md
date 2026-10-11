@@ -61,12 +61,16 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 `.github/workflows/deploy.yml` deploys `master` after CI passes on it.
 
 1. It provisions and migrates: queues, KV, R2 buckets with lifecycle rules, then the migrations, then the `mm_app` role and its Hyperdrive config. This is idempotent (`scripts/production/provision.ts`).
-2. It deploys `managemind-api`, then `managemind-storefront`.
+2. It uploads source maps to Sentry, then deploys `managemind-api`, then `managemind-storefront`.
 3. It smoke-tests `/health`, `/health/deep` and the storefront.
 
 - **Without deploying:** `provision.yml` runs step 1 by hand, and can rotate the `mm_app` password.
 - **Domains:** both Workers are on workers.dev until the `PLATFORM_DOMAIN` and `STORE_DOMAIN` repository variables are set.
 - **When a deploy goes wrong:** follow [docs/runbooks/rollback.md](docs/runbooks/rollback.md).
+
+## Errors
+
+Sentry receives errors from the API, the storefront and the admin, in production and previews. The organization and the three projects' DSNs are in `scripts/sentry.json` (DSNs are not secrets); the deploy workflows pass them to the Workers and the admin build. Local development and tests send nothing. Only errors are sent, with no personal data, headers, cookies, query strings or bodies, and no tracing.
 
 ## Usage alarm
 

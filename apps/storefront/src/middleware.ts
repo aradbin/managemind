@@ -5,6 +5,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { env } from 'cloudflare:workers';
 import { uuidv7 } from '@managemind/shared';
 import type { Locale } from '@managemind/shared/i18n';
+import { captureException } from '@sentry/cloudflare';
 import { DEV_STORE_COOKIE, resolveStoreHost, type StoreContext } from './lib/store';
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -41,5 +42,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     locale,
     requestId,
   });
-  return next();
+  try {
+    return await next();
+  } catch (e) {
+    // Astro renders its 500 page for this; report it before it does.
+    captureException(e, { tags: { request_id: requestId } });
+    throw e;
+  }
 });

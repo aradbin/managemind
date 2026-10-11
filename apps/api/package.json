@@ -12,6 +12,7 @@
     "@managemind/core": "workspace:*",
     "@managemind/db": "workspace:*",
     "@managemind/shared": "workspace:*",
+    "@sentry/cloudflare": "catalog:",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "pg": "catalog:",

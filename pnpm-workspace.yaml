@@ -15,7 +15,9 @@ catalog:
   "@hono/zod-openapi": 1.6.3
   "@neondatabase/serverless": 1.2.0
   "@playwright/test": 1.63.0
+  "@sentry/cli": 3.8.0
   "@sentry/cloudflare": 11.6.0
+  "@sentry/react": 11.6.0
   "@types/node": 22.20.5
   "@types/pg": 8.23.1
   "@types/react": 19.3.0

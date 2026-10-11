@@ -20,6 +20,8 @@
 | (none) for money and UUIDv7 | — | `packages/shared` | Money is about 140 lines on integers and BigInt, and UUIDv7 about 40 lines on `crypto.getRandomValues`. Both are small, fully tested and free of runtime dependencies, which keeps Worker bundles lean | dinero.js; the `uuidv7` package |
 | drizzle-orm, drizzle-kit | 0.45, 0.31 | `packages/db` | Typed SQL and generated migrations, as the plan specifies. drizzle-kit generates tables and RLS policies; `FORCE RLS`, roles and grants are hand-written custom migrations (ADR 0009) | Kysely; raw SQL migrations only |
 | tsx | 4.23 | `packages/db` (dev) | Runs TypeScript scripts (migrate, seed) in Node without a build step | Node's type stripping (needs `.ts` import extensions throughout) |
+| @sentry/cloudflare, @sentry/react | 11.6 | `apps/api`, `apps/storefront`; `apps/admin` | Error reports, as the plan specifies (phase-0-plan §9). Errors only, no tracing, and no personal data (`dataCollection` off). The storefront wraps Astro's handler itself instead of using `@sentry/astro`, so shoppers download no Sentry code | `@sentry/astro` (adds a browser bundle to every shopper page); Workers Logs alone (no alerts or grouping) |
+| @sentry/cli | 3.8 | `scripts` (dev) | Injects debug IDs into the built Workers and admin, and uploads their source maps from the deploy workflow. The API is bundled with a wrangler dry run and then deployed with `--no-bundle`, so the uploaded maps match the deployed file exactly | Sentry's Vite plugin (the API is not built with Vite); release-name matching (fragile with Workers' file paths) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 

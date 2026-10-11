@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@managemind/shared": "workspace:*",
+    "@sentry/react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
   },

@@ -69,6 +69,11 @@ jobs:
             fi
           fi
 
+      - name: Sentry settings for the admin build
+        run: |
+          echo "VITE_SENTRY_DSN=$(jq -r .projects.admin.dsn scripts/sentry.json)" >> "$GITHUB_ENV"
+          echo "VITE_SENTRY_ENVIRONMENT=preview" >> "$GITHUB_ENV"
+          echo "VITE_SENTRY_RELEASE=$COMMIT_SHA" >> "$GITHUB_ENV"
       - run: pnpm turbo run build --filter=./apps/*
 
       - name: Database (Neon branch, migrations, seed, Hyperdrive)

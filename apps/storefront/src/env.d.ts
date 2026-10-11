@@ -7,6 +7,10 @@ declare global {
       API: Fetcher;
       ENVIRONMENT: string;
       STORE_DOMAIN: string;
+      /** Git commit of the deployed build, set by CI. */
+      COMMIT_SHA?: string;
+      /** Sentry project DSN, set by CI; Sentry is off without it. */
+      SENTRY_DSN?: string;
     }
   }
   namespace App {

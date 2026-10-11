@@ -6,7 +6,8 @@
     ".": "./src/index.ts",
     "./money": "./src/money.ts",
     "./i18n": "./src/i18n/index.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./sentry": "./src/sentry.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

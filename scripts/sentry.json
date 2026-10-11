@@ -1,0 +1,17 @@
+{
+  "org": "arads-workspace",
+  "projects": {
+    "api": {
+      "slug": "managemind-api",
+      "dsn": "https://2098adb944ca7fef5f7a17e0db91add0@o4512219834810368.ingest.de.sentry.io/4512236695519312"
+    },
+    "storefront": {
+      "slug": "managemind-storefront",
+      "dsn": "https://b0b46b7fe3c83057c90fa6d7c640c0eb@o4512219834810368.ingest.de.sentry.io/4512236710592592"
+    },
+    "admin": {
+      "slug": "managemind-admin",
+      "dsn": "https://3ad733e880e8bd98a0b5e8f403d68fa6@o4512219834810368.ingest.de.sentry.io/4512236715180112"
+    }
+  }
+}

@@ -27,7 +27,7 @@ Create these on free plans. Use one email you control long term (ideally a compa
    - Create a project named `managemind`, Postgres version **18**, region **AWS Asia Pacific (Singapore)**, the closest to Bangladesh.
    - **Branches → production** (the default branch; older projects call it `main`) **→ Computes → Edit**: set a fixed size of **0.25 CU** (autoscaling off) and keep scale-to-zero on.
    - Copy the **Project ID** from project Settings. It is not a secret.
-4. **Sentry:** sign up at sentry.io (Developer, free plan). Create one organization; the agent creates the projects later.
+4. **Sentry:** sign up at sentry.io (Developer, free plan). Create one organization and three projects: `managemind-api` and `managemind-storefront` (Cloudflare Workers) and `managemind-admin` (React). Their DSNs and the organization slug go in `scripts/sentry.json`; DSNs are not secrets.
 5. **Password manager** (Bitwarden, 1Password or similar): create a vault entry for every token below. Later it also holds the backup and credential encryption keys.
 
 You do **not** need a domain, email provider, uptime monitor or SSLCommerz account for Phase 0 (see Part 6).
@@ -90,7 +90,6 @@ On github.com → `aradbin/managemind` → **Settings**:
    | --- | --- |
    | `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account ID |
    | `NEON_PROJECT_ID` | your Neon project ID |
-   | `SENTRY_ORG` | your Sentry organization slug |
 
 3. **Actions → General:** keep "Allow all actions" (the workflows use `cloudflare/wrangler-action`, `pnpm/action-setup` and Neon's branch actions). Under **Workflow permissions**, select **Read and write permissions** so CI can comment preview URLs on pull requests.
 4. **Claude GitHub App:** the first push that adds `.github/workflows/*` files may need the app's **Workflows** permission. If GitHub asks you to approve updated permissions for the Claude app, accept them.
@@ -207,7 +206,7 @@ Reply in the session with:
 - [ ] Neon project (Singapore, Postgres 18, 0.25 CU fixed), project ID copied
 - [ ] Sentry organization created
 - [ ] Two Cloudflare tokens, two Neon keys, Neon owner connection string, Sentry token, all in the password manager
-- [ ] GitHub Actions: 4 secrets and 3 variables added; workflow permissions set to read and write
+- [ ] GitHub Actions: 4 secrets and 2 variables added; workflow permissions set to read and write
 - [ ] Cloud environment: Custom network list, 2 network secrets, 4 environment variables, saved
 - [ ] New session started
 - [ ] Part 5 answers sent

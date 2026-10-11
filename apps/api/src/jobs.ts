@@ -1,5 +1,6 @@
 // Background entry points: the queue consumer and the daily Cron batch.
 import { type EventType, type OutboxEvent, relayEvents } from '@managemind/core';
+import { captureMessage } from '@sentry/cloudflare';
 import { queueSink, withClient } from './db';
 import type { Env } from './env';
 import { log } from './log';
@@ -61,9 +62,16 @@ export async function runDailyJobs(
       const result = await relayEvents(client, rows.map(toEvent), queueSink(env.OUTBOX));
       await client.query('commit');
       if (rows.length > 0) {
+        const level = result.failed > 0 ? 'error' : 'warning';
         log(result.failed > 0 ? 'error' : 'warn', 'outbox sweep relayed leftovers', {
           claimed: rows.length,
           ...result,
+        });
+        // The request path should leave nothing behind (ADR 0010), so any
+        // leftover is worth an alert.
+        captureMessage('outbox sweep relayed leftovers', {
+          level,
+          extra: { claimed: rows.length, ...result },
         });
       }
     } catch (e) {

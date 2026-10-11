@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { sentry } from './sentry';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -37,7 +38,12 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   api.workers_dev = true;
   api.preview_urls = false;
   api.hyperdrive = [{ binding: 'HYPERDRIVE', id: t.hyperdriveId }];
-  api.vars = { ...vars(api.vars), PLATFORM_DOMAIN: t.platformDomain, COMMIT_SHA: t.commit };
+  api.vars = {
+    ...vars(api.vars),
+    PLATFORM_DOMAIN: t.platformDomain,
+    COMMIT_SHA: t.commit,
+    SENTRY_DSN: sentry.projects.api.dsn,
+  };
   if (t.previewQueue) {
     api.queues = { producers: [{ binding: 'OUTBOX', queue: t.previewQueue }] };
     api.triggers = { crons: [] };
@@ -51,7 +57,11 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
-  storefront.vars = vars(storefront.vars);
+  storefront.vars = {
+    ...vars(storefront.vars),
+    COMMIT_SHA: t.commit,
+    SENTRY_DSN: sentry.projects.storefront.dsn,
+  };
   writeJson(storefrontConfig, storefront);
 }
 
