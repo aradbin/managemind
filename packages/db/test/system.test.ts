@@ -69,7 +69,7 @@ describe('outbox functions', () => {
 });
 
 describe('cleanup_expired', () => {
-  it('deletes expired idempotency keys and old dispatched events, nothing else', async () => {
+  it('deletes expired technical rows, nothing else', async () => {
     await inTenant(owner, TENANT_A, async () => {
       await owner.query(
         `insert into store.idempotency_keys (scope, key, request_hash, locked_until, expires_at)
@@ -82,11 +82,55 @@ describe('cleanup_expired', () => {
                 ('test.cleanup', 'test', '{}', now() - interval '1 day')`,
       );
     });
+    const { rows: users } = await owner.query<{ id: string }>(
+      `insert into platform.users (name, email) values ('Cleanup', 'cleanup@example.test') returning id`,
+    );
+    const userId = users[0]?.id;
+    await owner.query(
+      `insert into platform.sessions (user_id, token, expires_at)
+       values ($1, 'cleanup-old', now() - interval '2 days'), ($1, 'cleanup-new', now() - interval '1 hour')`,
+      [userId],
+    );
+    await owner.query(
+      `insert into platform.verifications (identifier, value, expires_at)
+       values ('cleanup-old', 'x', now() - interval '2 days'), ('cleanup-new', 'x', now())`,
+    );
+    await owner.query(
+      `insert into platform.dev_emails ("to", subject, text, html, created_at)
+       values ('cleanup@example.test', 's', 't', 'h', now() - interval '2 days'),
+              ('cleanup@example.test', 's', 't', 'h', now())`,
+    );
+    await owner.query(
+      `insert into platform.invitations (tenant_id, email, role, token_hash, invited_by, expires_at)
+       values ($1, 'old@example.test', 'staff', 'cleanup-old', $2, now() - interval '1 minute'),
+              ($1, 'new@example.test', 'staff', 'cleanup-new', $2, now() + interval '1 day')`,
+      [TENANT_A, userId],
+    );
     const { rows } = await app.query<{ name: string; deleted: string }>(
       'select * from app.cleanup_expired()',
     );
     const deleted = Object.fromEntries(rows.map((r) => [r.name, Number(r.deleted)]));
-    expect(deleted).toEqual({ idempotency_keys: 1, outbox_dispatched: 1 });
+    expect(deleted).toEqual({
+      idempotency_keys: 1,
+      outbox_dispatched: 1,
+      sessions: 1,
+      verifications: 1,
+      dev_emails: 1,
+      invitations_expired: 1,
+    });
+    const platform = await owner.query(
+      `select (select count(*)::int from platform.sessions where token like 'cleanup-%') as sessions,
+              (select count(*)::int from platform.verifications where identifier like 'cleanup-%') as codes,
+              (select count(*)::int from platform.dev_emails where "to" = 'cleanup@example.test') as emails,
+              (select string_agg(status, ',' order by email) from platform.invitations
+                where token_hash like 'cleanup-%') as invitations`,
+    );
+    expect(platform.rows[0]).toEqual({
+      sessions: 1,
+      codes: 1,
+      emails: 1,
+      invitations: 'pending,expired',
+    });
     const left = await owner.query(
       `select (select count(*)::int from store.idempotency_keys where scope = 'test.cleanup') as keys,
               (select count(*)::int from store.outbox where event_type = 'test.cleanup') as events`,

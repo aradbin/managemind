@@ -22,6 +22,8 @@
 | tsx | 4.23 | `packages/db` (dev) | Runs TypeScript scripts (migrate, seed) in Node without a build step | Node's type stripping (needs `.ts` import extensions throughout) |
 | @sentry/cloudflare, @sentry/react | 11.6 | `apps/api`, `apps/storefront`; `apps/admin` | Error reports, as the plan specifies (phase-0-plan §9). Errors only, no tracing, and no personal data (`dataCollection` off). The storefront wraps Astro's handler itself instead of using `@sentry/astro`, so shoppers download no Sentry code | `@sentry/astro` (adds a browser bundle to every shopper page); Workers Logs alone (no alerts or grouping) |
 | @sentry/cli | 3.8 | `scripts` (dev) | Injects debug IDs into the built Workers and admin, and uploads their source maps from the deploy workflow. The API is bundled with a wrangler dry run and then deployed with `--no-bundle`, so the uploaded maps match the deployed file exactly | Sentry's Vite plugin (the API is not built with Vite); release-name matching (fragile with Workers' file paths) |
+| (none) for Resend | — | `packages/providers` | One `fetch` call to Resend's HTTP API is all the adapter needs, so there is no SDK in the Worker bundle (ADR 0014) | The `resend` npm package |
+| (none) instead of Mailpit | — | `packages/providers` | The `capture` adapter saves emails to the database outside production, for local development, previews and Playwright alike (ADR 0014) | Mailpit (one more thing to install and run) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 

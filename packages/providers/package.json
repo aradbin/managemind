@@ -1,0 +1,20 @@
+{
+  "name": "@managemind/providers",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./email": "./src/email/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@managemind/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -24,6 +24,9 @@
       "localConnectionString": "postgres://mm_app_dev:mm_app_dev@127.0.0.1:5432/managemind"
     }
   ],
+  // Rate limits (ADR 0006): SQLite-backed, the only kind on the Free plan.
+  "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }],
   "queues": {
     "producers": [{ "binding": "OUTBOX", "queue": "managemind-outbox" }],
     "consumers": [

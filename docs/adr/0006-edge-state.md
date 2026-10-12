@@ -60,6 +60,15 @@ The free plan supports only SQLite-backed Durable Objects.
 4. **KV only for the domain-to-store map and cache versions**, written only when a store or domain changes.
 5. **Astro sessions off and the Astro image service set to passthrough**, as confirmed by the storefront spike (ADR 0004).
 
+## Implementation (Phase 1, 2026-10-11)
+
+- `apps/api/src/rate-limit/`: the `RateLimiter` Durable Object wraps `LimiterState`, which is plain TypeScript and unit-tested in Node.
+- Windows are aligned to the epoch, so a day-long window ends at midnight UTC. A refused attempt is not counted, so waiting out the window is always enough.
+- **Lockouts are stored**, unlike counters: 10 failed code checks in an hour lock the key for an hour, kept in the object's storage so eviction can't lift a lock early. It is the only write, and only when a lock starts or ends.
+- Object names are the rule plus a SHA-256 of the lowercased value, so no email address or IP address becomes an object name.
+- The limiter **fails open**: if the object can't be reached, the request goes ahead and the error is reported. Better Auth's own limit of three tries per code still applies.
+- The daily email count (ADR 0014) uses the same class, one object per UTC day.
+
 ## Consequences
 
 - Each rate-limited request costs one extra Durable Object call (a few milliseconds of latency, no database query).

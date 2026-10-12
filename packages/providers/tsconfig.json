@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Adapters run on Workers; type them against the Workers runtime.
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src"]
+}
