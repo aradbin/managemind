@@ -1,6 +1,6 @@
 # Phase 1 plan — Platform core
 
-Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
+Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, Q10 done Oct 13, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
 
 Phase 1 builds what every later module stands on, before any commerce data exists:
 
@@ -23,7 +23,7 @@ PLAN.md says no phase starts until its prerequisites are in. Checked Oct 11, 202
 | Transactional email provider, main domain verified (SPF, DKIM, DMARC) | **Provider chosen (Q1, Oct 11): Resend, free plan**, domain `notify.managemind.site` (§5.7). Still missing: the account, the verified domain and the API key | PRs 6, 14 and 18 (real sign-in). Everything before them uses the capture provider (§6.3) |
 | Confirmation of Owner, Manager, Staff and Viewer, and what each may do | **Missing.** A proposed matrix is in §5.2 (Q2) | PR 1 (the permission catalog) |
 | First super-admin email addresses | **Missing** (Q3) | Production bootstrap (PR 11) |
-| Staff auth secret | **Missing.** The owner generates it, keeps a copy in a password manager, and sets it as the GitHub secret `AUTH_SECRET` (Q10). A lost secret logs everyone out *and* makes TOTP secrets unreadable, so it cannot just be regenerated in CI like the `mm_app` password | PR 6 in production |
+| Staff auth secret | **Done (Oct 13).** The owner generated it, keeps a copy in a password manager, and set it as the GitHub secret `AUTH_SECRET` (Q10). A lost secret logs everyone out *and* makes TOTP secrets unreadable, so it cannot just be regenerated in CI like the `mm_app` password | — |
 | Credential encryption key | Not needed until Phase 5A (SSLCommerz credentials). The Phase 0 report listed it early | — |
 
 Also carried over from Phase 0:
@@ -678,7 +678,7 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | 3 | `packages/db`: tenant table registry and the purge-order test; KV and R2 key helpers | |
 | 4 | `packages/providers`: `EmailProvider`, `capture`, `resend`; templates; ADR 0012 rows; ADR 0014 (email provider) | Needs Q1 for the `resend` adapter; `capture` doesn't |
 | 5 | `apps/api`: rate-limiter Durable Object, lockout, email quota counter | |
-| 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | Needs `AUTH_SECRET` before it deploys to production |
+| 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | `AUTH_SECRET` is set (Q10) |
 | 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | |
 | 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | |
 | 9 | `apps/api`: `/v1/admin/*` routes and the generated API isolation suite | |
@@ -726,5 +726,5 @@ The PLAN.md items without their own criterion are covered by §9: PWA installabi
 - **Q7 — Store subdomains from Phase 1** (§3.7). The wildcard route on `managemind.store` moves up from Phase 3, so the acceptance criterion holds. **Decided (Oct 11):** as proposed.
 - **Q8 — Sender address.** `no-reply@notify.managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. The address follows from Q1. Still open: is there a support address for `Reply-To` yet?
 - **Q9 — Mailpit dropped** (§3.8) for the capture provider and dev mailbox. **Decided (Oct 11):** as proposed.
-- **Q10 — `AUTH_SECRET`.** Please generate 32 random bytes (for example `openssl rand -base64 32`), keep a copy in your password manager, and add it as a GitHub Actions secret. Previews use a separate `AUTH_SECRET_PREVIEW`, which the agent can create.
+- **Q10 — `AUTH_SECRET`. Done (Oct 13):** the owner set the GitHub Actions secret and keeps a copy in a password manager; it is 44 or more random letters and digits from the password manager's generator, equivalent in strength to 32 random bytes. Original request: please generate 32 random bytes (for example `openssl rand -base64 32`), keep a copy in your password manager, and add it as a GitHub Actions secret. Previews use a separate `AUTH_SECRET_PREVIEW`, which the agent can create.
 - **Q11 — Session length.** 7 days for store staff (refreshed while used) and 12 hours for platform users. Is that right for staff who mostly use phones?
