@@ -81,10 +81,22 @@ jobs:
       - name: Keep source maps out of the admin's public files
         run: find apps/admin/dist -name '*.map' -delete
 
+      # Secrets ship with the version, so the new code never runs without them.
+      # AUTH_SECRET is the owner's (Q10): never regenerated here, because a new
+      # one signs everyone out and makes stored TOTP secrets unreadable.
       - name: Deploy the API
-        run: >-
-          pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle
-          -c wrangler.production.json
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
+          : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
+          secrets="$RUNNER_TEMP/api-secrets.json"
+          trap 'rm -f "$secrets"' EXIT
+          (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}' > "$secrets")
+          pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \
+            -c wrangler.production.json --secrets-file "$secrets"
       - name: Deploy the storefront
         run: pnpm --filter @managemind/storefront exec wrangler deploy
 

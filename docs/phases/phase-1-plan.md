@@ -91,6 +91,7 @@ Staff sign in with email codes (ADR 0005). Better Auth's `twoFactor` plugin enfo
 - **Plan B**, if A needs plugin internals: a session field `two_factor_pending`, set when the session is created for a user with 2FA. Our auth middleware rejects pending sessions everywhere except the verify route, which checks the TOTP with Better Auth's exported helpers.
 - Nothing here needs an owner decision. The only effect on people: platform users must set up an authenticator app (§5.3).
 - The PR records which one works and why, with tests for both directions: no session without the code, and the code is never asked twice on a trusted device. ADR 0005 is updated to match.
+- **Result (PR 6, Oct 13): Plan A works.** The plugin's single after-hook is reused with a matcher that also covers `/sign-in/email-otp`, so trusted devices and backup codes stay the plugin's own. Recorded in the ADR 0005 amendment.
 
 **2FA is required** for platform roles (§5.3) and optional for store staff. An owner can require it for their store's staff later (not in Phase 1).
 
@@ -678,7 +679,7 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | 3 | `packages/db`: tenant table registry and the purge-order test; KV and R2 key helpers | |
 | 4 | `packages/providers`: `EmailProvider`, `capture`, `resend`; templates; ADR 0012 rows; ADR 0014 (email provider) | Needs Q1 for the `resend` adapter; `capture` doesn't |
 | 5 | `apps/api`: rate-limiter Durable Object, lockout, email quota counter | |
-| 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | `AUTH_SECRET` is set (Q10) |
+| 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | `AUTH_SECRET` is set (Q10). Until PR 17, `ADMIN_HOST` is the API Worker's workers.dev host. Previews use `AUTH_SECRET_PREVIEW` if the owner adds it, otherwise a new secret per deploy |
 | 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | |
 | 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | |
 | 9 | `apps/api`: `/v1/admin/*` routes and the generated API isolation suite | |

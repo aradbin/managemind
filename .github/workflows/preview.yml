@@ -88,8 +88,19 @@ jobs:
           pnpm --filter @managemind/scripts exec tsx preview/workers.ts
           --pr "$PR" --hyperdrive ${{ steps.database.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
 
+      # Previews sign with their own secret. Without the AUTH_SECRET_PREVIEW
+      # repository secret, each deploy makes a new one: preview sign-ins and
+      # authenticator setups then last only until the next push.
       - name: Deploy the API
-        run: pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json
+        env:
+          AUTH_SECRET_PREVIEW: ${{ secrets.AUTH_SECRET_PREVIEW }}
+        run: |
+          secrets="$RUNNER_TEMP/api-secrets.json"
+          trap 'rm -f "$secrets"' EXIT
+          auth="${AUTH_SECRET_PREVIEW:-$(openssl rand -base64 32)}"
+          (umask 077; jq -n --arg auth "$auth" '{AUTH_SECRET: $auth}' > "$secrets")
+          pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json \
+            --secrets-file "$secrets"
       - name: Deploy the storefront
         id: deployed
         run: pnpm --filter @managemind/storefront exec wrangler deploy
