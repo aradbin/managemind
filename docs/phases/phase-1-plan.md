@@ -1,6 +1,6 @@
 # Phase 1 plan — Platform core
 
-Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, Q10 done Oct 13, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
+Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, Q10 done and the email sender on the main domain (§5.7) Oct 13, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
 
 Phase 1 builds what every later module stands on, before any commerce data exists:
 
@@ -19,8 +19,8 @@ PLAN.md says no phase starts until its prerequisites are in. Checked Oct 11, 202
 | Item (PLAN.md, Phase 1) | Status | Blocks |
 | --- | --- | --- |
 | Main domain registered, nameservers on Cloudflare | **Done.** `managemind.site`, active on this account (Free plan). Both tokens have Zone Read, DNS Edit, Workers Routes Edit and Cache Purge | — |
-| Google Search Console for `managemind.site` | **Missing.** The owner adds the property. If the owner sends the TXT value, the agent can add the DNS record | Only PR 17's "Search Console alerts on" |
-| Transactional email provider, main domain verified (SPF, DKIM, DMARC) | **Provider chosen (Q1, Oct 11): Resend, free plan**, domain `notify.managemind.site` (§5.7). Still missing: the account, the verified domain and the API key | PRs 6, 14 and 18 (real sign-in). Everything before them uses the capture provider (§6.3) |
+| Google Search Console for `managemind.site` | **Probably done.** A `google-site-verification` TXT record is on the apex (seen Oct 13); the owner confirms the property and turns on its email alerts | Only PR 17's "Search Console alerts on" |
+| Transactional email provider, main domain verified (SPF, DKIM, DMARC) | **Done (Oct 13).** Resend, free plan (Q1). The owner verified `managemind.site` itself, not `notify.`, in the Tokyo region, and set the GitHub secret `RESEND_API_KEY` (sending access). DKIM is on `resend._domainkey`, the bounce records on `send.`; the agent added DMARC `p=none` (§5.7) | — |
 | Confirmation of Owner, Manager, Staff and Viewer, and what each may do | **Missing.** A proposed matrix is in §5.2 (Q2) | PR 1 (the permission catalog) |
 | First super-admin email addresses | **Missing** (Q3) | Production bootstrap (PR 11) |
 | Staff auth secret | **Done (Oct 13).** The owner generated it, keeps a copy in a password manager, and set it as the GitHub secret `AUTH_SECRET` (Q10). A lost secret logs everyone out *and* makes TOTP secrets unreadable, so it cannot just be regenerated in CI like the `mm_app` password | — |
@@ -406,7 +406,7 @@ The rules, enforced in `core` and tested as a matrix:
 - `capture` (non-production, §3.8);
 - a `cloudflare` adapter is written only at the Workers Paid switch: Cloudflare Email Service needs Workers Paid to send to arbitrary recipients (ADR 0014).
 
-**Sender:** `PLATFORM_NAME <no-reply@notify.managemind.site>` from a sending subdomain, so the apex keeps its own reputation (Q8). `Reply-To` is the support address once it exists (Phase 5B).
+**Sender:** `PLATFORM_NAME <no-reply@managemind.site>` (Q8). *Changed Oct 13:* the plan proposed a `notify.` sending subdomain to keep the apex's reputation separate, but the owner verified the apex in Resend, which allows one domain on the free plan. At tens of staff emails a day the separation buys little, so the apex stays. No mailbox exists behind the address, and the apex has no MX record, so replies bounce. `Reply-To` is the support address once it exists (Phase 5B).
 
 **Delivery:**
 
@@ -416,12 +416,12 @@ The rules, enforced in `core` and tested as a matrix:
 
 **Templates:** plain HTML and text built from the i18n catalogs, in the recipient's locale. Editable templates arrive in Phase 5A.
 
-**Resend setup (owner, Q1):**
+**Resend setup (owner, Q1). Done Oct 13:**
 
-1. Create the Resend account (free plan).
-2. Add the domain **`notify.managemind.site`**, not the apex: the sender domain is then separate from the domain people visit, and a deliverability problem never touches `managemind.site` itself. Pick the **Tokyo (`ap-northeast-1`)** region if the free plan offers it, otherwise North Virginia. The region changes only where mail leaves from.
-3. Let Resend's Cloudflare auto-configure add the DNS records (DKIM, plus SPF and MX on its `send.notify.managemind.site` bounce subdomain), or send the agent the record values to add through the API.
-4. Create an API key with **sending access** limited to that domain, and add it as the GitHub Actions secret `RESEND_API_KEY`. Never paste it into chat.
+1. The Resend account is on the free plan.
+2. The verified domain is **`managemind.site`** (Tokyo, `ap-northeast-1`). Resend's records: DKIM on `resend._domainkey.managemind.site`, and the bounce and tracking records on `send.` and `rsend.managemind.site`.
+3. The agent added `_dmarc.managemind.site` = `v=DMARC1; p=none` (monitoring only) through the API. Reports to Cloudflare DMARC Management and the move to `quarantine` follow in PR 17 (§10).
+4. The API key has **sending access** and is the GitHub Actions secret `RESEND_API_KEY`.
 
 **Volume:** Resend's free plan allows 100 emails a day and 3,000 a month. A Durable Object counts sends per day and logs a warning at 70%. The Phase 5A delivery log and alert build on that count.
 
@@ -650,8 +650,8 @@ Everything is done through the Cloudflare API from `scripts/production/zones.ts`
 
 - custom domain `admin.managemind.site` → `managemind-api`;
 - Workers routes `api.managemind.site/health` and `api.managemind.site/v1/webhooks/*`, with a proxied placeholder record;
-- the email provider's DKIM and SPF records on `notify.managemind.site`;
-- DMARC: `p=none` with reports to Cloudflare's free DMARC Management, moving to `quarantine` after two clean weeks;
+- the email provider's DKIM and bounce records on `managemind.site` (added by Resend, Oct 13); `zones.ts` checks them and doesn't manage them;
+- DMARC: `p=none` (added Oct 13), then reports to Cloudflare's free DMARC Management, moving to `quarantine` after two clean weeks;
 - "Block AI bots" on, and the WAF rule from §3.6;
 - Search Console TXT record, if the owner sends it.
 
@@ -699,7 +699,7 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | --- | --- |
 | Isolation suite: a user of store A gets 404 on every store B resource by ID | The generated API isolation suite (§9) runs in `ci.yml`. Like Phase 0, one deliberately unguarded route in a temporary commit makes CI fail, shown once in PR 9 and then reverted |
 | Raw SQL as the app role with tenant A context returns zero store B rows | The Phase 0 isolation suite, still generated from the catalog |
-| Creating a tenant with the CLI takes one command and produces a working admin login and subdomain | In production: one `gh workflow run platform.yml …` creates a test store. Its owner receives the code email from `notify.managemind.site`, signs in at `admin.managemind.site`, and the store's page answers at `<slug>.managemind.store`. The same flow runs in the preview E2E on every PR. The test store is then suspended, because purge arrives in Phase 5B |
+| Creating a tenant with the CLI takes one command and produces a working admin login and subdomain | In production: one `gh workflow run platform.yml …` creates a test store. Its owner receives the code email from `no-reply@managemind.site`, signs in at `admin.managemind.site`, and the store's page answers at `<slug>.managemind.store`. The same flow runs in the preview E2E on every PR. The test store is then suspended, because purge arrives in Phase 5B |
 
 The PLAN.md items without their own criterion are covered by §9: PWA installability (a Lighthouse PWA check in the E2E job), WCAG through axe, and the Bangla and English UI through the catalog parity test.
 
@@ -717,14 +717,14 @@ The PLAN.md items without their own criterion are covered by §9: PWA installabi
 
 ## 14. Open questions for the owner
 
-- **Q1 — Email provider. Decided (Oct 11):** Resend's free plan, with `notify.managemind.site` as the verified domain (setup in §5.7); the store domain's sender is decided in Phase 4. Original question: Cloudflare Email Service can't send to arbitrary recipients on Workers Free. **Recommended: Resend's free plan**: 3,000 emails a month and 100 a day, with an HTTP API that fits Workers. It may allow only one domain on the free plan, so shopper email from the store domain (Phase 4) is decided in that phase's plan, possibly together with the Workers Paid switch, after which Cloudflare Email Service includes 3,000 emails a month. Alternative: Brevo's free plan (300 a day; free-plan API and domain limits need checking). Please create the account, send an API key limited to sending, and confirm the provider.
+- **Q1 — Email provider. Decided (Oct 11), set up Oct 13:** Resend's free plan, with `managemind.site` as the verified domain (the plan proposed `notify.`; see §5.7); the store domain's sender is decided in Phase 4. Original question: Cloudflare Email Service can't send to arbitrary recipients on Workers Free. **Recommended: Resend's free plan**: 3,000 emails a month and 100 a day, with an HTTP API that fits Workers. It may allow only one domain on the free plan, so shopper email from the store domain (Phase 4) is decided in that phase's plan, possibly together with the Workers Paid switch, after which Cloudflare Email Service includes 3,000 emails a month. Alternative: Brevo's free plan (300 a day; free-plan API and domain limits need checking). Please create the account, send an API key limited to sending, and confirm the provider.
 - **Q2 — Roles. Decided (Oct 11):** fixed roles as proposed; custom roles per store later if a client needs them (§2). Original question: is the matrix in §5.2 right? In particular: Viewer without customer data, Staff without refunds and exports, Manager unable to manage Owners or other Managers.
 - **Q3 — First super admins.** Which email addresses get `super_admin`? Should anyone get `support` now?
 - **Q4 — Memberships outside Better Auth's organization plugin** (§3.3). This changes ADR 0005 decision 1. **Decided (Oct 11):** the agent's call, as proposed.
 - **Q5 — Support access.** Proposed: support users can give themselves read-only (Viewer) access for up to 4 hours with a written reason; Manager-level access needs a super admin; the store's Owners get an email each time. Is that right, or should Owners approve first? Approval would make the pilot's onboarding slower.
 - **Q6 — Bot protection** (§3.6). No Bot Fight Mode on `managemind.site`, because it can't exempt webhooks on the Free plan. Instead: "Block AI bots", one WAF rule and the Worker's rate limits. **Decided (Oct 11):** as proposed.
 - **Q7 — Store subdomains from Phase 1** (§3.7). The wildcard route on `managemind.store` moves up from Phase 3, so the acceptance criterion holds. **Decided (Oct 11):** as proposed.
-- **Q8 — Sender address.** `no-reply@notify.managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. The address follows from Q1. Still open: is there a support address for `Reply-To` yet?
+- **Q8 — Sender address. Decided (Oct 13):** `no-reply@managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. Still open: is there a support address for `Reply-To` yet?
 - **Q9 — Mailpit dropped** (§3.8) for the capture provider and dev mailbox. **Decided (Oct 11):** as proposed.
 - **Q10 — `AUTH_SECRET`. Done (Oct 13):** the owner set the GitHub Actions secret and keeps a copy in a password manager; it is 44 or more random letters and digits from the password manager's generator, equivalent in strength to 32 random bytes. Original request: please generate 32 random bytes (for example `openssl rand -base64 32`), keep a copy in your password manager, and add it as a GitHub Actions secret. Previews use a separate `AUTH_SECRET_PREVIEW`, which the agent can create.
 - **Q11 — Session length.** 7 days for store staff (refreshed while used) and 12 hours for platform users. Is that right for staff who mostly use phones?
