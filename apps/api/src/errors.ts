@@ -7,6 +7,7 @@ import type { Context } from 'hono';
 import type { ZodError } from 'zod';
 import type { AppEnv } from './env';
 import { log } from './log';
+import { RateLimitedError } from './rate-limit/index';
 
 export function problemResponse(c: Context<AppEnv>, error: unknown): Response {
   const config = c.var.config;
@@ -25,7 +26,9 @@ export function problemResponse(c: Context<AppEnv>, error: unknown): Response {
           : String(error),
     });
   }
-  return c.json(problem, problem.status as 400, { 'Content-Type': 'application/problem+json' });
+  const headers: Record<string, string> = { 'Content-Type': 'application/problem+json' };
+  if (error instanceof RateLimitedError) headers['Retry-After'] = String(error.retryAfter);
+  return c.json(problem, problem.status as 400, headers);
 }
 
 /** Maps zod issues to field errors for a validation_failed problem. */

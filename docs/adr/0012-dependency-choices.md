@@ -24,6 +24,7 @@
 | @sentry/cli | 3.8 | `scripts` (dev) | Injects debug IDs into the built Workers and admin, and uploads their source maps from the deploy workflow. The API is bundled with a wrangler dry run and then deployed with `--no-bundle`, so the uploaded maps match the deployed file exactly | Sentry's Vite plugin (the API is not built with Vite); release-name matching (fragile with Workers' file paths) |
 | (none) for Resend | — | `packages/providers` | One `fetch` call to Resend's HTTP API is all the adapter needs, so there is no SDK in the Worker bundle (ADR 0014) | The `resend` npm package |
 | (none) instead of Mailpit | — | `packages/providers` | The `capture` adapter saves emails to the database outside production, for local development, previews and Playwright alike (ADR 0014) | Mailpit (one more thing to install and run) |
+| better-auth | 1.7 | `apps/api` | Staff identity: email sign-in codes, sessions and cookies, and TOTP two-factor login, as the plan specifies (ADR 0005). Only the core and the `emailOTP` and `twoFactor` plugins are used; memberships and roles are ours (phase-1-plan §3.3). Adds about 330 KiB gzipped to the API bundle (354 to 679 KiB) | Our own sessions and TOTP (more security-sensitive code to own); Lucia (no longer maintained) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 

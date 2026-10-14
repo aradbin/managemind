@@ -20,7 +20,7 @@ Local development, previews and Playwright also need the emails, mainly to read 
 
 ## Decision
 
-1. **Resend's free plan in production**, sending from `no-reply@notify.<PLATFORM_DOMAIN>`. Only the subdomain `notify.` is verified, so a deliverability problem never reaches the main domain. The owner chose this on Oct 11.
+1. **Resend's free plan in production**, sending from `no-reply@<PLATFORM_DOMAIN>`. The owner chose Resend on Oct 11. *Amended Oct 13:* the plan proposed verifying only a `notify.` subdomain, so a deliverability problem would never reach the main domain; the owner verified the main domain instead. The free plan allows one domain, and staff email is tens a day, so the main domain stays. DMARC starts at `p=none`.
 2. **`packages/providers/email`** holds the `EmailProvider` interface and the adapters:
    - **`resend`:** one `fetch` call to Resend's HTTP API; no SDK.
    - **`capture`:** everywhere except production. It hands each message to a `save` function; the API saves to `platform.dev_emails`, where the dev mailbox endpoint and Playwright read it. **Mailpit is dropped**: one mechanism serves local development, previews and tests, with nothing to install.

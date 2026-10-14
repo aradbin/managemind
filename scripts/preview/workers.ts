@@ -27,6 +27,8 @@ writeWorkerConfigs({
   hyperdriveId: hyperdrive,
   platformDomain: domain,
   storeDomain: domain,
+  adminHost: `${apiWorker(pr)}.${domain}`,
+  emailProvider: 'capture',
   commit: args.get('commit') ?? 'preview',
   previewQueue: PREVIEW_QUEUE,
 });

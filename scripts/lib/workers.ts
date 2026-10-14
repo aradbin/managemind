@@ -16,6 +16,10 @@ export interface WorkerTarget {
   hyperdriveId: string;
   platformDomain: string;
   storeDomain: string;
+  /** The admin's host: sign-in cookies and CSRF checks are bound to it. */
+  adminHost: string;
+  /** `resend` in production; previews capture emails for the dev mailbox. */
+  emailProvider: 'resend' | 'capture';
   commit: string;
   /** Previews: no Cron Trigger, and outbox events go to this queue, which nothing consumes. */
   previewQueue?: string;
@@ -41,6 +45,8 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   api.vars = {
     ...vars(api.vars),
     PLATFORM_DOMAIN: t.platformDomain,
+    ADMIN_HOST: t.adminHost,
+    EMAIL_PROVIDER: t.emailProvider,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.api.dsn,
   };

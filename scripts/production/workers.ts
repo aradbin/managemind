@@ -28,6 +28,9 @@ writeWorkerConfigs({
   hyperdriveId: hyperdrive,
   platformDomain: process.env.PLATFORM_DOMAIN || workersDev,
   storeDomain: process.env.STORE_DOMAIN || workersDev,
+  // The admin is served by the API Worker until it moves to admin.<domain> (PR 17).
+  adminHost: `${api}.${workersDev}`,
+  emailProvider: 'resend',
   commit,
 });
 

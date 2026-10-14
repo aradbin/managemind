@@ -7,25 +7,10 @@ import {
   limiterName,
   RateLimitedError,
 } from '../src/rate-limit/index';
-import { LimiterState, type LockStore } from '../src/rate-limit/limiter';
+import { LimiterState } from '../src/rate-limit/limiter';
+import { fakeNamespace, memoryStore } from './support';
 
 const T0 = Date.UTC(2026, 9, 11, 10, 0, 0); // on a 10-minute boundary
-
-function memoryStore(): LockStore & { value: number | undefined; writes: number } {
-  const store = {
-    value: undefined as number | undefined,
-    writes: 0,
-    get: async () => store.value,
-    put: async (until: number) => {
-      store.value = until;
-      store.writes++;
-    },
-    delete: async () => {
-      store.value = undefined;
-    },
-  };
-  return store;
-}
 
 describe('LimiterState', () => {
   const windows = [
@@ -78,29 +63,6 @@ describe('LimiterState', () => {
     expect(store.value).toBeUndefined();
   });
 });
-
-/** The RateLimiter namespace, backed by LimiterState in memory. */
-function fakeNamespace(): LimiterNamespace & { names: string[] } {
-  const objects = new Map<string, LimiterState>();
-  const names: string[] = [];
-  return {
-    names,
-    getByName(name: string) {
-      names.push(name);
-      let state = objects.get(name);
-      if (!state) {
-        state = new LimiterState(memoryStore());
-        objects.set(name, state);
-      }
-      const s = state;
-      return {
-        hit: (w) => s.hit(w),
-        fail: (p) => s.fail(p),
-        clear: () => s.clear(),
-      };
-    },
-  };
-}
 
 describe('createLimiter', () => {
   it('accepts the real Durable Object namespace', () => {
