@@ -14,7 +14,7 @@ const app = createApp();
 // API's own 5xx problems are reported in errors.ts.
 export default withSentry<Env, OutboxEvent>((env) => sentryOptions(env), {
   fetch: app.fetch,
-  queue: (batch) => handleQueue(batch),
+  queue: (batch, env, ctx) => handleQueue(batch, env, ctx),
   scheduled: (_controller, env, ctx) => {
     ctx.waitUntil(runDailyJobs(env, ctx));
   },

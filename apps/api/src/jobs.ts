@@ -2,15 +2,23 @@
 import { type EventType, type OutboxEvent, relayEvents } from '@managemind/core';
 import { captureMessage } from '@sentry/cloudflare';
 import { queueSink, withClient } from './db';
-import type { Env } from './env';
+import { type Env, getConfig } from './env';
+import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 
 /**
- * Outbox consumer. Phase 0 only logs and acknowledges; each module adds its
- * handlers (email, SMS, cache refresh), keyed by event id so redeliveries are
- * harmless (ADR 0010). Messages that keep failing go to the dead-letter queue.
+ * Outbox consumer (ADR 0010). Events that change a store's hosts update the
+ * KV map; everything else is logged and acknowledged until its module adds a
+ * handler. Handlers recompute state rather than apply deltas, so redeliveries
+ * are harmless. Messages that keep failing go to the dead-letter queue.
  */
-export async function handleQueue(batch: MessageBatch<OutboxEvent>): Promise<void> {
+export async function handleQueue(
+  batch: MessageBatch<OutboxEvent>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  // One sync per store per batch, however many of its events arrived.
+  const tenants = new Map<string, Message<OutboxEvent>[]>();
   for (const message of batch.messages) {
     log('info', 'event received', {
       event_id: message.body.id,
@@ -18,7 +26,30 @@ export async function handleQueue(batch: MessageBatch<OutboxEvent>): Promise<voi
       tenant_id: message.body.tenantId,
       attempts: message.attempts,
     });
-    message.ack();
+    if (env.EDGE && touchesHosts(message.body)) {
+      const list = tenants.get(message.body.tenantId) ?? [];
+      list.push(message);
+      tenants.set(message.body.tenantId, list);
+    } else {
+      message.ack();
+    }
+  }
+  const storeDomain = getConfig(env).STORE_DOMAIN;
+  for (const [tenantId, messages] of tenants) {
+    try {
+      const result = await syncTenantHosts(
+        env,
+        env.EDGE as KVNamespace,
+        ctx,
+        tenantId,
+        storeDomain,
+      );
+      log('info', 'kv hosts synced', { tenant_id: tenantId, ...result });
+      for (const m of messages) m.ack();
+    } catch (e) {
+      log('error', 'kv host sync failed', { tenant_id: tenantId, error: String(e) });
+      for (const m of messages) m.retry();
+    }
   }
 }
 

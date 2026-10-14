@@ -680,7 +680,7 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | 4 | `packages/providers`: `EmailProvider`, `capture`, `resend`; templates; ADR 0012 rows; ADR 0014 (email provider) | Needs Q1 for the `resend` adapter; `capture` doesn't |
 | 5 | `apps/api`: rate-limiter Durable Object, lockout, email quota counter | |
 | 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | `AUTH_SECRET` is set (Q10). Until PR 17, `ADMIN_HOST` is the API Worker's workers.dev host. Previews use `AUTH_SECRET_PREVIEW` if the owner adds it, otherwise a new secret per deploy |
-| 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | |
+| 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | Also `Actor`, `authorize` and `requirePlatformRole` (`access.ts`), which PR 8 builds on. `/v1/store/context` uses `resolveHost` but still answers only for active stores until the maintenance page (PR 10). `tenant_domain.*` events are declared; nothing emits them before Phase 3 |
 | 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | |
 | 9 | `apps/api`: `/v1/admin/*` routes and the generated API isolation suite | |
 | 10 | `apps/api`: `/v1/platform/*` routes, dev mailbox; storefront KV resolution and maintenance page | |

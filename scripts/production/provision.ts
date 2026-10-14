@@ -71,6 +71,7 @@ try {
     );
   }
   setOutput('hyperdrive_id', id as string);
+  setOutput('kv_id', kv);
 } finally {
   await owner.end();
 }

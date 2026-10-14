@@ -1,8 +1,8 @@
+import { slugFromHost } from '@managemind/core';
 import { connect, inTenant, TENANT_A, TENANT_B } from '@managemind/db/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 import { handleQueue, runDailyJobs } from '../src/jobs';
-import { slugFromHost } from '../src/routes/store-context';
 import { makeCtx, makeEnv, ownerUrl } from './support';
 
 const call = async (path: string, init: RequestInit = {}, env = makeEnv()) => {
@@ -118,17 +118,21 @@ describe('daily jobs', () => {
   it('acknowledges queue messages', async () => {
     const acked: string[] = [];
     const info = vi.spyOn(console, 'log').mockImplementation(() => {});
-    await handleQueue({
-      queue: 'managemind-outbox',
-      messages: [
-        {
-          id: 'm1',
-          attempts: 1,
-          body: { id: 'e1', eventType: 'tenant.seeded', tenantId: TENANT_A },
-          ack: () => acked.push('m1'),
-        },
-      ],
-    } as unknown as MessageBatch<never>);
+    await handleQueue(
+      {
+        queue: 'managemind-outbox',
+        messages: [
+          {
+            id: 'm1',
+            attempts: 1,
+            body: { id: 'e1', eventType: 'tenant.seeded', tenantId: TENANT_A },
+            ack: () => acked.push('m1'),
+          },
+        ],
+      } as unknown as MessageBatch<never>,
+      makeEnv(),
+      makeCtx(),
+    );
     info.mockRestore();
     expect(acked).toEqual(['m1']);
   });

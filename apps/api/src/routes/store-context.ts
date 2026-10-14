@@ -1,11 +1,12 @@
 // GET /v1/store/context: which store a hostname belongs to. The storefront
 // calls it over its service binding with the shopper's host in
-// X-Forwarded-Host. Phase 0 knows `{slug}.<STORE_DOMAIN>`; custom domains
-// (tenant_domains, KV cache) arrive in Phases 1 and 3.
+// X-Forwarded-Host: an active custom domain, or `{slug}.<STORE_DOMAIN>`
+// (ADR 0015). It reads the database and never writes KV, so random hosts
+// can't spend KV writes. Suspended stores get their maintenance page in PR 10.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
-import { createDb, schema } from '@managemind/db';
+import { resolveHost } from '@managemind/core';
+import { createDb } from '@managemind/db';
 import { AppError } from '@managemind/shared';
-import { and, eq } from 'drizzle-orm';
 import { withClient } from '../db';
 import type { AppEnv } from '../env';
 
@@ -34,28 +35,19 @@ const route = createRoute({
   },
 });
 
-/** "Demo-Fashion.example.com:443" under "example.com" -> "demo-fashion". */
-export function slugFromHost(host: string, storeDomain: string): string | null {
-  const name = host.trim().toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '');
-  const suffix = `.${storeDomain}`;
-  if (!name.endsWith(suffix)) return null;
-  const slug = name.slice(0, -suffix.length);
-  return /^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$/.test(slug) ? slug : null;
-}
-
 export function registerStoreContext(app: OpenAPIHono<AppEnv>): void {
   app.openapi(route, async (c) => {
     const host = c.req.valid('header')['x-forwarded-host'];
-    const slug = slugFromHost(host, c.var.config.STORE_DOMAIN);
-    if (!slug) throw new AppError('store_not_found');
-    const t = schema.tenants;
-    const [store] = await withClient(c.env, c.executionCtx, (client) =>
-      createDb(client)
-        .select({ id: t.id, slug: t.slug, name: t.name, defaultLocale: t.defaultLocale })
-        .from(t)
-        .where(and(eq(t.slug, slug), eq(t.status, 'active'))),
+    const record = await withClient(c.env, c.executionCtx, (client) =>
+      resolveHost(createDb(client), host, c.var.config.STORE_DOMAIN),
     );
-    if (!store) throw new AppError('store_not_found');
+    if (record?.status !== 'active') throw new AppError('store_not_found');
+    const store = {
+      id: record.tenantId,
+      slug: record.slug,
+      name: record.name,
+      defaultLocale: record.defaultLocale,
+    };
     c.header('Cache-Control', 'public, max-age=60');
     return c.json(store, 200);
   });
