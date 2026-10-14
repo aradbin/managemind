@@ -217,15 +217,6 @@ export const ADMIN_ROUTES = {
     request: body(z.object({ token: z.string().min(20).max(100) })),
     responses: json(Me, 'Me in the joined store'),
   }),
-  // TEMPORARY (phase-1-plan §12): a deliberately unguarded route, to show the
-  // isolation suite failing CI. Reverted in the next commit.
-  unguarded: r({
-    method: 'get',
-    path: '/members/{id}',
-    summary: 'DEMO ONLY: reads any membership by id, with no store check',
-    request: { params: Id },
-    responses: json(z.object({ id: z.uuid(), role: Role }), 'Membership'),
-  }),
 } as const;
 
 async function me(c: Context<StaffEnv>) {
@@ -321,14 +312,6 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
     return c.body(null, 204);
   });
 
-  admin.openapi(R.unguarded, async (c) => {
-    const { id } = c.req.valid('param');
-    const { rows } = await c.var.staff.client.query<{ id: string; role: 'owner' }>(
-      'select id, role from platform.memberships where id = $1',
-      [id],
-    );
-    return c.json(rows[0] ?? { id, role: 'owner' as const }, 200);
-  });
   admin.openapi(R.invitations, async (c) =>
     c.json(await inStore(c, (tx) => listInvitations(tx, c.var.staff.actor)), 200),
   );

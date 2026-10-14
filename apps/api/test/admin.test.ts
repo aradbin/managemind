@@ -202,7 +202,6 @@ describe('isolation suite', () => {
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; body?: unknown }> = {
-      'GET /v1/admin/members/{id}': { id: bMember.memberId },
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
       'DELETE /v1/admin/members/{id}': { id: bMember.memberId },
       'POST /v1/admin/invitations/{id}/resend': { id: bInvitation },
