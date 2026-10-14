@@ -17,8 +17,12 @@ function fakeTargets() {
   const sent: OutboxEvent[] = [];
   const targets: PlatformTargets = {
     sendEvents: async (events) => void sent.push(...events),
-    kvPut: async (entries) => entries.forEach((e) => kv.set(e.key, e.value)),
-    kvDelete: async (keys) => keys.forEach((k) => kv.delete(k)),
+    kvPut: async (entries) => {
+      for (const e of entries) kv.set(e.key, e.value);
+    },
+    kvDelete: async (keys) => {
+      for (const k of keys) kv.delete(k);
+    },
   };
   return { targets, kv, sent };
 }

@@ -52,7 +52,11 @@ export async function tenantCreate(
         name: input.ownerName ?? input.ownerEmail.split('@')[0] ?? 'Owner',
       },
     },
-    { afterCommit: (e) => void (events = e) },
+    {
+      afterCommit: (e) => {
+        events = e;
+      },
+    },
   );
   // Relayed now, so the outbox consumer fills KV at once instead of at the daily sweep.
   const relayed = targets ? await relayEvents(client, events, { send: targets.sendEvents }) : null;
