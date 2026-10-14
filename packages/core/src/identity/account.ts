@@ -101,3 +101,18 @@ export async function setPlatformRole(
     after: { role },
   });
 }
+
+/** The signed-in user's own name and language. */
+export async function updateMyProfile(
+  tx: PlatformTx,
+  actor: Actor,
+  patch: { name?: string; locale?: 'bn' | 'en' },
+): Promise<void> {
+  if (!actor.userId) throw new AppError('forbidden');
+  const set = {
+    ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+    ...(patch.locale !== undefined ? { locale: patch.locale } : {}),
+  };
+  if (Object.keys(set).length === 0) return;
+  await tx.db.update(schema.users).set(set).where(eq(schema.users.id, actor.userId));
+}

@@ -14,11 +14,16 @@ import {
   createStaffAuth,
   PLATFORM_SESSION_SECONDS,
 } from '../src/auth/staff';
-import { apiConfig, type Env } from '../src/env';
+import { apiConfig } from '../src/env';
+import {
+  type Browser,
+  browser,
+  COOKIE,
+  latestCode as latestCodeFor,
+  ORIGIN,
+  signIn as signInAs,
+} from './staff';
 import { makeCtx, makeEnv, ownerUrl } from './support';
-
-const ORIGIN = 'https://admin.platform.example.test';
-const COOKIE = '__Secure-mm_staff.session_token';
 
 let owner: pg.Client;
 beforeAll(async () => {
@@ -37,66 +42,13 @@ async function staffUser(opts: { platformRole?: string; locale?: string } = {}):
   return email;
 }
 
-/** A browser stand-in: keeps cookies between calls and sends the admin's Origin. */
-function browser(env: Env = makeEnv()) {
-  const jar = new Map<string, string>();
-  const call = async (method: string, path: string, body?: unknown, headers = {}) => {
-    const ctx = makeCtx();
-    const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
-    const res = await createApp().request(
-      path,
-      {
-        method,
-        headers: {
-          origin: ORIGIN,
-          'cf-connecting-ip': '203.0.113.7',
-          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-          ...(cookie ? { cookie } : {}),
-          ...headers,
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      },
-      env,
-      ctx,
-    );
-    await ctx.settle();
-    for (const line of res.headers.getSetCookie()) {
-      const [pair = ''] = line.split(';');
-      const [name = '', value = ''] = pair.split('=');
-      if (/max-age=0/i.test(line) || value === '') jar.delete(name);
-      else jar.set(name, value);
-    }
-    return res;
-  };
-  return {
-    jar,
-    call,
-    post: (path: string, body: unknown = {}, headers = {}) => call('POST', path, body, headers),
-    get: (path: string) => call('GET', path),
-  };
-}
-
 type SessionBody = { user: { email: string; twoFactorEnabled: boolean; locale: string } } | null;
 
-const sessionOf = async (b: ReturnType<typeof browser>) =>
+const sessionOf = async (b: Browser) =>
   (await (await b.get('/api/auth/get-session')).json()) as SessionBody;
 
-async function latestCode(email: string): Promise<string> {
-  const { rows } = await owner.query<{ text: string; subject: string }>(
-    `select text, subject from platform.dev_emails where "to" = $1 order by created_at desc limit 1`,
-    [email],
-  );
-  const match = rows[0]?.text.match(/\b(\d{6})\b/);
-  if (!match?.[1]) throw new Error(`no sign-in code for ${email}`);
-  return match[1];
-}
-
-async function signIn(b: ReturnType<typeof browser>, email: string) {
-  expect(
-    (await b.post('/api/auth/email-otp/send-verification-otp', { email, type: 'sign-in' })).status,
-  ).toBe(200);
-  return b.post('/api/auth/sign-in/email-otp', { email, otp: await latestCode(email) });
-}
+const latestCode = (email: string) => latestCodeFor(owner, email);
+const signIn = (b: Browser, email: string) => signInAs(b, owner, email);
 
 /** RFC 6238 TOTP (SHA-1, 6 digits, 30 seconds), as authenticator apps compute it. */
 function totp(uri: string, at = Date.now()): string {
@@ -227,6 +179,17 @@ describe('POST /api/auth: email codes', () => {
       [email],
     );
     expect(rows[0]?.subject).toBe('Your managemind sign-in code');
+  });
+
+  it('signs in an invited user who has not verified their email yet, and verifies it', async () => {
+    const email = `invited-${Date.now()}@example.test`;
+    await owner.query(`insert into platform.users (name, email) values ('Invited', $1)`, [email]);
+    expect((await signIn(browser(), email)).status).toBe(200);
+    const { rows } = await owner.query(
+      `select email_verified from platform.users where email = $1`,
+      [email],
+    );
+    expect(rows[0]?.email_verified).toBe(true);
   });
 
   it('answers the same for unknown emails and sends them nothing', async () => {
@@ -473,7 +436,9 @@ describe('CSRF on /api/admin and /api/platform', () => {
   });
 
   it('lets JSON writes from the admin and all reads through to the routes', async () => {
-    expect((await b.post('/api/admin/me', {})).status).toBe(404);
+    // Past the CSRF check, the admin routes ask for a session.
+    expect((await b.call('PATCH', '/api/admin/me', {})).status).toBe(401);
+    expect((await b.get('/api/admin/me')).status).toBe(401);
     expect((await b.get('/api/platform/tenants')).status).toBe(404);
   });
 });

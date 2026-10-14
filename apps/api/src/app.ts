@@ -3,6 +3,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { AppError } from '@managemind/shared';
 import { secureHeaders } from 'hono/secure-headers';
 import { getPath } from 'hono/utils/url';
+import { registerAdmin } from './admin/routes';
 import { registerAuth } from './auth/routes';
 import type { AppEnv } from './env';
 import { problemResponse, validationError } from './errors';
@@ -46,6 +47,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerDeepHealth(app);
   registerStoreContext(app);
   registerAuth(app);
+  registerAdmin(app);
 
   // Client-side routes of the admin SPA: any /admin/* path that is not a
   // built file gets the app's index.html (files never reach the Worker).

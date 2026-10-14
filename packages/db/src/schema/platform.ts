@@ -166,7 +166,9 @@ export const accounts = platform.table(
 export const verifications = platform.table(
   'verifications',
   {
-    id: id(),
+    // Text, not uuid: Better Auth writes its own non-UUID ids here for the
+    // short-lived lock it takes when an unverified user first signs in.
+    id: text().primaryKey().default(sql`uuidv7()::text`),
     identifier: text().notNull(),
     value: text().notNull(),
     expiresAt: ts().notNull(),
