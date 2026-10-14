@@ -33,6 +33,20 @@ pnpm --filter @managemind/storefront dev
 pnpm --filter @managemind/db db:generate --name <change>
 ```
 
+## Platform CLI
+
+`pnpm platform <command>` runs against `DATABASE_URL` locally. In production, run the same commands through the **Platform** workflow (`.github/workflows/platform.yml`), so production credentials never leave GitHub:
+
+| Command | Does |
+| --- | --- |
+| `tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn\|en]` | Creates the store and its first Owner, prints the admin and store URLs, and relays the events so the KV map fills at once |
+| `platform:grant-role --email a@b.c --role super_admin\|support\|none` | Creates the user if needed and sets or clears the platform role (audited; signs them out) |
+| `kv:sync [--tenant <id>]` | Rewrites the KV host keys of every store, or one |
+
+```sh
+gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f role=super_admin
+```
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and every push to `master`:

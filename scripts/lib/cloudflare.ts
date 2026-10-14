@@ -1,4 +1,4 @@
-// The few Cloudflare API calls the preview workflow needs.
+// The few Cloudflare API calls the deploy, preview and platform workflows need.
 import { type ApiClient, apiClient, HttpError } from './http';
 
 interface Envelope<T> {
@@ -81,6 +81,45 @@ export class Cloudflare {
     );
     if (queues.some((q) => q.queue_name === name)) return;
     await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
+  }
+
+  async queueId(name: string): Promise<string> {
+    const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
+      `/queues?name=${encodeURIComponent(name)}`,
+    );
+    const found = queues.find((q) => q.queue_name === name);
+    if (!found) throw new Error(`queue ${name} not found`);
+    return found.queue_id;
+  }
+
+  /** Sends JSON messages to a queue, at most 100 per call. */
+  async sendToQueue(queueId: string, bodies: readonly unknown[]): Promise<void> {
+    for (let i = 0; i < bodies.length; i += 100) {
+      await this.api.request('POST', `${this.account}/queues/${queueId}/messages/batch`, {
+        messages: bodies.slice(i, i + 100).map((body) => ({ body, content_type: 'json' })),
+      });
+    }
+  }
+
+  async kvPutMany(
+    namespaceId: string,
+    entries: readonly { key: string; value: string }[],
+  ): Promise<void> {
+    if (entries.length === 0) return;
+    await this.api.request(
+      'PUT',
+      `${this.account}/storage/kv/namespaces/${namespaceId}/bulk`,
+      entries,
+    );
+  }
+
+  async kvDeleteMany(namespaceId: string, keys: readonly string[]): Promise<void> {
+    if (keys.length === 0) return;
+    await this.api.request(
+      'POST',
+      `${this.account}/storage/kv/namespaces/${namespaceId}/bulk/delete`,
+      keys,
+    );
   }
 
   /** Returns the namespace ID, creating the namespace if needed. */

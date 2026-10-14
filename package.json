@@ -12,7 +12,8 @@
     "test": "turbo run test",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "check": "biome check . && turbo run typecheck test"
+    "check": "biome check . && turbo run typecheck test",
+    "platform": "pnpm --filter @managemind/scripts platform"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
