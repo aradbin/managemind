@@ -2,7 +2,7 @@
 // super admins) platform roles (phase-1-plan §5.3, §6.2).
 import { schema } from '@managemind/db';
 import { AppError, type PlatformRole, type StoreRole } from '@managemind/shared';
-import { and, asc, eq, gt, isNull } from 'drizzle-orm';
+import { and, asc, eq, gt, isNotNull, isNull } from 'drizzle-orm';
 import { type Actor, actorFor, auditActor, requirePlatformRole } from '../access';
 import { type PlatformTx, recordPlatformAudit } from '../platform';
 
@@ -115,4 +115,21 @@ export async function updateMyProfile(
   };
   if (Object.keys(set).length === 0) return;
   await tx.db.update(schema.users).set(set).where(eq(schema.users.id, actor.userId));
+}
+
+/** Users with a platform role (super admins). */
+export async function listPlatformStaff(tx: PlatformTx, actor: Actor) {
+  requirePlatformRole(actor, 'super_admin');
+  const u = schema.users;
+  return tx.db
+    .select({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      platformRole: u.platformRole,
+      twoFactorEnabled: u.twoFactorEnabled,
+    })
+    .from(u)
+    .where(isNotNull(u.platformRole))
+    .orderBy(asc(u.email));
 }

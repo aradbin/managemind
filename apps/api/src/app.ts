@@ -10,6 +10,8 @@ import { problemResponse, validationError } from './errors';
 import { accessLog } from './middleware/access-log';
 import { context } from './middleware/context';
 import { staffWrites } from './middleware/staff-writes';
+import { registerPlatform } from './platform/routes';
+import { registerDevMailbox } from './routes/dev-mailbox';
 import { registerHealth } from './routes/health';
 import { registerDeepHealth } from './routes/health-deep';
 import { registerStoreContext } from './routes/store-context';
@@ -48,6 +50,8 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerStoreContext(app);
   registerAuth(app);
   registerAdmin(app);
+  registerPlatform(app);
+  registerDevMailbox(app);
 
   // Client-side routes of the admin SPA: any /admin/* path that is not a
   // built file gets the app's index.html (files never reach the Worker).
