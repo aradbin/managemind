@@ -135,20 +135,3 @@ describe('api skeleton', () => {
     expect(logLines(warn)[0]).toMatchObject({ level: 'warn', status: 404 });
   });
 });
-
-describe('admin SPA fallback', () => {
-  it('serves the admin index.html for client-side routes', async () => {
-    const requested: string[] = [];
-    const ASSETS = {
-      fetch: async (input: URL | string) => {
-        requested.push(new URL(String(input)).pathname);
-        // Like real asset responses, a fetch() response has immutable headers.
-        return fetch('data:text/html,<!doctype html><title>admin</title>');
-      },
-    } as unknown as Fetcher;
-    const res = await createApp().request('/admin/settings/staff', {}, { ...env, ASSETS });
-    expect(res.status).toBe(200);
-    expect(await res.text()).toContain('<title>admin</title>');
-    expect(requested).toEqual(['/admin/']);
-  });
-});

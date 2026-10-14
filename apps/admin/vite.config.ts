@@ -1,13 +1,54 @@
+import tailwindcss from '@tailwindcss/vite';
+import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// Built into dist/admin and served by the API Worker as static assets at
-// /admin (free, no Worker invocation). Phase 1 moves it to the admin host.
+// The admin, served by the API Worker as static assets at the root of the
+// admin host (phase-1-plan §3.5, §7.3). Navigation and assets never invoke
+// the Worker; /api/*, /v1/*, /health and /openapi.json go to it first.
 export default defineConfig({
-  base: '/admin/',
-  plugins: [react()],
+  base: '/',
+  plugins: [
+    // File-based routes in src/routes; each route's code is its own chunk.
+    tanstackRouter({ target: 'react', autoCodeSplitting: true }),
+    react(),
+    tailwindcss(),
+    VitePWA({
+      // A new version waits for the user to reload (the update prompt).
+      registerType: 'prompt',
+      includeAssets: ['apple-touch-icon.png'],
+      manifest: {
+        name: 'managemind admin',
+        short_name: 'managemind',
+        lang: 'bn',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#1d4ed8',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          {
+            src: '/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        // The app shell only: API responses are never cached.
+        globPatterns: ['**/*.{js,css,html,woff2,png,svg}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/v1\//, /^\/health/, /^\/openapi\.json/],
+        runtimeCaching: [],
+      },
+    }),
+  ],
   build: {
-    outDir: 'dist/admin',
+    outDir: 'dist',
     emptyOutDir: true,
     // Source maps only for production deploys, which upload them to Sentry
     // and delete them before deploying; they are never served.

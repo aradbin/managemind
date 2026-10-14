@@ -5,11 +5,16 @@
 // enforces (3 MiB on the Workers Free plan). Warns at 2.5 MiB and fails at
 // 3 MiB. Build the apps first: the API serves the admin's dist as assets.
 //
-// Usage: node scripts/bundle-size.mjs apps/api apps/storefront
+// apps/admin is checked differently (phase-1-plan §7.3): the JavaScript a
+// phone downloads before the sign-in screen (the entry script and its
+// modulepreloads in index.html), gzipped, at most 150 KiB.
+//
+// Usage: node scripts/bundle-size.mjs apps/api apps/storefront apps/admin
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 const WARN_KIB = 2.5 * 1024;
 const FAIL_KIB = 3 * 1024;
@@ -24,7 +29,44 @@ if (apps.length === 0) {
 const rows = [];
 let failed = false;
 
+const ADMIN_WARN_KIB = 130;
+const ADMIN_FAIL_KIB = 150;
+let admin = null;
+
+/** Gzipped size of the admin's initial JavaScript, from its built index.html. */
+function adminInitialJs(app) {
+  const dist = resolve(app, 'dist');
+  const html = readFileSync(join(dist, 'index.html'), 'utf8');
+  const files = [
+    ...html.matchAll(/<script[^>]+type="module"[^>]+src="([^"]+)"/g),
+    ...html.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g),
+  ].map((m) => m[1]);
+  if (files.length === 0) throw new Error(`${app}: no module scripts in dist/index.html`);
+  return files.reduce(
+    (kib, f) => kib + gzipSync(readFileSync(join(dist, f)), { level: 9 }).length / 1024,
+    0,
+  );
+}
+
 for (const app of apps) {
+  if (app.replace(/\/$/, '') === 'apps/admin') {
+    const gzip = adminInitialJs(app);
+    let status = 'ok';
+    if (gzip > ADMIN_FAIL_KIB) {
+      status = 'over the budget';
+      failed = true;
+      console.log(
+        `::error title=Bundle size::${app} initial JS is ${gzip.toFixed(0)} KiB gzip, over 150 KiB`,
+      );
+    } else if (gzip > ADMIN_WARN_KIB) {
+      status = 'warning';
+      console.log(
+        `::warning title=Bundle size::${app} initial JS is ${gzip.toFixed(0)} KiB gzip, over 130 KiB`,
+      );
+    }
+    admin = { app, gzip, status };
+    continue;
+  }
   const outdir = mkdtempSync(join(tmpdir(), 'bundle-'));
   const run = spawnSync('pnpm', ['exec', 'wrangler', 'deploy', '--dry-run', '--outdir', outdir], {
     cwd: resolve(app),
@@ -62,6 +104,14 @@ const table = [
     (r) =>
       `| ${r.app} | ${r.raw.toFixed(0)} KiB | ${r.gzip.toFixed(0)} KiB | ${((r.gzip / FAIL_KIB) * 100).toFixed(0)}% | ${r.status} |`,
   ),
+  ...(admin
+    ? [
+        '',
+        '| Admin | Initial JS (gzip) | Share of 150 KiB | Status |',
+        '| --- | --- | --- | --- |',
+        `| ${admin.app} | ${admin.gzip.toFixed(0)} KiB | ${((admin.gzip / ADMIN_FAIL_KIB) * 100).toFixed(0)}% | ${admin.status} |`,
+      ]
+    : []),
 ].join('\n');
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) {

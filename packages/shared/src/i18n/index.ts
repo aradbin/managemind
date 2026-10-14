@@ -17,39 +17,47 @@ export type Messages = {
   readonly [K in MessageKey]: (typeof en)[K] extends Plural ? Plural : string;
 };
 
-const catalogs: Record<Locale, Partial<Record<MessageKey, Message>>> = { bn, en };
 export type Params = Record<string, string | number>;
+export type { Message };
 
 const intlLocale = (locale: Locale, numerals?: Numerals) =>
   `${locale === 'bn' ? 'bn-BD' : 'en-BD'}-u-nu-${(numerals ?? (locale === 'bn' ? 'bengali' : 'latin')) === 'bengali' ? 'beng' : 'latn'}`;
 
 const pluralRules = new Map<Locale, Intl.PluralRules>();
 
-/** Translates `key`, falling back to English if a Bangla message is missing. */
-export function t(
-  locale: Locale,
-  key: MessageKey,
-  params: Params = {},
-  numerals?: Numerals,
-): string {
-  const message = catalogs[locale][key] ?? catalogs.en[key] ?? key;
-  let text: string;
-  if (typeof message === 'string') {
-    text = message;
-  } else {
-    let rules = pluralRules.get(locale);
-    if (!rules) {
-      rules = new Intl.PluralRules(locale === 'bn' ? 'bn-BD' : 'en-BD');
-      pluralRules.set(locale, rules);
+/**
+ * A t() over any pair of catalogs, so each app keeps its own messages (the
+ * admin's never reach storefront bundles). Missing Bangla falls back to
+ * English, then to the key.
+ */
+export function createTranslator<K extends string>(catalogs: {
+  en: Readonly<Record<K, Message>>;
+  bn: Readonly<Partial<Record<K, Message>>>;
+}) {
+  return (locale: Locale, key: K, params: Params = {}, numerals?: Numerals): string => {
+    const message = catalogs[locale][key] ?? catalogs.en[key] ?? key;
+    let text: string;
+    if (typeof message === 'string') {
+      text = message;
+    } else {
+      let rules = pluralRules.get(locale);
+      if (!rules) {
+        rules = new Intl.PluralRules(locale === 'bn' ? 'bn-BD' : 'en-BD');
+        pluralRules.set(locale, rules);
+      }
+      text = rules.select(Number(params.count ?? 0)) === 'one' ? message.one : message.other;
     }
-    text = rules.select(Number(params.count ?? 0)) === 'one' ? message.one : message.other;
-  }
-  return text.replace(/\{(\w+)\}/g, (match, name: string) => {
-    const value = params[name];
-    if (value === undefined) return match;
-    return typeof value === 'number' ? formatNumber(locale, value, numerals) : value;
-  });
+    return text.replace(/\{(\w+)\}/g, (match, name: string) => {
+      const value = params[name];
+      if (value === undefined) return match;
+      return typeof value === 'number' ? formatNumber(locale, value, numerals) : value;
+    });
+  };
 }
+
+/** Translates a shared message (storefront and common strings). */
+export const t: (locale: Locale, key: MessageKey, params?: Params, numerals?: Numerals) => string =
+  createTranslator<MessageKey>({ en, bn });
 
 export function formatNumber(locale: Locale, value: number, numerals?: Numerals): string {
   return new Intl.NumberFormat(intlLocale(locale, numerals)).format(value);

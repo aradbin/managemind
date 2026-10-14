@@ -248,8 +248,7 @@ async function sendInvitation(
     storeName: store.name,
     role: issued.invitation.role,
     // The token is in the fragment, so it never reaches a server log (ADR 0005).
-    // The admin moves from /admin to the root of its host in PR 13.
-    link: `${adminOrigin(c as unknown as Context<AppEnv>)}/admin/invite#t=${issued.token}`,
+    link: `${adminOrigin(c as unknown as Context<AppEnv>)}/invite#t=${issued.token}`,
     days: 7,
   });
   createMailer(c.env, config, c.executionCtx).sendLater(

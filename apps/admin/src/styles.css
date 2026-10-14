@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/*
+ * Colour tokens (phase-1-plan §7.3): every text/background pair meets WCAG AA
+ * (4.5:1) in both themes. Components use these names, never raw colours.
+ */
+@theme {
+  --font-sans: "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-background: #ffffff;
+  --color-foreground: #111827;
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #4b5563;
+  --color-border: #d1d5db;
+  --color-primary: #1d4ed8;
+  --color-primary-foreground: #ffffff;
+  --color-danger: #b91c1c;
+  --color-danger-foreground: #ffffff;
+  --color-warning: #fef3c7;
+  --color-warning-foreground: #78350f;
+  --color-ring: #1d4ed8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0b1120;
+    --color-foreground: #f3f4f6;
+    --color-muted: #1f2937;
+    --color-muted-foreground: #d1d5db;
+    --color-border: #374151;
+    --color-primary: #93c5fd;
+    --color-primary-foreground: #0b1120;
+    --color-danger: #fca5a5;
+    --color-danger-foreground: #0b1120;
+    --color-warning: #422006;
+    --color-warning-foreground: #fde68a;
+    --color-ring: #93c5fd;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  /* Visible focus for keyboard users everywhere. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
