@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
+const storeRole = z.enum(['owner', 'manager', 'staff', 'viewer']);
 
 export const EVENTS = {
   'tenant.seeded': z.object({ slug: z.string() }),
@@ -17,6 +18,11 @@ export const EVENTS = {
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),
+  // Membership changes. No consumer yet; they feed Phase 5A's notifications.
+  'staff.invited': z.object({ invitationId: z.uuid(), role: storeRole }),
+  'staff.joined': z.object({ userId: z.uuid(), role: storeRole }),
+  'staff.role_changed': z.object({ userId: z.uuid(), from: storeRole, to: storeRole }),
+  'staff.removed': z.object({ userId: z.uuid(), role: storeRole, left: z.boolean() }),
 } as const;
 
 /** Events that change which hosts point at a store, or what they say (§4.3). */

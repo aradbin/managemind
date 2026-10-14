@@ -1,6 +1,6 @@
 # Phase 1 plan — Platform core
 
-Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, Q10 done and the email sender on the main domain (§5.7) Oct 13, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
+Oct 11, 2026 · Status: **draft; Q1, Q4, Q6, Q7 and Q9 and the admin host (§3.5) decided Oct 11, Q10 done and the email sender on the main domain (§5.7) Oct 13, Q5 Oct 14, the rest awaiting the owner** · Source: `docs/PLAN.md` § Phase 1 · Follows: [`phase-0-report.md`](phase-0-report.md)
 
 Phase 1 builds what every later module stands on, before any commerce data exists:
 
@@ -681,7 +681,7 @@ Each PR is under about 400 changed lines, excluding generated files, migrations 
 | 5 | `apps/api`: rate-limiter Durable Object, lockout, email quota counter | |
 | 6 | `apps/api`: Better Auth staff instance (email OTP, sign-up off, TOTP with `allowPasswordless`), the 2FA-on-code spike (§3.4), sessions, cookies, CSRF, `/api/*` mapping; ADR 0005 amendment | `AUTH_SECRET` is set (Q10). Until PR 17, `ADMIN_HOST` is the API Worker's workers.dev host. Previews use `AUTH_SECRET_PREVIEW` if the owner adds it, otherwise a new secret per deploy |
 | 7 | `packages/core/tenancy`: `createTenant`, profile, lifecycle, host resolution; events; KV sync consumer; ADR 0015 | Also `Actor`, `authorize` and `requirePlatformRole` (`access.ts`), which PR 8 builds on. `/v1/store/context` uses `resolveHost` but still answers only for active stores until the maintenance page (PR 10). `tenant_domain.*` events are declared; nothing emits them before Phase 3 |
-| 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | |
+| 8 | `packages/core/identity` and `access`: memberships, invitations, support grants, platform roles, `authorize` | Core only: the API routes, emails and session middleware come with PRs 9 and 10. Marking expired invitations `expired` in the daily job moves to PR 10 with the other cron additions; accepting already checks `expires_at` |
 | 9 | `apps/api`: `/v1/admin/*` routes and the generated API isolation suite | |
 | 10 | `apps/api`: `/v1/platform/*` routes, dev mailbox; storefront KV resolution and maintenance page | |
 | 11 | Platform CLI and `platform.yml`; Queues REST sink | Production bootstrap needs Q3 |
@@ -722,7 +722,7 @@ The PLAN.md items without their own criterion are covered by §9: PWA installabi
 - **Q2 — Roles. Decided (Oct 11):** fixed roles as proposed; custom roles per store later if a client needs them (§2). Original question: is the matrix in §5.2 right? In particular: Viewer without customer data, Staff without refunds and exports, Manager unable to manage Owners or other Managers.
 - **Q3 — First super admins.** Which email addresses get `super_admin`? Should anyone get `support` now?
 - **Q4 — Memberships outside Better Auth's organization plugin** (§3.3). This changes ADR 0005 decision 1. **Decided (Oct 11):** the agent's call, as proposed.
-- **Q5 — Support access.** Proposed: support users can give themselves read-only (Viewer) access for up to 4 hours with a written reason; Manager-level access needs a super admin; the store's Owners get an email each time. Is that right, or should Owners approve first? Approval would make the pilot's onboarding slower.
+- **Q5 — Support access. Decided (Oct 14): as proposed.** Original question: support users can give themselves read-only (Viewer) access for up to 4 hours with a written reason; Manager-level access needs a super admin; the store's Owners get an email each time. Is that right, or should Owners approve first? Approval would make the pilot's onboarding slower.
 - **Q6 — Bot protection** (§3.6). No Bot Fight Mode on `managemind.site`, because it can't exempt webhooks on the Free plan. Instead: "Block AI bots", one WAF rule and the Worker's rate limits. **Decided (Oct 11):** as proposed.
 - **Q7 — Store subdomains from Phase 1** (§3.7). The wildcard route on `managemind.store` moves up from Phase 3, so the acceptance criterion holds. **Decided (Oct 11):** as proposed.
 - **Q8 — Sender address. Decided (Oct 13):** `no-reply@managemind.site` with the platform name as the sender, and DMARC reports to Cloudflare DMARC Management. Still open: is there a support address for `Reply-To` yet?
