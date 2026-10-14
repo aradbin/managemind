@@ -5,6 +5,8 @@ declare global {
   namespace Cloudflare {
     interface Env {
       API: Fetcher;
+      /** The host-to-store map (ADR 0015); production only. */
+      EDGE?: KVNamespace;
       ENVIRONMENT: string;
       STORE_DOMAIN: string;
       /** Git commit of the deployed build, set by CI. */

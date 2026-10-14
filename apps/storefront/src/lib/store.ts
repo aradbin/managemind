@@ -55,4 +55,49 @@ export interface StoreContext {
   slug: string;
   name: string;
   defaultLocale: 'bn' | 'en';
+  /** A suspended store shows its maintenance page. */
+  status: 'active' | 'suspended';
+  primaryHost: string;
+}
+
+/** The KV host map's value (ADR 0015), written by the API's outbox consumer. */
+interface HostRecord {
+  tenantId: string;
+  slug: string;
+  name: string;
+  defaultLocale: 'bn' | 'en';
+  status: 'active' | 'suspended';
+  primaryHost: string;
+}
+
+export interface StoreLookup {
+  /** The EDGE namespace; absent on previews and locally. */
+  kv?: Pick<KVNamespace, 'get'>;
+  /** Asks the API (GET /v1/store/context) about a host. */
+  api: (host: string) => Promise<StoreContext | null>;
+  onKvError?: (e: unknown) => void;
+}
+
+/**
+ * The store for a host: the KV map first, then the API on a miss. The API
+ * never writes KV, so a host that isn't a store costs one KV read and one
+ * API call, and no KV write (ADR 0015).
+ */
+export async function lookupStore(
+  host: string,
+  { kv, api, onKvError }: StoreLookup,
+): Promise<StoreContext | null> {
+  if (kv) {
+    try {
+      const record = await kv.get<HostRecord>(`host:${host}`, 'json');
+      if (record) {
+        const { tenantId, ...rest } = record;
+        return { id: tenantId, ...rest };
+      }
+    } catch (e) {
+      // KV trouble falls back to the API rather than failing the page.
+      onKvError?.(e);
+    }
+  }
+  return api(host);
 }

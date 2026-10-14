@@ -67,6 +67,7 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
+  if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),
     COMMIT_SHA: t.commit,
