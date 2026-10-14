@@ -11,6 +11,8 @@ export interface Env {
   OUTBOX: Queue<OutboxEvent>;
   /** Rate limits and the daily email count, one object per key (ADR 0006). */
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
+  /** Host-to-store map read by the storefront (ADR 0015); absent in previews. */
+  EDGE?: KVNamespace;
   /** Static assets: the admin SPA under /admin. */
   ASSETS?: Fetcher;
   ENVIRONMENT: string;

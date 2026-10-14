@@ -1,6 +1,6 @@
 // Writes the production wrangler configs.
 //
-//   tsx production/workers.ts --hyperdrive <id> --commit <sha>
+//   tsx production/workers.ts --hyperdrive <id> --kv <id> --commit <sha>
 //
 // Domains come from the PLATFORM_DOMAIN and STORE_DOMAIN repository
 // variables; until those are set, both Workers stay on workers.dev.
@@ -13,6 +13,8 @@ const hyperdrive = args.get('hyperdrive');
 if (!hyperdrive || !/^[0-9a-f]{32}$/.test(hyperdrive)) {
   throw new Error('--hyperdrive <id> is required');
 }
+const kv = args.get('kv');
+if (!kv || !/^[0-9a-f]{32}$/.test(kv)) throw new Error('--kv <namespace id> is required');
 const commit = args.get('commit');
 if (!commit) throw new Error('--commit <sha> is required');
 
@@ -26,6 +28,7 @@ writeWorkerConfigs({
   api,
   storefront,
   hyperdriveId: hyperdrive,
+  kvNamespaceId: kv,
   platformDomain: process.env.PLATFORM_DOMAIN || workersDev,
   storeDomain: process.env.STORE_DOMAIN || workersDev,
   // The admin is served by the API Worker until it moves to admin.<domain> (PR 17).

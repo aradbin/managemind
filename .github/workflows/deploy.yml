@@ -66,7 +66,8 @@ jobs:
         id: workers
         run: >-
           pnpm --filter @managemind/scripts exec tsx production/workers.ts
-          --hyperdrive ${{ steps.provision.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
+          --hyperdrive ${{ steps.provision.outputs.hyperdrive_id }}
+          --kv ${{ steps.provision.outputs.kv_id }} --commit "$COMMIT_SHA"
 
       # The API is bundled first, so the source maps uploaded to Sentry match
       # the exact file that is deployed (scripts/production/sourcemaps.ts).

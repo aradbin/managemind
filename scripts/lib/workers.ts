@@ -14,6 +14,8 @@ export interface WorkerTarget {
   api: string;
   storefront: string;
   hyperdriveId: string;
+  /** The managemind-edge KV namespace; previews have none (no consumer writes it). */
+  kvNamespaceId?: string;
   platformDomain: string;
   storeDomain: string;
   /** The admin's host: sign-in cookies and CSRF checks are bound to it. */
@@ -42,6 +44,8 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   api.workers_dev = true;
   api.preview_urls = false;
   api.hyperdrive = [{ binding: 'HYPERDRIVE', id: t.hyperdriveId }];
+  if (t.kvNamespaceId) api.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
+  else delete api.kv_namespaces;
   api.vars = {
     ...vars(api.vars),
     PLATFORM_DOMAIN: t.platformDomain,
