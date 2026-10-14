@@ -61,6 +61,14 @@ jobs:
             echo "::error title=Migrations::schema changes without a migration; run pnpm --filter @managemind/db db:generate --name <change>"
             exit 1
           fi
+      - name: SDK matches the API
+        run: |
+          pnpm --filter @managemind/sdk generate
+          if [ -n "$(git status --porcelain packages/sdk/src)" ]; then
+            git diff --stat packages/sdk/src
+            echo "::error title=SDK::routes changed without regenerating the SDK; run pnpm --filter @managemind/sdk generate"
+            exit 1
+          fi
       - name: Typecheck and test (unit, integration, isolation)
         run: pnpm turbo run typecheck test
       - name: Dependency audit

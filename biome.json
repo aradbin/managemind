@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/migrations/meta"]
+    "includes": ["**", "!**/migrations/meta", "!packages/sdk/src/schema.ts"]
   },
   "formatter": {
     "enabled": true,

@@ -26,5 +26,8 @@
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
+  },
+  "exports": {
+    "./app": "./src/app.ts"
   }
 }

@@ -25,6 +25,8 @@
 | (none) for Resend | — | `packages/providers` | One `fetch` call to Resend's HTTP API is all the adapter needs, so there is no SDK in the Worker bundle (ADR 0014) | The `resend` npm package |
 | (none) instead of Mailpit | — | `packages/providers` | The `capture` adapter saves emails to the database outside production, for local development, previews and Playwright alike (ADR 0014) | Mailpit (one more thing to install and run) |
 | better-auth | 1.7 | `apps/api` | Staff identity: email sign-in codes, sessions and cookies, and TOTP two-factor login, as the plan specifies (ADR 0005). Only the core and the `emailOTP` and `twoFactor` plugins are used; memberships and roles are ours (phase-1-plan §3.3). Adds about 330 KiB gzipped to the API bundle (354 to 679 KiB) | Our own sessions and TOTP (more security-sensitive code to own); Lucia (no longer maintained) |
+| openapi-typescript | 7.13 | `packages/sdk` (dev) | Generates the admin's API types from the API's own OpenAPI document; CI fails when the committed types are out of date. It declares a TypeScript 5 peer but generates correctly under 6.0 (pnpm only warns) | Hand-written types (drift); orval (heavier, generates code) |
+| openapi-fetch | 0.17 | `packages/sdk` | A typed `fetch` over those types, about 6 KB in the admin bundle, with no runtime code generation | Hono's RPC client (needs the app's types at build time, tying the admin to the Worker's code); ky or plain fetch (untyped) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 
