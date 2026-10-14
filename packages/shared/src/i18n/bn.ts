@@ -6,6 +6,8 @@ export const bn: Messages = {
   'common.language.en': 'English',
   'store.notFound.title': 'দোকানটি পাওয়া যায়নি',
   'store.notFound.body': '{host} ঠিকানায় কোনো দোকান নেই।',
+  'store.maintenance.title': 'শিগগিরই ফিরছি',
+  'store.maintenance.body': 'রক্ষণাবেক্ষণের জন্য {store} এখন বন্ধ আছে। পরে আবার চেষ্টা করুন।',
   'store.placeholder.welcome': '{store}-এ স্বাগতম',
   'store.devBanner': 'প্রিভিউ: {store} দেখানো হচ্ছে। অন্য দোকান দেখতে ?store=<slug> ব্যবহার করুন।',
   'admin.title': '{platform} অ্যাডমিন',

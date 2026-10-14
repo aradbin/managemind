@@ -45,6 +45,8 @@ describe('GET /v1/store/context', () => {
       slug: 'demo-fashion',
       name: 'Demo Fashion',
       defaultLocale: 'en',
+      status: 'active',
+      primaryHost: 'demo-fashion.stores.example.test',
     });
     expect(res.headers.get('cache-control')).toBe('public, max-age=60');
   });
@@ -61,10 +63,14 @@ describe('GET /v1/store/context', () => {
     }
   });
 
-  it('does not resolve a suspended store', async () => {
+  it('resolves a suspended store with its status, and not a closed one', async () => {
     const owner = await connect(ownerUrl);
     await owner.query("update platform.tenants set status = 'suspended' where id = $1", [TENANT_B]);
     try {
+      const suspended = await lookup('demo-grocery.stores.example.test');
+      expect(suspended.status).toBe(200);
+      expect(await suspended.json()).toMatchObject({ slug: 'demo-grocery', status: 'suspended' });
+      await owner.query("update platform.tenants set status = 'closed' where id = $1", [TENANT_B]);
       expect((await lookup('demo-grocery.stores.example.test')).status).toBe(404);
     } finally {
       await owner.query("update platform.tenants set status = 'active' where id = $1", [TENANT_B]);

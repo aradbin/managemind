@@ -5,6 +5,8 @@ export const en = {
   'common.language.en': 'English',
   'store.notFound.title': 'Store not found',
   'store.notFound.body': 'There is no store at {host}.',
+  'store.maintenance.title': 'We will be back soon',
+  'store.maintenance.body': '{store} is closed for maintenance. Please try again later.',
   'store.placeholder.welcome': 'Welcome to {store}',
   'store.devBanner': 'Preview: showing {store}. Choose another store with ?store=<slug>.',
   'admin.title': '{platform} admin',

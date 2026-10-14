@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveStoreHost, type StoreRequest } from './store';
+import { lookupStore, resolveStoreHost, type StoreContext, type StoreRequest } from './store';
 
 const base: StoreRequest = {
   host: 'managemind-storefront.example.workers.dev',
@@ -55,5 +55,47 @@ describe('resolveStoreHost', () => {
       devStore: null,
       cookie: null,
     });
+  });
+});
+
+describe('lookupStore', () => {
+  const record = {
+    tenantId: '0199d000-0000-7000-8000-00000000f001',
+    slug: 'demo-fashion',
+    name: 'Demo Fashion',
+    defaultLocale: 'en' as const,
+    status: 'active' as const,
+    primaryHost: 'demo-fashion.stores.example.test',
+  };
+  const { tenantId, ...fields } = record;
+  const fromApi: StoreContext = { ...fields, id: tenantId, name: 'From the API' };
+  const host = 'demo-fashion.stores.example.test';
+
+  it('uses the KV map when the host is in it, without calling the API', async () => {
+    let apiCalls = 0;
+    const kv = { get: async (key: string) => (key === `host:${host}` ? record : null) };
+    const store = await lookupStore(host, {
+      kv: kv as never,
+      api: async () => {
+        apiCalls++;
+        return fromApi;
+      },
+    });
+    expect(store).toEqual({ ...fromApi, name: 'Demo Fashion' });
+    expect(apiCalls).toBe(0);
+  });
+
+  it('falls back to the API on a miss, without KV, and when KV fails', async () => {
+    const api = async () => fromApi;
+    expect(await lookupStore(host, { kv: { get: async () => null } as never, api })).toEqual(
+      fromApi,
+    );
+    expect(await lookupStore(host, { api })).toEqual(fromApi);
+    const errors: unknown[] = [];
+    const broken = { get: async () => Promise.reject(new Error('kv down')) };
+    expect(
+      await lookupStore(host, { kv: broken as never, api, onKvError: (e) => errors.push(e) }),
+    ).toEqual(fromApi);
+    expect(errors).toHaveLength(1);
   });
 });

@@ -2,7 +2,8 @@
 // calls it over its service binding with the shopper's host in
 // X-Forwarded-Host: an active custom domain, or `{slug}.<STORE_DOMAIN>`
 // (ADR 0015). It reads the database and never writes KV, so random hosts
-// can't spend KV writes. Suspended stores get their maintenance page in PR 10.
+// can't spend KV writes. Suspended stores resolve, with their status, so the
+// storefront can show their maintenance page.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import { resolveHost } from '@managemind/core';
 import { createDb } from '@managemind/db';
@@ -16,6 +17,9 @@ const StoreContext = z
     slug: z.string(),
     name: z.string(),
     defaultLocale: z.enum(['bn', 'en']),
+    /** A suspended store shows its maintenance page. */
+    status: z.enum(['active', 'suspended']),
+    primaryHost: z.string(),
   })
   .openapi('StoreContext');
 
@@ -31,7 +35,7 @@ const route = createRoute({
   },
   responses: {
     200: { content: { 'application/json': { schema: StoreContext } }, description: 'The store' },
-    404: { description: 'No active store at this host' },
+    404: { description: 'No store at this host (or it is closed)' },
   },
 });
 
@@ -41,12 +45,14 @@ export function registerStoreContext(app: OpenAPIHono<AppEnv>): void {
     const record = await withClient(c.env, c.executionCtx, (client) =>
       resolveHost(createDb(client), host, c.var.config.STORE_DOMAIN),
     );
-    if (record?.status !== 'active') throw new AppError('store_not_found');
+    if (!record) throw new AppError('store_not_found');
     const store = {
       id: record.tenantId,
       slug: record.slug,
       name: record.name,
       defaultLocale: record.defaultLocale,
+      status: record.status,
+      primaryHost: record.primaryHost,
     };
     c.header('Cache-Control', 'public, max-age=60');
     return c.json(store, 200);
