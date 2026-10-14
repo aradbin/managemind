@@ -3,10 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "platform": "tsx platform/cli.ts"
   },
   "dependencies": {
+    "@managemind/core": "workspace:*",
     "@managemind/db": "workspace:*",
+    "@managemind/shared": "workspace:*",
+    "drizzle-orm": "catalog:",
     "pg": "catalog:"
   },
   "devDependencies": {
@@ -14,6 +19,7 @@
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

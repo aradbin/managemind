@@ -1,0 +1,97 @@
+# The platform CLI against production (phase-1-plan §8), so production
+# credentials never enter a session (Phase 0 Q3). From anywhere:
+#
+#   gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f role=super_admin
+#   gh workflow run platform.yml -f command=tenant:create -f slug=acme -f name="Acme" -f owner_email=a@b.c
+#   gh workflow run platform.yml -f command=kv:sync
+#
+# Inputs reach the script as environment variables, never inside the shell
+# command. Email addresses are masked from the step that masks them onward,
+# so the CLI's output never shows them; the inputs themselves stay visible on
+# the run's page to anyone with access to the repository.
+name: Platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: What to run
+        type: choice
+        options: [tenant:create, platform:grant-role, kv:sync]
+      slug:
+        description: tenant:create — the store address
+        required: false
+      name:
+        description: tenant:create — the store name
+        required: false
+      owner_email:
+        description: tenant:create — the first Owner's email
+        required: false
+      owner_name:
+        description: tenant:create — the first Owner's name (optional)
+        required: false
+      locale:
+        description: tenant:create — bn or en (optional; default bn)
+        required: false
+      email:
+        description: platform:grant-role — the user's email
+        required: false
+      role:
+        description: platform:grant-role — super_admin, support or none
+        required: false
+      tenant:
+        description: kv:sync — one store's id (optional; default every store)
+        required: false
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: ${{ inputs.command }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
+      STORE_DOMAIN: ${{ vars.STORE_DOMAIN }}
+      COMMAND: ${{ inputs.command }}
+      IN_SLUG: ${{ inputs.slug }}
+      IN_NAME: ${{ inputs.name }}
+      IN_OWNER_EMAIL: ${{ inputs.owner_email }}
+      IN_OWNER_NAME: ${{ inputs.owner_name }}
+      IN_LOCALE: ${{ inputs.locale }}
+      IN_EMAIL: ${{ inputs.email }}
+      IN_ROLE: ${{ inputs.role }}
+      IN_TENANT: ${{ inputs.tenant }}
+    steps:
+      - name: Mask email addresses
+        run: |
+          for value in "$IN_OWNER_EMAIL" "$IN_EMAIL"; do
+            if [ -n "$value" ]; then echo "::add-mask::$value"; fi
+          done
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run
+        run: |
+          args=("$COMMAND")
+          add() { if [ -n "$2" ]; then args+=("--$1" "$2"); fi; }
+          case "$COMMAND" in
+            tenant:create)
+              add slug "$IN_SLUG"; add name "$IN_NAME"; add owner-email "$IN_OWNER_EMAIL"
+              add owner-name "$IN_OWNER_NAME"; add locale "$IN_LOCALE" ;;
+            platform:grant-role) add email "$IN_EMAIL"; add role "$IN_ROLE" ;;
+            kv:sync) add tenant "$IN_TENANT" ;;
+          esac
+          pnpm --filter @managemind/scripts exec tsx platform/cli.ts "${args[@]}"
