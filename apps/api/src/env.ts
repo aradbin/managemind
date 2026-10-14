@@ -35,6 +35,8 @@ export interface Env {
   EMAIL_FROM?: string;
   /** Resend API key with sending access (a Worker secret). */
   RESEND_API_KEY?: string;
+  /** Opens the dev mailbox on previews (a Worker secret; never set in production). */
+  DEV_TOKEN?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
@@ -52,6 +54,7 @@ export const apiConfig = baseConfig
       .regex(/^[^<>]+ <[^\s<>@]+@[^\s<>@]+>$/, 'must look like "Name <address>"')
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
+    DEV_TOKEN: z.string().min(16).optional(),
   })
   .superRefine((c, ctx) => {
     const issue = (path: string, message: string) =>
@@ -64,6 +67,8 @@ export const apiConfig = baseConfig
       issue('EMAIL_PROVIDER', 'must be resend in production');
     }
     if (c.EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY) issue('RESEND_API_KEY', 'is required');
+    if (c.ENVIRONMENT === 'production' && c.DEV_TOKEN)
+      issue('DEV_TOKEN', 'must not be set in production');
   })
   // wrangler dev works without setup; deployed Workers always get the real secret.
   .transform((c) => ({ ...c, AUTH_SECRET: c.AUTH_SECRET ?? DEV_AUTH_SECRET }));

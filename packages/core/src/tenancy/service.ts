@@ -222,7 +222,7 @@ export async function transitionTenant(
   event: 'suspend' | 'reactivate',
   context: { reason?: string } = {},
   options: WithTenantOptions = {},
-): Promise<{ from: string; to: string }> {
+): Promise<{ from: Store['status']; to: Store['status'] }> {
   requirePlatformRole(actor, 'super_admin');
   return withTenant(
     client,

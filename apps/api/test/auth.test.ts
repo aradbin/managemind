@@ -425,7 +425,8 @@ describe('CSRF on /api/admin and /api/platform', () => {
     const form = await b.call('POST', '/api/platform/tenants', undefined, {
       'content-type': 'application/x-www-form-urlencoded',
     });
-    expect(form.status).toBe(404); // no body: nothing a form could smuggle
+    // No body, so nothing a form could smuggle: it passes CSRF and meets the session check.
+    expect(form.status).toBe(401);
     const text = await createApp().request(
       '/api/admin/me',
       { method: 'PATCH', headers: { origin: ORIGIN, 'content-type': 'text/plain' }, body: 'x' },
@@ -436,9 +437,9 @@ describe('CSRF on /api/admin and /api/platform', () => {
   });
 
   it('lets JSON writes from the admin and all reads through to the routes', async () => {
-    // Past the CSRF check, the admin routes ask for a session.
+    // Past the CSRF check, the admin and platform routes ask for a session.
     expect((await b.call('PATCH', '/api/admin/me', {})).status).toBe(401);
     expect((await b.get('/api/admin/me')).status).toBe(401);
-    expect((await b.get('/api/platform/tenants')).status).toBe(404);
+    expect((await b.get('/api/platform/tenants')).status).toBe(401);
   });
 });
