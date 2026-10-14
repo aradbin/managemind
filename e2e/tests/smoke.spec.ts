@@ -1,5 +1,6 @@
 // The Phase 0 E2E smoke (phase-0-plan §10): both demo stores resolve with
-// their locale, the admin placeholder loads, and the API reaches the database.
+// their locale, the admin opens at the root of its host, and the API reaches
+// the database.
 import { expect, test } from '@playwright/test';
 import { API, ENVIRONMENT, STOREFRONT } from './urls';
 
@@ -35,8 +36,17 @@ test('an unknown store is a 404', async ({ page }) => {
   expect(res?.status()).toBe(404);
 });
 
-test('the admin placeholder loads and reaches the API', async ({ page }) => {
-  await page.goto(`${API}/admin/`);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('managemind অ্যাডমিন');
-  await expect(page.getByRole('status')).toContainText('ok');
+test('the admin opens at the root and sends a visitor without a session to sign in', async ({
+  page,
+}) => {
+  await page.goto(`${API}/`);
+  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('সাইন ইন');
+});
+
+test('an admin client-side route is served without the Worker', async ({ request }) => {
+  const res = await request.get(`${API}/settings`);
+  expect(res.status()).toBe(200);
+  expect(await res.text()).toContain('<div id="root">');
 });

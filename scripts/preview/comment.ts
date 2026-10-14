@@ -47,7 +47,7 @@ function lines(status: string | undefined): string[] {
     '| --- | --- |',
     `| Storefront (demo-fashion, en) | ${storefront}/?store=demo-fashion |`,
     `| Storefront (demo-grocery, bn) | ${storefront}/?store=demo-grocery |`,
-    `| Admin | ${api}/admin/ |`,
+    `| Admin | ${api}/ |`,
     `| API health | ${api}/health |`,
     '',
     `Database: ${args.get('database') ?? 'shared preview branch'}.`,

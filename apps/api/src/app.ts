@@ -53,15 +53,6 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerPlatform(app);
   registerDevMailbox(app);
 
-  // Client-side routes of the admin SPA: any /admin/* path that is not a
-  // built file gets the app's index.html (files never reach the Worker).
-  app.get('/admin/*', async (c) => {
-    if (!c.env.ASSETS) throw new AppError('not_found');
-    const asset = await c.env.ASSETS.fetch(new URL('/admin/', c.req.url));
-    // Asset responses have immutable headers; copy so middleware can add to them.
-    return new Response(asset.body, asset);
-  });
-
   app.doc31('/openapi.json', {
     openapi: '3.1.0',
     info: { title: 'managemind API', version: '0.0.0' },

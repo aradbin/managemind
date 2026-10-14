@@ -87,5 +87,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run build --filter=./apps/*
-      - name: Bundle size (warn at 2.5 MiB, fail at 3 MiB gzip)
-        run: node scripts/bundle-size.mjs apps/api apps/storefront
+      - name: Bundle size (Workers 3 MiB gzip; admin initial JS 150 KiB gzip)
+        run: node scripts/bundle-size.mjs apps/api apps/storefront apps/admin

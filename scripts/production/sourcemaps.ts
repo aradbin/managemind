@@ -24,7 +24,7 @@ if (!process.env.SENTRY_AUTH_TOKEN) {
 const builds: [SentryApp, string][] = [
   ['api', 'apps/api/dist/worker'],
   ['storefront', 'apps/storefront/dist/server'],
-  ['admin', 'apps/admin/dist/admin'],
+  ['admin', 'apps/admin/dist'],
 ];
 
 const cli = (args: string[]) => execFileSync('sentry-cli', args, { stdio: 'inherit' });

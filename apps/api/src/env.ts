@@ -13,7 +13,7 @@ export interface Env {
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
   /** Host-to-store map read by the storefront (ADR 0015); absent in previews. */
   EDGE?: KVNamespace;
-  /** Static assets: the admin SPA under /admin. */
+  /** Static assets: the admin SPA at the root of the host. */
   ASSETS?: Fetcher;
   ENVIRONMENT: string;
   PLATFORM_NAME: string;

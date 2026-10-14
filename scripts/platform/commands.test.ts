@@ -43,7 +43,7 @@ describe('tenant:create', () => {
     });
     expect(result).toMatchObject({
       slug,
-      adminUrl: 'https://admin.example.test/admin/',
+      adminUrl: 'https://admin.example.test/',
       storeUrl: `https://${slug}.stores.example.test/`,
       relayed: 1,
     });

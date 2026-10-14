@@ -62,7 +62,7 @@ export async function tenantCreate(
   const relayed = targets ? await relayEvents(client, events, { send: targets.sendEvents }) : null;
   return {
     ...created,
-    adminUrl: `https://${domains.adminHost}/admin/`,
+    adminUrl: `https://${domains.adminHost}/`,
     storeUrl: `https://${created.slug}.${domains.storeDomain}/`,
     relayed: relayed?.dispatched ?? 0,
   };

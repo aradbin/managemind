@@ -9,10 +9,16 @@
   // Next to Neon in Singapore (ADR 0002).
   "placement": { "region": "aws:ap-southeast-1" },
   "observability": { "enabled": true },
-  // The admin SPA (apps/admin, built into dist/admin). Files are served
-  // without invoking the Worker; unknown /admin/* paths fall through to the
-  // Worker, which returns the app's index.html.
-  "assets": { "directory": "../admin/dist", "binding": "ASSETS" },
+  // The admin SPA (apps/admin, built into its dist) at the root of the host
+  // (phase-1-plan §3.5). Files and client-side routes are served without
+  // invoking the Worker; unknown paths get index.html. Only the API paths
+  // reach the Worker first.
+  "assets": {
+    "directory": "../admin/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/v1/*", "/health", "/health/*", "/openapi.json"]
+  },
   // Real Hyperdrive config IDs per environment are created by provisioning
   // (PR 18). Locally, wrangler dev connects to the session's Postgres as
   // mm_app_dev, a login role in app_rw, so RLS is on exactly as in
