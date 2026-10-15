@@ -16,6 +16,8 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   destructive?: boolean;
   confirmText?: string | undefined;
+  /** False while something in `children` (e.g. a reason) is still missing. */
+  canConfirm?: boolean;
   busy?: boolean;
   error?: string | undefined;
   onConfirm: () => void;
@@ -29,13 +31,14 @@ export function ConfirmDialog({
   confirmLabel,
   destructive = true,
   confirmText,
+  canConfirm = true,
   busy = false,
   error,
   onConfirm,
 }: ConfirmDialogProps) {
   const { t } = useLocale();
   const [typed, setTyped] = useState('');
-  const ready = !confirmText || typed.trim() === confirmText;
+  const ready = canConfirm && (!confirmText || typed.trim() === confirmText);
   return (
     <Dialog
       open={open}

@@ -141,9 +141,13 @@ describe('support access', () => {
     expect(mail.rows).toHaveLength(1);
     expect(mail.rows[0]?.text).toContain('customer asked for help');
 
-    expect(
-      (await support.call('PUT', '/api/admin/me/active-store', { tenantId: s.id })).status,
-    ).toBe(200);
+    const inStore = await support.call('PUT', '/api/admin/me/active-store', { tenantId: s.id });
+    expect(inStore.status).toBe(200);
+    expect((await inStore.json()) as Json).toMatchObject({
+      supportGrant: true,
+      supportGrantId: grant.id,
+      role: 'viewer',
+    });
     expect((await support.call('DELETE', `/api/platform/support-access/${grant.id}`)).status).toBe(
       204,
     );

@@ -27,7 +27,7 @@ import { Dialog } from '../components/ui/dialog';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
-import { chooseStore } from '../lib/store';
+import { refreshAccess } from '../lib/store';
 
 type Member = Awaited<ReturnType<typeof fetchMembers>>['items'][number];
 type Invitation = Awaited<ReturnType<typeof fetchInvitations>>[number];
@@ -365,9 +365,7 @@ function LeaveDialog({
   const leave = useMutation({
     mutationFn: async () => unwrap(await api.DELETE('/v1/admin/members/me')),
     onSuccess: async () => {
-      queryClient.clear();
-      const me = await queryClient.fetchQuery(meQuery);
-      await chooseStore(queryClient, me);
+      await refreshAccess(queryClient);
       onOpenChange(false);
       await navigate({ to: '/', replace: true });
     },

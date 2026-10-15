@@ -39,3 +39,15 @@ export async function chooseStore(queryClient: QueryClient, me: Me): Promise<voi
   // Best effort: without a store the shell still works, and the user can pick one.
   if (pick) await switchStore(queryClient, pick.tenantId).catch(() => undefined);
 }
+
+/**
+ * After the user's access changed (left a store, ended support): drop every
+ * store's data and refetch /me in place. Not queryClient.clear(): mounted
+ * screens would keep showing the removed queries' old data.
+ */
+export async function refreshAccess(queryClient: QueryClient): Promise<Me> {
+  queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
+  const me = await queryClient.fetchQuery({ ...meQuery, staleTime: 0 });
+  await chooseStore(queryClient, me);
+  return me;
+}

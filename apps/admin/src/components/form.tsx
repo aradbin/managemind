@@ -13,7 +13,7 @@ import {
   useFormContext,
 } from 'react-hook-form';
 import { z } from 'zod';
-import { type AdminKey, useLocale } from '../i18n';
+import { type AdminKey, messages, useLocale } from '../i18n';
 import { ApiError } from '../lib/api';
 import { cn } from '../lib/utils';
 import { Input } from './ui/input';
@@ -21,7 +21,7 @@ import { Input } from './ui/input';
 /** A message key for a field's error; zod's own messages are English-only. */
 export function fieldErrorKey(error: FieldError | undefined): AdminKey | undefined {
   if (!error) return;
-  if (error.message?.startsWith('form.')) return error.message as AdminKey;
+  if (error.message && Object.hasOwn(messages.en, error.message)) return error.message as AdminKey;
   if (error.type === 'too_small') return 'form.required';
   if (error.type === 'too_big') return 'form.tooLong';
   return 'form.invalid';

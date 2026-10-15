@@ -1,11 +1,11 @@
-// The account menu in the header: who is signed in, the account page and
-// sign out.
+// The account menu in the header: who is signed in, the account page,
+// the dev mailbox outside production, and sign out.
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { CircleUser } from 'lucide-react';
 import { useLocale } from '../i18n';
-import type { Me } from '../lib/api';
+import { healthQuery, type Me } from '../lib/api';
 import { auth } from '../lib/auth';
 import { Button } from './ui/button';
 
@@ -13,6 +13,7 @@ export function AccountMenu({ me }: { me: Me }) {
   const { t } = useLocale();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { data: health } = useQuery(healthQuery);
   const item =
     'flex min-h-11 cursor-pointer items-center rounded px-3 outline-none data-[highlighted]:bg-muted';
   return (
@@ -36,6 +37,11 @@ export function AccountMenu({ me }: { me: Me }) {
           <Menu.Item className={item} onSelect={() => navigate({ to: '/account' })}>
             {t('account.title')}
           </Menu.Item>
+          {health && health.environment !== 'production' && (
+            <Menu.Item className={item} onSelect={() => navigate({ to: '/dev/mailbox' })}>
+              {t('dev.mailbox')}
+            </Menu.Item>
+          )}
           <Menu.Item
             className={item}
             onSelect={async () => {
