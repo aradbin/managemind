@@ -1,10 +1,13 @@
 // The signed-in shell (phase-1-plan §7.3): a bottom navigation bar on phones,
 // a sidebar from the md breakpoint, and the banners every page needs. It
 // loads /me once; without a session it sends the user to sign in.
+import { formatDateTime } from '@managemind/shared/i18n';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { Home, type LucideIcon, Settings, Shield, User } from 'lucide-react';
+import { AccountMenu } from '../components/account-menu';
 import { LanguageSwitch } from '../components/language-switch';
+import { StoreSwitcher } from '../components/store-switcher';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, meQuery } from '../lib/api';
 import { chooseStore } from '../lib/store';
@@ -40,7 +43,7 @@ const NAV: NavItem[] = [
 ];
 
 function Shell() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { data: me } = useSuspenseQuery(meQuery);
   const store = me.stores.find((s) => s.tenantId === me.activeStore);
   const links = (className: string) =>
@@ -73,9 +76,12 @@ function Shell() {
       </aside>
 
       <div className="flex min-h-dvh flex-col pb-16 md:pb-0">
-        <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
-          <p className="truncate font-medium">{store?.name ?? me.user.name}</p>
-          <LanguageSwitch />
+        <header className="flex items-center justify-between gap-2 border-b border-border px-2 py-2 md:px-4">
+          <StoreSwitcher me={me} />
+          <div className="flex shrink-0 items-center">
+            <LanguageSwitch />
+            <AccountMenu me={me} />
+          </div>
         </header>
         {store?.status === 'suspended' && (
           <p role="status" className="bg-warning px-4 py-2 text-sm text-warning-foreground">
@@ -93,9 +99,13 @@ function Shell() {
             </Link>
           </p>
         )}
-        {store && me.supportGrant && (
+        {store?.supportUntil && me.supportGrant && (
           <p role="status" className="bg-muted px-4 py-2 text-sm">
-            {t('banner.support', { store: store.name, platform: 'managemind' })}
+            {t('banner.support', {
+              store: store.name,
+              platform: 'managemind',
+              time: formatDateTime(locale, new Date(store.supportUntil), { timeStyle: 'short' }),
+            })}
           </p>
         )}
         <main className="flex-1 p-4">

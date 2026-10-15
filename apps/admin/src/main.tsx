@@ -8,6 +8,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ToastProvider } from './components/toast';
 import { LocaleProvider } from './i18n';
 import { ApiError, queryClient } from './lib/api';
 import { AuthError } from './lib/auth';
@@ -48,7 +49,9 @@ if (root) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <LocaleProvider>
-          <RouterProvider router={router} />
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
         </LocaleProvider>
       </QueryClientProvider>
     </StrictMode>,

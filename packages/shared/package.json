@@ -8,7 +8,9 @@
     "./i18n": "./src/i18n/index.ts",
     "./config": "./src/config.ts",
     "./sentry": "./src/sentry.ts",
-    "./settings": "./src/tenant-settings.ts"
+    "./settings": "./src/tenant-settings.ts",
+    "./permissions": "./src/permissions.ts",
+    "./phone": "./src/phone.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

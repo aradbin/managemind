@@ -16,3 +16,13 @@ export function errorMessage(error: unknown, t: T): string {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return t('error.offline');
   return t('error.generic');
 }
+
+/** errorMessage, plus the reasons a change is refused in a store. */
+export function saveErrorMessage(error: unknown, t: T): string {
+  if (error instanceof ApiError) {
+    if (error.status === 423) return t('error.suspended');
+    if (error.status === 403) return t('error.forbidden');
+    if (error.status === 422) return t('form.invalid');
+  }
+  return errorMessage(error, t);
+}
