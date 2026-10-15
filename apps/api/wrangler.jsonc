@@ -33,6 +33,9 @@
   // The host-to-store map (ADR 0015), written by the outbox consumer. The
   // production namespace ID is set by provisioning; previews get no binding.
   "kv_namespaces": [{ "binding": "EDGE", "id": "00000000000000000000000000000000" }],
+  // Store files: product images under tenants/<id>/media/ (ADR 0016). The
+  // deployed bucket is set per environment by scripts/lib/workers.ts.
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "managemind-files-preview" }],
   // Rate limits (ADR 0006): SQLite-backed, the only kind on the Free plan.
   "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }],

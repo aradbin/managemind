@@ -25,5 +25,7 @@ export const en = {
   'error.insufficient_stock': 'There isn’t enough stock for this.',
   'error.in_use': 'This is still in use, so it can’t be removed.',
   'error.limit_exceeded': 'You’ve reached the limit for this.',
+  'error.payload_too_large': 'This file is too large.',
+  'error.unsupported_media_type': 'Only JPEG, PNG and WebP images can be uploaded.',
   'error.internal': 'Something went wrong. Please try again.',
 } as const;

@@ -22,11 +22,16 @@ export function browser(env: Env = makeEnv()) {
         headers: {
           origin: ORIGIN,
           'cf-connecting-ip': '203.0.113.7',
-          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+          ...(body === undefined || body instanceof Uint8Array
+            ? {}
+            : { 'content-type': 'application/json' }),
           ...(cookie ? { cookie } : {}),
           ...headers,
         },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        // Bytes go as they are (image uploads); anything else as JSON.
+        ...(body === undefined
+          ? {}
+          : { body: body instanceof Uint8Array ? body : JSON.stringify(body) }),
       },
       env,
       ctx,

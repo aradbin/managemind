@@ -50,6 +50,13 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   api.workers_dev = true;
   api.preview_urls = false;
   api.hyperdrive = [{ binding: 'HYPERDRIVE', id: t.hyperdriveId }];
+  // Production's files bucket, or the shared preview bucket (phase-0-plan §8).
+  api.r2_buckets = [
+    {
+      binding: 'FILES',
+      bucket_name: t.environment === 'production' ? 'managemind-files' : 'managemind-files-preview',
+    },
+  ];
   if (t.kvNamespaceId) api.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   else delete api.kv_namespaces;
   api.vars = {

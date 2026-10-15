@@ -110,7 +110,7 @@ const Variant = z
       .openapi({ description: 'Only with inventory.read' }),
   })
   .openapi('Variant');
-const Product = z
+export const Product = z
   .object({
     id: z.uuid(),
     status: z.enum(['draft', 'active', 'archived']),
@@ -136,7 +136,19 @@ const Product = z
       }),
     ),
     variants: z.array(Variant),
-    media: z.array(z.object({ mediaId: z.uuid(), position: z.number().int() })),
+    media: z.array(
+      z.object({
+        mediaId: z.uuid(),
+        position: z.number().int(),
+        mime: z.string(),
+        width: z.number().int(),
+        height: z.number().int(),
+        files: z.array(
+          z.object({ width: z.number().int(), sha256: z.string(), bytes: z.number().int() }),
+        ),
+        alt: translated(z.string()),
+      }),
+    ),
     categoryIds: z.array(z.uuid()),
     collectionIds: z.array(z.uuid()),
     attributes: z.array(

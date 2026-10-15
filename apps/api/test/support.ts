@@ -17,6 +17,40 @@ export class FakeQueue {
   }
 }
 
+/** R2 in memory: what the media routes and the cleanup use. */
+export class FakeR2 {
+  objects = new Map<string, { body: Uint8Array; contentType: string | undefined }>();
+  async head(key: string) {
+    const o = this.objects.get(key);
+    return o ? { key, size: o.body.byteLength } : null;
+  }
+  async get(key: string) {
+    const o = this.objects.get(key);
+    if (!o) return null;
+    return {
+      key,
+      size: o.body.byteLength,
+      body: new Blob([o.body]).stream(),
+      httpEtag: `"${key}"`,
+      httpMetadata: { contentType: o.contentType },
+    };
+  }
+  async put(
+    key: string,
+    value: ArrayBuffer | Uint8Array,
+    options?: { httpMetadata?: { contentType?: string } },
+  ) {
+    this.objects.set(key, {
+      body: new Uint8Array(value instanceof Uint8Array ? value : new Uint8Array(value)),
+      contentType: options?.httpMetadata?.contentType,
+    });
+    return { key };
+  }
+  async delete(keys: string | string[]) {
+    for (const key of Array.isArray(keys) ? keys : [keys]) this.objects.delete(key);
+  }
+}
+
 export function memoryStore(): LockStore & { value: number | undefined; writes: number } {
   const store = {
     value: undefined as number | undefined,
@@ -56,10 +90,13 @@ export function fakeNamespace(): LimiterNamespace & { names: string[] } {
   };
 }
 
-export function makeEnv(overrides: Partial<Env> = {}): Env & { OUTBOX: FakeQueue } {
+export function makeEnv(
+  overrides: Partial<Env> = {},
+): Env & { OUTBOX: FakeQueue; FILES: FakeR2 & R2Bucket } {
   return {
     HYPERDRIVE: { connectionString: appUrl } as unknown as Hyperdrive,
     OUTBOX: new FakeQueue(),
+    FILES: new FakeR2() as unknown as R2Bucket,
     RATE_LIMITER: fakeNamespace() as unknown as Env['RATE_LIMITER'],
     ENVIRONMENT: 'preview',
     PLATFORM_NAME: 'managemind',
@@ -70,7 +107,7 @@ export function makeEnv(overrides: Partial<Env> = {}): Env & { OUTBOX: FakeQueue
     ADMIN_HOST: 'admin.platform.example.test',
     EMAIL_PROVIDER: 'capture',
     ...overrides,
-  } as Env & { OUTBOX: FakeQueue };
+  } as Env & { OUTBOX: FakeQueue; FILES: FakeR2 & R2Bucket };
 }
 
 /** An ExecutionContext whose waitUntil promises can be awaited. */

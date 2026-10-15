@@ -269,6 +269,14 @@ describe('isolation suite', () => {
         body: { conditions: [{ type: 'created_within_days', days: 7 }] },
       },
       'PATCH /v1/admin/locations/{id}': { id: location?.id as string, body: { name: 'x' } },
+      'PUT /v1/admin/products/{id}/media': { id: product.id, body: { images: [] } },
+      // A file of store B's: store A's lookups only see store A's prefix.
+      'GET /v1/admin/media/files/{file}': { id: `${'b'.repeat(64)}.png` },
+    };
+    /** Routes whose path parameter names new content, not a stored row, with the reason. */
+    const exempt: Record<string, string> = {
+      'PUT /v1/admin/media/files/{file}':
+        'the name is the uploaded bytes’ hash, and the file lands in the caller’s own store',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));
@@ -276,10 +284,13 @@ describe('isolation suite', () => {
     const user = await staffIn(a.email, a.id);
     for (const route of withIds) {
       const key = `${route.method.toUpperCase()} ${route.path}`;
+      if (exempt[key]) continue;
       const fixture = fixtures[key];
       expect(fixture, `no isolation fixture for ${key}`).toBeDefined();
       if (!fixture) continue;
-      const path = route.path.replace('/v1/admin', '/api/admin').replace('{id}', fixture.id);
+      const path = route.path
+        .replace('/v1/admin', '/api/admin')
+        .replace(/\{(id|file)\}/, fixture.id);
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);
       expect(res.status, key).toBe(404);
     }

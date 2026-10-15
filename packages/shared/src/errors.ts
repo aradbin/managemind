@@ -18,6 +18,8 @@ export const ERROR_CODES = {
   insufficient_stock: { status: 409, title: 'Not enough stock' },
   in_use: { status: 409, title: 'Still in use' },
   limit_exceeded: { status: 422, title: 'Limit reached' },
+  payload_too_large: { status: 413, title: 'Too large' },
+  unsupported_media_type: { status: 415, title: 'Unsupported file type' },
   idempotency_key_reused: { status: 422, title: 'Idempotency key reused with a different request' },
   idempotency_request_in_progress: {
     status: 409,

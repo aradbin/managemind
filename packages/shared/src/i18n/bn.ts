@@ -26,5 +26,7 @@ export const bn: Messages = {
   'error.insufficient_stock': 'এর জন্য যথেষ্ট স্টক নেই।',
   'error.in_use': 'এটি এখনও ব্যবহার হচ্ছে, তাই মুছে ফেলা যাবে না।',
   'error.limit_exceeded': 'এর সীমা পূর্ণ হয়ে গেছে।',
+  'error.payload_too_large': 'ফাইলটি অনেক বড়।',
+  'error.unsupported_media_type': 'শুধু JPEG, PNG ও WebP ছবি আপলোড করা যায়।',
   'error.internal': 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
 };

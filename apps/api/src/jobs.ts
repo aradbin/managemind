@@ -1,5 +1,7 @@
 // Background entry points: the queue consumer and the daily Cron batch.
 import { type EventType, type OutboxEvent, relayEvents } from '@managemind/core';
+import { objectKey } from '@managemind/shared';
+import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { queueSink, withClient } from './db';
 import { type Env, getConfig } from './env';
@@ -119,7 +121,35 @@ export async function runDailyJobs(
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
     await checkInventoryDrift(client);
+    // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
+    if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);
   });
+}
+
+/**
+ * The weekly image cleanup (phase-2-plan §3.6): images no product or variant
+ * has used for 7 days are deleted, then the files no remaining image of their
+ * store refers to. A file whose R2 delete fails is only orphaned: no row
+ * points at it, and a later upload of the same bytes simply rewrites it.
+ */
+export async function cleanUpMedia(
+  env: Pick<Env, 'FILES'>,
+  client: Parameters<Parameters<typeof withClient>[2]>[0],
+): Promise<{ files: number }> {
+  let files = 0;
+  for (let round = 0; round < 10; round++) {
+    const { rows } = await client.query<{ tenant_id: string; sha256: string; mime: MediaType }>(
+      'select * from app.media_cleanup(500)',
+    );
+    if (rows.length === 0) break;
+    const keys = rows.map((r) =>
+      objectKey('file', r.tenant_id, `media/${r.sha256}.${MEDIA_EXTENSIONS[r.mime]}`),
+    );
+    for (let i = 0; i < keys.length; i += 1000) await env.FILES.delete(keys.slice(i, i + 1000));
+    files += keys.length;
+  }
+  if (files) log('info', 'media cleanup', { files });
+  return { files };
 }
 
 /**

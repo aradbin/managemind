@@ -31,6 +31,7 @@ import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
+import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 
 const Role = z.enum(STORE_ROLES);
 const Locale = z.enum(['bn', 'en']);
@@ -113,6 +114,7 @@ const r = <
 /** Every admin route, by method and path; the isolation suite reads this. */
 export const ADMIN_ROUTES = {
   ...CATALOG_ROUTES,
+  ...MEDIA_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -355,6 +357,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
     return c.body(null, 204);
   });
   registerCatalog(admin);
+  registerMediaRoutes(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

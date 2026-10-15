@@ -2832,6 +2832,252 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/media/files/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of the store’s files, for the admin’s previews (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        /** Upload one resized file, named <sha256>.<ext> (catalog.write; at most 2 MB) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/webp": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            responses: {
+                /** @description Stored, or already there */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            file: string;
+                            bytes: number;
+                            stored: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Images by ID, with their files and alt text (catalog.read) */
+        get: {
+            parameters: {
+                query: {
+                    ids: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Images */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Media"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Register an image from its uploaded files (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mime: "image/webp" | "image/jpeg" | "image/png";
+                        width: number;
+                        height: number;
+                        files: {
+                            width: number;
+                            sha256: string;
+                            bytes: number;
+                        }[];
+                        alt?: {
+                            bn?: string;
+                            en?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Image */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Media"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/media/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch an image by URL for the import’s image step (catalog.write; rate-limited) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The image */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A product's images in order, their alt text and the variants' images (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        images: {
+                            /** Format: uuid */
+                            mediaId: string;
+                            alt?: {
+                                bn?: string | null;
+                                en?: string | null;
+                            };
+                        }[];
+                        variantImages?: {
+                            /** Format: uuid */
+                            variantId: string;
+                            /** Format: uuid */
+                            mediaId: string | null;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/invitations/accept": {
         parameters: {
             query?: never;
@@ -3503,6 +3749,18 @@ export interface components {
                 /** Format: uuid */
                 mediaId: string;
                 position: number;
+                mime: string;
+                width: number;
+                height: number;
+                files: {
+                    width: number;
+                    sha256: string;
+                    bytes: number;
+                }[];
+                alt: {
+                    bn?: string;
+                    en?: string;
+                };
             }[];
             categoryIds: string[];
             collectionIds: string[];
@@ -4641,6 +4899,25 @@ export interface components {
                 line2?: string;
                 city?: string;
             } | null;
+        };
+        Media: {
+            /** Format: uuid */
+            id: string;
+            sha256: string;
+            /** @enum {string} */
+            mime: "image/webp" | "image/jpeg" | "image/png";
+            ext: string;
+            width: number;
+            height: number;
+            files: {
+                width: number;
+                sha256: string;
+                bytes: number;
+            }[];
+            alt: {
+                bn?: string;
+                en?: string;
+            };
         };
         TenantSummary: {
             /** Format: uuid */

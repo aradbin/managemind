@@ -94,7 +94,15 @@ export interface ProductDetail {
   translations: Translated<ProductTranslation>;
   options: ProductOption[];
   variants: ProductVariant[];
-  media: { mediaId: string; position: number }[];
+  media: {
+    mediaId: string;
+    position: number;
+    mime: string;
+    width: number;
+    height: number;
+    files: { width: number; sha256: string; bytes: number }[];
+    alt: Translated<string>;
+  }[];
   categoryIds: string[];
   collectionIds: string[];
   attributes: ProductAttributeValue[];
@@ -149,9 +157,14 @@ const detailSql = (id: string) => sql`
           from store.inventory_levels l where l.variant_id = v.id))
         order by v.position)
       from store.variants v where v.product_id = p.id and v.archived_at is null), '[]'::json),
-    'media', coalesce((select json_agg(json_build_object('mediaId', pm.media_id, 'position', pm.position)
+    'media', coalesce((select json_agg(json_build_object(
+        'mediaId', pm.media_id, 'position', pm.position, 'mime', md.mime,
+        'width', md.width, 'height', md.height, 'files', md.files,
+        'alt', coalesce((select json_object_agg(mt.locale, mt.alt) from store.media_translations mt
+                          where mt.media_id = md.id), '{}'::json))
         order by pm.position)
-      from store.product_media pm where pm.product_id = p.id), '[]'::json),
+      from store.product_media pm join store.media md on md.id = pm.media_id
+      where pm.product_id = p.id), '[]'::json),
     'categoryIds', coalesce((select json_agg(pc.category_id order by pc.category_id)
       from store.product_categories pc where pc.product_id = p.id), '[]'::json),
     'collectionIds', coalesce((select json_agg(cp.collection_id order by cp.collection_id)
