@@ -1,6 +1,7 @@
-# Production resources by hand (phase-0-plan §8). deploy.yml runs the same
-# idempotent script before every deploy; run this one to provision without
-# deploying, or to rotate the mm_app password.
+# Production resources by hand (phase-0-plan §8), then DNS and zone settings
+# (phase-1-plan §10). deploy.yml runs the same idempotent scripts before
+# every deploy; run this one to provision without deploying, or to rotate the
+# mm_app password.
 name: Provision
 
 on:
@@ -28,6 +29,8 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
+      PLATFORM_DOMAIN: ${{ vars.PLATFORM_DOMAIN || 'managemind.site' }}
+      STORE_DOMAIN: ${{ vars.STORE_DOMAIN || 'managemind.store' }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -39,3 +42,4 @@ jobs:
       - run: >-
           pnpm --filter @managemind/scripts exec tsx production/provision.ts
           ${{ inputs.rotate && '--rotate' || '' }}
+      - run: pnpm --filter @managemind/scripts exec tsx production/zones.ts

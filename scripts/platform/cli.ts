@@ -53,10 +53,13 @@ const client = new pg.Client({ connectionString: url });
 await client.connect();
 try {
   const cf = await cloudflare();
-  // The same defaults as the deploy (scripts/production/workers.ts) until the domains are connected.
+  // The same hosts as the deploy (scripts/production/workers.ts).
+  const platformDomain = process.env.PLATFORM_DOMAIN;
   const storeDomain = process.env.STORE_DOMAIN || cf?.workersDev || 'localhost';
   const adminHost =
-    process.env.ADMIN_HOST || (cf ? `managemind-api.${cf.workersDev}` : 'localhost:8787');
+    process.env.ADMIN_HOST ||
+    (platformDomain ? `admin.${platformDomain}` : undefined) ||
+    (cf ? `managemind-api.${cf.workersDev}` : 'localhost:8787');
 
   switch (command) {
     case 'tenant:create': {

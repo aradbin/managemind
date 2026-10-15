@@ -2,8 +2,10 @@
 //
 //   tsx production/workers.ts --hyperdrive <id> --kv <id> --commit <sha>
 //
-// Domains come from the PLATFORM_DOMAIN and STORE_DOMAIN repository
-// variables; until those are set, both Workers stay on workers.dev.
+// With PLATFORM_DOMAIN and STORE_DOMAIN set (deploy.yml passes them), the
+// Workers serve admin.<platform>, api.<platform> and *.<store>; without
+// them (a fork, a fresh account) they stay on workers.dev. workers.dev stays
+// on as well until the uptime monitor has moved (phase-1-plan §10).
 import { parseArgs, requireEnv, setOutput } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { writeWorkerConfigs } from '../lib/workers';
@@ -23,19 +25,29 @@ const workersDev = `${await cf.workersSubdomain()}.workers.dev`;
 
 const api = 'managemind-api';
 const storefront = 'managemind-storefront';
+const platformDomain = process.env.PLATFORM_DOMAIN;
+const storeDomain = process.env.STORE_DOMAIN;
+const routes = Boolean(platformDomain && storeDomain);
 writeWorkerConfigs({
   environment: 'production',
   api,
   storefront,
   hyperdriveId: hyperdrive,
   kvNamespaceId: kv,
-  platformDomain: process.env.PLATFORM_DOMAIN || workersDev,
-  storeDomain: process.env.STORE_DOMAIN || workersDev,
-  // The admin is served by the API Worker until it moves to admin.<domain> (PR 17).
-  adminHost: `${api}.${workersDev}`,
+  platformDomain: platformDomain || workersDev,
+  storeDomain: storeDomain || workersDev,
+  adminHost: routes ? `admin.${platformDomain}` : `${api}.${workersDev}`,
   emailProvider: 'resend',
   commit,
+  routes,
 });
 
-setOutput('api_url', `https://${api}.${workersDev}`);
-setOutput('storefront_url', `https://${storefront}.${workersDev}`);
+// The smoke test's targets. A random store subdomain must answer the
+// storefront's own "store not found" page.
+const probe = `smoke-${commit.slice(0, 7)}`;
+setOutput('api_url', routes ? `https://api.${platformDomain}` : `https://${api}.${workersDev}`);
+setOutput('admin_url', routes ? `https://admin.${platformDomain}` : `https://${api}.${workersDev}`);
+setOutput(
+  'storefront_url',
+  routes ? `https://${probe}.${storeDomain}` : `https://${storefront}.${workersDev}`,
+);

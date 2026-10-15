@@ -25,6 +25,12 @@ export interface WorkerTarget {
   commit: string;
   /** Previews: no Cron Trigger, and outbox events go to this queue, which nothing consumes. */
   previewQueue?: string;
+  /**
+   * Production on its own domains (phase-1-plan §10): admin.<platform> as the
+   * API Worker's custom domain, api.<platform> routes for health checks and
+   * webhooks only, and every <slug>.<store> to the storefront.
+   */
+  routes?: boolean;
 }
 
 type Config = Record<string, unknown> & { vars?: Record<string, string> };
@@ -54,6 +60,13 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.api.dsn,
   };
+  if (t.routes) {
+    api.routes = [
+      { pattern: t.adminHost, custom_domain: true },
+      { pattern: `api.${t.platformDomain}/health*`, zone_name: t.platformDomain },
+      { pattern: `api.${t.platformDomain}/v1/webhooks/*`, zone_name: t.platformDomain },
+    ];
+  }
   if (t.previewQueue) {
     api.queues = { producers: [{ binding: 'OUTBOX', queue: t.previewQueue }] };
     api.triggers = { crons: [] };
@@ -67,6 +80,7 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
+  if (t.routes) storefront.routes = [{ pattern: `*.${t.storeDomain}/*`, zone_name: t.storeDomain }];
   if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),

@@ -21,7 +21,7 @@ pnpm --filter @managemind/api exec wrangler rollback <version-id> --name managem
 
 Without a version ID, `wrangler rollback` goes back one version.
 
-Then confirm that `https://managemind-api.<subdomain>.workers.dev/health` reports the old commit, and that `/health/deep` answers `ok`.
+Then confirm that `https://api.managemind.site/health` reports the old commit, and that `/health/deep` answers `ok`.
 
 ## 2. Stop the next deploy from bringing it back
 

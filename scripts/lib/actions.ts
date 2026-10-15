@@ -17,6 +17,10 @@ export function notice(message: string): void {
   console.log(process.env.GITHUB_ACTIONS ? `::notice::${message}` : message);
 }
 
+export function warning(message: string): void {
+  console.log(process.env.GITHUB_ACTIONS ? `::warning::${message}` : `warning: ${message}`);
+}
+
 export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
