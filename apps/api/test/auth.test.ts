@@ -255,6 +255,12 @@ describe('POST /api/auth: email codes', () => {
     await signIn(b, email);
     const sessions = await (await b.get('/api/auth/list-sessions')).json();
     expect(sessions).toHaveLength(1);
+    // Still listed when the session is days old (no freshness check).
+    await owner.query(
+      `update platform.sessions set created_at = now() - interval '3 days' where user_id = (select id from platform.users where email = $1)`,
+      [email],
+    );
+    expect((await b.get('/api/auth/list-sessions')).status).toBe(200);
     expect((await b.post('/api/auth/sign-out')).status).toBe(200);
     expect(await sessionOf(b)).toBeNull();
   });

@@ -12,18 +12,25 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly problem: Problem | undefined,
+    /** Seconds to wait, from Retry-After on a 429. */
+    readonly retryAfter: number | null = null,
   ) {
     super(problem?.code ?? `http_${status}`);
     this.name = 'ApiError';
   }
 }
 
-/** The data of a successful openapi-fetch result, or an ApiError. */
+/** The data of a successful openapi-fetch result (undefined for a 204), or an ApiError. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
-  if (result.error !== undefined || result.data === undefined) {
-    throw new ApiError(result.response.status, result.error as Problem | undefined);
+  if (result.error !== undefined || !result.response.ok) {
+    const retry = Number(result.response.headers.get('retry-after'));
+    throw new ApiError(
+      result.response.status,
+      result.error as Problem | undefined,
+      Number.isFinite(retry) && retry > 0 ? retry : null,
+    );
   }
-  return result.data;
+  return result.data as T;
 }
 
 export const queryClient = new QueryClient({

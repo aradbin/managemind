@@ -20,6 +20,7 @@
     "@tanstack/react-router": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
+    "lean-qr": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

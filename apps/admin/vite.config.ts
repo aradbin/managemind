@@ -49,6 +49,7 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
+    manifest: true,
     emptyOutDir: true,
     // Source maps only for production deploys, which upload them to Sentry
     // and delete them before deploying; they are never served.

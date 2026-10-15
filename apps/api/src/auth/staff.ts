@@ -103,6 +103,10 @@ export function createStaffAuth(o: StaffAuthOptions) {
       updateAge: SESSION_REFRESH_SECONDS,
       // Off: it allowed cross-store session replay (ADR 0005). A test pins it.
       cookieCache: { enabled: false },
+      // No "fresh session" check: of the allowed endpoints it only guards
+      // list-sessions, and seeing your own sessions on day 2 of 7 shouldn't
+      // need a new sign-in (phase-1-plan §5.5).
+      freshAge: 0,
       additionalFields: {
         activeTenantId: { type: 'string', required: false, input: false },
       },

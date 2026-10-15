@@ -6,8 +6,8 @@
 // 3 MiB. Build the apps first: the API serves the admin's dist as assets.
 //
 // apps/admin is checked differently (phase-1-plan §7.3): the JavaScript a
-// phone downloads before the sign-in screen (the entry script and its
-// modulepreloads in index.html), gzipped, at most 150 KiB.
+// phone downloads before the sign-in screen (the entry, the sign-in route's
+// chunk and their static imports), gzipped, at most 150 KiB.
 //
 // Usage: node scripts/bundle-size.mjs apps/api apps/storefront apps/admin
 import { spawnSync } from 'node:child_process';
@@ -33,19 +33,27 @@ const ADMIN_WARN_KIB = 130;
 const ADMIN_FAIL_KIB = 150;
 let admin = null;
 
-/** Gzipped size of the admin's initial JavaScript, from its built index.html. */
+/**
+ * Gzipped size of the JavaScript a phone downloads before the sign-in screen
+ * shows: the entry, the sign-in route's lazy chunk, and everything either
+ * imports statically, read from Vite's build manifest.
+ */
 function adminInitialJs(app) {
   const dist = resolve(app, 'dist');
-  const html = readFileSync(join(dist, 'index.html'), 'utf8');
-  const files = [
-    ...html.matchAll(/<script[^>]+type="module"[^>]+src="([^"]+)"/g),
-    ...html.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="([^"]+)"/g),
-  ].map((m) => m[1]);
-  if (files.length === 0) throw new Error(`${app}: no module scripts in dist/index.html`);
-  return files.reduce(
-    (kib, f) => kib + gzipSync(readFileSync(join(dist, f)), { level: 9 }).length / 1024,
-    0,
-  );
+  const manifest = JSON.parse(readFileSync(join(dist, '.vite/manifest.json'), 'utf8'));
+  const roots = ['index.html', 'src/routes/sign-in.tsx?tsr-split=component'];
+  const files = new Set();
+  const visit = (key) => {
+    const chunk = manifest[key];
+    if (!chunk) throw new Error(`${app}: ${key} is not in the build manifest`);
+    if (files.has(chunk.file)) return;
+    files.add(chunk.file);
+    for (const dep of chunk.imports ?? []) visit(dep);
+  };
+  for (const root of roots) visit(root);
+  return [...files]
+    .filter((f) => f.endsWith('.js'))
+    .reduce((kib, f) => kib + gzipSync(readFileSync(join(dist, f)), { level: 9 }).length / 1024, 0);
 }
 
 for (const app of apps) {
@@ -107,7 +115,7 @@ const table = [
   ...(admin
     ? [
         '',
-        '| Admin | Initial JS (gzip) | Share of 150 KiB | Status |',
+        '| Admin | Sign-in JS (gzip) | Share of 150 KiB | Status |',
         '| --- | --- | --- | --- |',
         `| ${admin.app} | ${admin.gzip.toFixed(0)} KiB | ${((admin.gzip / ADMIN_FAIL_KIB) * 100).toFixed(0)}% | ${admin.status} |`,
       ]

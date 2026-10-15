@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ShellRouteImport } from './routes/_shell'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
 import { Route as ShellSettingsRouteImport } from './routes/_shell/settings'
@@ -19,9 +21,19 @@ const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TwoFactorRoute = TwoFactorRouteImport.update({
+  id: '/two-factor',
+  path: '/two-factor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShellIndexRoute = ShellIndexRouteImport.update({
@@ -42,12 +54,16 @@ const ShellSettingsRoute = ShellSettingsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
+  '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
+  '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/settings': typeof ShellSettingsRoute
 }
 export interface FileRoutesByTo {
+  '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
+  '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/settings': typeof ShellSettingsRoute
   '/': typeof ShellIndexRoute
@@ -55,20 +71,25 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_shell': typeof ShellRouteWithChildren
+  '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
+  '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
   '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/': typeof ShellIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/account' | '/settings'
+  fullPaths:
+    '/' | '/invite' | '/sign-in' | '/two-factor' | '/account' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in' | '/account' | '/settings' | '/'
+  to: '/invite' | '/sign-in' | '/two-factor' | '/account' | '/settings' | '/'
   id:
     | '__root__'
     | '/_shell'
+    | '/invite'
     | '/sign-in'
+    | '/two-factor'
     | '/_shell/account'
     | '/_shell/settings'
     | '/_shell/'
@@ -76,7 +97,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   ShellRoute: typeof ShellRouteWithChildren
+  InviteRoute: typeof InviteRoute
   SignInRoute: typeof SignInRoute
+  TwoFactorRoute: typeof TwoFactorRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,11 +111,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/two-factor': {
+      id: '/two-factor'
+      path: '/two-factor'
+      fullPath: '/two-factor'
+      preLoaderRoute: typeof TwoFactorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_shell/': {
@@ -135,7 +172,9 @@ const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   ShellRoute: ShellRouteWithChildren,
+  InviteRoute: InviteRoute,
   SignInRoute: SignInRoute,
+  TwoFactorRoute: TwoFactorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
