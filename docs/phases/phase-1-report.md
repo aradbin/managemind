@@ -89,17 +89,19 @@ For comparison:
 
 **Where the time goes.** A local profile of 1,500 `GET /me` requests in Node took about 8.8 ms of busy CPU per request; Workers runs about 2.5 times slower.
 
-- About 15% is Drizzle rebuilding its relational config on every `createDb` call (twice per request). The relational query API is never used.
+- Drizzle rebuilt its relational config on every `createDb` call (twice per request), though the relational query API is never used. The profile put this at about 15%.
 - About 13% is building a Better Auth instance per request.
 - The rest is spread across the Postgres driver, garbage collection, crypto, zod and Hono.
 - `/me` sends 7 SQL statements, and one of them is redundant (the platform role is read again after the user row).
 
-There is no slow query or slow route to fix; removing the two avoidable costs would bring the Workers median from about 25 ms to about 19 ms.
+There is no slow query or slow route to fix.
+
+**Follow-up, measured.** The PR after this report builds Drizzle without the relational config and passes the session's platform role to `actorFor`, dropping a query. Locally, `GET /me` went from a median of about 8.75 ms to about 8.0 ms of CPU (2 runs of 600 requests each, before and after); `PATCH /store` didn't change beyond noise. So the real gain is about 9%, smaller than the profile suggested. Reusing one Better Auth instance per isolate is the remaining larger item: its database handle is per request, so it needs a request-scoped adapter, and it is left for when the numbers call for it.
 
 **Recommendation.**
 
 1. Keep ADR 0003's policy. Staff requests are a small share of traffic, and none has been stopped.
-2. A small follow-up removes the avoidable work: cache Drizzle's config, read the platform role from the session user, and reuse one Better Auth instance per isolate.
+2. The cheap fixes are done (above). Sharing the Better Auth instance waits until the warm p99 stays over 50 ms.
 3. If Cloudflare ever stops a request (`exceededCpu`), move to Workers Paid ($5 a month, 30 s CPU), as ADR 0013 already decided.
 4. Close #40 with this explanation, and keep the 50 ms line as a regression alarm for the warm numbers above.
 

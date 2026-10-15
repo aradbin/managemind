@@ -4,7 +4,7 @@
 // member or a revoked grant loses access on their next request.
 import { type Actor, actorFor, relayEvents, type TenantTx, withTenant } from '@managemind/core';
 import { createDb, schema } from '@managemind/db';
-import { AppError } from '@managemind/shared';
+import { AppError, isPlatformRole } from '@managemind/shared';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -41,7 +41,11 @@ export const staffSession = createMiddleware<StaffEnv>(async (c, next) => {
     const session = response.session as typeof response.session & {
       activeTenantId?: string | null;
     };
-    const actor = await actorFor(db, response.user.id, session.activeTenantId ?? null);
+    // getSession just read the user row (no cookie cache), platform role included.
+    const role = (response.user as { platformRole?: unknown }).platformRole;
+    const actor = await actorFor(db, response.user.id, session.activeTenantId ?? null, {
+      platformRole: isPlatformRole(role) ? role : null,
+    });
     const user = response.user as unknown as Staff['user'];
     c.set('staff', { client, actor, sessionId: session.id, user });
     c.set('userId', user.id);
