@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 20
     environment:
       name: production
-      url: ${{ steps.workers.outputs.api_url }}/health
+      url: ${{ steps.workers.outputs.admin_url }}
     env:
       TURBO_TELEMETRY_DISABLED: 1
       WRANGLER_SEND_METRICS: false
@@ -38,8 +38,9 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      PLATFORM_DOMAIN: ${{ vars.PLATFORM_DOMAIN }}
-      STORE_DOMAIN: ${{ vars.STORE_DOMAIN }}
+      # Production's domains (phase-1-plan §10); repository variables override them.
+      PLATFORM_DOMAIN: ${{ vars.PLATFORM_DOMAIN || 'managemind.site' }}
+      STORE_DOMAIN: ${{ vars.STORE_DOMAIN || 'managemind.store' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -62,6 +63,8 @@ jobs:
       - name: Provision and migrate
         id: provision
         run: pnpm --filter @managemind/scripts exec tsx production/provision.ts
+      - name: DNS and zone settings
+        run: pnpm --filter @managemind/scripts exec tsx production/zones.ts
       - name: Worker configs
         id: workers
         run: >-
@@ -104,20 +107,27 @@ jobs:
       - name: Smoke test
         env:
           API_URL: ${{ steps.workers.outputs.api_url }}
+          ADMIN_URL: ${{ steps.workers.outputs.admin_url }}
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
         run: |
-          # A just-created workers.dev Worker is not on every edge at once: for
-          # about a minute some requests get Cloudflare's own 404. Retry each
-          # check for up to 2 minutes.
+          # A new Worker, route or custom domain is not on every edge at once,
+          # and a new custom domain waits for its certificate: some requests get
+          # Cloudflare's own errors for a few minutes. Retry each check for up
+          # to 5 minutes.
           retry() {
-            for i in $(seq 1 30); do "$1" && return 0; sleep 4; done
+            for i in $(seq 1 75); do "$1" && return 0; sleep 4; done
             echo "::error::smoke check $1 failed"; return 1
           }
           # The new version is live once /health reports this commit.
           live() { [ "$(curl -fsS "$API_URL/health" | jq -r .commit)" = "$COMMIT_SHA" ]; }
           database() { curl -fsS "$API_URL/health/deep" | jq -e '.status == "ok"' > /dev/null; }
-          # No stores are live yet, so the storefront answers its own 404 page
-          # (Cloudflare's 404 is a short text/plain body).
+          # The admin's shell from static assets, and the API under it.
+          admin() {
+            curl -fsS "$ADMIN_URL/" | grep -q '<div id="root">' &&
+              [ "$(curl -sS -o /dev/null -w '%{http_code}' "$ADMIN_URL/api/admin/me")" = 401 ]
+          }
+          # A store address that doesn't exist answers the storefront's own 404
+          # page (Cloudflare's 404 is a short text/plain body).
           storefront() {
             body=$(curl -sS -w '\n%{http_code}' "$STOREFRONT_URL/")
             case "${body##*$'\n'}" in
@@ -128,7 +138,9 @@ jobs:
           }
           retry live
           retry database
+          retry admin
           retry storefront
           echo "### Deployed $COMMIT_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Admin: $ADMIN_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "- API: $API_URL/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Storefront: $STOREFRONT_URL" >> "$GITHUB_STEP_SUMMARY"

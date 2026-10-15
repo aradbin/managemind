@@ -1,4 +1,4 @@
-// The few Cloudflare API calls the deploy, preview and platform workflows need.
+// The few Cloudflare API calls the deploy, preview, platform and zone scripts need.
 import { type ApiClient, apiClient, HttpError } from './http';
 
 interface Envelope<T> {
@@ -14,6 +14,20 @@ export interface LifecycleRule {
   prefix: string;
   deleteAfterDays?: number;
   abortUploadsAfterDays?: number;
+}
+export interface DnsRecord {
+  id: string;
+  type: string;
+  name: string;
+  content: string;
+  proxied?: boolean;
+}
+export interface WafRule {
+  ref: string;
+  description: string;
+  expression: string;
+  action: 'block' | 'managed_challenge' | 'skip';
+  enabled?: boolean;
 }
 export interface Origin {
   host: string;
@@ -218,6 +232,76 @@ export class Cloudflare {
       },
     });
     return res.result.calculations ?? [];
+  }
+
+  /** A zone's ID by name (zones aren't account-scoped in the API). */
+  async zoneId(name: string): Promise<string> {
+    const res = await this.api.request<Envelope<{ id: string }[]>>(
+      'GET',
+      `/zones?name=${encodeURIComponent(name)}`,
+    );
+    const zone = res.result[0];
+    if (!zone) throw new Error(`zone ${name} is not on this Cloudflare account`);
+    return zone.id;
+  }
+
+  async dnsRecords(zoneId: string, name: string, type?: string): Promise<DnsRecord[]> {
+    const query = `name=${encodeURIComponent(name)}${type ? `&type=${type}` : ''}`;
+    return (
+      await this.api.request<Envelope<DnsRecord[]>>('GET', `/zones/${zoneId}/dns_records?${query}`)
+    ).result;
+  }
+
+  /**
+   * A proxied placeholder (AAAA 100::) so a Workers route on `name` gets
+   * traffic. Leaves an existing proxied record alone; returns what it did.
+   */
+  async ensureRoutePlaceholder(
+    zoneId: string,
+    name: string,
+  ): Promise<'created' | 'proxied' | 'kept'> {
+    const existing = (await this.dnsRecords(zoneId, name)).find((r) =>
+      ['A', 'AAAA', 'CNAME'].includes(r.type),
+    );
+    if (existing?.proxied) return 'kept';
+    if (existing) {
+      await this.api.request('PATCH', `/zones/${zoneId}/dns_records/${existing.id}`, {
+        proxied: true,
+      });
+      return 'proxied';
+    }
+    await this.api.request('POST', `/zones/${zoneId}/dns_records`, {
+      type: 'AAAA',
+      name,
+      content: '100::',
+      proxied: true,
+      comment: 'Workers route placeholder (scripts/production/zones.ts)',
+    });
+    return 'created';
+  }
+
+  /** The zone's "Block AI bots" setting. */
+  async blockAiBots(zoneId: string): Promise<void> {
+    await this.api.request('PUT', `/zones/${zoneId}/bot_management`, {
+      ai_bots_protection: 'block',
+    });
+  }
+
+  /**
+   * Puts one WAF custom rule (by `ref`) into the zone's custom-rules entry
+   * point, keeping every other rule as it is.
+   */
+  async ensureWafRule(zoneId: string, rule: WafRule): Promise<void> {
+    const path = `/zones/${zoneId}/rulesets/phases/http_request_firewall_custom/entrypoint`;
+    let rules: (WafRule & { id?: string })[] = [];
+    try {
+      rules =
+        (await this.api.request<Envelope<{ rules?: WafRule[] }>>('GET', path)).result.rules ?? [];
+    } catch (e) {
+      if (!(e instanceof HttpError && e.status === 404)) throw e;
+    }
+    const others = rules.filter((r) => r.ref !== rule.ref).map(({ id: _id, ...r }) => r);
+    await this.api.request('PUT', path, { rules: [...others, { ...rule, enabled: true }] });
   }
 
   private async ignore404(fn: () => Promise<unknown>): Promise<void> {
