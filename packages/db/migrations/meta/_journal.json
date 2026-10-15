@@ -50,6 +50,27 @@
       "when": 1791993985688,
       "tag": "0006_verifications_text_id",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792081877966,
+      "tag": "0007_catalog_extensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792081898472,
+      "tag": "0008_catalog_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792081904291,
+      "tag": "0009_catalog_rls_and_grants",
+      "breakpoints": true
     }
   ]
 }

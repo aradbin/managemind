@@ -73,6 +73,13 @@ describe('createTenant', () => {
       [id, ownerUserId],
     );
     expect(member?.role).toBe('owner');
+    // The store's defaults: the built-in brand attribute.
+    expect(
+      await one(
+        `select key, is_system from store.attributes where tenant_id = $1 order by key`,
+        [id],
+      ),
+    ).toEqual([{ key: 'brand', is_system: true }]);
     const [u] = await one(`select email_verified, locale from platform.users where id = $1`, [
       ownerUserId,
     ]);

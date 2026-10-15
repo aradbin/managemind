@@ -8,7 +8,7 @@ import {
   type StoreProfile,
   tenantSettings,
 } from '@managemind/shared/settings';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize, requirePlatformRole } from '../access';
 import { recordAudit } from '../audit';
 import { emit } from '../outbox';
@@ -41,7 +41,7 @@ const pgError = (e: unknown) => {
 /**
  * Creates a store with its first Owner in one transaction: the tenant with
  * default settings, the owner's user (reused if the email exists), the Owner
- * membership, both audit entries and `tenant.created`.
+ * membership, the store's defaults, both audit entries and `tenant.created`.
  */
 export async function createTenant(
   client: DbClient,
@@ -91,6 +91,8 @@ export async function createTenant(
           role: 'owner',
           invitedBy: actor.userId,
         });
+        // What every store starts with (the built-in brand attribute; migration 0009).
+        await tx.db.execute(sql`select app.create_store_defaults()`);
 
         const after = { slug, name, defaultLocale, ownerUserId };
         const who = auditActor(actor, 'platform');
