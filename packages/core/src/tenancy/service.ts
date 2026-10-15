@@ -91,7 +91,7 @@ export async function createTenant(
           role: 'owner',
           invitedBy: actor.userId,
         });
-        // What every store starts with (the built-in brand attribute; migration 0009).
+        // What every store starts with: the brand attribute and a stock location (migration 0011).
         await tx.db.execute(sql`select app.create_store_defaults()`);
 
         const after = { slug, name, defaultLocale, ownerUserId };

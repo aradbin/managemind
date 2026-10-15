@@ -58,13 +58,29 @@ describe('store defaults', () => {
     }
   });
 
+  it('gives every store one default stock location, named in its language', async () => {
+    const names = [];
+    for (const tenant of [TENANT_A, TENANT_B]) {
+      const { rows } = await inTenant(app, tenant, () =>
+        app.query(`select name from store.stock_locations where is_default`),
+      );
+      names.push(rows.map((r) => r.name));
+    }
+    // Store A is in English, store B in Bangla (seed.ts).
+    expect(names).toEqual([['Main stock'], ['প্রধান স্টক']]);
+  });
+
   it('is idempotent', async () => {
     await inA(async () => {
       await app.query('select app.create_store_defaults()');
       const { n } = await one<{ n: string }>(
-        `select count(*) as n from store.attributes where key = 'brand'`,
+        `select (select count(*) from store.attributes where key = 'brand')
+              + (select count(*) from store.stock_locations where is_default) as n`,
       );
-      expect(Number(n)).toBe(1);
+      expect(Number(n)).toBe(2);
+      await expect(
+        app.query(`insert into store.stock_locations (name, is_default) values ('Second', true)`),
+      ).rejects.toThrow(/stock_locations_one_default/);
     });
   });
 });
@@ -322,6 +338,110 @@ describe('text checks', () => {
           `insert into store.collections (kind, rules, sort) values ('rule', '{}', 'manual')`,
         ),
       ).rejects.toThrow(/collections_rules_match_kind/);
+    });
+  });
+});
+
+describe('stock ledger', () => {
+  const setup = async () => {
+    const { id: productId } = await newProduct();
+    const variant = await one<{ id: string }>(
+      `insert into store.variants (product_id, options_key, price) values ($1, '', 100) returning id`,
+      [productId],
+    );
+    const location = await one<{ id: string }>(
+      `select id from store.stock_locations where is_default`,
+    );
+    const move = (type: string, quantity: number, key: string | null = null) =>
+      app.query(
+        `insert into store.stock_movements (variant_id, location_id, type, quantity, reason, actor_type, idempotency_key)
+         values ($1, $2, $3, $4, 'test', 'system', $5)`,
+        [variant.id, location.id, type, quantity, key],
+      );
+    return { variant, move };
+  };
+
+  it('ties each movement type to its sign', async () => {
+    await inA(async () => {
+      const { move } = await setup();
+      const refused: [string, number][] = [
+        ['receive', -1],
+        ['return', 0],
+        ['sale', 2],
+        ['reservation', -1],
+        ['release', 1],
+        ['adjustment', 0],
+        ['theft', -1],
+      ];
+      for (const [type, quantity] of refused) {
+        await app.query('savepoint s');
+        await expect(move(type, quantity), `${type} ${quantity}`).rejects.toThrow(
+          /stock_movements_type_sign/,
+        );
+        await app.query('rollback to savepoint s');
+      }
+      for (const [type, quantity] of [
+        ['receive', 5],
+        ['sale', -1],
+        ['reservation', 2],
+        ['release', -2],
+        ['adjustment', -1],
+        ['return', 1],
+      ] as const) {
+        await move(type, quantity);
+      }
+    });
+  });
+
+  it('writes a repeated idempotency key only once', async () => {
+    await inA(async () => {
+      const { move } = await setup();
+      await move('receive', 5, 'import:job:2');
+      await expect(move('receive', 5, 'import:job:2')).rejects.toThrow(
+        /stock_movements_idempotency_unique/,
+      );
+    });
+  });
+
+  it('is append-only for the app, and keeps a variant with history from being deleted', async () => {
+    await inA(async () => {
+      const { variant, move } = await setup();
+      await move('receive', 5);
+      for (const sql of [
+        'update store.stock_movements set quantity = 50',
+        'delete from store.stock_movements',
+      ]) {
+        await app.query('savepoint s');
+        await expect(app.query(sql)).rejects.toThrow(/permission denied/);
+        await app.query('rollback to savepoint s');
+      }
+      await expect(
+        app.query('delete from store.variants where id = $1', [variant.id]),
+      ).rejects.toThrow(/stock_movements_variant_fk/);
+    });
+  });
+});
+
+describe('media', () => {
+  it('keeps one row per image and refuses a malformed hash or type', async () => {
+    await inA(async () => {
+      const insert = (sha: string, mime = 'image/webp') =>
+        app.query(
+          `insert into store.media (sha256, mime, width, height, files) values ($1, $2, 800, 600, '[]')`,
+          [sha, mime],
+        );
+      const sha = 'a'.repeat(64);
+      await insert(sha);
+      const refused: [string, string, string][] = [
+        [sha, 'image/webp', 'media_sha256_unique'],
+        ['A'.repeat(64), 'image/webp', 'media_sha256_format'],
+        ['b'.repeat(64), 'image/svg+xml', 'media_mime_valid'],
+      ];
+      for (const [hash, mime, constraint] of refused) {
+        await app.query('savepoint s');
+        await expect(insert(hash, mime)).rejects.toMatchObject({ constraint });
+        await app.query('rollback to savepoint s');
+      }
     });
   });
 });

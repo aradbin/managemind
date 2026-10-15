@@ -7,6 +7,12 @@
  * the tables it references, so deleting in this order never hits a foreign key.
  */
 export const STORE_TABLES = [
+  // Imports and inventory
+  'import_images',
+  'import_errors',
+  'import_jobs',
+  'stock_movements',
+  'inventory_levels',
   // Catalog: attributes and tags
   'product_attribute_translations',
   'product_attributes',
@@ -32,7 +38,11 @@ export const STORE_TABLES = [
   'product_option_translations',
   'product_options',
   'product_translations',
+  'product_media',
   'products',
+  'media_translations',
+  'media',
+  'stock_locations',
   // Platform core
   'outbox',
   'audit_log',

@@ -73,13 +73,15 @@ describe('createTenant', () => {
       [id, ownerUserId],
     );
     expect(member?.role).toBe('owner');
-    // The store's defaults: the built-in brand attribute.
+    // The store's defaults: the built-in brand attribute and a default stock location.
     expect(
-      await one(
-        `select key, is_system from store.attributes where tenant_id = $1 order by key`,
-        [id],
-      ),
+      await one(`select key, is_system from store.attributes where tenant_id = $1 order by key`, [
+        id,
+      ]),
     ).toEqual([{ key: 'brand', is_system: true }]);
+    expect(
+      await one(`select name from store.stock_locations where tenant_id = $1 and is_default`, [id]),
+    ).toEqual([{ name: 'Main stock' }]);
     const [u] = await one(`select email_verified, locale from platform.users where id = $1`, [
       ownerUserId,
     ]);

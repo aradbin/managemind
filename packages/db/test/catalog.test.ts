@@ -78,10 +78,11 @@ describe.each(tables)('store.%s', (table) => {
 });
 
 describe('database-wide rules', () => {
-  it('keeps the audit log append-only for the app', async () => {
+  it.each(['audit_log', 'stock_movements'])('keeps %s append-only for the app', async (table) => {
     const { rows } = await db.query<{ privilege_type: string }>(
       `select privilege_type from information_schema.role_table_grants
-        where grantee = 'app_rw' and table_schema = 'store' and table_name = 'audit_log' order by 1`,
+        where grantee = 'app_rw' and table_schema = 'store' and table_name = $1 order by 1`,
+      [table],
     );
     expect(rows.map((r) => r.privilege_type)).toEqual(['INSERT', 'SELECT']);
   });

@@ -24,6 +24,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { media } from './media';
 import { store, tenantColumns, tenantPolicy } from './tenant-table';
 
 export const CATALOG_LOCALES = ['bn', 'en'] as const;
@@ -244,6 +245,8 @@ export const variants = store.table(
     trackInventory: boolean().notNull().default(true),
     allowBackorder: boolean().notNull().default(false),
     lowStockThreshold: integer(),
+    /** One of the product's images, shown when this variant is chosen. */
+    imageMediaId: uuid(),
     position: smallint().notNull().default(0),
     /** Set when the variant's combination disappeared; kept for stock history and orders. */
     archivedAt: ts(),
@@ -254,6 +257,8 @@ export const variants = store.table(
     tenantPolicy(t),
     tenantIdUnique('variants', t),
     ref('variants_product_fk', [t.tenantId, t.productId], [products.tenantId, products.id]),
+    // The image cleanup only removes images nothing points at.
+    ref('variants_image_fk', [t.tenantId, t.imageMediaId], [media.tenantId, media.id], 'restrict'),
     // SKUs are matched case-insensitively (the import matches on them). An
     // archived variant frees its SKU and its combination.
     uniqueIndex('variants_sku_unique')
@@ -298,6 +303,26 @@ export const variantOptionValues = store.table(
       [productOptionValues.tenantId, productOptionValues.id],
     ),
     index('variant_option_values_value_idx').on(t.tenantId, t.valueId),
+  ],
+);
+
+/** A product's images, in order (at most 10, phase-2-plan Q3). */
+export const productMedia = store.table(
+  'product_media',
+  {
+    ...tenantColumns(),
+    productId: uuid().notNull(),
+    mediaId: uuid().notNull(),
+    position: smallint().notNull(),
+  },
+  (t) => [
+    tenantPolicy(t),
+    primaryKey({ columns: [t.tenantId, t.productId, t.mediaId] }),
+    ref('product_media_product_fk', [t.tenantId, t.productId], [products.tenantId, products.id]),
+    ref('product_media_media_fk', [t.tenantId, t.mediaId], [media.tenantId, media.id], 'restrict'),
+    index('product_media_order_idx').on(t.tenantId, t.productId, t.position),
+    index('product_media_media_idx').on(t.tenantId, t.mediaId),
+    check('product_media_position_range', sql`${t.position} between 0 and 9`),
   ],
 );
 

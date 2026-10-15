@@ -71,6 +71,20 @@
       "when": 1792081904291,
       "tag": "0009_catalog_rls_and_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792082183503,
+      "tag": "0010_media_inventory_imports",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792082184570,
+      "tag": "0011_media_inventory_rls_and_grants",
+      "breakpoints": true
     }
   ]
 }

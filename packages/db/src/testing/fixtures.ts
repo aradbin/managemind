@@ -85,4 +85,30 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   product_tags: (tenant) =>
     `insert into store.product_tags (tenant_id, product_id, tag)
      values (${tenant}, ${first('products')}, 'fixture-' || gen_random_uuid())`,
+  media: (tenant) =>
+    `insert into store.media (tenant_id, sha256, mime, width, height, files)
+     values (${tenant}, encode(sha256(gen_random_uuid()::text::bytea), 'hex'), 'image/webp', 1200, 1200,
+             '[{"width": 1200, "sha256": "0", "bytes": 1}]')`,
+  media_translations: (tenant) =>
+    `insert into store.media_translations (tenant_id, media_id, locale, alt)
+     values (${tenant}, ${first('media')}, 'en', 'Fixture')`,
+  product_media: (tenant) =>
+    `insert into store.product_media (tenant_id, product_id, media_id, position)
+     values (${tenant}, ${first('products')}, ${first('media')}, 0)`,
+  stock_locations: (tenant) =>
+    `insert into store.stock_locations (tenant_id, name) values (${tenant}, 'Fixture')`,
+  inventory_levels: (tenant) =>
+    `insert into store.inventory_levels (tenant_id, variant_id, location_id)
+     values (${tenant}, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")})`,
+  stock_movements: (tenant) =>
+    `insert into store.stock_movements (tenant_id, variant_id, location_id, type, quantity, reason, actor_type)
+     values (${tenant}, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")}, 'receive', 1, 'fixture', 'system')`,
+  import_jobs: (tenant) =>
+    `insert into store.import_jobs (tenant_id, file_name, chunk_count) values (${tenant}, 'fixture.xlsx', 1)`,
+  import_errors: (tenant) =>
+    `insert into store.import_errors (tenant_id, job_id, row, field, code, message)
+     values (${tenant}, ${first('import_jobs')}, 2, 'price', 'invalid', 'not a price')`,
+  import_images: (tenant) =>
+    `insert into store.import_images (tenant_id, job_id, row, product_id, url, position)
+     values (${tenant}, ${first('import_jobs')}, 2, ${first('products')}, 'https://example.test/a.jpg', 0)`,
 };
