@@ -1567,6 +1567,8 @@ export interface components {
             /** @enum {string|null} */
             role: "owner" | "manager" | "staff" | "viewer" | null;
             supportGrant: boolean;
+            /** Format: uuid */
+            supportGrantId: string | null;
             permissions: ("settings.read" | "settings.write" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
         };
         Store: {

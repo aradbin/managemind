@@ -10,7 +10,8 @@
     "./sentry": "./src/sentry.ts",
     "./settings": "./src/tenant-settings.ts",
     "./permissions": "./src/permissions.ts",
-    "./phone": "./src/phone.ts"
+    "./phone": "./src/phone.ts",
+    "./slug": "./src/slug.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

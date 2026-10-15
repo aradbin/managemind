@@ -47,3 +47,13 @@ export const meQuery = {
   queryKey: ['me'] as const,
   queryFn: async () => unwrap(await api.GET('/v1/admin/me')),
 };
+
+/** Which environment this is (production, preview, development), from /health. */
+export const healthQuery = {
+  queryKey: ['health'] as const,
+  queryFn: async () => {
+    const res = await fetch('/health');
+    return (await res.json()) as { environment: string; commit: string };
+  },
+  staleTime: Number.POSITIVE_INFINITY,
+};

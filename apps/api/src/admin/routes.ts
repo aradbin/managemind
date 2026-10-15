@@ -64,6 +64,8 @@ const Me = z
     activeStore: z.uuid().nullable(),
     role: Role.nullable(),
     supportGrant: z.boolean(),
+    /** The live support grant behind this access, so support can end it early. */
+    supportGrantId: z.uuid().nullable(),
     permissions: z.array(z.enum(PERMISSIONS)),
   })
   .openapi('Me');
@@ -228,6 +230,7 @@ async function me(c: Context<StaffEnv>) {
     activeStore: actor.tenantId ?? null,
     role: actor.storeRole ?? null,
     supportGrant: Boolean(actor.supportGrantId),
+    supportGrantId: actor.supportGrantId ?? null,
     permissions: [...actor.permissions],
   };
 }

@@ -15,9 +15,15 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
+import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
+import { Route as ShellDevMailboxRouteImport } from './routes/_shell/dev/mailbox'
+import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
+import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
+import { Route as ShellPlatformStaffRouteImport } from './routes/_shell/platform/staff'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
 import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
 import { Route as ShellSettingsStoreRouteImport } from './routes/_shell/settings/store'
+import { Route as ShellPlatformTenantsIdRouteImport } from './routes/_shell/platform/tenants.$id'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -48,6 +54,31 @@ const ShellAccountRoute = ShellAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellPlatformRoute = ShellPlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellDevMailboxRoute = ShellDevMailboxRouteImport.update({
+  id: '/dev/mailbox',
+  path: '/dev/mailbox',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellPlatformIndexRoute = ShellPlatformIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
+const ShellPlatformAuditRoute = ShellPlatformAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
+const ShellPlatformStaffRoute = ShellPlatformStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
 const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -63,6 +94,11 @@ const ShellSettingsStoreRoute = ShellSettingsStoreRouteImport.update({
   path: '/settings/store',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellPlatformTenantsIdRoute = ShellPlatformTenantsIdRouteImport.update({
+  id: '/tenants/$id',
+  path: '/tenants/$id',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
@@ -70,9 +106,15 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
+  '/platform': typeof ShellPlatformRouteWithChildren
+  '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/platform/audit': typeof ShellPlatformAuditRoute
+  '/platform/staff': typeof ShellPlatformStaffRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
+  '/platform/': typeof ShellPlatformIndexRoute
   '/settings/': typeof ShellSettingsIndexRoute
+  '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
 }
 export interface FileRoutesByTo {
   '/invite': typeof InviteRoute
@@ -80,9 +122,14 @@ export interface FileRoutesByTo {
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/': typeof ShellIndexRoute
+  '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/platform/audit': typeof ShellPlatformAuditRoute
+  '/platform/staff': typeof ShellPlatformStaffRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
+  '/platform': typeof ShellPlatformIndexRoute
   '/settings': typeof ShellSettingsIndexRoute
+  '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,10 +138,16 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
+  '/_shell/platform': typeof ShellPlatformRouteWithChildren
   '/_shell/': typeof ShellIndexRoute
+  '/_shell/dev/mailbox': typeof ShellDevMailboxRoute
+  '/_shell/platform/audit': typeof ShellPlatformAuditRoute
+  '/_shell/platform/staff': typeof ShellPlatformStaffRoute
   '/_shell/settings/staff': typeof ShellSettingsStaffRoute
   '/_shell/settings/store': typeof ShellSettingsStoreRoute
+  '/_shell/platform/': typeof ShellPlatformIndexRoute
   '/_shell/settings/': typeof ShellSettingsIndexRoute
+  '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -104,9 +157,15 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/account'
+    | '/platform'
+    | '/dev/mailbox'
+    | '/platform/audit'
+    | '/platform/staff'
     | '/settings/staff'
     | '/settings/store'
+    | '/platform/'
     | '/settings/'
+    | '/platform/tenants/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/invite'
@@ -114,9 +173,14 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/account'
     | '/'
+    | '/dev/mailbox'
+    | '/platform/audit'
+    | '/platform/staff'
     | '/settings/staff'
     | '/settings/store'
+    | '/platform'
     | '/settings'
+    | '/platform/tenants/$id'
   id:
     | '__root__'
     | '/_shell'
@@ -124,10 +188,16 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/_shell/account'
+    | '/_shell/platform'
     | '/_shell/'
+    | '/_shell/dev/mailbox'
+    | '/_shell/platform/audit'
+    | '/_shell/platform/staff'
     | '/_shell/settings/staff'
     | '/_shell/settings/store'
+    | '/_shell/platform/'
     | '/_shell/settings/'
+    | '/_shell/platform/tenants/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,6 +251,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAccountRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/platform': {
+      id: '/_shell/platform'
+      path: '/platform'
+      fullPath: '/platform'
+      preLoaderRoute: typeof ShellPlatformRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/dev/mailbox': {
+      id: '/_shell/dev/mailbox'
+      path: '/dev/mailbox'
+      fullPath: '/dev/mailbox'
+      preLoaderRoute: typeof ShellDevMailboxRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/platform/': {
+      id: '/_shell/platform/'
+      path: '/'
+      fullPath: '/platform/'
+      preLoaderRoute: typeof ShellPlatformIndexRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
+    '/_shell/platform/audit': {
+      id: '/_shell/platform/audit'
+      path: '/audit'
+      fullPath: '/platform/audit'
+      preLoaderRoute: typeof ShellPlatformAuditRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
+    '/_shell/platform/staff': {
+      id: '/_shell/platform/staff'
+      path: '/staff'
+      fullPath: '/platform/staff'
+      preLoaderRoute: typeof ShellPlatformStaffRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
     '/_shell/settings/': {
       id: '/_shell/settings/'
       path: '/settings'
@@ -202,12 +307,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSettingsStoreRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/platform/tenants/$id': {
+      id: '/_shell/platform/tenants/$id'
+      path: '/tenants/$id'
+      fullPath: '/platform/tenants/$id'
+      preLoaderRoute: typeof ShellPlatformTenantsIdRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
   }
 }
 
+interface ShellPlatformRouteChildren {
+  ShellPlatformAuditRoute: typeof ShellPlatformAuditRoute
+  ShellPlatformStaffRoute: typeof ShellPlatformStaffRoute
+  ShellPlatformIndexRoute: typeof ShellPlatformIndexRoute
+  ShellPlatformTenantsIdRoute: typeof ShellPlatformTenantsIdRoute
+}
+
+const ShellPlatformRouteChildren: ShellPlatformRouteChildren = {
+  ShellPlatformAuditRoute: ShellPlatformAuditRoute,
+  ShellPlatformStaffRoute: ShellPlatformStaffRoute,
+  ShellPlatformIndexRoute: ShellPlatformIndexRoute,
+  ShellPlatformTenantsIdRoute: ShellPlatformTenantsIdRoute,
+}
+
+const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(
+  ShellPlatformRouteChildren,
+)
+
 interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
+  ShellPlatformRoute: typeof ShellPlatformRouteWithChildren
   ShellIndexRoute: typeof ShellIndexRoute
+  ShellDevMailboxRoute: typeof ShellDevMailboxRoute
   ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
   ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
@@ -215,7 +347,9 @@ interface ShellRouteChildren {
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
+  ShellPlatformRoute: ShellPlatformRouteWithChildren,
   ShellIndexRoute: ShellIndexRoute,
+  ShellDevMailboxRoute: ShellDevMailboxRoute,
   ShellSettingsStaffRoute: ShellSettingsStaffRoute,
   ShellSettingsStoreRoute: ShellSettingsStoreRoute,
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,

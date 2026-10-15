@@ -1,0 +1,260 @@
+// Platform: one store (phase-1-plan §5.4, §7.3). Registry data, addresses,
+// owners; super admins suspend and reactivate; support staff open the
+// store for a limited time, and its owners are told why.
+import { zodResolver } from '@hookform/resolvers/zod';
+import { formatDateTime } from '@managemind/shared/i18n';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import { ChevronLeft } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { ConfirmDialog } from '../../components/confirm-dialog';
+import { Form, SelectField, TextField } from '../../components/form';
+import { Notice } from '../../components/notice';
+import { PageHeader } from '../../components/page-header';
+import { useToast } from '../../components/toast';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { useLocale } from '../../i18n';
+import { api, meQuery, unwrap } from '../../lib/api';
+import { errorMessage, saveErrorMessage } from '../../lib/errors';
+import { switchStore } from '../../lib/store';
+import { StatusBadge } from './status';
+
+const route = getRouteApi('/_shell/platform/tenants/$id');
+
+function tenantQuery(id: string) {
+  return {
+    queryKey: ['platform', 'tenant', id] as const,
+    queryFn: async () =>
+      unwrap(await api.GET('/v1/platform/tenants/{id}', { params: { path: { id } } })),
+  };
+}
+type Tenant = Awaited<ReturnType<ReturnType<typeof tenantQuery>['queryFn']>>;
+
+export function TenantPage() {
+  const { t, locale } = useLocale();
+  const { id } = route.useParams();
+  const { data: me } = useSuspenseQuery(meQuery);
+  const tenant = useQuery(tenantQuery(id));
+  return (
+    <div className="flex max-w-3xl flex-col gap-6">
+      <Link to="/platform" className="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
+        <ChevronLeft aria-hidden className="size-4" />
+        {t('tenant.back')}
+      </Link>
+      {tenant.isPending ? (
+        <p role="status">{t('loading')}</p>
+      ) : tenant.isError ? (
+        <Notice tone="error">{errorMessage(tenant.error, t)}</Notice>
+      ) : (
+        <>
+          <PageHeader
+            title={tenant.data.name}
+            actions={me.user.platformRole === 'super_admin' && <Lifecycle tenant={tenant.data} />}
+          />
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            <dt className="text-muted-foreground">{t('tenants.status')}</dt>
+            <dd>
+              <StatusBadge status={tenant.data.status} />
+            </dd>
+            <dt className="text-muted-foreground">{t('tenants.slug')}</dt>
+            <dd lang="en">{tenant.data.slug}</dd>
+            <dt className="text-muted-foreground">{t('tenants.plan')}</dt>
+            <dd lang="en">{tenant.data.plan}</dd>
+            <dt className="text-muted-foreground">{t('store.defaultLocale')}</dt>
+            <dd>{tenant.data.defaultLocale === 'bn' ? 'বাংলা' : 'English'}</dd>
+            <dt className="text-muted-foreground">{t('tenants.createdAt')}</dt>
+            <dd>{formatDateTime(locale, new Date(tenant.data.createdAt))}</dd>
+            <dt className="text-muted-foreground">{t('tenant.members')}</dt>
+            <dd>{tenant.data.memberCount}</dd>
+          </dl>
+          {tenant.data.domains.length > 0 && (
+            <section aria-labelledby="domains-h" className="flex flex-col gap-2">
+              <h2 id="domains-h" className="text-lg font-semibold">
+                {t('tenant.domains')}
+              </h2>
+              <ul className="flex flex-col gap-1">
+                {tenant.data.domains.map((d) => (
+                  <li key={d.hostname} lang="en" className="break-all">
+                    {d.hostname}
+                    {d.isPrimary && (
+                      <span lang={locale} className="ms-2 rounded bg-muted px-2 py-0.5 text-xs">
+                        {t('tenant.primary')}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section aria-labelledby="owners-h" className="flex flex-col gap-2">
+            <h2 id="owners-h" className="text-lg font-semibold">
+              {t('tenant.owners')}
+            </h2>
+            <ul className="flex flex-col gap-1">
+              {tenant.data.owners.map((o) => (
+                <li key={o.userId}>
+                  {o.name} · <span className="break-all text-muted-foreground">{o.email}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          {tenant.data.status === 'active' && (
+            <SupportAccess
+              tenant={tenant.data}
+              superAdmin={me.user.platformRole === 'super_admin'}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Lifecycle({ tenant }: { tenant: Tenant }) {
+  const { t } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const suspending = tenant.status === 'active';
+  const change = useMutation({
+    mutationFn: async () => {
+      const params = { path: { id: tenant.id } };
+      const body = reason.trim() ? { reason: reason.trim() } : {};
+      return suspending
+        ? unwrap(
+            await api.POST('/v1/platform/tenants/{id}/suspend', {
+              params,
+              body: { reason: reason.trim() },
+            }),
+          )
+        : unwrap(await api.POST('/v1/platform/tenants/{id}/reactivate', { params, body }));
+    },
+    onSuccess: async () => {
+      toast(t(suspending ? 'tenant.suspended' : 'tenant.reactivated', { name: tenant.name }));
+      setOpen(false);
+      setReason('');
+      await queryClient.invalidateQueries({ queryKey: ['platform'] });
+    },
+  });
+  if (tenant.status !== 'active' && tenant.status !== 'suspended') return null;
+  return (
+    <>
+      <Button variant={suspending ? 'danger' : 'primary'} onClick={() => setOpen(true)}>
+        {t(suspending ? 'tenant.suspend' : 'tenant.reactivate')}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (!next) change.reset();
+        }}
+        title={t(suspending ? 'tenant.suspendTitle' : 'tenant.reactivateTitle', {
+          name: tenant.name,
+        })}
+        confirmLabel={t(suspending ? 'tenant.suspend' : 'tenant.reactivate')}
+        destructive={suspending}
+        confirmText={suspending ? tenant.slug : undefined}
+        canConfirm={!suspending || reason.trim().length >= 3}
+        busy={change.isPending}
+        error={change.isError ? saveErrorMessage(change.error, t) : undefined}
+        onConfirm={() => change.mutate()}
+      >
+        {suspending && <p>{t('tenant.suspendBody')}</p>}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="lifecycle-reason" className="text-sm font-medium">
+            {t('tenant.reason')}
+            {!suspending && (
+              <span className="font-normal text-muted-foreground"> ({t('form.optional')})</span>
+            )}
+          </label>
+          <Input
+            id="lifecycle-reason"
+            aria-describedby="lifecycle-reason-hint"
+            maxLength={500}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <p id="lifecycle-reason-hint" className="text-sm text-muted-foreground">
+            {t('tenant.reasonHint')}
+          </p>
+        </div>
+      </ConfirmDialog>
+    </>
+  );
+}
+
+const MINUTES = [15, 30, 60, 120, 240] as const;
+const supportSchema = z.object({
+  role: z.enum(['viewer', 'manager']),
+  minutes: z.coerce.number().int().min(1).max(240),
+  reason: z.string().trim().min(10, 'support.reasonShort').max(500),
+});
+
+function SupportAccess({ tenant, superAdmin }: { tenant: Tenant; superAdmin: boolean }) {
+  const { t } = useLocale();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const form = useForm<z.input<typeof supportSchema>, unknown, z.output<typeof supportSchema>>({
+    resolver: zodResolver(supportSchema),
+    defaultValues: { role: 'viewer', minutes: '60', reason: '' },
+  });
+  const start = useMutation({
+    mutationFn: async (v: z.output<typeof supportSchema>) =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/support-access', {
+          params: { path: { id: tenant.id } },
+          body: v,
+        }),
+      ),
+    onSuccess: async () => {
+      await switchStore(queryClient, tenant.id);
+      await queryClient.invalidateQueries({ predicate: (q) => q.queryKey[0] !== 'me' });
+      await navigate({ to: '/' });
+    },
+  });
+  return (
+    <section
+      aria-labelledby="support-h"
+      className="flex flex-col gap-3 border-t border-border pt-6"
+    >
+      <h2 id="support-h" className="text-lg font-semibold">
+        {t('support.title')}
+      </h2>
+      <p className="text-muted-foreground">{t('support.intro')}</p>
+      <Form form={form} onSubmit={(v) => start.mutate(v)}>
+        <SelectField
+          name="role"
+          label={t('support.role')}
+          options={[
+            { value: 'viewer', label: t('role.viewer') },
+            ...(superAdmin ? [{ value: 'manager', label: t('role.manager') }] : []),
+          ]}
+        />
+        <SelectField
+          name="minutes"
+          label={t('support.minutes')}
+          options={MINUTES.map((m) => ({
+            value: String(m),
+            label: t('support.minutesOption', { minutes: m }),
+          }))}
+        />
+        <TextField
+          name="reason"
+          label={t('tenant.reason')}
+          hint={t('support.reasonHint')}
+          maxLength={500}
+        />
+        {start.isError && <Notice tone="error">{saveErrorMessage(start.error, t)}</Notice>}
+        <div>
+          <Button type="submit" disabled={start.isPending}>
+            {t('support.start')}
+          </Button>
+        </div>
+      </Form>
+    </section>
+  );
+}
