@@ -4,7 +4,8 @@
 //
 //   tsx production/provision.ts [--rotate]
 //
-// - Queues: the outbox and its dead-letter queue (ADR 0010).
+// - Queues: the outbox (ADR 0010) and import chunks (phase-2-plan §3.7), each
+//   with its dead-letter queue.
 // - KV: the edge namespace for the domain-to-store map and cache versions
 //   (ADR 0006; bound to Workers from Phase 1).
 // - R2: the files buckets, with lifecycle rules (phase-0-plan §8).
@@ -18,7 +19,12 @@ import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare, type LifecycleRule } from '../lib/cloudflare';
 
 const HYPERDRIVE = 'managemind-production';
-const QUEUES = ['managemind-outbox', 'managemind-outbox-dlq'];
+const QUEUES = [
+  'managemind-outbox',
+  'managemind-outbox-dlq',
+  'managemind-imports',
+  'managemind-imports-dlq',
+];
 const KV_NAMESPACE = 'managemind-edge';
 const BUCKETS = ['managemind-files', 'managemind-files-preview'];
 const LIFECYCLE: LifecycleRule[] = [

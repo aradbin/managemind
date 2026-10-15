@@ -25,6 +25,8 @@ export interface WorkerTarget {
   commit: string;
   /** Previews: no Cron Trigger, and outbox events go to this queue, which nothing consumes. */
   previewQueue?: string;
+  /** Previews: the PR's own import queue (its dead-letter queue is this name + `-dlq`). */
+  previewImportQueue?: string;
   /**
    * Production on its own domains (phase-1-plan §10): admin.<platform> as the
    * API Worker's custom domain, api.<platform> routes for health checks and
@@ -75,7 +77,24 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
     ];
   }
   if (t.previewQueue) {
-    api.queues = { producers: [{ binding: 'OUTBOX', queue: t.previewQueue }] };
+    const imports = t.previewImportQueue ?? 'managemind-imports-preview';
+    api.queues = {
+      producers: [
+        { binding: 'OUTBOX', queue: t.previewQueue },
+        { binding: 'IMPORTS', queue: imports },
+      ],
+      // Imports run on previews too, so the E2E flow can import a file.
+      consumers: [
+        {
+          queue: imports,
+          max_batch_size: 1,
+          max_batch_timeout: 1,
+          max_retries: 3,
+          dead_letter_queue: `${imports}-dlq`,
+        },
+        { queue: `${imports}-dlq`, max_batch_size: 10, max_batch_timeout: 5 },
+      ],
+    };
     api.triggers = { crons: [] };
   }
   writeJson(join(apiDir, `wrangler.${t.environment}.json`), api);

@@ -40,7 +40,10 @@
   "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }],
   "queues": {
-    "producers": [{ "binding": "OUTBOX", "queue": "managemind-outbox" }],
+    "producers": [
+      { "binding": "OUTBOX", "queue": "managemind-outbox" },
+      { "binding": "IMPORTS", "queue": "managemind-imports" }
+    ],
     "consumers": [
       {
         "queue": "managemind-outbox",
@@ -48,7 +51,18 @@
         "max_batch_timeout": 5,
         "max_retries": 5,
         "dead_letter_queue": "managemind-outbox-dlq"
-      }
+      },
+      // Import chunks (phase-2-plan §3.7): one chunk per invocation, so one
+      // invocation never holds two chunks' CPU. A chunk that keeps failing goes
+      // to the dead-letter queue, whose consumer marks the job failed.
+      {
+        "queue": "managemind-imports",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_retries": 3,
+        "dead_letter_queue": "managemind-imports-dlq"
+      },
+      { "queue": "managemind-imports-dlq", "max_batch_size": 10, "max_batch_timeout": 5 }
     ]
   },
   // The daily batch (ADR 0010): 23:47 UTC is 05:47 in Dhaka, before the day's

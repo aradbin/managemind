@@ -3,6 +3,7 @@
 // and the image step's work list.
 import { sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   foreignKey,
   index,
@@ -51,6 +52,13 @@ export const importJobs = store.table(
     /** All row errors, including those past the 1,000 stored in import_errors. */
     errorCount: count(),
     lastError: text(),
+    /**
+     * What the person who started the import may change, fixed at creation:
+     * stock counts (inventory.write) and cost prices (catalog.cost). The queue
+     * consumer runs without a session, so it reads these instead.
+     */
+    withStock: boolean().notNull().default(false),
+    withCost: boolean().notNull().default(false),
     createdBy: uuid(),
     createdAt: ts().notNull().defaultNow(),
     updatedAt: ts().notNull().defaultNow(),

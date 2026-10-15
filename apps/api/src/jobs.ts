@@ -1,8 +1,17 @@
 // Background entry points: the queue consumer and the daily Cron batch.
-import { type EventType, type OutboxEvent, relayEvents } from '@managemind/core';
+import {
+  type EventType,
+  failImport,
+  type ImportMessage,
+  type OutboxEvent,
+  processImportChunk,
+  relayEvents,
+  withTenant,
+} from '@managemind/core';
 import { objectKey } from '@managemind/shared';
 import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
+import { chunkKey } from './admin/imports';
 import { queueSink, withClient } from './db';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
@@ -53,6 +62,77 @@ export async function handleQueue(
       for (const m of messages) m.retry();
     }
   }
+}
+
+/**
+ * Import chunks (phase-2-plan §3.7): one message per chunk, one chunk per
+ * invocation. The chunk's staged JSON is read from R2, processed in one
+ * transaction, its events relayed, and the next chunk queued. A failure
+ * retries the message; after 3 it goes to the dead-letter queue.
+ */
+export async function handleImportQueue(
+  batch: MessageBatch<ImportMessage>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  for (const message of batch.messages) {
+    const { tenantId, jobId, chunk } = message.body;
+    try {
+      const staged = await env.FILES.get(chunkKey(tenantId, jobId, chunk));
+      // A missing chunk (expired after a day, or never staged) fails the job.
+      const products = staged ? await staged.json() : null;
+      const next = await withClient(env, ctx, async (client) => {
+        if (products === null) {
+          await withTenant(client, tenantId, (tx) =>
+            failImport(tx, jobId, `chunk ${chunk} is missing`),
+          );
+          return null;
+        }
+        return processImportChunk(client, message.body, products, {
+          afterCommit: (events) =>
+            relayEvents(client, events, queueSink(env.OUTBOX)).then(() => {}),
+        });
+      });
+      if (next) await env.IMPORTS.send(next, { contentType: 'json' });
+      log('info', 'import chunk', {
+        tenant_id: tenantId,
+        job_id: jobId,
+        chunk,
+        next: next?.chunk ?? null,
+      });
+      message.ack();
+    } catch (e) {
+      log('error', 'import chunk failed', {
+        tenant_id: tenantId,
+        job_id: jobId,
+        chunk,
+        attempts: message.attempts,
+        error: String(e),
+      });
+      message.retry({ delaySeconds: 10 * message.attempts });
+    }
+  }
+}
+
+/** Chunks that kept failing: their jobs are marked failed with the last error. */
+export async function handleImportDeadLetters(
+  batch: MessageBatch<ImportMessage>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  await withClient(env, ctx, async (client) => {
+    for (const message of batch.messages) {
+      const { tenantId, jobId, chunk } = message.body;
+      await withTenant(client, tenantId, (tx) =>
+        failImport(tx, jobId, `chunk ${chunk} failed ${message.attempts} times; see the logs`),
+      );
+      captureMessage('import chunk dead-lettered', {
+        level: 'error',
+        extra: { tenantId, jobId, chunk },
+      });
+      message.ack();
+    }
+  });
 }
 
 interface OutboxRow {

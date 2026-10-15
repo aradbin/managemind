@@ -1,5 +1,5 @@
 // Worker bindings and the validated configuration derived from them.
-import type { OutboxEvent } from '@managemind/core';
+import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
 import type { RateLimiter } from './rate-limit/durable-object';
@@ -9,6 +9,8 @@ export interface Env {
   HYPERDRIVE: Hyperdrive;
   /** Outbox events, relayed after commit (ADR 0010). */
   OUTBOX: Queue<OutboxEvent>;
+  /** Import chunks, one message per chunk (phase-2-plan §3.7). */
+  IMPORTS: Queue<ImportMessage>;
   /** Rate limits and the daily email count, one object per key (ADR 0006). */
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */

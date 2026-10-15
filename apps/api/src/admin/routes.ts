@@ -31,6 +31,7 @@ import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
+import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 
 const Role = z.enum(STORE_ROLES);
@@ -115,6 +116,7 @@ const r = <
 export const ADMIN_ROUTES = {
   ...CATALOG_ROUTES,
   ...MEDIA_ROUTES,
+  ...IMPORT_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -358,6 +360,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   });
   registerCatalog(admin);
   registerMediaRoutes(admin);
+  registerImports(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

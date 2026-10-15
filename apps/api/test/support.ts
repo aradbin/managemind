@@ -33,15 +33,23 @@ export class FakeR2 {
       body: new Blob([o.body]).stream(),
       httpEtag: `"${key}"`,
       httpMetadata: { contentType: o.contentType },
+      text: async () => new TextDecoder().decode(o.body),
+      json: async () => JSON.parse(new TextDecoder().decode(o.body)),
     };
   }
   async put(
     key: string,
-    value: ArrayBuffer | Uint8Array,
+    value: ArrayBuffer | Uint8Array | string,
     options?: { httpMetadata?: { contentType?: string } },
   ) {
+    const body =
+      typeof value === 'string'
+        ? new TextEncoder().encode(value)
+        : value instanceof Uint8Array
+          ? value
+          : new Uint8Array(value);
     this.objects.set(key, {
-      body: new Uint8Array(value instanceof Uint8Array ? value : new Uint8Array(value)),
+      body: new Uint8Array(body),
       contentType: options?.httpMetadata?.contentType,
     });
     return { key };

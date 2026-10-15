@@ -8,6 +8,7 @@ import {
   createAttribute,
   createCategory,
   createCollection,
+  createImportJob,
   createProduct,
   createTenant,
   grantSupportAccess,
@@ -239,6 +240,9 @@ describe('isolation suite', () => {
       createCollection(tx, bOwner, { kind: 'manual', translations: { en: { name: 'B picks' } } }),
     );
     const [location] = await inB((tx) => listLocations(tx, bOwner));
+    const importJob = await inB((tx) =>
+      createImportJob(tx, bOwner, { fileName: 'b.csv', chunkCount: 1, total: 1 }),
+    );
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; body?: unknown }> = {
@@ -272,6 +276,16 @@ describe('isolation suite', () => {
       'PUT /v1/admin/products/{id}/media': { id: product.id, body: { images: [] } },
       // A file of store B's: store A's lookups only see store A's prefix.
       'GET /v1/admin/media/files/{file}': { id: `${'b'.repeat(64)}.png` },
+      'GET /v1/admin/imports/{id}': { id: importJob.id },
+      'PUT /v1/admin/imports/{id}/chunks/{n}': { id: importJob.id, body: [{}] },
+      'POST /v1/admin/imports/{id}/start': { id: importJob.id },
+      'POST /v1/admin/imports/{id}/cancel': { id: importJob.id },
+      'GET /v1/admin/imports/{id}/errors': { id: importJob.id },
+      'GET /v1/admin/imports/{id}/images': { id: importJob.id },
+      'PATCH /v1/admin/imports/{id}/images/{imageId}': {
+        id: importJob.id,
+        body: { status: 'failed', error: 'x' },
+      },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -290,7 +304,9 @@ describe('isolation suite', () => {
       if (!fixture) continue;
       const path = route.path
         .replace('/v1/admin', '/api/admin')
-        .replace(/\{(id|file)\}/, fixture.id);
+        .replace(/\{(id|file)\}/, fixture.id)
+        .replace('{n}', '0')
+        .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);
       expect(res.status, key).toBe(404);
     }

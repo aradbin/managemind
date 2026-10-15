@@ -97,6 +97,19 @@ export class Cloudflare {
     await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
   }
 
+  /** Deletes a queue if it exists (a closed PR's import queues). */
+  async deleteQueue(name: string): Promise<boolean> {
+    const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
+      `/queues?name=${encodeURIComponent(name)}`,
+    );
+    const found = queues.find((q) => q.queue_name === name);
+    if (!found) return false;
+    await this.ignore404(() =>
+      this.api.request('DELETE', `${this.account}/queues/${found.queue_id}`),
+    );
+    return true;
+  }
+
   async queueId(name: string): Promise<string> {
     const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
       `/queues?name=${encodeURIComponent(name)}`,

@@ -4,6 +4,7 @@ export * from './catalog/index';
 export * from './events';
 export * from './idempotency';
 export * from './identity/index';
+export * from './imports/index';
 export * from './inventory/index';
 export * from './outbox';
 export * from './platform';
