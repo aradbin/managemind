@@ -1,7 +1,6 @@
 packages:
   - apps/*
   - packages/*
-  - spikes/*
   - e2e
   - scripts
 
@@ -16,7 +15,6 @@ catalog:
   "@fontsource/noto-sans-bengali": 5.3.0
   "@hono/zod-openapi": 1.6.3
   "@hookform/resolvers": 5.9.1
-  "@neondatabase/serverless": 1.2.0
   "@playwright/test": 1.63.0
   "@radix-ui/react-dialog": 1.1.23
   "@radix-ui/react-dropdown-menu": 2.1.24
@@ -45,7 +43,6 @@ catalog:
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
   pg: 8.23.1
-  postgres: 3.4.9
   react-dom: 19.3.0
   react-hook-form: 7.89.0
   react: 19.3.0
