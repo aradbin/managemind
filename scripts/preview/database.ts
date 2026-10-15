@@ -1,6 +1,6 @@
 // Ensures the preview database for a PR and prints its Hyperdrive config ID.
 //
-//   tsx preview/database.ts --pr 12 --database shared|own [--skip-migrations]
+//   tsx preview/database.ts --pr 12 --database shared|own [--skip-migrations] [--e2e <run>]
 //
 // 1. Finds or creates the Neon branch (from production). A new branch gets a
 //    fresh owner password, so production's never reaches a preview.
@@ -10,6 +10,7 @@
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
 //    the config does not exist yet. The password is generated here and stored
 //    only in the role and the Hyperdrive config.
+// 4. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts).
 import { runMigrations } from '@managemind/db/migrate';
 import { seed } from '@managemind/db/seed';
 import pg from 'pg';
@@ -17,6 +18,7 @@ import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
 import { type Branch, DATABASE, Neon } from '../lib/neon';
+import { seedE2E } from './e2e-seed';
 import { branchName, DATABASE_LOCK, hyperdriveName, parseDatabase } from './names';
 
 const args = parseArgs(process.argv.slice(2));
@@ -68,6 +70,12 @@ try {
       password,
     });
     notice(`Created Hyperdrive config ${configName}`);
+  }
+  const run = args.get('e2e');
+  if (run) {
+    // Stores live at <slug>.<workers.dev subdomain> on previews (preview/workers.ts).
+    await seedE2E(owner, run, `${await cf.workersSubdomain()}.workers.dev`);
+    notice(`Seeded the E2E stores and people for run ${run}`);
   }
   setOutput('hyperdrive_id', config.id);
   setOutput('branch', name);

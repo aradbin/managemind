@@ -56,6 +56,8 @@ jobs:
           LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'db-branch') }}
           BASE: ${{ github.base_ref }}
         run: |
+          # Names the E2E's seeded stores and people, new for every run (e2e-seed.ts).
+          echo "E2E_RUN=${COMMIT_SHA::7}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
           if [ "$LABELED" = true ]; then
             echo "database=own" >> "$GITHUB_OUTPUT"
             echo "describe=own Neon branch pr-$PR (db-branch label)" >> "$GITHUB_OUTPUT"
@@ -76,11 +78,12 @@ jobs:
           echo "VITE_SENTRY_RELEASE=$COMMIT_SHA" >> "$GITHUB_ENV"
       - run: pnpm turbo run build --filter=./apps/*
 
-      - name: Database (Neon branch, migrations, seed, Hyperdrive)
+      - name: Database (Neon branch, migrations, seed, Hyperdrive, E2E people)
         id: database
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/database.ts
           --pr "$PR" --database ${{ steps.choice.outputs.database }} ${{ steps.choice.outputs.flags }}
+          --e2e "$E2E_RUN"
 
       - name: Worker configs
         id: workers
@@ -115,12 +118,23 @@ jobs:
         run: pnpm --filter @managemind/scripts exec tsx preview/teardown.ts --pr "$PR" --database-only
 
       - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
-      - name: Smoke test
+      # The smoke tests, then the Phase 1 flows at a phone and a desktop
+      # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
+      - name: Smoke test and E2E flows
         id: smoke
         env:
           API_URL: ${{ steps.workers.outputs.api_url }}
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
-        run: pnpm --filter @managemind/e2e e2e
+        run: |
+          echo "E2E_SINCE=$(date +%s%3N)" >> "$GITHUB_ENV"
+          pnpm --filter @managemind/e2e e2e
+      # ADR 0003's measurement on every preview: informational, never blocks.
+      - name: CPU per route
+        if: steps.smoke.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/cpu.ts --pr "$PR"
+          --api-url "${{ steps.workers.outputs.api_url }}" --since "$E2E_SINCE"
       - uses: actions/upload-artifact@v4
         if: failure() && steps.smoke.outcome == 'failure'
         with:
