@@ -1,5 +1,6 @@
 export * from './access';
 export * from './audit';
+export * from './catalog/index';
 export * from './events';
 export * from './idempotency';
 export * from './identity/index';

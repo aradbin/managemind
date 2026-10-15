@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
 const storeRole = z.enum(['owner', 'manager', 'staff', 'viewer']);
+const catalogChange = z.enum(['created', 'updated', 'moved', 'deleted']);
 
 export const EVENTS = {
   'tenant.seeded': z.object({ slug: z.string() }),
@@ -23,6 +24,20 @@ export const EVENTS = {
   'staff.joined': z.object({ userId: z.uuid(), role: storeRole }),
   'staff.role_changed': z.object({ userId: z.uuid(), from: storeRole, to: storeRole }),
   'staff.removed': z.object({ userId: z.uuid(), role: storeRole, left: z.boolean() }),
+  // Catalog and inventory (phase-2-plan §5). Phase 3 purges cached pages on
+  // them (ADR 0007); until then the consumer only acknowledges them.
+  'catalog.product.created': z.object({}),
+  /** Which parts changed: content, options, variants, prices, media, categories, … */
+  'catalog.product.updated': z.object({ fields: z.array(z.string()).max(20) }),
+  'catalog.product.archived': z.object({}),
+  'catalog.product.deleted': z.object({}),
+  'catalog.category.changed': z.object({ change: catalogChange }),
+  'catalog.collection.changed': z.object({ change: catalogChange }),
+  'catalog.attribute.changed': z.object({ change: catalogChange }),
+  'inventory.level.changed': z.object({
+    variantIds: z.array(z.uuid()).min(1).max(500),
+    reason: z.string(),
+  }),
 } as const;
 
 /** Events that change which hosts point at a store, or what they say (§4.3). */
