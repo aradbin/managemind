@@ -10,7 +10,9 @@ export const EVENTS = {
   'tenant.seeded': z.object({ slug: z.string() }),
   'tenant.created': z.object({ slug: z.string(), name: z.string() }),
   /** Which of name, defaultLocale and profile changed. */
-  'tenant.updated': z.object({ fields: z.array(z.enum(['name', 'defaultLocale', 'profile'])) }),
+  'tenant.updated': z.object({
+    fields: z.array(z.enum(['name', 'defaultLocale', 'profile', 'tax'])),
+  }),
   'tenant.status_changed': z.object({
     from: tenantStatus,
     to: tenantStatus,

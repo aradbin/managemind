@@ -445,7 +445,12 @@ export async function suggestTags(
 export async function suggestOptions(
   tx: TenantTx,
   actor: Actor,
-  query: { locale: Locale; prefix?: string; name?: string; limit?: number },
+  query: {
+    locale: Locale;
+    prefix?: string | undefined;
+    name?: string | undefined;
+    limit?: number | undefined;
+  },
 ): Promise<{
   names: { name: string; count: number }[];
   values: { label: string; count: number }[];

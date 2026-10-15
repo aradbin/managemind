@@ -77,7 +77,8 @@ const toEvent = (r: OutboxRow): OutboxEvent => ({
 
 /**
  * The daily batch: relay outbox events the request path missed (older than
- * five minutes, across tenants), then delete expired technical rows.
+ * five minutes, across tenants), delete expired technical rows, and check
+ * that every stock level still equals its movements (phase-2-plan §3.8).
  */
 export async function runDailyJobs(
   env: Env,
@@ -117,5 +118,30 @@ export async function runDailyJobs(
       'daily cleanup',
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
+    await checkInventoryDrift(client);
   });
+}
+
+/**
+ * Stock levels that differ from the sum of their movements. Only the
+ * inventory service writes either, in one transaction, so any row here is a
+ * bug: alert, and keep the IDs for the investigation.
+ */
+export async function checkInventoryDrift(client: Parameters<Parameters<typeof withClient>[2]>[0]) {
+  const { rows } = await client.query<{
+    tenant_id: string;
+    variant_id: string;
+    location_id: string;
+    on_hand: string;
+    reserved: string;
+    moved_on_hand: string;
+    moved_reserved: string;
+  }>('select * from app.inventory_drift(100)');
+  if (rows.length === 0) return 0;
+  log('error', 'inventory drift', { rows: rows.length, first: rows.slice(0, 10) });
+  captureMessage('inventory drift: stock levels differ from the ledger', {
+    level: 'error',
+    extra: { rows: rows.length, first: rows.slice(0, 10) },
+  });
+  return rows.length;
 }

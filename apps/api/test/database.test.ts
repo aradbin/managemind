@@ -2,7 +2,7 @@ import { slugFromHost } from '@managemind/core';
 import { connect, inTenant, TENANT_A, TENANT_B } from '@managemind/db/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
-import { handleQueue, runDailyJobs } from '../src/jobs';
+import { checkInventoryDrift, handleQueue, runDailyJobs } from '../src/jobs';
 import { makeCtx, makeEnv, ownerUrl } from './support';
 
 const call = async (path: string, init: RequestInit = {}, env = makeEnv()) => {
@@ -119,6 +119,26 @@ describe('daily jobs', () => {
     );
     expect(rows[0]).toEqual({ n: 0 });
     await owner.end();
+  });
+
+  it('alerts when a stock level differs from its movements', async () => {
+    const owner = await connect(ownerUrl);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(await checkInventoryDrift(owner)).toBe(0);
+      // Inside a transaction that is rolled back: a level nothing explains.
+      await owner.query('begin');
+      await owner.query(
+        `update store.inventory_levels set on_hand = on_hand + 1
+          where tenant_id = $1 and variant_id = (select variant_id from store.inventory_levels where tenant_id = $1 limit 1)`,
+        [TENANT_A],
+      );
+      expect(await checkInventoryDrift(owner)).toBe(1);
+    } finally {
+      await owner.query('rollback');
+      error.mockRestore();
+      await owner.end();
+    }
   });
 
   it('acknowledges queue messages', async () => {

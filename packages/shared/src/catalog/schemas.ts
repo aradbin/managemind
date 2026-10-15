@@ -52,7 +52,7 @@ export const barcode = z
   .regex(/^[A-Za-z0-9-]+$/, 'letters, digits and hyphens');
 
 export const metadata = z
-  .record(z.string().min(1).max(64), z.json())
+  .record(z.string().min(1).max(64), z.unknown())
   .refine((m) => Object.keys(m).length <= L.metadataKeys, `at most ${L.metadataKeys} keys`)
   .refine((m) => JSON.stringify(m).length <= 16_384, 'at most 16 KB');
 

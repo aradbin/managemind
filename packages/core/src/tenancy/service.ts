@@ -6,6 +6,8 @@ import { AppError, checkSlug, uuidv7 } from '@managemind/shared';
 import {
   defaultTenantSettings,
   type StoreProfile,
+  type TaxSettings,
+  taxSettings,
   tenantSettings,
 } from '@managemind/shared/settings';
 import { eq, sql } from 'drizzle-orm';
@@ -136,6 +138,8 @@ export interface Store {
   status: (typeof schema.TENANT_STATUSES)[number];
   defaultLocale: Locale;
   profile: StoreProfile;
+  /** VAT settings (phase-2-plan §3.9). */
+  tax: TaxSettings;
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -153,7 +157,8 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     .where(eq(t.id, tx.tenantId));
   const [row] = await (forUpdate ? query.for('update') : query);
   if (!row) throw new AppError('store_not_found');
-  return { ...row, profile: tenantSettings.parse(row.settings).profile };
+  const settings = tenantSettings.parse(row.settings);
+  return { ...row, profile: settings.profile, tax: settings.tax };
 }
 
 /** The active store's profile (`settings.read`). */
@@ -163,14 +168,28 @@ export async function getStore(tx: TenantTx, actor: Actor): Promise<Store> {
   return store;
 }
 
+function parseTax(input: unknown): TaxSettings {
+  const result = taxSettings.safeParse(input);
+  if (result.success) return result.data;
+  throw new AppError('validation_failed', {
+    fields: result.error.issues.map((i) => ({
+      path: ['tax', ...i.path].join('.'),
+      code: i.code,
+      message: i.message,
+    })),
+  });
+}
+
 export interface StoreProfilePatch {
   name?: string;
   defaultLocale?: Locale;
   /** Replaces the whole profile. */
   profile?: StoreProfile;
+  /** Replaces the VAT settings. */
+  tax?: unknown;
 }
 
-/** Edits name, default locale and profile (`settings.write`); refused while suspended. */
+/** Edits name, default locale, profile and VAT settings (`settings.write`); refused while suspended. */
 export async function updateStoreProfile(
   tx: TenantTx,
   actor: Actor,
@@ -185,8 +204,9 @@ export async function updateStoreProfile(
     name: patch.name?.trim() ?? current.name,
     defaultLocale: patch.defaultLocale ?? current.defaultLocale,
     profile: patch.profile ? tenantSettings.shape.profile.parse(patch.profile) : current.profile,
+    tax: patch.tax !== undefined ? parseTax(patch.tax) : current.tax,
   };
-  const fields = (['name', 'defaultLocale', 'profile'] as const).filter(
+  const fields = (['name', 'defaultLocale', 'profile', 'tax'] as const).filter(
     (f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]),
   );
   if (fields.length === 0) return getStore(tx, actor);
@@ -196,7 +216,7 @@ export async function updateStoreProfile(
     .set({
       name: next.name,
       defaultLocale: next.defaultLocale,
-      settings: { ...settings, profile: next.profile },
+      settings: { ...settings, profile: next.profile, tax: next.tax },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
   const pick = (s: typeof next) => Object.fromEntries(fields.map((f) => [f, s[f]]));

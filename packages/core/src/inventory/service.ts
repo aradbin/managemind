@@ -15,6 +15,7 @@ import {
   type StockMovementType,
 } from '@managemind/shared/catalog';
 import { eq, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
@@ -400,11 +401,11 @@ export async function listInventory(
   tx: TenantTx,
   actor: Actor,
   query: {
-    lowStock?: boolean;
-    locationId?: string;
-    q?: string;
-    after?: string;
-    limit?: number;
+    lowStock?: boolean | undefined;
+    locationId?: string | undefined;
+    q?: string | undefined;
+    after?: string | undefined;
+    limit?: number | undefined;
   } = {},
 ): Promise<{ items: InventoryRow[]; nextCursor: string | null }> {
   authorize(actor, 'inventory.read');
@@ -470,9 +471,15 @@ export async function listMovements(
   tx: TenantTx,
   actor: Actor,
   variantId: string,
-  page: { before?: string; limit?: number } = {},
+  page: { before?: string | undefined; limit?: number | undefined } = {},
 ): Promise<{ items: MovementRow[]; nextCursor: string | null }> {
   authorize(actor, 'inventory.read');
+  // An unknown variant (or another store's) is not found, not an empty ledger.
+  const [variant] = await tx.db
+    .select({ id: schema.variants.id })
+    .from(schema.variants)
+    .where(eq(schema.variants.id, variantId));
+  if (!variant) throw new AppError('not_found');
   const limit = Math.min(Math.max(page.limit ?? 50, 1), 200);
   const { rows } = await tx.db.execute<MovementRow>(sql`
     select id, location_id as "locationId", type, quantity, reason, note,
@@ -521,4 +528,73 @@ export async function inventoryDrift(tx: TenantTx): Promise<
         on m.variant_id = l.variant_id and m.location_id = l.location_id
      where coalesce(l.on_hand, 0) <> coalesce(m.on_hand, 0) or coalesce(l.reserved, 0) <> coalesce(m.reserved, 0)`);
   return rows;
+}
+
+// ---- Stock locations -------------------------------------------------------------------
+
+const locationAddress = z
+  .object({
+    line1: z.string().trim().min(1).max(200),
+    line2: z.string().trim().min(1).max(200).optional(),
+    city: z.string().trim().min(1).max(100).optional(),
+  })
+  .strict();
+const locationPatch = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  address: locationAddress.nullable().optional(),
+});
+
+export interface StockLocation {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  address: z.infer<typeof locationAddress> | null;
+}
+
+/** The store's stock locations, the default first. */
+export async function listLocations(tx: TenantTx, actor: Actor): Promise<StockLocation[]> {
+  authorize(actor, 'inventory.read');
+  const sl = schema.stockLocations;
+  const rows = await tx.db
+    .select({ id: sl.id, name: sl.name, isDefault: sl.isDefault, address: sl.address })
+    .from(sl)
+    .orderBy(sql`${sl.isDefault} desc`, sl.createdAt);
+  return rows.map((r) => ({ ...r, address: (r.address as StockLocation['address']) ?? null }));
+}
+
+/** Renames a location or sets its address (store settings, §7). */
+export async function updateLocation(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<StockLocation> {
+  authorize(actor, 'settings.write');
+  const patch = parseInput(locationPatch, input);
+  const sl = schema.stockLocations;
+  const [before] = await tx.db.select().from(sl).where(eq(sl.id, id)).for('update');
+  if (!before) throw new AppError('not_found');
+  const [after] = await tx.db
+    .update(sl)
+    .set({
+      ...(patch.name !== undefined ? { name: patch.name } : {}),
+      ...(patch.address !== undefined ? { address: patch.address } : {}),
+    })
+    .where(eq(sl.id, id))
+    .returning();
+  if (!after) throw new AppError('not_found');
+  await recordAudit(tx, {
+    ...auditActor(actor, 'staff'),
+    action: 'location.updated',
+    entityType: 'stock_location',
+    entityId: id,
+    before: { name: before.name, address: before.address },
+    after: { name: after.name, address: after.address },
+  });
+  return {
+    id: after.id,
+    name: after.name,
+    isDefault: after.isDefault,
+    address: (after.address as StockLocation['address']) ?? null,
+  };
 }

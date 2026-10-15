@@ -3,9 +3,9 @@
 // what the renderer knows ever gets stored.
 import { z } from 'zod';
 import {
-  type Block,
+  type BulletList,
   isSafeHref,
-  type ListItem,
+  type OrderedList,
   type RichTextDoc,
   richTextToPlainText,
 } from '../rich-text';
@@ -43,43 +43,49 @@ const heading = z.object({
   content: inline,
 });
 
-const listItem: z.ZodType<ListItem> = z.lazy(() =>
-  z.object({
+/**
+ * Lists nest at most MAX_LIST_DEPTH deep. The levels are built one by one
+ * from the deepest up rather than with z.lazy, so the schema isn't recursive:
+ * the depth limit is structural, and the OpenAPI generator can describe it.
+ */
+function listLevel(depth: number): {
+  bulletList: z.ZodType<BulletList>;
+  orderedList: z.ZodType<OrderedList>;
+} {
+  const nested: ReturnType<typeof listLevel> | null =
+    depth < MAX_LIST_DEPTH ? listLevel(depth + 1) : null;
+  const item = z.object({
     type: z.literal('listItem'),
     content: z
-      .array(z.union([paragraph, bulletList, orderedList]))
+      .array(nested ? z.union([paragraph, nested.bulletList, nested.orderedList]) : paragraph)
       .min(1)
       .max(50),
-  }),
-);
-const bulletList = z.object({
-  type: z.literal('bulletList'),
-  content: z.array(listItem).min(1).max(200),
-});
-const orderedList = z.object({
-  type: z.literal('orderedList'),
-  attrs: z.object({ start: z.int().min(0).max(10_000).optional() }).optional(),
-  content: z.array(listItem).min(1).max(200),
-});
-
-const block = z.discriminatedUnion('type', [paragraph, heading, bulletList, orderedList]);
-
-function listDepth(node: Block | ListItem, depth = 0): number {
-  if (node.type === 'paragraph' || node.type === 'heading') return depth;
-  const next = node.type === 'listItem' ? depth : depth + 1;
-  return Math.max(next, ...node.content.map((child) => listDepth(child, next)));
+  });
+  return {
+    bulletList: z.object({
+      type: z.literal('bulletList'),
+      content: z.array(item).min(1).max(200),
+    }),
+    orderedList: z.object({
+      type: z.literal('orderedList'),
+      attrs: z.object({ start: z.int().min(0).max(10_000).optional() }).optional(),
+      content: z.array(item).min(1).max(200),
+    }),
+  };
 }
+const { bulletList, orderedList } = listLevel(1);
+
+const block = z.union([paragraph, heading, bulletList, orderedList]);
 
 export const richTextDoc = z
   .object({ type: z.literal('doc'), content: z.array(block).max(500).optional() })
   .superRefine((doc, ctx) => {
-    if ((doc.content ?? []).some((b) => listDepth(b) > MAX_LIST_DEPTH)) {
-      ctx.addIssue({ code: 'custom', message: `lists nest at most ${MAX_LIST_DEPTH} deep` });
-    }
     if (richTextToPlainText(doc).length > CATALOG_LIMITS.descriptionText) {
       ctx.addIssue({
         code: 'custom',
         message: `at most ${CATALOG_LIMITS.descriptionText} characters`,
       });
     }
-  }) satisfies z.ZodType<RichTextDoc>;
+  })
+  // One named schema in the OpenAPI document, referenced wherever a description appears.
+  .meta({ id: 'RichTextDoc' }) satisfies z.ZodType<RichTextDoc>;

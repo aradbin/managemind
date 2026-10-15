@@ -24,11 +24,12 @@ import {
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
 import { PERMISSIONS, STORE_ROLES } from '@managemind/shared';
-import { storeProfile } from '@managemind/shared/settings';
+import { storeProfile, taxSettings } from '@managemind/shared/settings';
 import type { Context } from 'hono';
 import { createMailer } from '../auth/email';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
+import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 
 const Role = z.enum(STORE_ROLES);
@@ -77,6 +78,7 @@ const Store = z
     status: z.enum(['active', 'suspended', 'closed', 'purged']),
     defaultLocale: Locale,
     profile: storeProfile,
+    tax: taxSettings,
   })
   .openapi('Store');
 const Member = z
@@ -110,6 +112,7 @@ const r = <
 
 /** Every admin route, by method and path; the isolation suite reads this. */
 export const ADMIN_ROUTES = {
+  ...CATALOG_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -141,12 +144,13 @@ export const ADMIN_ROUTES = {
   updateStore: r({
     method: 'patch',
     path: '/store',
-    summary: 'Edit the store profile (settings.write)',
+    summary: 'Edit the store profile and VAT settings (settings.write)',
     request: body(
       z.object({
         name: z.string().trim().min(1).max(100).optional(),
         defaultLocale: Locale.optional(),
         profile: storeProfile.optional(),
+        tax: taxSettings.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
@@ -350,6 +354,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
     await inStore(c, (tx) => revokeInvitation(tx, c.var.staff.actor, id), { write: true });
     return c.body(null, 204);
   });
+  registerCatalog(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

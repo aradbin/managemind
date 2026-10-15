@@ -372,7 +372,12 @@ export async function collectionProducts(
   tx: TenantTx,
   actor: Actor,
   id: string,
-  options: { rules?: unknown; limit?: number; offset?: number; activeOnly?: boolean } = {},
+  options: {
+    rules?: unknown;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    activeOnly?: boolean | undefined;
+  } = {},
 ): Promise<{ items: CollectionProduct[]; total: number }> {
   authorize(actor, 'catalog.read');
   const collection = await getCollection(tx, actor, id);
