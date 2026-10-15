@@ -35,6 +35,7 @@
 | lucide-react | 1.49 | `apps/admin` | Icons, imported one by one so only the used ones ship | Inline SVGs (no consistent set) |
 | @fontsource/noto-sans-bengali | 5.3 | `apps/admin` | Self-hosted Noto Sans Bengali (400 and 600), so Bangla renders the same on every phone and no font request leaves for Google; the Bengali and Latin subsets load only when text needs them (`unicode-range`) | Google Fonts (a third-party request); system fonts (Bangla support varies by phone) |
 | vite-plugin-pwa, workbox-window | 1.3, 7.4 | `apps/admin` (dev; workbox-window at runtime) | Installable admin with a precached app shell, and a service worker that never caches API responses (`runtimeCaching` is empty and `/api`, `/v1` are excluded from the navigation fallback). Updates wait for the user (an "update available" prompt), so a form is never reloaded under them | Hand-written service worker (more code to own); no PWA (the plan asks for one) |
+| lean-qr | 2.7 | `apps/admin` | Draws the authenticator setup QR code as an SVG path, about 4 KB gzipped, loaded only with the account page. Chosen by size, as the plan asks: `uqr` is the same size but less maintained; `qrcode` is several times larger | `qrcode`; `uqr`; showing only the key (typing 32 characters on a phone) |
 
 All versions are pinned exactly in `pnpm-workspace.yaml`; Renovate (added with CI) proposes upgrades.
 

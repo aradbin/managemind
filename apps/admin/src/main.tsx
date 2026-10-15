@@ -9,13 +9,32 @@ import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LocaleProvider } from './i18n';
-import { queryClient } from './lib/api';
+import { ApiError, queryClient } from './lib/api';
+import { AuthError } from './lib/auth';
 import { routeTree } from './routeTree.gen';
 import { initSentry, rootErrorHandlers } from './sentry';
 
 initSentry();
 
 const router = createRouter({ routeTree, context: { queryClient }, defaultPreload: 'intent' });
+
+// A session that ends mid-visit (expired, or signed out from another device)
+// goes back to sign-in. First loads are handled by the routes' own guards.
+function signedOut(error: unknown) {
+  if (!((error instanceof ApiError || error instanceof AuthError) && error.status === 401)) return;
+  const { pathname, href } = router.state.location;
+  if (pathname === '/sign-in' || pathname === '/two-factor') return;
+  queryClient.clear();
+  void router.navigate({ to: '/sign-in', search: { redirect: href } });
+}
+queryClient.getQueryCache().subscribe((event) => {
+  if (event.type === 'updated' && event.action.type === 'error' && event.query.state.data) {
+    signedOut(event.action.error);
+  }
+});
+queryClient.getMutationCache().subscribe((event) => {
+  if (event.type === 'updated' && event.action.type === 'error') signedOut(event.action.error);
+});
 
 declare module '@tanstack/react-router' {
   interface Register {

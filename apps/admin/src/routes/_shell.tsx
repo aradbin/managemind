@@ -7,13 +7,20 @@ import { Home, type LucideIcon, Settings, Shield, User } from 'lucide-react';
 import { LanguageSwitch } from '../components/language-switch';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, meQuery } from '../lib/api';
+import { chooseStore } from '../lib/store';
 
 export const Route = createFileRoute('/_shell')({
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async ({ context, location }) => {
     try {
-      await context.queryClient.ensureQueryData(meQuery);
+      const me = await context.queryClient.ensureQueryData(meQuery);
+      await chooseStore(context.queryClient, me);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 401) throw redirect({ to: '/sign-in' });
+      if (e instanceof ApiError && e.status === 401) {
+        throw redirect({
+          to: '/sign-in',
+          search: location.href === '/' ? {} : { redirect: location.href },
+        });
+      }
       throw e;
     }
   },
@@ -73,6 +80,17 @@ function Shell() {
         {store?.status === 'suspended' && (
           <p role="status" className="bg-warning px-4 py-2 text-sm text-warning-foreground">
             {t('banner.suspended', { store: store.name })}
+          </p>
+        )}
+        {me.user.platformRole && !me.user.twoFactorEnabled && (
+          <p
+            role="status"
+            className="flex flex-wrap items-center gap-x-3 bg-warning px-4 py-2 text-sm text-warning-foreground"
+          >
+            {t('banner.twoFactorRequired')}
+            <Link to="/account" hash="two-factor" className="font-semibold underline">
+              {t('action.setUpNow')}
+            </Link>
           </p>
         )}
         {store && me.supportGrant && (
