@@ -15,7 +15,9 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
-import { Route as ShellSettingsRouteImport } from './routes/_shell/settings'
+import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
+import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
+import { Route as ShellSettingsStoreRouteImport } from './routes/_shell/settings/store'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -46,9 +48,19 @@ const ShellAccountRoute = ShellAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ShellRoute,
 } as any)
-const ShellSettingsRoute = ShellSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsStaffRoute = ShellSettingsStaffRouteImport.update({
+  id: '/settings/staff',
+  path: '/settings/staff',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsStoreRoute = ShellSettingsStoreRouteImport.update({
+  id: '/settings/store',
+  path: '/settings/store',
   getParentRoute: () => ShellRoute,
 } as any)
 
@@ -58,15 +70,19 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
-  '/settings': typeof ShellSettingsRoute
+  '/settings/staff': typeof ShellSettingsStaffRoute
+  '/settings/store': typeof ShellSettingsStoreRoute
+  '/settings/': typeof ShellSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
-  '/settings': typeof ShellSettingsRoute
   '/': typeof ShellIndexRoute
+  '/settings/staff': typeof ShellSettingsStaffRoute
+  '/settings/store': typeof ShellSettingsStoreRoute
+  '/settings': typeof ShellSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -75,15 +91,32 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
-  '/_shell/settings': typeof ShellSettingsRoute
   '/_shell/': typeof ShellIndexRoute
+  '/_shell/settings/staff': typeof ShellSettingsStaffRoute
+  '/_shell/settings/store': typeof ShellSettingsStoreRoute
+  '/_shell/settings/': typeof ShellSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/invite' | '/sign-in' | '/two-factor' | '/account' | '/settings'
+    | '/'
+    | '/invite'
+    | '/sign-in'
+    | '/two-factor'
+    | '/account'
+    | '/settings/staff'
+    | '/settings/store'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/invite' | '/sign-in' | '/two-factor' | '/account' | '/settings' | '/'
+  to:
+    | '/invite'
+    | '/sign-in'
+    | '/two-factor'
+    | '/account'
+    | '/'
+    | '/settings/staff'
+    | '/settings/store'
+    | '/settings'
   id:
     | '__root__'
     | '/_shell'
@@ -91,8 +124,10 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/_shell/account'
-    | '/_shell/settings'
     | '/_shell/'
+    | '/_shell/settings/staff'
+    | '/_shell/settings/store'
+    | '/_shell/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -146,11 +181,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAccountRouteImport
       parentRoute: typeof ShellRoute
     }
-    '/_shell/settings': {
-      id: '/_shell/settings'
+    '/_shell/settings/': {
+      id: '/_shell/settings/'
       path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof ShellSettingsRouteImport
+      fullPath: '/settings/'
+      preLoaderRoute: typeof ShellSettingsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/staff': {
+      id: '/_shell/settings/staff'
+      path: '/settings/staff'
+      fullPath: '/settings/staff'
+      preLoaderRoute: typeof ShellSettingsStaffRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/store': {
+      id: '/_shell/settings/store'
+      path: '/settings/store'
+      fullPath: '/settings/store'
+      preLoaderRoute: typeof ShellSettingsStoreRouteImport
       parentRoute: typeof ShellRoute
     }
   }
@@ -158,14 +207,18 @@ declare module '@tanstack/react-router' {
 
 interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
-  ShellSettingsRoute: typeof ShellSettingsRoute
   ShellIndexRoute: typeof ShellIndexRoute
+  ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
+  ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
+  ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
-  ShellSettingsRoute: ShellSettingsRoute,
   ShellIndexRoute: ShellIndexRoute,
+  ShellSettingsStaffRoute: ShellSettingsStaffRoute,
+  ShellSettingsStoreRoute: ShellSettingsStoreRoute,
+  ShellSettingsIndexRoute: ShellSettingsIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)

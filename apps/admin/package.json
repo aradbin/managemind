@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fontsource/noto-sans-bengali": "catalog:",
+    "@hookform/resolvers": "catalog:",
     "@managemind/sdk": "workspace:*",
     "@managemind/shared": "workspace:*",
     "@radix-ui/react-dialog": "catalog:",
@@ -24,8 +25,10 @@
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "catalog:",
     "tailwind-merge": "catalog:",
-    "workbox-window": "catalog:"
+    "workbox-window": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "catalog:",
