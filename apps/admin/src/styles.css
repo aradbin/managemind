@@ -17,6 +17,7 @@
   --color-danger-foreground: #ffffff;
   --color-warning: #fef3c7;
   --color-warning-foreground: #78350f;
+  --color-success: #166534;
   --color-ring: #1d4ed8;
 }
 
@@ -33,6 +34,7 @@
     --color-danger-foreground: #0b1120;
     --color-warning: #422006;
     --color-warning-foreground: #fde68a;
+    --color-success: #86efac;
     --color-ring: #93c5fd;
   }
 }

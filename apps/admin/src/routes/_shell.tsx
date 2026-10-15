@@ -4,7 +4,7 @@
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router';
-import { Home, type LucideIcon, Mail, Settings, Shield, User } from 'lucide-react';
+import { Home, type LucideIcon, Mail, Package, Settings, Shield, User } from 'lucide-react';
 import { useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
 import { LanguageSwitch } from '../components/language-switch';
@@ -34,16 +34,19 @@ export const Route = createFileRoute('/_shell')({
 });
 
 interface NavItem {
-  to: '/' | '/settings' | '/account' | '/platform' | '/dev/mailbox';
+  to: '/' | '/products' | '/settings' | '/account' | '/platform' | '/dev/mailbox';
   label: AdminKey;
   icon: LucideIcon;
 }
 
 const NAV: NavItem[] = [
   { to: '/', label: 'nav.home', icon: Home },
+  { to: '/products', label: 'nav.catalog', icon: Package },
   { to: '/settings', label: 'nav.settings', icon: Settings },
   { to: '/account', label: 'nav.account', icon: User },
 ];
+/** Bottom bar columns by item count (static class names, for Tailwind). */
+const COLUMNS: Record<number, string> = { 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5' };
 const PLATFORM: NavItem = { to: '/platform', label: 'nav.platform', icon: Shield };
 const MAILBOX: NavItem = { to: '/dev/mailbox', label: 'dev.mailbox', icon: Mail };
 
@@ -123,7 +126,7 @@ function Shell() {
 
       <nav
         aria-label={t('nav.main')}
-        className={`fixed inset-x-0 bottom-0 grid ${nav.length > 3 ? 'grid-cols-4' : 'grid-cols-3'} border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden`}
+        className={`fixed inset-x-0 bottom-0 grid ${COLUMNS[nav.length] ?? 'grid-cols-5'} border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden`}
       >
         {links(nav, 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs')}
       </nav>
