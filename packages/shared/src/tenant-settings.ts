@@ -36,6 +36,37 @@ export const storeProfile = z
   })
   .strict();
 
+/** A VAT category for products taxed differently from the standard rate. */
+const vatCategory = z
+  .object({
+    key: z.string().regex(/^[a-z][a-z0-9_]{0,31}$/),
+    name: text(100),
+    /** 0 for zero-rated. */
+    rateBasisPoints: z.int().min(0).max(10_000),
+    /** Outside VAT altogether, as opposed to taxed at 0%. */
+    exempt: z.boolean().default(false),
+  })
+  .strict();
+
+/**
+ * VAT (phase-2-plan §3.9, Q4): off by default, because many small merchants
+ * aren't registered; 15% with prices including VAT once turned on. Phase 4
+ * calculates VAT per order line from these settings.
+ */
+export const taxSettings = z
+  .object({
+    vatEnabled: z.boolean().default(false),
+    /** The standard rate in basis points: 1500 = 15%. */
+    rateBasisPoints: z.int().min(0).max(10_000).default(1500),
+    pricesIncludeVat: z.boolean().default(true),
+    categories: z
+      .array(vatCategory)
+      .max(20)
+      .refine((list) => new Set(list.map((c) => c.key)).size === list.length, 'keys must differ')
+      .default([]),
+  })
+  .strict();
+
 export const tenantSettings = z
   .object({
     version: z.literal(1).default(1),
@@ -47,9 +78,16 @@ export const tenantSettings = z
       })
       .strict()
       .default({}),
+    tax: taxSettings.default({
+      vatEnabled: false,
+      rateBasisPoints: 1500,
+      pricesIncludeVat: true,
+      categories: [],
+    }),
   })
   .strict();
 
+export type TaxSettings = z.infer<typeof taxSettings>;
 export type TenantSettings = z.infer<typeof tenantSettings>;
 export type StoreProfile = z.infer<typeof storeProfile>;
 

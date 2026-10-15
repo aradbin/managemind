@@ -2,8 +2,7 @@
 // local format; every input (checkout, import, admin, manual orders) goes
 // through normalizePhone before it is saved or matched (PLAN.md, core
 // principles). Only mobile numbers: shoppers and staff are reached by SMS.
-
-const BANGLA_DIGITS = '০১২৩৪৫৬৭৮৯';
+import { toBanglaDigits, toLatinDigits } from './digits';
 
 /** Mobile numbers: 1 followed by an operator digit (3–9) and 8 more digits. */
 const NATIONAL = /^1[3-9]\d{8}$/;
@@ -14,7 +13,7 @@ const NATIONAL = /^1[3-9]\d{8}$/;
  * forms 01XXXXXXXXX, 1XXXXXXXXX, 8801XXXXXXXXX, +8801XXXXXXXXX and 008801XXXXXXXXX.
  */
 export function normalizePhone(input: string): string | null {
-  let digits = input.replace(/[০-৯]/g, (d) => String(BANGLA_DIGITS.indexOf(d)));
+  let digits = toLatinDigits(input);
   const plus = digits.trim().startsWith('+');
   digits = digits.replace(/[\s\-.()]/g, '');
   if (plus) digits = digits.slice(1);
@@ -35,7 +34,5 @@ export function formatPhone(e164: string, numerals: 'latin' | 'bengali' = 'latin
   const match = /^\+880(1\d{3})(\d{6})$/.exec(e164);
   if (!match) return e164;
   const local = `0${match[1]}-${match[2]}`;
-  return numerals === 'bengali'
-    ? local.replace(/\d/g, (d) => BANGLA_DIGITS[Number(d)] ?? d)
-    : local;
+  return numerals === 'bengali' ? toBanglaDigits(local) : local;
 }

@@ -12,7 +12,8 @@ import {
 } from './permissions';
 
 describe('role matrix', () => {
-  // The reviewed matrix (phase-1-plan §5.2, approved Oct 11). A change to any
+  // The reviewed matrix (phase-1-plan §5.2, approved Oct 11; catalog.cost
+  // for Owner and Manager, phase-2-plan Q5). A change to any
   // role must change this list on purpose.
   const expected: Record<StoreRole, Permission[]> = {
     owner: [...PERMISSIONS],
@@ -55,6 +56,13 @@ describe('role matrix', () => {
     expect(coversRole(permissionsOf('owner'), 'manager')).toBe(true);
     expect(coversRole(permissionsOf('manager'), 'staff')).toBe(true);
     expect(coversRole(permissionsOf('staff'), 'viewer')).toBe(false); // Viewer reads reports
+  });
+});
+
+describe('catalog.cost', () => {
+  it('is for Owner and Manager only (phase-2-plan Q5)', () => {
+    const holders = STORE_ROLES.filter((role) => permissionsOf(role).has('catalog.cost'));
+    expect(holders).toEqual(['owner', 'manager']);
   });
 });
 

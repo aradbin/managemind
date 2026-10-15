@@ -12,6 +12,8 @@ export const PERMISSIONS = [
   'staff.manage_owners',
   'catalog.read',
   'catalog.write',
+  /** Cost prices, wherever they appear (phase-2-plan Q5): Owner and Manager. */
+  'catalog.cost',
   'inventory.read',
   'inventory.write',
   'orders.read',

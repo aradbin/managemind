@@ -1,5 +1,6 @@
 import { createDb } from '@managemind/db';
 import { permissionsOf } from '@managemind/shared';
+import { defaultTenantSettings } from '@managemind/shared/settings';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -66,7 +67,7 @@ describe('createTenant', () => {
       [id],
     );
     expect(tenant).toMatchObject({ slug, status: 'active', default_locale: 'en' });
-    expect(tenant?.settings).toEqual({ version: 1, profile: {}, display: {} });
+    expect(tenant?.settings).toEqual(defaultTenantSettings());
     const [member] = await one(
       `select role from platform.memberships where tenant_id = $1 and user_id = $2`,
       [id, ownerUserId],

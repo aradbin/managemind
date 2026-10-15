@@ -1,6 +1,7 @@
 // Money in integer minor units (poisha for BDT). No floats in money math:
 // every operation stays on safe integers, and percentages use BigInt for the
 // intermediate product. Rounding happens once per call, half away from zero.
+import { toLatinDigits } from './digits';
 
 export type CurrencyCode = 'BDT';
 
@@ -76,6 +77,31 @@ export function percentOf(m: Money, basisPoints: number): Money {
   return money(Number(divRound(BigInt(m.amount) * BigInt(basisPoints), 10_000n)), m.currency);
 }
 
+export interface VatSplit {
+  net: Money;
+  vat: Money;
+  gross: Money;
+}
+
+/**
+ * A price's VAT at `basisPoints`, when the price includes VAT or not. VAT is
+ * rounded once (half away from zero) and net + vat always equals gross.
+ */
+export function splitVat(price: Money, basisPoints: number, pricesIncludeVat: boolean): VatSplit {
+  if (!Number.isSafeInteger(basisPoints) || basisPoints < 0) {
+    throw new RangeError(`Basis points must be a non-negative integer, got ${basisPoints}`);
+  }
+  if (!pricesIncludeVat) {
+    const vat = percentOf(price, basisPoints);
+    return { net: price, vat, gross: add(price, vat) };
+  }
+  const vat = money(
+    Number(divRound(BigInt(price.amount) * BigInt(basisPoints), 10_000n + BigInt(basisPoints))),
+    price.currency,
+  );
+  return { net: subtract(price, vat), vat, gross: price };
+}
+
 /**
  * Splits `m` in proportion to integer `weights` (largest remainder method).
  * The parts always add up to `m` exactly; leftover minor units go to the
@@ -136,4 +162,42 @@ export function format(m: Money, locale: Locale, options: FormatOptions = {}): s
     .padStart(digits + 1, '0');
   const decimal = `${m.amount < 0 ? '-' : ''}${abs.slice(0, -digits)}.${abs.slice(-digits)}`;
   return f.format(decimal as `${number}`);
+}
+
+/** Currency marks people type around a price: ৳, Tk, BDT, টাকা. */
+const CURRENCY_MARKS = /৳|টাকা|\btk\.?|\bbdt\b/giu;
+
+/**
+ * Parses a typed amount into minor units: "৳১,২৫০.৫০" -> 125050. Accepts
+ * Bangla digits, currency marks, spaces and thousands separators in either
+ * grouping (1,234,567 or 12,34,567). Returns null for anything else,
+ * including more decimals than the currency has: it never rounds silently.
+ */
+export function parseAmount(input: string, currency: CurrencyCode = 'BDT'): number | null {
+  const digits = CURRENCIES[currency].minorUnits;
+  const text = toLatinDigits(input)
+    .replace(CURRENCY_MARKS, '')
+    .replace(/\s+/g, '')
+    .replace(/(?<=\d),(?=\d{2})/g, '');
+  const match = /^(-)?(\d+)(?:\.(\d*))?$/.exec(text);
+  if (!match) return null;
+  const [, minus, whole = '', fraction = ''] = match;
+  if (fraction.length > digits) return null;
+  const amount = Number(whole + fraction.padEnd(digits, '0'));
+  if (!Number.isSafeInteger(amount)) return null;
+  return minus ? -amount : amount;
+}
+
+/** Minor units as a plain decimal for inputs and exports: 125050 -> "1250.50", 125000 -> "1250". */
+export function amountToDecimal(amount: number, currency: CurrencyCode = 'BDT'): string {
+  assertAmount(amount);
+  const digits = CURRENCIES[currency].minorUnits;
+  const abs = Math.abs(amount)
+    .toString()
+    .padStart(digits + 1, '0');
+  const fraction = abs.slice(-digits);
+  const text = /^0+$/.test(fraction)
+    ? abs.slice(0, -digits)
+    : `${abs.slice(0, -digits)}.${fraction}`;
+  return amount < 0 ? `-${text}` : text;
 }

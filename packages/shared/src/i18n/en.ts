@@ -20,5 +20,10 @@ export const en = {
   'error.role_not_allowed': 'You cannot give or change this role.',
   'error.invitation_invalid': 'This invitation is no longer valid. Ask for a new one.',
   'error.rate_limited': 'Too many attempts. Please wait a minute and try again.',
+  'error.sku_taken': 'Another product already uses this SKU.',
+  'error.catalog_slug_taken': 'Another item already uses this address. Choose a different one.',
+  'error.insufficient_stock': 'There isn’t enough stock for this.',
+  'error.in_use': 'This is still in use, so it can’t be removed.',
+  'error.limit_exceeded': 'You’ve reached the limit for this.',
   'error.internal': 'Something went wrong. Please try again.',
 } as const;

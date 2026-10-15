@@ -3,7 +3,12 @@ import { defaultTenantSettings, tenantSettings } from './tenant-settings';
 
 describe('tenantSettings', () => {
   it('fills defaults for a new store', () => {
-    expect(defaultTenantSettings()).toEqual({ version: 1, profile: {}, display: {} });
+    expect(defaultTenantSettings()).toEqual({
+      version: 1,
+      profile: {},
+      display: {},
+      tax: { vatEnabled: false, rateBasisPoints: 1500, pricesIncludeVat: true, categories: [] },
+    });
     expect(tenantSettings.parse({})).toEqual(defaultTenantSettings());
   });
 
@@ -31,5 +36,39 @@ describe('tenantSettings', () => {
     const settings = tenantSettings.parse({ profile: { address: { line1: '  House 12  ' } } });
     expect(settings.profile.address).toEqual({ line1: 'House 12' });
     expect(tenantSettings.safeParse({ profile: { address: { line1: '  ' } } }).success).toBe(false);
+  });
+});
+
+describe('tax settings', () => {
+  it('defaults to 15% including VAT once turned on (Q4)', () => {
+    const settings = tenantSettings.parse({ tax: { vatEnabled: true } });
+    expect(settings.tax).toEqual({
+      vatEnabled: true,
+      rateBasisPoints: 1500,
+      pricesIncludeVat: true,
+      categories: [],
+    });
+  });
+
+  it('accepts VAT categories and refuses duplicates and bad rates', () => {
+    const tax = {
+      vatEnabled: true,
+      categories: [
+        { key: 'reduced', name: 'Reduced 5%', rateBasisPoints: 500 },
+        { key: 'exempt', name: 'Exempt', rateBasisPoints: 0, exempt: true },
+      ],
+    };
+    expect(tenantSettings.parse({ tax }).tax.categories[0]?.exempt).toBe(false);
+    const dup = { ...tax, categories: [tax.categories[0], tax.categories[0]] };
+    expect(tenantSettings.safeParse({ tax: dup }).success).toBe(false);
+    expect(tenantSettings.safeParse({ tax: { rateBasisPoints: 10_001 } }).success).toBe(false);
+    expect(tenantSettings.safeParse({ tax: { rateBasisPoints: 15.5 } }).success).toBe(false);
+    expect(tenantSettings.safeParse({ tax: { vat: true } }).success).toBe(false);
+  });
+
+  it('reads settings stored before the tax section existed', () => {
+    expect(tenantSettings.parse({ version: 1, profile: {}, display: {} }).tax.vatEnabled).toBe(
+      false,
+    );
   });
 });
