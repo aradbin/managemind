@@ -36,15 +36,27 @@ export async function actorFor(
   db: Db,
   userId: string,
   activeTenantId: string | null,
-  now = new Date(),
+  options: {
+    now?: Date;
+    /** The user row was just read (the session lookup): skip reading it again. */
+    platformRole?: PlatformRole | null;
+  } = {},
 ): Promise<Actor> {
-  const u = schema.users;
-  const [user] = await db.select({ platformRole: u.platformRole }).from(u).where(eq(u.id, userId));
-  if (!user) throw new AppError('unauthorized');
+  const now = options.now ?? new Date();
+  let platformRole = options.platformRole;
+  if (platformRole === undefined) {
+    const u = schema.users;
+    const [user] = await db
+      .select({ platformRole: u.platformRole })
+      .from(u)
+      .where(eq(u.id, userId));
+    if (!user) throw new AppError('unauthorized');
+    platformRole = user.platformRole ?? null;
+  }
   const actor: Actor = {
     kind: 'user',
     userId,
-    platformRole: user.platformRole ?? null,
+    platformRole,
     permissions: new Set(),
   };
   if (!activeTenantId) return actor;
