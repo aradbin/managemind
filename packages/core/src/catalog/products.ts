@@ -111,8 +111,8 @@ export interface ProductDetail {
   updatedAt: string;
 }
 
-/** The whole product as one JSON document, built by Postgres. */
-const detailSql = (id: string) => sql`
+/** Whole products as JSON documents, built by Postgres: one row per product. */
+const detailSql = (where: SQL) => sql`
   select json_build_object(
     'id', p.id,
     'status', p.status,
@@ -189,12 +189,12 @@ const detailSql = (id: string) => sql`
     'tags', coalesce((select json_agg(tg.tag order by tg.tag)
       from store.product_tags tg where tg.product_id = p.id), '[]'::json)
   ) as product
-  from store.products p where p.id = ${id}`;
+  from store.products p where ${where}`;
 
 /** A product with everything the editor shows; cost and stock only for those allowed. */
 export async function getProduct(tx: TenantTx, actor: Actor, id: string): Promise<ProductDetail> {
   authorize(actor, 'catalog.read');
-  const { rows } = await tx.db.execute<{ product: ProductDetail }>(detailSql(id));
+  const { rows } = await tx.db.execute<{ product: ProductDetail }>(detailSql(sql`p.id = ${id}`));
   const product = rows[0]?.product;
   if (!product) throw new AppError('not_found');
   return redact(product, actor);
@@ -240,6 +240,8 @@ export type ProductSummary = {
   available?: number | null;
   lowStock?: boolean;
   imageMediaId: string | null;
+  /** `<sha256>.<ext>` of the first image's smallest file. */
+  imageFile: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -300,6 +302,11 @@ export async function listProducts(
       ${LOW_STOCK} as "lowStock",
       (select pm.media_id from store.product_media pm where pm.product_id = p.id
         order by pm.position limit 1) as "imageMediaId",
+      -- The first image's smallest file, for list thumbnails (files are stored smallest first).
+      (select (md.files -> 0 ->> 'sha256') || '.' ||
+              case md.mime when 'image/webp' then 'webp' when 'image/jpeg' then 'jpg' else 'png' end
+         from store.product_media pm join store.media md on md.id = pm.media_id
+        where pm.product_id = p.id order by pm.position limit 1) as "imageFile",
       p.created_at as "createdAt", p.updated_at as "updatedAt"
     from store.products p
     left join lateral (
@@ -323,6 +330,28 @@ export async function listProducts(
   return {
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+  };
+}
+
+/**
+ * Whole products for the export, a page at a time, with the list's filters:
+ * the browser writes the file (phase-2-plan §3.7).
+ */
+export async function exportProducts(
+  tx: TenantTx,
+  actor: Actor,
+  query: ProductListQuery = {},
+): Promise<{ items: ProductDetail[]; nextCursor: string | null }> {
+  const page = await listProducts(tx, actor, query);
+  const ids = page.items.map((p) => p.id);
+  if (!ids.length) return { items: [], nextCursor: null };
+  const { rows } = await tx.db.execute<{ product: ProductDetail }>(
+    detailSql(sql`p.id = any(${sql.param(ids)}::uuid[])`),
+  );
+  const byId = new Map(rows.map((r) => [r.product.id, redact(r.product, actor)]));
+  return {
+    items: ids.map((id) => byId.get(id)).filter((p): p is ProductDetail => Boolean(p)),
+    nextCursor: page.nextCursor,
   };
 }
 

@@ -16,6 +16,7 @@ import {
   deleteCategory,
   deleteCollection,
   deleteProduct,
+  exportProducts,
   getProduct,
   listAttributes,
   listCategories,
@@ -178,6 +179,7 @@ const ProductSummary = z
     available: z.number().int().nullable().optional(),
     lowStock: z.boolean().optional(),
     imageMediaId: z.uuid().nullable(),
+    imageFile: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -312,6 +314,28 @@ export const CATALOG_ROUTES = {
       }),
     },
     responses: json(page(ProductSummary), 'Products'),
+  }),
+  exportProducts: r({
+    method: 'get',
+    path: '/products/export',
+    summary: 'Whole products for the export, a page at a time, with the list’s filters',
+    request: {
+      query: z.object({
+        q: z.string().max(100).optional(),
+        status: z.enum(['draft', 'active', 'archived']).optional(),
+        categoryId: z.uuid().optional(),
+        collectionId: z.uuid().optional(),
+        brandValueId: z.uuid().optional(),
+        tag: z.string().max(50).optional(),
+        lowStock: flag,
+        after: z.uuid().optional(),
+        limit,
+      }),
+    },
+    responses: json(
+      z.object({ items: z.array(Product), nextCursor: z.string().nullable() }),
+      'Products',
+    ),
   }),
   createProduct: r({
     method: 'post',
@@ -639,6 +663,15 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
       listProducts(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
     );
     return c.json(result, 200);
+  });
+  admin.openapi(R.exportProducts, async (c) => {
+    const { lowStock, ...query } = c.req.valid('query');
+    return c.json(
+      await inStore(c, (tx) =>
+        exportProducts(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
+      ),
+      200,
+    );
   });
   admin.openapi(R.createProduct, async (c) => {
     const input = c.req.valid('json');

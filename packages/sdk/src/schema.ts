@@ -1191,6 +1191,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/products/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whole products for the export, a page at a time, with the list’s filters */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "draft" | "active" | "archived";
+                    categoryId?: string;
+                    collectionId?: string;
+                    brandValueId?: string;
+                    tag?: string;
+                    lowStock?: "true" | "false";
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Products */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["Product"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/products/{id}": {
         parameters: {
             query?: never;
@@ -4070,6 +4119,7 @@ export interface components {
             lowStock?: boolean;
             /** Format: uuid */
             imageMediaId: string | null;
+            imageFile: string | null;
             createdAt: string;
             updatedAt: string;
         };
