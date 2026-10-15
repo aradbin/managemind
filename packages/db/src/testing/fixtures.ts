@@ -98,8 +98,9 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   stock_locations: (tenant) =>
     `insert into store.stock_locations (tenant_id, name) values (${tenant}, 'Fixture')`,
   inventory_levels: (tenant) =>
-    `insert into store.inventory_levels (tenant_id, variant_id, location_id)
-     values (${tenant}, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")})`,
+    // On hand 1: the stock_movements fixture below receives 1 here, so the invariant holds.
+    `insert into store.inventory_levels (tenant_id, variant_id, location_id, on_hand)
+     values (${tenant}, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")}, 1)`,
   stock_movements: (tenant) =>
     `insert into store.stock_movements (tenant_id, variant_id, location_id, type, quantity, reason, actor_type)
      values (${tenant}, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")}, 'receive', 1, 'fixture', 'system')`,
