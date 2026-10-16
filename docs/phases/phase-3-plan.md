@@ -1,6 +1,6 @@
 # Phase 3 plan — Storefront, themes and domains
 
-- Status: Draft, waiting for the owner's answers (§13). Approved when this PR merges (PLAN.md: no code before approval)
+- Status: Questions answered by the owner on 2026-10-16 (§13); approved when this PR merges (PLAN.md: no code before approval)
 - Date: 2026-10-16
 - Scope: PLAN.md "Phase 3 — Storefront, themes and domains"
 
@@ -34,8 +34,8 @@ Two acceptance criteria, from PLAN.md:
 | Two or three reference stores per theme preset (fashion, grocery, general) | **Open.** They shape the homepage presets (§3.4, Q6). **Needed before PR 10**, about week 2 |
 | A pilot client's logo, colors and banners | **Open, not blocking.** There is no pilot client yet. The demo stores use placeholder branding |
 | A test Meta Pixel ID, a GA4 property, a WhatsApp number and a Messenger page link | **Open.** **Needed before PR 14**, about week 3 |
-| Cookie consent wording | **Proposed in §3.10** for the owner to approve or change (Q11) |
-| New: a test domain that isn't ours, for acceptance criterion 1 | **Open** (Q8) |
+| Cookie consent wording | **Done:** the wording in §3.10 is approved as the default, editable per store (Q11) |
+| New: a test domain that isn't ours, for acceptance criterion 1 | **Open:** a subdomain of a domain the owner has elsewhere (Q8). **Needed before PR 19** |
 | Legal review: which business details the footer must show | **Open, not blocking.** Every field is optional until then (§3.11) |
 
 ## 2. Research: what is borrowed
@@ -192,12 +192,12 @@ The flow, using Cloudflare for SaaS custom hostnames on `managemind.store` (100 
 
 **Infrastructure (provisioning, idempotent):** the fallback origin `stores.managemind.store` (a proxied placeholder record, like Phase 1's wildcard), and a Worker route `*/*` on the `managemind.store` zone to the storefront, which catches custom hostnames. The bare `managemind.store` then reaches the storefront too, which redirects it to the main site. A new ADR (0019) records this.
 
-**Purge on custom hostnames:** ADR 0007 decision 8 left one question open: does purging the `managemind.store` zone by tag reach pages cached on custom hostnames? PR 19 tests it on the test domain (Q8) before the acceptance run. If it doesn't, those pages fall back to purge by URL prefix per host, which has its own, much larger rate limit (ADR 0007).
+**Purge on custom hostnames:** ADR 0007 decision 8 left one question open: does purging the `managemind.store` zone by tag reach pages cached on custom hostnames? PR 19 tests it on the owner's test hostname (Q8) before the acceptance run. If it doesn't, those pages fall back to purge by URL prefix per host, which has its own, much larger rate limit (ADR 0007).
 
 ### 3.10 Tracking, consent and chat
 
 - **Tracking settings:** `storefront.tracking` holds a Meta Pixel ID and a GA4 measurement ID, each validated by format.
-- **No tag loads before consent.** A banner offers "Accept" and "Reject", equally prominent. The choice is a first-party cookie that only the browser reads, kept 6 months, and the footer has a link to change it. Proposed wording (Q11):
+- **No tag loads before consent.** A banner offers "Accept" and "Reject", equally prominent. The choice is a first-party cookie that only the browser reads, kept 6 months, and the footer has a link to change it. The default wording (Q11: approved), which each store can change in its storefront settings (`storefront.consent`, both languages, at most 300 characters):
   - **bn:** "আমরা আপনার অভিজ্ঞতা উন্নত করতে এবং বিজ্ঞাপন মাপতে কুকি ব্যবহার করি। আপনি কি সম্মত?" · **গ্রহণ করুন** · **প্রত্যাখ্যান করুন**
   - **en:** "We use cookies to improve your visit and measure our ads. Do you agree?" · **Accept** · **Reject**
   - Stores without a Pixel or GA4 ID show no banner, because they set no such cookies.
@@ -216,8 +216,7 @@ The flow, using Cloudflare for SaaS custom hostnames on `managemind.store` (100 
 
 | Permission | What it covers |
 | --- | --- |
-| `settings.read` / `settings.write` | Theme, homepage, static pages, storefront settings (tracking, chat, holiday, indexing, display), business details. Owner and Manager write; Staff and Viewer read (Phase 1's roles) |
-| **New: `domains.write`** | Add, remove and make primary custom domains. **Owner only** (Q10), because a wrong change can take the store offline or hand its traffic elsewhere |
+| `settings.read` / `settings.write` | Theme, homepage, static pages, storefront settings (tracking, chat, consent text, holiday, indexing, display), business details, and custom domains (Q10). Owner and Manager write; Staff and Viewer read (Phase 1's roles) |
 
 ### 3.13 New dependencies
 
@@ -248,7 +247,7 @@ No dependency is added to a Worker. The storefront's islands use plain TypeScrip
 **Settings (typed JSON, no migration):**
 
 - `theme`, `themeDraft` (§3.4);
-- `storefront`: `indexing`, `tracking`, `chat`, `holiday` (§3.6–3.10);
+- `storefront`: `indexing`, `tracking`, `consent`, `chat`, `holiday` (§3.6–3.10);
 - `profile` gains the business details (§3.11).
 
 **Events:**
@@ -293,7 +292,7 @@ No dependency is added to a Worker. The storefront's islands use plain TypeScrip
 | --- | --- |
 | Theme | `GET /theme` (draft and published), `PUT /theme/draft`, `POST /theme/presets/{name}` (replaces the draft), `POST /theme/publish`, `POST /theme/preview-token` |
 | Pages | `GET /pages`, `POST /pages`, `GET /pages/{id}`, `PATCH /pages/{id}`, `DELETE /pages/{id}` |
-| Domains | `GET /domains`, `POST /domains`, `POST /domains/{id}/check`, `POST /domains/{id}/primary`, `DELETE /domains/{id}` (all `domains.write`, except the list) |
+| Domains | `GET /domains`, `POST /domains`, `POST /domains/{id}/check`, `POST /domains/{id}/primary`, `DELETE /domains/{id}` (`settings.write`, except the list) |
 | Settings | `PATCH /store` gains `storefront` and the business details |
 
 ## 7. Admin screens
@@ -305,7 +304,7 @@ No dependency is added to a Worker. The storefront's islands use plain TypeScrip
   - the live preview, which sits beside the editor on desktop and is a "Preview" tab on phones;
   - "Publish".
 - **Online store → Pages:** a list and the rich-text editor from Phase 2, with Bangla and English tabs.
-- **Online store → Settings:** tracking IDs, chat buttons, holiday mode, search-engine indexing, digits.
+- **Online store → Settings:** tracking IDs, the consent banner's text, chat buttons, holiday mode, search-engine indexing, digits.
 - **Settings → Domains:**
   - the store's default address;
   - each custom domain with its status, the DNS record to add (with a copy button), "Check now", "Make primary" and "Remove".
@@ -361,7 +360,7 @@ PLAN.md's targets on a mid-range Android phone over 4G: LCP under 2.5 s, INP und
 | --- | --- |
 | 0 | This plan, the PLAN.md status update and README fixes |
 | 1 | `db`: `C.UTF-8` for local databases, the Bangla trigram test, the deploy's locale check (ADR 0008 amendment); `app.search_text()` and the new trigram indexes |
-| 2 | `shared`: theme schema, tokens, sections and presets; storefront settings (indexing, tracking, chat, holiday); business details; contrast check; URL and cache-key helpers; cache tag builders; `domains.write` |
+| 2 | `shared`: theme schema, tokens, sections and presets; storefront settings (indexing, tracking, consent text, chat, holiday); business details; contrast check; URL and cache-key helpers; cache tag builders |
 | 3 | `db`: pages and their translations, `price_min`/`price_max` with a backfill, `tenant_domains` columns, the `page` redirect type |
 | 4 | `core`: published-only catalog reads, listing with filters, facets and sort, search, price upkeep, the availability event |
 | 5 | `core`: the storefront page queries; static pages; theme draft, publish and preview tokens |
@@ -387,29 +386,30 @@ As in Phase 2, these can ship as one pull request with one commit per step if th
 
 | Criterion | Verification |
 | --- | --- |
-| Two stores with different themes and languages served from the same deployment, each on its own domain | In production: `demo-fashion` (fashion preset, Bangla default) on the test custom domain (Q8), and `demo-grocery` (grocery preset, English default) on `demo-grocery.managemind.store`. A Playwright check against production loads both: each page has its own theme tokens and `lang`, canonical URLs on its own host, and `demo-fashion.managemind.store` 301s to the custom domain. Previews run the same flows with the dev store selector |
+| Two stores with different themes and languages served from the same deployment, each on its own domain | In production: `demo-fashion` (fashion preset, Bangla default) on the owner's test hostname (Q8), and `demo-grocery` (grocery preset, English default) on `demo-grocery.managemind.store`. A Playwright check against production loads both: each page has its own theme tokens and `lang`, canonical URLs on its own host, and `demo-fashion.managemind.store` 301s to the custom domain. Previews run the same flows with the dev store selector |
 | A cached product page is served without any database query (verified in logs) | Production's deploy smoke requests a product page twice. The second response has `x-cache: hit`, and Workers Logs show that request ID only on the storefront Worker: no KV read, no API invocation, so no Hyperdrive query. The storefront's unit test pins the same behaviour on every PR |
 
-## 13. Questions for the owner
+## 13. The owner's answers (2026-10-16)
 
-| # | Question | Recommendation |
+| # | Question | Answer |
 | --- | --- | --- |
-| Q1 | **Scope.** Move cart, checkout, order confirmation, order tracking and the shopper account pages to Phase 4, which builds what they need? | **Yes.** Phase 3 builds browsing; the pages Phase 4 needs appear in Phase 4 with their APIs. The chat buttons are the call to action until then |
-| Q2 | **Estimate:** about 4 weeks instead of 3 (custom domains, Bangla search, live preview) | Accept |
-| Q3 | **Language URLs:** the default language at the root, the other under `/en/` or `/bn/` | **Yes.** Each language has its own URL, as hreflang and Shopify do |
-| Q4 | **Cache lifetime:** one day, with purges keeping pages fresh (ADR 0007 said to start at one hour and tune) | **One day.** Fewer misses mean less CPU and fewer Neon wake-ups; a lost purge still ends within a day |
-| Q5 | **Fonts:** the phone's own font by default (no download), with Hind Siliguri as an optional web font | **Yes** |
-| Q6 | **Presets:** fashion, grocery and general | **Yes, with your reference stores** (§1) before PR 10 |
-| Q7 | **Search engines:** stores are `noindex` until the owner turns indexing on | **Yes.** A store without checkout shouldn't appear in Google; turn it on per store at launch |
-| Q8 | **A test custom domain** for the acceptance run and the purge check. Options: (a) buy a cheap domain (a few dollars a year; a paid item, so it needs your yes), (b) use a subdomain of `managemind.site` for the test only | **(a)**, so the test matches what a client does and nothing a store serves sits on the main domain (PLAN.md). (b) works if you'd rather not buy one |
-| Q9 | **Bare domains** (`shop.com.bd` without `www`): Cloudflare's Free plan can't serve them | **`www` only;** the admin explains how to forward the bare domain at the registrar |
-| Q10 | **Who manages domains:** a new `domains.write` permission for Owners only; theme and pages for Owner and Manager (`settings.write`) | **Yes** |
-| Q11 | **Consent banner:** the wording in §3.10, shown only when a store has a Pixel or GA4 ID; no tags before "Accept" | **Approve or edit the wording** |
-| Q12 | **Policy pages:** start empty with suggested headings (what a returns or delivery policy should cover), until the legal review provides templates | **Yes.** We shouldn't write legal text the review hasn't seen |
+| Q1 | Scope | **Cart, checkout, order confirmation, order tracking and the shopper account move to Phase 4.** The chat buttons are the call to action until then |
+| Q2 | Estimate | **About 4 weeks** |
+| Q3 | Language URLs | **The default language at the root, the other under a prefix** (`/en/…` or `/bn/…`) |
+| Q4 | Cache lifetime | **One day,** with purges keeping pages fresh |
+| Q5 | Fonts | **The phone's own font by default,** Hind Siliguri as an optional self-hosted web font |
+| Q6 | Presets | **Fashion, grocery and general,** shaped by the owner's reference stores before PR 10 |
+| Q7 | Search engines | **Stores are `noindex` until the owner turns indexing on** per store |
+| Q8 | Test custom domain | **A subdomain of a domain the owner has elsewhere** (for example `shop-test.<their domain>`), with a CNAME to `stores.managemind.store`. It behaves like a client's `www`; if that domain is on Cloudflare, the TXT ownership record is tested too. The hostname is due before PR 19 |
+| Q9 | Bare domains | **`www` only;** the admin explains how to forward the bare domain at the registrar |
+| Q10 | Who manages domains and the theme | **Owner and Manager for both** (`settings.write`). No new permission |
+| Q11 | Consent banner | **The wording in §3.10, as the default, editable per store** |
+| Q12 | Policy pages | **Empty, with suggested headings,** until the legal review provides templates |
 
-**Also needed from the owner:**
+**Still needed from the owner:**
 
 - Cloudflare for SaaS turned on (before PR 8) and the `CF_STORE_TOKEN` token (before PR 7);
 - the reference stores (before PR 10);
 - the test tracking IDs and chat links (before PR 14);
+- the test hostname (before PR 19);
 - confirmation that Search Console is verified with alerts on for both domains.
