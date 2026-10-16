@@ -1,9 +1,11 @@
 // Categories (phase-2-plan §3.3, §3.4, §7): the tree with add, rename, move
 // and reorder, and each category's attribute template. At most 3 levels.
 import { CATALOG_LIMITS } from '@managemind/shared/catalog';
+import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
 import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -20,6 +22,7 @@ import {
   attributesQuery,
   type Category,
   categoriesQuery,
+  categoryOptions,
   pick,
   storeSettingsQuery,
 } from '../lib/catalog';
@@ -193,7 +196,11 @@ export function CategoriesPage() {
   );
 }
 
-/** Create or rename: a name (and optional URL) in each language. */
+/**
+ * Create or edit: a name, description and (when editing) URL in each
+ * language, and where the category sits: editing can move it under another
+ * category, at the end of that category's list.
+ */
 function CategoryDialog({
   editing,
   onClose,
@@ -201,10 +208,11 @@ function CategoryDialog({
   editing: NonNullable<Editing>;
   onClose: () => void;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
   const store = useQuery(storeSettingsQuery);
+  const categories = useQuery(categoriesQuery);
   const defaultLang: Lang = store.data?.defaultLocale ?? 'bn';
   const initial = editing.mode === 'edit' ? editing.category.translations : {};
   const [names, setNames] = useState<Record<Lang, string>>({
@@ -215,13 +223,34 @@ function CategoryDialog({
     bn: initial.bn?.slug ?? '',
     en: initial.en?.slug ?? '',
   });
+  // Only a description that was changed is sent; one left alone stays.
+  const [descriptions, setDescriptions] = useState<Partial<Record<Lang, RichTextDoc>>>({});
+  const self = editing.mode === 'edit' ? editing.category : null;
+  const [parentId, setParentId] = useState<string>(self?.parentId ?? '');
+  // Not itself or anything under it: that would make a loop.
+  const all = categories.data ?? [];
+  const below = new Set<string>(self ? [self.id] : []);
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const c of all) {
+      if (c.parentId && below.has(c.parentId) && !below.has(c.id)) {
+        below.add(c.id);
+        grew = true;
+      }
+    }
+  }
+  const parents = categoryOptions(all, locale).filter((o) => !below.has(o.id));
   const save = useMutation({
     mutationFn: async () => {
       const translations = Object.fromEntries(
         (['bn', 'en'] as const).map((l) => [
           l,
           names[l].trim()
-            ? { name: names[l], ...(slugs[l].trim() ? { slug: slugs[l].trim() } : {}) }
+            ? {
+                name: names[l],
+                ...(slugs[l].trim() ? { slug: slugs[l].trim() } : {}),
+                ...(descriptions[l] ? { description: descriptions[l] } : {}),
+              }
             : editing.mode === 'edit' && initial[l]
               ? null
               : undefined,
@@ -234,10 +263,17 @@ function CategoryDialog({
           }),
         );
       }
-      return unwrap(
+      const saved = unwrap(
         await api.PATCH('/v1/admin/categories/{id}', {
           params: { path: { id: editing.category.id } },
           body: { translations: translations as never },
+        }),
+      );
+      if ((editing.category.parentId ?? '') === parentId) return saved;
+      return unwrap(
+        await api.POST('/v1/admin/categories/{id}/move', {
+          params: { path: { id: editing.category.id } },
+          body: { parentId: parentId || null },
         }),
       );
     },
@@ -270,6 +306,12 @@ function CategoryDialog({
               required={l === defaultLang}
               onChange={(e) => setNames({ ...names, [l]: e.target.value })}
             />
+            <DescriptionField
+              label={`${t('product.description')} (${LANGUAGE_NAMES[l]})`}
+              lang={l}
+              value={(initial[l]?.description as RichTextDoc | null | undefined) ?? null}
+              onChange={(doc) => setDescriptions((d) => ({ ...d, [l]: doc }))}
+            />
             {editing.mode === 'edit' && (
               <Field
                 label={`${t('product.slug')} (${LANGUAGE_NAMES[l]})`}
@@ -280,6 +322,23 @@ function CategoryDialog({
             )}
           </div>
         ))}
+        {editing.mode === 'edit' && (
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {t('categories.parent')}
+            <select
+              className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal md:text-sm"
+              value={parentId}
+              onChange={(e) => setParentId(e.target.value)}
+            >
+              <option value="">{t('categories.topLevel')}</option>
+              {parents.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
         <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
           <Button variant="ghost" onClick={onClose}>

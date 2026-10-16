@@ -174,6 +174,8 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'categories.deleteBody': '{name} মুছবেন? শুধু খালি ক্যাটাগরি মোছা যায়।',
   'categories.deleted': 'ক্যাটাগরি মুছে ফেলা হয়েছে।',
   'categories.saved': 'ক্যাটাগরি সংরক্ষিত হয়েছে।',
+  'categories.parent': 'যার ভেতরে',
+  'categories.topLevel': 'সবার উপরে',
   'categories.template': 'বৈশিষ্ট্য ({count})',
   'categories.templateTitle': '{name}-এর বৈশিষ্ট্য',
   'categories.templateIntro': 'এই ক্যাটাগরি ও এর ভেতরের ক্যাটাগরির পণ্যের জন্য এডিটর এগুলো আগে দেখাবে।',

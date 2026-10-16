@@ -174,6 +174,8 @@ export const catalogEn = {
   'categories.deleteBody': 'Delete {name}? Only an empty category can be deleted.',
   'categories.deleted': 'Category deleted.',
   'categories.saved': 'Category saved.',
+  'categories.parent': 'Under',
+  'categories.topLevel': 'Top level',
   'categories.template': 'Specifications ({count})',
   'categories.templateTitle': 'Specifications for {name}',
   'categories.templateIntro':

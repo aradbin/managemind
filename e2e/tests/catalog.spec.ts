@@ -26,6 +26,7 @@ test('catalog flows', async ({ page }, info) => {
   const title = `জামদানি শাড়ি ${RUN}`;
   const titleEn = `Jamdani saree ${RUN}`;
   const category = `শাড়ি ${RUN}`;
+  const parent = `পোশাক ${RUN}`;
   const big = viewport === 'desktop';
 
   await test.step('the owner sees an empty catalog', async () => {
@@ -96,6 +97,19 @@ test('catalog flows', async ({ page }, info) => {
     await dialog.getByRole('button', { name: t('action.save') }).click();
     await expect(dialog).toBeHidden();
     await expect(toast(page, t('categories.templateSaved'))).toBeVisible();
+
+    // A second category, and the first moved under it.
+    await page.getByRole('button', { name: t('categories.new') }).click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(parent);
+    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await expect(dialog).toBeHidden();
+    await page.getByRole('button', { name: t('categories.edit', { name: category }) }).click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByLabel(t('categories.parent')).selectOption({ label: parent });
+    await expectAccessible(page, 'edit category');
+    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await expect(dialog).toBeHidden();
   });
 
   await test.step('they create a product with a price', async () => {
@@ -134,9 +148,10 @@ test('catalog flows', async ({ page }, info) => {
     await page.getByLabel(t('product.titleIn', { language: 'English' })).fill(titleEn);
 
     await page.getByLabel(t('status.active'), { exact: false }).check();
+    // Listed with its path, now that it sits under the other category.
     await page
       .getByRole('group', { name: t('catalog.categories') })
-      .getByLabel(category)
+      .getByLabel(`${parent} › ${category}`)
       .check();
     // The category's template brings the fabric; the brand is added by hand.
     await page.getByLabel('কাপড়', { exact: true }).selectOption({ label: 'সুতি' });

@@ -2,10 +2,12 @@
 // order (buttons to move, so a keyboard works) or rules (all conditions must
 // match, Q7) with a live preview of what they match.
 import { CATALOG_LIMITS } from '@managemind/shared/catalog';
+import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
 import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -378,6 +380,8 @@ function CollectionEditor({
     bn: collection?.translations.bn?.name ?? '',
     en: collection?.translations.en?.name ?? '',
   });
+  // Only a description that was changed is sent; one left alone stays.
+  const [descriptions, setDescriptions] = useState<Partial<Record<Lang, RichTextDoc>>>({});
   const [published, setPublished] = useState(collection?.published ?? false);
   const [sort, setSort] = useState(collection?.sort ?? 'manual');
   const [conditions, setConditions] = useState<Condition[]>(
@@ -392,7 +396,11 @@ function CollectionEditor({
       const translations = Object.fromEntries(
         (['bn', 'en'] as const).map((l) => [
           l,
-          names[l].trim() ? { name: names[l] } : collection?.translations[l] ? null : undefined,
+          names[l].trim()
+            ? { name: names[l], ...(descriptions[l] ? { description: descriptions[l] } : {}) }
+            : collection?.translations[l]
+              ? null
+              : undefined,
         ]),
       );
       const effectiveSort = kind === 'rule' && sort === 'manual' ? 'newest' : sort;
@@ -471,14 +479,24 @@ function CollectionEditor({
       </div>
       <fieldset disabled={!canWrite} className="flex flex-col gap-4">
         {[defaultLang, other].map((l) => (
-          <Field
-            key={l}
-            lang={l}
-            label={`${t('collections.name')} (${LANGUAGE_NAMES[l]}${l === defaultLang ? '' : `, ${t('form.optional')}`})`}
-            value={names[l]}
-            maxLength={100}
-            onChange={(e) => setNames({ ...names, [l]: e.target.value })}
-          />
+          <div key={l} className="flex flex-col gap-3">
+            <Field
+              lang={l}
+              label={`${t('collections.name')} (${LANGUAGE_NAMES[l]}${l === defaultLang ? '' : `, ${t('form.optional')}`})`}
+              value={names[l]}
+              maxLength={100}
+              onChange={(e) => setNames({ ...names, [l]: e.target.value })}
+            />
+            <DescriptionField
+              label={`${t('product.description')} (${LANGUAGE_NAMES[l]})`}
+              lang={l}
+              value={
+                (collection?.translations[l]?.description as RichTextDoc | null | undefined) ?? null
+              }
+              onChange={(doc) => setDescriptions((d) => ({ ...d, [l]: doc }))}
+              disabled={!canWrite}
+            />
+          </div>
         ))}
         {!collection && (
           <fieldset className="flex flex-col gap-1">
