@@ -15,7 +15,7 @@ Phase 2 is built and tested, locally and on #45's preview: the catalog, product 
 **Four things the owner should know:**
 
 1. **Imports are over the Free plan's CPU limit, and slow.** On the preview a 10-product chunk takes about 190 ms of CPU (Free allows 10 ms), and Cloudflare has started stopping some chunks; the queue retries them. A chunk also takes about a minute, because each product makes about 36 database round trips to Singapore. So 500 products take about 50 minutes (§3). The owner decided on Oct 16 to stay on Free for now and accept the speed. The preview E2E therefore imports 20 products; the full fixture runs in the API test.
-2. **Two items still need the owner** (§5): the pilot client's spreadsheet, and the Bangla typing test of the description editor on the owner's phone (Q6).
+2. **The owner's checks (Oct 16):** Bangla typing in the description editor works on the owner's Android phone (Q6). There is no pilot client yet, so the import has no real spreadsheet to test against.
 3. **The admin's sign-in bundle is at 142 of 150 KiB.** Most of the growth is Phase 2's Bangla and English messages. The next phase should load only the active language's messages (§5).
 4. **Previews now clean up after themselves.** An E2E run with the 500-product import added about 6.5 MB to the shared preview database; with 20 products it adds much less. Older runs' catalog data is deleted before each new run, so the 0.5 GB limit isn't reached (§4).
 
@@ -121,9 +121,10 @@ The sign-in bundle grew by 12 KiB. The admin's messages grew 6 KiB, and two KiB 
 
 ### Waiting on the owner
 
-1. **The pilot client's product spreadsheet** (plan §1). It joins the fixture in the import tests. It is especially useful now: its headers and grouping will show whether real sheets need more than what the fixes below added.
-2. **Q6: the Bangla typing test.** On the first preview, open a product and type a description with your usual Android keyboard (Gboard Bangla, Ridmik). If anything goes wrong (lost letters, a jumping cursor, doubled conjuncts), tap **সাধারণ লেখা (Plain text)** above the field. That switch is remembered on the phone, and the stored format doesn't change. Please tell me what happened either way.
+1. **A real product spreadsheet** (plan §1), once there is a pilot client: there is none yet (Oct 16). It joins the fixture in the import tests, and its headers and grouping will show whether real sheets need more than the fixes below added.
+2. **Q6, the Bangla typing test: done.** The owner typed a description on their Android phone with their usual keyboard on Oct 16; it works, so the formatted editor stays the default.
 3. **Workers Paid and import speed** (§3), when imports matter for a client. Until then a big import is slow and some chunks are stopped and retried; if a chunk is stopped four times, the job fails and the admin shows it.
+4. **The daily usage alarm: raised (Oct 16).** It failed every day on production's known CPU baseline (API p99 113–140 ms, storefront p90 41 ms, nothing stopped). At the owner's request the lines are now 250 ms and 100 ms, on requests only. Import chunks are reported but not alarmed on (ADR 0003 amendment).
 
 ### Not built yet, or smaller than planned
 

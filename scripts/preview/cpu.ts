@@ -193,7 +193,7 @@ const table = [
   '| --- | --- | --- | --- | --- | --- |',
   ...rows.map((r) => `| \`${r.route}\` | ${r.n} | ${r.p50} | ${r.p90} | ${r.p99} | ${r.max} |`),
   '',
-  'Limits (ADR 0003): 10 ms per request on the Free plan, with headroom for occasional overruns; the daily alarm fires at API p99 above 50 ms.',
+  'Limits (ADR 0003): 10 ms per request on the Free plan, with headroom for occasional overruns; the daily alarm fires at request CPU above 250 ms p99 (API) or 100 ms p90 (storefront).',
 ].join('\n');
 console.log(table);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${table}\n`);
