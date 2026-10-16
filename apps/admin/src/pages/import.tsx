@@ -107,7 +107,9 @@ function ChooseFile({ onParsed }: { onParsed: (p: Parsed) => void }) {
           type="file"
           accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="sr-only"
-          aria-label={t('import.chooseFile')}
+          // The button below opens it; screen readers meet only the button.
+          tabIndex={-1}
+          aria-hidden
           onChange={async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;

@@ -209,8 +209,9 @@ export function ImageManager({
             type="file"
             accept="image/*"
             multiple
+            // The button below opens it; screen readers meet only the button.
             tabIndex={-1}
-            aria-label={t('images.add')}
+            aria-hidden
             className="sr-only"
             onChange={(e) => addFiles(e.target.files)}
           />
