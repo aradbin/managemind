@@ -53,6 +53,7 @@ When the storefront (running near the caller, EWR) called the API over its servi
    - any invocation with status `exceededCpu` or `exceededResources` on the API or storefront Worker means **move to Workers Paid**;
    - API p99 CPU above 50 ms for a day: investigate (a regression, or a route that needs work);
    - storefront p90 CPU above 10 ms for a day: investigate, because shopper pages are expected to stay well inside the limit.
+   - **Amended 2026-10-16** (the owner's decision): the CPU lines are now API p99 above **250 ms** and storefront p90 above **100 ms**, measured on requests only. Production ran at 113 ms (API p99) and 41 ms (storefront p90) with nothing stopped, so the old lines alarmed every day on the known baseline. The new ones are about twice that, to catch regressions. Import chunks, which run on the API Worker's queue, are left out of both checks: on the Free plan some are stopped for CPU and retried, which the owner accepted (phase-2-report §3). The daily check still reports how many were stopped.
 3. **Keep the shapes that made shopper traffic cheap:**
    - storefront pages are rendered from small, purpose-built store API responses;
    - catalog pages are edge-cached (Phase 3), so most shopper requests do not even reach the API.

@@ -6,11 +6,16 @@
 //   tsx monitor/usage.ts [--test]   # --test adds one forced alarm, to check the notification
 //
 // Thresholds:
-// - any exceededCpu or exceededResources on the API or storefront: the
-//   trigger to move to Workers Paid (ADR 0013);
-// - API p99 CPU above 50 ms, storefront p90 above 10 ms: investigate
-//   (ADR 0003). Only judged on at least 200 requests a day: below that, p99 is
-//   the slowest single request, usually a cold start;
+// - any request (fetch) stopped for CPU or memory on the API or storefront:
+//   the trigger to move to Workers Paid (ADR 0013). Import chunks (the API's
+//   queue invocations) stopped for CPU are reported but not an alarm: the
+//   owner accepted them on the Free plan, and the queue retries them
+//   (phase-2-report §3);
+// - request CPU, API p99 above 250 ms, storefront p90 above 100 ms:
+//   investigate (ADR 0003, raised Oct 16 to about twice what production
+//   uses, so the alarm flags regressions rather than the known baseline).
+//   Only judged on at least 200 requests a day: below that, p99 is the
+//   slowest single request, usually a cold start;
 // - any free-plan limit above 70% (PLAN.md growth table).
 import { notice, parseArgs, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
@@ -53,18 +58,22 @@ async function section(name: string, fn: () => Promise<void>): Promise<void> {
 // Workers Logs: outcomes and CPU per Worker. Analytics reports newer Workers
 // as "__unknown__", so per-Worker numbers come from the logs.
 for (const [worker, percentile, limitMs] of [
-  ['managemind-api', 'p99', 50],
-  ['managemind-storefront', 'p90', 10],
+  ['managemind-api', 'p99', 250],
+  ['managemind-storefront', 'p90', 100],
 ] as const) {
   await section(`${worker} (Workers Logs)`, async () => {
-    const [outcomes] = await cf.workerLogStats(
-      worker,
-      from,
-      to,
-      [{ operator: 'count', alias: 'n' }],
-      '$workers.outcome',
-    );
-    const byOutcome = new Map((outcomes?.aggregates ?? []).map((a) => [a.groupKey ?? '', a.value]));
+    const outcomesOf = async (eventType: string) => {
+      const [stats] = await cf.workerLogStats(
+        worker,
+        from,
+        to,
+        [{ operator: 'count', alias: 'n' }],
+        '$workers.outcome',
+        { '$workers.eventType': eventType },
+      );
+      return new Map((stats?.aggregates ?? []).map((a) => [a.groupKey ?? '', a.value]));
+    };
+    const byOutcome = await outcomesOf('fetch');
     const total = [...byOutcome.values()].reduce((a, b) => a + b, 0);
     const terminated = TERMINATED.reduce((n, o) => n + (byOutcome.get(o) ?? 0), 0);
     checks.push({
@@ -74,13 +83,30 @@ for (const [worker, percentile, limitMs] of [
       alarm: terminated > 0,
     });
 
-    const [cpu] = await cf.workerLogStats(worker, from, to, [
-      { operator: percentile, key: '$workers.cpuTimeMs', alias: percentile },
-    ]);
+    if (worker === 'managemind-api') {
+      const chunks = await outcomesOf('queue');
+      const chunkTotal = [...chunks.values()].reduce((a, b) => a + b, 0);
+      const chunkStopped = TERMINATED.reduce((n, o) => n + (chunks.get(o) ?? 0), 0);
+      checks.push({
+        check: `${worker}: queue invocations (import chunks) stopped for CPU`,
+        value: `${chunkStopped} of ${chunkTotal}`,
+        limit: 'reported only (retried; accepted on Free)',
+        alarm: false,
+      });
+    }
+
+    const [cpu] = await cf.workerLogStats(
+      worker,
+      from,
+      to,
+      [{ operator: percentile, key: '$workers.cpuTimeMs', alias: percentile }],
+      undefined,
+      { '$workers.eventType': 'fetch' },
+    );
     const ms = cpu?.aggregates[0]?.value;
     const judged = total >= MIN_REQUESTS;
     checks.push({
-      check: `${worker}: ${percentile} CPU`,
+      check: `${worker}: request ${percentile} CPU`,
       value:
         ms === undefined
           ? 'no requests'
