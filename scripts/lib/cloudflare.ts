@@ -97,26 +97,39 @@ export class Cloudflare {
     await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
   }
 
-  /**
-   * Deletes a queue if it exists (a closed PR's import queues), detaching its
-   * consumers first: Cloudflare won't delete a Worker that still consumes a
-   * queue, so a PR's queues go before its API Worker.
-   */
-  async deleteQueue(name: string): Promise<boolean> {
+  /** A queue by name, with its consumers, or undefined. */
+  private async findQueue(
+    name: string,
+  ): Promise<{ queue_id: string; consumers?: { consumer_id: string }[] } | undefined> {
     const queues = await this.get<
       { queue_id: string; queue_name: string; consumers?: { consumer_id: string }[] }[]
     >(`/queues?name=${encodeURIComponent(name)}`);
-    const found = queues.find((q) => q.queue_name === name);
-    if (!found) return false;
-    for (const consumer of found.consumers ?? []) {
+    return queues.find((q) => q.queue_name === name);
+  }
+
+  /**
+   * Detaches a queue's consumers. Cloudflare won't delete a Worker that
+   * consumes a queue, nor a queue that a Worker still binds, so a closed
+   * PR's queues are detached, then its API Worker deleted, then the queues.
+   */
+  async detachQueueConsumers(name: string): Promise<void> {
+    const found = await this.findQueue(name);
+    for (const consumer of found?.consumers ?? []) {
       await this.ignore404(() =>
         this.api.request(
           'DELETE',
-          `${this.account}/queues/${found.queue_id}/consumers/${consumer.consumer_id}`,
+          `${this.account}/queues/${found?.queue_id}/consumers/${consumer.consumer_id}`,
         ),
       );
     }
-    // Detaching takes a moment to apply: until it has, the delete is refused.
+  }
+
+  /** Deletes a queue if it exists (a closed PR's import queues). */
+  async deleteQueue(name: string): Promise<boolean> {
+    const found = await this.findQueue(name);
+    if (!found) return false;
+    // A just-deleted Worker's binding takes a moment to go: until it has, the
+    // delete is refused.
     for (let attempt = 1; ; attempt++) {
       try {
         await this.ignore404(() =>
