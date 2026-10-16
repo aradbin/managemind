@@ -34,6 +34,9 @@ describe('headers', () => {
     });
     expect(matchHeader('Variant SKU')).toEqual({ field: 'sku' });
     expect(matchHeader('Vendor')).toEqual({ field: 'brand' });
+    expect(matchHeader('Option1 Name')).toEqual({ field: 'option1Name' });
+    expect(matchHeader('Option 2 value (bn)')).toEqual({ field: 'option2Value', locale: 'bn' });
+    expect(matchHeader('অপশন ৩ মান (en)')).toEqual({ field: 'option3Value', locale: 'en' });
   });
 
   it('leaves unknown headers, and a language on a field without one, to the user', () => {
@@ -208,6 +211,23 @@ describe('dryRunImport', () => {
     expect(products.map((p) => [p.handle, p.row])).toEqual([
       ['row-2', 2],
       ['row-4', 4],
+    ]);
+  });
+
+  it('without a handle, joins variant rows to the product above by title', () => {
+    const rows: MappedRow[] = [
+      { 'title:bn': 'শাড়ি', price: '1800', 'option1Name:bn': 'রং', 'option1Value:bn': 'লাল' },
+      { 'title:bn': 'শাড়ি', price: '1800', 'option1Value:bn': 'নীল' },
+      { price: '1900', 'option1Value:bn': 'সবুজ' },
+      { 'title:bn': 'শাড়ি', price: '500' },
+      { 'title:bn': 'পাঞ্জাবি', price: '950', 'option1Name:bn': 'সাইজ', 'option1Value:bn': 'এম' },
+    ];
+    const { products, errors } = dryRunImport(rows, { defaultLocale: 'bn' });
+    expect(errors).toEqual([]);
+    expect(products.map((p) => [p.handle, p.variants.length])).toEqual([
+      ['row-2', 3],
+      ['row-5', 1],
+      ['row-6', 1],
     ]);
   });
 

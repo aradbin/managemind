@@ -153,6 +153,8 @@ export const columnId = (ref: ColumnRef): string =>
 const headerKey = (header: string) =>
   toLatinDigits(normalizeKey(header))
     .replace(/[\s_-]+/g, ' ')
+    // "Option 1 name" as well as Shopify's "Option1 Name".
+    .replace(/(option|অপশন) ([123])/g, '$1$2')
     .trim();
 
 const HEADER_INDEX = new Map<string, ImportField>([
@@ -380,11 +382,22 @@ export function dryRunImport(
   const errors: ImportRowError[] = [];
   const groups = new Map<string, { rows: { n: number; cells: MappedRow }[] }>();
 
+  // Without a handle, a row with option values continues the product above
+  // when its title is blank or the same: sheets made by hand rarely have a
+  // handle column. Otherwise the row is a product of its own.
+  const titleColumn = columnId({ field: 'title', locale: options.defaultLocale });
+  let previous: { key: string; title: string } | null = null;
   rows.forEach((cells, i) => {
     const n = firstRow + i;
     if (Object.values(cells).every((v) => !v?.trim())) return; // blank row
     const handle = cleanText(cells.handle ?? '').toLowerCase();
-    const key = handle || `row-${n}`;
+    const title = cleanText(cells[titleColumn] ?? '');
+    const hasOptionValue = Object.entries(cells).some(
+      ([column, value]) => /^option[123]Value:/.test(column) && value?.trim(),
+    );
+    const continues = !handle && previous && hasOptionValue && (!title || title === previous.title);
+    const key = handle || (continues && previous ? previous.key : `row-${n}`);
+    previous = handle ? null : { key, title: continues && previous ? previous.title : title };
     const group = groups.get(key) ?? { rows: [] };
     group.rows.push({ n, cells });
     groups.set(key, group);
