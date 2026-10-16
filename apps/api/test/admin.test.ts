@@ -9,6 +9,7 @@ import {
   createCategory,
   createCollection,
   createImportJob,
+  createPage,
   createProduct,
   createTenant,
   grantSupportAccess,
@@ -245,6 +246,9 @@ describe('isolation suite', () => {
     const importJob = await inB((tx) =>
       createImportJob(tx, bOwner, { fileName: 'b.csv', chunkCount: 1, total: 1 }),
     );
+    const page = await inB((tx) =>
+      createPage(tx, bOwner, { kind: 'about', translations: { en: { title: 'B about' } } }),
+    );
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; body?: unknown }> = {
@@ -288,11 +292,16 @@ describe('isolation suite', () => {
         id: importJob.id,
         body: { status: 'failed', error: 'x' },
       },
+      'GET /v1/admin/pages/{id}': { id: page.id },
+      'PATCH /v1/admin/pages/{id}': { id: page.id, body: { published: true } },
+      'DELETE /v1/admin/pages/{id}': { id: page.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
       'PUT /v1/admin/media/files/{file}':
         'the name is the uploaded bytes’ hash, and the file lands in the caller’s own store',
+      'POST /v1/admin/theme/presets/{name}':
+        'the name is a preset, not a stored row; it only ever changes the caller’s own draft',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));

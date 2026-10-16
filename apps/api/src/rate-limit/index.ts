@@ -1,6 +1,7 @@
 // Rate limits for the sensitive endpoints only: sign-in codes, two-factor
-// checks, invitations (phase-1-plan §5.5) and fetching images by URL
-// (phase-2-plan §3.7). Never on every request.
+// checks, invitations (phase-1-plan §5.5), fetching images by URL
+// (phase-2-plan §3.7) and storefront search misses (phase-3-plan §3.7).
+// Never on every request.
 import { AppError } from '@managemind/shared';
 import type { HitResult, LockoutPolicy, Window } from './limiter';
 
@@ -44,6 +45,8 @@ export const RULES = {
   },
   /** Invitations sent by one store. */
   'invite:tenant': { windows: [{ limit: 30, seconds: DAY }] },
+  /** Storefront search misses from one shopper (phase-3-plan §3.7); cached results cost nothing. */
+  'search:ip': { windows: [{ limit: 30, seconds: MINUTE }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */
   'media-fetch:tenant': {
     windows: [

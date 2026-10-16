@@ -73,6 +73,7 @@
     "PLATFORM_NAME": "managemind",
     "PLATFORM_DOMAIN": "localhost",
     "STORE_DOMAIN": "localhost",
+    "STOREFRONT_ORIGIN": "http://localhost:4321",
     "LOG_SAMPLE_RATE": "1"
   }
 }

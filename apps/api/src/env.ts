@@ -41,6 +41,11 @@ export interface Env {
   RESEND_API_KEY?: string;
   /** Opens the dev mailbox on previews (a Worker secret; never set in production). */
   DEV_TOKEN?: string;
+  /**
+   * The storefront's origin where store hosts don't exist (previews on
+   * workers.dev, local development): store links use the dev store selector.
+   */
+  STOREFRONT_ORIGIN?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
@@ -59,6 +64,10 @@ export const apiConfig = baseConfig
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     DEV_TOKEN: z.string().min(16).optional(),
+    STOREFRONT_ORIGIN: z
+      .url({ protocol: /^https?$/ })
+      .transform((u) => u.replace(/\/$/, ''))
+      .optional(),
   })
   .superRefine((c, ctx) => {
     const issue = (path: string, message: string) =>
@@ -73,6 +82,9 @@ export const apiConfig = baseConfig
     if (c.EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY) issue('RESEND_API_KEY', 'is required');
     if (c.ENVIRONMENT === 'production' && c.DEV_TOKEN)
       issue('DEV_TOKEN', 'must not be set in production');
+    // Production stores live on their own hosts; the dev selector is off there.
+    if (c.ENVIRONMENT === 'production' && c.STOREFRONT_ORIGIN)
+      issue('STOREFRONT_ORIGIN', 'must not be set in production');
   })
   // wrangler dev works without setup; deployed Workers always get the real secret.
   .transform((c) => ({ ...c, AUTH_SECRET: c.AUTH_SECRET ?? DEV_AUTH_SECRET }));
