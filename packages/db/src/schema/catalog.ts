@@ -129,11 +129,12 @@ export const productTranslations = store.table(
       [products.tenantId, products.id],
     ),
     unique('product_translations_slug_unique').on(t.tenantId, t.locale, t.slug),
-    // Search by title (Phase 3), typo-tolerant in Bangla and English.
-    index('product_translations_title_trgm_idx').using(
+    // Search by title, typo-tolerant in Bangla and English, on the normalized
+    // form (app.search_text, migration 0015; phase-3-plan §3.7).
+    index('product_translations_search_trgm_idx').using(
       'gin',
       t.tenantId,
-      t.title.op('gin_trgm_ops'),
+      sql`app.search_text(${t.title}) gin_trgm_ops`,
     ),
     localeCheck('product_translations', t.locale),
     length('product_translations_title_length', t.title, 1, 200),
@@ -268,6 +269,8 @@ export const variants = store.table(
       .on(t.tenantId, t.productId, t.optionsKey)
       .where(sql`archived_at is null`),
     index('variants_tenant_product_idx').on(t.tenantId, t.productId, t.position),
+    // Search by SKU (phase-3-plan §3.7).
+    index('variants_sku_trgm_idx').using('gin', t.tenantId, sql`lower(${t.sku}) gin_trgm_ops`),
     index('variants_tenant_barcode_idx').on(t.tenantId, t.barcode).where(sql`barcode is not null`),
     check(
       'variants_amounts_non_negative',
@@ -739,7 +742,11 @@ export const productTags = store.table(
     primaryKey({ columns: [t.tenantId, t.productId, t.tag] }),
     ref('product_tags_product_fk', [t.tenantId, t.productId], [products.tenantId, products.id]),
     index('product_tags_tag_idx').on(t.tenantId, t.tag),
-    index('product_tags_tag_trgm_idx').using('gin', t.tenantId, t.tag.op('gin_trgm_ops')),
+    index('product_tags_search_trgm_idx').using(
+      'gin',
+      t.tenantId,
+      sql`app.search_text(${t.tag}) gin_trgm_ops`,
+    ),
     length('product_tags_tag_length', t.tag, 1, 50),
     check('product_tags_tag_normalized', sql`${t.tag} = lower(btrim(${t.tag}))`),
   ],

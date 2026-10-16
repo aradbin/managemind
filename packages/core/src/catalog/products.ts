@@ -264,7 +264,8 @@ export async function listProducts(
     const text = query.q.trim().normalize('NFC');
     const like = `%${likeEscape(text)}%`;
     where.push(sql`(
-      exists (select 1 from store.product_translations t where t.product_id = p.id and t.title ilike ${like})
+      exists (select 1 from store.product_translations t where t.product_id = p.id
+                 and app.search_text(t.title) like app.search_text(${like}))
       or exists (select 1 from store.variants sv where sv.product_id = p.id and lower(sv.sku) like ${`${likeEscape(text.toLowerCase())}%`})
       or exists (select 1 from store.product_tags tg where tg.product_id = p.id and tg.tag = ${normalizeKey(text)}))`);
   }

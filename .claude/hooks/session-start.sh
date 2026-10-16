@@ -59,9 +59,18 @@ fi
 
 psql_su() { runuser -u postgres -- psql -p "$PG_PORT" -v ON_ERROR_STOP=1 -qtA "$@"; }
 psql_su -c "alter role postgres with password '${PG_PASSWORD}'"
+# C.UTF-8, as on Neon: under the cluster's default C locale pg_trgm makes no
+# trigrams from Bangla text (phase-3-plan §3.7). A database left with the old
+# locale is recreated; local data is throwaway (db:dev-setup rebuilds it).
 for db in managemind managemind_test; do
-  if [ "$(psql_su -c "select 1 from pg_database where datname = '${db}'")" != "1" ]; then
-    psql_su -c "create database ${db}"
+  ctype=$(psql_su -c "select datctype from pg_database where datname = '${db}'")
+  if [ "$ctype" = "C" ]; then
+    log "recreating ${db} with locale C.UTF-8"
+    psql_su -c "drop database ${db} with (force)"
+    ctype=""
+  fi
+  if [ -z "$ctype" ]; then
+    psql_su -c "create database ${db} template template0 encoding 'UTF8' locale 'C.UTF-8'"
   fi
 done
 

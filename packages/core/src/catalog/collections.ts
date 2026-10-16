@@ -66,7 +66,8 @@ function conditionSql(condition: CollectionCondition): SQL {
           ${condition.max !== null ? sql`and rv.price <= ${condition.max}` : sql``})`;
     case 'title_contains':
       return sql`exists (select 1 from store.product_translations rt
-        where rt.product_id = p.id and rt.title ilike ${`%${condition.text.replace(/[\\%_]/g, (x) => `\\${x}`)}%`})`;
+        where rt.product_id = p.id
+          and app.search_text(rt.title) like app.search_text(${`%${condition.text.replace(/[\\%_]/g, (x) => `\\${x}`)}%`}))`;
     case 'created_within_days':
       return sql`p.created_at > now() - make_interval(days => ${condition.days})`;
     case 'tag':

@@ -439,7 +439,7 @@ export async function listInventory(
           query.q
             ? sql`and (lower(v.sku) like ${`${query.q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`}
           or exists (select 1 from store.product_translations t where t.product_id = v.product_id
-                      and t.title ilike ${`%${query.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`}))`
+                      and app.search_text(t.title) like app.search_text(${`%${query.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`})))`
             : sql``
         }
       order by v.id
