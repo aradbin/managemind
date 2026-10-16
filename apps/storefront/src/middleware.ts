@@ -11,17 +11,17 @@ import { uuidv7 } from '@managemind/shared';
 import { storeTag } from '@managemind/shared/storefront/cache';
 import { captureException } from '@sentry/cloudflare';
 import { CACHE_TAGS_HEADER } from './lib/cache';
+import { previewParents } from './lib/preview';
 import { decide } from './lib/routing';
 import { DEV_STORE_COOKIE, lookupStore, resolveStoreHost, type StoreContext } from './lib/store';
 
 export const PREVIEW_COOKIE = 'mm_preview';
 const PREVIEW_TOKEN = /^[0-9a-f-]{36}\.\d{1,12}\.[A-Za-z0-9_-]{43}$/;
 
-/** Who may frame preview pages: the admin, and locally its dev servers. */
 function frameAncestors(): string {
-  if (env.ENVIRONMENT === 'development')
-    return "'self' http://localhost:8787 http://localhost:5173";
-  return env.ADMIN_HOST ? `https://${env.ADMIN_HOST}` : "'none'";
+  const parents = previewParents();
+  if (env.ENVIRONMENT === 'development') return ["'self'", ...parents].join(' ');
+  return parents.length ? parents.join(' ') : "'none'";
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {

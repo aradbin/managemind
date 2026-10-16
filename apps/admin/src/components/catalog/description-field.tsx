@@ -31,7 +31,7 @@ interface DescriptionFieldProps {
   value: RichTextDoc | null | undefined;
   onChange: (doc: RichTextDoc) => void;
   lang?: string | undefined;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 }
 
 export function DescriptionField({

@@ -16,6 +16,7 @@ const choice = (): string | null =>
 
 function remember(value: 'granted' | 'denied') {
   const secure = location.protocol === 'https:' ? '; Secure' : '';
+  // biome-ignore lint/suspicious/noDocumentCookie: the Cookie Store API is missing in Safari and Firefox
   document.cookie = `${COOKIE}=${value}; Path=/; Max-Age=${SIX_MONTHS}; SameSite=Lax${secure}`;
 }
 

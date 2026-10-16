@@ -242,5 +242,11 @@ export const en = {
   'dev.show': 'Show emails',
   'dev.none': 'No emails for this address.',
   'dev.unavailable': 'The mailbox isn’t available here, or the token is wrong.',
+  // Phase 3: the shell's and the settings list's online-store strings.
+  'nav.onlineStore': 'Online store',
+  'store.view': 'View store',
+  'domains.title': 'Domains',
+  'domains.description':
+    'Your store’s addresses. Connect your own domain, such as www.yourshop.com.bd.',
   ...catalogEn,
 } as const;

@@ -59,8 +59,14 @@ async function encode(
   );
 }
 
-/** Resizes a photo (a File, or a Blob fetched by URL) into the files to upload. */
-export async function prepareImage(source: Blob): Promise<PreparedImage> {
+/**
+ * Resizes a photo (a File, or a Blob fetched by URL) into the files to
+ * upload: product widths by default, BANNER_WIDTHS for theme banners.
+ */
+export async function prepareImage(
+  source: Blob,
+  sizes: readonly number[] = MEDIA_WIDTHS,
+): Promise<PreparedImage> {
   if (source.size > MAX_ORIGINAL_BYTES) throw new ImageError('too_large');
   let bitmap: ImageBitmap;
   try {
@@ -70,7 +76,7 @@ export async function prepareImage(source: Blob): Promise<PreparedImage> {
     throw new ImageError('unreadable');
   }
   try {
-    const widths: number[] = MEDIA_WIDTHS.filter((w) => w <= bitmap.width);
+    const widths: number[] = sizes.filter((w) => w <= bitmap.width);
     if (!widths.length) widths.push(bitmap.width);
     // Safari can't encode WebP and quietly hands back a PNG: JPEG it is, then.
     const probe = await encode(bitmap, widths[0] as number, 'image/webp', QUALITY);

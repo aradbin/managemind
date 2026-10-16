@@ -649,6 +649,7 @@ main {
 .choices label {
   position: relative;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .choices input {
   position: absolute;
   opacity: 0;
@@ -709,6 +710,7 @@ dl.specs-list dd {
 .rich h2 {
   margin-top: 1.2em;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .rich ul,
 .rich ol {
   padding-left: 1.4em;
@@ -730,6 +732,7 @@ dl.specs-list dd {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .site-footer ul {
   list-style: none;
   padding: 0;
@@ -752,9 +755,11 @@ dl.specs-list dd {
 .site-footer dl {
   margin: 0;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .site-footer dt {
   font-weight: 600;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .site-footer dd {
   margin: 0 0 6px;
 }

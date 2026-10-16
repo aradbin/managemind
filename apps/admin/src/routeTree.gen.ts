@@ -21,6 +21,9 @@ import { Route as ShellCatalogAttributesRouteImport } from './routes/_shell/cata
 import { Route as ShellCatalogCategoriesRouteImport } from './routes/_shell/catalog/categories'
 import { Route as ShellCatalogImportRouteImport } from './routes/_shell/catalog/import'
 import { Route as ShellDevMailboxRouteImport } from './routes/_shell/dev/mailbox'
+import { Route as ShellOnlineStoreIndexRouteImport } from './routes/_shell/online-store/index'
+import { Route as ShellOnlineStoreSettingsRouteImport } from './routes/_shell/online-store/settings'
+import { Route as ShellOnlineStoreThemeRouteImport } from './routes/_shell/online-store/theme'
 import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
 import { Route as ShellPlatformStaffRouteImport } from './routes/_shell/platform/staff'
@@ -28,12 +31,15 @@ import { Route as ShellProductsIndexRouteImport } from './routes/_shell/products
 import { Route as ShellProductsIdRouteImport } from './routes/_shell/products/$id'
 import { Route as ShellProductsNewRouteImport } from './routes/_shell/products/new'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
+import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
 import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
 import { Route as ShellSettingsStoreRouteImport } from './routes/_shell/settings/store'
 import { Route as ShellSettingsVatRouteImport } from './routes/_shell/settings/vat'
 import { Route as ShellCatalogCollectionsIndexRouteImport } from './routes/_shell/catalog/collections/index'
 import { Route as ShellCatalogCollectionsIdRouteImport } from './routes/_shell/catalog/collections/$id'
+import { Route as ShellOnlineStorePagesIndexRouteImport } from './routes/_shell/online-store/pages/index'
+import { Route as ShellOnlineStorePagesIdRouteImport } from './routes/_shell/online-store/pages/$id'
 import { Route as ShellPlatformTenantsIdRouteImport } from './routes/_shell/platform/tenants.$id'
 
 const ShellRoute = ShellRouteImport.update({
@@ -95,6 +101,22 @@ const ShellDevMailboxRoute = ShellDevMailboxRouteImport.update({
   path: '/dev/mailbox',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellOnlineStoreIndexRoute = ShellOnlineStoreIndexRouteImport.update({
+  id: '/online-store/',
+  path: '/online-store/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOnlineStoreSettingsRoute =
+  ShellOnlineStoreSettingsRouteImport.update({
+    id: '/online-store/settings',
+    path: '/online-store/settings',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellOnlineStoreThemeRoute = ShellOnlineStoreThemeRouteImport.update({
+  id: '/online-store/theme',
+  path: '/online-store/theme',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellPlatformIndexRoute = ShellPlatformIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -130,6 +152,11 @@ const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
   path: '/settings/',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSettingsDomainsRoute = ShellSettingsDomainsRouteImport.update({
+  id: '/settings/domains',
+  path: '/settings/domains',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsLocationRoute = ShellSettingsLocationRouteImport.update({
   id: '/settings/location',
   path: '/settings/location',
@@ -162,6 +189,17 @@ const ShellCatalogCollectionsIdRoute =
     path: '/catalog/collections/$id',
     getParentRoute: () => ShellRoute,
   } as any)
+const ShellOnlineStorePagesIndexRoute =
+  ShellOnlineStorePagesIndexRouteImport.update({
+    id: '/online-store/pages/',
+    path: '/online-store/pages/',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellOnlineStorePagesIdRoute = ShellOnlineStorePagesIdRouteImport.update({
+  id: '/online-store/pages/$id',
+  path: '/online-store/pages/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellPlatformTenantsIdRoute = ShellPlatformTenantsIdRouteImport.update({
   id: '/tenants/$id',
   path: '/tenants/$id',
@@ -180,20 +218,26 @@ export interface FileRoutesByFullPath {
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/catalog/import': typeof ShellCatalogImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
+  '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
+  '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/vat': typeof ShellSettingsVatRoute
+  '/online-store/': typeof ShellOnlineStoreIndexRoute
   '/platform/': typeof ShellPlatformIndexRoute
   '/products/': typeof ShellProductsIndexRoute
   '/settings/': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
+  '/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/invite': typeof InviteRoute
@@ -206,20 +250,26 @@ export interface FileRoutesByTo {
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/catalog/import': typeof ShellCatalogImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
+  '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
+  '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/vat': typeof ShellSettingsVatRoute
+  '/online-store': typeof ShellOnlineStoreIndexRoute
   '/platform': typeof ShellPlatformIndexRoute
   '/products': typeof ShellProductsIndexRoute
   '/settings': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/catalog/collections': typeof ShellCatalogCollectionsIndexRoute
+  '/online-store/pages': typeof ShellOnlineStorePagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -235,20 +285,26 @@ export interface FileRoutesById {
   '/_shell/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/_shell/catalog/import': typeof ShellCatalogImportRoute
   '/_shell/dev/mailbox': typeof ShellDevMailboxRoute
+  '/_shell/online-store/settings': typeof ShellOnlineStoreSettingsRoute
+  '/_shell/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
   '/_shell/platform/staff': typeof ShellPlatformStaffRoute
   '/_shell/products/$id': typeof ShellProductsIdRoute
   '/_shell/products/new': typeof ShellProductsNewRoute
+  '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
   '/_shell/settings/staff': typeof ShellSettingsStaffRoute
   '/_shell/settings/store': typeof ShellSettingsStoreRoute
   '/_shell/settings/vat': typeof ShellSettingsVatRoute
+  '/_shell/online-store/': typeof ShellOnlineStoreIndexRoute
   '/_shell/platform/': typeof ShellPlatformIndexRoute
   '/_shell/products/': typeof ShellProductsIndexRoute
   '/_shell/settings/': typeof ShellSettingsIndexRoute
   '/_shell/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/_shell/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/_shell/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
+  '/_shell/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -264,20 +320,26 @@ export interface FileRouteTypes {
     | '/catalog/categories'
     | '/catalog/import'
     | '/dev/mailbox'
+    | '/online-store/settings'
+    | '/online-store/theme'
     | '/platform/audit'
     | '/platform/staff'
     | '/products/$id'
     | '/products/new'
+    | '/settings/domains'
     | '/settings/location'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/vat'
+    | '/online-store/'
     | '/platform/'
     | '/products/'
     | '/settings/'
     | '/catalog/collections/$id'
+    | '/online-store/pages/$id'
     | '/platform/tenants/$id'
     | '/catalog/collections/'
+    | '/online-store/pages/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/invite'
@@ -290,20 +352,26 @@ export interface FileRouteTypes {
     | '/catalog/categories'
     | '/catalog/import'
     | '/dev/mailbox'
+    | '/online-store/settings'
+    | '/online-store/theme'
     | '/platform/audit'
     | '/platform/staff'
     | '/products/$id'
     | '/products/new'
+    | '/settings/domains'
     | '/settings/location'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/vat'
+    | '/online-store'
     | '/platform'
     | '/products'
     | '/settings'
     | '/catalog/collections/$id'
+    | '/online-store/pages/$id'
     | '/platform/tenants/$id'
     | '/catalog/collections'
+    | '/online-store/pages'
   id:
     | '__root__'
     | '/_shell'
@@ -318,20 +386,26 @@ export interface FileRouteTypes {
     | '/_shell/catalog/categories'
     | '/_shell/catalog/import'
     | '/_shell/dev/mailbox'
+    | '/_shell/online-store/settings'
+    | '/_shell/online-store/theme'
     | '/_shell/platform/audit'
     | '/_shell/platform/staff'
     | '/_shell/products/$id'
     | '/_shell/products/new'
+    | '/_shell/settings/domains'
     | '/_shell/settings/location'
     | '/_shell/settings/staff'
     | '/_shell/settings/store'
     | '/_shell/settings/vat'
+    | '/_shell/online-store/'
     | '/_shell/platform/'
     | '/_shell/products/'
     | '/_shell/settings/'
     | '/_shell/catalog/collections/$id'
+    | '/_shell/online-store/pages/$id'
     | '/_shell/platform/tenants/$id'
     | '/_shell/catalog/collections/'
+    | '/_shell/online-store/pages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -427,6 +501,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellDevMailboxRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/online-store/': {
+      id: '/_shell/online-store/'
+      path: '/online-store'
+      fullPath: '/online-store/'
+      preLoaderRoute: typeof ShellOnlineStoreIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/online-store/settings': {
+      id: '/_shell/online-store/settings'
+      path: '/online-store/settings'
+      fullPath: '/online-store/settings'
+      preLoaderRoute: typeof ShellOnlineStoreSettingsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/online-store/theme': {
+      id: '/_shell/online-store/theme'
+      path: '/online-store/theme'
+      fullPath: '/online-store/theme'
+      preLoaderRoute: typeof ShellOnlineStoreThemeRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/platform/': {
       id: '/_shell/platform/'
       path: '/'
@@ -476,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSettingsIndexRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/settings/domains': {
+      id: '/_shell/settings/domains'
+      path: '/settings/domains'
+      fullPath: '/settings/domains'
+      preLoaderRoute: typeof ShellSettingsDomainsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings/location': {
       id: '/_shell/settings/location'
       path: '/settings/location'
@@ -518,6 +620,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellCatalogCollectionsIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/online-store/pages/': {
+      id: '/_shell/online-store/pages/'
+      path: '/online-store/pages'
+      fullPath: '/online-store/pages/'
+      preLoaderRoute: typeof ShellOnlineStorePagesIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/online-store/pages/$id': {
+      id: '/_shell/online-store/pages/$id'
+      path: '/online-store/pages/$id'
+      fullPath: '/online-store/pages/$id'
+      preLoaderRoute: typeof ShellOnlineStorePagesIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/platform/tenants/$id': {
       id: '/_shell/platform/tenants/$id'
       path: '/tenants/$id'
@@ -555,16 +671,22 @@ interface ShellRouteChildren {
   ShellCatalogCategoriesRoute: typeof ShellCatalogCategoriesRoute
   ShellCatalogImportRoute: typeof ShellCatalogImportRoute
   ShellDevMailboxRoute: typeof ShellDevMailboxRoute
+  ShellOnlineStoreSettingsRoute: typeof ShellOnlineStoreSettingsRoute
+  ShellOnlineStoreThemeRoute: typeof ShellOnlineStoreThemeRoute
   ShellProductsIdRoute: typeof ShellProductsIdRoute
   ShellProductsNewRoute: typeof ShellProductsNewRoute
+  ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
   ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
   ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
   ShellSettingsVatRoute: typeof ShellSettingsVatRoute
+  ShellOnlineStoreIndexRoute: typeof ShellOnlineStoreIndexRoute
   ShellProductsIndexRoute: typeof ShellProductsIndexRoute
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
+  ShellOnlineStorePagesIdRoute: typeof ShellOnlineStorePagesIdRoute
   ShellCatalogCollectionsIndexRoute: typeof ShellCatalogCollectionsIndexRoute
+  ShellOnlineStorePagesIndexRoute: typeof ShellOnlineStorePagesIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -576,16 +698,22 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellCatalogCategoriesRoute: ShellCatalogCategoriesRoute,
   ShellCatalogImportRoute: ShellCatalogImportRoute,
   ShellDevMailboxRoute: ShellDevMailboxRoute,
+  ShellOnlineStoreSettingsRoute: ShellOnlineStoreSettingsRoute,
+  ShellOnlineStoreThemeRoute: ShellOnlineStoreThemeRoute,
   ShellProductsIdRoute: ShellProductsIdRoute,
   ShellProductsNewRoute: ShellProductsNewRoute,
+  ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,
   ShellSettingsStaffRoute: ShellSettingsStaffRoute,
   ShellSettingsStoreRoute: ShellSettingsStoreRoute,
   ShellSettingsVatRoute: ShellSettingsVatRoute,
+  ShellOnlineStoreIndexRoute: ShellOnlineStoreIndexRoute,
   ShellProductsIndexRoute: ShellProductsIndexRoute,
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
+  ShellOnlineStorePagesIdRoute: ShellOnlineStorePagesIdRoute,
   ShellCatalogCollectionsIndexRoute: ShellCatalogCollectionsIndexRoute,
+  ShellOnlineStorePagesIndexRoute: ShellOnlineStorePagesIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)

@@ -21,6 +21,7 @@ import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
+import '../i18n/online-store';
 import { api, meQuery, unwrap } from '../lib/api';
 import { saveErrorMessage } from '../lib/errors';
 
@@ -33,6 +34,10 @@ const schema = z
     line1: optionalText(200),
     line2: optionalText(200),
     city: optionalText(100),
+    businessName: optionalText(200),
+    tradeLicense: optionalText(50),
+    dbid: optionalText(50),
+    bin: optionalText(20),
   })
   .superRefine((v, ctx) => {
     // The address needs its first line before the rest means anything.
@@ -49,6 +54,10 @@ const FIELDS: Record<keyof Input, true> = {
   line1: true,
   line2: true,
   city: true,
+  businessName: true,
+  tradeLicense: true,
+  dbid: true,
+  bin: true,
 };
 type Output = z.output<typeof schema>;
 
@@ -92,6 +101,10 @@ function ProfileForm({ store }: { store: Store }) {
       line1: profile.address?.line1 ?? '',
       line2: profile.address?.line2 ?? '',
       city: profile.address?.city ?? '',
+      businessName: profile.businessName ?? '',
+      tradeLicense: profile.tradeLicense ?? '',
+      dbid: profile.dbid ?? '',
+      bin: profile.bin ?? '',
     },
   });
   const save = useMutation({
@@ -113,6 +126,10 @@ function ProfileForm({ store }: { store: Store }) {
                     },
                   }
                 : {}),
+              ...(v.businessName ? { businessName: v.businessName } : {}),
+              ...(v.tradeLicense ? { tradeLicense: v.tradeLicense } : {}),
+              ...(v.dbid ? { dbid: v.dbid } : {}),
+              ...(v.bin ? { bin: v.bin } : {}),
             },
           },
         }),
@@ -166,6 +183,18 @@ function ProfileForm({ store }: { store: Store }) {
           optional
         />
         <TextField name="city" label={t('store.city')} autoComplete="address-level2" optional />
+        <h2 className="mt-2 font-semibold">{t('business.title')}</h2>
+        <p className="text-sm text-muted-foreground">{t('business.hint')}</p>
+        <TextField name="businessName" label={t('business.name')} maxLength={200} optional />
+        <TextField name="tradeLicense" label={t('business.tradeLicense')} maxLength={50} optional />
+        <TextField name="dbid" label={t('business.dbid')} maxLength={50} optional />
+        <TextField
+          name="bin"
+          label={t('business.bin')}
+          maxLength={20}
+          inputMode="numeric"
+          optional
+        />
       </fieldset>
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
       {canEdit && (

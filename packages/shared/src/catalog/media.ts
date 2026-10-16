@@ -6,6 +6,9 @@ import { CATALOG_LIMITS } from './limits';
 
 /** Resized widths, smallest first (Q3). */
 export const MEDIA_WIDTHS = [400, 800, 1200] as const;
+/** Theme banners are shown full width, so they get larger files (phase-3-plan §3.4). */
+export const BANNER_WIDTHS = [800, 1200, 1600] as const;
+const MAX_WIDTH = BANNER_WIDTHS[BANNER_WIDTHS.length - 1] as number;
 /** One resized file, as uploaded. */
 export const MAX_MEDIA_FILE_BYTES = 2 * 1024 * 1024;
 /** An original fetched by URL for the import's image step; it is resized in the browser. */
@@ -48,10 +51,7 @@ export const mediaCreate = z
     files: z
       .array(
         z.object({
-          width: z
-            .int()
-            .min(1)
-            .max(MEDIA_WIDTHS[MEDIA_WIDTHS.length - 1] as number),
+          width: z.int().min(1).max(MAX_WIDTH),
           sha256: sha256Hex,
           bytes: z.int().min(1).max(MAX_MEDIA_FILE_BYTES),
         }),

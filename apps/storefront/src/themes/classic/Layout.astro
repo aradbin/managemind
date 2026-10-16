@@ -7,6 +7,7 @@
 import { t as shared } from '@managemind/shared/i18n';
 import { DEFAULT_CONSENT_TEXT, messengerLink, whatsappLink } from '@managemind/shared/storefront';
 import type { PageContext } from '../../lib/page';
+import { previewParents } from '../../lib/preview';
 import { type Head, ldJson } from '../../lib/seo';
 import Footer from './Footer.astro';
 import Header from './Header.astro';
@@ -60,6 +61,9 @@ const chatText = product
 const tracking = storefront.tracking;
 const hasTags = Boolean(tracking.metaPixelId || tracking.ga4Id);
 const consentText = ctx.text(storefront.consent.text) || DEFAULT_CONSENT_TEXT[locale];
+// The theme editor sends colours, fonts and corners while the owner edits; only
+// the admin's origin is listened to, and only the theme's own variables are set.
+const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
 ---
 
 <!doctype html>
@@ -92,6 +96,11 @@ const consentText = ctx.text(storefront.consent.text) || DEFAULT_CONSENT_TEXT[lo
       <p class="bar preview-bar" role="note">{shared(locale, 'store.devBanner', { store: layout.store.name })}</p>
     )}
     {ctx.preview && <p class="bar preview-bar" role="note">{t('preview.banner')}</p>}
+    {ctx.preview && (
+      <script is:inline define:vars={{ parents }}>
+        (function(){var ok=JSON.parse(parents);var keys=['--c-primary','--c-on-primary','--c-background','--c-surface','--c-text','--c-accent','--c-sale','--radius','--font','--card-ratio'];addEventListener('message',function(e){if(ok.indexOf(e.origin)<0||!e.data||e.data.type!=='mm-theme-vars')return;var v=e.data.vars||{};keys.forEach(function(k){var x=v[k];if(typeof x==='string'&&x.length<200&&!/[;{}<>]/.test(x))document.documentElement.style.setProperty(k,x);});});})();
+      </script>
+    )}
     {holiday && holidayText && (
       <p class="bar" id="mm-holiday" role="note" hidden data-start={holiday.startsAt} data-end={holiday.endsAt}>{holidayText}</p>
     )}

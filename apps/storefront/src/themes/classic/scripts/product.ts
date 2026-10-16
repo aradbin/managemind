@@ -20,7 +20,11 @@ function show(index: number) {
   if (!track || index < 0) return;
   const slide = track.children[index] as HTMLElement | undefined;
   if (slide) track.scrollTo({ left: slide.offsetLeft - track.offsetLeft, behavior: 'smooth' });
-  thumbs.forEach((t, i) => t.setAttribute('aria-current', String(i === index)));
+  mark(index);
+}
+
+function mark(index: number) {
+  for (const [i, t] of thumbs.entries()) t.setAttribute('aria-current', String(i === index));
 }
 
 for (const thumb of thumbs)
@@ -28,8 +32,7 @@ for (const thumb of thumbs)
 track?.addEventListener(
   'scroll',
   () => {
-    const index = Math.round(track.scrollLeft / Math.max(track.clientWidth, 1));
-    thumbs.forEach((t, i) => t.setAttribute('aria-current', String(i === index)));
+    mark(Math.round(track.scrollLeft / Math.max(track.clientWidth, 1)));
   },
   { passive: true },
 );
