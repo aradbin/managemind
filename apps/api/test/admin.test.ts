@@ -198,6 +198,8 @@ describe('admin API', () => {
 });
 
 describe('isolation suite', () => {
+  // Every admin route against two whole stores: about 5 s on a CI runner, which
+  // crossed vitest's 5 s default on the merge of Phase 2.
   it('answers 404 on every admin route given another store’s IDs', async () => {
     const a = await store();
     const b = await store();
@@ -326,7 +328,7 @@ describe('isolation suite', () => {
     expect(
       (await user.call('PATCH', '/api/admin/variants', [{ id: variant, price: 5 }])).status,
     ).toBe(404);
-  });
+  }, 30_000);
 
   it('a support grant for store A gives nothing in store B', async () => {
     const a = await store();
