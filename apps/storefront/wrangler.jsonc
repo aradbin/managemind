@@ -13,8 +13,13 @@
   // Not placed: shopper pages are served from the location nearest the
   // shopper; the API it calls is placed next to Neon (ADRs 0002, 0003).
   "services": [{ "binding": "API", "service": "managemind-api" }],
+  // Images for /media/* (ADR 0016); the deployed bucket is set per
+  // environment by scripts/lib/workers.ts.
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "managemind-files-preview" }],
   "vars": {
     "ENVIRONMENT": "development",
-    "STORE_DOMAIN": "localhost"
+    "STORE_DOMAIN": "localhost",
+    "PLATFORM_DOMAIN": "localhost",
+    "ADMIN_HOST": "localhost:8787"
   }
 }

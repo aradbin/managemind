@@ -7,6 +7,9 @@ export default defineConfig({
   // Images; photos are resized in the admin before upload (ADR 0006).
   session: false,
   adapter: cloudflare({ imageService: 'passthrough' }),
+  // CSS goes into each page: no extra request before the first paint
+  // (phase-3-plan §8).
+  build: { inlineStylesheets: 'always' },
   // Source maps only for production deploys, which upload them to Sentry and
   // delete them before deploying (scripts/production/sourcemaps.ts).
   vite: { build: { sourcemap: process.env.SENTRY_SOURCEMAPS ? 'hidden' : false } },

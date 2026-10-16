@@ -1,0 +1,43 @@
+---
+// Pages without a theme to wear: no store at this host, a store under
+// maintenance, or too many searches. In both languages, since the store's
+// language may not be known (Phase 1's pages).
+import { t } from '@managemind/shared/i18n';
+
+interface Props {
+  kind: 'not_found' | 'maintenance' | 'busy';
+  name: string;
+  host: string;
+}
+const { kind, name, host } = Astro.props;
+const copy = {
+  not_found: { title: 'store.notFound.title', body: 'store.notFound.body' },
+  maintenance: { title: 'store.maintenance.title', body: 'store.maintenance.body' },
+  busy: { title: 'error.rate_limited', body: 'error.rate_limited' },
+} as const;
+const c = copy[kind];
+---
+
+<!doctype html>
+<html lang="bn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{t('bn', c.title)} · {t('en', c.title)}</title>
+    <style>
+      body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Bengali', sans-serif; margin: 0; color: #1a1a1a; background: #fff; }
+      main { max-width: 640px; margin: 0 auto; padding: 64px 16px; text-align: center; }
+      h1 { font-size: 1.5rem; }
+      h2 { font-size: 1.25rem; margin-top: 2rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{t('bn', c.title)}</h1>
+      <p>{t('bn', c.body, { store: name, host })}</p>
+      <h2 lang="en">{t('en', c.title)}</h2>
+      <p lang="en">{t('en', c.body, { store: name, host })}</p>
+    </main>
+  </body>
+</html>

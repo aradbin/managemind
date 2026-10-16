@@ -1,0 +1,22 @@
+---
+import type { ProductCard } from '@managemind/core';
+import type { ThemeSection } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+import ProductList from '../ProductList.astro';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'product_grid' }>;
+  products: ProductCard[];
+  eager: boolean;
+}
+const { ctx, section, products, eager } = Astro.props;
+const heading = ctx.text(section.heading);
+---
+
+{products.length > 0 && (
+  <section class="section" aria-labelledby={`s-${section.id}`}>
+    <h2 id={`s-${section.id}`}>{heading}</h2>
+    <ProductList ctx={ctx} products={products} layout={section.layout} eagerFirst={eager} />
+  </section>
+)}

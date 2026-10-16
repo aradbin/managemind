@@ -1,0 +1,31 @@
+---
+import type { StoreCategory, StoreImage } from '@managemind/core';
+import type { ThemeSection } from '@managemind/shared/storefront';
+import { href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import Img from '../Img.astro';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'category_grid' }>;
+  categories: (StoreCategory & { image: StoreImage | null })[];
+}
+const { ctx, section, categories } = Astro.props;
+const heading = ctx.text(section.heading);
+---
+
+{categories.length > 0 && (
+  <section class="section" aria-labelledby={`s-${section.id}`}>
+    <h2 id={`s-${section.id}`} class={heading ? undefined : 'visually-hidden'}>{heading || ctx.t('nav.categories')}</h2>
+    <ul class="tiles" role="list">
+      {categories.map((c) => (
+        <li>
+          <a class="tile" href={href(ctx.link, { kind: 'category', slug: c.slug })}>
+            <div class="tile-media">{c.image && <Img image={c.image} alt="" sizes="(min-width: 900px) 16vw, 33vw" />}</div>
+            <span>{c.name}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

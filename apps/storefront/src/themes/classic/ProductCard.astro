@@ -1,0 +1,46 @@
+---
+import type { ProductCard } from '@managemind/core';
+import { price, priceRange } from '../../lib/format';
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+import Img from './Img.astro';
+
+interface Props {
+  ctx: PageContext;
+  product: ProductCard;
+  eager?: boolean;
+}
+const { ctx, product, eager = false } = Astro.props;
+const { t, d, theme } = ctx;
+const card = theme.tokens.card;
+const onSale =
+  card.showCompareAt &&
+  product.compareAt !== null &&
+  product.priceMin !== null &&
+  product.compareAt > product.priceMin;
+const ranged =
+  product.priceMax !== null && product.priceMin !== null && product.priceMax !== product.priceMin;
+---
+
+<a class="card" href={href(ctx.link, { kind: 'product', slug: product.slug })}>
+  <div class="card-media">
+    {product.image && (
+      <Img image={product.image} alt={product.title} sizes="(min-width: 1000px) 25vw, (min-width: 640px) 33vw, 50vw" eager={eager} />
+    )}
+    {!product.available ? <span class="badge out">{t('product.outOfStock')}</span> : onSale && <span class="badge">{t('product.sale')}</span>}
+  </div>
+  <div class="card-body">
+    {card.showBrand && product.brand && <p class="card-brand">{product.brand}</p>}
+    <h3 class="card-title">{product.title}</h3>
+    {product.priceMin !== null && (
+      <p class="price" style="margin:0">
+        <span class={onSale ? 'sale' : undefined}>
+          {ranged ? t('product.from', { price: price(product.priceMin, d) }) : priceRange(product.priceMin, product.priceMax, d)}
+        </span>
+        {onSale && product.compareAt !== null && (
+          <s class="compare"><span class="visually-hidden">{t('product.regular')}: </span>{price(product.compareAt, d)}</s>
+        )}
+      </p>
+    )}
+  </div>
+</a>

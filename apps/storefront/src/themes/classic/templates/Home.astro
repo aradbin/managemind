@@ -1,0 +1,66 @@
+---
+import type { HomeData } from '@managemind/core';
+import { absolute, alternates, href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import { type Head, storeLd } from '../../../lib/seo';
+import Layout from '../Layout.astro';
+import CategoryGrid from '../sections/CategoryGrid.astro';
+import CollectionCarousel from '../sections/CollectionCarousel.astro';
+import Hero from '../sections/Hero.astro';
+import ImageWithText from '../sections/ImageWithText.astro';
+import ProductGrid from '../sections/ProductGrid.astro';
+import RichText from '../sections/RichText.astro';
+import TrustBadges from '../sections/TrustBadges.astro';
+
+interface Props {
+  ctx: PageContext;
+  home: HomeData;
+  noindex: boolean;
+}
+const { ctx, home, noindex } = Astro.props;
+const { layout, theme } = ctx;
+const langs = alternates(ctx.link, () => ({ kind: 'home' }), null);
+const logo = ctx.image(theme.tokens.logoMediaId);
+const head: Head = {
+  title: layout.store.name,
+  canonical: absolute(ctx.link, href(ctx.link, { kind: 'home' })),
+  alternates: langs,
+  noindex,
+  jsonLd: storeLd(
+    layout.store.name,
+    ctx.link.origin,
+    logo?.files.at(-1) ? absolute(ctx.link, `/media/${logo.files.at(-1)?.file}`) : null,
+    absolute(ctx.link, href(ctx.link, { kind: 'search' })),
+  ),
+};
+const languageHref =
+  langs.find((a) => a.locale !== ctx.locale && a.locale !== 'x-default')?.url ?? '/';
+// The first section with images gets the eager (LCP) image.
+const firstImage = theme.sections.findIndex((s) => s.type === 'hero' || s.type === 'product_grid');
+const hasH1 =
+  theme.sections[0]?.type === 'hero' && Boolean(ctx.text(theme.sections[0].slides[0]?.heading));
+---
+
+<Layout ctx={ctx} head={head} languageHref={languageHref}>
+  {!hasH1 && <h1 class="visually-hidden">{layout.store.name}</h1>}
+  {theme.sections.map((section, i) => {
+    switch (section.type) {
+      case 'hero':
+        return <Hero ctx={ctx} section={section} first={i === firstImage} h1={i === 0} />;
+      case 'category_grid':
+        return <CategoryGrid ctx={ctx} section={section} categories={home.categoryGrids[section.id] ?? []} />;
+      case 'collection_carousel':
+        return <CollectionCarousel ctx={ctx} section={section} collections={home.collectionCarousels[section.id] ?? []} />;
+      case 'product_grid':
+        return <ProductGrid ctx={ctx} section={section} products={home.productGrids[section.id] ?? []} eager={i === firstImage} />;
+      case 'image_with_text':
+        return <ImageWithText ctx={ctx} section={section} />;
+      case 'rich_text':
+        return <RichText ctx={ctx} section={section} />;
+      case 'trust_badges':
+        return <TrustBadges ctx={ctx} section={section} />;
+      default:
+        return null;
+    }
+  })}
+</Layout>

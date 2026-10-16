@@ -118,12 +118,14 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
+  storefront.r2_buckets = api.r2_buckets;
   // `*/*` on the store zone catches every store subdomain and every custom
   // hostname served through Cloudflare for SaaS (ADR 0019).
   if (t.routes) storefront.routes = [{ pattern: '*/*', zone_name: t.storeDomain }];
   if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),
+    PLATFORM_DOMAIN: t.platformDomain,
     ADMIN_HOST: t.adminHost,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.storefront.dsn,

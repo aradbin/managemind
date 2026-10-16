@@ -101,9 +101,9 @@ describe('published products', () => {
       title: 'Shirt',
       slugs: { bn: bnSlug, en: 'shirt-pub' },
     });
-    // The default language's slug works under the other language too.
+    // The default language's slug under the other language redirects to that language's own.
     const fallback = await run((tx) => publishedProductBySlug(tx, en, bnSlug));
-    expect(fallback && 'found' in fallback).toBe(true);
+    expect(fallback).toEqual({ redirect: 'shirt-pub' });
 
     expect(
       await run((tx) => publishedProductBySlug(tx, bn, draft.translations.bn?.slug as string)),

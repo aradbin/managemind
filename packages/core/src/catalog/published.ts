@@ -503,7 +503,7 @@ async function idBySlug(
   table: 'product' | 'category' | 'collection' | 'page',
   lang: Lang,
   slug: string,
-): Promise<{ id: string } | { redirectTo: string } | null> {
+): Promise<{ id: string; locale: Locale } | { redirectTo: string } | null> {
   const t = {
     product: { table: 'store.product_translations', column: 'product_id' },
     category: { table: 'store.category_translations', column: 'category_id' },
@@ -515,7 +515,7 @@ async function idBySlug(
      where slug = ${slug} and locale in (${lang.locale}, ${lang.fallback})
      order by (locale = ${lang.locale}) desc limit 1`);
   const hit = rows[0];
-  if (hit) return { id: hit.id };
+  if (hit) return { id: hit.id, locale: hit.locale };
   for (const locale of new Set([lang.locale, lang.fallback])) {
     const id = await resolveRedirect(tx, table, locale, slug);
     if (id) return { redirectTo: id };
@@ -555,9 +555,11 @@ export async function resolveStoreSlug(
   if (!hit) return null;
   const id = 'id' in hit ? hit.id : hit.redirectTo;
   if (!(await isPublished(id))) return null;
-  if ('id' in hit) return { found: id };
+  // Found by the default language's slug, though this language has its own:
+  // the page's own URL is the one to use.
   const current = await currentSlug(tx, kind, lang, id);
-  return current && current !== slug ? { redirect: current } : null;
+  if ('id' in hit && (hit.locale === lang.locale || current === slug)) return { found: id };
+  return current && current !== slug ? { redirect: current } : 'id' in hit ? { found: id } : null;
 }
 
 const isActiveProduct = (tx: TenantTx) => async (id: string) => {

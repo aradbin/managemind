@@ -1,0 +1,31 @@
+---
+// A responsive image from its resized files (400/800/1200 px for products,
+// up to 1600 for banners): srcset, explicit dimensions so nothing shifts,
+// lazy unless it is the page's first image (phase-3-plan §8).
+import type { StoreImage } from '@managemind/core';
+import { srcset } from '../../lib/page';
+
+interface Props {
+  image: StoreImage;
+  alt: string;
+  sizes: string;
+  eager?: boolean;
+  class?: string;
+}
+const { image, alt, sizes, eager = false, class: className } = Astro.props;
+const largest = image.files[image.files.length - 1];
+const src = largest ? `/media/${largest.file}` : '';
+---
+
+<img
+  src={src}
+  srcset={srcset(image)}
+  sizes={sizes}
+  width={image.width}
+  height={image.height}
+  alt={image.alt ?? alt}
+  loading={eager ? 'eager' : 'lazy'}
+  decoding={eager ? 'sync' : 'async'}
+  fetchpriority={eager ? 'high' : 'auto'}
+  class={className}
+/>
