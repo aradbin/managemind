@@ -28,6 +28,8 @@ const storefront = 'managemind-storefront';
 const platformDomain = process.env.PLATFORM_DOMAIN;
 const storeDomain = process.env.STORE_DOMAIN;
 const routes = Boolean(platformDomain && storeDomain);
+// Purges and custom hostnames work on the store zone (ADR 0018, 0019).
+const storeZoneId = routes ? await cf.zoneId(storeDomain as string) : undefined;
 writeWorkerConfigs({
   environment: 'production',
   api,
@@ -37,6 +39,7 @@ writeWorkerConfigs({
   platformDomain: platformDomain || workersDev,
   storeDomain: storeDomain || workersDev,
   adminHost: routes ? `admin.${platformDomain}` : `${api}.${workersDev}`,
+  ...(storeZoneId ? { storeZoneId } : {}),
   emailProvider: 'resend',
   commit,
   routes,

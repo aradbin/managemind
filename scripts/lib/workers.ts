@@ -20,6 +20,13 @@ export interface WorkerTarget {
   storeDomain: string;
   /** The admin's host: sign-in cookies and CSRF checks are bound to it. */
   adminHost: string;
+  /** The store zone, for cache purges and custom hostnames (production only). */
+  storeZoneId?: string;
+  /**
+   * Previews: the storefront's own URL. Store hosts don't exist on
+   * workers.dev, so store links and the theme preview use the dev selector.
+   */
+  storefrontOrigin?: string;
   /** `resend` in production; previews capture emails for the dev mailbox. */
   emailProvider: 'resend' | 'capture';
   commit: string;
@@ -68,7 +75,11 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
     EMAIL_PROVIDER: t.emailProvider,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.api.dsn,
+    ...(t.storeZoneId ? { STORE_ZONE_ID: t.storeZoneId } : {}),
+    ...(t.storefrontOrigin ? { STOREFRONT_ORIGIN: t.storefrontOrigin } : {}),
   };
+  // The checked-in value is for local development only.
+  if (!t.storefrontOrigin) delete (api.vars as Record<string, string>).STOREFRONT_ORIGIN;
   if (t.routes) {
     api.routes = [
       { pattern: t.adminHost, custom_domain: true },
@@ -110,6 +121,7 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),
+    ADMIN_HOST: t.adminHost,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.storefront.dsn,
   };

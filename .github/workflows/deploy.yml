@@ -88,17 +88,24 @@ jobs:
       # Secrets ship with the version, so the new code never runs without them.
       # AUTH_SECRET is the owner's (Q10): never regenerated here, because a new
       # one signs everyone out and makes stored TOTP secrets unreadable.
+      # CF_STORE_TOKEN (Cache Purge, and SSL and Certificates, on the store
+      # zone) is optional until the owner adds it: without it pages are not
+      # purged (they expire within a day) and custom domains can't be added.
       - name: Deploy the API
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
+          if [ -z "$CF_STORE_TOKEN" ]; then
+            echo "::warning title=CF_STORE_TOKEN::not set: store pages are not purged after changes, and custom domains are off"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
-          (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" \
-            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}' > "$secrets")
+          (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend} + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \
             -c wrangler.production.json --secrets-file "$secrets"
       - name: Deploy the storefront

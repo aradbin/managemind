@@ -4,8 +4,8 @@
 //
 //   tsx production/provision.ts [--rotate]
 //
-// - Queues: the outbox (ADR 0010) and import chunks (phase-2-plan §3.7), each
-//   with its dead-letter queue.
+// - Queues: the outbox (ADR 0010), import chunks (phase-2-plan §3.7) and
+//   cache purges (ADR 0018), each with its dead-letter queue.
 // - KV: the edge namespace for the domain-to-store map and cache versions
 //   (ADR 0006; bound to Workers from Phase 1).
 // - R2: the files buckets, with lifecycle rules (phase-0-plan §8).
@@ -24,6 +24,8 @@ const QUEUES = [
   'managemind-outbox-dlq',
   'managemind-imports',
   'managemind-imports-dlq',
+  'managemind-purge',
+  'managemind-purge-dlq',
 ];
 const KV_NAMESPACE = 'managemind-edge';
 const BUCKETS = ['managemind-files', 'managemind-files-preview'];

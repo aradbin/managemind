@@ -36,6 +36,7 @@ writeWorkerConfigs({
   platformDomain: domain,
   storeDomain: domain,
   adminHost: `${apiWorker(pr)}.${domain}`,
+  storefrontOrigin: `https://${storefrontWorker(pr)}.${domain}`,
   emailProvider: 'capture',
   commit: args.get('commit') ?? 'preview',
   previewQueue: PREVIEW_QUEUE,
