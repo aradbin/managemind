@@ -118,8 +118,9 @@ jobs:
         run: pnpm --filter @managemind/scripts exec tsx preview/teardown.ts --pr "$PR" --database-only
 
       - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
-      # The smoke tests, then the Phase 1 flows at a phone and a desktop
-      # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
+      # The smoke tests, then the Phase 1 flows and the catalog flows (Phase 2)
+      # at a phone and a desktop viewport with axe on every screen (E2E_RUN and
+      # DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
         env:

@@ -81,6 +81,9 @@ export async function expectAccessible(page: Page, screen: string): Promise<void
     .analyze();
   const found = result.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-    .map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`);
+    .map(
+      (v) =>
+        `${v.id} (${v.impact}): ${v.nodes.map((n) => `${n.target.join(' ')} ${n.html.slice(0, 160)}`).join(' | ')}`,
+    );
   expect(found, `accessibility on ${screen}`).toEqual([]);
 }
