@@ -2,22 +2,22 @@
 
 - Date: 2026-10-16
 - Plan: `docs/phases/phase-2-plan.md`
-- Branch: `ccr-ea035c9a-cuhggi`, 18 commits ahead of `master`. **Not yet in a pull request**, so there is no preview and nothing in production. The CPU and free-tier rows marked *pending* come from the first preview.
+- Pull request: #45, all of Phase 2 in one pull request (the owner's choice), with one commit per plan step. Its preview has its own database branch (`db-branch`).
 
 ## Summary
 
-Phase 2 is built and tested locally: the catalog, product images, the stock ledger, the spreadsheet import and export, and every admin screen for them, in Bangla and English.
+Phase 2 is built and tested, locally and on #45's preview: the catalog, product images, the stock ledger, the spreadsheet import and export, and every admin screen for them, in Bangla and English.
 
 - **Products** have up to 3 options and 100 variants, Bangla and English text, a formatted description, images resized on the phone, categories (3 levels, each with a specification template), collections (by hand or by rules), specifications, a brand, tags, SEO fields and Bangla slugs with redirects.
 - **Stock** is a ledger. Every change is a movement with a reason, and on hand always equals the sum of the movements. A property test runs 1,500 random operations, some at the same time, and checks this after each one.
-- **Import** reads .xlsx or .csv in the browser, shows a dry run with errors per row, then queues chunks of whole products. The 500-product fixture (1,500 variants) imports through the admin in the local E2E run and exports back with every variant.
+- **Import** reads .xlsx or .csv in the browser, shows a dry run with errors per row, then queues chunks of whole products. The 500-product fixture (1,500 variants) imports correctly, but on Cloudflare it is slow and over the Free CPU limit (below).
 
 **Four things the owner should know:**
 
-1. **Nothing has been measured on Cloudflare yet.** CPU per route and per import chunk comes from the first preview (§3). The plan's Q1 answer stands: stay on Free and measure.
+1. **Imports are over the Free plan's CPU limit, and slow.** On the preview a 10-product chunk takes about 190 ms of CPU (Free allows 10 ms), and Cloudflare has started stopping some chunks; the queue retries them. A chunk also takes about a minute, because each product makes about 36 database round trips to Singapore. So 500 products take about 50 minutes (§3). The owner decided on Oct 16 to stay on Free for now and accept the speed. The preview E2E therefore imports 20 products; the full fixture runs in the API test.
 2. **Two items still need the owner** (§5): the pilot client's spreadsheet, and the Bangla typing test of the description editor on the owner's phone (Q6).
 3. **The admin's sign-in bundle is at 142 of 150 KiB.** Most of the growth is Phase 2's Bangla and English messages. The next phase should load only the active language's messages (§5).
-4. **Previews now clean up after themselves.** Each E2E run adds about 6.5 MB to the shared preview database. Older runs' catalog data is deleted before each new run, so the 0.5 GB limit isn't reached (§4).
+4. **Previews now clean up after themselves.** An E2E run with the 500-product import added about 6.5 MB to the shared preview database; with 20 products it adds much less. Older runs' catalog data is deleted before each new run, so the 0.5 GB limit isn't reached (§4).
 
 ## 1. What was built
 
@@ -42,7 +42,7 @@ Phase 2 is built and tested locally: the catalog, product images, the stock ledg
 
 | Criterion | Status |
 | --- | --- |
-| 500 products with variants imported from a spreadsheet in one go, correct in both languages | **Met locally; the preview run and the pilot spreadsheet are pending.** The API test runs the fixture (500 products, 1,500 variants, Bangla and English, 3 options, brand, tags, attributes of every type) through the real consumer, chunk by chunk, and checks counts, both languages, row errors and re-import by SKU. The local E2E imports the same fixture through the admin, creates its missing attributes in the wizard, reads it in English and exports it back with all 1,500 variants. At the phone viewport an exported .xlsx imports back as updates. The pilot client's spreadsheet hasn't arrived (§5) |
+| 500 products with variants imported from a spreadsheet in one go, correct in both languages | **Met in tests and locally; not on Cloudflare at a usable speed.** On the preview the 500-product job ran correctly but at about 1 chunk a minute, with some chunks stopped for CPU and retried (§3). The owner accepted this for now. The pilot spreadsheet is still pending. The API test runs the fixture (500 products, 1,500 variants, Bangla and English, 3 options, brand, tags, attributes of every type) through the real consumer, chunk by chunk, and checks counts, both languages, row errors and re-import by SKU. Locally, the E2E imported the same fixture through the admin, created its missing attributes in the wizard, read it in English and exported it back with all 1,500 variants. The preview E2E does the same with the fixture's first 20 products. At the phone viewport an exported .xlsx imports back as updates. The pilot client's spreadsheet hasn't arrived (§5) |
 | Every stock change is traceable; on hand equals the sum of movements for every variant | **Met.** The property test (1,500 random operations, some concurrent) checks the invariant after each one. `app.inventory_drift()` runs in the daily job. A grant test pins the ledger as append-only for the app role, and a repeated idempotency key writes nothing |
 
 PLAN.md items without their own criterion:
@@ -67,9 +67,21 @@ PLAN.md items without their own criterion:
 
 ### CPU per route
 
-**Pending: the first preview.** The preview's CPU step now also sends bursts of the product list, product read, product save (with a description) and bulk price edit of 6 variants, and lists queue invocations, which are the import chunks, in their own rows.
+From Workers Logs on #45's preview (Oct 16, 30 minutes, ms):
 
-Locally, a 10-product chunk takes about 300 ms of wall time, nearly all of it database round trips. Wall time isn't CPU time, so this doesn't predict the Workers number. If chunks come out over what ADR 0003 tolerates, the chunk size goes down (it is one constant).
+| Invocation | Count | CPU p50 | CPU max | Wall max | Outcome |
+| --- | --- | --- | --- | --- | --- |
+| Import chunk (queue, 10 products) | 13 | 191 | 299 | 71,493 | All ok at first; from 06:35 UTC some `exceededCpu`, retried by the queue |
+| Requests (all routes, mostly the E2E) | 532 | 19 | 180 | 7,021 | All ok |
+
+The per-route table for the product list, read, save and bulk edit comes from the preview's CPU step. It runs only after a green E2E, so it will be here after the next run.
+
+**Why imports are slow.** A 10-product chunk sends about 360 queries: about 36 per product, mostly one insert per option value, variant and translation. On the preview each query takes about 190 ms between the queue consumer and Neon in Singapore, so a chunk takes about 70 s. Locally the same chunk takes 0.3 s. Chunks run one after another, so 500 products take about 50 minutes.
+
+**What would fix it, when the owner wants it:**
+- **Workers Paid** ($5 a month) lifts the 10 ms CPU limit, so no chunk is stopped. It doesn't make imports faster.
+- **Batched writes** would insert each table's rows for a whole chunk at once: about 10 round trips per chunk instead of 360, so 500 products in a few minutes. This is a rewrite of the import's write path, about a day or two.
+- **Smaller chunks don't help.** Even one product is about 19 ms of CPU, over the Free limit.
 
 ### Bundles
 
@@ -88,9 +100,9 @@ The sign-in bundle grew by 12 KiB. The admin's messages grew 6 KiB, and two KiB 
 | Resource | Free limit | Phase 2 | Note |
 | --- | --- | --- | --- |
 | R2 storage | 10 GB | About 150 KB per image (3 widths) | Deduplicated by content hash |
-| Queue operations | 10,000/day, per account | About 3 per import chunk: about 150 for 500 products | Each preview run imports 500 products once (desktop) and two small files (phone): about 160 operations |
-| Neon storage (preview branch) | 0.5 GB | About 6.5 MB per E2E run | The database step now deletes the store data of E2E stores older than a day, keeping the stores and people |
-| Worker CPU | 10 ms per invocation | *Pending* | Q1: stay on Free; move to Workers Paid the day a request is stopped |
+| Queue operations | 10,000/day, per account | About 3 per import chunk: about 150 for 500 products, more when chunks are retried | Each preview run imports 20 products (desktop) and two small files (phone): about 12 operations |
+| Neon storage (preview branch) | 0.5 GB | Up to about 6.5 MB per E2E run (measured with the 500-product import) | The database step now deletes the store data of E2E stores older than a day, keeping the stores and people |
+| Worker CPU | 10 ms per invocation | Import chunks about 190 ms; requests about 19 ms at p50 | Import chunks have been stopped (§3). The owner chose to stay on Free for now (Oct 16) |
 | Hyperdrive queries | 100,000/day | A few per save and per chunk | |
 
 ## 5. Known gaps and follow-ups
@@ -99,12 +111,13 @@ The sign-in bundle grew by 12 KiB. The admin's messages grew 6 KiB, and two KiB 
 
 1. **The pilot client's product spreadsheet** (plan §1). It joins the fixture in the import tests. It is especially useful now: its headers and grouping will show whether real sheets need more than what the fixes below added.
 2. **Q6: the Bangla typing test.** On the first preview, open a product and type a description with your usual Android keyboard (Gboard Bangla, Ridmik). If anything goes wrong (lost letters, a jumping cursor, doubled conjuncts), tap **সাধারণ লেখা (Plain text)** above the field. That switch is remembered on the phone, and the stored format doesn't change. Please tell me what happened either way.
-3. **How to open the pull requests** for this phase. This decides when CI and the preview first run. The migrations need the `db-branch` label.
+3. **Workers Paid and import speed** (§3), when imports matter for a client. Until then a big import is slow and some chunks are stopped and retried; if a chunk is stopped four times, the job fails and the admin shows it.
 
 ### Not built yet, or smaller than planned
 
 - **Collections:** products are reordered with up and down buttons, which work by keyboard and touch. Drag reordering wasn't built.
-- **CPU and free-tier numbers** wait for the first preview (§3, §4).
+- **Import speed:** batched writes are a follow-up (§3).
+- **The per-route CPU table** for the catalog routes comes from the next green preview run.
 - **Abandoned uploads leave files.** A photo uploaded but never saved leaves its 3 files in R2 without a media row. The weekly cleanup only finds files that have a row. This is small, about 150 KB per abandoned photo, and an R2 listing sweep can come later.
 - **The admin's messages** should load per language, which would win back about 10 KiB of the sign-in bundle.
 

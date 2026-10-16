@@ -3,9 +3,11 @@
 // creates a product in both languages (formatted description, category,
 // specifications, brand, tags), uploads a photo, makes size variants, adds
 // stock, imports a spreadsheet and exports the catalog. At the desktop
-// viewport the import is the 500-product fixture; at the phone viewport a
-// small file, to keep queue use down. Runs after the Phase 1 flows, on the
-// same store, with axe on every screen.
+// viewport the import is the first 20 products of the 500-product fixture
+// (every column type, 2 chunks); at the phone viewport a small file. The
+// whole fixture runs in the API test: on a preview a chunk takes about a
+// minute (phase-2-report §3), too long for a run. Runs after the Phase 1
+// flows, on the same store, with axe on every screen.
 import { expect, type Page, test } from '@playwright/test';
 import { en } from '../../apps/admin/src/i18n/en';
 import { fixtureCsv } from './catalog-fixture';
@@ -14,7 +16,7 @@ import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
 test.skip(!RUN || !DEV_TOKEN, 'needs a seeded preview: E2E_RUN and DEV_TOKEN');
-test.describe.configure({ mode: 'serial', timeout: 600_000 });
+test.describe.configure({ mode: 'serial', timeout: 900_000 });
 
 const toast = (page: Page, text: string) => page.getByRole('status').filter({ hasText: text });
 const visible = (page: Page, name: string) =>
@@ -228,7 +230,7 @@ test('catalog flows', async ({ page }, info) => {
   });
 
   await test.step(
-    big ? 'they import the 500-product file' : 'they import a spreadsheet',
+    big ? 'they import part of the fixture' : 'they import a spreadsheet',
     async () => {
       await page.goto(`${API}/catalog/import`);
       await expect(
@@ -236,7 +238,7 @@ test('catalog flows', async ({ page }, info) => {
       ).toBeVisible();
       await expectAccessible(page, 'import');
       const csv = big
-        ? fixtureCsv(500, `FX${RUN}`)
+        ? fixtureCsv(20, `FX${RUN}`)
         : [
             'Title (bn),Price,SKU,Option 1 name (bn),Option 1 value (bn),Stock',
             `টাঙ্গাইল শাড়ি ${RUN},1800,TS-${RUN}-1,রং,লাল,5`,
@@ -269,11 +271,12 @@ test('catalog flows', async ({ page }, info) => {
         }
       }
       await page.getByRole('button', { name: t('import.check') }).click();
-      const [products, variants] = big ? ['৫০০', '১,৫০০'] : ['২', '৩'];
+      const [products, variants] = big ? ['২০', '৬০'] : ['২', '৩'];
       await expect(page.getByText(t('import.ready', { products, variants }))).toBeVisible();
       await expectAccessible(page, 'import dry run');
       await page.getByRole('button', { name: t('import.start', { count: products }) }).click();
-      await expect(page.getByText(t('import.status.done'))).toBeVisible({ timeout: 300_000 });
+      // A chunk takes up to about a minute on a preview, longer when the queue retries it.
+      await expect(page.getByText(t('import.status.done'))).toBeVisible({ timeout: 420_000 });
       await expectAccessible(page, 'import done');
       await page.getByRole('link', { name: t('import.seeProducts') }).click();
       const imported = big ? 'ফিক্সচার পাঞ্জাবি ৭' : `পাঞ্জাবি ${RUN}`;
@@ -310,10 +313,10 @@ test('catalog flows', async ({ page }, info) => {
     expect(csv).toContain('**ঢাকাই**');
     expect(csv).toContain('আড়ং');
     if (big) {
-      // Every variant of the fixture, and its products in both languages.
-      expect(csv.match(new RegExp(`\\bFX${RUN}-\\d+-\\d\\b`, 'g'))?.length).toBe(1_500);
-      expect(csv).toContain('Fixture Panjabi 499');
-      expect(csv).toContain('ফিক্সচার পাঞ্জাবি ৪৯৯');
+      // Every imported variant, and the products in both languages.
+      expect(csv.match(new RegExp(`\\bFX${RUN}-\\d+-\\d\\b`, 'g'))?.length).toBe(60);
+      expect(csv).toContain('Fixture Panjabi 19');
+      expect(csv).toContain('ফিক্সচার পাঞ্জাবি ১৯');
     } else {
       expect(csv).toContain(`TS-${RUN}-2`);
     }

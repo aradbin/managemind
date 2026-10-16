@@ -1,4 +1,4 @@
-// The 500-product import fixture as a CSV file with the export's English
+// Products of the 500-product import fixture as a CSV file with the export's English
 // headers, built from the same rows the API's import test uses
 // (apps/api/test/import-fixture.ts). Image links are left out: the fixture's
 // hosts don't exist, and the image step is covered with an upload instead.
