@@ -4,6 +4,8 @@
 // default locale are columns, not settings.
 import { z } from 'zod';
 import { normalizePhone } from './phone';
+import { storefrontSettings } from './storefront/settings';
+import { themeSchema } from './storefront/theme';
 
 /** A Bangladeshi mobile number, stored in E.164. */
 export const phoneNumber = () =>
@@ -32,6 +34,19 @@ export const storeProfile = z
         city: text(100).optional(),
       })
       .strict()
+      .optional(),
+    // Business details (phase-3-plan §3.11): shown in the storefront footer
+    // and, from Phase 4, on invoices. All optional until the legal review.
+    /** The registered business name, when it differs from the store's name. */
+    businessName: text(200).optional(),
+    tradeLicense: text(50).optional(),
+    /** Digital Business ID (Digital Commerce Operation Guidelines). */
+    dbid: text(50).optional(),
+    /** VAT registration number (BIN). */
+    bin: z
+      .string()
+      .trim()
+      .regex(/^[0-9][0-9-]{8,19}$/, 'digits and hyphens')
       .optional(),
   })
   .strict();
@@ -84,6 +99,12 @@ export const tenantSettings = z
       pricesIncludeVat: true,
       categories: [],
     }),
+    /** Indexing, tracking, consent text, chat and holiday mode (phase-3-plan §3.6–§3.10). */
+    storefront: storefrontSettings.default(() => storefrontSettings.parse({})),
+    /** The published theme; absent until the first publish, so the default theme shows. */
+    theme: themeSchema.optional(),
+    /** The theme editor's working copy (phase-3-plan §3.4). */
+    themeDraft: themeSchema.optional(),
   })
   .strict();
 
