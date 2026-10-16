@@ -1,5 +1,6 @@
 // Rate limits for the sensitive endpoints only: sign-in codes, two-factor
-// checks and invitations (phase-1-plan §5.5). Never on every request.
+// checks, invitations (phase-1-plan §5.5) and fetching images by URL
+// (phase-2-plan §3.7). Never on every request.
 import { AppError } from '@managemind/shared';
 import type { HitResult, LockoutPolicy, Window } from './limiter';
 
@@ -43,6 +44,13 @@ export const RULES = {
   },
   /** Invitations sent by one store. */
   'invite:tenant': { windows: [{ limit: 30, seconds: DAY }] },
+  /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */
+  'media-fetch:tenant': {
+    windows: [
+      { limit: 2_000, seconds: HOUR },
+      { limit: 10_000, seconds: DAY },
+    ],
+  },
 } as const satisfies Record<string, Rule>;
 
 export type RuleName = keyof typeof RULES;

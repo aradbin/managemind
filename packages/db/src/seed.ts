@@ -35,6 +35,7 @@ export async function seed(connectionString: string): Promise<string[]> {
           "select set_config('app.tenant_id', $1, true), set_config('app.tenant_at', now()::text, true)",
           [t.id],
         );
+        await client.query('select app.create_store_defaults()');
         await client.query(
           `insert into store.outbox (event_type, aggregate_type, aggregate_id, payload)
            values ('tenant.seeded', 'tenant', $1, $2)`,

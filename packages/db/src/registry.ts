@@ -6,7 +6,48 @@
  * Every table in the `store` schema, in purge order: each table comes before
  * the tables it references, so deleting in this order never hits a foreign key.
  */
-export const STORE_TABLES = ['outbox', 'audit_log', 'idempotency_keys'] as const;
+export const STORE_TABLES = [
+  // Imports and inventory
+  'import_images',
+  'import_errors',
+  'import_jobs',
+  'stock_movements',
+  'inventory_levels',
+  // Catalog: attributes and tags
+  'product_attribute_translations',
+  'product_attributes',
+  'category_attributes',
+  'attribute_value_translations',
+  'attribute_values',
+  'attribute_translations',
+  'attributes',
+  'product_tags',
+  // Catalog: categories, collections, redirects
+  'slug_redirects',
+  'collection_products',
+  'collection_translations',
+  'collections',
+  'product_categories',
+  'category_translations',
+  'categories',
+  // Catalog: products, options and variants
+  'variant_option_values',
+  'variants',
+  'product_option_value_translations',
+  'product_option_values',
+  'product_option_translations',
+  'product_options',
+  'product_translations',
+  'product_media',
+  'products',
+  'media_translations',
+  'media',
+  'stock_locations',
+  // Platform core
+  'outbox',
+  'audit_log',
+  'idempotency_keys',
+] as const;
 
 /**
  * What a purge does with a store's rows in a platform table:

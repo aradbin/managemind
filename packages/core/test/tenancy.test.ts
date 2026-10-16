@@ -1,5 +1,6 @@
 import { createDb } from '@managemind/db';
 import { permissionsOf } from '@managemind/shared';
+import { defaultTenantSettings } from '@managemind/shared/settings';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -66,12 +67,21 @@ describe('createTenant', () => {
       [id],
     );
     expect(tenant).toMatchObject({ slug, status: 'active', default_locale: 'en' });
-    expect(tenant?.settings).toEqual({ version: 1, profile: {}, display: {} });
+    expect(tenant?.settings).toEqual(defaultTenantSettings());
     const [member] = await one(
       `select role from platform.memberships where tenant_id = $1 and user_id = $2`,
       [id, ownerUserId],
     );
     expect(member?.role).toBe('owner');
+    // The store's defaults: the built-in brand attribute and a default stock location.
+    expect(
+      await one(`select key, is_system from store.attributes where tenant_id = $1 order by key`, [
+        id,
+      ]),
+    ).toEqual([{ key: 'brand', is_system: true }]);
+    expect(
+      await one(`select name from store.stock_locations where tenant_id = $1 and is_default`, [id]),
+    ).toEqual([{ name: 'Main stock' }]);
     const [u] = await one(`select email_verified, locale from platform.users where id = $1`, [
       ownerUserId,
     ]);

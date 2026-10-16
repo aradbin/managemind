@@ -13,6 +13,9 @@ export const hyperdriveName = (pr: number, db: Database) =>
   db === 'shared' ? 'managemind-preview' : `managemind-pr-${pr}`;
 export const apiWorker = (pr: number) => `managemind-api-pr-${pr}`;
 export const storefrontWorker = (pr: number) => `managemind-storefront-pr-${pr}`;
+/** Each preview consumes its own import queue (a queue has one consumer), unlike the outbox. */
+export const importQueue = (pr: number) => `managemind-imports-pr-${pr}`;
+export const importDeadLetters = (pr: number) => `managemind-imports-pr-${pr}-dlq`;
 
 /** Serializes migrations, seeding and role setup on one preview database. */
 export const DATABASE_LOCK = 72_616_002;

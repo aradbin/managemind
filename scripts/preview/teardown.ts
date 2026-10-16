@@ -5,7 +5,14 @@
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { Neon } from '../lib/neon';
-import { apiWorker, branchName, hyperdriveName, storefrontWorker } from './names';
+import {
+  apiWorker,
+  branchName,
+  hyperdriveName,
+  importDeadLetters,
+  importQueue,
+  storefrontWorker,
+} from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -17,6 +24,10 @@ if (!args.has('database-only')) {
   await cf.deleteWorker(storefrontWorker(pr));
   await cf.deleteWorker(apiWorker(pr));
   notice(`Deleted Workers ${storefrontWorker(pr)} and ${apiWorker(pr)}`);
+  // After the Worker, which consumed them.
+  for (const queue of [importQueue(pr), importDeadLetters(pr)]) {
+    if (await cf.deleteQueue(queue)) notice(`Deleted queue ${queue}`);
+  }
 }
 
 const config = await cf.findHyperdrive(hyperdriveName(pr, 'own'));

@@ -1,15 +1,18 @@
-// CPU per route on a preview (ADR 0003, phase-1-plan §9), after the E2E:
-// signs in as the run's phone owner, sends a burst of GET /v1/admin/me and
-// PATCH /v1/admin/store so most land on warm isolates, then reads CPU time
-// per route from Workers Logs since --since (which covers the E2E's
-// sign-ins too). Writes a table to the step summary; it never fails a run.
+// CPU per route on a preview (ADR 0003, phase-1-plan §9, phase-2-plan §8),
+// after the E2E: signs in as the run's phone owner and sends bursts so most
+// requests land on warm isolates: GET /v1/admin/me, PATCH /v1/admin/store,
+// and Phase 2's product list, product read, product save and bulk price
+// edit on a product with 6 variants. Then reads CPU time per route from
+// Workers Logs since --since, which covers the E2E's sign-ins and its
+// imports: queue invocations (the import chunks) get their own rows. Writes
+// a table to the step summary; it never fails a run.
 //
 //   tsx preview/cpu.ts --pr 12 --api-url <url> --since <epoch ms>
 import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { sleep } from '../lib/http';
-import { apiWorker } from './names';
+import { apiWorker, importQueue } from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -20,14 +23,7 @@ const devToken = requireEnv('DEV_TOKEN');
 const owner = `e2e-${requireEnv('E2E_RUN')}-phone-owner@example.test`;
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
 
-const BURST = { me: 60, store: 30 };
-const ROUTES = [
-  'GET /v1/admin/me',
-  'PATCH /v1/admin/store',
-  'POST /api/auth/email-otp/send-verification-otp',
-  'POST /api/auth/sign-in/email-otp',
-  'GET /health',
-];
+const BURST = { me: 60, store: 30, list: 30, read: 30, save: 20, bulk: 15 };
 
 const jar = new Map<string, string>();
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
@@ -74,14 +70,88 @@ if (!store) throw new Error('the E2E owner has no store');
 await call('PUT', '/v1/admin/me/active-store', { tenantId: store.tenantId });
 for (let i = 0; i < BURST.me; i++) await call('GET', '/v1/admin/me');
 for (let i = 0; i < BURST.store; i++) await call('PATCH', '/v1/admin/store', { name: store.name });
-notice(`Sent ${BURST.me} GET /v1/admin/me and ${BURST.store} PATCH /v1/admin/store`);
+
+// A product like a real one: a description of a few paragraphs and a list,
+// two options making 6 variants.
+const text = (t: string) => ({ type: 'text', text: t });
+const description = {
+  type: 'doc',
+  content: [
+    ...Array.from({ length: 4 }, (_, i) => ({
+      type: 'paragraph',
+      content: [text(`হাতে বোনা ঢাকাই জামদানি, অনুচ্ছেদ ${i + 1}। নরম সুতি, উজ্জ্বল রং, সারা বছর পরার মতো।`)],
+    })),
+    {
+      type: 'bulletList',
+      content: ['সুতি', '৬ গজ', 'ব্লাউজ পিস সহ'].map((t) => ({
+        type: 'listItem',
+        content: [{ type: 'paragraph', content: [text(t)] }],
+      })),
+    },
+  ],
+};
+async function json<T>(res: Response, what: string): Promise<T> {
+  if (!res.ok) throw new Error(`${what}: ${res.status} ${await res.text()}`);
+  return (await res.json()) as T;
+}
+const product = await json<{ id: string }>(
+  await call('POST', '/v1/admin/products', {
+    translations: { bn: { title: 'সিপিইউ পরীক্ষার শাড়ি', description } },
+    variant: { price: 125_000 },
+  }),
+  'create product',
+);
+const withOptions = await json<{ variants: { id: string }[] }>(
+  await call('PUT', `/v1/admin/products/${product.id}/options`, [
+    { name: { bn: 'রং' }, values: ['লাল', 'নীল', 'সবুজ'].map((v) => ({ label: { bn: v } })) },
+    { name: { bn: 'সাইজ' }, values: ['ছোট', 'বড়'].map((v) => ({ label: { bn: v } })) },
+  ]),
+  'set options',
+);
+const productPath = `/v1/admin/products/${product.id}`;
+for (let i = 0; i < BURST.list; i++) await call('GET', '/v1/admin/products');
+for (let i = 0; i < BURST.read; i++) await call('GET', productPath);
+for (let i = 0; i < BURST.save; i++) {
+  await call('PATCH', productPath, {
+    translations: { bn: { title: `সিপিইউ পরীক্ষার শাড়ি ${i}`, description } },
+    tags: ['cpu', `run-${i}`],
+  });
+}
+for (let i = 0; i < BURST.bulk; i++) {
+  await call(
+    'PATCH',
+    '/v1/admin/variants',
+    withOptions.variants.map((v) => ({ id: v.id, price: 125_000 + i * 100 })),
+  );
+}
+notice(
+  `Sent ${BURST.me} GET /v1/admin/me, ${BURST.store} PATCH /v1/admin/store, ` +
+    `${BURST.list} product lists, ${BURST.read} product reads, ${BURST.save} product saves ` +
+    `and ${BURST.bulk} bulk edits of 6 variants`,
+);
+
+// Workers Logs names an invocation by its method and path, with IDs in the
+// path written as REDACTED, and a queue invocation by its queue. A grouped
+// query returns only the busiest groups, so each route is queried on its own.
+const ROUTES: { trigger: string; label: string }[] = [
+  { trigger: 'GET /v1/admin/me', label: 'GET /v1/admin/me' },
+  { trigger: 'PATCH /v1/admin/store', label: 'PATCH /v1/admin/store' },
+  { trigger: 'GET /v1/admin/products', label: 'GET /v1/admin/products' },
+  { trigger: 'GET /v1/admin/products/REDACTED', label: 'GET /v1/admin/products/{id}' },
+  { trigger: 'PATCH /v1/admin/products/REDACTED', label: 'PATCH /v1/admin/products/{id} (save)' },
+  { trigger: 'PATCH /v1/admin/variants', label: 'PATCH /v1/admin/variants (bulk, 6)' },
+  { trigger: importQueue(pr), label: 'Import chunk (queue, up to 10 products)' },
+  {
+    trigger: 'POST /api/auth/email-otp/send-verification-otp',
+    label: 'POST /api/auth/email-otp/send-verification-otp',
+  },
+  { trigger: 'POST /api/auth/sign-in/email-otp', label: 'POST /api/auth/sign-in/email-otp' },
+];
 
 // Workers Logs takes a little while to make new events queryable.
 const service = apiWorker(pr);
 type Row = { route: string; n: number; p50: number; p90: number; p99: number; max: number };
-let rows: Row[] = [];
-for (let attempt = 0; attempt < 12; attempt++) {
-  await sleep(10_000);
+async function stats(trigger: string, label: string): Promise<Row> {
   const calcs = await cf.workerLogStats(
     service,
     since,
@@ -93,19 +163,27 @@ for (let attempt = 0; attempt < 12; attempt++) {
       { operator: 'p99', key: '$workers.cpuTimeMs', alias: 'p99' },
       { operator: 'max', key: '$workers.cpuTimeMs', alias: 'max' },
     ],
-    '$metadata.trigger',
+    undefined,
+    { '$metadata.trigger': trigger },
   );
-  const value = (alias: string, route: string) =>
-    calcs.find((c) => c.alias === alias)?.aggregates.find((a) => a.groupKey === route)?.value ?? 0;
-  rows = ROUTES.map((route) => ({
-    route,
-    n: value('n', route),
-    p50: value('p50', route),
-    p90: value('p90', route),
-    p99: value('p99', route),
-    max: value('max', route),
-  }));
-  if ((rows.find((r) => r.route === 'PATCH /v1/admin/store')?.n ?? 0) >= BURST.store) break;
+  const value = (alias: string) =>
+    Math.round(calcs.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0);
+  return {
+    route: label,
+    n: value('n'),
+    p50: value('p50'),
+    p90: value('p90'),
+    p99: value('p99'),
+    max: value('max'),
+  };
+}
+let rows: Row[] = [];
+for (let attempt = 0; attempt < 12; attempt++) {
+  await sleep(10_000);
+  rows = [];
+  for (const r of ROUTES) rows.push(await stats(r.trigger, r.label));
+  if ((rows.find((r) => r.route.startsWith('PATCH /v1/admin/variants'))?.n ?? 0) >= BURST.bulk)
+    break;
 }
 
 const table = [

@@ -1,3 +1,4 @@
+import { catalogBn } from './catalog-bn';
 import type { en } from './en';
 
 export const bn: Record<keyof typeof en, string> = {
@@ -233,4 +234,5 @@ export const bn: Record<keyof typeof en, string> = {
   'dev.show': 'ইমেইল দেখুন',
   'dev.none': 'এই ঠিকানার কোনো ইমেইল নেই।',
   'dev.unavailable': 'এখানে মেইলবক্স পাওয়া যায় না, অথবা টোকেনটি ভুল।',
+  ...catalogBn,
 };

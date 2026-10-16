@@ -76,3 +76,12 @@ Column names are snake_case through drizzle-kit's `casing: 'snake_case'`; TypeSc
 - Each new store table costs four lines in a custom migration: `FORCE` plus grants. CI catches any that are forgotten.
 - `outbox` keeps `created_at` and `dispatched_at` but no `updated_at`, since only the dispatcher changes it. `audit_log` is append-only and has `created_at` only. Every other table has both timestamps.
 - Purging a tenant (Phase 5B) deletes `store` rows in dependency order, running as the migration role. `ON DELETE RESTRICT` on `tenant_id` makes sure the tenant registry entry is never removed while store rows remain.
+
+## Amendment (2026-10-15, Phase 2): references between store tables
+
+Phase 2 adds the first store tables that reference other store tables. Foreign key checks ignore row-level security, so a plain reference to a parent's `id` would let one store attach a row to another store's product if it knew the UUID.
+
+- **Every reference between store tables is a composite foreign key** on `(tenant_id, <parent>_id)` to a unique `(tenant_id, id)` on the parent. A row can only point inside its own store, whoever writes it. `packages/db/test/catalog-model.test.ts` checks this with a role that bypasses RLS.
+- **Join and translation tables** have composite primary keys that start with `tenant_id`, so the "every index starts with `tenant_id`" rule holds without exceptions.
+- **Search indexes** (`pg_trgm` GIN on titles and tags) start with `tenant_id` too, through the `btree_gin` extension. Both extensions are trusted, so Neon's migration role creates them (migration 0007).
+- **Store defaults** (the built-in brand attribute and the default stock location) come from `app.create_store_defaults()`, which runs with the caller's rights in the store's transaction. `createTenant` and the seed call it; a migration calls it for stores that already exist.

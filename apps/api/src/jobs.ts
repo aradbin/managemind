@@ -1,6 +1,17 @@
 // Background entry points: the queue consumer and the daily Cron batch.
-import { type EventType, type OutboxEvent, relayEvents } from '@managemind/core';
+import {
+  type EventType,
+  failImport,
+  type ImportMessage,
+  type OutboxEvent,
+  processImportChunk,
+  relayEvents,
+  withTenant,
+} from '@managemind/core';
+import { objectKey } from '@managemind/shared';
+import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
+import { chunkKey } from './admin/imports';
 import { queueSink, withClient } from './db';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
@@ -53,6 +64,77 @@ export async function handleQueue(
   }
 }
 
+/**
+ * Import chunks (phase-2-plan §3.7): one message per chunk, one chunk per
+ * invocation. The chunk's staged JSON is read from R2, processed in one
+ * transaction, its events relayed, and the next chunk queued. A failure
+ * retries the message; after 3 it goes to the dead-letter queue.
+ */
+export async function handleImportQueue(
+  batch: MessageBatch<ImportMessage>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  for (const message of batch.messages) {
+    const { tenantId, jobId, chunk } = message.body;
+    try {
+      const staged = await env.FILES.get(chunkKey(tenantId, jobId, chunk));
+      // A missing chunk (expired after a day, or never staged) fails the job.
+      const products = staged ? await staged.json() : null;
+      const next = await withClient(env, ctx, async (client) => {
+        if (products === null) {
+          await withTenant(client, tenantId, (tx) =>
+            failImport(tx, jobId, `chunk ${chunk} is missing`),
+          );
+          return null;
+        }
+        return processImportChunk(client, message.body, products, {
+          afterCommit: (events) =>
+            relayEvents(client, events, queueSink(env.OUTBOX)).then(() => {}),
+        });
+      });
+      if (next) await env.IMPORTS.send(next, { contentType: 'json' });
+      log('info', 'import chunk', {
+        tenant_id: tenantId,
+        job_id: jobId,
+        chunk,
+        next: next?.chunk ?? null,
+      });
+      message.ack();
+    } catch (e) {
+      log('error', 'import chunk failed', {
+        tenant_id: tenantId,
+        job_id: jobId,
+        chunk,
+        attempts: message.attempts,
+        error: String(e),
+      });
+      message.retry({ delaySeconds: 10 * message.attempts });
+    }
+  }
+}
+
+/** Chunks that kept failing: their jobs are marked failed with the last error. */
+export async function handleImportDeadLetters(
+  batch: MessageBatch<ImportMessage>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  await withClient(env, ctx, async (client) => {
+    for (const message of batch.messages) {
+      const { tenantId, jobId, chunk } = message.body;
+      await withTenant(client, tenantId, (tx) =>
+        failImport(tx, jobId, `chunk ${chunk} failed ${message.attempts} times; see the logs`),
+      );
+      captureMessage('import chunk dead-lettered', {
+        level: 'error',
+        extra: { tenantId, jobId, chunk },
+      });
+      message.ack();
+    }
+  });
+}
+
 interface OutboxRow {
   id: string;
   tenant_id: string;
@@ -77,7 +159,8 @@ const toEvent = (r: OutboxRow): OutboxEvent => ({
 
 /**
  * The daily batch: relay outbox events the request path missed (older than
- * five minutes, across tenants), then delete expired technical rows.
+ * five minutes, across tenants), delete expired technical rows, and check
+ * that every stock level still equals its movements (phase-2-plan §3.8).
  */
 export async function runDailyJobs(
   env: Env,
@@ -117,5 +200,58 @@ export async function runDailyJobs(
       'daily cleanup',
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
+    await checkInventoryDrift(client);
+    // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
+    if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);
   });
+}
+
+/**
+ * The weekly image cleanup (phase-2-plan §3.6): images no product or variant
+ * has used for 7 days are deleted, then the files no remaining image of their
+ * store refers to. A file whose R2 delete fails is only orphaned: no row
+ * points at it, and a later upload of the same bytes simply rewrites it.
+ */
+export async function cleanUpMedia(
+  env: Pick<Env, 'FILES'>,
+  client: Parameters<Parameters<typeof withClient>[2]>[0],
+): Promise<{ files: number }> {
+  let files = 0;
+  for (let round = 0; round < 10; round++) {
+    const { rows } = await client.query<{ tenant_id: string; sha256: string; mime: MediaType }>(
+      'select * from app.media_cleanup(500)',
+    );
+    if (rows.length === 0) break;
+    const keys = rows.map((r) =>
+      objectKey('file', r.tenant_id, `media/${r.sha256}.${MEDIA_EXTENSIONS[r.mime]}`),
+    );
+    for (let i = 0; i < keys.length; i += 1000) await env.FILES.delete(keys.slice(i, i + 1000));
+    files += keys.length;
+  }
+  if (files) log('info', 'media cleanup', { files });
+  return { files };
+}
+
+/**
+ * Stock levels that differ from the sum of their movements. Only the
+ * inventory service writes either, in one transaction, so any row here is a
+ * bug: alert, and keep the IDs for the investigation.
+ */
+export async function checkInventoryDrift(client: Parameters<Parameters<typeof withClient>[2]>[0]) {
+  const { rows } = await client.query<{
+    tenant_id: string;
+    variant_id: string;
+    location_id: string;
+    on_hand: string;
+    reserved: string;
+    moved_on_hand: string;
+    moved_reserved: string;
+  }>('select * from app.inventory_drift(100)');
+  if (rows.length === 0) return 0;
+  log('error', 'inventory drift', { rows: rows.length, first: rows.slice(0, 10) });
+  captureMessage('inventory drift: stock levels differ from the ledger', {
+    level: 'error',
+    extra: { rows: rows.length, first: rows.slice(0, 10) },
+  });
+  return rows.length;
 }

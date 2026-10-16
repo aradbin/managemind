@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   add,
   allocate,
+  amountToDecimal,
   compare,
   format,
   type Money,
   money,
   multiply,
+  parseAmount,
   percentOf,
+  splitVat,
   subtract,
   sum,
 } from './money';
@@ -84,5 +87,66 @@ describe('format', () => {
 
   it('lets a store choose Latin digits in Bangla', () => {
     expect(format(bdt(123_450), 'bn', { numerals: 'latin' })).toBe('1,234.50৳');
+  });
+});
+
+describe('parseAmount', () => {
+  it.each([
+    ['1250', 125_000],
+    ['1250.5', 125_050],
+    ['1250.50', 125_050],
+    ['১২৫০.৫০', 125_050],
+    ['৳১,২৫০', 125_000],
+    ['৳ 1,250.00', 125_000],
+    ['1,234,567', 123_456_700],
+    ['12,34,567', 123_456_700],
+    ['1250 টাকা', 125_000],
+    ['Tk 99', 9_900],
+    ['BDT 99', 9_900],
+    ['0', 0],
+    ['.5', null],
+    ['-20', -2_000],
+  ])('parses %s', (input, expected) => {
+    expect(parseAmount(input)).toBe(expected);
+  });
+
+  it.each(['', '৳', 'abc', '12.345', '1.234,50', '12,3', '1e3', '1 2 3x', '99999999999999999'])(
+    'refuses %s',
+    (input) => {
+      expect(parseAmount(input)).toBeNull();
+    },
+  );
+
+  it('round-trips through amountToDecimal', () => {
+    for (const amount of [0, 5, 50, 125_000, 125_050, -2_005]) {
+      expect(parseAmount(amountToDecimal(amount))).toBe(amount);
+    }
+    expect(amountToDecimal(125_000)).toBe('1250');
+    expect(amountToDecimal(125_050)).toBe('1250.50');
+    expect(amountToDecimal(5)).toBe('0.05');
+  });
+});
+
+describe('splitVat', () => {
+  it('takes VAT out of a price that includes it', () => {
+    const split = splitVat(money(115_000), 1500, true);
+    expect(split).toEqual({ net: money(100_000), vat: money(15_000), gross: money(115_000) });
+  });
+
+  it('adds VAT to a price that excludes it', () => {
+    const split = splitVat(money(100_000), 1500, false);
+    expect(split).toEqual({ net: money(100_000), vat: money(15_000), gross: money(115_000) });
+  });
+
+  it('rounds once and always adds up', () => {
+    for (const amount of [1, 99, 12_345, 99_999]) {
+      for (const included of [true, false]) {
+        const { net, vat, gross } = splitVat(money(amount), 750, included);
+        expect(net.amount + vat.amount).toBe(gross.amount);
+      }
+    }
+    expect(splitVat(money(99), 1500, true).vat.amount).toBe(13); // 99 × 15/115 = 12.91
+    expect(splitVat(money(1000), 0, true).vat.amount).toBe(0);
+    expect(() => splitVat(money(1000), -1, true)).toThrow(RangeError);
   });
 });

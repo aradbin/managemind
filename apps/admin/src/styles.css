@@ -17,6 +17,7 @@
   --color-danger-foreground: #ffffff;
   --color-warning: #fef3c7;
   --color-warning-foreground: #78350f;
+  --color-success: #166534;
   --color-ring: #1d4ed8;
 }
 
@@ -33,6 +34,7 @@
     --color-danger-foreground: #0b1120;
     --color-warning: #422006;
     --color-warning-foreground: #fde68a;
+    --color-success: #86efac;
     --color-ring: #93c5fd;
   }
 }
@@ -48,5 +50,27 @@
   /* Visible focus for keyboard users everywhere. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Descriptions in the editor: Tailwind's reset removes heading sizes and list markers. */
+@layer components {
+  .rich-text > * + * {
+    @apply mt-2;
+  }
+  .rich-text h2 {
+    @apply text-xl font-semibold;
+  }
+  .rich-text h3 {
+    @apply text-lg font-semibold;
+  }
+  .rich-text ul {
+    @apply list-disc ps-6;
+  }
+  .rich-text ol {
+    @apply list-decimal ps-6;
+  }
+  .rich-text a {
+    @apply text-primary underline;
   }
 }

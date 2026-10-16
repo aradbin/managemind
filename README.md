@@ -61,7 +61,8 @@ Dependency updates come from Renovate (`renovate.json`): one weekly group for mi
 `.github/workflows/preview.yml` gives every pull request its own Workers, `managemind-api-pr-<n>` and `managemind-storefront-pr-<n>` on workers.dev. It runs the Playwright smoke test (`e2e/`) against them and posts the URLs in a PR comment. Open a demo store with `?store=demo-fashion` or `?store=demo-grocery`.
 
 - **Database:** the shared Neon branch `preview`. Add the `db-branch` label for the PR's own branch `pr-<n>`, which you need when the PR changes migrations.
-- **Cleanup:** closing the PR deletes its Workers and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
+- **Imports:** each preview consumes its own import queue, `managemind-imports-pr-<n>` (and its dead-letter queue), so spreadsheet imports run on previews too.
+- **Cleanup:** closing the PR deletes its Workers, its import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
 
 Run the smoke test against local Workers (both `wrangler dev` servers running):
 

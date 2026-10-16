@@ -1,5 +1,7 @@
 // Admin messages (phase-1-plan §7.3). Kept out of packages/shared so
 // storefront bundles never carry them; same t() and parity test.
+import { catalogEn } from './catalog-en';
+
 export const en = {
   'app.name': '{platform} admin',
   'nav.home': 'Home',
@@ -240,4 +242,5 @@ export const en = {
   'dev.show': 'Show emails',
   'dev.none': 'No emails for this address.',
   'dev.unavailable': 'The mailbox isn’t available here, or the token is wrong.',
+  ...catalogEn,
 } as const;

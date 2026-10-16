@@ -708,7 +708,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Edit the store profile (settings.write) */
+        /** Edit the store profile and VAT settings (settings.write) */
         patch: {
             parameters: {
                 query?: never;
@@ -731,6 +731,22 @@ export interface paths {
                                 line2?: string;
                                 city?: string;
                             };
+                        };
+                        tax?: {
+                            /** @default false */
+                            vatEnabled?: boolean;
+                            /** @default 1500 */
+                            rateBasisPoints?: number;
+                            /** @default true */
+                            pricesIncludeVat?: boolean;
+                            /** @default [] */
+                            categories?: {
+                                key: string;
+                                name: string;
+                                rateBasisPoints: number;
+                                /** @default false */
+                                exempt?: boolean;
+                            }[];
                         };
                     };
                 };
@@ -1026,6 +1042,2463 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Products, newest first, with search and filters (catalog.read) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "draft" | "active" | "archived";
+                    categoryId?: string;
+                    collectionId?: string;
+                    brandValueId?: string;
+                    tag?: string;
+                    attributeValueId?: string;
+                    lowStock?: "true" | "false";
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Products */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["ProductSummary"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a product (catalog.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @default draft
+                         * @enum {string}
+                         */
+                        status?: "draft" | "active";
+                        translations: {
+                            bn?: {
+                                title: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            };
+                            en?: {
+                                title: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            };
+                        };
+                        variant?: {
+                            sku?: string | null;
+                            barcode?: string | null;
+                            price: number;
+                            compareAtPrice?: number | null;
+                            costPrice?: number | null;
+                            weightGrams?: number | null;
+                            trackInventory?: boolean;
+                            allowBackorder?: boolean;
+                            lowStockThreshold?: number | null;
+                        };
+                        categoryIds?: string[];
+                        tags?: string[];
+                        attributes?: ({
+                            /** @enum {string} */
+                            type: "choice";
+                            /** Format: uuid */
+                            attributeId: string;
+                            valueIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "multi_choice";
+                            /** Format: uuid */
+                            attributeId: string;
+                            valueIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "number";
+                            /** Format: uuid */
+                            attributeId: string;
+                            number: number | null;
+                        } | {
+                            /** @enum {string} */
+                            type: "boolean";
+                            /** Format: uuid */
+                            attributeId: string;
+                            value: boolean | null;
+                        } | {
+                            /** @enum {string} */
+                            type: "text";
+                            /** Format: uuid */
+                            attributeId: string;
+                            text: {
+                                bn?: string | null;
+                                en?: string | null;
+                            };
+                        })[];
+                        vatCategory?: string | null;
+                        metadata?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whole products for the export, a page at a time, with the list’s filters */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "draft" | "active" | "archived";
+                    categoryId?: string;
+                    collectionId?: string;
+                    brandValueId?: string;
+                    tag?: string;
+                    lowStock?: "true" | "false";
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Products */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["Product"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product with translations, options, variants, media, attributes and tags */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a draft that has no history (catalog.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a product (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status?: "draft" | "active";
+                        translations?: {
+                            bn?: {
+                                title: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            } | null;
+                            en?: {
+                                title: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            } | null;
+                        };
+                        categoryIds?: string[];
+                        collectionIds?: string[];
+                        tags?: string[];
+                        attributes?: ({
+                            /** @enum {string} */
+                            type: "choice";
+                            /** Format: uuid */
+                            attributeId: string;
+                            valueIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "multi_choice";
+                            /** Format: uuid */
+                            attributeId: string;
+                            valueIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "number";
+                            /** Format: uuid */
+                            attributeId: string;
+                            number: number | null;
+                        } | {
+                            /** @enum {string} */
+                            type: "boolean";
+                            /** Format: uuid */
+                            attributeId: string;
+                            value: boolean | null;
+                        } | {
+                            /** @enum {string} */
+                            type: "text";
+                            /** Format: uuid */
+                            attributeId: string;
+                            text: {
+                                bn?: string | null;
+                                en?: string | null;
+                            };
+                        })[];
+                        vatCategory?: string | null;
+                        metadata?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/products/{id}/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the options and regenerate the variants (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id?: string;
+                        name: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        values: {
+                            /** Format: uuid */
+                            id?: string;
+                            label: {
+                                bn?: string;
+                                en?: string;
+                            };
+                        }[];
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Archive a product (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/variants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a variant (catalog.write; cost prices need catalog.cost) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        sku?: string | null;
+                        barcode?: string | null;
+                        price?: number;
+                        compareAtPrice?: number | null;
+                        costPrice?: number | null;
+                        weightGrams?: number | null;
+                        trackInventory?: boolean;
+                        allowBackorder?: boolean;
+                        lowStockThreshold?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Variant */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Variant"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/variants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Bulk price, compare-at and threshold edits, at most 200 (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        price?: number;
+                        compareAtPrice?: number | null;
+                        lowStockThreshold?: number | null;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            updated: number;
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/variants/{id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A variant's stock ledger, newest first (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Movements */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["StockMovement"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The category tree (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Categories */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Category"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a category (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        parentId?: string | null;
+                        translations: {
+                            bn?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                            en?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Category"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an empty category (catalog.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Rename a category (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        translations?: {
+                            bn?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            } | null;
+                            en?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            } | null;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Category */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Category"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/categories/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a category under another, or reorder it (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        parentId: string | null;
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Category */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Category"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/categories/{id}/attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the category's attribute template (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": string[];
+                };
+            };
+            responses: {
+                /** @description Category */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Category"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/template-attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The template attributes of categories and their parents, nearest first */
+        get: {
+            parameters: {
+                query: {
+                    categoryIds: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Attribute IDs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/attributes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Attributes with their values (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Attributes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attribute"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create an attribute (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        key: string;
+                        /** @enum {string} */
+                        type: "choice" | "multi_choice" | "number" | "text" | "boolean";
+                        translations: {
+                            bn?: {
+                                name: string;
+                                unit?: string | null;
+                            };
+                            en?: {
+                                name: string;
+                                unit?: string | null;
+                            };
+                        };
+                        /** @default false */
+                        filterable?: boolean;
+                        /** @default true */
+                        visible?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attribute"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/attributes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an attribute and its values from every product; never the brand */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            removedFrom: number;
+                        };
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Rename, re-flag or move an attribute (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        translations?: {
+                            bn?: {
+                                name: string;
+                                unit?: string | null;
+                            } | null;
+                            en?: {
+                                name: string;
+                                unit?: string | null;
+                            } | null;
+                        };
+                        filterable?: boolean;
+                        visible?: boolean;
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Attribute */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attribute"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/attributes/{id}/values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace a choice attribute's values (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id?: string;
+                        label: {
+                            bn?: string;
+                            en?: string;
+                        };
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Attribute */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Attribute"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's tags by prefix, most used first */
+        get: {
+            parameters: {
+                query?: {
+                    prefix?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Tags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            tag: string;
+                            count: number;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/option-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's option names and values by prefix */
+        get: {
+            parameters: {
+                query: {
+                    locale: "bn" | "en";
+                    prefix?: string;
+                    name?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suggestions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            names: {
+                                name: string;
+                                count: number;
+                            }[];
+                            values: {
+                                label: string;
+                                count: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Collections (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Collections */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Collection"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a manual or rule-based collection (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind: "manual";
+                        translations: {
+                            bn?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                            en?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                        };
+                        /**
+                         * @default manual
+                         * @enum {string}
+                         */
+                        sort?: "manual" | "newest" | "price_asc" | "price_desc" | "title_asc";
+                        /** @default false */
+                        published?: boolean;
+                    } | {
+                        /** @enum {string} */
+                        kind: "rule";
+                        translations: {
+                            bn?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                            en?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            };
+                        };
+                        rules: {
+                            /**
+                             * @default all
+                             * @enum {string}
+                             */
+                            match?: "all";
+                            conditions: ({
+                                /** @enum {string} */
+                                type: "category";
+                                /** Format: uuid */
+                                categoryId: string;
+                            } | {
+                                min: number | null;
+                                max: number | null;
+                                /** @enum {string} */
+                                type: "price";
+                            } | {
+                                /** @enum {string} */
+                                type: "title_contains";
+                                text: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "created_within_days";
+                                days: number;
+                            } | {
+                                /** @enum {string} */
+                                type: "tag";
+                                tag: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "brand";
+                                /** Format: uuid */
+                                valueId: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "attribute_value";
+                                /** Format: uuid */
+                                attributeId: string;
+                                /** Format: uuid */
+                                valueId: string;
+                            } | {
+                                min: number | null;
+                                max: number | null;
+                                /** @enum {string} */
+                                type: "attribute_range";
+                                /** Format: uuid */
+                                attributeId: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "attribute_boolean";
+                                /** Format: uuid */
+                                attributeId: string;
+                                value: boolean;
+                            })[];
+                        };
+                        /**
+                         * @default newest
+                         * @enum {string}
+                         */
+                        sort?: "newest" | "price_asc" | "price_desc" | "title_asc";
+                        /** @default false */
+                        published?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Collection"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/collections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a collection (catalog.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a collection (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        translations?: {
+                            bn?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            } | null;
+                            en?: {
+                                name: string;
+                                slug?: string;
+                                description?: components["schemas"]["RichTextDoc"];
+                            } | null;
+                        };
+                        rules?: {
+                            /**
+                             * @default all
+                             * @enum {string}
+                             */
+                            match?: "all";
+                            conditions: ({
+                                /** @enum {string} */
+                                type: "category";
+                                /** Format: uuid */
+                                categoryId: string;
+                            } | {
+                                min: number | null;
+                                max: number | null;
+                                /** @enum {string} */
+                                type: "price";
+                            } | {
+                                /** @enum {string} */
+                                type: "title_contains";
+                                text: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "created_within_days";
+                                days: number;
+                            } | {
+                                /** @enum {string} */
+                                type: "tag";
+                                tag: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "brand";
+                                /** Format: uuid */
+                                valueId: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "attribute_value";
+                                /** Format: uuid */
+                                attributeId: string;
+                                /** Format: uuid */
+                                valueId: string;
+                            } | {
+                                min: number | null;
+                                max: number | null;
+                                /** @enum {string} */
+                                type: "attribute_range";
+                                /** Format: uuid */
+                                attributeId: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "attribute_boolean";
+                                /** Format: uuid */
+                                attributeId: string;
+                                value: boolean;
+                            })[];
+                        };
+                        /** @enum {string} */
+                        sort?: "manual" | "newest" | "price_asc" | "price_desc" | "title_asc";
+                        published?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Collection */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Collection"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/collections/{id}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A collection's products in its order; for rules, what they match now */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                    offset?: number | null;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Products */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                status: string;
+                                titles: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                minPrice: number | null;
+                            }[];
+                            total: number;
+                        };
+                    };
+                };
+            };
+        };
+        /** A manual collection's products, in order (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": string[];
+                };
+            };
+            responses: {
+                /** @description Collection */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Collection"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/collections/{id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What unsaved rules would match (the live preview) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @default all
+                         * @enum {string}
+                         */
+                        match?: "all";
+                        conditions: ({
+                            /** @enum {string} */
+                            type: "category";
+                            /** Format: uuid */
+                            categoryId: string;
+                        } | {
+                            min: number | null;
+                            max: number | null;
+                            /** @enum {string} */
+                            type: "price";
+                        } | {
+                            /** @enum {string} */
+                            type: "title_contains";
+                            text: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "created_within_days";
+                            days: number;
+                        } | {
+                            /** @enum {string} */
+                            type: "tag";
+                            tag: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "brand";
+                            /** Format: uuid */
+                            valueId: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "attribute_value";
+                            /** Format: uuid */
+                            attributeId: string;
+                            /** Format: uuid */
+                            valueId: string;
+                        } | {
+                            min: number | null;
+                            max: number | null;
+                            /** @enum {string} */
+                            type: "attribute_range";
+                            /** Format: uuid */
+                            attributeId: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "attribute_boolean";
+                            /** Format: uuid */
+                            attributeId: string;
+                            value: boolean;
+                        })[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Products */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                status: string;
+                                titles: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                minPrice: number | null;
+                            }[];
+                            total: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock per variant (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    lowStock?: "true" | "false";
+                    locationId?: string;
+                    q?: string;
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Inventory */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["InventoryRow"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/inventory/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive, count or write off stock (inventory.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": ({
+                        /** @enum {string} */
+                        mode: "delta";
+                        /** Format: uuid */
+                        variantId: string;
+                        /** Format: uuid */
+                        locationId?: string;
+                        quantity: number;
+                        /** @enum {string} */
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        note?: string | null;
+                    } | {
+                        /** @enum {string} */
+                        mode: "set";
+                        /** Format: uuid */
+                        variantId: string;
+                        /** Format: uuid */
+                        locationId?: string;
+                        onHand: number;
+                        /** @enum {string} */
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        note?: string | null;
+                    })[];
+                };
+            };
+            responses: {
+                /** @description Applied */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            applied: number;
+                            skipped: number;
+                            levels: {
+                                /** Format: uuid */
+                                variantId: string;
+                                /** Format: uuid */
+                                locationId: string;
+                                onHand: number;
+                                reserved: number;
+                                available: number;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock locations, the default first (inventory.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Locations */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockLocation"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/locations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** A location's name and address (settings.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            city?: string;
+                        } | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Location */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockLocation"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/media/files/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of the store’s files, for the admin’s previews (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        /** Upload one resized file, named <sha256>.<ext> (catalog.write; at most 2 MB) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/webp": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            responses: {
+                /** @description Stored, or already there */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            file: string;
+                            bytes: number;
+                            stored: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Images by ID, with their files and alt text (catalog.read) */
+        get: {
+            parameters: {
+                query: {
+                    ids: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Images */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Media"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Register an image from its uploaded files (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mime: "image/webp" | "image/jpeg" | "image/png";
+                        width: number;
+                        height: number;
+                        files: {
+                            width: number;
+                            sha256: string;
+                            bytes: number;
+                        }[];
+                        alt?: {
+                            bn?: string;
+                            en?: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Image */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Media"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/media/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fetch an image by URL for the import’s image step (catalog.write; rate-limited) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The image */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/products/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A product's images in order, their alt text and the variants' images (catalog.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        images: {
+                            /** Format: uuid */
+                            mediaId: string;
+                            alt?: {
+                                bn?: string | null;
+                                en?: string | null;
+                            };
+                        }[];
+                        variantImages?: {
+                            /** Format: uuid */
+                            variantId: string;
+                            /** Format: uuid */
+                            mediaId: string | null;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Product */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Product"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest imports (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Imports */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create an import job (catalog.write; stock columns need inventory.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        fileName: string;
+                        chunkCount: number;
+                        total: number;
+                        stock?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An import’s progress (catalog.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/chunks/{n}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Stage one chunk of products (the dry run’s output; at most 1 MB) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    n: number | null;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": unknown[];
+                };
+            };
+            responses: {
+                /** @description Staged */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start processing once every chunk is staged (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop an import (catalog.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Import */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Row errors in row order (the first 1,000; total counts all) */
+        get: {
+            parameters: {
+                query?: {
+                    afterRow?: number | null;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Errors */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                row: number;
+                                field: string;
+                                code: string;
+                                message: string;
+                            }[];
+                            total: number;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The image step’s work list (pending first) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "pending" | "done" | "failed";
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Images */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            row: number;
+                            /** Format: uuid */
+                            productId: string;
+                            /** Format: uuid */
+                            variantId: string | null;
+                            url: string;
+                            position: number;
+                            /** @enum {string} */
+                            status: "pending" | "done" | "failed";
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/imports/{id}/images/{imageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Report one image: uploaded and registered, or failed (catalog.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    imageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "done";
+                        /** Format: uuid */
+                        mediaId: string;
+                    } | {
+                        /** @enum {string} */
+                        status: "failed";
+                        error: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Import */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportJob"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/v1/admin/invitations/accept": {
@@ -1569,7 +4042,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -1589,6 +4062,22 @@ export interface components {
                     line2?: string;
                     city?: string;
                 };
+            };
+            tax: {
+                /** @default false */
+                vatEnabled: boolean;
+                /** @default 1500 */
+                rateBasisPoints: number;
+                /** @default true */
+                pricesIncludeVat: boolean;
+                /** @default [] */
+                categories: {
+                    key: string;
+                    name: string;
+                    rateBasisPoints: number;
+                    /** @default false */
+                    exempt: boolean;
+                }[];
             };
         };
         Member: {
@@ -1613,6 +4102,1271 @@ export interface components {
             expiresAt: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        ProductSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            titles: {
+                bn?: string;
+                en?: string;
+            };
+            minPrice: number | null;
+            maxPrice: number | null;
+            variantCount: number;
+            available?: number | null;
+            lowStock?: boolean;
+            /** Format: uuid */
+            imageMediaId: string | null;
+            imageFile: string | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        Product: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "draft" | "active" | "archived";
+            vatCategory: string | null;
+            metadata: {
+                [key: string]: unknown;
+            };
+            translations: {
+                bn?: {
+                    title: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                    seoTitle: string | null;
+                    seoDescription: string | null;
+                };
+                en?: {
+                    title: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                    seoTitle: string | null;
+                    seoDescription: string | null;
+                };
+            };
+            options: {
+                /** Format: uuid */
+                id: string;
+                position: number;
+                name: {
+                    bn?: string;
+                    en?: string;
+                };
+                values: {
+                    /** Format: uuid */
+                    id: string;
+                    position: number;
+                    label: {
+                        bn?: string;
+                        en?: string;
+                    };
+                }[];
+            }[];
+            variants: components["schemas"]["Variant"][];
+            media: {
+                /** Format: uuid */
+                mediaId: string;
+                position: number;
+                mime: string;
+                width: number;
+                height: number;
+                files: {
+                    width: number;
+                    sha256: string;
+                    bytes: number;
+                }[];
+                alt: {
+                    bn?: string;
+                    en?: string;
+                };
+            }[];
+            categoryIds: string[];
+            collectionIds: string[];
+            attributes: {
+                /** Format: uuid */
+                attributeId: string;
+                key: string;
+                type: string;
+                valueIds: string[];
+                number: number | null;
+                boolean: boolean | null;
+                text: {
+                    bn?: string;
+                    en?: string;
+                };
+            }[];
+            tags: string[];
+            createdAt: string;
+            updatedAt: string;
+        };
+        Variant: {
+            /** Format: uuid */
+            id: string;
+            optionValueIds: string[];
+            sku: string | null;
+            barcode: string | null;
+            price: number;
+            compareAtPrice: number | null;
+            /** @description Only with catalog.cost */
+            costPrice?: number | null;
+            weightGrams: number | null;
+            trackInventory: boolean;
+            allowBackorder: boolean;
+            lowStockThreshold: number | null;
+            /** Format: uuid */
+            imageMediaId: string | null;
+            position: number;
+            /** @description Only with inventory.read */
+            stock?: {
+                onHand: number;
+                reserved: number;
+                available: number;
+            };
+        };
+        RichTextDoc: {
+            /** @enum {string} */
+            type: "doc";
+            content?: ({
+                /** @enum {string} */
+                type: "paragraph";
+                content?: {
+                    /** @enum {string} */
+                    type: "text";
+                    text: string;
+                    marks?: ({
+                        /** @enum {string} */
+                        type: "bold";
+                    } | {
+                        /** @enum {string} */
+                        type: "italic";
+                    } | {
+                        /** @enum {string} */
+                        type: "link";
+                        attrs: {
+                            href: string;
+                        };
+                    })[];
+                }[];
+            } | {
+                /** @enum {string} */
+                type: "heading";
+                attrs: {
+                    level: 2 | 3;
+                };
+                content?: {
+                    /** @enum {string} */
+                    type: "text";
+                    text: string;
+                    marks?: ({
+                        /** @enum {string} */
+                        type: "bold";
+                    } | {
+                        /** @enum {string} */
+                        type: "italic";
+                    } | {
+                        /** @enum {string} */
+                        type: "link";
+                        attrs: {
+                            href: string;
+                        };
+                    })[];
+                }[];
+            } | {
+                /** @enum {string} */
+                type: "bulletList";
+                content: {
+                    /** @enum {string} */
+                    type: "listItem";
+                    content: ({
+                        /** @enum {string} */
+                        type: "paragraph";
+                        content?: {
+                            /** @enum {string} */
+                            type: "text";
+                            text: string;
+                            marks?: ({
+                                /** @enum {string} */
+                                type: "bold";
+                            } | {
+                                /** @enum {string} */
+                                type: "italic";
+                            } | {
+                                /** @enum {string} */
+                                type: "link";
+                                attrs: {
+                                    href: string;
+                                };
+                            })[];
+                        }[];
+                    } | {
+                        /** @enum {string} */
+                        type: "bulletList";
+                        content: {
+                            /** @enum {string} */
+                            type: "listItem";
+                            content: ({
+                                /** @enum {string} */
+                                type: "paragraph";
+                                content?: {
+                                    /** @enum {string} */
+                                    type: "text";
+                                    text: string;
+                                    marks?: ({
+                                        /** @enum {string} */
+                                        type: "bold";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "italic";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "link";
+                                        attrs: {
+                                            href: string;
+                                        };
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "bulletList";
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "orderedList";
+                                attrs?: {
+                                    start?: number;
+                                };
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            })[];
+                        }[];
+                    } | {
+                        /** @enum {string} */
+                        type: "orderedList";
+                        attrs?: {
+                            start?: number;
+                        };
+                        content: {
+                            /** @enum {string} */
+                            type: "listItem";
+                            content: ({
+                                /** @enum {string} */
+                                type: "paragraph";
+                                content?: {
+                                    /** @enum {string} */
+                                    type: "text";
+                                    text: string;
+                                    marks?: ({
+                                        /** @enum {string} */
+                                        type: "bold";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "italic";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "link";
+                                        attrs: {
+                                            href: string;
+                                        };
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "bulletList";
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "orderedList";
+                                attrs?: {
+                                    start?: number;
+                                };
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            })[];
+                        }[];
+                    })[];
+                }[];
+            } | {
+                /** @enum {string} */
+                type: "orderedList";
+                attrs?: {
+                    start?: number;
+                };
+                content: {
+                    /** @enum {string} */
+                    type: "listItem";
+                    content: ({
+                        /** @enum {string} */
+                        type: "paragraph";
+                        content?: {
+                            /** @enum {string} */
+                            type: "text";
+                            text: string;
+                            marks?: ({
+                                /** @enum {string} */
+                                type: "bold";
+                            } | {
+                                /** @enum {string} */
+                                type: "italic";
+                            } | {
+                                /** @enum {string} */
+                                type: "link";
+                                attrs: {
+                                    href: string;
+                                };
+                            })[];
+                        }[];
+                    } | {
+                        /** @enum {string} */
+                        type: "bulletList";
+                        content: {
+                            /** @enum {string} */
+                            type: "listItem";
+                            content: ({
+                                /** @enum {string} */
+                                type: "paragraph";
+                                content?: {
+                                    /** @enum {string} */
+                                    type: "text";
+                                    text: string;
+                                    marks?: ({
+                                        /** @enum {string} */
+                                        type: "bold";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "italic";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "link";
+                                        attrs: {
+                                            href: string;
+                                        };
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "bulletList";
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "orderedList";
+                                attrs?: {
+                                    start?: number;
+                                };
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            })[];
+                        }[];
+                    } | {
+                        /** @enum {string} */
+                        type: "orderedList";
+                        attrs?: {
+                            start?: number;
+                        };
+                        content: {
+                            /** @enum {string} */
+                            type: "listItem";
+                            content: ({
+                                /** @enum {string} */
+                                type: "paragraph";
+                                content?: {
+                                    /** @enum {string} */
+                                    type: "text";
+                                    text: string;
+                                    marks?: ({
+                                        /** @enum {string} */
+                                        type: "bold";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "italic";
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "link";
+                                        attrs: {
+                                            href: string;
+                                        };
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "bulletList";
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            } | {
+                                /** @enum {string} */
+                                type: "orderedList";
+                                attrs?: {
+                                    start?: number;
+                                };
+                                content: {
+                                    /** @enum {string} */
+                                    type: "listItem";
+                                    content: ({
+                                        /** @enum {string} */
+                                        type: "paragraph";
+                                        content?: {
+                                            /** @enum {string} */
+                                            type: "text";
+                                            text: string;
+                                            marks?: ({
+                                                /** @enum {string} */
+                                                type: "bold";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "italic";
+                                            } | {
+                                                /** @enum {string} */
+                                                type: "link";
+                                                attrs: {
+                                                    href: string;
+                                                };
+                                            })[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "bulletList";
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "orderedList";
+                                        attrs?: {
+                                            start?: number;
+                                        };
+                                        content: {
+                                            /** @enum {string} */
+                                            type: "listItem";
+                                            content: {
+                                                /** @enum {string} */
+                                                type: "paragraph";
+                                                content?: {
+                                                    /** @enum {string} */
+                                                    type: "text";
+                                                    text: string;
+                                                    marks?: ({
+                                                        /** @enum {string} */
+                                                        type: "bold";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "italic";
+                                                    } | {
+                                                        /** @enum {string} */
+                                                        type: "link";
+                                                        attrs: {
+                                                            href: string;
+                                                        };
+                                                    })[];
+                                                }[];
+                                            }[];
+                                        }[];
+                                    })[];
+                                }[];
+                            })[];
+                        }[];
+                    })[];
+                }[];
+            })[];
+        };
+        StockMovement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            locationId: string;
+            /** @enum {string} */
+            type: "receive" | "sale" | "reservation" | "release" | "adjustment" | "return";
+            quantity: number;
+            reason: string;
+            note: string | null;
+            referenceType: string | null;
+            /** Format: uuid */
+            referenceId: string | null;
+            actorType: string;
+            /** Format: uuid */
+            actorId: string | null;
+            createdAt: string;
+        };
+        Category: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            parentId: string | null;
+            depth: number;
+            position: number;
+            translations: {
+                bn?: {
+                    name: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                };
+                en?: {
+                    name: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                };
+            };
+            attributeIds: string[];
+            productCount: number;
+        };
+        Attribute: {
+            /** Format: uuid */
+            id: string;
+            key: string;
+            /** @enum {string} */
+            type: "choice" | "multi_choice" | "number" | "text" | "boolean";
+            filterable: boolean;
+            visible: boolean;
+            isSystem: boolean;
+            position: number;
+            name: {
+                bn?: string;
+                en?: string;
+            };
+            unit: {
+                bn?: string;
+                en?: string;
+            };
+            values: {
+                /** Format: uuid */
+                id: string;
+                position: number;
+                label: {
+                    bn?: string;
+                    en?: string;
+                };
+            }[];
+            productCount: number;
+        };
+        Collection: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "manual" | "rule";
+            rules?: unknown;
+            sort: string;
+            published: boolean;
+            translations: {
+                bn?: {
+                    name: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                };
+                en?: {
+                    name: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    description?: unknown;
+                };
+            };
+            productCount: number;
+            createdAt: string;
+            updatedAt: string;
+        };
+        InventoryRow: {
+            /** Format: uuid */
+            variantId: string;
+            /** Format: uuid */
+            productId: string;
+            titles: {
+                bn?: string;
+                en?: string;
+            };
+            optionLabels: {
+                bn?: string;
+                en?: string;
+            }[];
+            sku: string | null;
+            trackInventory: boolean;
+            allowBackorder: boolean;
+            lowStockThreshold: number | null;
+            onHand: number;
+            reserved: number;
+            available: number;
+            lowStock: boolean;
+        };
+        StockLocation: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            isDefault: boolean;
+            address: {
+                line1: string;
+                line2?: string;
+                city?: string;
+            } | null;
+        };
+        Media: {
+            /** Format: uuid */
+            id: string;
+            sha256: string;
+            /** @enum {string} */
+            mime: "image/webp" | "image/jpeg" | "image/png";
+            ext: string;
+            width: number;
+            height: number;
+            files: {
+                width: number;
+                sha256: string;
+                bytes: number;
+            }[];
+            alt: {
+                bn?: string;
+                en?: string;
+            };
+        };
+        ImportJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "staging" | "running" | "images" | "done" | "failed" | "cancelled";
+            fileName: string;
+            chunkCount: number;
+            nextChunk: number;
+            total: number;
+            processed: number;
+            created: number;
+            updated: number;
+            failed: number;
+            errorCount: number;
+            withStock: boolean;
+            withCost: boolean;
+            lastError: string | null;
+            images: {
+                pending: number;
+                done: number;
+                failed: number;
+            };
+            createdAt: string;
+            finishedAt: string | null;
         };
         TenantSummary: {
             /** Format: uuid */

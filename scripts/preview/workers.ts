@@ -7,7 +7,13 @@
 import { parseArgs, prNumber, requireEnv, setOutput } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { writeWorkerConfigs } from '../lib/workers';
-import { apiWorker, PREVIEW_QUEUE, storefrontWorker } from './names';
+import {
+  apiWorker,
+  importDeadLetters,
+  importQueue,
+  PREVIEW_QUEUE,
+  storefrontWorker,
+} from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -19,6 +25,8 @@ if (!hyperdrive || !/^[0-9a-f]{32}$/.test(hyperdrive)) {
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
 const domain = `${await cf.workersSubdomain()}.workers.dev`;
 await cf.ensureQueue(PREVIEW_QUEUE);
+await cf.ensureQueue(importQueue(pr));
+await cf.ensureQueue(importDeadLetters(pr));
 
 writeWorkerConfigs({
   environment: 'preview',
@@ -31,6 +39,7 @@ writeWorkerConfigs({
   emailProvider: 'capture',
   commit: args.get('commit') ?? 'preview',
   previewQueue: PREVIEW_QUEUE,
+  previewImportQueue: importQueue(pr),
 });
 
 setOutput('api_url', `https://${apiWorker(pr)}.${domain}`);

@@ -10,7 +10,8 @@
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
 //    the config does not exist yet. The password is generated here and stored
 //    only in the role and the Hyperdrive config.
-// 4. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts).
+// 4. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts),
+//    after deleting the store data of runs older than a day.
 import { runMigrations } from '@managemind/db/migrate';
 import { seed } from '@managemind/db/seed';
 import pg from 'pg';
@@ -18,7 +19,7 @@ import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
 import { type Branch, DATABASE, Neon } from '../lib/neon';
-import { seedE2E } from './e2e-seed';
+import { cleanOldE2E, seedE2E } from './e2e-seed';
 import { branchName, DATABASE_LOCK, hyperdriveName, parseDatabase } from './names';
 
 const args = parseArgs(process.argv.slice(2));
@@ -73,6 +74,8 @@ try {
   }
   const run = args.get('e2e');
   if (run) {
+    const cleaned = await cleanOldE2E(owner);
+    if (cleaned) notice(`Deleted the store data of ${cleaned} E2E stores older than a day`);
     // Stores live at <slug>.<workers.dev subdomain> on previews (preview/workers.ts).
     await seedE2E(owner, run, `${await cf.workersSubdomain()}.workers.dev`);
     notice(`Seeded the E2E stores and people for run ${run}`);

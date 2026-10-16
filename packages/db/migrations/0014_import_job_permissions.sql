@@ -1,0 +1,2 @@
+ALTER TABLE "store"."import_jobs" ADD COLUMN "with_stock" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "store"."import_jobs" ADD COLUMN "with_cost" boolean DEFAULT false NOT NULL;

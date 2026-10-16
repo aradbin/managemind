@@ -3,14 +3,23 @@
 // B's IDs and must answer 404. A route without a fixture fails the suite,
 // so new routes join it automatically.
 import {
+  type Actor,
   actorFor,
+  createAttribute,
+  createCategory,
+  createCollection,
+  createImportJob,
+  createProduct,
   createTenant,
   grantSupportAccess,
+  listLocations,
   systemActor,
   transitionTenant,
+  withTenant,
 } from '@managemind/core';
 import { createDb } from '@managemind/db';
 import { connect } from '@managemind/db/testing';
+import { permissionsOf } from '@managemind/shared';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ADMIN_ROUTES } from '../src/admin/routes';
@@ -200,12 +209,88 @@ describe('isolation suite', () => {
     );
     const bInvitation = rows[0]?.id as string;
 
+    // Store B's catalog, created by its owner.
+    const bOwner: Actor = {
+      kind: 'user',
+      userId: b.ownerUserId,
+      platformRole: null,
+      permissions: permissionsOf('owner'),
+      tenantId: b.id,
+      storeRole: 'owner',
+    };
+    const inB = <T>(fn: Parameters<typeof withTenant<T>>[2]) => withTenant(app, b.id, fn);
+    const product = await inB((tx) =>
+      createProduct(tx, bOwner, {
+        translations: { en: { title: 'B product' } },
+        variant: { price: 100 },
+      }),
+    );
+    const variant = product.variants[0]?.id as string;
+    const category = await inB((tx) =>
+      createCategory(tx, bOwner, { translations: { en: { name: 'B category' } } }),
+    );
+    const attribute = await inB((tx) =>
+      createAttribute(tx, bOwner, {
+        key: 'b_only',
+        type: 'choice',
+        translations: { en: { name: 'B attribute' } },
+      }),
+    );
+    const collection = await inB((tx) =>
+      createCollection(tx, bOwner, { kind: 'manual', translations: { en: { name: 'B picks' } } }),
+    );
+    const [location] = await inB((tx) => listLocations(tx, bOwner));
+    const importJob = await inB((tx) =>
+      createImportJob(tx, bOwner, { fileName: 'b.csv', chunkCount: 1, total: 1 }),
+    );
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
       'DELETE /v1/admin/members/{id}': { id: bMember.memberId },
       'POST /v1/admin/invitations/{id}/resend': { id: bInvitation },
       'DELETE /v1/admin/invitations/{id}': { id: bInvitation },
+      'GET /v1/admin/products/{id}': { id: product.id },
+      'PATCH /v1/admin/products/{id}': { id: product.id, body: { tags: ['x'] } },
+      'PUT /v1/admin/products/{id}/options': { id: product.id, body: [] },
+      'POST /v1/admin/products/{id}/archive': { id: product.id },
+      'DELETE /v1/admin/products/{id}': { id: product.id },
+      'PATCH /v1/admin/variants/{id}': { id: variant, body: { price: 1 } },
+      'GET /v1/admin/variants/{id}/movements': { id: variant },
+      'PATCH /v1/admin/categories/{id}': { id: category.id, body: {} },
+      'POST /v1/admin/categories/{id}/move': { id: category.id, body: { parentId: null } },
+      'DELETE /v1/admin/categories/{id}': { id: category.id },
+      'PUT /v1/admin/categories/{id}/attributes': { id: category.id, body: [] },
+      'PATCH /v1/admin/attributes/{id}': { id: attribute.id, body: { visible: false } },
+      'DELETE /v1/admin/attributes/{id}': { id: attribute.id },
+      'PUT /v1/admin/attributes/{id}/values': { id: attribute.id, body: [] },
+      'PATCH /v1/admin/collections/{id}': { id: collection.id, body: { published: true } },
+      'DELETE /v1/admin/collections/{id}': { id: collection.id },
+      'PUT /v1/admin/collections/{id}/products': { id: collection.id, body: [] },
+      'GET /v1/admin/collections/{id}/products': { id: collection.id },
+      'POST /v1/admin/collections/{id}/preview': {
+        id: collection.id,
+        body: { conditions: [{ type: 'created_within_days', days: 7 }] },
+      },
+      'PATCH /v1/admin/locations/{id}': { id: location?.id as string, body: { name: 'x' } },
+      'PUT /v1/admin/products/{id}/media': { id: product.id, body: { images: [] } },
+      // A file of store B's: store A's lookups only see store A's prefix.
+      'GET /v1/admin/media/files/{file}': { id: `${'b'.repeat(64)}.png` },
+      'GET /v1/admin/imports/{id}': { id: importJob.id },
+      'PUT /v1/admin/imports/{id}/chunks/{n}': { id: importJob.id, body: [{}] },
+      'POST /v1/admin/imports/{id}/start': { id: importJob.id },
+      'POST /v1/admin/imports/{id}/cancel': { id: importJob.id },
+      'GET /v1/admin/imports/{id}/errors': { id: importJob.id },
+      'GET /v1/admin/imports/{id}/images': { id: importJob.id },
+      'PATCH /v1/admin/imports/{id}/images/{imageId}': {
+        id: importJob.id,
+        body: { status: 'failed', error: 'x' },
+      },
+    };
+    /** Routes whose path parameter names new content, not a stored row, with the reason. */
+    const exempt: Record<string, string> = {
+      'PUT /v1/admin/media/files/{file}':
+        'the name is the uploaded bytes’ hash, and the file lands in the caller’s own store',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));
@@ -213,10 +298,15 @@ describe('isolation suite', () => {
     const user = await staffIn(a.email, a.id);
     for (const route of withIds) {
       const key = `${route.method.toUpperCase()} ${route.path}`;
+      if (exempt[key]) continue;
       const fixture = fixtures[key];
       expect(fixture, `no isolation fixture for ${key}`).toBeDefined();
       if (!fixture) continue;
-      const path = route.path.replace('/v1/admin', '/api/admin').replace('{id}', fixture.id);
+      const path = route.path
+        .replace('/v1/admin', '/api/admin')
+        .replace(/\{(id|file)\}/, fixture.id)
+        .replace('{n}', '0')
+        .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);
       expect(res.status, key).toBe(404);
     }
@@ -225,6 +315,17 @@ describe('isolation suite', () => {
       bMember.memberId,
     ]);
     expect(still.rowCount).toBe(1);
+    const catalog = await owner.query(
+      `select (select status from store.products where id = $1) as status,
+              (select count(*)::int from store.categories where id = $2) as categories,
+              (select count(*)::int from store.attributes where id = $3) as attributes`,
+      [product.id, category.id, attribute.id],
+    );
+    expect(catalog.rows[0]).toEqual({ status: 'draft', categories: 1, attributes: 1 });
+    // A bulk edit naming B's variant is refused too.
+    expect(
+      (await user.call('PATCH', '/api/admin/variants', [{ id: variant, price: 5 }])).status,
+    ).toBe(404);
   });
 
   it('a support grant for store A gives nothing in store B', async () => {

@@ -97,6 +97,19 @@ export class Cloudflare {
     await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
   }
 
+  /** Deletes a queue if it exists (a closed PR's import queues). */
+  async deleteQueue(name: string): Promise<boolean> {
+    const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
+      `/queues?name=${encodeURIComponent(name)}`,
+    );
+    const found = queues.find((q) => q.queue_name === name);
+    if (!found) return false;
+    await this.ignore404(() =>
+      this.api.request('DELETE', `${this.account}/queues/${found.queue_id}`),
+    );
+    return true;
+  }
+
   async queueId(name: string): Promise<string> {
     const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
       `/queues?name=${encodeURIComponent(name)}`,
@@ -208,6 +221,8 @@ export class Cloudflare {
     to: number,
     calculations: { operator: string; key?: string; alias: string }[],
     groupBy?: string,
+    /** Extra string-equality filters, such as one `$metadata.trigger`. */
+    where: Record<string, string> = {},
   ): Promise<
     { alias: string; aggregates: { groupKey?: string; value: number; count: number }[] }[]
   > {
@@ -228,7 +243,15 @@ export class Cloudflare {
           ...(c.key ? { keyType: 'number' } : {}),
         })),
         ...(groupBy ? { groupBys: [{ type: 'string', value: groupBy }] } : {}),
-        filters: [{ key: '$metadata.service', operation: 'eq', value: service, type: 'string' }],
+        filters: [
+          { key: '$metadata.service', operation: 'eq', value: service, type: 'string' },
+          ...Object.entries(where).map(([key, value]) => ({
+            key,
+            operation: 'eq',
+            value,
+            type: 'string',
+          })),
+        ],
       },
     });
     return res.result.calculations ?? [];
