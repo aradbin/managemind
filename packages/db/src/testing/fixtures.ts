@@ -95,6 +95,12 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   product_media: (tenant) =>
     `insert into store.product_media (tenant_id, product_id, media_id, position)
      values (${tenant}, ${first('products')}, ${first('media')}, 0)`,
+  pages: (tenant) => `insert into store.pages (tenant_id, kind) values (${tenant}, 'custom')`,
+  page_translations: (tenant) =>
+    `insert into store.page_translations (tenant_id, page_id, locale, title, slug)
+     values (${tenant}, ${first('pages')}, 'en', 'Fixture', 'fixture-' || gen_random_uuid())`,
+  theme_media: (tenant) =>
+    `insert into store.theme_media (tenant_id, media_id) values (${tenant}, ${first('media')})`,
   stock_locations: (tenant) =>
     `insert into store.stock_locations (tenant_id, name) values (${tenant}, 'Fixture')`,
   inventory_levels: (tenant) =>

@@ -120,6 +120,20 @@
       "when": 1792163820134,
       "tag": "0016_search_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792164407613,
+      "tag": "0017_storefront_content",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792164419023,
+      "tag": "0018_storefront_content_grants",
+      "breakpoints": true
     }
   ]
 }

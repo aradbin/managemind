@@ -1,4 +1,5 @@
 export * from './catalog';
+export * from './content';
 export * from './imports';
 export * from './inventory';
 export * from './media';

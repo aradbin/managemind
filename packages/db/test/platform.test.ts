@@ -29,8 +29,19 @@ const EXPECTED: Record<string, { table: string[]; update?: string[] }> = {
   },
   tenant_domains: {
     table: ['INSERT', 'SELECT'],
-    update: ['is_primary', 'provider_ref', 'status', 'verified_at'],
+    update: [
+      'check_attempts',
+      'failure_reason',
+      'is_primary',
+      'last_checked_at',
+      'ownership_record',
+      'provider_ref',
+      'ssl_status',
+      'status',
+      'verified_at',
+    ],
   },
+  tenant_domain_history: { table: ['INSERT', 'SELECT'] },
   users: {
     table: ['INSERT', 'SELECT'],
     update: [

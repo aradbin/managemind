@@ -37,7 +37,7 @@ export const COLLECTION_SORTS = [
   'price_desc',
   'title_asc',
 ] as const;
-export const SLUG_ENTITY_TYPES = ['product', 'category', 'collection'] as const;
+export const SLUG_ENTITY_TYPES = ['product', 'category', 'collection', 'page'] as const;
 export const ATTRIBUTE_TYPES = ['choice', 'multi_choice', 'number', 'text', 'boolean'] as const;
 
 const id = () => uuid().primaryKey().default(sql`uuidv7()`);
@@ -94,6 +94,13 @@ export const products = store.table(
     status: text({ enum: PRODUCT_STATUSES }).notNull().default('draft'),
     vatCategory: text(),
     metadata: jsonb().notNull().default({}),
+    /**
+     * The lowest and highest live variant price, kept by the catalog service
+     * in the same transaction as any variant change, for price sort and
+     * filters (phase-3-plan §3.7). Null without live variants.
+     */
+    priceMin: money(),
+    priceMax: money(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -101,6 +108,8 @@ export const products = store.table(
     tenantPolicy(t),
     tenantIdUnique('products', t),
     index('products_tenant_status_created_idx').on(t.tenantId, t.status, sql`created_at desc`),
+    index('products_tenant_status_price_idx').on(t.tenantId, t.status, t.priceMin),
+    check('products_price_range', sql`${t.priceMin} <= ${t.priceMax}`),
     check('products_status_valid', sql`${t.status} in (${inList(PRODUCT_STATUSES)})`),
     check('products_metadata_object', sql`jsonb_typeof(${t.metadata}) = 'object'`),
   ],
