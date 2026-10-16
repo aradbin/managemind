@@ -303,4 +303,34 @@ test('catalog flows', async ({ page }, info) => {
       expect(csv).toContain(`TS-${RUN}-2`);
     }
   });
+
+  if (!big) {
+    await test.step('an exported Excel file imports back as updates', async () => {
+      await page.getByRole('button', { name: t('export.button') }).click();
+      const download = page.waitForEvent('download');
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: t('export.xlsx') })
+        .click();
+      const chunks = await (await (await download).createReadStream()).toArray();
+      const xlsx = Buffer.concat(chunks as Buffer[]);
+
+      await page.goto(`${API}/catalog/import`);
+      await page.locator('input[type=file]').setInputFiles({
+        name: 'products.xlsx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: xlsx,
+      });
+      await expect(page.getByText(t('import.mappingIntro'))).toBeVisible();
+      await page.getByRole('button', { name: t('import.check') }).click();
+      await expect(
+        page.getByText(t('import.ready', { products: '৩', variants: '৫' })),
+      ).toBeVisible();
+      await page.getByRole('button', { name: t('import.start', { count: '৩' }) }).click();
+      await expect(page.getByText(t('import.status.done'))).toBeVisible({ timeout: 120_000 });
+      await expect(
+        page.getByText(t('import.counts', { created: '০', updated: '৩', failed: '০' })).first(),
+      ).toBeVisible();
+    });
+  }
 });
