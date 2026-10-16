@@ -7,10 +7,13 @@ import {
   defaultTenantSettings,
   type StoreProfile,
   type TaxSettings,
+  type TenantSettings,
   taxSettings,
   tenantSettings,
 } from '@managemind/shared/settings';
+import { type StorefrontSettings, storefrontSettings } from '@managemind/shared/storefront';
 import { eq, sql } from 'drizzle-orm';
+import type { z } from 'zod';
 import { type Actor, auditActor, authorize, requirePlatformRole } from '../access';
 import { recordAudit } from '../audit';
 import { emit } from '../outbox';
@@ -140,6 +143,10 @@ export interface Store {
   profile: StoreProfile;
   /** VAT settings (phase-2-plan §3.9). */
   tax: TaxSettings;
+  /** Indexing, tracking, consent text, chat and holiday mode (phase-3-plan §3.6–§3.10). */
+  storefront: StorefrontSettings;
+  /** Bangla or Western digits on the storefront. */
+  display: TenantSettings['display'];
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -158,7 +165,13 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
   const [row] = await (forUpdate ? query.for('update') : query);
   if (!row) throw new AppError('store_not_found');
   const settings = tenantSettings.parse(row.settings);
-  return { ...row, profile: settings.profile, tax: settings.tax };
+  return {
+    ...row,
+    profile: settings.profile,
+    tax: settings.tax,
+    storefront: settings.storefront,
+    display: settings.display,
+  };
 }
 
 /** The active store's profile (`settings.read`). */
@@ -168,12 +181,13 @@ export async function getStore(tx: TenantTx, actor: Actor): Promise<Store> {
   return store;
 }
 
-function parseTax(input: unknown): TaxSettings {
-  const result = taxSettings.safeParse(input);
+/** Parses one settings section, with field paths under its name. */
+function parseSection<T>(name: string, schemaOf: z.ZodType<T>, input: unknown): T {
+  const result = schemaOf.safeParse(input);
   if (result.success) return result.data;
   throw new AppError('validation_failed', {
     fields: result.error.issues.map((i) => ({
-      path: ['tax', ...i.path].join('.'),
+      path: [name, ...i.path].join('.'),
       code: i.code,
       message: i.message,
     })),
@@ -187,9 +201,13 @@ export interface StoreProfilePatch {
   profile?: StoreProfile;
   /** Replaces the VAT settings. */
   tax?: unknown;
+  /** Replaces the storefront settings. */
+  storefront?: unknown;
+  /** Replaces the display settings. */
+  display?: unknown;
 }
 
-/** Edits name, default locale, profile and VAT settings (`settings.write`); refused while suspended. */
+/** Edits name, default locale, profile, VAT, storefront and display settings (`settings.write`); refused while suspended. */
 export async function updateStoreProfile(
   tx: TenantTx,
   actor: Actor,
@@ -203,12 +221,22 @@ export async function updateStoreProfile(
   const next = {
     name: patch.name?.trim() ?? current.name,
     defaultLocale: patch.defaultLocale ?? current.defaultLocale,
-    profile: patch.profile ? tenantSettings.shape.profile.parse(patch.profile) : current.profile,
-    tax: patch.tax !== undefined ? parseTax(patch.tax) : current.tax,
+    profile: patch.profile
+      ? parseSection('profile', tenantSettings.shape.profile, patch.profile)
+      : current.profile,
+    tax: patch.tax !== undefined ? parseSection('tax', taxSettings, patch.tax) : current.tax,
+    storefront:
+      patch.storefront !== undefined
+        ? parseSection('storefront', storefrontSettings, patch.storefront)
+        : current.storefront,
+    display:
+      patch.display !== undefined
+        ? parseSection('display', tenantSettings.shape.display, patch.display)
+        : current.display,
   };
-  const fields = (['name', 'defaultLocale', 'profile', 'tax'] as const).filter(
-    (f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]),
-  );
+  const fields = (
+    ['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display'] as const
+  ).filter((f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]));
   if (fields.length === 0) return getStore(tx, actor);
 
   await tx.db
@@ -216,7 +244,13 @@ export async function updateStoreProfile(
     .set({
       name: next.name,
       defaultLocale: next.defaultLocale,
-      settings: { ...settings, profile: next.profile, tax: next.tax },
+      settings: {
+        ...settings,
+        profile: next.profile,
+        tax: next.tax,
+        storefront: next.storefront,
+        display: next.display,
+      },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
   const pick = (s: typeof next) => Object.fromEntries(fields.map((f) => [f, s[f]]));

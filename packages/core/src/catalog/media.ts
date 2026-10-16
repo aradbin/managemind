@@ -116,13 +116,17 @@ async function writeAlt(
   }
 }
 
-/** Marks images used or unused after a change, by whether anything still points at them. */
-async function refreshUsage(tx: TenantTx, mediaIds: string[]): Promise<void> {
+/**
+ * Marks images used or unused after a change, by whether anything (a
+ * product, a variant or the theme) still points at them.
+ */
+export async function refreshUsage(tx: TenantTx, mediaIds: string[]): Promise<void> {
   if (!mediaIds.length) return;
   await tx.db.execute(sql`
     update store.media m set unused_since = case
         when exists (select 1 from store.product_media pm where pm.media_id = m.id)
-          or exists (select 1 from store.variants v where v.image_media_id = m.id) then null
+          or exists (select 1 from store.variants v where v.image_media_id = m.id)
+          or exists (select 1 from store.theme_media tm where tm.media_id = m.id) then null
         else coalesce(m.unused_since, now()) end
      where m.id = any(${sql.param(mediaIds)}::uuid[])`);
 }
