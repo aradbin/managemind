@@ -74,7 +74,19 @@ From Workers Logs on #45's preview (Oct 16, 30 minutes, ms):
 | Import chunk (queue, 10 products) | 13 | 191 | 299 | 71,493 | All ok at first; from 06:35 UTC some `exceededCpu`, retried by the queue |
 | Requests (all routes, mostly the E2E) | 532 | 19 | 180 | 7,021 | All ok |
 
-The per-route table for the product list, read, save and bulk edit comes from the preview's CPU step. It runs only after a green E2E, so it will be here after the next run.
+Per route, from the preview of `e4d6e78` (E2E and the CPU step's bursts, warm isolates, ms):
+
+| Route | Requests | p50 | p90 | p99 | Max |
+| --- | --- | --- | --- | --- | --- |
+| `GET /v1/admin/me` | 126 | 17 | 36 | 100 | 145 |
+| `PATCH /v1/admin/store` | 32 | 27 | 38 | 42 | 42 |
+| `GET /v1/admin/products` (list) | 41 | 16 | 32 | 54 | 54 |
+| `GET /v1/admin/products/{id}` | 41 | 23 | 36 | 37 | 37 |
+| `PATCH /v1/admin/products/{id}` (save, with a description) | 22 | 41 | 80 | 105 | 105 |
+| `PATCH /v1/admin/variants` (bulk edit, 6 variants) | 15 | 32 | 73 | 77 | 77 |
+| Import chunk (queue, the E2E's small imports) | 4 | 63 | 289 | 289 | 289 |
+
+Catalog requests cost about what Phase 1's staff requests did (Phase 1 report §3). A product save is the heaviest request, at 41 ms. None was stopped. The CPU step queried these rows wrongly in this run, because Workers Logs writes IDs in paths as `REDACTED`; it now queries each route on its own.
 
 **Why imports are slow.** A 10-product chunk sends about 360 queries: about 36 per product, mostly one insert per option value, variant and translation. On the preview each query takes about 190 ms between the queue consumer and Neon in Singapore, so a chunk takes about 70 s. Locally the same chunk takes 0.3 s. Chunks run one after another, so 500 products take about 50 minutes.
 
@@ -117,7 +129,6 @@ The sign-in bundle grew by 12 KiB. The admin's messages grew 6 KiB, and two KiB 
 
 - **Collections:** products are reordered with up and down buttons, which work by keyboard and touch. Drag reordering wasn't built.
 - **Import speed:** batched writes are a follow-up (§3).
-- **The per-route CPU table** for the catalog routes comes from the next green preview run.
 - **Abandoned uploads leave files.** A photo uploaded but never saved leaves its 3 files in R2 without a media row. The weekly cleanup only finds files that have a row. This is small, about 150 KB per abandoned photo, and an R2 listing sweep can come later.
 - **The admin's messages** should load per language, which would win back about 10 KiB of the sign-in bundle.
 

@@ -221,6 +221,8 @@ export class Cloudflare {
     to: number,
     calculations: { operator: string; key?: string; alias: string }[],
     groupBy?: string,
+    /** Extra string-equality filters, such as one `$metadata.trigger`. */
+    where: Record<string, string> = {},
   ): Promise<
     { alias: string; aggregates: { groupKey?: string; value: number; count: number }[] }[]
   > {
@@ -241,7 +243,15 @@ export class Cloudflare {
           ...(c.key ? { keyType: 'number' } : {}),
         })),
         ...(groupBy ? { groupBys: [{ type: 'string', value: groupBy }] } : {}),
-        filters: [{ key: '$metadata.service', operation: 'eq', value: service, type: 'string' }],
+        filters: [
+          { key: '$metadata.service', operation: 'eq', value: service, type: 'string' },
+          ...Object.entries(where).map(([key, value]) => ({
+            key,
+            operation: 'eq',
+            value,
+            type: 'string',
+          })),
+        ],
       },
     });
     return res.result.calculations ?? [];

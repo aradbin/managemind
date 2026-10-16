@@ -12,7 +12,7 @@ import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { sleep } from '../lib/http';
-import { apiWorker } from './names';
+import { apiWorker, importQueue } from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -130,31 +130,28 @@ notice(
     `and ${BURST.bulk} bulk edits of 6 variants`,
 );
 
-// Workers Logs groups by the request's own path, so the product's ID is in
-// its rows; the table shows the route pattern.
+// Workers Logs names an invocation by its method and path, with IDs in the
+// path written as REDACTED, and a queue invocation by its queue. A grouped
+// query returns only the busiest groups, so each route is queried on its own.
 const ROUTES: { trigger: string; label: string }[] = [
   { trigger: 'GET /v1/admin/me', label: 'GET /v1/admin/me' },
   { trigger: 'PATCH /v1/admin/store', label: 'PATCH /v1/admin/store' },
   { trigger: 'GET /v1/admin/products', label: 'GET /v1/admin/products' },
-  { trigger: `GET ${productPath}`, label: 'GET /v1/admin/products/{id}' },
-  { trigger: `PATCH ${productPath}`, label: 'PATCH /v1/admin/products/{id} (save)' },
+  { trigger: 'GET /v1/admin/products/REDACTED', label: 'GET /v1/admin/products/{id}' },
+  { trigger: 'PATCH /v1/admin/products/REDACTED', label: 'PATCH /v1/admin/products/{id} (save)' },
   { trigger: 'PATCH /v1/admin/variants', label: 'PATCH /v1/admin/variants (bulk, 6)' },
-  { trigger: 'POST /v1/admin/imports', label: 'POST /v1/admin/imports' },
+  { trigger: importQueue(pr), label: 'Import chunk (queue, up to 10 products)' },
   {
     trigger: 'POST /api/auth/email-otp/send-verification-otp',
     label: 'POST /api/auth/email-otp/send-verification-otp',
   },
   { trigger: 'POST /api/auth/sign-in/email-otp', label: 'POST /api/auth/sign-in/email-otp' },
-  { trigger: 'GET /health', label: 'GET /health' },
 ];
-const HTTP = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /;
 
 // Workers Logs takes a little while to make new events queryable.
 const service = apiWorker(pr);
 type Row = { route: string; n: number; p50: number; p90: number; p99: number; max: number };
-let rows: Row[] = [];
-for (let attempt = 0; attempt < 12; attempt++) {
-  await sleep(10_000);
+async function stats(trigger: string, label: string): Promise<Row> {
   const calcs = await cf.workerLogStats(
     service,
     since,
@@ -166,26 +163,25 @@ for (let attempt = 0; attempt < 12; attempt++) {
       { operator: 'p99', key: '$workers.cpuTimeMs', alias: 'p99' },
       { operator: 'max', key: '$workers.cpuTimeMs', alias: 'max' },
     ],
-    '$metadata.trigger',
+    undefined,
+    { '$metadata.trigger': trigger },
   );
-  const value = (alias: string, route: string) =>
-    calcs.find((c) => c.alias === alias)?.aggregates.find((a) => a.groupKey === route)?.value ?? 0;
-  const row = (trigger: string, label: string): Row => ({
+  const value = (alias: string) =>
+    Math.round(calcs.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0);
+  return {
     route: label,
-    n: value('n', trigger),
-    p50: value('p50', trigger),
-    p90: value('p90', trigger),
-    p99: value('p99', trigger),
-    max: value('max', trigger),
-  });
-  // Queue and cron invocations aren't requests: the import chunks are among them.
-  const others = (calcs.find((c) => c.alias === 'n')?.aggregates ?? [])
-    .map((a) => a.groupKey ?? '')
-    .filter((key) => key && !HTTP.test(key));
-  rows = [
-    ...ROUTES.map((r) => row(r.trigger, r.label)),
-    ...others.map((key) => row(key, `${key} (not a request)`)),
-  ];
+    n: value('n'),
+    p50: value('p50'),
+    p90: value('p90'),
+    p99: value('p99'),
+    max: value('max'),
+  };
+}
+let rows: Row[] = [];
+for (let attempt = 0; attempt < 12; attempt++) {
+  await sleep(10_000);
+  rows = [];
+  for (const r of ROUTES) rows.push(await stats(r.trigger, r.label));
   if ((rows.find((r) => r.route.startsWith('PATCH /v1/admin/variants'))?.n ?? 0) >= BURST.bulk)
     break;
 }
