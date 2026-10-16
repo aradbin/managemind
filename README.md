@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Current phase: [`docs/phases/phase-0-plan.md`](docs/phases/phase-0-plan.md)
+- Status: Phases 0–2 are done ([reports](docs/phases/)); Phase 3 is planned in [`docs/phases/phase-3-plan.md`](docs/phases/phase-3-plan.md)
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development
@@ -80,7 +80,7 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 3. It smoke-tests `/health`, `/health/deep` and the storefront.
 
 - **Without deploying:** `provision.yml` runs step 1 by hand, and can rotate the `mm_app` password.
-- **Domains:** both Workers are on workers.dev until the `PLATFORM_DOMAIN` and `STORE_DOMAIN` repository variables are set.
+- **Domains:** the `PLATFORM_DOMAIN` and `STORE_DOMAIN` repository variables (`managemind.site` and `managemind.store`) put the admin on `admin.managemind.site`, webhooks and health checks on `api.managemind.site`, and every store on `<slug>.managemind.store`.
 - **When a deploy goes wrong:** follow [docs/runbooks/rollback.md](docs/runbooks/rollback.md).
 
 ## Errors
@@ -93,7 +93,8 @@ Sentry receives errors from the API, the storefront and the admin, in production
 
 - **CPU:**
   - any request stopped for CPU or memory on `managemind-api` or `managemind-storefront` (the trigger to move to Workers Paid, ADR 0013);
-  - API p99 CPU above 50 ms, and storefront p90 above 10 ms. These are judged only on days with at least 200 requests (ADR 0003).
+  - API p99 CPU above 250 ms, and storefront p90 above 100 ms, on requests only. These are judged only on days with at least 200 requests (ADR 0003, amended Oct 16).
+  - Import chunks stopped for CPU are reported but don't raise the alarm; the queue retries them (phase-2-report §3).
 - **Free-plan limits:** Worker requests, Hyperdrive queries, queue operations, KV writes, and Neon compute and storage, each above 70%.
 
 On an alarm the run fails and opens (or comments on) a **Usage alarm** issue assigned to the repository owner. Close the issue once it's handled. To check the notification, run the workflow by hand with *test* checked.
