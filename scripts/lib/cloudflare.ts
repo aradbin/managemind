@@ -1,5 +1,5 @@
 // The few Cloudflare API calls the deploy, preview, platform and zone scripts need.
-import { type ApiClient, apiClient, HttpError } from './http';
+import { type ApiClient, apiClient, HttpError, sleep } from './http';
 
 interface Envelope<T> {
   result: T;
@@ -97,17 +97,37 @@ export class Cloudflare {
     await this.api.request('POST', `${this.account}/queues`, { queue_name: name });
   }
 
-  /** Deletes a queue if it exists (a closed PR's import queues). */
+  /**
+   * Deletes a queue if it exists (a closed PR's import queues), detaching its
+   * consumers first: Cloudflare won't delete a Worker that still consumes a
+   * queue, so a PR's queues go before its API Worker.
+   */
   async deleteQueue(name: string): Promise<boolean> {
-    const queues = await this.get<{ queue_id: string; queue_name: string }[]>(
-      `/queues?name=${encodeURIComponent(name)}`,
-    );
+    const queues = await this.get<
+      { queue_id: string; queue_name: string; consumers?: { consumer_id: string }[] }[]
+    >(`/queues?name=${encodeURIComponent(name)}`);
     const found = queues.find((q) => q.queue_name === name);
     if (!found) return false;
-    await this.ignore404(() =>
-      this.api.request('DELETE', `${this.account}/queues/${found.queue_id}`),
-    );
-    return true;
+    for (const consumer of found.consumers ?? []) {
+      await this.ignore404(() =>
+        this.api.request(
+          'DELETE',
+          `${this.account}/queues/${found.queue_id}/consumers/${consumer.consumer_id}`,
+        ),
+      );
+    }
+    // Detaching takes a moment to apply: until it has, the delete is refused.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.ignore404(() =>
+          this.api.request('DELETE', `${this.account}/queues/${found.queue_id}`),
+        );
+        return true;
+      } catch (e) {
+        if (attempt >= 5) throw e;
+        await sleep(2000 * attempt);
+      }
+    }
   }
 
   async queueId(name: string): Promise<string> {
