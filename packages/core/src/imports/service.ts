@@ -32,6 +32,7 @@ import {
 } from '../catalog/attributes';
 import { writeNameTranslations } from '../catalog/collections';
 import { type Locale, parseInput, pgError, storeCatalogContext } from '../catalog/common';
+import { refreshPriceRange } from '../catalog/prices';
 import { chooseSlug, recordSlugChange } from '../catalog/slugs';
 import { type OnHandTarget, setOnHand } from '../inventory/service';
 import { emit } from '../outbox';
@@ -937,6 +938,7 @@ async function writeVariants(
   }
   if (links.length)
     await tx.db.insert(schema.variantOptionValues).values(links).onConflictDoNothing();
+  await refreshPriceRange(tx, [productId]);
   return result;
 }
 

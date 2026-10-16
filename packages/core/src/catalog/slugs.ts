@@ -9,12 +9,13 @@ import { sql } from 'drizzle-orm';
 import type { TenantTx } from '../tenant';
 import { type Locale, mapCatalogError } from './common';
 
-export type SlugKind = 'product' | 'category' | 'collection';
+export type SlugKind = 'product' | 'category' | 'collection' | 'page';
 
 const TABLES: Record<SlugKind, { table: string; column: string }> = {
   product: { table: 'store.product_translations', column: 'product_id' },
   category: { table: 'store.category_translations', column: 'category_id' },
   collection: { table: 'store.collection_translations', column: 'collection_id' },
+  page: { table: 'store.page_translations', column: 'page_id' },
 };
 
 /**

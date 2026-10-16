@@ -11,7 +11,7 @@ export const EVENTS = {
   'tenant.created': z.object({ slug: z.string(), name: z.string() }),
   /** Which of name, defaultLocale and profile changed. */
   'tenant.updated': z.object({
-    fields: z.array(z.enum(['name', 'defaultLocale', 'profile', 'tax'])),
+    fields: z.array(z.enum(['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display'])),
   }),
   'tenant.status_changed': z.object({
     from: tenantStatus,
@@ -21,6 +21,7 @@ export const EVENTS = {
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),
+  'tenant_domain.removed': z.object({ hostname: z.string() }),
   // Membership changes. No consumer yet; they feed Phase 5A's notifications.
   'staff.invited': z.object({ invitationId: z.uuid(), role: storeRole }),
   'staff.joined': z.object({ userId: z.uuid(), role: storeRole }),
@@ -40,6 +41,14 @@ export const EVENTS = {
     variantIds: z.array(z.uuid()).min(1).max(500),
     reason: z.string(),
   }),
+  /** Variants went in or out of stock (available crossed zero): purges their pages (phase-3-plan §3.2). */
+  'inventory.availability.changed': z.object({
+    productIds: z.array(z.uuid()).min(1).max(500),
+  }),
+  // Storefront content (phase-3-plan §4).
+  /** `navigation`: the title, slug or publication changed, so every page's footer did. */
+  'catalog.page.changed': z.object({ change: catalogChange, navigation: z.boolean() }),
+  'theme.published': z.object({}),
 } as const;
 
 /** Events that change which hosts point at a store, or what they say (§4.3). */
@@ -49,6 +58,7 @@ export const HOST_EVENTS: readonly EventType[] = [
   'tenant.status_changed',
   'tenant_domain.added',
   'tenant_domain.updated',
+  'tenant_domain.removed',
 ];
 
 export type EventType = keyof typeof EVENTS;

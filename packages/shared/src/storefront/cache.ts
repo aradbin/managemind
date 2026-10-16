@@ -59,7 +59,7 @@ export interface PurgeEvent {
 const HIDDEN_PRODUCT_FIELDS = new Set(['settings']);
 
 /** tenant.updated fields that show on every page. */
-const STORE_FIELDS = new Set(['name', 'defaultLocale', 'profile', 'storefront', 'theme']);
+const STORE_FIELDS = new Set(['name', 'defaultLocale', 'profile', 'storefront', 'display']);
 
 /**
  * Which cache tags an event purges (§3.2). The store tag empties every page
