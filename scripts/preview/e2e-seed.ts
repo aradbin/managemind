@@ -3,6 +3,7 @@
 // super admin, all named after the run, so runs and viewports never share
 // state. Emails are on example.test: the capture provider keeps them for the
 // dev mailbox and nothing is ever sent.
+import { STORE_TABLES } from '@managemind/db/registry';
 import type pg from 'pg';
 import { grantRole, tenantCreate } from '../platform/commands';
 
@@ -38,4 +39,40 @@ export async function seedE2E(client: pg.Client, run: string, storeDomain: strin
     );
     await grantRole(client, { email: n.admin, role: 'super_admin', name: 'E2E Admin' });
   }
+}
+
+/**
+ * Deletes the store data of E2E runs older than a day on the shared preview
+ * branch (Neon's 0.5 GB), keeping the stores and people themselves. Each
+ * run's catalog flow adds about 6.5 MB, mostly the 500-product import.
+ * Runs younger than a day are left alone: another PR's E2E may be using
+ * them. The brand attribute can't be deleted while its store is open, and
+ * it's small, so it stays. Returns the number of stores cleaned.
+ */
+export async function cleanOldE2E(client: pg.Client): Promise<number> {
+  const { rows } = await client.query<{ id: string }>(
+    `select id from platform.tenants
+     where slug like 'e2e-%' and created_at < now() - interval '1 day'`,
+  );
+  const ids = rows.map((r) => r.id);
+  if (!ids.length) return 0;
+  await client.query('begin');
+  try {
+    for (const table of STORE_TABLES) {
+      const guarded =
+        table === 'attributes'
+          ? ' and not is_system'
+          : table === 'attribute_translations'
+            ? ' and attribute_id in (select id from store.attributes where not is_system)'
+            : '';
+      await client.query(`delete from store.${table} where tenant_id = any($1::uuid[])${guarded}`, [
+        ids,
+      ]);
+    }
+    await client.query('commit');
+  } catch (e) {
+    await client.query('rollback');
+    throw e;
+  }
+  return ids.length;
 }
