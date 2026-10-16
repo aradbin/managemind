@@ -31,6 +31,18 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
+**Status (Oct 16, 2026)**
+
+| Phase | Status | Record |
+| --- | --- | --- |
+| 0 — Foundations | Done | [`phase-0-report.md`](phases/phase-0-report.md) |
+| 1 — Platform core | Done; in production on `managemind.site` and `*.managemind.store` | [`phase-1-report.md`](phases/phase-1-report.md) |
+| 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
+| 3 — Storefront, themes and domains | Planned; waiting for the owner's answers | [`phase-3-plan.md`](phases/phase-3-plan.md) |
+| 4 onwards | Not started | — |
+
+The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
+
 ## Research: how commerce platforms are built
 
 Established platforms split commerce into the same dozen domain modules, each owning its own data and talking to others through clear interfaces, and they share a small set of engineering patterns. We copy that structure and build only the parts Bangladeshi SMEs need.
@@ -262,25 +274,25 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Spikes first (each ends with an ADR)**
 
-- [ ] **Database path:** Drizzle over Hyperdrive to Neon, with an interactive transaction that sets `app.tenant_id` and reads through RLS. Measure latency from Bangladesh-facing Cloudflare locations; pick the Neon region closest to Bangladesh that is available. Fallback: Neon's serverless driver over WebSockets.
-- [ ] **CPU budget:** confirm a typical API request (auth check, 3–5 queries, JSON response) and a server-rendered Astro product page stay under the free plan's 10 ms CPU per request. If not, identify what to cache or move to the paid plan.
-- [ ] **Bundle size:** confirm each Worker stays under the free plan's 3 MiB compressed limit.
-- [ ] **Auth:** two Better Auth instances on Workers with Drizzle. Staff: `platform` schema, organization plugin for store membership and roles. Shoppers: tables in the `store` schema with `tenant_id`, email and phone unique per store, and RLS so the instance only ever sees the current store; prove that two shoppers with the same email in two stores stay fully separate. Measure password-hashing CPU time against the free plan's 10 ms limit; if it does not fit, staff sign in with email codes and passkeys until the paid plan.
+- [x] **Database path:** Drizzle over Hyperdrive to Neon, with an interactive transaction that sets `app.tenant_id` and reads through RLS. Measure latency from Bangladesh-facing Cloudflare locations; pick the Neon region closest to Bangladesh that is available. Fallback: Neon's serverless driver over WebSockets.
+- [x] **CPU budget:** confirm a typical API request (auth check, 3–5 queries, JSON response) and a server-rendered Astro product page stay under the free plan's 10 ms CPU per request. If not, identify what to cache or move to the paid plan. *Built differently: staff requests run over 10 ms, which Cloudflare tolerates; an alarm triggers Workers Paid on the first termination (ADR 0003, ADR 0013).*
+- [x] **Bundle size:** confirm each Worker stays under the free plan's 3 MiB compressed limit.
+- [x] **Auth:** two Better Auth instances on Workers with Drizzle. Staff: `platform` schema, organization plugin for store membership and roles. Shoppers: tables in the `store` schema with `tenant_id`, email and phone unique per store, and RLS so the instance only ever sees the current store; prove that two shoppers with the same email in two stores stay fully separate. Measure password-hashing CPU time against the free plan's 10 ms limit; if it does not fit, staff sign in with email codes and passkeys until the paid plan.
 
-* [ ] **Edge state on the free plan:** KV allows only [1,000 writes a day](https://developers.cloudflare.com/kv/platform/limits) on the free plan, so use it only for rarely changing data (domain-to-store map, cache versions). Rate-limit counters use the Workers rate-limiting binding or a Durable Object; turn off Astro's default KV session storage. Confirm each choice works on the free plan.
-* [ ] **Per-store cache invalidation:** test purging one store's cached pages on the free plan. Fallback: a per-store catalog version in every cache key, bumped on change (debounced, so a bulk import causes one write), so old pages simply stop being used.
+* [x] **Edge state on the free plan:** KV allows only [1,000 writes a day](https://developers.cloudflare.com/kv/platform/limits) on the free plan, so use it only for rarely changing data (domain-to-store map, cache versions). Rate-limit counters use the Workers rate-limiting binding or a Durable Object; turn off Astro's default KV session storage. Confirm each choice works on the free plan.
+* [x] **Per-store cache invalidation:** test purging one store's cached pages on the free plan. Fallback: a per-store catalog version in every cache key, bumped on change (debounced, so a bulk import causes one write), so old pages simply stop being used.
 
 **Build**
 
-- [ ] Monorepo, Biome, TypeScript strict, Turborepo, shared tsconfig.
-- [ ] `packages/db`: base schema (tenants, outbox, audit log, idempotency keys), migration and app database roles, RLS helper to generate policies per table, seed script with two demo tenants.
-- [ ] `packages/shared`: money type and helpers, UUIDv7, state machine helper, typed error model (problem+json responses), i18n setup with Bangla and English.
-- [ ] `apps/api`: Hono app with request ID, structured JSON logging, error handler, zod validation, OpenAPI document at `/openapi.json`, health route, queue consumer and cron handler stubs, static assets for `/admin`.
-- [ ] `apps/storefront`: Astro on Workers with a placeholder page that resolves the tenant from the hostname.
-- [ ] CI/CD as described: tests against a Postgres container in GitHub Actions; a Neon preview branch only when a pull request is labeled for it, deleted after merge. Neon compute fixed at 0.25 CU; Cloudflare bot protection on both domains; R2 lifecycle rules for exports, temporary uploads and backups.
-- [ ] Monitoring on free tiers: Workers Logs and analytics, Sentry (free plan) for errors in API, admin and storefront, an external uptime check on `/health`.
+- [x] Monorepo, Biome, TypeScript strict, Turborepo, shared tsconfig.
+- [x] `packages/db`: base schema (tenants, outbox, audit log, idempotency keys), migration and app database roles, RLS helper to generate policies per table, seed script with two demo tenants.
+- [x] `packages/shared`: money type and helpers, UUIDv7, state machine helper, typed error model (problem+json responses), i18n setup with Bangla and English.
+- [x] `apps/api`: Hono app with request ID, structured JSON logging, error handler, zod validation, OpenAPI document at `/openapi.json`, health route, queue consumer and cron handler stubs, static assets for `/admin`.
+- [x] `apps/storefront`: Astro on Workers with a placeholder page that resolves the tenant from the hostname.
+- [x] CI/CD as described: tests against a Postgres container in GitHub Actions; a Neon preview branch only when a pull request is labeled for it, deleted after merge. Neon compute fixed at 0.25 CU; Cloudflare bot protection on both domains; R2 lifecycle rules for exports, temporary uploads and backups. *Built differently: unlabeled PRs share one `preview` database branch (ADR 0011); "Block AI bots" waits for the owner (phase-1-report §5).*
+- [x] Monitoring on free tiers: Workers Logs and analytics, Sentry (free plan) for errors in API, admin and storefront, an external uptime check on `/health`.
 
-* [ ] Development without a domain: `{slug}.localhost` hostnames for testing several stores locally, previews on `workers.dev` addresses with a development-only store selector that is switched off in production, and a local mail catcher for email codes. Domain setup happens when each domain arrives: the main domain by the end of Phase 1, the store domain by Phase 3.
+* [x] Development without a domain: `{slug}.localhost` hostnames for testing several stores locally, previews on `workers.dev` addresses with a development-only store selector that is switched off in production, and a local mail catcher for email codes. Domain setup happens when each domain arrives: the main domain by the end of Phase 1, the store domain by Phase 3.
 
 **Acceptance criteria**
 
@@ -294,36 +306,36 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Tenancy module**
 
-- [ ] `tenants`: slug, name, status (active, suspended, closed, purged), default locale, settings (typed JSON), plan.
-- [ ] `tenant_domains`: hostname, type (platform subdomain or custom), verification status, primary flag.
-- [ ] Tenant resolution: hostname to tenant via a KV cache (refreshed by an outbox event on change) with database fallback. Admin and API requests resolve the tenant from the authenticated staff member's active store, never from client input alone.
-- [ ] Platform CLI and super-admin API: `tenant:create` provisions the tenant, its owner account, default settings and subdomain in one transaction.
+- [x] `tenants`: slug, name, status (active, suspended, closed, purged), default locale, settings (typed JSON), plan.
+- [x] `tenant_domains`: hostname, type (platform subdomain or custom), verification status, primary flag.
+- [x] Tenant resolution: hostname to tenant via a KV cache (refreshed by an outbox event on change) with database fallback. Admin and API requests resolve the tenant from the authenticated staff member's active store, never from client input alone.
+- [x] Platform CLI and super-admin API: `tenant:create` provisions the tenant, its owner account, default settings and subdomain in one transaction.
 
 **Data ownership (prepares for clean tenant removal)**
 
-- [ ] Two classes of data in separate Postgres schemas. **Store data** (`store` schema): everything a client creates or collects, such as catalog, customers, orders, returns, files and credentials; every table has `tenant_id` and RLS. **Platform data** (`platform` schema): our own records about each client, such as the tenant registry, plan and billing history, contract dates, platform audit log and purge records; cleanup never touches it.
-- [ ] A tenant table registry generated from the `store` schema, with a CI test that fails if any table is missing from the purge order.
-- [ ] Every tenant file stored under `tenants/{tenant_id}/` in R2, and every KV key prefixed with the tenant ID.
+- [x] Two classes of data in separate Postgres schemas. **Store data** (`store` schema): everything a client creates or collects, such as catalog, customers, orders, returns, files and credentials; every table has `tenant_id` and RLS. **Platform data** (`platform` schema): our own records about each client, such as the tenant registry, plan and billing history, contract dates, platform audit log and purge records; cleanup never touches it.
+- [x] A tenant table registry generated from the `store` schema, with a CI test that fails if any table is missing from the purge order.
+- [x] Every tenant file stored under `tenants/{tenant_id}/` in R2, and every KV key prefixed with the tenant ID.
 
 **Identity and access**
 
-- [ ] Staff users with email and password, email codes for verification and password reset, and optional two-factor login, on the Better Auth staff instance (Google login and passkeys can be switched on later); one user may belong to several stores (agency staff) with a role per store.
-- [ ] Roles: Owner, Manager, Staff, Viewer, each a set of fine-grained permissions (for example `catalog.write`, `orders.read`, `payments.refund`, `settings.write`). Permissions are checked in the route layer and again in the core service.
-- [ ] Platform roles (super admin, support) kept separate from tenant roles, with two-factor login required for them; support access to a store is time-limited and audited.
-- [ ] Security: rate limits on login and OTP (Workers rate-limiting binding or a Durable Object counter, never KV), lockout after repeated failures, session expiry and rotation, `HttpOnly` `Secure` `SameSite=Lax` cookies, CSRF protection for cookie-authenticated writes.
+- [x] Staff users with email and password, email codes for verification and password reset, and optional two-factor login, on the Better Auth staff instance (Google login and passkeys can be switched on later); one user may belong to several stores (agency staff) with a role per store. *Built differently: staff sign in with email codes, not passwords, until Workers Paid (ADR 0005, ADR 0013).*
+- [x] Roles: Owner, Manager, Staff, Viewer, each a set of fine-grained permissions (for example `catalog.write`, `orders.read`, `payments.refund`, `settings.write`). Permissions are checked in the route layer and again in the core service.
+- [x] Platform roles (super admin, support) kept separate from tenant roles, with two-factor login required for them; support access to a store is time-limited and audited.
+- [x] Security: rate limits on login and OTP (Workers rate-limiting binding or a Durable Object counter, never KV), lockout after repeated failures, session expiry and rotation, `HttpOnly` `Secure` `SameSite=Lax` cookies, CSRF protection for cookie-authenticated writes.
 
-* [ ] Basic email sending behind an `EmailProvider` interface: the platform's default sender, from the main domain for staff emails (sign-in codes, password reset, invitations) and from the store domain for shopper emails once Phase 4 needs them. Phase 5A adds per-store providers, order notifications and editable templates on top.
+* [x] Basic email sending behind an `EmailProvider` interface: the platform's default sender, from the main domain for staff emails (sign-in codes, password reset, invitations) and from the store domain for shopper emails once Phase 4 needs them. Phase 5A adds per-store providers, order notifications and editable templates on top.
 
-- [ ] Connect the main domain: Worker routes for the admin and webhook hosts, the email sender verified with SPF, DKIM and DMARC, and Search Console alerts on.
+- [x] Connect the main domain: Worker routes for the admin and webhook hosts, the email sender verified with SPF, DKIM and DMARC, and Search Console alerts on.
 
 **Admin shell**
 
-- [ ] Login, store switcher, navigation, settings pages for store profile and staff management, Bangla and English UI.
-- [ ] Shared table, form and dialog components used by every later module.
+- [x] Login, store switcher, navigation, settings pages for store profile and staff management, Bangla and English UI.
+- [x] Shared table, form and dialog components used by every later module.
 
-* [ ] Mobile-first admin: every screen designed for a phone first, then widened for desktop; installable as a Progressive Web App (home-screen icon, full-screen, web push support) at no cost.
+* [x] Mobile-first admin: every screen designed for a phone first, then widened for desktop; installable as a Progressive Web App (home-screen icon, full-screen, web push support) at no cost.
 
-- [ ] Admin meets WCAG 2.1 AA for contrast, form labels and keyboard use.
+- [x] Admin meets WCAG 2.1 AA for contrast, form labels and keyboard use.
 
 **Acceptance criteria**
 
@@ -336,31 +348,31 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Catalog**
 
-- [ ] Products: title, slug, description (rich text stored as sanitized structured content), status (draft, active, archived), SEO fields, category and collection links, metadata.
-- [ ] Options and option values (size, color) per product; variants generated from option combinations, each with SKU, barcode, price, compare-at price, cost price, weight, stock tracking flag.
-- [ ] Translations stored in per-locale translation tables for product, variant option labels, category and collection text, with a fallback locale.
-- [ ] Categories (tree, for navigation) and collections (manual or rule-based, for merchandising).
-- [ ] Slugs unique per tenant and locale; redirects table so renamed slugs keep working.
+- [x] Products: title, slug, description (rich text stored as sanitized structured content), status (draft, active, archived), SEO fields, category and collection links, metadata.
+- [x] Options and option values (size, color) per product; variants generated from option combinations, each with SKU, barcode, price, compare-at price, cost price, weight, stock tracking flag.
+- [x] Translations stored in per-locale translation tables for product, variant option labels, category and collection text, with a fallback locale.
+- [x] Categories (tree, for navigation) and collections (manual or rule-based, for merchandising).
+- [x] Slugs unique per tenant and locale; redirects table so renamed slugs keep working.
 
-* [ ] VAT settings per store: VAT on or off, the rate, and whether prices include VAT; a VAT category per product where needed. VAT is calculated and stored per order line and shown on invoices.
+* [x] VAT settings per store: VAT on or off, the rate, and whether prices include VAT; a VAT category per product where needed. VAT is calculated and stored per order line and shown on invoices. *Settings built in Phase 2; the per-line calculation comes with orders in Phase 4.*
 
 **Media**
 
-- [ ] The admin app resizes photos in the browser to WebP at two or three fixed widths, then uploads them to R2 through short-lived signed URLs; the server validates type and size and stores dimensions. Originals are not kept.
-- [ ] Files named by content hash (duplicates stored once, cacheable for a year); a weekly job removes images no product uses.
-- [ ] Ordered images per product and optional image per variant.
+- [x] The admin app resizes photos in the browser to WebP at two or three fixed widths, then uploads them to R2 through short-lived signed URLs; the server validates type and size and stores dimensions. Originals are not kept. *Built differently: files go through the API Worker into R2 instead of signed URLs, so the server can enforce sizes (ADR 0016); iPhones upload JPEG, because Safari can't encode WebP.*
+- [x] Files named by content hash (duplicates stored once, cacheable for a year); a weekly job removes images no product uses.
+- [x] Ordered images per product and optional image per variant.
 
 **Inventory**
 
-- [ ] Stock locations (one default per tenant now; the model allows many).
-- [ ] Inventory levels per variant per location: on hand, reserved, available (derived).
-- [ ] `stock_movements` ledger: type (receive, sale, reservation, release, adjustment, return), quantity, reason, reference (order, purchase), actor. Every change goes through the inventory service.
-- [ ] Low-stock threshold per variant; allow-backorder flag.
+- [x] Stock locations (one default per tenant now; the model allows many).
+- [x] Inventory levels per variant per location: on hand, reserved, available (derived).
+- [x] `stock_movements` ledger: type (receive, sale, reservation, release, adjustment, return), quantity, reason, reference (order, purchase), actor. Every change goes through the inventory service.
+- [x] Low-stock threshold per variant; allow-backorder flag.
 
 **Admin and import**
 
-- [ ] Product list with search and filters, product editor with variants grid, bulk price and stock edit.
-- [ ] CSV and Excel import and export (products, variants, prices, stock, image URLs) with a dry-run preview and row-level error report; run as a queued job.
+- [x] Product list with search and filters, product editor with variants grid, bulk price and stock edit.
+- [x] CSV and Excel import and export (products, variants, prices, stock, image URLs) with a dry-run preview and row-level error report; run as a queued job. *On the Free plan a 500-product import takes about 50 minutes, and some chunks are stopped for CPU and retried (phase-2-report §3).*
 
 **Acceptance criteria**
 
