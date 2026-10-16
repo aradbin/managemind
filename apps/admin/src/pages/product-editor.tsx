@@ -475,6 +475,7 @@ function TranslationFields({
       />
       <DescriptionField
         label={t('product.description')}
+        lang={lang}
         value={value.description}
         onChange={(description) => onChange({ description })}
         disabled={disabled}

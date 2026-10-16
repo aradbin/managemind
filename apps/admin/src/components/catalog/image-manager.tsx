@@ -209,6 +209,8 @@ export function ImageManager({
             type="file"
             accept="image/*"
             multiple
+            tabIndex={-1}
+            aria-label={t('images.add')}
             className="sr-only"
             onChange={(e) => addFiles(e.target.files)}
           />
