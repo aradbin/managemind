@@ -386,8 +386,11 @@ describe('the invariant (property test)', () => {
         sql`select on_hand, reserved from store.inventory_levels where variant_id = ${strict} and location_id = ${location2}`,
       ),
     );
+    // What holds whatever the interleaving. Available (on hand minus reserved)
+    // can end below zero by the rules: a count or a loss may find less stock
+    // than is reserved (the model above allows it too).
     expect(rows[0]?.reserved).toBeGreaterThanOrEqual(0);
-    expect((rows[0]?.on_hand ?? 0) - (rows[0]?.reserved ?? 0)).toBeGreaterThanOrEqual(0);
+    expect(rows[0]?.on_hand).toBeGreaterThanOrEqual(0);
   }, 120_000);
 
   it('has no drift in any store (the daily check)', async () => {
