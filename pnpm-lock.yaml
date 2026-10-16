@@ -410,6 +410,9 @@ importers:
       '@managemind/db':
         specifier: workspace:*
         version: link:../db
+      '@managemind/providers':
+        specifier: workspace:*
+        version: link:../providers
       '@managemind/shared':
         specifier: workspace:*
         version: link:../shared

@@ -27,5 +27,6 @@ export const en = {
   'error.limit_exceeded': 'You’ve reached the limit for this.',
   'error.payload_too_large': 'This file is too large.',
   'error.unsupported_media_type': 'Only JPEG, PNG and WebP images can be uploaded.',
+  'error.feature_unavailable': 'This isn’t available yet. Please try again later.',
   'error.internal': 'Something went wrong. Please try again.',
 } as const;

@@ -45,6 +45,8 @@ export const RULES = {
   },
   /** Invitations sent by one store. */
   'invite:tenant': { windows: [{ limit: 30, seconds: DAY }] },
+  /** "Check now" on custom domains, per store (phase-3-plan §3.9). */
+  'domain-check:tenant': { windows: [{ limit: 20, seconds: HOUR }] },
   /** Storefront search misses from one shopper (phase-3-plan §3.7); cached results cost nothing. */
   'search:ip': { windows: [{ limit: 30, seconds: MINUTE }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */

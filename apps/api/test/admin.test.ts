@@ -5,6 +5,7 @@
 import {
   type Actor,
   actorFor,
+  addDomain,
   createAttribute,
   createCategory,
   createCollection,
@@ -20,6 +21,7 @@ import {
 } from '@managemind/core';
 import { createDb } from '@managemind/db';
 import { connect } from '@managemind/db/testing';
+import { pendingHostnames } from '@managemind/providers/hostnames';
 import { permissionsOf } from '@managemind/shared';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -249,6 +251,18 @@ describe('isolation suite', () => {
     const page = await inB((tx) =>
       createPage(tx, bOwner, { kind: 'about', translations: { en: { title: 'B about' } } }),
     );
+    const domain = await inB((tx) =>
+      addDomain(
+        tx,
+        bOwner,
+        { hostname: `www.${unique()}.example.com` },
+        {
+          platformDomain: 'platform.example.test',
+          storeDomain: 'stores.example.test',
+          provider: pendingHostnames(),
+        },
+      ),
+    );
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; body?: unknown }> = {
@@ -295,6 +309,9 @@ describe('isolation suite', () => {
       'GET /v1/admin/pages/{id}': { id: page.id },
       'PATCH /v1/admin/pages/{id}': { id: page.id, body: { published: true } },
       'DELETE /v1/admin/pages/{id}': { id: page.id },
+      'POST /v1/admin/domains/{id}/check': { id: domain.id },
+      'POST /v1/admin/domains/{id}/primary': { id: domain.id },
+      'DELETE /v1/admin/domains/{id}': { id: domain.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

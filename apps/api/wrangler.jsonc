@@ -52,7 +52,8 @@
     "producers": [
       { "binding": "OUTBOX", "queue": "managemind-outbox" },
       { "binding": "IMPORTS", "queue": "managemind-imports" },
-      { "binding": "PURGE", "queue": "managemind-purge" }
+      { "binding": "PURGE", "queue": "managemind-purge" },
+      { "binding": "DOMAINS", "queue": "managemind-domains" }
     ],
     "consumers": [
       {
@@ -81,6 +82,13 @@
         "max_batch_timeout": 10,
         "max_retries": 5,
         "dead_letter_queue": "managemind-purge-dlq"
+      },
+      // Delayed re-checks of new custom domains (ADR 0019).
+      {
+        "queue": "managemind-domains",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3
       }
     ]
   },

@@ -13,6 +13,7 @@ import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
 import { queueSink, withClient } from './db';
+import { recheckDomains } from './domains';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
@@ -167,8 +168,9 @@ const toEvent = (r: OutboxRow): OutboxEvent => ({
 
 /**
  * The daily batch: relay outbox events the request path missed (older than
- * five minutes, across tenants), delete expired technical rows, and check
- * that every stock level still equals its movements (phase-2-plan §3.8).
+ * five minutes, across tenants), delete expired technical rows, check that
+ * every stock level still equals its movements (phase-2-plan §3.8), and
+ * re-check custom domains (phase-3-plan §3.9).
  */
 export async function runDailyJobs(
   env: Env,
@@ -209,6 +211,13 @@ export async function runDailyJobs(
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
     await checkInventoryDrift(client);
+    // Custom domains: pending ones until active or 7 days old, active ones for breakage (ADR 0019).
+    try {
+      await recheckDomains(env, ctx, client);
+    } catch (e) {
+      log('error', 'domain recheck failed', { error: String(e) });
+      captureMessage('domain recheck failed', { level: 'error', extra: { error: String(e) } });
+    }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);
   });

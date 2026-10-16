@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./email": "./src/email/index.ts"
+    "./email": "./src/email/index.ts",
+    "./hostnames": "./src/hostnames/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

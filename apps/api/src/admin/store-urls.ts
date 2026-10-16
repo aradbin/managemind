@@ -11,6 +11,8 @@ import type { Context } from 'hono';
 import type { StaffEnv } from './context';
 
 export interface StoreUrls {
+  /** {slug}.<STORE_DOMAIN>, derived from the slug (ADR 0015). */
+  defaultHost: string;
   primaryHost: string;
   /** The storefront's home page. */
   store: string;
@@ -27,17 +29,20 @@ export async function storeUrls(c: Context<StaffEnv>, tx: TenantTx): Promise<Sto
     .select({ hostname: d.hostname })
     .from(d)
     .where(and(eq(d.tenantId, tx.tenantId), eq(d.isPrimary, true), eq(d.status, 'active')));
-  const primaryHost = primary?.hostname ?? `${row.slug}.${c.var.config.STORE_DOMAIN}`;
+  const defaultHost = `${row.slug}.${c.var.config.STORE_DOMAIN}`;
+  const primaryHost = primary?.hostname ?? defaultHost;
   const origin = c.var.config.STOREFRONT_ORIGIN;
   const token = (value: string) => encodeURIComponent(value);
   if (origin) {
     return {
+      defaultHost,
       primaryHost,
       store: `${origin}/?store=${row.slug}`,
       preview: (value) => `${origin}/__preview?store=${row.slug}&token=${token(value)}`,
     };
   }
   return {
+    defaultHost,
     primaryHost,
     store: `https://${primaryHost}/`,
     preview: (value) => `https://${primaryHost}/__preview?token=${token(value)}`,

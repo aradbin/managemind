@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@managemind/db": "workspace:*",
+    "@managemind/providers": "workspace:*",
     "@managemind/shared": "workspace:*",
     "drizzle-orm": "catalog:",
     "pg": "catalog:",

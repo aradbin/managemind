@@ -18,6 +18,8 @@ import { productTag, storeTag } from '@managemind/shared/storefront/cache';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
+import { hostnameProvider } from '../src/domains';
+import { getConfig } from '../src/env';
 import { browser, signIn } from './staff';
 import { appUrl, makeCtx, makeEnv, ownerUrl } from './support';
 
@@ -242,5 +244,52 @@ describe('admin theme and pages', () => {
       ((await (await user.get('/api/admin/pages')).json()) as Json[]).map((p) => p.id),
     ).toEqual([page.id]);
     expect((await user.call('DELETE', `/api/admin/pages/${page.id}`)).status).toBe(204);
+  });
+});
+
+describe('admin domains', () => {
+  it('adds a pending domain with its DNS record, refuses bare domains, and removes it', async () => {
+    const s = await store('bn');
+    const user = browser(makeEnv());
+    expect((await signIn(user, owner, s.email)).status).toBe(200);
+    expect((await user.call('PUT', '/api/admin/me/active-store', { tenantId: s.id })).status).toBe(
+      200,
+    );
+
+    const bare = await user.post('/api/admin/domains', { hostname: 'shop.com.bd' });
+    expect(bare.status).toBe(422);
+    expect(((await bare.json()) as Json).errors[0].code).toBe('bare_domain');
+
+    const hostname = `www.${s.slug}.example.com`;
+    const added = await user.post('/api/admin/domains', { hostname });
+    expect(added.status).toBe(201);
+    const domain: Json = await added.json();
+    expect(domain).toMatchObject({
+      hostname,
+      status: 'pending',
+      dns: [{ type: 'CNAME', name: hostname, value: `stores.${env.STORE_DOMAIN}` }],
+    });
+    const list: Json = await (await user.get('/api/admin/domains')).json();
+    expect(list).toMatchObject({ defaultHost: s.host, primaryHost: s.host });
+    expect(list.domains.map((d: Json) => d.id)).toEqual([domain.id]);
+
+    const checked: Json = await (await user.post(`/api/admin/domains/${domain.id}/check`)).json();
+    expect(checked.status).toBe('pending');
+    expect((await user.post(`/api/admin/domains/${domain.id}/primary`)).status).toBe(409);
+    expect((await user.call('DELETE', `/api/admin/domains/${domain.id}`)).status).toBe(204);
+    expect(((await (await user.get('/api/admin/domains')).json()) as Json).domains).toEqual([]);
+  });
+
+  it('uses Cloudflare only with the store zone and token, and refuses in production without them', () => {
+    const dev = makeEnv();
+    expect(() => hostnameProvider(dev, getConfig(dev))).not.toThrow();
+    const prod = makeEnv({
+      ENVIRONMENT: 'production',
+      EMAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 'k',
+    });
+    expect(() => hostnameProvider(prod, getConfig(prod))).toThrow(/not set up/);
+    const ready = makeEnv({ ...prod, CF_STORE_TOKEN: 't', STORE_ZONE_ID: 'z' });
+    expect(() => hostnameProvider(ready, getConfig(ready))).not.toThrow();
   });
 });

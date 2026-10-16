@@ -98,6 +98,15 @@ const COPY = {
       access: { viewer: 'read-only', manager: 'manager' },
       footer: "If you didn't ask for help, contact {platform} right away.",
     },
+    domainProblem: {
+      subject: '{domain} needs attention',
+      body: [
+        "{store}'s domain {domain} isn't working properly: {problem}",
+        'Check the DNS record in Settings > Domains. Until it is fixed, shoppers may not reach your store at {domain}.',
+      ],
+      button: 'Open Domains',
+      footer: 'You get this email because you own {store} on {platform}.',
+    },
   },
   bn: {
     signInCode: {
@@ -123,6 +132,15 @@ const COPY = {
       ],
       access: { viewer: 'শুধু দেখার', manager: 'ম্যানেজারের' },
       footer: 'আপনি সাহায্য না চেয়ে থাকলে এখনই {platform}-এর সাথে যোগাযোগ করুন।',
+    },
+    domainProblem: {
+      subject: '{domain} ডোমেইনে সমস্যা',
+      body: [
+        '{store} দোকানের ডোমেইন {domain} ঠিকমতো কাজ করছে না: {problem}',
+        'সেটিংস > ডোমেইন-এ DNS রেকর্ডটি দেখুন। ঠিক না হওয়া পর্যন্ত ক্রেতারা হয়তো {domain} দিয়ে আপনার দোকানে ঢুকতে পারবেন না।',
+      ],
+      button: 'ডোমেইন খুলুন',
+      footer: 'আপনি {platform}-এ {store} দোকানের মালিক বলে এই ইমেইল পাচ্ছেন।',
     },
   },
 } as const satisfies Record<Locale, unknown>;
@@ -198,6 +216,33 @@ export function supportAccessEmail(input: SupportAccessEmail): RenderedEmail {
       access: copy.access[input.role],
       reason: input.reason,
       until: formatDateTime(input.locale, input.until),
+    },
+    footer: copy.footer,
+  });
+}
+
+export interface DomainProblemEmail {
+  locale: Locale;
+  platformName: string;
+  storeName: string;
+  domain: string;
+  problem: string;
+  link: string;
+}
+
+/** To a store's owners when the daily check finds their active domain broken (phase-3-plan §3.9). */
+export function domainProblemEmail(input: DomainProblemEmail): RenderedEmail {
+  const copy = COPY[input.locale].domainProblem;
+  return render(copy.subject, {
+    locale: input.locale,
+    platformName: input.platformName,
+    paragraphs: [...copy.body],
+    button: { label: copy.button, href: input.link },
+    values: {
+      platform: input.platformName,
+      store: input.storeName,
+      domain: input.domain,
+      problem: input.problem,
     },
     footer: copy.footer,
   });

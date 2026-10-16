@@ -2,6 +2,7 @@ import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { sentryOptions } from '@managemind/shared/sentry';
 import { withSentry } from '@sentry/cloudflare';
 import { createApp } from './app';
+import { type DomainCheckMessage, handleDomainQueue } from './domains';
 import type { Env } from './env';
 import { handleImportDeadLetters, handleImportQueue, handleQueue, runDailyJobs } from './jobs';
 import { handlePurgeQueue, type PurgeMessage } from './purge/consumer';
@@ -14,7 +15,7 @@ const app = createApp();
 
 // Sentry reports what escapes the handlers (queue and cron failures); the
 // API's own 5xx problems are reported in errors.ts.
-type Message = OutboxEvent | ImportMessage | PurgeMessage;
+type Message = OutboxEvent | ImportMessage | PurgeMessage | DomainCheckMessage;
 
 /**
  * One queue handler for every queue: imports (managemind-imports, or a
@@ -24,6 +25,9 @@ type Message = OutboxEvent | ImportMessage | PurgeMessage;
 function routeQueue(batch: MessageBatch<Message>, env: Env, ctx: ExecutionContext) {
   if (batch.queue === 'managemind-purge') {
     return handlePurgeQueue(batch as MessageBatch<PurgeMessage>, env);
+  }
+  if (batch.queue === 'managemind-domains') {
+    return handleDomainQueue(batch as MessageBatch<DomainCheckMessage>, env, ctx);
   }
   if (batch.queue.startsWith('managemind-imports')) {
     const imports = batch as MessageBatch<ImportMessage>;

@@ -37,7 +37,8 @@ export interface WorkerTarget {
   /**
    * Production on its own domains (phase-1-plan §10): admin.<platform> as the
    * API Worker's custom domain, api.<platform> routes for health checks and
-   * webhooks only, and every <slug>.<store> to the storefront.
+   * webhooks only, and everything on the store zone (<slug>.<store> and
+   * custom hostnames) to the storefront.
    */
   routes?: boolean;
 }
@@ -117,7 +118,9 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
-  if (t.routes) storefront.routes = [{ pattern: `*.${t.storeDomain}/*`, zone_name: t.storeDomain }];
+  // `*/*` on the store zone catches every store subdomain and every custom
+  // hostname served through Cloudflare for SaaS (ADR 0019).
+  if (t.routes) storefront.routes = [{ pattern: '*/*', zone_name: t.storeDomain }];
   if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),
