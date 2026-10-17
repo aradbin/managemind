@@ -15,7 +15,7 @@ Phase 3 is built and tested locally: every store gets a server-rendered storefro
 
 **Four things the owner should know:**
 
-1. **Six owner items are still open, and the code works around each one** (§5): `CF_STORE_TOKEN`, Cloudflare for SaaS, the reference stores, test tracking IDs, the test hostname, and the Search Console confirmation.
+1. **The owner's setup (Oct 17):** `CF_STORE_TOKEN` is added, Cloudflare for SaaS is on, the test hostname's CNAME is in place and Search Console is confirmed. The reference stores and test tracking IDs are still open, and the code works around both (§5).
 2. **Without `CF_STORE_TOKEN`, production doesn't cache pages.** Purges need the token, and without purges an owner's change would wait up to a day. So the storefront renders every page fresh until the token is added; the deploy warns while it's missing. Images are cached either way.
 3. **Neither acceptance criterion can be verified yet** (§2). Both need production with the token, and the first needs the test hostname (plan PR 19).
 4. **The admin's sign-in bundle is at 143 of 150 KiB.** The online store's messages load only when its screens open; only the navigation labels joined the sign-in bundle.
@@ -93,12 +93,12 @@ As planned (plan §10), with one change: **until `CF_STORE_TOKEN` is set, every 
 
 ### Waiting on the owner
 
-1. **`CF_STORE_TOKEN`** (zone `managemind.store`: Cache Purge, and SSL and Certificates: Edit), as a repository secret. It turns on purges and the page cache, and lets custom domains be added. Without it the admin's Domains screen says custom domains aren't available yet.
-2. **Cloudflare for SaaS on `managemind.store`** (SSL/TLS → Custom Hostnames). Provisioning warns until the fallback origin can be set.
-3. **The test hostname** for PR 19 (Q8): a subdomain of a domain the owner has elsewhere, CNAMEd to `stores.managemind.store`.
+1. **`CF_STORE_TOKEN`: added (Oct 17).** It takes effect on the next production deploy, which turns on purges and the page cache and lets custom domains be added.
+2. **Cloudflare for SaaS: on (Oct 17).** The next deploy sets the fallback origin to `stores.managemind.store`.
+3. **The test hostname: CNAME added (Oct 17)** for PR 19 (Q8).
 4. **Reference stores** for the presets (Q6). The three presets were built from general Bangladeshi fashion and grocery conventions; they're settings, so they change without code.
 5. **A test Meta Pixel ID, a GA4 property, a WhatsApp number and a Messenger link.** The loader and the event IDs are tested with mocked tag hosts; real IDs show whether events arrive in Meta's and Google's test tools.
-6. **Search Console:** confirmation that both properties are verified, with alerts on.
+6. **Search Console: confirmed (Oct 17)**, both properties verified with alerts on.
 7. **Legal review** of the footer's business details. Every field is optional until then.
 
 ### Not built yet, or smaller than planned
