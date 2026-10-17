@@ -35,14 +35,14 @@ import { download, toCsv } from './export';
 const CHUNK = 10;
 const IMAGE_CONCURRENCY = 3;
 
-interface Parsed {
+export interface Parsed {
   fileName: string;
   header: string[];
   rows: string[][];
 }
 
 /** The file's first sheet (xlsx) or the CSV, as text cells; each parser loads only when needed. */
-async function parseFile(file: File): Promise<Parsed> {
+export async function parseFile(file: File): Promise<Parsed> {
   let table: string[][];
   if (/\.xlsx$/i.test(file.name)) {
     const { readXlsx } = await import('../lib/xlsx');
@@ -422,9 +422,15 @@ function Mapping({
   );
 }
 
-type RowError = { row: number; column?: string; field?: string; code: string; message: string };
+export type RowError = {
+  row: number;
+  column?: string;
+  field?: string;
+  code: string;
+  message: string;
+};
 
-function ErrorTable({ errors }: { errors: RowError[] }) {
+export function ErrorTable({ errors }: { errors: RowError[] }) {
   const { t } = useLocale();
   return (
     <div className="max-h-96 overflow-auto rounded-md border border-border">
@@ -457,7 +463,7 @@ function ErrorTable({ errors }: { errors: RowError[] }) {
   );
 }
 
-function downloadErrors(
+export function downloadErrors(
   fileName: string,
   errors: RowError[],
   t: ReturnType<typeof useLocale>['t'],
@@ -474,7 +480,16 @@ function downloadErrors(
 
 // ---- Progress and the image step ----------------------------------------------------
 
-function JobProgress({ jobId, onNew }: { jobId: string; onNew: () => void }) {
+/** A job's progress; customer imports (phase-4-plan §3.10) use it too, without the image step. */
+export function JobProgress({
+  jobId,
+  onNew,
+  kind = 'products',
+}: {
+  jobId: string;
+  onNew: () => void;
+  kind?: 'products' | 'customers';
+}) {
   const { t } = useLocale();
   const queryClient = useQueryClient();
   const job = useQuery({
@@ -502,12 +517,15 @@ function JobProgress({ jobId, onNew }: { jobId: string; onNew: () => void }) {
     ),
   });
   useEffect(() => {
-    if (job.data?.status === 'done') {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      queryClient.invalidateQueries({ queryKey: ['attributes'] });
+    if (job.data?.status !== 'done') return;
+    if (kind === 'customers') {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      return;
     }
-  }, [job.data?.status, queryClient]);
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['categories'] });
+    queryClient.invalidateQueries({ queryKey: ['attributes'] });
+  }, [job.data?.status, queryClient, kind]);
 
   if (job.isPending) return <p role="status">{t('loading')}</p>;
   if (job.isError) {
@@ -566,7 +584,11 @@ function JobProgress({ jobId, onNew }: { jobId: string; onNew: () => void }) {
         {['done', 'failed', 'cancelled'].includes(j.status) && (
           <>
             <Button asChild variant="secondary">
-              <Link to="/products">{t('import.seeProducts')}</Link>
+              {kind === 'customers' ? (
+                <Link to="/customers">{t('import.seeCustomers')}</Link>
+              ) : (
+                <Link to="/products">{t('import.seeProducts')}</Link>
+              )}
             </Button>
             <Button onClick={onNew}>{t('import.another')}</Button>
           </>

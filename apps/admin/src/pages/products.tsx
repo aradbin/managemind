@@ -49,12 +49,13 @@ export function ProductsPage() {
 
   const setFilter = (patch: Partial<ProductSearch>) =>
     navigate({
+      from: '/products/',
       to: '/products',
       search: (prev: ProductSearch) => {
         const next = { ...prev, ...patch };
         return Object.fromEntries(
           Object.entries(next).filter(([, v]) => v !== undefined && v !== '' && v !== false),
-        );
+        ) as ProductSearch;
       },
       replace: true,
     });

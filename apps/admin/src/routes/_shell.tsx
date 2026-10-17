@@ -13,7 +13,9 @@ import {
   Palette,
   Settings,
   Shield,
+  ShoppingBag,
   User,
+  Users,
 } from 'lucide-react';
 import { useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
@@ -46,17 +48,30 @@ export const Route = createFileRoute('/_shell')({
 });
 
 interface NavItem {
-  to: '/' | '/products' | '/online-store' | '/settings' | '/account' | '/platform' | '/dev/mailbox';
+  to:
+    | '/'
+    | '/orders'
+    | '/products'
+    | '/customers'
+    | '/online-store'
+    | '/settings'
+    | '/account'
+    | '/platform'
+    | '/dev/mailbox';
   label: AdminKey;
   icon: LucideIcon;
+  /** Left out of the phone's bottom bar (the account menu in the header has it). */
+  sidebarOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
   { to: '/', label: 'nav.home', icon: Home },
+  { to: '/orders', label: 'nav.orders', icon: ShoppingBag },
   { to: '/products', label: 'nav.catalog', icon: Package },
+  { to: '/customers', label: 'nav.customers', icon: Users },
   { to: '/online-store', label: 'nav.onlineStore', icon: Palette },
   { to: '/settings', label: 'nav.settings', icon: Settings },
-  { to: '/account', label: 'nav.account', icon: User },
+  { to: '/account', label: 'nav.account', icon: User, sidebarOnly: true },
 ];
 /** Bottom bar columns by item count (static class names, for Tailwind). */
 const COLUMNS: Record<number, string> = {
@@ -64,6 +79,7 @@ const COLUMNS: Record<number, string> = {
   4: 'grid-cols-4',
   5: 'grid-cols-5',
   6: 'grid-cols-6',
+  7: 'grid-cols-7',
 };
 const PLATFORM: NavItem = { to: '/platform', label: 'nav.platform', icon: Shield };
 const MAILBOX: NavItem = { to: '/dev/mailbox', label: 'dev.mailbox', icon: Mail };
@@ -73,7 +89,12 @@ function Shell() {
   const { data: me } = useSuspenseQuery(meQuery);
   const { data: health } = useQuery(healthQuery);
   const store = me.stores.find((s) => s.tenantId === me.activeStore);
-  const nav = me.user.platformRole ? [...NAV, PLATFORM] : NAV;
+  const customers = usePermission('customers.read');
+  const nav = [
+    ...NAV.filter((n) => n.to !== '/customers' || customers),
+    ...(me.user.platformRole ? [PLATFORM] : []),
+  ];
+  const bar = nav.filter((n) => !n.sidebarOnly);
   const links = (items: NavItem[], className: string) =>
     items.map(({ to, label, icon: Icon }) => (
       <Link
@@ -145,9 +166,9 @@ function Shell() {
 
       <nav
         aria-label={t('nav.main')}
-        className={`fixed inset-x-0 bottom-0 grid ${COLUMNS[nav.length] ?? 'grid-cols-5'} border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden`}
+        className={`fixed inset-x-0 bottom-0 grid ${COLUMNS[bar.length] ?? 'grid-cols-6'} border-t border-border bg-background pb-[env(safe-area-inset-bottom)] md:hidden`}
       >
-        {links(nav, 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs')}
+        {links(bar, 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs')}
       </nav>
     </div>
   );

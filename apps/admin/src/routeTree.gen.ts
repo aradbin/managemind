@@ -17,13 +17,20 @@ import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
 import { Route as ShellInventoryRouteImport } from './routes/_shell/inventory'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
+import { Route as PrintOrdersRouteImport } from './routes/print.orders'
 import { Route as ShellCatalogAttributesRouteImport } from './routes/_shell/catalog/attributes'
 import { Route as ShellCatalogCategoriesRouteImport } from './routes/_shell/catalog/categories'
 import { Route as ShellCatalogImportRouteImport } from './routes/_shell/catalog/import'
+import { Route as ShellCustomersIndexRouteImport } from './routes/_shell/customers/index'
+import { Route as ShellCustomersIdRouteImport } from './routes/_shell/customers/$id'
+import { Route as ShellCustomersImportRouteImport } from './routes/_shell/customers/import'
 import { Route as ShellDevMailboxRouteImport } from './routes/_shell/dev/mailbox'
 import { Route as ShellOnlineStoreIndexRouteImport } from './routes/_shell/online-store/index'
 import { Route as ShellOnlineStoreSettingsRouteImport } from './routes/_shell/online-store/settings'
 import { Route as ShellOnlineStoreThemeRouteImport } from './routes/_shell/online-store/theme'
+import { Route as ShellOrdersIndexRouteImport } from './routes/_shell/orders/index'
+import { Route as ShellOrdersIdRouteImport } from './routes/_shell/orders/$id'
+import { Route as ShellOrdersNewRouteImport } from './routes/_shell/orders/new'
 import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
 import { Route as ShellPlatformStaffRouteImport } from './routes/_shell/platform/staff'
@@ -31,6 +38,8 @@ import { Route as ShellProductsIndexRouteImport } from './routes/_shell/products
 import { Route as ShellProductsIdRouteImport } from './routes/_shell/products/$id'
 import { Route as ShellProductsNewRouteImport } from './routes/_shell/products/new'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
+import { Route as ShellSettingsCheckoutRouteImport } from './routes/_shell/settings/checkout'
+import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/settings/delivery'
 import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
 import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
@@ -81,6 +90,11 @@ const ShellPlatformRoute = ShellPlatformRouteImport.update({
   path: '/platform',
   getParentRoute: () => ShellRoute,
 } as any)
+const PrintOrdersRoute = PrintOrdersRouteImport.update({
+  id: '/print/orders',
+  path: '/print/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShellCatalogAttributesRoute = ShellCatalogAttributesRouteImport.update({
   id: '/catalog/attributes',
   path: '/catalog/attributes',
@@ -94,6 +108,21 @@ const ShellCatalogCategoriesRoute = ShellCatalogCategoriesRouteImport.update({
 const ShellCatalogImportRoute = ShellCatalogImportRouteImport.update({
   id: '/catalog/import',
   path: '/catalog/import',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellCustomersIndexRoute = ShellCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellCustomersIdRoute = ShellCustomersIdRouteImport.update({
+  id: '/customers/$id',
+  path: '/customers/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellCustomersImportRoute = ShellCustomersImportRouteImport.update({
+  id: '/customers/import',
+  path: '/customers/import',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellDevMailboxRoute = ShellDevMailboxRouteImport.update({
@@ -115,6 +144,21 @@ const ShellOnlineStoreSettingsRoute =
 const ShellOnlineStoreThemeRoute = ShellOnlineStoreThemeRouteImport.update({
   id: '/online-store/theme',
   path: '/online-store/theme',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOrdersIndexRoute = ShellOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOrdersIdRoute = ShellOrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOrdersNewRoute = ShellOrdersNewRouteImport.update({
+  id: '/orders/new',
+  path: '/orders/new',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellPlatformIndexRoute = ShellPlatformIndexRouteImport.update({
@@ -150,6 +194,16 @@ const ShellProductsNewRoute = ShellProductsNewRouteImport.update({
 const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsCheckoutRoute = ShellSettingsCheckoutRouteImport.update({
+  id: '/settings/checkout',
+  path: '/settings/checkout',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsDeliveryRoute = ShellSettingsDeliveryRouteImport.update({
+  id: '/settings/delivery',
+  path: '/settings/delivery',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSettingsDomainsRoute = ShellSettingsDomainsRouteImport.update({
@@ -214,22 +268,31 @@ export interface FileRoutesByFullPath {
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
   '/platform': typeof ShellPlatformRouteWithChildren
+  '/print/orders': typeof PrintOrdersRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/catalog/import': typeof ShellCatalogImportRoute
+  '/customers/$id': typeof ShellCustomersIdRoute
+  '/customers/import': typeof ShellCustomersImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
+  '/orders/$id': typeof ShellOrdersIdRoute
+  '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
+  '/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/vat': typeof ShellSettingsVatRoute
+  '/customers/': typeof ShellCustomersIndexRoute
   '/online-store/': typeof ShellOnlineStoreIndexRoute
+  '/orders/': typeof ShellOrdersIndexRoute
   '/platform/': typeof ShellPlatformIndexRoute
   '/products/': typeof ShellProductsIndexRoute
   '/settings/': typeof ShellSettingsIndexRoute
@@ -245,23 +308,32 @@ export interface FileRoutesByTo {
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
+  '/print/orders': typeof PrintOrdersRoute
   '/': typeof ShellIndexRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/catalog/import': typeof ShellCatalogImportRoute
+  '/customers/$id': typeof ShellCustomersIdRoute
+  '/customers/import': typeof ShellCustomersImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
+  '/orders/$id': typeof ShellOrdersIdRoute
+  '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
+  '/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/vat': typeof ShellSettingsVatRoute
+  '/customers': typeof ShellCustomersIndexRoute
   '/online-store': typeof ShellOnlineStoreIndexRoute
+  '/orders': typeof ShellOrdersIndexRoute
   '/platform': typeof ShellPlatformIndexRoute
   '/products': typeof ShellProductsIndexRoute
   '/settings': typeof ShellSettingsIndexRoute
@@ -280,23 +352,32 @@ export interface FileRoutesById {
   '/_shell/account': typeof ShellAccountRoute
   '/_shell/inventory': typeof ShellInventoryRoute
   '/_shell/platform': typeof ShellPlatformRouteWithChildren
+  '/print/orders': typeof PrintOrdersRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/_shell/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/_shell/catalog/import': typeof ShellCatalogImportRoute
+  '/_shell/customers/$id': typeof ShellCustomersIdRoute
+  '/_shell/customers/import': typeof ShellCustomersImportRoute
   '/_shell/dev/mailbox': typeof ShellDevMailboxRoute
   '/_shell/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/_shell/online-store/theme': typeof ShellOnlineStoreThemeRoute
+  '/_shell/orders/$id': typeof ShellOrdersIdRoute
+  '/_shell/orders/new': typeof ShellOrdersNewRoute
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
   '/_shell/platform/staff': typeof ShellPlatformStaffRoute
   '/_shell/products/$id': typeof ShellProductsIdRoute
   '/_shell/products/new': typeof ShellProductsNewRoute
+  '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/_shell/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
   '/_shell/settings/staff': typeof ShellSettingsStaffRoute
   '/_shell/settings/store': typeof ShellSettingsStoreRoute
   '/_shell/settings/vat': typeof ShellSettingsVatRoute
+  '/_shell/customers/': typeof ShellCustomersIndexRoute
   '/_shell/online-store/': typeof ShellOnlineStoreIndexRoute
+  '/_shell/orders/': typeof ShellOrdersIndexRoute
   '/_shell/platform/': typeof ShellPlatformIndexRoute
   '/_shell/products/': typeof ShellProductsIndexRoute
   '/_shell/settings/': typeof ShellSettingsIndexRoute
@@ -316,22 +397,31 @@ export interface FileRouteTypes {
     | '/account'
     | '/inventory'
     | '/platform'
+    | '/print/orders'
     | '/catalog/attributes'
     | '/catalog/categories'
     | '/catalog/import'
+    | '/customers/$id'
+    | '/customers/import'
     | '/dev/mailbox'
     | '/online-store/settings'
     | '/online-store/theme'
+    | '/orders/$id'
+    | '/orders/new'
     | '/platform/audit'
     | '/platform/staff'
     | '/products/$id'
     | '/products/new'
+    | '/settings/checkout'
+    | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/vat'
+    | '/customers/'
     | '/online-store/'
+    | '/orders/'
     | '/platform/'
     | '/products/'
     | '/settings/'
@@ -347,23 +437,32 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/account'
     | '/inventory'
+    | '/print/orders'
     | '/'
     | '/catalog/attributes'
     | '/catalog/categories'
     | '/catalog/import'
+    | '/customers/$id'
+    | '/customers/import'
     | '/dev/mailbox'
     | '/online-store/settings'
     | '/online-store/theme'
+    | '/orders/$id'
+    | '/orders/new'
     | '/platform/audit'
     | '/platform/staff'
     | '/products/$id'
     | '/products/new'
+    | '/settings/checkout'
+    | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/vat'
+    | '/customers'
     | '/online-store'
+    | '/orders'
     | '/platform'
     | '/products'
     | '/settings'
@@ -381,23 +480,32 @@ export interface FileRouteTypes {
     | '/_shell/account'
     | '/_shell/inventory'
     | '/_shell/platform'
+    | '/print/orders'
     | '/_shell/'
     | '/_shell/catalog/attributes'
     | '/_shell/catalog/categories'
     | '/_shell/catalog/import'
+    | '/_shell/customers/$id'
+    | '/_shell/customers/import'
     | '/_shell/dev/mailbox'
     | '/_shell/online-store/settings'
     | '/_shell/online-store/theme'
+    | '/_shell/orders/$id'
+    | '/_shell/orders/new'
     | '/_shell/platform/audit'
     | '/_shell/platform/staff'
     | '/_shell/products/$id'
     | '/_shell/products/new'
+    | '/_shell/settings/checkout'
+    | '/_shell/settings/delivery'
     | '/_shell/settings/domains'
     | '/_shell/settings/location'
     | '/_shell/settings/staff'
     | '/_shell/settings/store'
     | '/_shell/settings/vat'
+    | '/_shell/customers/'
     | '/_shell/online-store/'
+    | '/_shell/orders/'
     | '/_shell/platform/'
     | '/_shell/products/'
     | '/_shell/settings/'
@@ -413,6 +521,7 @@ export interface RootRouteChildren {
   InviteRoute: typeof InviteRoute
   SignInRoute: typeof SignInRoute
   TwoFactorRoute: typeof TwoFactorRoute
+  PrintOrdersRoute: typeof PrintOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -473,6 +582,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPlatformRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/print/orders': {
+      id: '/print/orders'
+      path: '/print/orders'
+      fullPath: '/print/orders'
+      preLoaderRoute: typeof PrintOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_shell/catalog/attributes': {
       id: '/_shell/catalog/attributes'
       path: '/catalog/attributes'
@@ -492,6 +608,27 @@ declare module '@tanstack/react-router' {
       path: '/catalog/import'
       fullPath: '/catalog/import'
       preLoaderRoute: typeof ShellCatalogImportRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/customers/': {
+      id: '/_shell/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof ShellCustomersIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/customers/$id': {
+      id: '/_shell/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof ShellCustomersIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/customers/import': {
+      id: '/_shell/customers/import'
+      path: '/customers/import'
+      fullPath: '/customers/import'
+      preLoaderRoute: typeof ShellCustomersImportRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/dev/mailbox': {
@@ -520,6 +657,27 @@ declare module '@tanstack/react-router' {
       path: '/online-store/theme'
       fullPath: '/online-store/theme'
       preLoaderRoute: typeof ShellOnlineStoreThemeRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/orders/': {
+      id: '/_shell/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof ShellOrdersIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/orders/$id': {
+      id: '/_shell/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof ShellOrdersIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/orders/new': {
+      id: '/_shell/orders/new'
+      path: '/orders/new'
+      fullPath: '/orders/new'
+      preLoaderRoute: typeof ShellOrdersNewRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/platform/': {
@@ -569,6 +727,20 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings/'
       preLoaderRoute: typeof ShellSettingsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/checkout': {
+      id: '/_shell/settings/checkout'
+      path: '/settings/checkout'
+      fullPath: '/settings/checkout'
+      preLoaderRoute: typeof ShellSettingsCheckoutRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/delivery': {
+      id: '/_shell/settings/delivery'
+      path: '/settings/delivery'
+      fullPath: '/settings/delivery'
+      preLoaderRoute: typeof ShellSettingsDeliveryRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/settings/domains': {
@@ -670,17 +842,25 @@ interface ShellRouteChildren {
   ShellCatalogAttributesRoute: typeof ShellCatalogAttributesRoute
   ShellCatalogCategoriesRoute: typeof ShellCatalogCategoriesRoute
   ShellCatalogImportRoute: typeof ShellCatalogImportRoute
+  ShellCustomersIdRoute: typeof ShellCustomersIdRoute
+  ShellCustomersImportRoute: typeof ShellCustomersImportRoute
   ShellDevMailboxRoute: typeof ShellDevMailboxRoute
   ShellOnlineStoreSettingsRoute: typeof ShellOnlineStoreSettingsRoute
   ShellOnlineStoreThemeRoute: typeof ShellOnlineStoreThemeRoute
+  ShellOrdersIdRoute: typeof ShellOrdersIdRoute
+  ShellOrdersNewRoute: typeof ShellOrdersNewRoute
   ShellProductsIdRoute: typeof ShellProductsIdRoute
   ShellProductsNewRoute: typeof ShellProductsNewRoute
+  ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
+  ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
   ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
   ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
   ShellSettingsVatRoute: typeof ShellSettingsVatRoute
+  ShellCustomersIndexRoute: typeof ShellCustomersIndexRoute
   ShellOnlineStoreIndexRoute: typeof ShellOnlineStoreIndexRoute
+  ShellOrdersIndexRoute: typeof ShellOrdersIndexRoute
   ShellProductsIndexRoute: typeof ShellProductsIndexRoute
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
@@ -697,17 +877,25 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellCatalogAttributesRoute: ShellCatalogAttributesRoute,
   ShellCatalogCategoriesRoute: ShellCatalogCategoriesRoute,
   ShellCatalogImportRoute: ShellCatalogImportRoute,
+  ShellCustomersIdRoute: ShellCustomersIdRoute,
+  ShellCustomersImportRoute: ShellCustomersImportRoute,
   ShellDevMailboxRoute: ShellDevMailboxRoute,
   ShellOnlineStoreSettingsRoute: ShellOnlineStoreSettingsRoute,
   ShellOnlineStoreThemeRoute: ShellOnlineStoreThemeRoute,
+  ShellOrdersIdRoute: ShellOrdersIdRoute,
+  ShellOrdersNewRoute: ShellOrdersNewRoute,
   ShellProductsIdRoute: ShellProductsIdRoute,
   ShellProductsNewRoute: ShellProductsNewRoute,
+  ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
+  ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,
   ShellSettingsStaffRoute: ShellSettingsStaffRoute,
   ShellSettingsStoreRoute: ShellSettingsStoreRoute,
   ShellSettingsVatRoute: ShellSettingsVatRoute,
+  ShellCustomersIndexRoute: ShellCustomersIndexRoute,
   ShellOnlineStoreIndexRoute: ShellOnlineStoreIndexRoute,
+  ShellOrdersIndexRoute: ShellOrdersIndexRoute,
   ShellProductsIndexRoute: ShellProductsIndexRoute,
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
@@ -723,6 +911,7 @@ const rootRouteChildren: RootRouteChildren = {
   InviteRoute: InviteRoute,
   SignInRoute: SignInRoute,
   TwoFactorRoute: TwoFactorRoute,
+  PrintOrdersRoute: PrintOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
