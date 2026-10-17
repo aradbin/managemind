@@ -64,6 +64,8 @@ jobs:
         id: provision
         run: pnpm --filter @managemind/scripts exec tsx production/provision.ts
       - name: DNS and zone settings
+        env:
+          CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
         run: pnpm --filter @managemind/scripts exec tsx production/zones.ts
       - name: Worker configs
         id: workers

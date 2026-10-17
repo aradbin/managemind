@@ -7,7 +7,8 @@
 // - Proxied placeholder records for the Workers routes: api.<platform> and
 //   the wildcard *.<store> (§3.5, §3.7), and stores.<store>, the fallback
 //   origin custom domains point at (ADR 0019).
-// - Cloudflare for SaaS's fallback origin, once the owner has enabled it.
+// - Cloudflare for SaaS's fallback origin, once the owner has enabled it,
+//   with CF_STORE_TOKEN (SSL and Certificates on the store zone) when set.
 // - Checks that the email provider's DKIM record and DMARC exist (Resend
 //   adds them; we don't manage them).
 // - "Block AI bots" and the WAF rule for cross-site writes to the admin's
@@ -21,6 +22,9 @@ const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDF
 const platform = requireEnv('PLATFORM_DOMAIN');
 const store = requireEnv('STORE_DOMAIN');
 const [platformZone, storeZone] = await Promise.all([cf.zoneId(platform), cf.zoneId(store)]);
+// The store token has SSL and Certificates on the store zone; the deploy token may not.
+const storeToken = process.env.CF_STORE_TOKEN;
+const saas = storeToken ? new Cloudflare(storeToken, requireEnv('CLOUDFLARE_ACCOUNT_ID')) : cf;
 
 for (const [zone, name] of [
   [platformZone, `api.${platform}`],
@@ -68,8 +72,8 @@ await optional(
 
 await optional(
   `Custom hostnames fallback origin stores.${store}`,
-  `Turn on Cloudflare for SaaS (${store} > SSL/TLS > Custom Hostnames) and give the deploy token SSL and Certificates: Edit; until then custom domains can't be served.`,
+  `Turn on Cloudflare for SaaS (${store} > SSL/TLS > Custom Hostnames) and set CF_STORE_TOKEN (SSL and Certificates: Edit on ${store}); until then custom domains can't be served.`,
   async () => {
-    await cf.setFallbackOrigin(storeZone, `stores.${store}`);
+    await saas.setFallbackOrigin(storeZone, `stores.${store}`);
   },
 );
