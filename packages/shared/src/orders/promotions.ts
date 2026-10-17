@@ -39,7 +39,7 @@ const tagList = z
 /** All conditions must match. */
 export const promotionConditions = z
   .object({
-    /** The cart's subtotal (or, with `items`, the matching items' subtotal) after item discounts. */
+    /** The cart's subtotal (or, with `items`, the matching items' subtotal), before discounts. */
     minSubtotal: positivePrice.optional(),
     /** Units in the cart (or, with `items`, matching units). */
     minQuantity: z.int().min(1).max(1000).optional(),

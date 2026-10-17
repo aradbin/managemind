@@ -132,14 +132,11 @@ describe('delivery zones', () => {
         /delivery_zone_areas_district_unique/,
         [zone.id],
       );
-      await app.query(
-        `insert into store.delivery_zones (name, fee, is_fallback) values ('{"en":"A"}', 0, true)`,
+      // Every store starts with its fallback zone, "Outside Dhaka" (migration 0023).
+      await refuses(
+        `insert into store.delivery_zones (name, fee, is_fallback) values ('{"en":"B"}', 0, true)`,
+        /delivery_zones_one_fallback/,
       );
-      await expect(
-        app.query(
-          `insert into store.delivery_zones (name, fee, is_fallback) values ('{"en":"B"}', 0, true)`,
-        ),
-      ).rejects.toThrow(/delivery_zones_one_fallback/);
     });
   });
 
@@ -191,5 +188,22 @@ describe('customers', () => {
         app.query(`insert into store.customers (phone, name) values ('01700000001', 'Bad')`),
       ).rejects.toThrow(/customers_phone_format/);
     });
+  });
+});
+
+describe('store defaults', () => {
+  it('give every store the three default delivery zones', async () => {
+    const zones = await inA(() =>
+      app.query(
+        `select z.name->>'en' as name, z.fee::int, z.is_fallback as fallback,
+                (select count(*)::int from store.delivery_zone_areas a where a.zone_id = z.id) as areas
+           from store.delivery_zones z where z.name->>'en' <> 'Fixture' order by z.position`,
+      ),
+    );
+    expect(zones.rows).toEqual([
+      { name: 'Inside Dhaka', fee: 7000, fallback: false, areas: 50 },
+      { name: 'Dhaka suburbs', fee: 10000, fallback: false, areas: 4 },
+      { name: 'Outside Dhaka', fee: 13000, fallback: true, areas: 0 },
+    ]);
   });
 });

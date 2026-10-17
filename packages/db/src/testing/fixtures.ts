@@ -123,7 +123,7 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
     `insert into store.delivery_zones (tenant_id, name, fee) values (${tenant}, '{"en": "Fixture"}', 7000)`,
   delivery_zone_areas: (tenant) =>
     `insert into store.delivery_zone_areas (tenant_id, zone_id, district_id)
-     values (${tenant}, ${first('delivery_zones')}, 1)`,
+     values (${tenant}, ${first('delivery_zones', "name->>'en' = 'Fixture'")}, 1)`,
   customers: (tenant) =>
     `insert into store.customers (tenant_id, phone, name) values (${tenant}, '+8801700000001', 'Fixture')`,
   customer_addresses: (tenant) =>

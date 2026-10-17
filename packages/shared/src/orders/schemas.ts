@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { CATALOG_LIMITS } from '../catalog/limits';
 import { cleanString, locale } from '../catalog/schemas';
-import { cleanText } from '../catalog/text';
+import { cleanText, normalizeTag } from '../catalog/text';
 import { placeNames } from '../geo/index';
 import { phoneNumber } from '../tenant-settings';
 
@@ -107,3 +107,57 @@ export const trackInput = z
   .strict();
 
 export const reasonInput = z.object({ reason: cleanString(300) }).strict();
+
+const customerTags = z
+  .array(z.string())
+  .max(20)
+  .transform((list) => [
+    ...new Set(list.map((t) => normalizeTag(t)).filter((t): t is string => t !== null)),
+  ]);
+
+export const customerInput = z
+  .object({
+    phone: phoneNumber(),
+    name: cleanString(100),
+    email: z
+      .string()
+      .trim()
+      .transform((s) => s || null)
+      .pipe(z.email().max(254).nullable())
+      .nullable()
+      .optional(),
+    tags: customerTags.optional(),
+    note: z
+      .string()
+      .transform(cleanText)
+      .pipe(z.string().max(2000))
+      .transform((s) => s || null)
+      .nullable()
+      .optional(),
+  })
+  .strict();
+export const customerPatch = customerInput.partial();
+
+export const addressInput = z
+  .object({
+    name: cleanString(100),
+    phone: phoneNumber(),
+    divisionId: z.int().min(1),
+    districtId: z.int().min(1),
+    areaId: z.int().min(1),
+    line: cleanString(250),
+    label: z
+      .string()
+      .transform(cleanText)
+      .pipe(z.string().max(40))
+      .transform((s) => s || null)
+      .nullable()
+      .optional(),
+    isDefault: z.boolean().optional(),
+  })
+  .strict()
+  .refine((p) => placeNames(p) !== null, {
+    message: 'choose an area from the list',
+    path: ['areaId'],
+  });
+export type AddressInput = z.infer<typeof addressInput>;
