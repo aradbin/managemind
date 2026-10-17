@@ -159,6 +159,21 @@ export async function loadPromotions(
   return { rules, code: { code: hit.codeText, status: 'applied', promotionId } };
 }
 
+/** An order's own promotions, whatever their state now, for re-checking after an edit. */
+async function promotionsById(
+  tx: TenantTx,
+  list: { id: string; code: string | null; codeId: string | null }[],
+): Promise<PromotionRule[]> {
+  if (!list.length) return [];
+  const { rows } = await tx.db.execute<PromotionRow>(sql`
+    select ${PROMOTION_COLUMNS} from store.promotions p
+     where p.id = any(${sql.param(list.map((x) => x.id))}::uuid[])`);
+  return rows.map((r) => {
+    const own = list.find((x) => x.id === r.id);
+    return toRule(r, own?.code && own.codeId ? { code: own.code, id: own.codeId } : undefined);
+  });
+}
+
 /** For each product, the collections it is in among those the promotions name. */
 async function collectionsOf(
   tx: TenantTx,
@@ -266,6 +281,17 @@ export interface QuoteInput {
   /** The store's per-line limit; staff entering orders aren't held to it. */
   maxQuantityPerLine: number | null;
   settings: OrderSettings;
+  /**
+   * Editing an order (§3.9): only the promotions applied at placement are
+   * re-checked (live or not), and existing lines keep the price they were
+   * ordered at.
+   */
+  edit?:
+    | {
+        promotions: { id: string; code: string | null; codeId: string | null }[];
+        unitPrices: Record<string, number>;
+      }
+    | undefined;
 }
 
 export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
@@ -273,7 +299,9 @@ export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
     tx,
     input.lines.map((l) => l.variantId),
   );
-  const loaded = await loadPromotions(tx, input.code, input.phone);
+  const loaded = input.edit
+    ? { rules: await promotionsById(tx, input.edit.promotions), code: null }
+    : await loadPromotions(tx, input.code, input.phone);
   const facts = await customerFacts(tx, input.phone);
 
   // The zone: the staff's choice, else the area's.
@@ -320,6 +348,7 @@ export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
         : input.maxQuantityPerLine !== null && l.quantity > input.maxQuantityPerLine
           ? 'over_limit'
           : null;
+    const unitPrice = input.edit?.unitPrices[v.id] ?? v.price;
     const line: QuoteLine = {
       key,
       variantId: v.id,
@@ -329,7 +358,7 @@ export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
       optionLabels: v.optionLabels,
       sku: v.sku,
       image: v.image,
-      unitPrice: v.price,
+      unitPrice,
       compareAtPrice: v.compareAtPrice,
       quantity: l.quantity,
       subtotal: 0,
@@ -342,14 +371,14 @@ export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
     lines.push(line);
     if (v.live) {
       priced.push({
-        variant: v,
+        variant: { ...v, price: unitPrice },
         line: {
           key,
           variantId: v.id,
           productId: v.productId,
           categoryIds: v.categoryIds,
           collectionIds: collections.get(v.productId) ?? [],
-          unitPrice: v.price,
+          unitPrice,
           quantity: l.quantity,
           vatRateBp: vatRateOf(input.settings.tax, v.vatCategory),
         },
