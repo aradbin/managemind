@@ -214,6 +214,46 @@ export const shopperVerifications = store.table(
   ],
 );
 
+/**
+ * A signed-in shopper's saved addresses (§3.11), apart from the customer's:
+ * nobody has verified that the shopper owns a phone, so an account never
+ * reads a customer's addresses by phone.
+ */
+export const shopperAddresses = store.table(
+  'shopper_addresses',
+  {
+    ...tenantColumns(),
+    id: id(),
+    userId: uuid().notNull(),
+    name: text().notNull(),
+    phone: text().notNull(),
+    divisionId: smallint().notNull(),
+    districtId: smallint().notNull(),
+    areaId: integer().notNull(),
+    line: text().notNull(),
+    label: text(),
+    isDefault: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    tenantPolicy(t),
+    tenantIdUnique('shopper_addresses', t),
+    shopperRef('shopper_addresses', t),
+    foreignKey({
+      name: 'shopper_addresses_area_fk',
+      columns: [t.districtId, t.areaId],
+      foreignColumns: [areas.districtId, areas.id],
+    }),
+    index('shopper_addresses_user_idx').on(t.tenantId, t.userId),
+    uniqueIndex('shopper_addresses_one_default').on(t.tenantId, t.userId).where(sql`is_default`),
+    phoneCheck('shopper_addresses_phone_format', t.phone),
+    check('shopper_addresses_name_length', sql`char_length(${t.name}) between 1 and 100`),
+    check('shopper_addresses_line_length', sql`char_length(${t.line}) between 1 and 250`),
+    check('shopper_addresses_label_length', sql`char_length(${t.label}) <= 40`),
+  ],
+);
+
 /** Phones refused at checkout with a generic message (§3.15). */
 export const blockedPhones = store.table(
   'blocked_phones',

@@ -18,11 +18,14 @@ import {
   relayEvents,
   removeFromCart,
   resolveHost,
+  saveCheckoutDetails,
   setCartArea,
   setCartCode,
   setCartQuantity,
   shopperActor,
+  shopperAddresses,
   shopperOrderView,
+  shopperProfile,
   type TenantTx,
   withTenant,
 } from '@managemind/core';
@@ -41,6 +44,7 @@ import { queueSink, withClient } from '../db';
 import type { AppEnv } from '../env';
 import { createLimiter } from '../rate-limit/index';
 import { verifyTurnstile } from '../turnstile';
+import { currentShopper } from './account';
 
 export const CART_COOKIE = 'mm_cart';
 export const CART_COUNT_COOKIE = 'mm_cart_n';
@@ -122,6 +126,27 @@ const CheckoutState = z
     email: z.enum(['optional', 'required', 'hidden']),
     termsCheckbox: z.boolean(),
     accounts: z.boolean(),
+    /** The signed-in shopper's details and saved addresses, to fill the form (§3.11). */
+    account: z
+      .object({
+        name: z.string(),
+        email: z.string(),
+        phone: z.string().nullable(),
+        addresses: z.array(
+          z.object({
+            id: z.uuid(),
+            name: z.string(),
+            phone: z.string(),
+            divisionId: z.number().int(),
+            districtId: z.number().int(),
+            areaId: z.number().int(),
+            line: z.string(),
+            label: z.string().nullable(),
+            isDefault: z.boolean(),
+          }),
+        ),
+      })
+      .nullable(),
     turnstileSiteKey: z.string().nullable(),
   })
   .openapi('CheckoutState');
@@ -270,7 +295,7 @@ export const shopperIp = (c: Context<AppEnv>) =>
   c.req.header('cf-connecting-ip') ||
   'unknown';
 
-function cookie(c: Context<AppEnv>, name: string): string | null {
+export function cookie(c: Context<AppEnv>, name: string): string | null {
   const header = c.req.header('cookie') ?? '';
   for (const part of header.split(';')) {
     const [k, ...v] = part.trim().split('=');
@@ -280,33 +305,28 @@ function cookie(c: Context<AppEnv>, name: string): string | null {
 }
 
 /** The cart cookie (HttpOnly, /api only) and the count cookie the header reads. */
-function setCartCookies(c: Context<AppEnv>, token: string | null, count: number) {
+export function cartCookies(token: string | null, count: number): string[] {
   const base = 'Secure; SameSite=Lax';
-  if (token) {
-    c.header(
-      'Set-Cookie',
-      `${CART_COOKIE}=${token}; Path=/api; HttpOnly; ${base}; Max-Age=${CART_MAX_AGE}`,
-      {
-        append: true,
-      },
-    );
-  }
-  c.header(
-    'Set-Cookie',
+  return [
+    ...(token
+      ? [`${CART_COOKIE}=${token}; Path=/api; HttpOnly; ${base}; Max-Age=${CART_MAX_AGE}`]
+      : []),
     `${CART_COUNT_COOKIE}=${count}; Path=/; ${base}; Max-Age=${CART_MAX_AGE}`,
-    {
-      append: true,
-    },
-  );
+  ];
 }
 
-function clearCartCookies(c: Context<AppEnv>) {
-  c.header('Set-Cookie', `${CART_COOKIE}=; Path=/api; HttpOnly; Secure; SameSite=Lax; Max-Age=0`, {
-    append: true,
-  });
-  c.header('Set-Cookie', `${CART_COUNT_COOKIE}=0; Path=/; Secure; SameSite=Lax; Max-Age=0`, {
-    append: true,
-  });
+/** Both cart cookies, expired. */
+export const clearedCartCookies = (): string[] => [
+  `${CART_COOKIE}=; Path=/api; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
+  `${CART_COUNT_COOKIE}=0; Path=/; Secure; SameSite=Lax; Max-Age=0`,
+];
+
+export function setCartCookies(c: Context<AppEnv>, token: string | null, count: number) {
+  for (const value of cartCookies(token, count)) c.header('Set-Cookie', value, { append: true });
+}
+
+export function clearCartCookies(c: Context<AppEnv>) {
+  for (const value of clearedCartCookies()) c.header('Set-Cookie', value, { append: true });
 }
 
 /** A browser's write must come from the store's own origin (no Origin: SameSite=Lax still applies). */
@@ -331,7 +351,7 @@ type Run = <T>(fn: (tx: TenantTx) => Promise<T>) => Promise<T>;
  * transactions in it (events relayed after each commit), so work that
  * mustn't hold a transaction open (Turnstile, rate limits) can go between.
  */
-async function withShopStore<T>(
+export async function withShopStore<T>(
   c: Context<AppEnv>,
   fn: (run: Run, tenantId: string) => Promise<T>,
 ): Promise<T> {
@@ -354,8 +374,10 @@ async function withShopStore<T>(
 }
 
 /** One transaction in the host's store. */
-const inShopStore = <T>(c: Context<AppEnv>, fn: (tx: TenantTx, tenantId: string) => Promise<T>) =>
-  withShopStore(c, (run, tenantId) => run((tx) => fn(tx, tenantId)));
+export const inShopStore = <T>(
+  c: Context<AppEnv>,
+  fn: (tx: TenantTx, tenantId: string) => Promise<T>,
+) => withShopStore(c, (run, tenantId) => run((tx) => fn(tx, tenantId)));
 
 const EMPTY_TOTALS: ShopperCart['totals'] = {
   subtotal: 0,
@@ -429,7 +451,7 @@ export function toShopperCart(view: CartView | null, fallbackMax = 10): ShopperC
   };
 }
 
-const limiterFor = (c: Context<AppEnv>) =>
+export const limiterFor = (c: Context<AppEnv>) =>
   createLimiter(c.env.RATE_LIMITER, (e) =>
     captureException(e, { tags: { request_id: c.var.requestId } }),
   );
@@ -495,9 +517,11 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
   }) as never);
 
   app.openapi(R.checkoutState, (async (c: Context<AppEnv>) => {
-    const state = await inShopStore(c, async (tx) => {
+    const state = await inShopStore(c, async (tx, tenantId) => {
       const settings = await orderSettings(tx);
       const view = await getCart(tx, cookie(c, CART_COOKIE));
+      const userId = await currentShopper(c, tx, tenantId, settings);
+      const profile = userId ? await shopperProfile(tx, userId) : null;
       return {
         cart: toShopperCart(view, settings.checkout.maxQuantityPerLine),
         cod: { enabled: settings.cod.enabled, maxOrderValue: settings.cod.maxOrderValue },
@@ -508,6 +532,15 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
         email: settings.checkout.email,
         termsCheckbox: settings.checkout.termsCheckbox,
         accounts: settings.checkout.accounts,
+        account:
+          profile && userId
+            ? {
+                name: profile.name,
+                email: profile.email,
+                phone: profile.phone,
+                addresses: await shopperAddresses(tx, userId),
+              }
+            : null,
         turnstileSiteKey: c.env.TURNSTILE_SITE_KEY ?? null,
       };
     });
@@ -548,8 +581,11 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
         { limit: limits.perIpHour, seconds: 3600 },
       ]);
       await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, input.turnstileToken, { host, ip });
+      // A signed-in shopper's order shows in their account (§3.11).
+      const shopperUserId = await run((tx) => currentShopper(c, tx, tenantId, settings));
       const placed = await run((tx) =>
-        checkout(tx, shopperActor(), key, request, {
+        checkout(tx, shopperActor(shopperUserId), key, request, {
+          shopperUserId,
           channel: 'storefront',
           source: 'website',
           cartToken: cookie(c, CART_COOKIE),
@@ -565,6 +601,15 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
         }),
       );
       const order = placed.body as { id: string };
+      if (shopperUserId && input.saveDetails && !placed.replayed) {
+        await run((tx) =>
+          saveCheckoutDetails(tx, shopperUserId, {
+            name: input.contact.name,
+            phone: input.contact.phone,
+            address: input.address,
+          }),
+        );
+      }
       return {
         replayed: placed.replayed,
         body: {

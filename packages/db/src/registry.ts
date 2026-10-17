@@ -30,6 +30,7 @@ export const STORE_TABLES = [
   'delivery_zone_areas',
   'delivery_zones',
   // Shopper accounts
+  'shopper_addresses',
   'shopper_sessions',
   'shopper_accounts',
   'shopper_verifications',

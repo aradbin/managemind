@@ -99,16 +99,24 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
           if [ -z "$CF_STORE_TOKEN" ]; then
             echo "::warning title=CF_STORE_TOKEN::not set: store pages are not purged after changes, and custom domains are off"
           fi
+          # Shopper email (ADR 0022): with the key, accounts can be turned on.
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "::warning title=BREVO_API_KEY::not set: shopper accounts can't be turned on"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
-            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend} + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)' > "$secrets")
+            --arg brevo "$BREVO_API_KEY" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}
+              + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)
+              + (if $brevo == "" then {} else {BREVO_API_KEY: $brevo, SHOPPER_EMAIL_PROVIDER: "brevo"} end)' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \
             -c wrangler.production.json --secrets-file "$secrets"
       # The page cache is on only when purges can run (ADR 0018); until the

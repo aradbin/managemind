@@ -333,3 +333,29 @@ export async function mergeCarts(
   await touch(tx, own.id);
   return own as CartRow;
 }
+
+/**
+ * Signing in (§3.4, §3.11): the guest cart merged into the shopper's, and
+ * the token the cart cookie should now hold. A shopper's own cart from
+ * another visit gets a new token: only its hash is kept, so the old one
+ * can't be handed back.
+ */
+export async function signInCart(
+  tx: TenantTx,
+  guestToken: string | null,
+  shopperUserId: string,
+): Promise<{ token: string; itemCount: number } | null> {
+  const guest = await cartByToken(tx, guestToken);
+  const cart = await mergeCarts(tx, guestToken, shopperUserId);
+  if (!cart) return null;
+  let token = guestToken as string;
+  if (!guest || guest.id !== cart.id) {
+    token = newCartToken();
+    await tx.db
+      .update(schema.carts)
+      .set({ tokenHash: await hashCartToken(token) })
+      .where(eq(schema.carts.id, cart.id));
+  }
+  const lines = await cartLines(tx, cart.id);
+  return { token, itemCount: lines.reduce((a, l) => a + l.quantity, 0) };
+}

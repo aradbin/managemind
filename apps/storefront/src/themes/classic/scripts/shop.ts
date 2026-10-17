@@ -16,6 +16,7 @@ export interface ShopConfig {
     checkout: string;
     thanks: string;
     track: string;
+    account: string;
     terms: string | null;
   };
   shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };

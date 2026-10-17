@@ -1134,3 +1134,25 @@ button.link {
 .added[hidden] {
   display: none;
 }
+/* The account page (phase-4-plan §3.11). */
+.link-button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.orders,
+.addresses {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.orders li,
+.addresses li {
+  padding: 12px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
+}

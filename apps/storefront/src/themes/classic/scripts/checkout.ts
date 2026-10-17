@@ -31,6 +31,24 @@ interface CheckoutState {
   holiday: { active: boolean; message: { bn?: string; en?: string } };
   email: 'optional' | 'required' | 'hidden';
   termsCheckbox: boolean;
+  accounts: boolean;
+  /** The signed-in shopper's details and saved addresses (§3.11). */
+  account: {
+    name: string;
+    email: string;
+    phone: string | null;
+    addresses: {
+      id: string;
+      name: string;
+      phone: string;
+      divisionId: number;
+      districtId: number;
+      areaId: number;
+      line: string;
+      label: string | null;
+      isDefault: boolean;
+    }[];
+  } | null;
   turnstileSiteKey: string | null;
 }
 interface Placed {
@@ -86,6 +104,9 @@ function renderSummary(c: Cart) {
   if (place) place.disabled = !c.ready;
 }
 
+/** Chooses a place in the three dropdowns, as a reload or a saved address does. */
+let choosePlace: (areaId: number) => void = () => {};
+
 /** The three dropdowns, from the geography file (cached for a year). */
 async function setupAddress() {
   const geo = (await (await fetch(cfg.geo ?? '/geo/bd.json')).json()) as GeoFile;
@@ -125,9 +146,8 @@ async function setupAddress() {
       show(t('cart.error'));
     }
   });
-  // A cart that already has an area (a reload): choose it again.
-  if (cart?.areaId) {
-    const a = geo.a.find((x) => x[0] === cart?.areaId);
+  choosePlace = (areaId: number) => {
+    const a = geo.a.find((x) => x[0] === areaId);
     const s = a && geo.s.find((x) => x[0] === a[1]);
     if (a && s) {
       division.value = String(s[1]);
@@ -142,7 +162,78 @@ async function setupAddress() {
       );
       area.value = String(a[0]);
     }
+  };
+  // A cart that already has an area (a reload): choose it again.
+  if (cart?.areaId) choosePlace(cart.areaId);
+}
+
+/**
+ * A signed-in shopper (§3.11): their details filled in, their saved
+ * addresses offered, and "save my details" for next time.
+ */
+function setupAccount(account: NonNullable<CheckoutState['account']>) {
+  const input = (id: string) => document.getElementById(id) as HTMLInputElement | null;
+  const local = (phone: string) => phone.replace(/^\+88/, '');
+  const nameInput = input('c-name');
+  const phoneInput = input('c-phone');
+  const emailInput = input('c-email');
+  if (nameInput && !nameInput.value) nameInput.value = account.name;
+  if (phoneInput && !phoneInput.value && account.phone) phoneInput.value = local(account.phone);
+  if (emailInput && !emailInput.value) emailInput.value = account.email;
+  const line = document.getElementById('c-line') as HTMLTextAreaElement | null;
+  const use = async (a: (typeof account.addresses)[number]) => {
+    choosePlace(a.areaId);
+    if (line) line.value = a.line;
+    if (nameInput) nameInput.value = a.name;
+    if (phoneInput) phoneInput.value = local(a.phone);
+    try {
+      renderSummary(await api<Cart>('/cart/area', { method: 'PUT', body: { areaId: a.areaId } }));
+    } catch {
+      show(t('cart.error'));
+    }
+  };
+  const division = document.getElementById('c-division');
+  const fieldset = division?.closest('fieldset');
+  if (account.addresses.length && division) {
+    const select = el(
+      'select',
+      { id: 'c-saved' },
+      ...account.addresses.map((a) =>
+        el('option', { value: a.id, text: [a.label, a.line].filter(Boolean).join(': ') }),
+      ),
+      el('option', { value: '', text: t('checkout.newAddress') }),
+    );
+    select.addEventListener('change', () => {
+      const a = account.addresses.find((x) => x.id === select.value);
+      if (a) void use(a);
+      else if (line) line.value = '';
+    });
+    division
+      .closest('.field')
+      ?.insertAdjacentElement(
+        'beforebegin',
+        el(
+          'div',
+          { class: 'field' },
+          el('label', { for: 'c-saved', text: t('checkout.savedAddress') }),
+          select,
+        ),
+      );
+    const first = account.addresses.find((a) => a.isDefault) ?? account.addresses[0];
+    if (first) {
+      select.value = first.id;
+      void use(first);
+    }
   }
+  fieldset?.insertAdjacentElement(
+    'beforeend',
+    el(
+      'label',
+      { class: 'choice' },
+      el('input', { type: 'checkbox', name: 'saveDetails', checked: true }),
+      el('span', { text: t('checkout.saveDetails') }),
+    ),
+  );
 }
 
 type Turnstile = {
@@ -231,6 +322,7 @@ function collect(): Record<string, unknown> | null {
     paymentMethod: 'cod',
     expectedTotal: cart?.totals.total ?? 0,
     ...(data.get('acceptTerms') ? { acceptTerms: true } : {}),
+    ...(data.get('saveDetails') ? { saveDetails: true } : {}),
   };
 }
 
@@ -357,6 +449,13 @@ async function start() {
   renderSummary(state.cart);
   form.hidden = false;
   await setupAddress().catch(() => show(t('cart.error')));
+  if (state.account) setupAccount(state.account);
+  else if (state.accounts && cfg.links.account) {
+    form.insertAdjacentElement(
+      'beforebegin',
+      el('p', {}, el('a', { href: cfg.links.account, text: t('checkout.signIn') })),
+    );
+  }
   if (state.turnstileSiteKey) setupTurnstile(state.turnstileSiteKey);
   form.addEventListener('submit', (e) => void submit(e));
   tracker()?.beginCheckout(

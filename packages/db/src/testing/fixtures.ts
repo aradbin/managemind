@@ -133,6 +133,9 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
     `insert into store.blocked_phones (tenant_id, phone, reason) values (${tenant}, '+8801700000009', 'fixture')`,
   shopper_users: (tenant) =>
     `insert into store.shopper_users (tenant_id, name, email) values (${tenant}, 'Fixture', 'fixture-' || gen_random_uuid() || '@example.test')`,
+  shopper_addresses: (tenant) =>
+    `insert into store.shopper_addresses (tenant_id, user_id, name, phone, division_id, district_id, area_id, line)
+     values (${tenant}, ${first('shopper_users')}, 'Fixture', '+8801700000001', 6, 47, 513, 'Road 1')`,
   shopper_sessions: (tenant) =>
     `insert into store.shopper_sessions (tenant_id, user_id, token, expires_at)
      values (${tenant}, ${first('shopper_users')}, gen_random_uuid()::text, now() + interval '1 day')`,

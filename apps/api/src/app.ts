@@ -15,6 +15,7 @@ import { registerDevMailbox } from './routes/dev-mailbox';
 import { registerHealth } from './routes/health';
 import { registerDeepHealth } from './routes/health-deep';
 import { registerStoreContext } from './routes/store-context';
+import { registerAccount } from './store/account';
 import { registerCommerce } from './store/commerce';
 import { registerStorePages } from './store/pages';
 
@@ -52,6 +53,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerStoreContext(app);
   registerStorePages(app);
   registerCommerce(app);
+  registerAccount(app);
   registerAuth(app);
   registerAdmin(app);
   registerPlatform(app);

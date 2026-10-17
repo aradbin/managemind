@@ -385,7 +385,10 @@ export const ordersEn = {
   'checkoutSettings.terms': 'Ask shoppers to accept the terms',
   'checkoutSettings.termsHint': 'Needs a published terms page.',
   'checkoutSettings.accounts': 'Shopper accounts',
-  'checkoutSettings.accountsSoon': 'Arrives with shopper sign-in by email code.',
+  'checkoutSettings.accountsHint':
+    'Shoppers can sign in with a code sent to their email, to see their orders and keep addresses. Guests can still order.',
+  'checkoutSettings.accountsUnavailable':
+    'Accounts can’t be turned on yet: shopper email isn’t set up for the platform.',
   'checkoutSettings.cod': 'Cash on delivery',
   'checkoutSettings.codEnabled': 'Offer cash on delivery',
   'checkoutSettings.codOffNotice':

@@ -381,7 +381,10 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'checkoutSettings.terms': 'ক্রেতাদের শর্তাবলিতে সম্মতি দিতে বলুন',
   'checkoutSettings.termsHint': 'প্রকাশিত শর্তাবলির পাতা লাগবে।',
   'checkoutSettings.accounts': 'ক্রেতার অ্যাকাউন্ট',
-  'checkoutSettings.accountsSoon': 'ইমেইল কোডে ক্রেতার সাইন-ইন চালু হলে আসবে।',
+  'checkoutSettings.accountsHint':
+    'ক্রেতারা ইমেইলে পাঠানো কোড দিয়ে সাইন ইন করে নিজের অর্ডার দেখতে ও ঠিকানা রাখতে পারবেন। অতিথিরাও অর্ডার দিতে পারবেন।',
+  'checkoutSettings.accountsUnavailable':
+    'এখনই অ্যাকাউন্ট চালু করা যাবে না: প্ল্যাটফর্মে ক্রেতাদের ইমেইল এখনো চালু হয়নি।',
   'checkoutSettings.cod': 'ক্যাশ অন ডেলিভারি',
   'checkoutSettings.codEnabled': 'ক্যাশ অন ডেলিভারি দিন',
   'checkoutSettings.codOffNotice':

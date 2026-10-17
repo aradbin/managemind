@@ -13,6 +13,8 @@ const FORWARDED_HEADERS = [
   'accept-language',
   // Checkout keeps the user agent with the order.
   'user-agent',
+  // Shopper sign-in code requests carry their Turnstile token here (§3.15).
+  'x-turnstile-token',
 ];
 
 /**

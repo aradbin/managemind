@@ -23,12 +23,12 @@ import {
   withPlatform,
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
-import { PERMISSIONS, STORE_ROLES } from '@managemind/shared';
+import { AppError, PERMISSIONS, STORE_ROLES } from '@managemind/shared';
 import { checkoutSettings, codSettings } from '@managemind/shared/orders';
 import { storeProfile, taxSettings, tenantSettings } from '@managemind/shared/settings';
 import { storefrontSettings } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
-import { createMailer } from '../auth/email';
+import { createMailer, shopperEmailReady } from '../auth/email';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
@@ -321,6 +321,12 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   );
   admin.openapi(R.updateStore, async (c) => {
     const patch = compact(c.req.valid('json'));
+    // Accounts sign in by email code, so they need shopper email (ADR 0022).
+    if (patch.checkout?.accounts && !shopperEmailReady(c.var.config)) {
+      throw new AppError('feature_unavailable', {
+        detail: 'Shopper email is not set up yet, so accounts can’t be turned on',
+      });
+    }
     return c.json(
       await inStore(
         c,

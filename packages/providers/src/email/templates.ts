@@ -73,6 +73,14 @@ const ROLE_NAMES: Record<Locale, Record<StoreRole, string>> = {
 
 const COPY = {
   en: {
+    shopperSignInCode: {
+      subject: 'Your {store} sign-in code',
+      body: [
+        'Use this code to sign in to your account at {store}. It works for {minutes} minutes.',
+      ],
+      footer:
+        "If you didn't ask for this code, you can ignore this email. Nobody can sign in without it.",
+    },
     signInCode: {
       subject: 'Your {platform} sign-in code',
       body: ['Use this code to sign in to {platform}. It works for {minutes} minutes.'],
@@ -109,6 +117,11 @@ const COPY = {
     },
   },
   bn: {
+    shopperSignInCode: {
+      subject: '{store}-এ সাইন ইনের কোড',
+      body: ['{store}-এ আপনার অ্যাকাউন্টে সাইন ইন করতে এই কোডটি ব্যবহার করুন। এটি {minutes} মিনিট কাজ করবে।'],
+      footer: 'আপনি এই কোড না চেয়ে থাকলে ইমেইলটি উপেক্ষা করুন। কোড ছাড়া কেউ সাইন ইন করতে পারবে না।',
+    },
     signInCode: {
       subject: '{platform}-এ সাইন ইনের কোড',
       body: ['{platform}-এ সাইন ইন করতে এই কোডটি ব্যবহার করুন। এটি {minutes} মিনিট কাজ করবে।'],
@@ -161,6 +174,26 @@ export function signInCodeEmail(input: SignInCodeEmail): RenderedEmail {
     // Codes stay in Latin digits: they are typed into an input.
     code: input.code,
     values: { platform: input.platformName, minutes: formatNumber(input.locale, input.minutes) },
+    footer: copy.footer,
+  });
+}
+
+export interface ShopperSignInCodeEmail {
+  locale: Locale;
+  storeName: string;
+  code: string;
+  minutes: number;
+}
+
+/** A shopper's sign-in code (phase-4-plan §3.11), from the store, in the store's language. */
+export function shopperSignInCodeEmail(input: ShopperSignInCodeEmail): RenderedEmail {
+  const copy = COPY[input.locale].shopperSignInCode;
+  return render(copy.subject, {
+    locale: input.locale,
+    platformName: input.storeName,
+    paragraphs: [...copy.body],
+    code: input.code,
+    values: { store: input.storeName, minutes: formatNumber(input.locale, input.minutes) },
     footer: copy.footer,
   });
 }

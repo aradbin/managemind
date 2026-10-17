@@ -22,7 +22,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
-import { api, unwrap } from '../lib/api';
+import { ApiError, api, unwrap } from '../lib/api';
 import { priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { blockedQuery, dateOnly } from '../lib/orders';
@@ -176,14 +176,12 @@ export function CheckoutSettingsPage() {
               type="checkbox"
               className="mt-3 size-5"
               checked={checkout.accounts}
-              // Shopper sign-in arrives with the email provider (phase-4-plan PR 10).
-              disabled={!checkout.accounts}
               onChange={(e) => setCheckout({ ...checkout, accounts: e.target.checked })}
             />
             <span className="flex min-h-11 flex-col justify-center">
               {t('checkoutSettings.accounts')}
               <span className="text-sm text-muted-foreground">
-                {t('checkoutSettings.accountsSoon')}
+                {t('checkoutSettings.accountsHint')}
               </span>
             </span>
           </label>
@@ -254,7 +252,13 @@ export function CheckoutSettingsPage() {
             />
           </div>
         </fieldset>
-        {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        {save.error && (
+          <Notice tone="error">
+            {save.error instanceof ApiError && save.error.problem?.code === 'feature_unavailable'
+              ? t('checkoutSettings.accountsUnavailable')
+              : saveErrorMessage(save.error, t)}
+          </Notice>
+        )}
         {canEdit && (
           <div>
             <Button type="submit" disabled={save.isPending}>

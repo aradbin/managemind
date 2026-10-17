@@ -176,6 +176,13 @@
       "when": 1792262231208,
       "tag": "0024_sale_edges",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792262951394,
+      "tag": "0025_shopper_addresses",
+      "breakpoints": true
     }
   ]
 }

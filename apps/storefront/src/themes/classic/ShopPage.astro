@@ -31,6 +31,7 @@ const shop = {
     checkout: href(ctx.link, { kind: 'checkout' }),
     thanks: href(ctx.link, { kind: 'thanks' }),
     track: href(ctx.link, { kind: 'track' }),
+    account: href(ctx.link, { kind: 'account' }),
     terms: terms ? href(ctx.link, { kind: 'page', slug: terms.slug }) : null,
   },
   shop: ctx.layout.shop,
