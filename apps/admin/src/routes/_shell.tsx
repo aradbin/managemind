@@ -4,14 +4,26 @@
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router';
-import { Home, type LucideIcon, Mail, Package, Settings, Shield, User } from 'lucide-react';
+import {
+  ExternalLink,
+  Home,
+  type LucideIcon,
+  Mail,
+  Package,
+  Palette,
+  Settings,
+  Shield,
+  User,
+} from 'lucide-react';
 import { useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
 import { LanguageSwitch } from '../components/language-switch';
+import { usePermission } from '../components/permission-gate';
 import { StoreSwitcher } from '../components/store-switcher';
 import { useToast } from '../components/toast';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, healthQuery, meQuery, unwrap } from '../lib/api';
+import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { chooseStore, refreshAccess } from '../lib/store';
 
@@ -34,7 +46,7 @@ export const Route = createFileRoute('/_shell')({
 });
 
 interface NavItem {
-  to: '/' | '/products' | '/settings' | '/account' | '/platform' | '/dev/mailbox';
+  to: '/' | '/products' | '/online-store' | '/settings' | '/account' | '/platform' | '/dev/mailbox';
   label: AdminKey;
   icon: LucideIcon;
 }
@@ -42,11 +54,17 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/', label: 'nav.home', icon: Home },
   { to: '/products', label: 'nav.catalog', icon: Package },
+  { to: '/online-store', label: 'nav.onlineStore', icon: Palette },
   { to: '/settings', label: 'nav.settings', icon: Settings },
   { to: '/account', label: 'nav.account', icon: User },
 ];
 /** Bottom bar columns by item count (static class names, for Tailwind). */
-const COLUMNS: Record<number, string> = { 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5' };
+const COLUMNS: Record<number, string> = {
+  3: 'grid-cols-3',
+  4: 'grid-cols-4',
+  5: 'grid-cols-5',
+  6: 'grid-cols-6',
+};
 const PLATFORM: NavItem = { to: '/platform', label: 'nav.platform', icon: Shield };
 const MAILBOX: NavItem = { to: '/dev/mailbox', label: 'dev.mailbox', icon: Mail };
 
@@ -86,6 +104,7 @@ function Shell() {
         <header className="flex items-center justify-between gap-2 border-b border-border px-2 py-2 md:px-4">
           <StoreSwitcher me={me} />
           <div className="flex shrink-0 items-center">
+            <ViewStore />
             <LanguageSwitch />
             <AccountMenu me={me} />
           </div>
@@ -131,6 +150,26 @@ function Shell() {
         {links(nav, 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs')}
       </nav>
     </div>
+  );
+}
+
+/** Opens the store on its primary address in a new tab (phase-3-plan §7). */
+function ViewStore() {
+  const { t } = useLocale();
+  const allowed = usePermission('settings.read');
+  const store = useQuery({ ...storeSettingsQuery, enabled: allowed });
+  if (!store.data) return null;
+  return (
+    <a
+      href={store.data.storeUrl}
+      target="_blank"
+      rel="noopener"
+      className="flex min-h-11 items-center gap-1 rounded-md px-2 text-sm hover:bg-muted"
+    >
+      <ExternalLink aria-hidden className="size-4" />
+      <span className="hidden sm:inline">{t('store.view')}</span>
+      <span className="sr-only sm:hidden">{t('store.view')}</span>
+    </a>
   );
 }
 

@@ -155,6 +155,8 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
   await test.step('the store answers on its storefront', async () => {
     const res = await owner.goto(`${STOREFRONT}/?store=${p.slug}`);
     expect(res?.status()).toBe(200);
-    await expect(owner.getByRole('heading', { level: 1 })).toContainText(p.storeName);
+    // A new store shows the default theme: its name is the title and the header's brand.
+    await expect(owner).toHaveTitle(p.storeName);
+    await expect(owner.getByRole('banner').getByRole('link', { name: p.storeName })).toBeVisible();
   });
 });

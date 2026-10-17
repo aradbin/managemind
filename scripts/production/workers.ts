@@ -28,6 +28,8 @@ const storefront = 'managemind-storefront';
 const platformDomain = process.env.PLATFORM_DOMAIN;
 const storeDomain = process.env.STORE_DOMAIN;
 const routes = Boolean(platformDomain && storeDomain);
+// Purges and custom hostnames work on the store zone (ADR 0018, 0019).
+const storeZoneId = routes ? await cf.zoneId(storeDomain as string) : undefined;
 writeWorkerConfigs({
   environment: 'production',
   api,
@@ -37,6 +39,7 @@ writeWorkerConfigs({
   platformDomain: platformDomain || workersDev,
   storeDomain: storeDomain || workersDev,
   adminHost: routes ? `admin.${platformDomain}` : `${api}.${workersDev}`,
+  ...(storeZoneId ? { storeZoneId } : {}),
   emailProvider: 'resend',
   commit,
   routes,
@@ -47,6 +50,8 @@ writeWorkerConfigs({
 const probe = `smoke-${commit.slice(0, 7)}`;
 setOutput('api_url', routes ? `https://api.${platformDomain}` : `https://${api}.${workersDev}`);
 setOutput('admin_url', routes ? `https://admin.${platformDomain}` : `https://${api}.${workersDev}`);
+// A demo store's home page, for the page-cache check (empty without routes).
+setOutput('demo_store_url', routes ? `https://demo-fashion.${storeDomain}/` : '');
 setOutput(
   'storefront_url',
   routes ? `https://${probe}.${storeDomain}` : `https://${storefront}.${workersDev}`,

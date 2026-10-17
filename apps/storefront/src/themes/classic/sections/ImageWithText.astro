@@ -1,0 +1,28 @@
+---
+import type { ThemeSection } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+import Img from '../Img.astro';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'image_with_text' }>;
+}
+const { ctx, section } = Astro.props;
+const image = ctx.image(section.mediaId);
+const heading = ctx.text(section.heading);
+const text = ctx.text(section.text);
+const button = section.button
+  ? { label: ctx.text(section.button.label), href: ctx.themeLink(section.button.link) }
+  : null;
+---
+
+<section class="section">
+  <div class={`split ${section.imagePosition}`}>
+    <div>{image && <Img image={image} alt={heading} sizes="(min-width: 800px) 50vw, 100vw" />}</div>
+    <div>
+      {heading && <h2>{heading}</h2>}
+      {text.split(/\n{2,}/).map((p) => <p>{p}</p>)}
+      {button?.href && button.label && <a class="button" href={button.href}>{button.label}</a>}
+    </div>
+  </div>
+</section>

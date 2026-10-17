@@ -8,5 +8,7 @@ export * from './imports/index';
 export * from './inventory/index';
 export * from './outbox';
 export * from './platform';
+export * from './storefront/index';
 export * from './tenancy/index';
 export * from './tenant';
+export * from './theme/index';

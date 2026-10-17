@@ -31,14 +31,14 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 16, 2026)**
+**Status (Oct 17, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
 | 0 — Foundations | Done | [`phase-0-report.md`](phases/phase-0-report.md) |
 | 1 — Platform core | Done; in production on `managemind.site` and `*.managemind.store` | [`phase-1-report.md`](phases/phase-1-report.md) |
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
-| 3 — Storefront, themes and domains | Planned; the owner answered its questions on Oct 16 | [`phase-3-plan.md`](phases/phase-3-plan.md) |
+| 3 — Storefront, themes and domains | Built and tested locally; production checks wait on `CF_STORE_TOKEN`, Cloudflare for SaaS and the test hostname | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -385,41 +385,41 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Rendering and caching (the key to staying free)**
 
-- [ ] Catalog pages (home, category, collection, product) are server-rendered once and cached at Cloudflare's edge per tenant and locale; cache is invalidated by outbox events when products, prices or stock change (purge or version bump, as decided in Phase 0). Most shopper traffic then never reaches the API or the database.
-- [ ] Cart, checkout and account parts are small client-side islands calling the API directly; never cached.
-- [ ] A public, read-only catalog endpoint set in the API designed for caching (stable URLs, cache headers, ETags).
+- [x] Catalog pages (home, category, collection, product) are server-rendered once and cached at Cloudflare's edge per tenant and locale; cache is invalidated by outbox events when products, prices or stock change (purge or version bump, as decided in Phase 0). Most shopper traffic then never reaches the API or the database. *Purged by tag ([ADR 0018](adr/0018-page-tags-and-purges.md)); pages are cached only once `CF_STORE_TOKEN` is set.*
+- [ ] Cart, checkout and account parts are small client-side islands calling the API directly; never cached. *Moved to Phase 4 (Phase 3 Q1).*
+- [x] A public, read-only catalog endpoint set in the API designed for caching (stable URLs, cache headers, ETags).
 
 **Themes**
 
-- [ ] A theme is a named template set plus design tokens (colors, fonts, radius, logo, banners, homepage sections) stored in tenant settings and validated by a zod schema.
-- [ ] Start with one theme and two or three homepage layouts; adding a theme later means adding a folder of templates, not changing the core.
-- [ ] Theme settings editor in the admin with live preview.
+- [x] A theme is a named template set plus design tokens (colors, fonts, radius, logo, banners, homepage sections) stored in tenant settings and validated by a zod schema.
+- [x] Start with one theme and two or three homepage layouts; adding a theme later means adding a folder of templates, not changing the core. *One theme (`classic`) with three presets: fashion, grocery, general.*
+- [x] Theme settings editor in the admin with live preview.
 
 **Pages and SEO**
 
-- [ ] Home, category, collection, product, search, cart, checkout, order confirmation, order tracking (order number + phone), account, static pages (about, contact, policies).
-- [ ] Per-tenant sitemap, robots, canonical URLs, Open Graph, schema.org Product and Offer data, hreflang for Bangla and English.
-- [ ] Performance targets on a mid-range Android phone over 4G: LCP under 2.5 s, INP under 200 ms, CLS under 0.1; JavaScript on product pages under about 50 KB compressed.
+- [ ] Home, category, collection, product, search, cart, checkout, order confirmation, order tracking (order number + phone), account, static pages (about, contact, policies). *Phase 3 built home, category, collection, product, search and static pages; the rest moved to Phase 4 (Q1).*
+- [x] Per-tenant sitemap, robots, canonical URLs, Open Graph, schema.org Product and Offer data, hreflang for Bangla and English.
+- [x] Performance targets on a mid-range Android phone over 4G: LCP under 2.5 s, INP under 200 ms, CLS under 0.1; JavaScript on product pages under about 50 KB compressed. *Checked by Lighthouse CI and the E2E on every preview (TBT stands in for INP).*
 
-* [ ] Tracking settings per store: Meta Pixel ID and Google Analytics 4 ID; browser events for page view, product view, add to cart, checkout started and purchase, with a cookie consent banner. Server-side Meta Conversions API follows in Phase 9.
-* [ ] Floating WhatsApp and Messenger chat buttons, configured per store (number or page link, greeting text, show or hide by page).
+* [x] Tracking settings per store: Meta Pixel ID and Google Analytics 4 ID; browser events for page view, product view, add to cart, checkout started and purchase, with a cookie consent banner. Server-side Meta Conversions API follows in Phase 9. *Page and product views in Phase 3; cart, checkout and purchase events come with Phase 4.*
+* [x] Floating WhatsApp and Messenger chat buttons, configured per store (number or page link, greeting text, show or hide by page).
 
-- [ ] Product search using Postgres trigram matching (`pg_trgm`) on Bangla and English names, SKUs and tags, tolerant of typos and spelling variants; filters by category, price and availability.
+- [x] Product search using Postgres trigram matching (`pg_trgm`) on Bangla and English names, SKUs and tags, tolerant of typos and spelling variants; filters by category, price and availability.
 
-* [ ] Holiday mode per store: pause new orders for a date range (for example Eid) with a notice banner, while browsing stays on.
-* [ ] Display options per store: Bangla or Western numerals for prices and dates; image alt text taken from product names (editable) for search engines and screen readers.
-* [ ] Storefront meets WCAG 2.1 AA for contrast, labels and keyboard use.
+* [x] Holiday mode per store: pause new orders for a date range (for example Eid) with a notice banner, while browsing stays on. *The banner and date window in Phase 3; pausing orders comes with orders in Phase 4.*
+* [x] Display options per store: Bangla or Western numerals for prices and dates; image alt text taken from product names (editable) for search engines and screen readers.
+* [x] Storefront meets WCAG 2.1 AA for contrast, labels and keyboard use.
 
-- [ ] Business details in the store profile (registered name, address, trade license and DBID numbers), shown in the storefront footer and on invoices; the legal review confirms which fields are required.
+- [x] Business details in the store profile (registered name, address, trade license and DBID numbers), shown in the storefront footer and on invoices; the legal review confirms which fields are required.
 
 **Domains**
 
-- [ ] Every tenant gets `<slug>.<store domain>` through a wildcard route.
-- [ ] Custom domains through Cloudflare for SaaS custom hostnames: the admin shows the CNAME record to add, the platform verifies it and Cloudflare issues the certificate. Recommend `www` plus a redirect from the bare domain.
+- [x] Every tenant gets `<slug>.<store domain>` through a wildcard route.
+- [x] Custom domains through Cloudflare for SaaS custom hostnames: the admin shows the CNAME record to add, the platform verifies it and Cloudflare issues the certificate. Recommend `www` plus a redirect from the bare domain. *Built ([ADR 0019](adr/0019-custom-domains.md)); needs Cloudflare for SaaS on and `CF_STORE_TOKEN` in production.*
 
-* [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on.
+* [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on. *The wildcard route and the fallback origin's provisioning are built (the origin waits for Cloudflare for SaaS); sender records come with Phase 4's first shopper email; Search Console awaits the owner's confirmation.*
 
-- [ ] Once a custom domain is connected, the store's subdomain permanently (301) redirects to it, and canonical URLs, sitemap and feeds use the custom domain, so search engines never see two copies of the store.
+- [x] Once a custom domain is connected, the store's subdomain permanently (301) redirects to it, and canonical URLs, sitemap and feeds use the custom domain, so search engines never see two copies of the store.
 
 **Acceptance criteria**
 

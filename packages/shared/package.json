@@ -14,7 +14,11 @@
     "./slug": "./src/slug.ts",
     "./rich-text": "./src/rich-text.ts",
     "./catalog": "./src/catalog/index.ts",
-    "./catalog/import": "./src/catalog/import.ts"
+    "./catalog/import": "./src/catalog/import.ts",
+    "./storefront": "./src/storefront/index.ts",
+    "./storefront/urls": "./src/storefront/urls.ts",
+    "./storefront/listing": "./src/storefront/listing.ts",
+    "./storefront/cache": "./src/storefront/cache.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

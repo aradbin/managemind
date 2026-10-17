@@ -15,6 +15,7 @@ import { registerDevMailbox } from './routes/dev-mailbox';
 import { registerHealth } from './routes/health';
 import { registerDeepHealth } from './routes/health-deep';
 import { registerStoreContext } from './routes/store-context';
+import { registerStorePages } from './store/pages';
 
 /**
  * The admin reaches the API under its own host as /api/* (phase-1-plan §3.5):
@@ -48,6 +49,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerHealth(app);
   registerDeepHealth(app);
   registerStoreContext(app);
+  registerStorePages(app);
   registerAuth(app);
   registerAdmin(app);
   registerPlatform(app);

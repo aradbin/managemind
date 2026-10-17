@@ -17,6 +17,7 @@
   "devDependencies": {
     "@astrojs/check": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@managemind/core": "workspace:*",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"

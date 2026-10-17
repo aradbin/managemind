@@ -1,0 +1,205 @@
+---
+import type { ProductPageData, StoreSpecification } from '@managemind/core';
+import { renderRichText, richTextToPlainText } from '@managemind/shared/rich-text';
+import { messengerLink, whatsappLink } from '@managemind/shared/storefront';
+import { number, price } from '../../../lib/format';
+import { absolute, alternates, href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import { breadcrumbLd, type Head, productLd } from '../../../lib/seo';
+import Img from '../Img.astro';
+import Layout from '../Layout.astro';
+import ProductList from '../ProductList.astro';
+
+interface Props {
+  ctx: PageContext;
+  data: ProductPageData;
+  noindex: boolean;
+}
+const { ctx, data, noindex } = Astro.props;
+const { product, related } = data;
+const { t, d, theme, layout } = ctx;
+const url = absolute(ctx.link, href(ctx.link, { kind: 'product', slug: product.slug }));
+const langs = alternates(
+  ctx.link,
+  (slug) => (slug ? { kind: 'product', slug } : null),
+  product.slugs,
+);
+const languageHref =
+  langs.find((a) => a.locale !== ctx.locale && a.locale !== 'x-default')?.url ??
+  href(ctx.link, { kind: 'home' });
+
+// The first available variant is chosen to start with.
+const start = product.variants.find((v) => v.available) ?? product.variants[0];
+const prices = product.variants.map((v) => v.price);
+const minPrice = Math.min(...prices);
+const maxPrice = Math.max(...prices);
+const imageIndex = (mediaId: string | null) =>
+  mediaId ? product.media.findIndex((m) => m.id === mediaId) : -1;
+const variantData = product.variants.map((v) => ({
+  id: v.id,
+  values: v.optionValueIds,
+  price: price(v.price, d),
+  compare:
+    v.compareAtPrice !== null && v.compareAtPrice > v.price ? price(v.compareAtPrice, d) : null,
+  available: v.available,
+  sku: v.sku,
+  image: imageIndex(v.imageMediaId),
+}));
+const anySku = product.variants.some((v) => v.sku);
+const startCompare =
+  start && start.compareAtPrice !== null && start.compareAtPrice > start.price
+    ? start.compareAtPrice
+    : null;
+
+const description = product.description ? renderRichText(product.description) : '';
+const plain =
+  product.seoDescription ??
+  (product.description ? richTextToPlainText(product.description).slice(0, 160) : undefined);
+const images = product.media.map((m) => absolute(ctx.link, `/media/${m.files.at(-1)?.file ?? ''}`));
+const crumbs = [
+  { name: t('nav.home'), href: href(ctx.link, { kind: 'home' }) },
+  ...product.breadcrumbs.map((c) => ({
+    name: c.name,
+    href: href(ctx.link, { kind: 'category', slug: c.slug }),
+  })),
+];
+const head: Head = {
+  title: `${product.seoTitle ?? product.title} | ${layout.store.name}`,
+  ...(plain ? { description: plain } : {}),
+  canonical: url,
+  alternates: langs,
+  noindex,
+  image: images[0] ?? null,
+  type: 'product',
+  jsonLd: [
+    productLd(product, url, images),
+    breadcrumbLd([
+      ...crumbs.map((c) => ({ name: c.name, url: absolute(ctx.link, c.href) })),
+      { name: product.title, url },
+    ]),
+  ],
+};
+
+const specValue = (s: StoreSpecification): string => {
+  if (s.type === 'number' && s.number !== null)
+    return `${number(s.number, d)}${s.unit ? ` ${s.unit}` : ''}`;
+  if (s.type === 'boolean' && s.boolean !== null)
+    return s.boolean ? t('product.yes') : t('product.no');
+  return s.values.join(', ');
+};
+const specs = product.specifications.filter((s) => specValue(s));
+const chat = layout.storefront.chat;
+const greeting = ctx.text(chat.greeting);
+const orderText = t('chat.productGreeting', { greeting, product: product.title, url }).trim();
+const showOrder = chat.show !== 'none' && Boolean(chat.whatsapp || chat.messenger);
+const count = product.media.length;
+---
+
+<Layout ctx={ctx} head={head} languageHref={languageHref} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
+  <nav class="crumbs" aria-label={t('breadcrumb.label')}>
+    <ol>
+      {crumbs.map((c) => <li><a href={c.href}>{c.name}</a></li>)}
+      <li aria-current="page">{product.title}</li>
+    </ol>
+  </nav>
+  <div class="product" data-product>
+    <section aria-label={t('product.images')} data-gallery>
+      {count > 0 ? (
+        <>
+          <ul class="gallery-main" role="list" data-gallery-track>
+            {product.media.map((m, i) => (
+              <li aria-label={count > 1 ? t('product.image', { n: i + 1, count }) : undefined}>
+                <Img image={m} alt={product.title} sizes="(min-width: 900px) 55vw, 100vw" eager={i === 0} />
+              </li>
+            ))}
+          </ul>
+          {count > 1 && (
+            <ul class="thumbs" role="list">
+              {product.media.map((m, i) => (
+                <li>
+                  <button type="button" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} aria-label={t('product.image', { n: i + 1, count })}>
+                    <Img image={m} alt="" sizes="64px" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <div class="card-media" style="border-radius: var(--radius)"></div>
+      )}
+    </section>
+    <div>
+      {product.brand && <p class="card-brand">{product.brand}</p>}
+      <h1>{product.title}</h1>
+      <p class="product-price">
+        <span class={`price${startCompare ? ' sale' : ''}`} data-price>
+          {product.variants.length > 1 && minPrice !== maxPrice && !product.options.length ? t('product.from', { price: price(minPrice, d) }) : price(start?.price ?? minPrice, d)}
+        </span>
+        <s class="compare" data-compare hidden={!startCompare}>
+          <span class="visually-hidden">{t('product.regular')}: </span><span data-compare-value>{startCompare ? price(startCompare, d) : ''}</span>
+        </s>
+      </p>
+      <p class={`stock${start?.available ? '' : ' out'}`} data-stock data-in={t('product.inStock')} data-out={t('product.outOfStock')} data-none={t('product.unavailable')} role="status">
+        {start?.available ? t('product.inStock') : t('product.outOfStock')}
+      </p>
+      {product.options.length > 0 && (
+        <form class="options" data-variant-picker>
+          {product.options.map((option) => (
+            <fieldset>
+              <legend>{option.name}</legend>
+              <div class="choices">
+                {option.values.map((value) => (
+                  <label>
+                    <input type="radio" name={option.id} value={value.id} checked={start?.optionValueIds.includes(value.id)} />
+                    <span>{value.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </form>
+      )}
+      {showOrder && (
+        <div>
+          <p style="margin:16px 0 0">{t('product.order')}</p>
+          <div class="order">
+            {chat.whatsapp && <a class="button" href={whatsappLink(chat.whatsapp, orderText)} target="_blank" rel="noopener">{t('chat.whatsapp')}</a>}
+            {chat.messenger && <a class="button secondary" href={messengerLink(chat.messenger, orderText)} target="_blank" rel="noopener">{t('chat.messenger')}</a>}
+          </div>
+        </div>
+      )}
+      {anySku && <p class="count" data-sku-row hidden={!start?.sku}>{t('product.sku')}: <span data-sku>{start?.sku ?? ''}</span></p>}
+      {description && (
+        <section class="rich" aria-labelledby="desc">
+          <h2 id="desc">{t('product.description')}</h2>
+          <Fragment set:html={description} />
+        </section>
+      )}
+      {specs.length > 0 && (
+        <section aria-labelledby="specs">
+          <h2 id="specs">{t('product.specifications')}</h2>
+          {theme.pages.product.specifications === 'table' ? (
+            <table class="specs">
+              <tbody>
+                {specs.map((s) => <tr><th scope="row">{s.name}</th><td>{specValue(s)}</td></tr>)}
+              </tbody>
+            </table>
+          ) : (
+            <dl class="specs-list">
+              {specs.map((s) => <div><dt>{s.name}</dt><dd>{specValue(s)}</dd></div>)}
+            </dl>
+          )}
+        </section>
+      )}
+    </div>
+  </div>
+  {related.length > 0 && (
+    <section class="section" aria-labelledby="related">
+      <h2 id="related">{t('product.related')}</h2>
+      <ProductList ctx={ctx} products={related} layout="carousel" />
+    </section>
+  )}
+  <script type="application/json" id="mm-variants" set:html={JSON.stringify(variantData).replace(/</g, '\\u003c')} />
+  <script src="../scripts/product.ts"></script>
+</Layout>

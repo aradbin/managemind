@@ -125,6 +125,19 @@ export async function applyMovements(
     rows.map((r) => [key({ variantId: r.variant_id, locationId: r.location_id }), { ...r }]),
   );
 
+  // Each variant's available stock across locations before the movements, to
+  // tell when it goes in or out of stock (phase-3-plan §3.2).
+  const { rows: before } = await tx.db.execute<{
+    id: string;
+    product_id: string;
+    limited: boolean;
+    available: number;
+  }>(sql`
+    select v.id, v.product_id, v.track_inventory and not v.allow_backorder as limited,
+           coalesce((select sum(l.on_hand - l.reserved) from store.inventory_levels l
+                      where l.variant_id = v.id), 0)::int as available
+      from store.variants v where v.id = any(${sql.param([...new Set(variantIds)])}::uuid[])`);
+
   // 2. Movements already written under the same idempotency key are skipped.
   const keys = moves.map((m) => m.idempotencyKey).filter((k): k is string => Boolean(k));
   const done = new Set<string>();
@@ -201,6 +214,24 @@ export async function applyMovements(
       await emit(tx, 'inventory.level.changed', {
         aggregateType: 'inventory',
         payload: { variantIds: ids.slice(i, i + 500), reason: written[0]?.reason ?? 'adjustment' },
+      });
+    }
+    // Only a variant crossing zero changes what shoppers see, so only that
+    // purges cached pages; every other movement doesn't (§3.2).
+    const delta = new Map<string, number>();
+    for (const m of written) {
+      const sign = MOVEMENT_EFFECT[m.type].column === 'reserved' ? -1 : 1;
+      delta.set(m.variantId, (delta.get(m.variantId) ?? 0) + sign * m.quantity);
+    }
+    const crossed = before.filter((b) => {
+      const after = b.available + (delta.get(b.id) ?? 0);
+      return b.limited && b.available > 0 !== after > 0;
+    });
+    const productIds = [...new Set(crossed.map((b) => b.product_id))];
+    for (let i = 0; i < productIds.length; i += 500) {
+      await emit(tx, 'inventory.availability.changed', {
+        aggregateType: 'inventory',
+        payload: { productIds: productIds.slice(i, i + 500) },
       });
     }
   }
@@ -439,7 +470,7 @@ export async function listInventory(
           query.q
             ? sql`and (lower(v.sku) like ${`${query.q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`}
           or exists (select 1 from store.product_translations t where t.product_id = v.product_id
-                      and t.title ilike ${`%${query.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`}))`
+                      and app.search_text(t.title) like app.search_text(${`%${query.q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`})))`
             : sql``
         }
       order by v.id

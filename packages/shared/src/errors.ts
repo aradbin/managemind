@@ -29,6 +29,7 @@ export const ERROR_CODES = {
   slug_reserved: { status: 422, title: 'Store address reserved' },
   tenant_suspended: { status: 423, title: 'Store suspended' },
   rate_limited: { status: 429, title: 'Too many requests' },
+  feature_unavailable: { status: 503, title: 'Not available yet' },
   tenant_context_missing: { status: 500, title: 'Internal error' },
   internal: { status: 500, title: 'Internal error' },
 } as const satisfies Record<string, { status: number; title: string }>;

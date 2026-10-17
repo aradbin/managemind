@@ -24,15 +24,19 @@ import {
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
 import { PERMISSIONS, STORE_ROLES } from '@managemind/shared';
-import { storeProfile, taxSettings } from '@managemind/shared/settings';
+import { storeProfile, taxSettings, tenantSettings } from '@managemind/shared/settings';
+import { storefrontSettings } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMailer } from '../auth/email';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
+import { DOMAIN_ROUTES, registerDomains } from './domains';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
+import { storeUrls } from './store-urls';
+import { registerStorefrontAdmin, STOREFRONT_ROUTES } from './storefront';
 
 const Role = z.enum(STORE_ROLES);
 const Locale = z.enum(['bn', 'en']);
@@ -81,6 +85,10 @@ const Store = z
     defaultLocale: Locale,
     profile: storeProfile,
     tax: taxSettings,
+    storefront: storefrontSettings,
+    display: tenantSettings.shape.display,
+    /** The store's home page, for the admin's "View store" link. */
+    storeUrl: z.string(),
   })
   .openapi('Store');
 const Member = z
@@ -117,6 +125,8 @@ export const ADMIN_ROUTES = {
   ...CATALOG_ROUTES,
   ...MEDIA_ROUTES,
   ...IMPORT_ROUTES,
+  ...STOREFRONT_ROUTES,
+  ...DOMAIN_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -148,13 +158,15 @@ export const ADMIN_ROUTES = {
   updateStore: r({
     method: 'patch',
     path: '/store',
-    summary: 'Edit the store profile and VAT settings (settings.write)',
+    summary: 'Edit the store profile, VAT, storefront and display settings (settings.write)',
     request: body(
       z.object({
         name: z.string().trim().min(1).max(100).optional(),
         defaultLocale: Locale.optional(),
         profile: storeProfile.optional(),
         tax: taxSettings.optional(),
+        storefront: storefrontSettings.optional(),
+        display: tenantSettings.shape.display.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
@@ -289,12 +301,25 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   });
 
   admin.openapi(R.store, async (c) =>
-    c.json(await inStore(c, (tx) => getStore(tx, c.var.staff.actor)), 200),
+    c.json(
+      await inStore(c, async (tx) => ({
+        ...(await getStore(tx, c.var.staff.actor)),
+        storeUrl: (await storeUrls(c, tx)).store,
+      })),
+      200,
+    ),
   );
   admin.openapi(R.updateStore, async (c) => {
     const patch = compact(c.req.valid('json'));
     return c.json(
-      await inStore(c, (tx) => updateStoreProfile(tx, c.var.staff.actor, patch), { write: true }),
+      await inStore(
+        c,
+        async (tx) => ({
+          ...(await updateStoreProfile(tx, c.var.staff.actor, patch)),
+          storeUrl: (await storeUrls(c, tx)).store,
+        }),
+        { write: true },
+      ),
       200,
     );
   });
@@ -361,6 +386,8 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerCatalog(admin);
   registerMediaRoutes(admin);
   registerImports(admin);
+  registerStorefrontAdmin(admin);
+  registerDomains(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

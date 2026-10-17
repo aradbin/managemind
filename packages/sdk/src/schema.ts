@@ -128,6 +128,510 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/pages/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The layout alone, for not-found pages */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The homepage */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/products/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product page, or a redirect for an old slug */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/categories/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A category with a page of products and facets */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/collections/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A collection with a page of products and facets */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search results and facets (30 misses a minute per shopper) */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/pages/pages/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A static page */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    slug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/sitemap/{part}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One sitemap’s entries, with each one’s slug in every language */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    part: "products" | "categories" | "collections" | "pages";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StoreSitemap"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Any store page with the draft theme, for the theme editor (never cached) */
+        get: {
+            parameters: {
+                query: {
+                    token: string;
+                    path: string;
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page with the draft theme */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description The token is missing, expired or for another store */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/email-otp/send-verification-otp": {
         parameters: {
             query?: never;
@@ -708,7 +1212,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Edit the store profile and VAT settings (settings.write) */
+        /** Edit the store profile, VAT, storefront and display settings (settings.write) */
         patch: {
             parameters: {
                 query?: never;
@@ -731,6 +1235,10 @@ export interface paths {
                                 line2?: string;
                                 city?: string;
                             };
+                            businessName?: string;
+                            tradeLicense?: string;
+                            dbid?: string;
+                            bin?: string;
                         };
                         tax?: {
                             /** @default false */
@@ -747,6 +1255,63 @@ export interface paths {
                                 /** @default false */
                                 exempt?: boolean;
                             }[];
+                        };
+                        storefront?: {
+                            /** @default false */
+                            indexing?: boolean;
+                            /** @default {} */
+                            tracking?: {
+                                metaPixelId?: string;
+                                ga4Id?: string;
+                            };
+                            /**
+                             * @default {
+                             *       "text": {}
+                             *     }
+                             */
+                            consent?: {
+                                /** @default {} */
+                                text?: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                            };
+                            /**
+                             * @default {
+                             *       "greeting": {},
+                             *       "show": "all"
+                             *     }
+                             */
+                            chat?: {
+                                whatsapp?: string;
+                                messenger?: string;
+                                /** @default {} */
+                                greeting?: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                /**
+                                 * @default all
+                                 * @enum {string}
+                                 */
+                                show?: "all" | "product" | "none";
+                            };
+                            /** @default null */
+                            holiday?: {
+                                /** Format: date-time */
+                                startsAt: string;
+                                /** Format: date-time */
+                                endsAt: string;
+                                message: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                            } | null;
+                        };
+                        /** @default {} */
+                        display?: {
+                            /** @enum {string} */
+                            numerals?: "bengali" | "latin";
                         };
                     };
                 };
@@ -3501,6 +4066,800 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/theme": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The draft and published theme (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Theme */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ThemeState"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/theme/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save the theme editor’s draft (settings.write); refuses contrast below WCAG AA */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {number} */
+                        version: 1;
+                        /** @enum {string} */
+                        name: "classic";
+                        /** @enum {string} */
+                        preset: "fashion" | "grocery" | "general";
+                        tokens: {
+                            colors: {
+                                primary: string;
+                                onPrimary: string;
+                                background: string;
+                                surface: string;
+                                text: string;
+                                accent: string;
+                                sale: string;
+                            };
+                            /** @enum {string} */
+                            font: "system" | "hind-siliguri";
+                            /** @enum {string} */
+                            radius: "none" | "small" | "large";
+                            /** Format: uuid */
+                            logoMediaId: string | null;
+                            /** Format: uuid */
+                            faviconMediaId: string | null;
+                            card: {
+                                /** @enum {string} */
+                                imageRatio: "1:1" | "3:4";
+                                showCompareAt: boolean;
+                                showBrand: boolean;
+                            };
+                        };
+                        announcement: {
+                            text: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            link: {
+                                /** @enum {string} */
+                                type: "category";
+                                /** Format: uuid */
+                                id: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "collection";
+                                /** Format: uuid */
+                                id: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "product";
+                                /** Format: uuid */
+                                id: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "page";
+                                /** Format: uuid */
+                                id: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "search";
+                                q: string;
+                            } | {
+                                /** @enum {string} */
+                                type: "url";
+                                /** Format: uri */
+                                url: string;
+                            } | null;
+                        } | null;
+                        sections: ({
+                            /** @enum {string} */
+                            type: "hero";
+                            id: string;
+                            /** @enum {string} */
+                            size: "large" | "compact";
+                            slides: {
+                                /** Format: uuid */
+                                mediaId: string | null;
+                                heading: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                subheading: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                button: {
+                                    label: {
+                                        bn?: string;
+                                        en?: string;
+                                    };
+                                    link: {
+                                        /** @enum {string} */
+                                        type: "category";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "collection";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "product";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "page";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "search";
+                                        q: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "url";
+                                        /** Format: uri */
+                                        url: string;
+                                    };
+                                } | null;
+                            }[];
+                        } | {
+                            /** @enum {string} */
+                            type: "category_grid";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            categoryIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "collection_carousel";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            collectionIds: string[];
+                        } | {
+                            /** @enum {string} */
+                            type: "product_grid";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            /** Format: uuid */
+                            collectionId: string | null;
+                            limit: number;
+                            /** @enum {string} */
+                            layout: "grid" | "carousel";
+                        } | {
+                            /** @enum {string} */
+                            type: "image_with_text";
+                            id: string;
+                            /** Format: uuid */
+                            mediaId: string | null;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            text: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            button: {
+                                label: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                link: {
+                                    /** @enum {string} */
+                                    type: "category";
+                                    /** Format: uuid */
+                                    id: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "collection";
+                                    /** Format: uuid */
+                                    id: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "product";
+                                    /** Format: uuid */
+                                    id: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "page";
+                                    /** Format: uuid */
+                                    id: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "search";
+                                    q: string;
+                                } | {
+                                    /** @enum {string} */
+                                    type: "url";
+                                    /** Format: uri */
+                                    url: string;
+                                };
+                            } | null;
+                            /** @enum {string} */
+                            imagePosition: "start" | "end";
+                        } | {
+                            /** @enum {string} */
+                            type: "rich_text";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            body: {
+                                bn?: components["schemas"]["RichTextDoc"];
+                                en?: components["schemas"]["RichTextDoc"];
+                            };
+                        } | {
+                            /** @enum {string} */
+                            type: "trust_badges";
+                            id: string;
+                            items: {
+                                /** @enum {string} */
+                                icon: "cod" | "delivery" | "returns" | "secure" | "support";
+                                title: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                text: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                            }[];
+                        })[];
+                        pages: {
+                            product: {
+                                showRelated: boolean;
+                                /** @enum {string} */
+                                specifications: "table" | "list";
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ThemeState"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/theme/presets/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace the draft with a preset, keeping the logo and favicon (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    name: "fashion" | "grocery" | "general";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The new draft */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ThemeState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/theme/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish the draft (settings.write); the store shows it within a minute */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Published */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ThemeState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/theme/preview-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A 15-minute token and URL for the live preview (settings.read) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Token */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            token: string;
+                            expiresAt: string;
+                            url: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Static pages (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Pages */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePageAdmin"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a page (settings.write); policy pages start with suggested headings */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind: "about" | "contact" | "privacy" | "returns" | "delivery" | "terms" | "custom";
+                        /** @default false */
+                        published?: boolean;
+                        position?: number;
+                        translations: {
+                            bn?: {
+                                title: string;
+                                slug?: string;
+                                body?: components["schemas"]["RichTextDoc"] & (Record<string, never> | null);
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            };
+                            en?: {
+                                title: string;
+                                slug?: string;
+                                body?: components["schemas"]["RichTextDoc"] & (Record<string, never> | null);
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            };
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePageAdmin"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/pages/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A page (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePageAdmin"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a page (settings.write); its address stops working */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a page (settings.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        published?: boolean;
+                        position?: number;
+                        translations?: {
+                            bn?: {
+                                title: string;
+                                slug?: string;
+                                body?: components["schemas"]["RichTextDoc"] & (Record<string, never> | null);
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            } | null;
+                            en?: {
+                                title: string;
+                                slug?: string;
+                                body?: components["schemas"]["RichTextDoc"] & (Record<string, never> | null);
+                                seoTitle?: string | null;
+                                seoDescription?: string | null;
+                            } | null;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePageAdmin"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store’s default address and custom domains (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Domains */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            defaultHost: string;
+                            primaryHost: string;
+                            domains: components["schemas"]["Domain"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Connect a domain, such as www.shop.com.bd (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        hostname: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Added, pending */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Domain"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/domains/{id}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check a domain now (settings.write; 20 an hour per store) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Checked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Domain"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/domains/{id}/primary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make an active domain the store’s primary address (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Primary */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Domain"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/domains/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect a domain (settings.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/invitations/accept": {
         parameters: {
             query?: never;
@@ -4012,6 +5371,27 @@ export interface components {
             status: "active" | "suspended";
             primaryHost: string;
         };
+        StorePage: {
+            /** @description Theme, menu, footer and settings */
+            layout: {
+                [key: string]: unknown;
+            };
+            /** @description The page’s data; null when not found */
+            page?: unknown;
+            /** @description The current slug, for an old one (301) */
+            redirect: string | null;
+        };
+        StoreSitemap: {
+            /** @enum {string} */
+            defaultLocale: "bn" | "en";
+            indexing: boolean;
+            entries: {
+                slugs: {
+                    [key: string]: string;
+                };
+                updatedAt: string;
+            }[];
+        };
         Me: {
             user: {
                 /** Format: uuid */
@@ -4062,6 +5442,10 @@ export interface components {
                     line2?: string;
                     city?: string;
                 };
+                businessName?: string;
+                tradeLicense?: string;
+                dbid?: string;
+                bin?: string;
             };
             tax: {
                 /** @default false */
@@ -4079,6 +5463,64 @@ export interface components {
                     exempt: boolean;
                 }[];
             };
+            storefront: {
+                /** @default false */
+                indexing: boolean;
+                /** @default {} */
+                tracking: {
+                    metaPixelId?: string;
+                    ga4Id?: string;
+                };
+                /**
+                 * @default {
+                 *       "text": {}
+                 *     }
+                 */
+                consent: {
+                    /** @default {} */
+                    text: {
+                        bn?: string;
+                        en?: string;
+                    };
+                };
+                /**
+                 * @default {
+                 *       "greeting": {},
+                 *       "show": "all"
+                 *     }
+                 */
+                chat: {
+                    whatsapp?: string;
+                    messenger?: string;
+                    /** @default {} */
+                    greeting: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    /**
+                     * @default all
+                     * @enum {string}
+                     */
+                    show: "all" | "product" | "none";
+                };
+                /** @default null */
+                holiday: {
+                    /** Format: date-time */
+                    startsAt: string;
+                    /** Format: date-time */
+                    endsAt: string;
+                    message: {
+                        bn?: string;
+                        en?: string;
+                    };
+                } | null;
+            };
+            /** @default {} */
+            display: {
+                /** @enum {string} */
+                numerals?: "bengali" | "latin";
+            };
+            storeUrl: string;
         };
         Member: {
             /** Format: uuid */
@@ -5367,6 +6809,301 @@ export interface components {
             };
             createdAt: string;
             finishedAt: string | null;
+        };
+        ThemeState: {
+            draft: components["schemas"]["Theme"];
+            published: components["schemas"]["Theme"] & (Record<string, never> | null);
+            unpublishedChanges: boolean;
+        };
+        Theme: {
+            /** @enum {number} */
+            version: 1;
+            /** @enum {string} */
+            name: "classic";
+            /** @enum {string} */
+            preset: "fashion" | "grocery" | "general";
+            tokens: {
+                colors: {
+                    primary: string;
+                    onPrimary: string;
+                    background: string;
+                    surface: string;
+                    text: string;
+                    accent: string;
+                    sale: string;
+                };
+                /** @enum {string} */
+                font: "system" | "hind-siliguri";
+                /** @enum {string} */
+                radius: "none" | "small" | "large";
+                /** Format: uuid */
+                logoMediaId: string | null;
+                /** Format: uuid */
+                faviconMediaId: string | null;
+                card: {
+                    /** @enum {string} */
+                    imageRatio: "1:1" | "3:4";
+                    showCompareAt: boolean;
+                    showBrand: boolean;
+                };
+            };
+            announcement: {
+                text: {
+                    bn?: string;
+                    en?: string;
+                };
+                link: {
+                    /** @enum {string} */
+                    type: "category";
+                    /** Format: uuid */
+                    id: string;
+                } | {
+                    /** @enum {string} */
+                    type: "collection";
+                    /** Format: uuid */
+                    id: string;
+                } | {
+                    /** @enum {string} */
+                    type: "product";
+                    /** Format: uuid */
+                    id: string;
+                } | {
+                    /** @enum {string} */
+                    type: "page";
+                    /** Format: uuid */
+                    id: string;
+                } | {
+                    /** @enum {string} */
+                    type: "search";
+                    q: string;
+                } | {
+                    /** @enum {string} */
+                    type: "url";
+                    /** Format: uri */
+                    url: string;
+                } | null;
+            } | null;
+            sections: ({
+                /** @enum {string} */
+                type: "hero";
+                id: string;
+                /** @enum {string} */
+                size: "large" | "compact";
+                slides: {
+                    /** Format: uuid */
+                    mediaId: string | null;
+                    heading: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    subheading: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    button: {
+                        label: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        link: {
+                            /** @enum {string} */
+                            type: "category";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "collection";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "product";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "page";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "search";
+                            q: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "url";
+                            /** Format: uri */
+                            url: string;
+                        };
+                    } | null;
+                }[];
+            } | {
+                /** @enum {string} */
+                type: "category_grid";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                categoryIds: string[];
+            } | {
+                /** @enum {string} */
+                type: "collection_carousel";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                collectionIds: string[];
+            } | {
+                /** @enum {string} */
+                type: "product_grid";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                /** Format: uuid */
+                collectionId: string | null;
+                limit: number;
+                /** @enum {string} */
+                layout: "grid" | "carousel";
+            } | {
+                /** @enum {string} */
+                type: "image_with_text";
+                id: string;
+                /** Format: uuid */
+                mediaId: string | null;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                text: {
+                    bn?: string;
+                    en?: string;
+                };
+                button: {
+                    label: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    link: {
+                        /** @enum {string} */
+                        type: "category";
+                        /** Format: uuid */
+                        id: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "collection";
+                        /** Format: uuid */
+                        id: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "product";
+                        /** Format: uuid */
+                        id: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "page";
+                        /** Format: uuid */
+                        id: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "search";
+                        q: string;
+                    } | {
+                        /** @enum {string} */
+                        type: "url";
+                        /** Format: uri */
+                        url: string;
+                    };
+                } | null;
+                /** @enum {string} */
+                imagePosition: "start" | "end";
+            } | {
+                /** @enum {string} */
+                type: "rich_text";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                body: {
+                    bn?: components["schemas"]["RichTextDoc"];
+                    en?: components["schemas"]["RichTextDoc"];
+                };
+            } | {
+                /** @enum {string} */
+                type: "trust_badges";
+                id: string;
+                items: {
+                    /** @enum {string} */
+                    icon: "cod" | "delivery" | "returns" | "secure" | "support";
+                    title: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    text: {
+                        bn?: string;
+                        en?: string;
+                    };
+                }[];
+            })[];
+            pages: {
+                product: {
+                    showRelated: boolean;
+                    /** @enum {string} */
+                    specifications: "table" | "list";
+                };
+            };
+        };
+        StorePageAdmin: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "about" | "contact" | "privacy" | "returns" | "delivery" | "terms" | "custom";
+            published: boolean;
+            position: number;
+            translations: {
+                bn?: {
+                    title: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    body?: unknown;
+                    seoTitle: string | null;
+                    seoDescription: string | null;
+                };
+                en?: {
+                    title: string;
+                    slug: string;
+                    /** @description ProseMirror JSON (the description whitelist) */
+                    body?: unknown;
+                    seoTitle: string | null;
+                    seoDescription: string | null;
+                };
+            };
+            createdAt: string;
+            updatedAt: string;
+        };
+        Domain: {
+            /** Format: uuid */
+            id: string;
+            hostname: string;
+            /** @enum {string} */
+            status: "pending" | "active" | "failed" | "removed";
+            isPrimary: boolean;
+            sslStatus: string | null;
+            verifiedAt: string | null;
+            lastCheckedAt: string | null;
+            checkAttempts: number;
+            failureReason: string | null;
+            createdAt: string;
+            dns: {
+                /** @enum {string} */
+                type: "CNAME" | "TXT";
+                name: string;
+                value: string;
+            }[];
         };
         TenantSummary: {
             /** Format: uuid */

@@ -20,15 +20,17 @@ test('demo-fashion is served in English', async ({ page }) => {
   const res = await page.goto(`${STOREFRONT}/?store=demo-fashion`);
   expect(res?.status()).toBe(200);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Welcome to Demo Fashion');
-  await expect(page.getByRole('note')).toContainText('Demo Fashion');
+  await expect(page).toHaveTitle('Demo Fashion');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('note').first()).toContainText('Demo Fashion');
 });
 
 test('demo-grocery is served in Bangla', async ({ page }) => {
   const res = await page.goto(`${STOREFRONT}/?store=demo-grocery`);
   expect(res?.status()).toBe(200);
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('ডেমো গ্রোসারি-এ স্বাগতম');
+  await expect(page).toHaveTitle('ডেমো গ্রোসারি');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
 });
 
 test('an unknown store is a 404', async ({ page }) => {

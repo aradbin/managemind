@@ -8,6 +8,13 @@ describe('tenantSettings', () => {
       profile: {},
       display: {},
       tax: { vatEnabled: false, rateBasisPoints: 1500, pricesIncludeVat: true, categories: [] },
+      storefront: {
+        indexing: false,
+        tracking: {},
+        consent: { text: {} },
+        chat: { greeting: {}, show: 'all' },
+        holiday: null,
+      },
     });
     expect(tenantSettings.parse({})).toEqual(defaultTenantSettings());
   });

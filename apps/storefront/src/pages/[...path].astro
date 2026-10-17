@@ -1,0 +1,133 @@
+---
+import { env } from 'cloudflare:workers';
+// Every store page (phase-3-plan §3.3, §3.5): the path's route, one call to
+// the API for its data and the layout, then the store's theme renders it.
+// The page marks itself cacheable with its cache tags (lib/cache.ts) unless
+// it is a preview. Old slugs answer a 301 to the current one, cached too.
+import type { StoreProduct } from '@managemind/core';
+import { parseStorePath } from '@managemind/shared/storefront/urls';
+import StoreMessage from '../layouts/StoreMessage.astro';
+import {
+  type CategoryPage,
+  type CollectionPage,
+  fetchPage,
+  type HomeData,
+  type ProductPageData,
+  type SearchPage,
+  type StorePage,
+} from '../lib/api';
+import { CACHE_TAGS_HEADER } from '../lib/cache';
+import { pageContext } from '../lib/page';
+import { apiPath, redirectTarget } from '../lib/store-page';
+import { THEMES } from '../themes/index';
+
+const { store, locale, prefixed, previewToken, host, requestId, shopperIp } = Astro.locals;
+const url = Astro.url;
+
+let message: 'not_found' | 'maintenance' | null = null;
+if (!store) message = 'not_found';
+else if (store.status === 'suspended') message = 'maintenance';
+
+const parsed = parseStorePath(url.pathname);
+const route = parsed.type === 'route' ? parsed.route : null;
+let result: Awaited<ReturnType<typeof fetchPage<unknown>>> | null = null;
+if (!message) {
+  result = await fetchPage<unknown>(
+    { api: env.API, host, requestId, shopperIp },
+    apiPath(
+      route,
+      prefixed ? locale : null,
+      url.searchParams,
+      previewToken ? { token: previewToken, path: url.pathname } : null,
+    ),
+  );
+  if (result.kind === 'error') {
+    if (result.code === 'tenant_suspended') message = 'maintenance';
+    else if (result.code === 'store_not_found') message = 'not_found';
+    else if (result.status === 401 && previewToken) {
+      // An expired preview: back to the live store.
+      Astro.cookies.delete('mm_preview', { path: '/' });
+      return Astro.redirect(`${url.pathname}${url.search}`, 302);
+    } else if (result.status === 429) {
+      Astro.response.status = 429;
+      Astro.response.headers.set('Retry-After', '60');
+    } else {
+      throw new Error(`store page API answered ${result.status} (${result.code ?? 'no code'})`);
+    }
+  }
+}
+
+if (message === 'not_found') Astro.response.status = 404;
+if (message === 'maintenance') {
+  Astro.response.status = 503;
+  Astro.response.headers.set('Retry-After', '3600');
+}
+
+const ok = result?.kind === 'ok' ? result : null;
+const body = ok?.body ?? null;
+if (ok && !previewToken) Astro.response.headers.set(CACHE_TAGS_HEADER, ok.tags);
+
+// Old slugs: a 301 to the current one.
+if (ok && body?.redirect && route && store) {
+  return new Response(null, {
+    status: 301,
+    headers: {
+      Location: redirectTarget(
+        route,
+        body.redirect,
+        body.layout.locale,
+        body.layout.store.defaultLocale,
+        url.search,
+      ),
+      ...(previewToken ? {} : { [CACHE_TAGS_HEADER]: ok.tags }),
+    },
+  });
+}
+
+const ctx =
+  body && store
+    ? pageContext({
+        layout: body.layout,
+        url,
+        // Canonical URLs are on the primary host; previews and local runs use their own origin.
+        origin: env.ENVIRONMENT === 'production' ? `https://${store.primaryHost}` : url.origin,
+        preview: Boolean(previewToken),
+      })
+    : null;
+const theme = ctx ? THEMES[ctx.theme.name] : null;
+const noindex = !body?.layout.storefront.indexing || Boolean(previewToken);
+if (ok && (ok.status === 404 || !route)) Astro.response.status = 404;
+const page = body?.page;
+---
+
+{message === 'maintenance' && store && <StoreMessage kind="maintenance" name={store.name} host={host} />}
+{message === 'not_found' && <StoreMessage kind="not_found" name={store?.name ?? ''} host={host} />}
+{!message && result?.kind === 'error' && result.status === 429 && <StoreMessage kind="busy" name={store?.name ?? ''} host={host} />}
+{ctx && theme && (() => {
+  if (!route || ok?.status === 404 || page === null || page === undefined) {
+    if (route?.kind === 'search') {
+      return <theme.Listing ctx={ctx} route={route} title="" listing={null} query={(page as SearchPage | null)?.query ?? { sort: 'featured', page: 1, inStock: false, attributes: {}, options: {} }} noindex />;
+    }
+    return <theme.NotFound ctx={ctx} />;
+  }
+  switch (route.kind) {
+    case 'home':
+      return <theme.Home ctx={ctx} home={page as HomeData} noindex={noindex} />;
+    case 'product':
+      return <theme.Product ctx={ctx} data={page as ProductPageData & { product: StoreProduct }} noindex={noindex} />;
+    case 'category': {
+      const p = page as CategoryPage;
+      return <theme.Listing ctx={ctx} route={route} title={p.entity.name} description={p.entity.description} slugs={p.entity.slugs} category={p.entity} listing={p.listing} query={p.query} noindex={noindex} />;
+    }
+    case 'collection': {
+      const p = page as CollectionPage;
+      return <theme.Listing ctx={ctx} route={route} title={p.entity.name} description={p.entity.description} slugs={p.entity.slugs} listing={p.listing} query={p.query} noindex={noindex} />;
+    }
+    case 'search': {
+      const p = page as SearchPage;
+      return <theme.Listing ctx={ctx} route={route} title="" listing={p.listing} query={p.query} noindex />;
+    }
+    case 'page':
+      return <theme.StaticPage ctx={ctx} page={page as StorePage} noindex={noindex} />;
+  }
+})()}

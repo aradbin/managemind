@@ -1,0 +1,41 @@
+---
+import type { StorePage } from '@managemind/core';
+import { renderRichText } from '@managemind/shared/rich-text';
+import { absolute, alternates, href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import { breadcrumbLd, type Head } from '../../../lib/seo';
+import Layout from '../Layout.astro';
+
+interface Props {
+  ctx: PageContext;
+  page: StorePage;
+  noindex: boolean;
+}
+const { ctx, page, noindex } = Astro.props;
+const { t } = ctx;
+const url = absolute(ctx.link, href(ctx.link, { kind: 'page', slug: page.slug }));
+const langs = alternates(ctx.link, (slug) => (slug ? { kind: 'page', slug } : null), page.slugs);
+const head: Head = {
+  title: `${page.seoTitle ?? page.title} | ${ctx.layout.store.name}`,
+  ...(page.seoDescription ? { description: page.seoDescription } : {}),
+  canonical: url,
+  alternates: langs,
+  noindex,
+  jsonLd: [
+    breadcrumbLd([
+      { name: t('nav.home'), url: absolute(ctx.link, href(ctx.link, { kind: 'home' })) },
+      { name: page.title, url },
+    ]),
+  ],
+};
+const languageHref =
+  langs.find((a) => a.locale !== ctx.locale && a.locale !== 'x-default')?.url ??
+  href(ctx.link, { kind: 'home' });
+---
+
+<Layout ctx={ctx} head={head} languageHref={languageHref}>
+  <article class="rich" style="max-width: 760px">
+    <h1>{page.title}</h1>
+    {page.body && <Fragment set:html={renderRichText(page.body)} />}
+  </article>
+</Layout>

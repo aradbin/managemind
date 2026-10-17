@@ -1,0 +1,20 @@
+---
+import type { ProductCard as Card } from '@managemind/core';
+import type { PageContext } from '../../lib/page';
+import ProductCard from './ProductCard.astro';
+
+interface Props {
+  ctx: PageContext;
+  products: Card[];
+  layout?: 'grid' | 'carousel';
+  /** The first card's image loads eagerly (the page's likely LCP). */
+  eagerFirst?: boolean;
+}
+const { ctx, products, layout = 'grid', eagerFirst = false } = Astro.props;
+---
+
+<ul class={layout} role="list">
+  {products.map((product, i) => (
+    <li><ProductCard ctx={ctx} product={product} eager={eagerFirst && i < 2} /></li>
+  ))}
+</ul>

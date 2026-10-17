@@ -1,0 +1,37 @@
+---
+import type { ThemeSection } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+import Img from '../Img.astro';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'hero' }>;
+  first: boolean;
+  /** The page's main heading: only when the hero is the first section. */
+  h1: boolean;
+}
+const { ctx, section, first, h1 } = Astro.props;
+const { t } = ctx;
+const count = section.slides.length;
+---
+
+<section class="section" aria-roledescription={count > 1 ? 'carousel' : undefined}>
+  <div class={`hero ${section.size}`}>
+    {section.slides.map((slide, i) => {
+      const image = ctx.image(slide.mediaId);
+      const heading = ctx.text(slide.heading);
+      const sub = ctx.text(slide.subheading);
+      const button = slide.button ? { label: ctx.text(slide.button.label), href: ctx.themeLink(slide.button.link) } : null;
+      return (
+        <div class={`slide${image ? '' : ' plain'}`} role={count > 1 ? 'group' : undefined} aria-label={count > 1 ? t('section.slide', { n: i + 1, count }) : undefined}>
+          {image && <Img image={image} alt={heading} sizes="100vw" eager={first && i === 0} />}
+          <div class="slide-text">
+            {heading && (h1 && i === 0 ? <h1>{heading}</h1> : <h2>{heading}</h2>)}
+            {sub && <p>{sub}</p>}
+            {button?.href && button.label && <a class="button" href={button.href}>{button.label}</a>}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>

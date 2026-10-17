@@ -13,6 +13,10 @@ export const STORE_TABLES = [
   'import_jobs',
   'stock_movements',
   'inventory_levels',
+  // Storefront content
+  'page_translations',
+  'pages',
+  'theme_media',
   // Catalog: attributes and tags
   'product_attribute_translations',
   'product_attributes',
@@ -59,6 +63,7 @@ export type PurgeAction = 'delete' | 'clear' | 'keep';
 
 /** Every platform table that references platform.tenants. */
 export const PLATFORM_TENANT_ROWS: Record<string, PurgeAction> = {
+  tenant_domain_history: 'delete',
   tenant_domains: 'delete',
   memberships: 'delete',
   invitations: 'delete',

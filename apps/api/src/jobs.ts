@@ -13,21 +13,30 @@ import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
 import { queueSink, withClient } from './db';
+import { recheckDomains } from './domains';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
+import { purgeMessages } from './purge/consumer';
 
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
- * KV map; everything else is logged and acknowledged until its module adds a
- * handler. Handlers recompute state rather than apply deltas, so redeliveries
- * are harmless. Messages that keep failing go to the dead-letter queue.
+ * KV map; events that change what shoppers see become cache purges, one
+ * message per store on the purge queue (ADR 0018); everything else is logged
+ * and acknowledged. Handlers recompute state rather than apply deltas, so
+ * redeliveries are harmless. Messages that keep failing go to the
+ * dead-letter queue.
  */
 export async function handleQueue(
   batch: MessageBatch<OutboxEvent>,
   env: Env,
   ctx: Pick<ExecutionContext, 'waitUntil'>,
 ): Promise<void> {
+  // Purges first: if the queue refuses them, the whole batch is retried.
+  const purges = purgeMessages(batch.messages.map((m) => m.body));
+  if (env.PURGE && purges.length) {
+    await env.PURGE.sendBatch(purges.map((body) => ({ body, contentType: 'json' as const })));
+  }
   // One sync per store per batch, however many of its events arrived.
   const tenants = new Map<string, Message<OutboxEvent>[]>();
   for (const message of batch.messages) {
@@ -159,8 +168,9 @@ const toEvent = (r: OutboxRow): OutboxEvent => ({
 
 /**
  * The daily batch: relay outbox events the request path missed (older than
- * five minutes, across tenants), delete expired technical rows, and check
- * that every stock level still equals its movements (phase-2-plan §3.8).
+ * five minutes, across tenants), delete expired technical rows, check that
+ * every stock level still equals its movements (phase-2-plan §3.8), and
+ * re-check custom domains (phase-3-plan §3.9).
  */
 export async function runDailyJobs(
   env: Env,
@@ -201,6 +211,13 @@ export async function runDailyJobs(
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
     await checkInventoryDrift(client);
+    // Custom domains: pending ones until active or 7 days old, active ones for breakage (ADR 0019).
+    try {
+      await recheckDomains(env, ctx, client);
+    } catch (e) {
+      log('error', 'domain recheck failed', { error: String(e) });
+      captureMessage('domain recheck failed', { level: 'error', extra: { error: String(e) } });
+    }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);
   });

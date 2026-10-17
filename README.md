@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Status: Phases 0–2 are done ([reports](docs/phases/)); Phase 3 is planned in [`docs/phases/phase-3-plan.md`](docs/phases/phase-3-plan.md)
+- Status: Phases 0–2 are done; Phase 3 is built and waits on production checks ([reports](docs/phases/))
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development

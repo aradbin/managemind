@@ -1,0 +1,32 @@
+---
+import type { ThemeSection } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'trust_badges' }>;
+}
+const { ctx, section } = Astro.props;
+const ICONS: Record<string, string> = {
+  cod: 'M3 6h18v12H3zM3 10h18M7 15h3',
+  delivery:
+    'M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z',
+  returns: 'M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4',
+  secure: 'M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6zM9 12l2 2 4-4',
+  support: 'M4 13v-1a8 8 0 0 1 16 0v1M4 13h3v5H4zM17 13h3v5h-3z',
+};
+---
+
+<section class="section" aria-label={section.items.map((i) => ctx.text(i.title)).join(', ')}>
+  <ul class="badges" role="list">
+    {section.items.map((item) => (
+      <li>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={ICONS[item.icon]} /></svg>
+        <div>
+          <h3>{ctx.text(item.title)}</h3>
+          <p>{ctx.text(item.text)}</p>
+        </div>
+      </li>
+    ))}
+  </ul>
+</section>

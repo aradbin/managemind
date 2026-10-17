@@ -2,6 +2,9 @@
 import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
+import type { DomainCheckMessage } from './domains';
+import type { PurgeMessage } from './purge/consumer';
+import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
 
 export interface Env {
@@ -13,6 +16,12 @@ export interface Env {
   IMPORTS: Queue<ImportMessage>;
   /** Rate limits and the daily email count, one object per key (ADR 0006). */
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
+  /** Cache purges, one message per store (ADR 0018); absent in previews. */
+  PURGE?: Queue<PurgeMessage>;
+  /** Delayed re-checks of new custom domains (ADR 0019); absent in previews. */
+  DOMAINS?: Queue<DomainCheckMessage>;
+  /** The account-wide purge counter, one object named "account" (ADR 0007). */
+  PURGE_BUDGET: DurableObjectNamespace<PurgeBudget>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */
   FILES: R2Bucket;
   /** Host-to-store map read by the storefront (ADR 0015); absent in previews. */
@@ -41,6 +50,15 @@ export interface Env {
   RESEND_API_KEY?: string;
   /** Opens the dev mailbox on previews (a Worker secret; never set in production). */
   DEV_TOKEN?: string;
+  /**
+   * The storefront's origin where store hosts don't exist (previews on
+   * workers.dev, local development): store links use the dev store selector.
+   */
+  STOREFRONT_ORIGIN?: string;
+  /** Cache Purge and SSL and Certificates on the store zone (a Worker secret; phase-3-plan §1). */
+  CF_STORE_TOKEN?: string;
+  /** The store zone's ID, set by the deploy, for purges and custom hostnames. */
+  STORE_ZONE_ID?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
@@ -59,6 +77,10 @@ export const apiConfig = baseConfig
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     DEV_TOKEN: z.string().min(16).optional(),
+    STOREFRONT_ORIGIN: z
+      .url({ protocol: /^https?$/ })
+      .transform((u) => u.replace(/\/$/, ''))
+      .optional(),
   })
   .superRefine((c, ctx) => {
     const issue = (path: string, message: string) =>
@@ -73,6 +95,9 @@ export const apiConfig = baseConfig
     if (c.EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY) issue('RESEND_API_KEY', 'is required');
     if (c.ENVIRONMENT === 'production' && c.DEV_TOKEN)
       issue('DEV_TOKEN', 'must not be set in production');
+    // Production stores live on their own hosts; the dev selector is off there.
+    if (c.ENVIRONMENT === 'production' && c.STOREFRONT_ORIGIN)
+      issue('STOREFRONT_ORIGIN', 'must not be set in production');
   })
   // wrangler dev works without setup; deployed Workers always get the real secret.
   .transform((c) => ({ ...c, AUTH_SECRET: c.AUTH_SECRET ?? DEV_AUTH_SECRET }));

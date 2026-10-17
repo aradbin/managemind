@@ -234,5 +234,9 @@ export const bn: Record<keyof typeof en, string> = {
   'dev.show': 'ইমেইল দেখুন',
   'dev.none': 'এই ঠিকানার কোনো ইমেইল নেই।',
   'dev.unavailable': 'এখানে মেইলবক্স পাওয়া যায় না, অথবা টোকেনটি ভুল।',
+  'nav.onlineStore': 'অনলাইন স্টোর',
+  'store.view': 'দোকান দেখুন',
+  'domains.title': 'ডোমেইন',
+  'domains.description': 'আপনার দোকানের ঠিকানা। নিজের ডোমেইন যুক্ত করুন, যেমন www.yourshop.com.bd।',
   ...catalogBn,
 };

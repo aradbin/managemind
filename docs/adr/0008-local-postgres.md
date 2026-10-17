@@ -33,3 +33,12 @@ A developer on a laptop can still run Postgres 18 in Docker or natively; only th
 - Tests in sessions and in CI run on the same major version as production.
 - Session start depends on `apt.postgresql.org` being reachable when the container is not cached yet.
 - The hook runs as root and changes system Postgres configuration inside the throwaway container only. It does nothing outside cloud sessions (`CLAUDE_CODE_REMOTE` unset).
+
+## Amendment (2026-10-16): databases use the `C.UTF-8` locale
+
+Phase 3's planning found that the session's cluster creates databases with the plain `C` locale, under which `pg_trgm` makes no trigrams from Bangla text: `show_trgm('লাল শাড়ি')` is `{}`, so every Bangla search finds nothing (phase-3-plan §3.7). CI's `postgres:18` image uses `en_US.utf8`, and Neon's default for projects created since November 2024 is `C.UTF-8`; both work.
+
+- The session hook creates `managemind` and `managemind_test` with `TEMPLATE template0 ENCODING 'UTF8' LOCALE 'C.UTF-8'`, and recreates a database left with the old locale (local data is throwaway; `db:dev-setup` rebuilds it).
+- The test helpers create each package's database the same way, and recreate one left with `C`.
+- `runMigrations` refuses a database whose character classification is plain `C` or `POSIX` (`checkDatabaseLocale`), so every deploy and preview checks production's and the preview branch's locale before migrating.
+- A test in `packages/db` fails if Bangla makes no trigrams.

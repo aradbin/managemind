@@ -20,6 +20,13 @@ export interface WorkerTarget {
   storeDomain: string;
   /** The admin's host: sign-in cookies and CSRF checks are bound to it. */
   adminHost: string;
+  /** The store zone, for cache purges and custom hostnames (production only). */
+  storeZoneId?: string;
+  /**
+   * Previews: the storefront's own URL. Store hosts don't exist on
+   * workers.dev, so store links and the theme preview use the dev selector.
+   */
+  storefrontOrigin?: string;
   /** `resend` in production; previews capture emails for the dev mailbox. */
   emailProvider: 'resend' | 'capture';
   commit: string;
@@ -30,7 +37,8 @@ export interface WorkerTarget {
   /**
    * Production on its own domains (phase-1-plan §10): admin.<platform> as the
    * API Worker's custom domain, api.<platform> routes for health checks and
-   * webhooks only, and every <slug>.<store> to the storefront.
+   * webhooks only, and everything on the store zone (<slug>.<store> and
+   * custom hostnames) to the storefront.
    */
   routes?: boolean;
 }
@@ -68,7 +76,11 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
     EMAIL_PROVIDER: t.emailProvider,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.api.dsn,
+    ...(t.storeZoneId ? { STORE_ZONE_ID: t.storeZoneId } : {}),
+    ...(t.storefrontOrigin ? { STOREFRONT_ORIGIN: t.storefrontOrigin } : {}),
   };
+  // The checked-in value is for local development only.
+  if (!t.storefrontOrigin) delete (api.vars as Record<string, string>).STOREFRONT_ORIGIN;
   if (t.routes) {
     api.routes = [
       { pattern: t.adminHost, custom_domain: true },
@@ -106,10 +118,15 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   storefront.workers_dev = true;
   storefront.preview_urls = false;
   storefront.services = [{ binding: 'API', service: t.api }];
-  if (t.routes) storefront.routes = [{ pattern: `*.${t.storeDomain}/*`, zone_name: t.storeDomain }];
+  storefront.r2_buckets = api.r2_buckets;
+  // `*/*` on the store zone catches every store subdomain and every custom
+  // hostname served through Cloudflare for SaaS (ADR 0019).
+  if (t.routes) storefront.routes = [{ pattern: '*/*', zone_name: t.storeDomain }];
   if (t.kvNamespaceId) storefront.kv_namespaces = [{ binding: 'EDGE', id: t.kvNamespaceId }];
   storefront.vars = {
     ...vars(storefront.vars),
+    PLATFORM_DOMAIN: t.platformDomain,
+    ADMIN_HOST: t.adminHost,
     COMMIT_SHA: t.commit,
     SENTRY_DSN: sentry.projects.storefront.dsn,
   };

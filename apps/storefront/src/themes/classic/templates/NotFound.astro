@@ -1,0 +1,20 @@
+---
+import { href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import Layout from '../Layout.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const home = href(ctx.link, { kind: 'home' });
+---
+
+<Layout ctx={ctx} head={{ title: t('notFound.title'), canonical: null, alternates: [], noindex: true }} languageHref={home}>
+  <div class="message">
+    <h1>{t('notFound.title')}</h1>
+    <p>{t('notFound.body')}</p>
+    <p><a class="button" href={home}>{t('notFound.home')}</a></p>
+  </div>
+</Layout>

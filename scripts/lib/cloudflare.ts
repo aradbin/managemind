@@ -336,6 +336,23 @@ export class Cloudflare {
     return 'created';
   }
 
+  /**
+   * Cloudflare for SaaS: the origin custom hostnames are served from
+   * (ADR 0019). Fails with 403 until SaaS is enabled on the zone, or when
+   * the token lacks SSL and Certificates: Edit.
+   */
+  async setFallbackOrigin(zoneId: string, origin: string): Promise<'set' | 'kept'> {
+    const current = await this.api
+      .request<Envelope<{ origin?: string }>>(
+        'GET',
+        `/zones/${zoneId}/custom_hostnames/fallback_origin`,
+      )
+      .catch(() => null);
+    if (current?.result?.origin === origin) return 'kept';
+    await this.api.request('PUT', `/zones/${zoneId}/custom_hostnames/fallback_origin`, { origin });
+    return 'set';
+  }
+
   /** The zone's "Block AI bots" setting. */
   async blockAiBots(zoneId: string): Promise<void> {
     await this.api.request('PUT', `/zones/${zoneId}/bot_management`, {

@@ -88,21 +88,39 @@ jobs:
       # Secrets ship with the version, so the new code never runs without them.
       # AUTH_SECRET is the owner's (Q10): never regenerated here, because a new
       # one signs everyone out and makes stored TOTP secrets unreadable.
+      # CF_STORE_TOKEN (Cache Purge, and SSL and Certificates, on the store
+      # zone) is optional until the owner adds it: without it pages can't be
+      # purged (so the storefront doesn't cache them) and custom domains can't
+      # be added.
       - name: Deploy the API
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
+          if [ -z "$CF_STORE_TOKEN" ]; then
+            echo "::warning title=CF_STORE_TOKEN::not set: store pages are not purged after changes, and custom domains are off"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
-          (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" \
-            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}' > "$secrets")
+          (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend} + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \
             -c wrangler.production.json --secrets-file "$secrets"
+      # The page cache is on only when purges can run (ADR 0018); until the
+      # owner adds CF_STORE_TOKEN every page is rendered fresh.
       - name: Deploy the storefront
-        run: pnpm --filter @managemind/storefront exec wrangler deploy
+        env:
+          CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
+        run: |
+          if [ -n "$CF_STORE_TOKEN" ]; then
+            pnpm --filter @managemind/storefront exec wrangler deploy --var PAGE_CACHE:on
+          else
+            echo "::warning title=Page cache off::CF_STORE_TOKEN is not set, so pages can't be purged and the storefront doesn't cache them"
+            pnpm --filter @managemind/storefront exec wrangler deploy
+          fi
 
       - name: Smoke test
         env:
@@ -144,3 +162,22 @@ jobs:
           echo "- Admin: $ADMIN_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "- API: $API_URL/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Storefront: $STOREFRONT_URL" >> "$GITHUB_STEP_SUMMARY"
+
+      # A cache hit on a demo store (phase-3-plan §9), once pages are cached
+      # (CF_STORE_TOKEN set). The daily monitor reports the storefront's CPU,
+      # which hits dominate. Informational: a missing demo store or catalog
+      # doesn't block the deploy.
+      - name: Storefront cache hit
+        if: steps.workers.outputs.demo_store_url != ''
+        continue-on-error: true
+        env:
+          CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
+          DEMO_STORE_URL: ${{ steps.workers.outputs.demo_store_url }}
+        run: |
+          if [ -z "$CF_STORE_TOKEN" ]; then echo "Page cache off (no CF_STORE_TOKEN)"; exit 0; fi
+          for i in 1 2 3; do
+            line=$(curl -sS -o /dev/null -D - -w 'time %{time_total}s\n' "$DEMO_STORE_URL" | grep -iE '^x-cache:|^time ' | tr -d '\r' | paste -sd ' ')
+            echo "request $i: $line"
+          done
+          echo "- Storefront cache: $line ($DEMO_STORE_URL, third request)" >> "$GITHUB_STEP_SUMMARY"
+          grep -qi 'x-cache: hit' <<< "$line" || { echo "::warning title=Page cache::the third request to $DEMO_STORE_URL was not a cache hit"; exit 1; }

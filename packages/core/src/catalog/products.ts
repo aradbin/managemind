@@ -34,6 +34,7 @@ import {
   storeCatalogContext,
   type Translated,
 } from './common';
+import { refreshPriceRange } from './prices';
 import { chooseSlug, dropRedirects, recordSlugChange } from './slugs';
 
 const p = schema.products;
@@ -264,7 +265,8 @@ export async function listProducts(
     const text = query.q.trim().normalize('NFC');
     const like = `%${likeEscape(text)}%`;
     where.push(sql`(
-      exists (select 1 from store.product_translations t where t.product_id = p.id and t.title ilike ${like})
+      exists (select 1 from store.product_translations t where t.product_id = p.id
+                 and app.search_text(t.title) like app.search_text(${like}))
       or exists (select 1 from store.variants sv where sv.product_id = p.id and lower(sv.sku) like ${`${likeEscape(text.toLowerCase())}%`})
       or exists (select 1 from store.product_tags tg where tg.product_id = p.id and tg.tag = ${normalizeKey(text)}))`);
   }
@@ -555,6 +557,7 @@ export async function createProduct(
       .insert(v)
       .values({ productId: id, optionsKey: '', price: 0, ...variantColumns(data.variant ?? {}) }),
   );
+  await refreshPriceRange(tx, [id]);
   if (data.categoryIds?.length) await replaceCategories(tx, id, data.categoryIds);
   if (data.tags?.length) await replaceProductTags(tx, id, data.tags);
   if (data.attributes?.length)
@@ -888,6 +891,7 @@ export async function setProductOptions(
   }
   if (links.length) await tx.db.insert(vov).values(links);
   await tx.db.update(p).set({ updatedAt: sql`now()` }).where(eq(p.id, productId));
+  await refreshPriceRange(tx, [productId]);
 
   const after = await getProduct(tx, actor, productId);
   const summary = (d: ProductDetail) => ({
@@ -964,6 +968,7 @@ export async function updateVariant(
   const changes = variantChanges(current, updated);
   if (changes.keys.length) {
     await tx.db.update(p).set({ updatedAt: sql`now()` }).where(eq(p.id, current.productId));
+    await refreshPriceRange(tx, [current.productId]);
     await recordAudit(tx, {
       ...auditActor(actor, 'staff'),
       action: 'variant.updated',
@@ -1041,6 +1046,7 @@ export async function bulkUpdateVariants(
       .update(p)
       .set({ updatedAt: sql`now()` })
       .where(inArray(p.id, [...products]));
+    await refreshPriceRange(tx, [...products]);
   }
   for (const productId of products) {
     await emit(tx, 'catalog.product.updated', {

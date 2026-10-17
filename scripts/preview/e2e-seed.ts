@@ -56,9 +56,14 @@ export async function cleanOldE2E(client: pg.Client): Promise<number> {
   );
   const ids = rows.map((r) => r.id);
   if (!ids.length) return 0;
+  // A database without a PR's new migrations (the shared branch) lacks its new tables.
+  const { rows: present } = await client.query<{ name: string }>(
+    `select table_name as name from information_schema.tables where table_schema = 'store'`,
+  );
+  const existing = new Set(present.map((r) => r.name));
   await client.query('begin');
   try {
-    for (const table of STORE_TABLES) {
+    for (const table of STORE_TABLES.filter((t) => existing.has(t))) {
       const guarded =
         table === 'attributes'
           ? ' and not is_system'

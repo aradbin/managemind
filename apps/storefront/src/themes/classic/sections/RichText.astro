@@ -1,0 +1,21 @@
+---
+import type { RichTextDoc } from '@managemind/shared/rich-text';
+import { renderRichText } from '@managemind/shared/rich-text';
+import type { ThemeSection } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'rich_text' }>;
+}
+const { ctx, section } = Astro.props;
+const heading = ctx.text(section.heading);
+const body = (section.body[ctx.locale] ??
+  section.body[ctx.defaultLocale] ??
+  null) as RichTextDoc | null;
+---
+
+<section class="section rich">
+  {heading && <h2>{heading}</h2>}
+  {body && <Fragment set:html={renderRichText(body)} />}
+</section>

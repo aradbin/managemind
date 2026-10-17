@@ -1,0 +1,60 @@
+---
+import { formatPhone } from '@managemind/shared';
+import { number } from '../../lib/format';
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  /** Shows "Cookie settings" when the store has tracking tags. */
+  consent: boolean;
+}
+const { ctx, consent } = Astro.props;
+const { layout, t, d } = ctx;
+const profile = layout.store.profile;
+const business = [
+  ['footer.businessName', profile.businessName],
+  ['footer.tradeLicense', profile.tradeLicense],
+  ['footer.dbid', profile.dbid],
+  ['footer.bin', profile.bin],
+].filter((e): e is [Parameters<typeof t>[0], string] => Boolean(e[1]));
+const address = profile.address
+  ? [profile.address.line1, profile.address.line2, profile.address.city].filter(Boolean).join(', ')
+  : null;
+const year = number(new Date().getUTCFullYear(), d).replace(/[,،]/g, '');
+---
+
+<footer class="site-footer">
+  <div class="wrap footer-cols">
+    {layout.pages.length > 0 && (
+      <nav aria-labelledby="footer-pages">
+        <h2 id="footer-pages">{t('footer.pages')}</h2>
+        <ul>
+          {layout.pages.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
+        </ul>
+      </nav>
+    )}
+    {(profile.contactPhone || profile.contactEmail || address) && (
+      <section aria-labelledby="footer-contact">
+        <h2 id="footer-contact">{t('footer.contact')}</h2>
+        <ul>
+          {profile.contactPhone && <li><a href={`tel:${profile.contactPhone}`}>{formatPhone(profile.contactPhone, d.numerals)}</a></li>}
+          {profile.contactEmail && <li><a href={`mailto:${profile.contactEmail}`}>{profile.contactEmail}</a></li>}
+          {address && <li>{address}</li>}
+        </ul>
+      </section>
+    )}
+    {business.length > 0 && (
+      <section aria-labelledby="footer-business">
+        <h2 id="footer-business">{t('footer.business')}</h2>
+        <dl>
+          {business.map(([key, value]) => (<><dt>{t(key)}</dt><dd>{value}</dd></>))}
+        </dl>
+      </section>
+    )}
+  </div>
+  <div class="wrap" style="margin-top:24px">
+    {consent && <p><button type="button" class="linkish" data-consent-open>{t('footer.cookies')}</button></p>}
+    <p>{t('footer.rights', { year, store: layout.store.name })}</p>
+  </div>
+</footer>

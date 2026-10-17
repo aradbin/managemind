@@ -4,7 +4,7 @@
 //
 // 1. Finds or creates the Neon branch (from production). A new branch gets a
 //    fresh owner password, so production's never reaches a preview.
-// 2. Applies the migrations and the demo seed as the owner role, unless
+// 2. Applies the migrations, the demo seed and the demo catalog as the owner role, unless
 //    --skip-migrations (a PR changing migrations must not migrate the shared
 //    branch ahead of master).
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
@@ -15,6 +15,7 @@
 import { runMigrations } from '@managemind/db/migrate';
 import { seed } from '@managemind/db/seed';
 import pg from 'pg';
+import { seedDemoCatalog } from '../demo/catalog';
 import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib/actions';
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
@@ -58,6 +59,9 @@ try {
   } else {
     await runMigrations(ownerUrl);
     await seed(ownerUrl);
+    // The demo stores' catalog, for the storefront E2E and Lighthouse (phase-3-plan §8).
+    const filled = await seedDemoCatalog(owner);
+    if (filled.length) notice(`Demo catalog added to ${filled.join(', ')}`);
   }
 
   let config = await cf.findHyperdrive(configName);

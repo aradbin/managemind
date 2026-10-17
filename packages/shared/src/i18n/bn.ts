@@ -28,5 +28,6 @@ export const bn: Messages = {
   'error.limit_exceeded': 'এর সীমা পূর্ণ হয়ে গেছে।',
   'error.payload_too_large': 'ফাইলটি অনেক বড়।',
   'error.unsupported_media_type': 'শুধু JPEG, PNG ও WebP ছবি আপলোড করা যায়।',
+  'error.feature_unavailable': 'এটি এখনো চালু হয়নি। পরে আবার চেষ্টা করুন।',
   'error.internal': 'কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।',
 };

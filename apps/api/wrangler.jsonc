@@ -37,12 +37,23 @@
   // deployed bucket is set per environment by scripts/lib/workers.ts.
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "managemind-files-preview" }],
   // Rate limits (ADR 0006): SQLite-backed, the only kind on the Free plan.
-  "durable_objects": { "bindings": [{ "name": "RATE_LIMITER", "class_name": "RateLimiter" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RateLimiter"] }],
+  // The purge counter (ADR 0007): one object for the whole account.
+  "durable_objects": {
+    "bindings": [
+      { "name": "RATE_LIMITER", "class_name": "RateLimiter" },
+      { "name": "PURGE_BUDGET", "class_name": "PurgeBudget" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["RateLimiter"] },
+    { "tag": "v2", "new_sqlite_classes": ["PurgeBudget"] }
+  ],
   "queues": {
     "producers": [
       { "binding": "OUTBOX", "queue": "managemind-outbox" },
-      { "binding": "IMPORTS", "queue": "managemind-imports" }
+      { "binding": "IMPORTS", "queue": "managemind-imports" },
+      { "binding": "PURGE", "queue": "managemind-purge" },
+      { "binding": "DOMAINS", "queue": "managemind-domains" }
     ],
     "consumers": [
       {
@@ -62,7 +73,23 @@
         "max_retries": 3,
         "dead_letter_queue": "managemind-imports-dlq"
       },
-      { "queue": "managemind-imports-dlq", "max_batch_size": 10, "max_batch_timeout": 5 }
+      { "queue": "managemind-imports-dlq", "max_batch_size": 10, "max_batch_timeout": 5 },
+      // Cache purges (ADR 0018): batches of up to 10 seconds debounce each
+      // store's changes; rate-limited purges come back as delayed messages.
+      {
+        "queue": "managemind-purge",
+        "max_batch_size": 100,
+        "max_batch_timeout": 10,
+        "max_retries": 5,
+        "dead_letter_queue": "managemind-purge-dlq"
+      },
+      // Delayed re-checks of new custom domains (ADR 0019).
+      {
+        "queue": "managemind-domains",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3
+      }
     ]
   },
   // The daily batch (ADR 0010): 23:47 UTC is 05:47 in Dhaka, before the day's
@@ -73,6 +100,7 @@
     "PLATFORM_NAME": "managemind",
     "PLATFORM_DOMAIN": "localhost",
     "STORE_DOMAIN": "localhost",
+    "STOREFRONT_ORIGIN": "http://localhost:4321",
     "LOG_SAMPLE_RATE": "1"
   }
 }

@@ -75,8 +75,20 @@ export async function prepareTestDatabase(database: string): Promise<void> {
     // a fresh server (CI) their CREATE ROLEs would race, so setups take turns;
     // the tests themselves still run in parallel.
     await server.query('select pg_advisory_lock($1)', [SETUP_LOCK]);
-    const exists = await server.query('select 1 from pg_database where datname = $1', [database]);
-    if (exists.rowCount === 0) await server.query(`create database ${database}`);
+    // C.UTF-8, as production: under plain C, pg_trgm makes no Bangla trigrams.
+    // A database left over with the old locale is recreated.
+    const exists = await server.query<{ ctype: string }>(
+      'select datctype as ctype from pg_database where datname = $1',
+      [database],
+    );
+    if (exists.rows[0] && exists.rows[0].ctype === 'C') {
+      await server.query(`drop database ${database} with (force)`);
+    }
+    if (exists.rowCount === 0 || exists.rows[0]?.ctype === 'C') {
+      await server.query(
+        `create database ${database} template template0 encoding 'UTF8' locale 'C.UTF-8'`,
+      );
+    }
     await server.query(`
       do $$ begin
         create role ${APP_ROLE} login password '${APP_ROLE}';

@@ -1,13 +1,32 @@
 // The admin's translator and the current language, kept in React context and
 // remembered on this device. The document's lang follows it (WCAG 3.1.1).
-import { createTranslator, type Locale, type Params } from '@managemind/shared/i18n';
+import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { bn } from './bn';
 import { en } from './en';
+import type { onlineStoreEn } from './online-store-en';
 
-export type AdminKey = keyof typeof en;
-export const translate = createTranslator<AdminKey>({ en, bn });
-export const messages = { en, bn };
+/** Every key, including those of catalogs loaded with their pages. */
+export type AdminKey = keyof typeof en | keyof typeof onlineStoreEn;
+const catalogs = {
+  en: { ...en } as Record<AdminKey, Message>,
+  bn: { ...bn } as Partial<Record<AdminKey, Message>>,
+};
+export const translate = createTranslator<AdminKey>(catalogs);
+export const messages = catalogs;
+
+/**
+ * Adds a catalog loaded with its pages (the online store's messages), so the
+ * first download stays small. Pages that use these keys import the module
+ * that calls this, so their keys are there before they render.
+ */
+export function addMessages(more: {
+  en: Partial<Record<AdminKey, Message>>;
+  bn: Partial<Record<AdminKey, Message>>;
+}): void {
+  Object.assign(catalogs.en, more.en);
+  Object.assign(catalogs.bn, more.bn);
+}
 
 const STORAGE_KEY = 'mm.locale';
 

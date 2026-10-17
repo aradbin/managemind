@@ -1,0 +1,55 @@
+---
+import type { StoreCategory } from '@managemind/core';
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+import Img from './Img.astro';
+
+interface Props {
+  ctx: PageContext;
+  /** This page in the other language. */
+  languageHref: string;
+}
+const { ctx, languageHref } = Astro.props;
+const { layout, t, locale } = ctx;
+const other = locale === 'bn' ? 'en' : 'bn';
+const logo = ctx.image(ctx.theme.tokens.logoMediaId);
+const roots = layout.categories.filter((c) => c.parentId === null);
+const children = (id: string): StoreCategory[] =>
+  layout.categories.filter((c) => c.parentId === id);
+const query = ctx.url.pathname.endsWith('/search') ? (ctx.url.searchParams.get('q') ?? '') : '';
+---
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href={href(ctx.link, { kind: 'home' })}>
+      {logo ? <Img image={logo} alt={layout.store.name} sizes="160px" eager /> : <span>{layout.store.name}</span>}
+    </a>
+    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get">
+      <label class="visually-hidden" for="q">{t('search.label')}</label>
+      <input id="q" name="q" type="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" />
+      <button type="submit">{t('search.submit')}</button>
+    </form>
+    {roots.length > 0 && (
+      <details class="menu">
+        <summary>{t('nav.menu')}</summary>
+        <nav class="menu-panel" aria-label={t('nav.categories')}>
+          <ul>
+            {roots.map((c) => (
+              <li>
+                <a href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a>
+                {children(c.id).length > 0 && (
+                  <ul>
+                    {children(c.id).map((k) => (
+                      <li><a href={href(ctx.link, { kind: 'category', slug: k.slug })}>{k.name}</a></li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </details>
+    )}
+    <a class="lang" href={languageHref} hreflang={other} lang={other}>{other === 'bn' ? 'বাংলা' : 'English'}</a>
+  </div>
+</header>

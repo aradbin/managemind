@@ -380,6 +380,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261009.1
+      '@managemind/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -410,6 +413,9 @@ importers:
       '@managemind/db':
         specifier: workspace:*
         version: link:../db
+      '@managemind/providers':
+        specifier: workspace:*
+        version: link:../providers
       '@managemind/shared':
         specifier: workspace:*
         version: link:../shared

@@ -5,7 +5,9 @@
 //   tsx production/zones.ts        (PLATFORM_DOMAIN and STORE_DOMAIN set)
 //
 // - Proxied placeholder records for the Workers routes: api.<platform> and
-//   the wildcard *.<store> (§3.5, §3.7).
+//   the wildcard *.<store> (§3.5, §3.7), and stores.<store>, the fallback
+//   origin custom domains point at (ADR 0019).
+// - Cloudflare for SaaS's fallback origin, once the owner has enabled it.
 // - Checks that the email provider's DKIM record and DMARC exist (Resend
 //   adds them; we don't manage them).
 // - "Block AI bots" and the WAF rule for cross-site writes to the admin's
@@ -23,6 +25,7 @@ const [platformZone, storeZone] = await Promise.all([cf.zoneId(platform), cf.zon
 for (const [zone, name] of [
   [platformZone, `api.${platform}`],
   [storeZone, `*.${store}`],
+  [storeZone, `stores.${store}`],
 ] as const) {
   notice(`DNS ${name}: ${await cf.ensureRoutePlaceholder(zone, name)}`);
 }
@@ -61,4 +64,12 @@ await optional(
       expression: `(http.host eq "${admin}" and starts_with(http.request.uri.path, "/api/") and http.request.method in {"POST" "PUT" "PATCH" "DELETE"} and not any(http.request.headers["origin"][*] eq "https://${admin}"))`,
       action: 'block',
     }),
+);
+
+await optional(
+  `Custom hostnames fallback origin stores.${store}`,
+  `Turn on Cloudflare for SaaS (${store} > SSL/TLS > Custom Hostnames) and give the deploy token SSL and Certificates: Edit; until then custom domains can't be served.`,
+  async () => {
+    await cf.setFallbackOrigin(storeZone, `stores.${store}`);
+  },
 );

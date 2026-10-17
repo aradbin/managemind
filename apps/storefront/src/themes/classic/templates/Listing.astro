@@ -1,0 +1,209 @@
+---
+// Category, collection and search pages (phase-3-plan §3.5, §3.7): 24
+// products a page with previous and next links, sort, and filters that work
+// as a plain GET form, so everything works without JavaScript and crawlers
+// can follow the pages. Filtered pages are noindex, with the unfiltered page
+// as canonical.
+import type { Listing, StoreCategory } from '@managemind/core';
+import type { RichTextDoc } from '@managemind/shared/rich-text';
+import { renderRichText } from '@managemind/shared/rich-text';
+import {
+  isFiltered,
+  LISTING_LIMITS,
+  LISTING_SORTS,
+  type ListingQuery,
+  listingQueryString,
+} from '@managemind/shared/storefront/listing';
+import type { StoreRoute } from '@managemind/shared/storefront/urls';
+import { number } from '../../../lib/format';
+import { absolute, alternates, href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import { breadcrumbLd, type Head } from '../../../lib/seo';
+import Layout from '../Layout.astro';
+import ProductList from '../ProductList.astro';
+
+interface Props {
+  ctx: PageContext;
+  route: StoreRoute;
+  title: string;
+  description?: RichTextDoc | null;
+  slugs?: Partial<Record<'bn' | 'en', string>> | null;
+  /** Category pages: the category, for its children and breadcrumbs. */
+  category?: StoreCategory | null;
+  listing: Listing | null;
+  query: ListingQuery;
+  noindex: boolean;
+}
+const {
+  ctx,
+  route,
+  title,
+  description = null,
+  slugs = null,
+  category = null,
+  listing,
+  query,
+  noindex,
+} = Astro.props;
+const { t, d, layout } = ctx;
+const search = route.kind === 'search';
+const path = href(ctx.link, route);
+const filtered = isFiltered(query);
+const canonicalQuery = !filtered && query.page > 1 ? `?page=${query.page}` : '';
+const langs = search
+  ? []
+  : alternates(ctx.link, (slug) => (slug && 'slug' in route ? { ...route, slug } : null), slugs);
+const languageHref = search
+  ? `${href({ ...ctx.link, locale: ctx.locale === 'bn' ? 'en' : 'bn' }, route)}${listingQueryString(query)}`
+  : (langs.find((a) => a.locale !== ctx.locale && a.locale !== 'x-default')?.url ??
+    href(ctx.link, { kind: 'home' }));
+
+const children = category ? layout.categories.filter((c) => c.parentId === category.id) : [];
+const parents: StoreCategory[] = [];
+for (let c = category; c?.parentId; ) {
+  const parent = layout.categories.find((x) => x.id === c?.parentId);
+  if (!parent) break;
+  parents.unshift(parent);
+  c = parent;
+}
+const crumbs = [
+  { name: t('nav.home'), href: href(ctx.link, { kind: 'home' }) },
+  ...parents.map((c) => ({
+    name: c.name,
+    href: href(ctx.link, { kind: 'category', slug: c.slug }),
+  })),
+];
+const head: Head = {
+  title: search
+    ? `${query.q ? `${query.q} | ` : ''}${t('search.title')} | ${layout.store.name}`
+    : `${title} | ${layout.store.name}`,
+  canonical: search ? null : absolute(ctx.link, `${path}${canonicalQuery}`),
+  alternates: filtered ? [] : langs,
+  // Search results are never indexed (robots.txt disallows them too).
+  noindex: noindex || filtered || search,
+  ...(listing?.items[0]?.image?.files.at(-1)
+    ? { image: absolute(ctx.link, `/media/${listing.items[0].image.files.at(-1)?.file}`) }
+    : {}),
+  jsonLd: search
+    ? []
+    : [
+        breadcrumbLd(
+          [...crumbs, { name: title, href: path }].map((c) => ({
+            name: c.name,
+            url: absolute(ctx.link, c.href),
+          })),
+        ),
+      ],
+};
+const facets = listing?.facets ?? null;
+const pageHref = (page: number) => `${path}${listingQueryString({ ...query, page })}`;
+const total = listing?.total ?? 0;
+const capped = search && total >= LISTING_LIMITS.searchResults;
+const toTaka = (poisha: number) => Math.floor(poisha / 100);
+---
+
+<Layout ctx={ctx} head={head} languageHref={languageHref}>
+  {!search && (
+    <nav class="crumbs" aria-label={t('breadcrumb.label')}>
+      <ol>
+        {crumbs.map((c) => <li><a href={c.href}>{c.name}</a></li>)}
+        <li aria-current="page">{title}</li>
+      </ol>
+    </nav>
+  )}
+  <div class="listing-head">
+    <h1>{search ? (query.q ? t('search.resultsFor', { count: total, q: query.q }) : t('search.title')) : title}</h1>
+    {listing && !search && <p class="count">{t('listing.count', { count: total })}</p>}
+  </div>
+  {description && <div class="rich"><Fragment set:html={renderRichText(description)} /></div>}
+  {children.length > 0 && (
+    <nav aria-label={t('listing.subcategories')}>
+      <ul class="chips" role="list">
+        {children.map((c) => <li><a href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a></li>)}
+      </ul>
+    </nav>
+  )}
+  {search && !query.q && <p>{t('search.empty')}</p>}
+  {search && query.q && listing && total === 0 && <p>{t('search.none', { q: query.q })}</p>}
+  {capped && <p class="count">{t('search.refine', { count: LISTING_LIMITS.searchResults })}</p>}
+
+  {listing && (total > 0 || filtered) && (
+    <div class="with-filters">
+      <details class="filters" open={filtered || undefined}>
+        <summary>{t('listing.filters')}</summary>
+        <form method="get" action={path}>
+          {search && query.q && <input type="hidden" name="q" value={query.q} />}
+          {query.sort !== 'featured' && <input type="hidden" name="sort" value={query.sort} />}
+          {search && facets && facets.categories.length > 0 && (
+            <fieldset>
+              <legend>{t('listing.category')}</legend>
+              {facets.categories.map((c) => (
+                <label><input type="radio" name="category" value={c.slug} checked={c.selected} /> {c.name} <span class="count">({number(c.count, d)})</span></label>
+              ))}
+            </fieldset>
+          )}
+          {facets?.price && facets.price.max > facets.price.min && (
+            <fieldset>
+              <legend>{t('listing.price')}</legend>
+              <div class="range">
+                <label class="visually-hidden" for="min">{t('listing.min')}</label>
+                <input id="min" name="min" type="number" inputmode="numeric" min="0" placeholder={String(toTaka(facets.price.min))} value={query.min} />
+                <label class="visually-hidden" for="max">{t('listing.max')}</label>
+                <input id="max" name="max" type="number" inputmode="numeric" min="0" placeholder={String(toTaka(facets.price.max) + 1)} value={query.max} />
+              </div>
+            </fieldset>
+          )}
+          <label><input type="checkbox" name="stock" value="1" checked={query.inStock} /> {t('listing.inStock')}</label>
+          {facets?.groups.map((group) => (
+            <fieldset>
+              <legend>{group.name}</legend>
+              {group.values.map((v) => (
+                <label>
+                  <input type="checkbox" name={`${group.type === 'attribute' ? 'a' : 'o'}.${group.key}`} value={v.key} checked={v.selected} />
+                  {v.label} <span class="count">({number(v.count, d)})</span>
+                </label>
+              ))}
+            </fieldset>
+          ))}
+          <div style="display:flex;gap:12px;align-items:center">
+            <button type="submit" class="button">{t('listing.apply')}</button>
+            {filtered && <a href={`${path}${search && query.q ? `?q=${encodeURIComponent(query.q)}` : ''}`}>{t('listing.clear')}</a>}
+          </div>
+        </form>
+      </details>
+      <div>
+        {total > 0 && (
+          <form class="sorter" method="get" action={path}>
+            {[...new URLSearchParams(listingQueryString({ ...query, sort: 'featured', page: 1 }))].map(([name, value]) => (
+              <input type="hidden" name={name} value={value} />
+            ))}
+            <label for="sort">{t('listing.sort')}</label>
+            <select id="sort" name="sort">
+              {LISTING_SORTS.map((s) => <option value={s} selected={query.sort === s}>{t(`sort.${s}`)}</option>)}
+            </select>
+            <button type="submit" class="button secondary">{t('listing.apply')}</button>
+          </form>
+        )}
+        {total === 0 ? (
+          <p>{filtered ? t('listing.noMatch') : t('listing.empty')}</p>
+        ) : (
+          <ProductList ctx={ctx} products={listing.items} eagerFirst />
+        )}
+        {listing.pageCount > 1 && (
+          <nav class="pager" aria-label={t('pagination.label')}>
+            {listing.page > 1 ? <a rel="prev" href={pageHref(listing.page - 1)}>{t('pagination.prev')}</a> : <span></span>}
+            <span>{t('pagination.page', { page: listing.page, pages: listing.pageCount })}</span>
+            {listing.page < listing.pageCount ? <a rel="next" href={pageHref(listing.page + 1)}>{t('pagination.next')}</a> : <span></span>}
+          </nav>
+        )}
+      </div>
+    </div>
+  )}
+  {listing && total === 0 && !filtered && !search && <p>{t('listing.empty')}</p>}
+  <script>
+  // Sorting applies as soon as it changes; without JavaScript the button does.
+  const sorter = document.querySelector<HTMLFormElement>('form.sorter');
+  sorter?.querySelector('select')?.addEventListener('change', () => sorter.submit());
+  sorter?.querySelector('button')?.setAttribute('hidden', '');
+  </script>
+</Layout>

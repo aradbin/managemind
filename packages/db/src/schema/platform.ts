@@ -68,17 +68,27 @@ export const tenantDomains = platform.table(
   {
     id: id(),
     tenantId: tenantRef(),
-    hostname: text().notNull().unique(),
+    hostname: text().notNull(),
     status: text({ enum: DOMAIN_STATUSES }).notNull().default('pending'),
     /** The canonical host; without one, the default subdomain is canonical. */
     isPrimary: boolean().notNull().default(false),
     verifiedAt: ts(),
     /** Cloudflare for SaaS custom hostname ID. */
     providerRef: text(),
+    /** The certificate's state at Cloudflare (pending_validation, active, …). */
+    sslStatus: text(),
+    /** The TXT ownership record Cloudflare asks for, when the client's DNS is on Cloudflare. */
+    ownershipRecord: jsonb(),
+    lastCheckedAt: ts(),
+    checkAttempts: integer().notNull().default(0),
+    /** Cloudflare's reason, when the domain failed or needs attention. */
+    failureReason: text(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
+    // A removed domain frees its hostname for another store (phase-3-plan §3.9).
+    uniqueIndex('tenant_domains_hostname_unique').on(t.hostname).where(sql`status <> 'removed'`),
     uniqueIndex('tenant_domains_one_primary')
       .on(t.tenantId)
       .where(sql`is_primary and status = 'active'`),
@@ -89,6 +99,25 @@ export const tenantDomains = platform.table(
     ),
     check('tenant_domains_status_valid', sql`${t.status} in (${inList(DOMAIN_STATUSES)})`),
   ],
+);
+
+/** Every status change of a custom domain (the state machine's history, PLAN.md lifecycles). */
+export const tenantDomainHistory = platform.table(
+  'tenant_domain_history',
+  {
+    id: id(),
+    tenantId: tenantRef(),
+    domainId: uuid()
+      .notNull()
+      .references(() => tenantDomains.id, { onDelete: 'cascade' }),
+    fromStatus: text({ enum: DOMAIN_STATUSES }),
+    toStatus: text({ enum: DOMAIN_STATUSES }).notNull(),
+    /** A staff user, or null for the system's checks. */
+    actorId: uuid(),
+    reason: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('tenant_domain_history_domain_idx').on(t.domainId, t.createdAt)],
 );
 
 // Staff identity: Better Auth's core tables and its twoFactor plugin's table
