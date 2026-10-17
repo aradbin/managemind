@@ -2,7 +2,11 @@
 // entered by staff and placed with the same placeOrder as the storefront.
 // The preview prices them exactly as placing will, and says whether the
 // phone is blocked so the screen can warn first.
-import { type ManualOrderInput, manualOrderInput } from '@managemind/shared/orders';
+import {
+  type ManualOrderInput,
+  manualOrderInput,
+  manualQuoteInput,
+} from '@managemind/shared/orders';
 import { type Actor, authorize } from '../access';
 import { parseInput } from '../catalog/common';
 import { isBlocked } from '../customers/blocklist';
@@ -11,7 +15,7 @@ import type { TenantTx } from '../tenant';
 import { completeWalkIn } from './lifecycle';
 import { type PlacedOrder, placeOrder } from './place';
 
-const zoneOf = (v: ManualOrderInput) =>
+const zoneOf = (v: Pick<ManualOrderInput, 'zoneId' | 'address'>) =>
   v.zoneId === 'none'
     ? ('none' as const)
     : v.zoneId
@@ -26,7 +30,8 @@ export async function previewManualOrder(
   input: unknown,
 ): Promise<{ quote: Quote; blocked: boolean; firstOrder: boolean }> {
   authorize(actor, 'orders.write');
-  const v = parseInput(manualOrderInput, input);
+  const v = parseInput(manualQuoteInput, input);
+  const phone = v.contact?.phone ?? null;
   const settings = await orderSettings(tx);
   const q = await quote(tx, {
     lines: v.lines,
@@ -34,16 +39,16 @@ export async function previewManualOrder(
     zone: zoneOf(v),
     deliveryFeeOverride: v.deliveryFee?.amount,
     code: v.code ?? null,
-    phone: v.contact.phone,
+    phone,
     paymentMethod: v.payment ? 'manual' : 'cod',
     manualDiscount: v.manualDiscount ?? null,
     maxQuantityPerLine: null,
     settings,
   });
-  const facts = await customerFacts(tx, v.contact.phone);
+  const facts = await customerFacts(tx, phone);
   return {
     quote: q,
-    blocked: await isBlocked(tx, v.contact.phone),
+    blocked: phone !== null && (await isBlocked(tx, phone)),
     firstOrder: facts.isFirstOrder,
   };
 }

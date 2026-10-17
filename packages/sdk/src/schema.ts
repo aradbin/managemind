@@ -4242,10 +4242,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The latest imports (catalog.read) */
+        /** The latest imports of one kind (catalog.read, or customers.read) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    kind?: "products" | "customers";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -4264,7 +4266,7 @@ export interface paths {
             };
         };
         put?: never;
-        /** Create an import job (catalog.write; stock columns need inventory.write; accepts Idempotency-Key) */
+        /** Create an import job (catalog.write, or customers.write; stock columns need inventory.write; accepts Idempotency-Key) */
         post: {
             parameters: {
                 query?: never;
@@ -4275,6 +4277,8 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
+                        /** @enum {string} */
+                        kind?: "products" | "customers";
                         fileName: string;
                         chunkCount: number;
                         total: number;
@@ -4346,7 +4350,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Stage one chunk of products (the dry run’s output; at most 1 MB) */
+        /** Stage one chunk: up to 100 products or 500 customers (the dry run’s output; at most 1 MB) */
         put: {
             parameters: {
                 query?: never;
@@ -5554,10 +5558,10 @@ export interface paths {
                             variantId: string;
                             quantity: number;
                         }[];
-                        contact: {
-                            name: string;
-                            phone: string;
-                            email?: string;
+                        contact?: {
+                            phone?: string;
+                        } & {
+                            [key: string]: unknown;
                         };
                         address: {
                             divisionId: number;
@@ -9079,6 +9083,8 @@ export interface components {
         ImportJob: {
             /** Format: uuid */
             id: string;
+            /** @enum {string} */
+            kind: "products" | "customers";
             /** @enum {string} */
             status: "staging" | "running" | "images" | "done" | "failed" | "cancelled";
             fileName: string;

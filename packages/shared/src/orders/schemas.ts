@@ -260,6 +260,15 @@ export const manualOrderInput = z
   .strict();
 export type ManualOrderInput = z.infer<typeof manualOrderInput>;
 
+/** The live price of a manual order while it is typed: the customer may not be entered yet. */
+export const manualQuoteInput = manualOrderInput.extend({
+  contact: z
+    .object({ phone: phoneNumber().optional() })
+    .loose()
+    .transform((c) => ({ phone: c.phone }))
+    .optional(),
+});
+
 export const orderListQuery = z.object({
   status: z.enum(['pending', 'confirmed', 'processing', 'completed', 'cancelled']).optional(),
   paymentStatus: z.enum(['unpaid', 'partially_paid', 'paid']).optional(),

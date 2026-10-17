@@ -55,6 +55,7 @@ import {
   failInput,
   manualOrderInput,
   manualPaymentInput,
+  manualQuoteInput,
   noteInput,
   orderEditInput,
   orderListQuery,
@@ -444,7 +445,7 @@ export const ORDER_ROUTES = {
     method: 'post',
     path: '/orders/quote',
     summary: 'Prices a manual order before it is saved, and warns about a blocked phone',
-    request: body(manualOrderInput),
+    request: body(manualQuoteInput),
     responses: json(
       z.object({ quote: QuoteView, blocked: z.boolean(), firstOrder: z.boolean() }),
       'Quote',

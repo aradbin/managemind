@@ -6,6 +6,7 @@
 import { createTenant, type ImportMessage, systemActor } from '@managemind/core';
 import { connect } from '@managemind/db/testing';
 import { chunkProducts, dryRunImport, type MappedRow } from '@managemind/shared/catalog/import';
+import { mapCustomerHeaders, parseCustomerRow } from '@managemind/shared/orders/customer-import';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { handleImportDeadLetters, handleImportQueue } from '../src/jobs';
@@ -367,5 +368,46 @@ describe('import errors and delivery', () => {
     const job = await api('POST', '/imports', { fileName: 'x.csv', chunkCount: 2, total: 2 });
     expect((await api('POST', `/imports/${job.body.id}/start`)).status).toBe(422);
     expect((await api('POST', `/imports/${job.body.id}/cancel`)).body.status).toBe('cancelled');
+  });
+});
+
+describe('customer imports (phase-4-plan §3.10)', () => {
+  it('imports customers through the same job, kept apart from product imports', async () => {
+    const header = ['Name', 'Phone', 'Address', 'Area', 'District', 'Tags'];
+    const rows = [
+      ['Rahim', '01711-000001', 'House 5, Road 2', 'Dhanmondi', 'Dhaka', 'vip'],
+      ['করিম', '০১৭১১০০০০০২', '', '', '', ''],
+      ['Nobody', 'not a phone', '', '', '', ''],
+    ];
+    const columns = mapCustomerHeaders(header);
+    const parsed = rows.map((r, i) => parseCustomerRow(r, columns, i + 2));
+    expect(parsed.map((p) => p.errors.length)).toEqual([0, 0, 1]);
+    const customers = parsed.flatMap((p) => (p.customer ? [p.customer] : []));
+
+    const job = await api('POST', '/imports', {
+      kind: 'customers',
+      fileName: 'customers.csv',
+      chunkCount: 1,
+      total: customers.length,
+    });
+    expect(job.status).toBe(201);
+    expect(job.body.kind).toBe('customers');
+    expect((await api('PUT', `/imports/${job.body.id}/chunks/0`, customers)).status).toBe(204);
+    expect((await api('POST', `/imports/${job.body.id}/start`)).status).toBe(200);
+    await drain();
+    expect((await api('GET', `/imports/${job.body.id}`)).body).toMatchObject({
+      status: 'done',
+      created: 2,
+    });
+
+    const list = await api('GET', '/customers?q=01711000001');
+    expect(list.body.items[0]).toMatchObject({ name: 'Rahim', tags: ['vip'] });
+    const detail = await api('GET', `/customers/${list.body.items[0].id}`);
+    expect(detail.body.addresses[0]).toMatchObject({ areaId: 513, line: 'House 5, Road 2' });
+
+    const kinds = await api('GET', '/imports?kind=customers');
+    expect(kinds.body.map((j: Json) => j.id)).toEqual([job.body.id]);
+    const products = await api('GET', '/imports');
+    expect(products.body.some((j: Json) => j.id === job.body.id)).toBe(false);
   });
 });

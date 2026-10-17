@@ -68,6 +68,11 @@ const manual = (extra: Record<string, unknown> = {}) => ({
 describe('a manual order from entry to completed', () => {
   it('prices, places once per key, confirms, ships, delivers and completes', async () => {
     const b = await staff(ownerEmail);
+    // Prices show while the order is typed, before the customer is entered.
+    const early = (await (
+      await b.post('/api/admin/orders/quote', manual({ contact: undefined }))
+    ).json()) as Json;
+    expect(early).toMatchObject({ blocked: false, quote: { totals: { total: 307_000 } } });
     const quote = (await (await b.post('/api/admin/orders/quote', manual())).json()) as Json;
     expect(quote).toMatchObject({
       blocked: false,
