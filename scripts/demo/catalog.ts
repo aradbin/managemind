@@ -247,138 +247,136 @@ export async function seedDemoCatalog(
     );
     if (!rows[0]) continue;
     const actor = ownerActor(tenant.id);
-    const run = <T>(fn: (tx: TenantTx) => Promise<T>) =>
-      withTenant(client, tenant.id, async (tx) => {
-        await tx.db.execute(sql`set local role app_rw`);
-        return fn(tx);
-      });
-    const done = await run(async (tx) => {
+    // One transaction per store: an interrupted run leaves nothing half-made.
+    const added = await withTenant(client, tenant.id, async (tx) => {
+      await tx.db.execute(sql`set local role app_rw`);
+      const run = <T>(fn: (tx: TenantTx) => Promise<T>) => fn(tx);
       const { rows: existing } = await tx.db.execute<{ n: number }>(
         // A demo store's collection marks the catalog as there.
         sql`select count(*)::int as n from store.collection_translations where slug = ${slugOf(demo.collection.en)}`,
       );
-      return (existing[0]?.n ?? 0) > 0;
-    });
-    if (done) continue;
+      if ((existing[0]?.n ?? 0) > 0) return false;
 
-    const categoryIds: string[] = [];
-    for (const name of demo.categories) {
-      const c = await run((tx) =>
-        createCategory(tx, actor, {
-          translations: { bn: { name: name.bn }, en: { name: name.en, slug: slugOf(name.en) } },
-        }),
-      );
-      categoryIds.push(c.id);
-    }
-    const brand = await run((tx) => brandAttributeId(tx));
-    await run((tx) => updateAttribute(tx, actor, brand, { filterable: true }));
-    const brandValues = (
-      await run((tx) =>
-        setAttributeValues(
-          tx,
-          actor,
-          brand,
-          demo.brands.map((b) => ({ label: { bn: b.bn, en: b.en } })),
-        ),
-      )
-    ).values.map((v) => v.id);
-
-    const productIds: string[] = [];
-    for (const p of demo.products) {
-      const product = await run((tx) =>
-        createProduct(tx, actor, {
-          status: 'active',
-          translations: {
-            bn: { title: p.title.bn },
-            en: { title: p.title.en, slug: slugOf(p.title.en) },
-          },
-          variant: {
-            price: p.price,
-            compareAtPrice: p.compareAt ?? null,
-            sku: skuOf(demo.slug, p.title.en),
-          },
-          categoryIds: [categoryIds[p.category] as string],
-          attributes: [
-            { type: 'choice', attributeId: brand, valueIds: [brandValues[p.brand] as string] },
-          ],
-          tags: ['demo'],
-        }),
-      );
-      let variantIds = product.variants.map((v) => v.id);
-      if (p.option) {
-        const option = p.option;
-        const withOptions = await run((tx) =>
-          setProductOptions(tx, actor, product.id, [
-            {
-              name: { bn: option.name.bn, en: option.name.en },
-              values: option.values.map((v) => ({ label: { bn: v.bn, en: v.en } })),
-            },
-          ]),
+      const categoryIds: string[] = [];
+      for (const name of demo.categories) {
+        const c = await run((tx) =>
+          createCategory(tx, actor, {
+            translations: { bn: { name: name.bn }, en: { name: name.en, slug: slugOf(name.en) } },
+          }),
         );
-        variantIds = withOptions.variants.map((v) => v.id);
-        for (const [i, id] of variantIds.entries()) {
-          await run((tx) =>
-            updateVariant(tx, actor, id, {
-              price: p.price + i * Math.round(p.price / 10 / 100) * 100,
-              compareAtPrice: p.compareAt
-                ? p.compareAt + i * Math.round(p.price / 10 / 100) * 100
-                : null,
-              sku: `${skuOf(demo.slug, p.title.en)}-${i + 1}`,
-            }),
-          );
-        }
+        categoryIds.push(c.id);
       }
-      if (p.stock > 0) {
-        for (const id of variantIds) {
-          await run((tx) =>
-            receive(tx, actor, { variantId: id, quantity: p.stock, reason: 'received' }),
+      const brand = await run((tx) => brandAttributeId(tx));
+      await run((tx) => updateAttribute(tx, actor, brand, { filterable: true }));
+      const brandValues = (
+        await run((tx) =>
+          setAttributeValues(
+            tx,
+            actor,
+            brand,
+            demo.brands.map((b) => ({ label: { bn: b.bn, en: b.en } })),
+          ),
+        )
+      ).values.map((v) => v.id);
+
+      const productIds: string[] = [];
+      for (const p of demo.products) {
+        const product = await run((tx) =>
+          createProduct(tx, actor, {
+            status: 'active',
+            translations: {
+              bn: { title: p.title.bn },
+              en: { title: p.title.en, slug: slugOf(p.title.en) },
+            },
+            variant: {
+              price: p.price,
+              compareAtPrice: p.compareAt ?? null,
+              sku: skuOf(demo.slug, p.title.en),
+            },
+            categoryIds: [categoryIds[p.category] as string],
+            attributes: [
+              { type: 'choice', attributeId: brand, valueIds: [brandValues[p.brand] as string] },
+            ],
+            tags: ['demo'],
+          }),
+        );
+        let variantIds = product.variants.map((v) => v.id);
+        if (p.option) {
+          const option = p.option;
+          const withOptions = await run((tx) =>
+            setProductOptions(tx, actor, product.id, [
+              {
+                name: { bn: option.name.bn, en: option.name.en },
+                values: option.values.map((v) => ({ label: { bn: v.bn, en: v.en } })),
+              },
+            ]),
           );
+          variantIds = withOptions.variants.map((v) => v.id);
+          for (const [i, id] of variantIds.entries()) {
+            await run((tx) =>
+              updateVariant(tx, actor, id, {
+                price: p.price + i * Math.round(p.price / 10 / 100) * 100,
+                compareAtPrice: p.compareAt
+                  ? p.compareAt + i * Math.round(p.price / 10 / 100) * 100
+                  : null,
+                sku: `${skuOf(demo.slug, p.title.en)}-${i + 1}`,
+              }),
+            );
+          }
         }
+        if (p.stock > 0) {
+          for (const id of variantIds) {
+            await run((tx) =>
+              receive(tx, actor, { variantId: id, quantity: p.stock, reason: 'received' }),
+            );
+          }
+        }
+        productIds.push(product.id);
       }
-      productIds.push(product.id);
-    }
 
-    const collection = await run((tx) =>
-      createCollection(tx, actor, {
-        kind: 'manual',
-        published: true,
-        translations: {
-          bn: { name: demo.collection.bn },
-          en: { name: demo.collection.en, slug: slugOf(demo.collection.en) },
-        },
-      }),
-    );
-    await run((tx) =>
-      setCollectionProducts(
-        tx,
-        actor,
-        collection.id,
-        productIds.filter((_, i) => i % 2 === 0),
-      ),
-    );
-
-    for (const [kind, title] of [
-      ['about', { bn: 'আমাদের সম্পর্কে', en: 'About us' }],
-      ['returns', { bn: 'রিটার্ন নীতি', en: 'Returns' }],
-      ['delivery', { bn: 'ডেলিভারি তথ্য', en: 'Delivery' }],
-    ] as const) {
-      await run((tx) =>
-        createPage(tx, actor, {
-          kind,
+      const collection = await run((tx) =>
+        createCollection(tx, actor, {
+          kind: 'manual',
           published: true,
           translations: {
-            bn: { title: title.bn },
-            en: { title: title.en, slug: slugOf(title.en) },
+            bn: { name: demo.collection.bn },
+            en: { name: demo.collection.en, slug: slugOf(demo.collection.en) },
           },
         }),
       );
-    }
+      await run((tx) =>
+        setCollectionProducts(
+          tx,
+          actor,
+          collection.id,
+          productIds.filter((_, i) => i % 2 === 0),
+        ),
+      );
 
-    const settings = storefront[demo.slug];
-    if (settings) await run((tx) => updateStoreProfile(tx, actor, { storefront: settings }));
-    await run((tx) => applyThemePreset(tx, actor, demo.preset));
-    await run((tx) => publishTheme(tx, actor));
-    filled.push(demo.slug);
+      for (const [kind, title] of [
+        ['about', { bn: 'আমাদের সম্পর্কে', en: 'About us' }],
+        ['returns', { bn: 'রিটার্ন নীতি', en: 'Returns' }],
+        ['delivery', { bn: 'ডেলিভারি তথ্য', en: 'Delivery' }],
+      ] as const) {
+        await run((tx) =>
+          createPage(tx, actor, {
+            kind,
+            published: true,
+            translations: {
+              bn: { title: title.bn },
+              en: { title: title.en, slug: slugOf(title.en) },
+            },
+          }),
+        );
+      }
+
+      const settings = storefront[demo.slug];
+      if (settings) await run((tx) => updateStoreProfile(tx, actor, { storefront: settings }));
+      await run((tx) => applyThemePreset(tx, actor, demo.preset));
+      await run((tx) => publishTheme(tx, actor));
+      return true;
+    });
+    if (added) filled.push(demo.slug);
   }
   return filled;
 }
