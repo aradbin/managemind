@@ -87,10 +87,10 @@ describe('database-wide rules', () => {
     expect(rows.map((r) => r.privilege_type)).toEqual(['INSERT', 'SELECT']);
   });
 
-  it('gives PUBLIC no access to app, platform or store', async () => {
+  it('gives PUBLIC no access to app, platform, ref or store', async () => {
     const { rows } = await db.query<{ nspname: string }>(
       `select nspname from pg_namespace
-        where nspname in ('app', 'platform', 'store') and has_schema_privilege('public', oid, 'USAGE')`,
+        where nspname in ('app', 'platform', 'ref', 'store') and has_schema_privilege('public', oid, 'USAGE')`,
     );
     expect(rows).toEqual([]);
   });

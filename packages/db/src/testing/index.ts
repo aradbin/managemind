@@ -97,7 +97,7 @@ export async function prepareTestDatabase(database: string): Promise<void> {
     const owner = await connect(ownerUrl);
     try {
       await owner.query('set client_min_messages = warning');
-      await owner.query('drop schema if exists store, platform, app, drizzle cascade');
+      await owner.query('drop schema if exists store, platform, ref, app, drizzle cascade');
       await runMigrations(ownerUrl);
       await owner.query(`grant app_rw to ${APP_ROLE}`);
       await seed(ownerUrl);

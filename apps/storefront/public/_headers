@@ -1,0 +1,5 @@
+# Static assets (Workers static assets read this file). The geography file is
+# named after its content, so browsers keep it for a year (phase-4-plan §3.2).
+/geo/*
+  Cache-Control: public, max-age=31536000, immutable
+  X-Content-Type-Options: nosniff

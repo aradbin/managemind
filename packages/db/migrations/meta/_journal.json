@@ -134,6 +134,20 @@
       "when": 1792164419023,
       "tag": "0018_storefront_content_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792242586332,
+      "tag": "0019_geography",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792242600330,
+      "tag": "0020_geography_data",
+      "breakpoints": true
     }
   ]
 }
