@@ -7,6 +7,33 @@
  * the tables it references, so deleting in this order never hits a foreign key.
  */
 export const STORE_TABLES = [
+  // Orders, payments and shipments (Phase 4)
+  'payments',
+  'shipment_lines',
+  'shipments',
+  'order_notes',
+  'order_history',
+  'order_line_adjustments',
+  'order_adjustments',
+  'order_lines',
+  'orders',
+  'counters',
+  // Carts, promotions, customers and delivery zones
+  'cart_lines',
+  'carts',
+  'promotion_customer_usage',
+  'promotion_codes',
+  'promotions',
+  'customer_addresses',
+  'customers',
+  'blocked_phones',
+  'delivery_zone_areas',
+  'delivery_zones',
+  // Shopper accounts
+  'shopper_sessions',
+  'shopper_accounts',
+  'shopper_verifications',
+  'shopper_users',
   // Imports and inventory
   'import_images',
   'import_errors',

@@ -144,7 +144,7 @@ export const stockMovements = store.table(
     ),
     check(
       'stock_movements_actor_type_valid',
-      sql`${t.actorType} in ('staff', 'platform', 'system')`,
+      sql`${t.actorType} in (${sql.raw(ACTOR_TYPES.map((a) => `'${a}'`).join(', '))})`,
     ),
     check('stock_movements_reason_length', sql`char_length(${t.reason}) between 1 and 50`),
     check('stock_movements_note_length', sql`char_length(${t.note}) <= 500`),

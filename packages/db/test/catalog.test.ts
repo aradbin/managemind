@@ -78,14 +78,17 @@ describe.each(tables)('store.%s', (table) => {
 });
 
 describe('database-wide rules', () => {
-  it.each(['audit_log', 'stock_movements'])('keeps %s append-only for the app', async (table) => {
-    const { rows } = await db.query<{ privilege_type: string }>(
-      `select privilege_type from information_schema.role_table_grants
+  it.each(['audit_log', 'stock_movements', 'order_history', 'order_notes'])(
+    'keeps %s append-only for the app',
+    async (table) => {
+      const { rows } = await db.query<{ privilege_type: string }>(
+        `select privilege_type from information_schema.role_table_grants
         where grantee = 'app_rw' and table_schema = 'store' and table_name = $1 order by 1`,
-      [table],
-    );
-    expect(rows.map((r) => r.privilege_type)).toEqual(['INSERT', 'SELECT']);
-  });
+        [table],
+      );
+      expect(rows.map((r) => r.privilege_type)).toEqual(['INSERT', 'SELECT']);
+    },
+  );
 
   it('gives PUBLIC no access to app, platform, ref or store', async () => {
     const { rows } = await db.query<{ nspname: string }>(

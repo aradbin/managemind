@@ -1,9 +1,12 @@
 export * from './catalog';
 export * from './content';
+export * from './customers';
 export * from './imports';
 export * from './inventory';
 export * from './media';
+export * from './orders';
 export * from './platform';
+export * from './promotions';
 export * from './ref';
 export * from './store';
 export { appRw, currentTenant, store, tenantColumns, tenantPolicy } from './tenant-table';

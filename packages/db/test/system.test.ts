@@ -117,6 +117,10 @@ describe('cleanup_expired', () => {
       verifications: 1,
       dev_emails: 1,
       invitations_expired: 1,
+      carts: 0,
+      shopper_sessions: 0,
+      shopper_verifications: 0,
+      order_ips: 0,
     });
     const platform = await owner.query(
       `select (select count(*)::int from platform.sessions where token like 'cleanup-%') as sessions,
@@ -136,5 +140,52 @@ describe('cleanup_expired', () => {
               (select count(*)::int from store.outbox where event_type = 'test.cleanup') as events`,
     );
     expect(left.rows[0]).toEqual({ keys: 1, events: 1 });
+  });
+});
+
+describe('cleanup_expired, Phase 4', () => {
+  it('deletes old carts and expired shopper sessions, and clears old order IPs', async () => {
+    const before = await inTenant(owner, TENANT_A, async () => {
+      await owner.query(
+        `insert into store.carts (token_hash, status, updated_at) values
+           (encode(sha256('cleanup-1'::bytea), 'hex'), 'active', now() - interval '31 days'),
+           (encode(sha256('cleanup-2'::bytea), 'hex'), 'active', now() - interval '29 days'),
+           (encode(sha256('cleanup-3'::bytea), 'hex'), 'converted', now() - interval '8 days')`,
+      );
+      await owner.query(
+        `insert into store.shopper_sessions (user_id, token, expires_at)
+         select id, 'cleanup-' || gen_random_uuid(), now() - interval '1 minute'
+           from store.shopper_users limit 1`,
+      );
+      await owner.query(
+        `insert into store.shopper_verifications (identifier, value, expires_at)
+         values ('cleanup', 'x', now() - interval '1 minute')`,
+      );
+      const { rows } = await owner.query<{ id: string }>(
+        `insert into store.orders (number, source, customer_id, phone, contact, subtotal, total, locale, ip, user_agent, placed_at)
+         select 99001, 'website', id, phone, '{}', 0, 0, 'en', '10.0.0.1', 'UA', now() - interval '91 days'
+           from store.customers limit 1 returning id`,
+      );
+      return rows[0]?.id;
+    });
+    const { rows } = await app.query<{ name: string; deleted: string }>(
+      'select * from app.cleanup_expired()',
+    );
+    const deleted = Object.fromEntries(rows.map((r) => [r.name, Number(r.deleted)]));
+    expect(deleted).toMatchObject({
+      carts: 2,
+      shopper_sessions: 1,
+      shopper_verifications: 1,
+      order_ips: 1,
+    });
+    const left = await inTenant(owner, TENANT_A, () =>
+      owner.query(
+        `select (select count(*)::int from store.carts where token_hash in
+                  (encode(sha256('cleanup-2'::bytea), 'hex'))) as carts,
+                (select ip is null and user_agent is null from store.orders where id = $1) as cleared`,
+        [before],
+      ),
+    );
+    expect(left.rows[0]).toEqual({ carts: 1, cleared: true });
   });
 });

@@ -42,7 +42,8 @@ export const outbox = store.table(
   ],
 );
 
-export const ACTOR_TYPES = ['staff', 'platform', 'system'] as const;
+/** `shopper`: a shopper acting on their own order (Phase 4). */
+export const ACTOR_TYPES = ['staff', 'platform', 'system', 'shopper'] as const;
 
 /** Append-only record of staff actions: the app role may insert and read only. */
 export const auditLog = store.table(
@@ -70,7 +71,10 @@ export const auditLog = store.table(
       t.entityId,
       sql`created_at desc`,
     ),
-    check('audit_log_actor_type_valid', sql`actor_type in ('staff', 'platform', 'system')`),
+    check(
+      'audit_log_actor_type_valid',
+      sql`actor_type in (${sql.raw(ACTOR_TYPES.map((a) => `'${a}'`).join(', '))})`,
+    ),
   ],
 );
 
