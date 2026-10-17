@@ -15,6 +15,8 @@ declare global {
       PLATFORM_DOMAIN?: string;
       /** The admin's host: only it may frame the theme preview. */
       ADMIN_HOST?: string;
+      /** "on" when pages can be purged (production with CF_STORE_TOKEN); the page cache needs it. */
+      PAGE_CACHE?: string;
       /** Git commit of the deployed build, set by CI. */
       COMMIT_SHA?: string;
       /** Sentry project DSN, set by CI; Sentry is off without it. */

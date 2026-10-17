@@ -15,6 +15,9 @@ export default {
     return serveWithCache(request, {
       // Previews and local development never cache (ADR 0007 decision 7).
       enabled: env.ENVIRONMENT === 'production',
+      // Pages only once purges can run (CF_STORE_TOKEN, ADR 0018): without
+      // them an owner's change would wait up to a day. Images never change.
+      pages: env.PAGE_CACHE === 'on',
       cache: (caches as unknown as { default: Cache }).default,
       waitUntil: (p) => ctx.waitUntil(p),
       render: async (r) =>

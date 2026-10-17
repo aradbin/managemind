@@ -51,7 +51,7 @@ ADR 0007 settled how storefront pages are cached and purged: the Cache API, tags
 
 6. **Cache lifetime: one day** (Q4). `s-maxage=86400`, `max-age=60` for browsers. A lost purge is fixed within a day.
 
-7. **Without `CF_STORE_TOKEN`**, which needs Cache Purge on the store zone, the consumer logs and acknowledges. Pages then change within a day. The deploy warns while the secret is missing. Previews have no outbox consumer, so they never purge (ADR 0007 decision 7).
+7. **Without `CF_STORE_TOKEN`**, which needs Cache Purge on the store zone, the consumer logs and acknowledges, and **the storefront doesn't cache pages** (images, named by their content, still are): the deploy sets `PAGE_CACHE=on` on the storefront only when the secret is there, and warns while it's missing. An owner's change would otherwise wait up to a day; rendering every page costs more CPU and Neon time, which the launch's traffic can afford. Previews have no outbox consumer, so they never purge (ADR 0007 decision 7).
 
 ## Consequences
 

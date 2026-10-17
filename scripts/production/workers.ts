@@ -50,6 +50,8 @@ writeWorkerConfigs({
 const probe = `smoke-${commit.slice(0, 7)}`;
 setOutput('api_url', routes ? `https://api.${platformDomain}` : `https://${api}.${workersDev}`);
 setOutput('admin_url', routes ? `https://admin.${platformDomain}` : `https://${api}.${workersDev}`);
+// A demo store's home page, for the page-cache check (empty without routes).
+setOutput('demo_store_url', routes ? `https://demo-fashion.${storeDomain}/` : '');
 setOutput(
   'storefront_url',
   routes ? `https://${probe}.${storeDomain}` : `https://${storefront}.${workersDev}`,

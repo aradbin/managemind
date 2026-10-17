@@ -35,6 +35,17 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 } },
     },
+    // A shopper's flows on the demo stores (phase-3-plan §9); no seed needed.
+    {
+      name: 'storefront-phone',
+      testMatch: /storefront\.spec\.ts/,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true },
+    },
+    {
+      name: 'storefront-desktop',
+      testMatch: /storefront\.spec\.ts/,
+      use: { viewport: { width: 1280, height: 800 } },
+    },
     // The catalog flows (phase-2-plan §8) run on the same stores after the
     // Phase 1 flows, which suspend and reactivate them.
     {
@@ -48,6 +59,21 @@ export default defineConfig({
       name: 'catalog-desktop',
       testMatch: /catalog\.spec\.ts/,
       dependencies: ['flows-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
+    // The online-store flows (phase-3-plan §9) on the same stores, after the catalog flows.
+    {
+      name: 'online-store-phone',
+      testMatch: /online-store\.spec\.ts/,
+      dependencies: ['catalog-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'online-store-desktop',
+      testMatch: /online-store\.spec\.ts/,
+      dependencies: ['catalog-desktop'],
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },

@@ -47,13 +47,16 @@ function forBrowser(response: Response, cache: 'hit' | 'miss' | 'bypass'): Respo
 
 export interface CacheOptions {
   enabled: boolean;
+  /** Pages too, not only images: only when purges can run (ADR 0018). */
+  pages: boolean;
   cache: PageCache;
   waitUntil: (promise: Promise<unknown>) => void;
   render: (request: Request) => Promise<Response>;
 }
 
 export async function serveWithCache(request: Request, options: CacheOptions): Promise<Response> {
-  const key = options.enabled ? cacheKeyFor(request) : null;
+  const found = options.enabled ? cacheKeyFor(request) : null;
+  const key = found && (options.pages || found.includes('/media/')) ? found : null;
   if (!key) return forBrowser(await options.render(request), 'bypass');
 
   const hit = await options.cache.match(key);

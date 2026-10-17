@@ -42,8 +42,10 @@ const variantData = product.variants.map((v) => ({
   compare:
     v.compareAtPrice !== null && v.compareAtPrice > v.price ? price(v.compareAtPrice, d) : null,
   available: v.available,
+  sku: v.sku,
   image: imageIndex(v.imageMediaId),
 }));
+const anySku = product.variants.some((v) => v.sku);
 const startCompare =
   start && start.compareAtPrice !== null && start.compareAtPrice > start.price
     ? start.compareAtPrice
@@ -167,7 +169,7 @@ const count = product.media.length;
           </div>
         </div>
       )}
-      {start?.sku && <p class="count">{t('product.sku')}: <span data-sku>{start.sku}</span></p>}
+      {anySku && <p class="count" data-sku-row hidden={!start?.sku}>{t('product.sku')}: <span data-sku>{start?.sku ?? ''}</span></p>}
       {description && (
         <section class="rich" aria-labelledby="desc">
           <h2 id="desc">{t('product.description')}</h2>

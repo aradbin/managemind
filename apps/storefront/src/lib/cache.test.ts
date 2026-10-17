@@ -28,11 +28,18 @@ const page = (
     },
   });
 
-function run(url: string, render: () => Promise<Response>, init: RequestInit = {}, enabled = true) {
+function run(
+  url: string,
+  render: () => Promise<Response>,
+  init: RequestInit = {},
+  enabled = true,
+  pages = true,
+) {
   const cache = fakeCache();
   const pending: Promise<unknown>[] = [];
   const options = {
     enabled,
+    pages,
     cache,
     waitUntil: (p: Promise<unknown>) => pending.push(p),
     render: vi.fn(render),
@@ -90,6 +97,14 @@ describe('the page cache', () => {
     const res = await t.serve();
     expect(res.headers.get('x-cache')).toBe('bypass');
     expect(t.cache.entries.size).toBe(0);
+  });
+
+  it('caches only images while purges are not set up', async () => {
+    const t = run('https://s.test/', async () => page(), {}, true, false);
+    expect((await t.serve()).headers.get('x-cache')).toBe('bypass');
+    const file = `${'b'.repeat(64)}.webp`;
+    await t.serve(`https://s.test/media/${file}`);
+    expect([...t.cache.entries.keys()]).toEqual([`https://s.test/media/${file}`]);
   });
 
   it('caches images for a year, keyed without the query', async () => {

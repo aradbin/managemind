@@ -9,6 +9,7 @@ interface VariantData {
   price: string;
   compare: string | null;
   available: boolean;
+  sku: string | null;
   /** Index of its image in the gallery, or -1. */
   image: number;
 }
@@ -45,6 +46,8 @@ if (picker && data) {
   const compareEl = document.querySelector<HTMLElement>('[data-compare]');
   const compareValue = document.querySelector<HTMLElement>('[data-compare-value]');
   const stock = document.querySelector<HTMLElement>('[data-stock]');
+  const skuRow = document.querySelector<HTMLElement>('[data-sku-row]');
+  const sku = document.querySelector<HTMLElement>('[data-sku]');
 
   const selected = () =>
     [...picker.querySelectorAll<HTMLInputElement>('input[type=radio]:checked')].map((i) => i.value);
@@ -68,6 +71,10 @@ if (picker && data) {
     }
     stock.textContent = (variant.available ? stock.dataset.in : stock.dataset.out) ?? '';
     stock.classList.toggle('out', !variant.available);
+    if (skuRow && sku) {
+      skuRow.hidden = !variant.sku;
+      sku.textContent = variant.sku ?? '';
+    }
     show(variant.image);
   });
 }

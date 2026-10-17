@@ -7,23 +7,44 @@
 // imports: queue invocations (the import chunks) get their own rows. Writes
 // a table to the step summary; it never fails a run.
 //
-//   tsx preview/cpu.ts --pr 12 --api-url <url> --since <epoch ms>
+// Phase 3 (phase-3-plan §9) adds the storefront: a burst of each page type
+// on the demo store. Previews never cache pages, so every one is a miss:
+// the storefront Worker's render plus the API's page endpoint behind it,
+// both measured.
+//
+//   tsx preview/cpu.ts --pr 12 --api-url <url> --storefront-url <url> --since <epoch ms>
 import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { sleep } from '../lib/http';
-import { apiWorker, importQueue } from './names';
+import { apiWorker, importQueue, storefrontWorker } from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
 const api = (args.get('api-url') ?? '').replace(/\/$/, '');
+const storefront = (args.get('storefront-url') ?? '').replace(/\/$/, '');
 const since = Number(args.get('since'));
-if (!api || !Number.isFinite(since)) throw new Error('--api-url and --since are required');
+if (!api || !storefront || !Number.isFinite(since)) {
+  throw new Error('--api-url, --storefront-url and --since are required');
+}
 const devToken = requireEnv('DEV_TOKEN');
 const owner = `e2e-${requireEnv('E2E_RUN')}-phone-owner@example.test`;
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
 
-const BURST = { me: 60, store: 30, list: 30, read: 30, save: 20, bulk: 15 };
+const BURST = { me: 60, store: 30, list: 30, read: 30, save: 20, bulk: 15, page: 20 };
+
+/** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
+const STORE_PAGES = [
+  { path: '/', api: '/v1/store/pages/home', label: 'Home' },
+  { path: '/categories/sarees', api: '/v1/store/pages/categories/sarees', label: 'Category' },
+  {
+    path: '/products/red-jamdani-saree',
+    api: '/v1/store/pages/products/red-jamdani-saree',
+    label: 'Product',
+  },
+  { path: '/search', query: 'q=saree', api: '/v1/store/pages/search', label: 'Search' },
+  { path: '/pages/about-us', api: '/v1/store/pages/pages/about-us', label: 'Static page' },
+];
 
 const jar = new Map<string, string>();
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
@@ -124,8 +145,17 @@ for (let i = 0; i < BURST.bulk; i++) {
     withOptions.variants.map((v) => ({ id: v.id, price: 125_000 + i * 100 })),
   );
 }
+for (const page of STORE_PAGES) {
+  for (let i = 0; i < BURST.page; i++) {
+    const query = `${page.query ? `${page.query}&` : ''}store=demo-fashion`;
+    const res = await fetch(`${storefront}${page.path}?${query}`);
+    await res.arrayBuffer();
+    if (!res.ok) throw new Error(`${page.path}: ${res.status}`);
+  }
+}
 notice(
-  `Sent ${BURST.me} GET /v1/admin/me, ${BURST.store} PATCH /v1/admin/store, ` +
+  `Sent ${BURST.page} of each storefront page (${STORE_PAGES.map((p) => p.label).join(', ')}), ` +
+    `${BURST.me} GET /v1/admin/me, ${BURST.store} PATCH /v1/admin/store, ` +
     `${BURST.list} product lists, ${BURST.read} product reads, ${BURST.save} product saves ` +
     `and ${BURST.bulk} bulk edits of 6 variants`,
 );
@@ -133,7 +163,7 @@ notice(
 // Workers Logs names an invocation by its method and path, with IDs in the
 // path written as REDACTED, and a queue invocation by its queue. A grouped
 // query returns only the busiest groups, so each route is queried on its own.
-const ROUTES: { trigger: string; label: string }[] = [
+const ROUTES: { trigger: string; label: string; worker?: string }[] = [
   { trigger: 'GET /v1/admin/me', label: 'GET /v1/admin/me' },
   { trigger: 'PATCH /v1/admin/store', label: 'PATCH /v1/admin/store' },
   { trigger: 'GET /v1/admin/products', label: 'GET /v1/admin/products' },
@@ -146,14 +176,22 @@ const ROUTES: { trigger: string; label: string }[] = [
     label: 'POST /api/auth/email-otp/send-verification-otp',
   },
   { trigger: 'POST /api/auth/sign-in/email-otp', label: 'POST /api/auth/sign-in/email-otp' },
+  ...STORE_PAGES.flatMap((p) => [
+    {
+      trigger: `GET ${p.path}`,
+      label: `Storefront: ${p.label} page miss`,
+      worker: storefrontWorker(pr),
+    },
+    { trigger: `GET ${p.api}`, label: `API: ${p.label} page data` },
+  ]),
 ];
 
 // Workers Logs takes a little while to make new events queryable.
 const service = apiWorker(pr);
 type Row = { route: string; n: number; p50: number; p90: number; p99: number; max: number };
-async function stats(trigger: string, label: string): Promise<Row> {
+async function stats(trigger: string, label: string, worker = service): Promise<Row> {
   const calcs = await cf.workerLogStats(
-    service,
+    worker,
     since,
     Date.now(),
     [
@@ -181,18 +219,19 @@ let rows: Row[] = [];
 for (let attempt = 0; attempt < 12; attempt++) {
   await sleep(10_000);
   rows = [];
-  for (const r of ROUTES) rows.push(await stats(r.trigger, r.label));
+  for (const r of ROUTES) rows.push(await stats(r.trigger, r.label, r.worker));
   if ((rows.find((r) => r.route.startsWith('PATCH /v1/admin/variants'))?.n ?? 0) >= BURST.bulk)
     break;
 }
 
 const table = [
-  `### CPU per route on ${service} (Workers Logs, ms)`,
+  `### CPU per route on ${service} and ${storefrontWorker(pr)} (Workers Logs, ms)`,
   '',
   '| Route | Requests | p50 | p90 | p99 | Max |',
   '| --- | --- | --- | --- | --- | --- |',
   ...rows.map((r) => `| \`${r.route}\` | ${r.n} | ${r.p50} | ${r.p90} | ${r.p99} | ${r.max} |`),
   '',
+  'Storefront pages are all misses on previews (no page cache); a hit is measured by the production smoke. A row with 0 requests means Workers Logs names that trigger differently.',
   'Limits (ADR 0003): 10 ms per request on the Free plan, with headroom for occasional overruns; the daily alarm fires at request CPU above 250 ms p99 (API) or 100 ms p90 (storefront).',
 ].join('\n');
 console.log(table);

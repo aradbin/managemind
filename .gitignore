@@ -14,3 +14,5 @@ coverage/
 wrangler.*.json
 test-results/
 playwright-report/
+e2e/lighthouse/reports/
+.lighthouseci/
