@@ -38,7 +38,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 0 — Foundations | Done | [`phase-0-report.md`](phases/phase-0-report.md) |
 | 1 — Platform core | Done; in production on `managemind.site` and `*.managemind.store` | [`phase-1-report.md`](phases/phase-1-report.md) |
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
-| 3 — Storefront, themes and domains | Built and tested locally; production checks wait on `CF_STORE_TOKEN`, Cloudflare for SaaS and the test hostname | [`phase-3-report.md`](phases/phase-3-report.md) |
+| 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -385,7 +385,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Rendering and caching (the key to staying free)**
 
-- [x] Catalog pages (home, category, collection, product) are server-rendered once and cached at Cloudflare's edge per tenant and locale; cache is invalidated by outbox events when products, prices or stock change (purge or version bump, as decided in Phase 0). Most shopper traffic then never reaches the API or the database. *Purged by tag ([ADR 0018](adr/0018-page-tags-and-purges.md)); pages are cached only once `CF_STORE_TOKEN` is set.*
+- [x] Catalog pages (home, category, collection, product) are server-rendered once and cached at Cloudflare's edge per tenant and locale; cache is invalidated by outbox events when products, prices or stock change (purge or version bump, as decided in Phase 0). Most shopper traffic then never reaches the API or the database. *Purged by tag ([ADR 0018](adr/0018-page-tags-and-purges.md)); pages are cached only when `CF_STORE_TOKEN` is set (it is).*
 - [ ] Cart, checkout and account parts are small client-side islands calling the API directly; never cached. *Moved to Phase 4 (Phase 3 Q1).*
 - [x] A public, read-only catalog endpoint set in the API designed for caching (stable URLs, cache headers, ETags).
 
@@ -415,9 +415,9 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 **Domains**
 
 - [x] Every tenant gets `<slug>.<store domain>` through a wildcard route.
-- [x] Custom domains through Cloudflare for SaaS custom hostnames: the admin shows the CNAME record to add, the platform verifies it and Cloudflare issues the certificate. Recommend `www` plus a redirect from the bare domain. *Built ([ADR 0019](adr/0019-custom-domains.md)); needs Cloudflare for SaaS on and `CF_STORE_TOKEN` in production.*
+- [x] Custom domains through Cloudflare for SaaS custom hostnames: the admin shows the CNAME record to add, the platform verifies it and Cloudflare issues the certificate. Recommend `www` plus a redirect from the bare domain. *Built ([ADR 0019](adr/0019-custom-domains.md)); verified in production with `shop-test.asrexpress.com`.*
 
-* [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on. *The wildcard route and the fallback origin's provisioning are built (the origin waits for Cloudflare for SaaS); sender records come with Phase 4's first shopper email; Search Console awaits the owner's confirmation.*
+* [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on. *The wildcard route and the fallback origin are in place and Search Console alerts are on; sender records come with Phase 4's first shopper email.*
 
 - [x] Once a custom domain is connected, the store's subdomain permanently (301) redirects to it, and canonical URLs, sitemap and feeds use the custom domain, so search engines never see two copies of the store.
 
