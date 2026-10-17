@@ -1,0 +1,129 @@
+---
+import type { StoreMessageKey } from '../../../i18n';
+import { href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t, layout } = ctx;
+const email = layout.shop.email;
+const terms = layout.pages.find((p) => p.kind === 'terms');
+const keys: StoreMessageKey[] = [
+  'cart.subtotal',
+  'cart.discount',
+  'cart.delivery',
+  'cart.deliveryFrom',
+  'cart.free',
+  'cart.vatIncluded',
+  'cart.vat',
+  'cart.rounding',
+  'cart.total',
+  'cart.freeDelivery',
+  'cart.empty',
+  'cart.continue',
+  'cart.error',
+  'cart.unavailable',
+  'cart.insufficient',
+  'cart.overLimit',
+  'cart.fix',
+  'checkout.choose',
+  'checkout.estimate',
+  'checkout.chooseArea',
+  'checkout.paused',
+  'checkout.codUnavailable',
+  'checkout.priceChanged',
+  'checkout.stock',
+  'checkout.limited',
+  'checkout.invalid',
+  'checkout.required',
+  'checkout.badPhone',
+  'checkout.badEmail',
+  'checkout.noDelivery',
+  'checkout.place',
+  'checkout.placing',
+  'checkout.backToCart',
+  'checkout.check',
+];
+---
+
+<ShopPage ctx={ctx} kind="checkout" title={t('checkout.title')} keys={keys}>
+  <h1>{t('checkout.title')}</h1>
+  <noscript><p>{t('cart.noscript')}</p></noscript>
+  <p class="notice" data-notice role="alert" hidden></p>
+  <form class="shop-grid checkout" data-checkout novalidate hidden>
+    <div>
+      <fieldset>
+        <legend>{t('checkout.contact')}</legend>
+        <div class="field">
+          <label for="c-name">{t('checkout.name')}</label>
+          <input id="c-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="c-name-e" />
+          <p class="field-error" id="c-name-e"></p>
+        </div>
+        <div class="field">
+          <label for="c-phone">{t('checkout.phone')}</label>
+          <input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="c-phone-h c-phone-e" />
+          <p class="muted small" id="c-phone-h">{t('checkout.phoneHint')}</p>
+          <p class="field-error" id="c-phone-e"></p>
+        </div>
+        {email !== 'hidden' && (
+          <div class="field">
+            <label for="c-email">{t('checkout.email')} {email === 'optional' && <span class="muted">{t('checkout.optional')}</span>}</label>
+            <input id="c-email" name="email" type="email" autocomplete="email" maxlength="254" required={email === 'required'} aria-describedby="c-email-e" />
+            <p class="field-error" id="c-email-e"></p>
+          </div>
+        )}
+      </fieldset>
+      <fieldset>
+        <legend>{t('checkout.address')}</legend>
+        <div class="field">
+          <label for="c-division">{t('checkout.division')}</label>
+          <select id="c-division" name="divisionId" required aria-describedby="c-division-e"><option value="">{t('checkout.choose')}</option></select>
+          <p class="field-error" id="c-division-e"></p>
+        </div>
+        <div class="field">
+          <label for="c-district">{t('checkout.district')}</label>
+          <select id="c-district" name="districtId" required disabled aria-describedby="c-district-e"><option value="">{t('checkout.choose')}</option></select>
+          <p class="field-error" id="c-district-e"></p>
+        </div>
+        <div class="field">
+          <label for="c-area">{t('checkout.area')}</label>
+          <select id="c-area" name="areaId" required disabled aria-describedby="c-area-e"><option value="">{t('checkout.choose')}</option></select>
+          <p class="field-error" id="c-area-e"></p>
+        </div>
+        <div class="field">
+          <label for="c-line">{t('checkout.line')}</label>
+          <textarea id="c-line" name="line" rows="2" maxlength="250" autocomplete="street-address" required aria-describedby="c-line-e"></textarea>
+          <p class="field-error" id="c-line-e"></p>
+        </div>
+        <div class="field">
+          <label for="c-note">{t('checkout.note')} <span class="muted">{t('checkout.optional')}</span></label>
+          <textarea id="c-note" name="note" rows="2" maxlength="500"></textarea>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>{t('checkout.payment')}</legend>
+        <label class="choice"><input type="radio" name="payment" value="cod" checked /> <span><strong>{t('checkout.cod')}</strong><br /><span class="muted small">{t('checkout.codHint')}</span></span></label>
+      </fieldset>
+      {layout.shop.termsCheckbox && (
+        <div class="field">
+          <label class="choice">
+            <input type="checkbox" name="acceptTerms" required aria-describedby="c-terms-e" />
+            <span>{terms ? <a href={href(ctx.link, { kind: 'page', slug: terms.slug })} target="_blank" rel="noopener">{t('checkout.terms')}</a> : t('checkout.terms')}</span>
+          </label>
+          <p class="field-error" id="c-terms-e"></p>
+        </div>
+      )}
+      <div data-turnstile></div>
+    </div>
+    <aside class="summary">
+      <h2>{t('checkout.summary')}</h2>
+      <div data-summary aria-live="polite"></div>
+      <button type="submit" class="button wide" data-place>{t('checkout.place')}</button>
+      <p><a href={href(ctx.link, { kind: 'cart' })}>{t('checkout.backToCart')}</a></p>
+    </aside>
+  </form>
+  <script src="../scripts/checkout.ts"></script>
+</ShopPage>

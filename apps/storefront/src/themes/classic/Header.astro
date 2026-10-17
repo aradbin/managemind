@@ -51,5 +51,16 @@ const query = ctx.url.pathname.endsWith('/search') ? (ctx.url.searchParams.get('
       </details>
     )}
     <a class="lang" href={languageHref} hreflang={other} lang={other}>{other === 'bn' ? 'বাংলা' : 'English'}</a>
+    {layout.shop.accounts && <a class="account-link" href={href(ctx.link, { kind: 'account' })}>{t('nav.account')}</a>}
+    <a class="cart-link" href={href(ctx.link, { kind: 'cart' })}>
+      <span class="visually-hidden">{t('nav.cart')}</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"/><circle cx="10" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
+      <span class="cart-count" data-cart-count data-bengali={ctx.d.numerals === 'bengali' ? '' : undefined} hidden></span>
+    </a>
   </div>
 </header>
+<script is:inline>
+  // The count comes from a cookie the API keeps (phase-4-plan §3.4), so the
+  // cached page shows it with no API call.
+  (function(){var m=/(?:^|;\s*)mm_cart_n=(\d+)/.exec(document.cookie);var n=m?+m[1]:0;if(!n)return;var b=document.querySelector('[data-cart-count]');if(b){b.textContent=b.hasAttribute('data-bengali')?String(n).replace(/\d/g,function(d){return '০১২৩৪৫৬৭৮৯'[d]}):String(n);b.hidden=false;}})();
+</script>

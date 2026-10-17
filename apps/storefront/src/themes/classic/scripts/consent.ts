@@ -28,6 +28,8 @@ function start() {
   });
   const load = () => {
     tracker.load();
+    // The shopper pages' scripts send their events through it (shop.ts).
+    (window as unknown as { mmTracker?: typeof tracker }).mmTracker = tracker;
     tracker.pageView();
     const product = config.dataset.product ? JSON.parse(config.dataset.product) : null;
     if (product) tracker.viewItem(product);

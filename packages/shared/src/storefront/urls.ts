@@ -11,9 +11,28 @@ export type StoreRoute =
   | { kind: 'category'; slug: string }
   | { kind: 'collection'; slug: string }
   | { kind: 'page'; slug: string }
-  | { kind: 'search' };
+  | { kind: 'search' }
+  | { kind: ShellKind };
 export type RouteKind = StoreRoute['kind'];
-export type SlugRouteKind = Exclude<RouteKind, 'home' | 'search'>;
+export type SlugRouteKind = Exclude<RouteKind, 'home' | 'search' | ShellKind>;
+
+/**
+ * Shopper pages (phase-4-plan §3.16): cached shells with no personal data,
+ * whose scripts call /api/*. noindex, and disallowed in robots.txt.
+ */
+export const SHELL_PATHS = {
+  cart: 'cart',
+  checkout: 'checkout',
+  thanks: 'orders/thanks',
+  track: 'track',
+  account: 'account',
+} as const;
+export type ShellKind = keyof typeof SHELL_PATHS;
+const SHELL_BY_PATH = Object.fromEntries(
+  Object.entries(SHELL_PATHS).map(([kind, path]) => [path, kind]),
+) as Record<string, ShellKind>;
+export const isShell = (route: StoreRoute): route is { kind: ShellKind } =>
+  route.kind in SHELL_PATHS;
 
 /** Path segment of each slug route. */
 export const ROUTE_SEGMENTS: Record<SlugRouteKind, string> = {
@@ -72,6 +91,8 @@ export function parseStorePath(pathname: string): ParsedPath {
   if (segments.length === 1 && segments[0] === 'search') {
     return { type: 'route', locale, route: { kind: 'search' } };
   }
+  const shell = SHELL_BY_PATH[segments.join('/')];
+  if (shell) return { type: 'route', locale, route: { kind: shell } };
   const kind = KIND_BY_SEGMENT[segments[0] ?? ''];
   if (kind && segments.length === 2) {
     const slug = decodeSlug(segments[1] ?? '');
@@ -87,6 +108,12 @@ function withPrefix(route: StoreRoute, prefix: string): string {
       return prefix || '/';
     case 'search':
       return `${prefix}/search`;
+    case 'cart':
+    case 'checkout':
+    case 'thanks':
+    case 'track':
+    case 'account':
+      return `${prefix}/${SHELL_PATHS[route.kind]}`;
     default:
       return `${prefix}/${ROUTE_SEGMENTS[route.kind]}/${encodeURIComponent(route.slug)}`;
   }

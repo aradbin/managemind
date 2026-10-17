@@ -38,6 +38,7 @@ const imageIndex = (mediaId: string | null) =>
 const variantData = product.variants.map((v) => ({
   id: v.id,
   values: v.optionValueIds,
+  amount: v.price,
   price: price(v.price, d),
   compare:
     v.compareAtPrice !== null && v.compareAtPrice > v.price ? price(v.compareAtPrice, d) : null,
@@ -160,6 +161,13 @@ const count = product.media.length;
           ))}
         </form>
       )}
+      <div class="buy" data-buy data-locale={ctx.locale} data-variant={start?.available ? start.id : ''} data-product-name={product.title} data-adding={t('cart.adding')} data-add={t('cart.add')} data-sold-out={t('cart.soldOut')}>
+        <button type="button" class="button wide" data-add-to-cart disabled={!start?.available}>{start?.available ? t('cart.add') : t('cart.soldOut')}</button>
+        <p class="added" data-added role="status" hidden>
+          <span>{t('cart.added')}</span> <a href={href(ctx.link, { kind: 'cart' })}>{t('cart.view')}</a>
+        </p>
+        <p class="line-problem" data-add-error data-message={t('cart.error')} role="alert"></p>
+      </div>
       {showOrder && (
         <div>
           <p style="margin:16px 0 0">{t('product.order')}</p>

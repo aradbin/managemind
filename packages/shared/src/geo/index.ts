@@ -5,6 +5,9 @@
 // IDs and codes are stable: an area is retired with `active: false`, never
 // renumbered, so Phase 7 can map codes to each courier's own area IDs.
 import data from './bd.json' with { type: 'json' };
+import { GEO_VERSION } from './version';
+
+export { GEO_VERSION, geoFilePath } from './version';
 
 export interface Division {
   id: number;
@@ -40,13 +43,6 @@ export interface Geography {
 
 export const GEOGRAPHY = data as Geography;
 
-/**
- * The hash of the data (`geoHash(JSON.stringify(GEOGRAPHY))`), which names
- * the browser file (`/geo/bd-<version>.json`) so it can be cached for a year.
- * A test recomputes it: change both together.
- */
-export const GEO_VERSION = 'e133ce81';
-
 /** FNV-1a, 32 bits, as 8 hex digits: enough to tell versions of one file apart. */
 export function geoHash(text: string): string {
   let h = 0x811c9dc5;
@@ -78,8 +74,6 @@ export function geoFile(geo: Geography = GEOGRAPHY): GeoFile {
     a: geo.areas.filter((a) => a.active !== false).map((a) => [a.id, a.districtId, a.bn, a.en]),
   };
 }
-
-export const geoFilePath = (version: string = GEO_VERSION) => `/geo/bd-${version}.json`;
 
 export interface GeoIndex {
   division(id: number): Division | undefined;

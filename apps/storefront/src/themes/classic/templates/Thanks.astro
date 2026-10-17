@@ -1,0 +1,59 @@
+---
+import type { StoreMessageKey } from '../../../i18n';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = [
+  'thanks.title',
+  'thanks.number',
+  'thanks.cod',
+  'thanks.next',
+  'thanks.missing',
+  'thanks.items',
+  'thanks.deliverTo',
+  'track.title',
+  'cart.subtotal',
+  'cart.discount',
+  'cart.delivery',
+  'cart.free',
+  'cart.vatIncluded',
+  'cart.vat',
+  'cart.rounding',
+  'cart.total',
+  'cart.error',
+  'track.status',
+  'status.pending',
+  'status.confirmed',
+  'status.processing',
+  'status.completed',
+  'status.cancelled',
+  'track.delivery',
+  'delivery.not_shipped',
+  'delivery.partially_shipped',
+  'delivery.shipped',
+  'delivery.delivered',
+  'delivery.failed',
+  'track.shipments',
+  'track.courier',
+  'shipment.shipped',
+  'shipment.delivered',
+  'shipment.failed',
+  'shipment.returned',
+  'track.cancel',
+  'track.cancelConfirm',
+  'track.cancelled',
+];
+---
+
+<ShopPage ctx={ctx} kind="thanks" title={t('thanks.title')} keys={keys}>
+  <div class="shop narrow" data-thanks aria-live="polite">
+    <h1>{t('thanks.title')}</h1>
+    <noscript><p>{t('thanks.next')}</p></noscript>
+  </div>
+  <script src="../scripts/order.ts"></script>
+</ShopPage>

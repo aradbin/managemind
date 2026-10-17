@@ -60,7 +60,14 @@ const HIDDEN_PRODUCT_FIELDS = new Set(['settings']);
 
 /** tenant.updated fields that show on every page. */
 /** `checkout` too: it turns the header's account link on or off (phase-4-plan §3.16). */
-const STORE_FIELDS = new Set(['name', 'defaultLocale', 'profile', 'storefront', 'display', 'checkout']);
+const STORE_FIELDS = new Set([
+  'name',
+  'defaultLocale',
+  'profile',
+  'storefront',
+  'display',
+  'checkout',
+]);
 
 /**
  * Which cache tags an event purges (§3.2). The store tag empties every page

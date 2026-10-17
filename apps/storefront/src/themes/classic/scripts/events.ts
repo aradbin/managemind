@@ -1,7 +1,7 @@
-// The browser events helper (phase-3-plan §3.10): page view and product view
-// now; add to cart, checkout started and purchase in Phase 4. Every event has
-// an ID, which Phase 9's server-side Conversions API will reuse so Meta can
-// de-duplicate.
+// The browser events helper (phase-3-plan §3.10, phase-4-plan §3.16): page
+// view, product view, add to cart, checkout started and purchase. Every
+// event has an ID, which Phase 9's server-side Conversions API will reuse so
+// Meta can de-duplicate; a purchase's ID is the order's.
 
 export interface TrackerConfig {
   pixelId: string | null;
@@ -40,6 +40,24 @@ export const eventId = (): string =>
   typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+export interface CartItem {
+  id: string;
+  name: string;
+  /** Poisha, per unit. */
+  price: number;
+  quantity: number;
+}
+
+const ga4Items = (items: readonly CartItem[]) =>
+  items.map((i) => ({
+    item_id: i.id,
+    item_name: i.name,
+    price: i.price / 100,
+    quantity: i.quantity,
+  }));
+
+export type Tracker = ReturnType<typeof createTracker>;
 
 export function createTracker(config: TrackerConfig) {
   return {
@@ -90,6 +108,61 @@ export function createTracker(config: TrackerConfig) {
         currency: 'BDT',
         value,
         items: [{ item_id: product.id, item_name: product.name, price: value }],
+      });
+    },
+    addToCart(item: CartItem) {
+      const id = eventId();
+      const value = (item.price * item.quantity) / 100;
+      window.fbq?.(
+        'track',
+        'AddToCart',
+        {
+          content_ids: [item.id],
+          content_type: 'product',
+          content_name: item.name,
+          value,
+          currency: 'BDT',
+        },
+        { eventID: id },
+      );
+      window.gtag?.('event', 'add_to_cart', {
+        event_id: id,
+        currency: 'BDT',
+        value,
+        items: ga4Items([item]),
+      });
+    },
+    beginCheckout(items: readonly CartItem[], total: number) {
+      const id = eventId();
+      const value = total / 100;
+      window.fbq?.(
+        'track',
+        'InitiateCheckout',
+        { content_ids: items.map((i) => i.id), num_items: items.length, value, currency: 'BDT' },
+        { eventID: id },
+      );
+      window.gtag?.('event', 'begin_checkout', {
+        event_id: id,
+        currency: 'BDT',
+        value,
+        items: ga4Items(items),
+      });
+    },
+    /** The event ID is the order ID, for Phase 9's server-side de-duplication. */
+    purchase(orderId: string, items: readonly CartItem[], total: number) {
+      const value = total / 100;
+      window.fbq?.(
+        'track',
+        'Purchase',
+        { content_ids: items.map((i) => i.id), content_type: 'product', value, currency: 'BDT' },
+        { eventID: orderId },
+      );
+      window.gtag?.('event', 'purchase', {
+        event_id: orderId,
+        transaction_id: orderId,
+        currency: 'BDT',
+        value,
+        items: ga4Items(items),
       });
     },
   };

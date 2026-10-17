@@ -21,7 +21,8 @@
     "./storefront/cache": "./src/storefront/cache.ts",
     "./geo": "./src/geo/index.ts",
     "./orders": "./src/orders/index.ts",
-    "./orders/customer-import": "./src/orders/customer-import.ts"
+    "./orders/customer-import": "./src/orders/customer-import.ts",
+    "./geo/version": "./src/geo/version.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
