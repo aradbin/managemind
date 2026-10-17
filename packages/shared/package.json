@@ -20,7 +20,8 @@
     "./storefront/listing": "./src/storefront/listing.ts",
     "./storefront/cache": "./src/storefront/cache.ts",
     "./geo": "./src/geo/index.ts",
-    "./orders": "./src/orders/index.ts"
+    "./orders": "./src/orders/index.ts",
+    "./orders/customer-import": "./src/orders/customer-import.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

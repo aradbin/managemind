@@ -387,15 +387,13 @@ export async function createShipment(
     })
     .returning({ id: schema.shipments.id });
   if (!shipment) throw new AppError('internal');
-  await tx.db
-    .insert(schema.shipmentLines)
-    .values(
-      v.lines.map((l) => ({
-        shipmentId: shipment.id,
-        orderLineId: l.orderLineId,
-        quantity: l.quantity,
-      })),
-    );
+  await tx.db.insert(schema.shipmentLines).values(
+    v.lines.map((l) => ({
+      shipmentId: shipment.id,
+      orderLineId: l.orderLineId,
+      quantity: l.quantity,
+    })),
+  );
   if (order.status === 'confirmed') order = await moveOrder(tx, actor, order, 'process');
   await recordHistory(tx, actor, {
     orderId,

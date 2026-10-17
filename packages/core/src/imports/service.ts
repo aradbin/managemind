@@ -21,6 +21,7 @@ import {
   importProduct,
   parseBooleanCell,
 } from '@managemind/shared/catalog/import';
+import { type ImportCustomer, importCustomer } from '@managemind/shared/orders/customer-import';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, auditActor, authorize, systemActor } from '../access';
@@ -50,6 +51,8 @@ export interface ImportMessage {
 
 export type ImportJob = {
   id: string;
+  /** Products (Phase 2) or customers (phase-4-plan §3.10). */
+  kind: 'products' | 'customers';
   status: 'staging' | 'running' | 'images' | 'done' | 'failed' | 'cancelled';
   fileName: string;
   chunkCount: number;
@@ -69,7 +72,7 @@ export type ImportJob = {
 };
 
 const jobSql = (where: ReturnType<typeof sql>) => sql`
-  select j.id, j.status, j.file_name as "fileName", j.chunk_count as "chunkCount",
+  select j.id, j.kind, j.status, j.file_name as "fileName", j.chunk_count as "chunkCount",
     j.next_chunk as "nextChunk", j.total, j.processed, j.created, j.updated, j.failed,
     j.error_count as "errorCount", j.with_stock as "withStock", j.with_cost as "withCost",
     j.last_error as "lastError", j.created_at as "createdAt", j.finished_at as "finishedAt",
@@ -87,21 +90,33 @@ const toJob = (row: ImportJob): ImportJob => ({
   finishedAt: row.finishedAt ? new Date(row.finishedAt).toISOString() : null,
 });
 
+/** What reading and writing each kind of import needs. */
+const KIND_PERMISSIONS = {
+  products: { read: 'catalog.read', write: 'catalog.write' },
+  customers: { read: 'customers.read', write: 'customers.write' },
+} as const;
+
 export async function getImportJob(tx: TenantTx, actor: Actor, id: string): Promise<ImportJob> {
-  authorize(actor, 'catalog.read');
   const { rows } = await tx.db.execute<ImportJob>(jobSql(sql`j.id = ${id}`));
-  if (!rows[0]) throw new AppError('not_found');
-  return toJob(rows[0]);
+  const job = rows[0];
+  if (!job) throw new AppError('not_found');
+  authorize(actor, KIND_PERMISSIONS[job.kind].read);
+  return toJob(job);
 }
 
-/** The store's latest imports. */
-export async function listImportJobs(tx: TenantTx, actor: Actor): Promise<ImportJob[]> {
-  authorize(actor, 'catalog.read');
-  const { rows } = await tx.db.execute<ImportJob>(sql`${jobSql(sql`true`)} limit 20`);
+/** The store's latest imports of one kind. */
+export async function listImportJobs(
+  tx: TenantTx,
+  actor: Actor,
+  kind: ImportJob['kind'] = 'products',
+): Promise<ImportJob[]> {
+  authorize(actor, KIND_PERMISSIONS[kind].read);
+  const { rows } = await tx.db.execute<ImportJob>(sql`${jobSql(sql`j.kind = ${kind}`)} limit 20`);
   return rows.map(toJob);
 }
 
 const createInput = z.object({
+  kind: z.enum(['products', 'customers']).default('products'),
   fileName: z.string().trim().min(1).max(255),
   chunkCount: z.int().min(1).max(1_000),
   total: z.int().min(1).max(100_000),
@@ -115,12 +130,13 @@ export async function createImportJob(
   actor: Actor,
   input: unknown,
 ): Promise<ImportJob> {
-  authorize(actor, 'catalog.write');
   const data = parseInput(createInput, input);
+  authorize(actor, KIND_PERMISSIONS[data.kind].write);
   if (data.stock) authorize(actor, 'inventory.write');
   const [row] = await tx.db
     .insert(j)
     .values({
+      kind: data.kind,
       fileName: data.fileName,
       chunkCount: data.chunkCount,
       total: data.total,
@@ -156,8 +172,8 @@ export async function unstartImport(tx: TenantTx, id: string): Promise<void> {
 
 /** Starts a staged job: the caller queues its first chunk after commit. */
 export async function startImport(tx: TenantTx, actor: Actor, id: string): Promise<ImportJob> {
-  authorize(actor, 'catalog.write');
   const job = await lockJob(tx, id);
+  authorize(actor, KIND_PERMISSIONS[job.kind].write);
   if (job.status !== 'staging')
     throw new AppError('illegal_transition', { detail: `the import is ${job.status}` });
   await tx.db.update(j).set({ status: 'running', updatedAt: sql`now()` }).where(eq(j.id, id));
@@ -166,8 +182,8 @@ export async function startImport(tx: TenantTx, actor: Actor, id: string): Promi
 
 /** Stops a job: chunks not yet processed are skipped, pending images dropped. */
 export async function cancelImport(tx: TenantTx, actor: Actor, id: string): Promise<ImportJob> {
-  authorize(actor, 'catalog.write');
   const job = await lockJob(tx, id);
+  authorize(actor, KIND_PERMISSIONS[job.kind].write);
   if (['done', 'failed', 'cancelled'].includes(job.status)) {
     throw new AppError('illegal_transition', { detail: `the import is ${job.status}` });
   }
@@ -415,6 +431,7 @@ export async function processImportChunk(
         return resend ? { ...message, chunk: job.nextChunk } : null;
       }
       const list = Array.isArray(products) ? products : [];
+      if (job.kind === 'customers') return processCustomerChunk(tx, job, message, list);
       const store = await storeCatalogContext(tx);
       const errors: ImportError[] = [];
       const valid: ImportProduct[] = [];
@@ -1052,4 +1069,117 @@ async function writeAttributes(
     }
   }
   if (inputs.size) await replaceProductAttributes(tx, productId, [...inputs.values()], ctx.locale);
+}
+
+// ---- Customers (phase-4-plan §3.10) --------------------------------------------------
+
+/**
+ * One chunk of customers, matched by phone, written with batched statements
+ * from the start (the lesson of Phase 2's product imports, phase-2-report §3):
+ * one upsert for the customers and one insert for their new addresses. An
+ * existing customer keeps an email it has unless the file brings one, and
+ * gains the file's tags.
+ */
+async function processCustomerChunk(
+  tx: TenantTx,
+  job: { id: string; chunkCount: number },
+  message: ImportMessage,
+  list: unknown[],
+): Promise<ImportMessage | null> {
+  const errors: ImportError[] = [];
+  const byPhone = new Map<string, ImportCustomer>();
+  for (const [i, raw] of list.entries()) {
+    const parsed = importCustomer.safeParse(raw);
+    if (!parsed.success) {
+      const row = (raw as { row?: unknown })?.row;
+      const issue = parsed.error.issues[0];
+      errors.push({
+        row: typeof row === 'number' ? row : i + 1,
+        field: issue?.path.join('.') ?? '',
+        code: 'invalid',
+        message: issue?.message ?? 'invalid customer',
+      });
+      continue;
+    }
+    const earlier = byPhone.get(parsed.data.phone);
+    if (earlier) {
+      errors.push({
+        row: earlier.row,
+        field: 'phone',
+        code: 'duplicate',
+        message: `the same phone is on row ${parsed.data.row}, which was used`,
+      });
+    }
+    byPhone.set(parsed.data.phone, parsed.data);
+  }
+  const rows = [...byPhone.values()];
+  let created = 0;
+  let updated = 0;
+  if (rows.length) {
+    const { rows: written } = await tx.db.execute<{ inserted: boolean }>(sql`
+      insert into store.customers (phone, name, email, tags, note)
+      select x.phone, x.name, x.email, coalesce(x.tags, '{}'), x.note
+        from jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+          as x(phone text, name text, email text, tags text[], note text)
+      on conflict (tenant_id, phone) where deleted_at is null do update set
+        name = excluded.name,
+        email = coalesce(excluded.email, store.customers.email),
+        tags = array(select distinct t from unnest(store.customers.tags || excluded.tags) t limit 20),
+        note = coalesce(excluded.note, store.customers.note)
+      returning (xmax = 0) as inserted`);
+    created = written.filter((w) => w.inserted).length;
+    updated = written.length - created;
+    const addresses = rows
+      .filter((r) => r.address)
+      .map((r) => ({ phone: r.phone, name: r.name, ...r.address }));
+    if (addresses.length) {
+      await tx.db.execute(sql`
+        insert into store.customer_addresses (customer_id, name, phone, division_id, district_id, area_id, line, is_default)
+        select c.id, x.name, x.phone, x."divisionId", x."districtId", x."areaId", x.line,
+               not exists (select 1 from store.customer_addresses a where a.customer_id = c.id)
+          from jsonb_to_recordset(${JSON.stringify(addresses)}::jsonb)
+            as x(phone text, name text, "divisionId" smallint, "districtId" smallint, "areaId" int, line text)
+          join store.customers c on c.phone = x.phone and c.deleted_at is null
+         where not exists (select 1 from store.customer_addresses a
+                            where a.customer_id = c.id and a.area_id = x."areaId" and a.line = x.line)
+           and (select count(*) from store.customer_addresses a where a.customer_id = c.id) < 10`);
+    }
+  }
+  await recordErrors(tx, job.id, errors);
+  const next = message.chunk + 1;
+  const last = next >= job.chunkCount;
+  await tx.db
+    .update(j)
+    .set({
+      nextChunk: next,
+      processed: sql`least(${j.processed} + ${list.length}, ${j.total})`,
+      created: sql`${j.created} + ${created}`,
+      updated: sql`${j.updated} + ${updated}`,
+      failed: sql`${j.failed} + ${list.length - rows.length}`,
+      status: last ? 'done' : 'running',
+      ...(last ? { finishedAt: sql`now()` } : {}),
+      updatedAt: sql`now()`,
+    })
+    .where(eq(j.id, job.id));
+  await recordAudit(tx, {
+    actorType: 'system',
+    action: 'import.chunk_processed',
+    entityType: 'import_job',
+    entityId: job.id,
+    after: {
+      chunk: message.chunk,
+      kind: 'customers',
+      created,
+      updated,
+      failed: list.length - rows.length,
+    },
+  });
+  if (created) {
+    await emit(tx, 'customer.created', {
+      aggregateType: 'import_job',
+      aggregateId: job.id,
+      payload: {},
+    });
+  }
+  return last ? null : { ...message, chunk: next };
 }
