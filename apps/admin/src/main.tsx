@@ -9,7 +9,7 @@ import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ToastProvider } from './components/toast';
-import { LocaleProvider } from './i18n';
+import { initialLocale, LocaleProvider, loadLocale } from './i18n';
 import { ApiError, queryClient } from './lib/api';
 import { AuthError } from './lib/auth';
 import { routeTree } from './routeTree.gen';
@@ -44,16 +44,18 @@ declare module '@tanstack/react-router' {
 }
 
 const root = document.getElementById('root');
-if (root) {
-  createRoot(root, rootErrorHandlers).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <LocaleProvider>
-          <ToastProvider>
-            <RouterProvider router={router} />
-          </ToastProvider>
-        </LocaleProvider>
-      </QueryClientProvider>
-    </StrictMode>,
-  );
-}
+// The language's messages first (its own small chunk), then the app.
+if (root)
+  void loadLocale(initialLocale()).then(() => {
+    createRoot(root, rootErrorHandlers).render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <LocaleProvider>
+            <ToastProvider>
+              <RouterProvider router={router} />
+            </ToastProvider>
+          </LocaleProvider>
+        </QueryClientProvider>
+      </StrictMode>,
+    );
+  });

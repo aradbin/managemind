@@ -1,7 +1,11 @@
 import { placeholders } from '@managemind/shared/i18n';
 import { describe, expect, it } from 'vitest';
-import { type AdminKey, messages, translate } from './index';
+import { type AdminKey, loadLocale, messages, translate } from './index';
 import './online-store';
+import './orders';
+
+await loadLocale('en');
+await loadLocale('bn');
 
 describe('admin messages', () => {
   it('has every English key in Bangla, with the same placeholders', () => {

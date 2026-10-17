@@ -1,16 +1,19 @@
 // The admin's translator and the current language, kept in React context and
 // remembered on this device. The document's lang follows it (WCAG 3.1.1).
+// Only the current language's messages are downloaded (phase-4-plan PR 0b):
+// main.tsx loads them before the first render, and switching language loads
+// the other first. Feature screens bring their own catalogs with their pages.
 import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-import { bn } from './bn';
-import { en } from './en';
+import type { en } from './en';
 import type { onlineStoreEn } from './online-store-en';
+import type { ordersEn } from './orders-en';
 
 /** Every key, including those of catalogs loaded with their pages. */
-export type AdminKey = keyof typeof en | keyof typeof onlineStoreEn;
+export type AdminKey = keyof typeof en | keyof typeof onlineStoreEn | keyof typeof ordersEn;
 const catalogs = {
-  en: { ...en } as Record<AdminKey, Message>,
-  bn: { ...bn } as Partial<Record<AdminKey, Message>>,
+  en: {} as Record<AdminKey, Message>,
+  bn: {} as Partial<Record<AdminKey, Message>>,
 };
 export const translate = createTranslator<AdminKey>(catalogs);
 export const messages = catalogs;
@@ -28,9 +31,19 @@ export function addMessages(more: {
   Object.assign(catalogs.bn, more.bn);
 }
 
+const loaded = new Set<Locale>();
+
+/** Downloads a language's base messages once (each is its own chunk). */
+export async function loadLocale(locale: Locale): Promise<void> {
+  if (loaded.has(locale)) return;
+  const base = locale === 'bn' ? (await import('./bn')).bn : (await import('./en')).en;
+  Object.assign(catalogs[locale], base);
+  loaded.add(locale);
+}
+
 const STORAGE_KEY = 'mm.locale';
 
-function initialLocale(): Locale {
+export function initialLocale(): Locale {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved === 'bn' || saved === 'en') return saved;
@@ -57,12 +70,14 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     () => ({
       locale,
       setLocale: (next) => {
-        setLocaleState(next);
-        try {
-          localStorage.setItem(STORAGE_KEY, next);
-        } catch {
-          // Not remembered; still switched for this visit.
-        }
+        void loadLocale(next).then(() => {
+          setLocaleState(next);
+          try {
+            localStorage.setItem(STORAGE_KEY, next);
+          } catch {
+            // Not remembered; still switched for this visit.
+          }
+        });
       },
       t: (key, params) => translate(locale, key, params),
     }),
