@@ -1,6 +1,6 @@
 # Phase 4 plan — Cart, checkout, orders, promotions and cash on delivery
 
-- Status: Draft for the owner's review. The questions are in §14; approved when this PR merges (PLAN.md: no code before approval)
+- Status: Draft for the owner's review. The blocking questions (Q1, Q2, Q5, Q13) were answered on 2026-10-17; the rest are in §14. Approved when this PR merges (PLAN.md: no code before approval)
 - Date: 2026-10-17
 - Scope: PLAN.md "Phase 4 — Cart, checkout, orders, promotions and cash on delivery", plus what earlier phases moved here: the storefront's cart, checkout, order confirmation, order tracking and shopper account (phase-3-plan Q1), and the division, district and area dataset (phase-2-plan §1)
 
@@ -30,10 +30,10 @@ The promotion engine is the largest single piece. None of the acceptance criteri
 | --- | --- |
 | Phase 3 | Done (report: `docs/phases/phase-3-report.md`) |
 | Pilot clients' delivery zones and fees, COD rules, usual promotions, and what invoices and packing slips must show | **Open.** There is no pilot client yet (Oct 17). The plan uses common Bangladeshi defaults (§3.3, Q6), which are editable settings. The owner can confirm or adjust them from what they know of the market. **Not blocking**: the defaults are data, not code |
-| Email provider verified for the store domain (shopper sign-in codes) | **Open, and a decision first** (Q2). Resend's free plan allows one domain, and that domain is `managemind.site` (ADR 0014). **Needed before PR 10** |
-| SPF, DKIM and DMARC for `managemind.store` | **Open.** Phase 3 left them for "the first shopper email", which is this phase. They follow from Q2 |
-| The division, district and area dataset | **Open.** PLAN.md asks the owner to approve it. §3.2 proposes the levels and a source. **Needed before PR 1** |
-| New: Turnstile | **Open.** Cloudflare Turnstile is free. It needs one widget for the platform's hosts, and a token permission (Account → Turnstile: Edit) so that a store's custom domain can be added to the widget when it connects (§3.15, Q13). **Needed before PR 15** |
+| Email provider verified for the store domain (shopper sign-in codes) | **Decided: Brevo's free plan** for `managemind.store` (Q2), since Resend's free plan allows one domain and that is `managemind.site` (ADR 0014). **Open:** the owner creates the Brevo account, verifies `managemind.store`, and sends an API key limited to sending. **Needed before PR 10** |
+| SPF, DKIM and DMARC for `managemind.store` | **Open.** Phase 3 left them for "the first shopper email", which is this phase. Brevo's domain setup gives the DKIM and SPF records; DMARC starts at `p=none`, as for the main domain. The provisioning step can add them through the Cloudflare API once Brevo shows them |
+| The division, district and area dataset | **Levels decided** (Q5): upazilas, with the metropolitan thanas of Dhaka and Chattogram. **Open:** the owner approves the final list in PR 1 |
+| New: Turnstile | **Open.** Cloudflare Turnstile is free. It needs one widget for the platform's hosts, and a token permission (Account → Turnstile: Edit) so that a store's custom domain can be added to the widget when it connects (§3.15). **Decided** (Q13): the owner adds the permission to `CF_STORE_TOKEN` and creates the widget. **Needed before PR 15** |
 | New: sample bulk-upload files from the Steadfast and Pathao merchant panels | **Open, not blocking.** They give the exact columns of the courier export (§3.17). Public templates are the fallback. **Needed before PR 19** |
 | An accountant's confirmation of the VAT defaults | **Open since Phase 2** (phase-2-plan Q4). This phase calculates VAT per order line. Its rules are data (§3.1), so they change without code. VAT is off by default, and an accountant must answer Q8 before any store turns it on |
 
@@ -402,7 +402,7 @@ Every staff action on orders, payments, customers, promotions and these settings
 
 ### 3.19 New dependencies
 
-No dependency is added to either Worker. Turnstile is a `fetch` to `siteverify`. The storefront loads Turnstile's script from Cloudflare only on checkout and sign-in. The geography file is data. The admin's printing and export use what Phase 2 added.
+No dependency is added to either Worker. Brevo is a `fetch` to its HTTP API, as Resend is (ADR 0014): a new `brevo` adapter behind the existing `EmailProvider` interface, used for shopper email from the store domain, while staff email stays on Resend. Turnstile is a `fetch` to `siteverify`. The storefront loads Turnstile's script from Cloudflare only on checkout and sign-in. The geography file is data. The admin's printing and export use what Phase 2 added.
 
 ## 4. Data model
 
@@ -555,7 +555,7 @@ Each page's script loads only on that page.
 - **CPU:**
   - cart calls are anonymous store API requests, which ADR 0003 measured at about 6 ms at p50;
   - `placeOrder` is the heaviest shopper request: about 15 round trips in one transaction, with batched statements as in the inventory service. It will be over the Free plan's 10 ms, as staff requests already are (ADR 0013).
-- **A stopped checkout loses nothing:** its transaction never commits, and the page retries with the same idempotency key. But a shopper who sees an error may leave. So **the first real store taking orders is the moment ADR 0013's "first serious client" trigger applies** (Q2).
+- **A stopped checkout loses nothing:** its transaction never commits, and the page retries with the same idempotency key. But a shopper who sees an error may leave. The owner chose to stay on the Free plan (Q2), so checkout runs under ADR 0013's alarm: the first stopped request, or the first serious client, is still the trigger for Workers Paid. The CPU step reports `placeOrder` on its own so the trend is visible before a real store sells.
 - **The CPU step** adds the cart calls, `placeOrder` and the admin's order list and detail, reported per route as in Phase 3.
 - **Budgets:**
   - Lighthouse runs on the cart and checkout pages as well (LCP 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95);
@@ -586,7 +586,7 @@ Each page's script loads only on that page.
 | Neon storage | 0.5 GB | A few KB per order (PLAN.md); carts are deleted after 30 days | |
 | Queue operations | 10,000/day | About 5 events per order over its life, 3 operations each; sale edges | About 300 a day for the pilot |
 | Durable Object requests | 100,000/day | Rate-limit checks on checkout, tracking and code requests | |
-| Email | Q2 | Shopper sign-in codes only; order emails come in Phase 5A | Tens a day at most |
+| Email | Brevo: 300/day for the store domain; Resend: 100/day for staff | Shopper sign-in codes only; order emails come in Phase 5A | Tens a day at most. The daily monitor adds Brevo's count, alerting at 70% |
 | Turnstile | Free | Checkout and sign-in | |
 
 ## 12. Pull requests
@@ -604,7 +604,7 @@ Each page's script loads only on that page.
 | 7 | `core`: the order machines, shipments, stock on shipping and return, `cod` and `manual` payments, cancellation, editing |
 | 8 | `core`: customers (find or create, addresses, totals) and the customer import with batched writes |
 | 9 | `api`: storefront cart, checkout, view and tracking endpoints; rate limits; isolation fixtures; SDK |
-| 10 | `api`: shopper accounts on many hosts (Better Auth instance per host, per-store secret, `Path=/api` cookies); ADR 0020. **Needs the email decision (Q2)** |
+| 10 | `api`: shopper accounts on many hosts (Better Auth instance per host, per-store secret, `Path=/api` cookies); ADR 0020; the `brevo` email adapter and ADR 0022 (shopper email from the store domain). **Needs the Brevo API key** |
 | 11 | `api`: admin orders, shipments, payments, customers, delivery zones, settings, blocklist, dashboard, print data; SDK |
 | 12 | `storefront`: add to cart, the cart page and the header count |
 | 13 | `storefront`: checkout, confirmation, tracking with cancellation; the new tracking events |
@@ -631,13 +631,13 @@ As in Phases 2 and 3, these can ship as one pull request with one commit per ste
 
 ## 14. Questions for the owner
 
-| # | Question | Recommendation |
+| # | Question | Recommendation, or the owner's answer |
 | --- | --- | --- |
-| Q1 | Estimate and order | **About 7 weeks,** with the order flow first (PRs 1–19) and promotions after it (PRs 20–21). If time matters more than scope, promotions could become their own short phase before 5A |
-| Q2 | Workers Paid and the shopper email sender | **Move to Workers Paid ($5 a month) when the first real store starts taking orders, and send shopper email through Cloudflare Email Service from `managemind.store`.** This was the path ADR 0013 and ADR 0014 left for this point. Checkout is over 10 ms of CPU (§9), and a stopped checkout can lose a sale. Workers Paid includes 3,000 emails a month, enough for Phase 5A's order emails too. Until a real store sells, production has only the demo stores, so the switch can wait. **Alternative at $0:** a second free email provider (Brevo, 300 a day) for the store domain, with a new adapter and account; checkout then stays on Free under ADR 0013's alarm |
+| Q1 | Estimate and order | **Answered (Oct 17): one phase of about 7 weeks,** with the order flow first (PRs 1–19) and promotions after it (PRs 20–21) |
+| Q2 | Workers Paid and the shopper email sender | **Answered (Oct 17): stay at $0.** Shopper email goes through Brevo's free plan (300 a day) from `managemind.store`, with a new `brevo` adapter; staff email stays on Resend. Checkout stays on the Free plan under ADR 0013's alarm (§9). The recommendation was Workers Paid with Cloudflare Email Service when the first real store sells; that remains the path if the alarm fires |
 | Q3 | Shopper accounts | **Built, off by default per store, email code only until Phase 5A adds phone codes.** An account shows only orders placed while signed in (§3.11). Most Bangladeshi shoppers check out as guests by phone |
 | Q4 | Order numbers | **A per-store prefix, `#` by default, with numbers from 1001** (`#1001`). PLAN.md's example was `ORD-10234`. A store can set its own prefix (for example `AR-`) |
-| Q5 | Geography | **Division, district and area, where area is the upazila, or the metropolitan thana in Dhaka and Chattogram** (about 500 areas). The owner approves the list in PR 1 |
+| Q5 | Geography | **Answered (Oct 17): division, district and area, where area is the upazila, or the metropolitan thana in Dhaka and Chattogram** (about 500 areas). The owner approves the final list in PR 1 |
 | Q6 | Default delivery zones | **Inside Dhaka ৳70, Dhaka suburbs ৳100, outside Dhaka ৳130, plus ৳20 per kilogram over the first,** as a template every store can change. Please correct the numbers or the suburbs list if the market differs |
 | Q7 | Whole taka | **Discounts rounded to whole taka in the shopper's favour,** so totals stay in whole taka for couriers |
 | Q8 | VAT on the delivery fee | **None by default,** until an accountant confirms how delivery should be treated. VAT is off by default for every store anyway |
@@ -645,13 +645,14 @@ As in Phases 2 and 3, these can ship as one pull request with one commit per ste
 | Q10 | Promotion stacking | **One code per cart, alongside automatic promotions. The shopper gets the larger of the best exclusive promotion and all the combinable ones together** |
 | Q11 | OTP before COD | **Moved to Phase 5A,** where stores connect their SMS gateways |
 | Q12 | Scheduled sale prices | **Per variant, with a start and end, set in bulk,** and purges sent at the window's edges by delayed messages (§3.14) |
-| Q13 | Turnstile on custom domains, and invoices | **Add the `Account → Turnstile: Edit` permission to `CF_STORE_TOKEN`,** so connecting a domain also adds it to the widget. **Invoices and packing slips as printable pages,** saved as PDF by the browser |
+| Q13 | Turnstile on custom domains, and invoices | **Turnstile answered (Oct 17): add the `Account → Turnstile: Edit` permission to `CF_STORE_TOKEN`,** so connecting a domain also adds it to the widget. **Still open: invoices and packing slips as printable pages,** saved as PDF by the browser |
 | Q14 | Holiday mode and manual orders | **The storefront refuses orders during the window; staff can still enter manual orders,** for example pre-orders taken by phone |
 | Q15 | A repeat customer with a different name | **The customer keeps their first name and the order keeps what was typed.** Staff can update the customer's name from the order |
 
 **Still needed from the owner:**
 
-- the answers above, Q2 first (before PR 10);
+- the remaining answers above (Q3, Q4, Q6–Q12, Q13's invoices, Q14, Q15);
+- the Brevo account with `managemind.store` verified, and a sending-only API key (before PR 10);
 - approval of the geography list (PR 1);
 - the Turnstile widget and the token permission (before PR 15);
 - the Steadfast and Pathao sample bulk-upload files, if available (before PR 19);
