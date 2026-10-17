@@ -39,7 +39,8 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 1 — Platform core | Done; in production on `managemind.site` and `*.managemind.store` | [`phase-1-report.md`](phases/phase-1-report.md) |
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
-| 4 onwards | Not started | — |
+| 4 — Cart, checkout, orders, promotions and COD | Plan written; waiting for the owner's answers and approval | [`phase-4-plan.md`](phases/phase-4-plan.md) |
+| 5A onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
 
