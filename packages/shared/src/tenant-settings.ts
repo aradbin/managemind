@@ -3,6 +3,7 @@
 // are refused, so a typo can never be stored silently. The store's name and
 // default locale are columns, not settings.
 import { z } from 'zod';
+import { checkoutSettings, codSettings } from './orders/settings';
 import { normalizePhone } from './phone';
 import { storefrontSettings } from './storefront/settings';
 import { themeSchema } from './storefront/theme';
@@ -101,6 +102,10 @@ export const tenantSettings = z
     }),
     /** Indexing, tracking, consent text, chat and holiday mode (phase-3-plan §3.6–§3.10). */
     storefront: storefrontSettings.default(() => storefrontSettings.parse({})),
+    /** Checkout fields, limits and shopper accounts (phase-4-plan §4). */
+    checkout: checkoutSettings.default(() => checkoutSettings.parse({})),
+    /** Cash on delivery (phase-4-plan §3.8). */
+    cod: codSettings.default(() => codSettings.parse({})),
     /** The published theme; absent until the first publish, so the default theme shows. */
     theme: themeSchema.optional(),
     /** The theme editor's working copy (phase-3-plan §3.4). */
