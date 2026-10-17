@@ -20,10 +20,10 @@
 import { runMigrations } from '@managemind/db/migrate';
 import { DEMO_TENANTS, seed } from '@managemind/db/seed';
 import pg from 'pg';
+import { seedDemoCatalog } from '../demo/catalog';
 import { mask, notice, parseArgs, requireEnv, setOutput } from '../lib/actions';
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare, type LifecycleRule } from '../lib/cloudflare';
-import { seedDemoCatalog } from '../demo/catalog';
 import { kvSync } from '../platform/commands';
 
 const HYPERDRIVE = 'managemind-production';
