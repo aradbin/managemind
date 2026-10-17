@@ -15,9 +15,9 @@ Phase 3 is built and tested locally: every store gets a server-rendered storefro
 
 **Four things the owner should know:**
 
-1. **The owner's setup (Oct 17):** `CF_STORE_TOKEN` is added, Cloudflare for SaaS is on, the test hostname's CNAME is in place and Search Console is confirmed. The reference stores and test tracking IDs are still open, and the code works around both (§5).
+1. **The owner's setup is done (Oct 17):** `CF_STORE_TOKEN` is added, Cloudflare for SaaS is on, `shop-test.asrexpress.com` points at `stores.managemind.store`, Search Console is confirmed, and the test tracking IDs and chat links are in. The owner left the reference stores to judgement (§5).
 2. **Without `CF_STORE_TOKEN`, production doesn't cache pages.** Purges need the token, and without purges an owner's change would wait up to a day. So the storefront renders every page fresh until the token is added; the deploy warns while it's missing. Images are cached either way.
-3. **Neither acceptance criterion can be verified yet** (§2). Both need production with the token, and the first needs the test hostname (plan PR 19).
+3. **Neither acceptance criterion is verified yet** (§2). Both need this work deployed to production; the deploy then creates the demo stores, and the owner connects `shop-test.asrexpress.com` to demo-fashion in the admin (plan PR 19).
 4. **The admin's sign-in bundle is at 143 of 150 KiB.** The online store's messages load only when its screens open; only the navigation labels joined the sign-in bundle.
 
 ## 1. What was built
@@ -95,15 +95,15 @@ As planned (plan §10), with one change: **until `CF_STORE_TOKEN` is set, every 
 
 1. **`CF_STORE_TOKEN`: added (Oct 17).** It takes effect on the next production deploy, which turns on purges and the page cache and lets custom domains be added.
 2. **Cloudflare for SaaS: on (Oct 17).** The next deploy sets the fallback origin to `stores.managemind.store`.
-3. **The test hostname: CNAME added (Oct 17)** for PR 19 (Q8).
-4. **Reference stores** for the presets (Q6). The three presets were built from general Bangladeshi fashion and grocery conventions; they're settings, so they change without code.
-5. **A test Meta Pixel ID, a GA4 property, a WhatsApp number and a Messenger link.** The loader and the event IDs are tested with mocked tag hosts; real IDs show whether events arrive in Meta's and Google's test tools.
+3. **The test hostname: `shop-test.asrexpress.com`, CNAME added (Oct 17)** for PR 19 (Q8). Its DNS is at Namecheap, so Cloudflare validates it over HTTP.
+4. **Reference stores: left to judgement (Oct 17).** The presets follow well-known Bangladeshi stores: fashion like Aarong, Yellow and Sailor (a full-width banner first, collections, portrait 3:4 photos, square corners); grocery like Chaldal and Shwapno (categories first, then offers, square photos with the brand); general in between. They're settings, so they change without code.
+5. **Test tracking IDs and chat links: given (Oct 17).** The production deploy puts them on demo-fashion when it first creates the store. Meta's and Google's test tools then show whether page and product views arrive after a shopper accepts cookies.
 6. **Search Console: confirmed (Oct 17)**, both properties verified with alerts on.
 7. **Legal review** of the footer's business details. Every field is optional until then.
 
 ### Not built yet, or smaller than planned
 
-- **Production checks (PR 19)** wait on items 1–3.
+- **Production checks (PR 19)** wait for this work to reach production.
 - **The maintenance page isn't themed**: it uses the platform's plain page, so it works even when a store's settings can't load.
 - **Shopper email sender records** (SPF, DKIM, DMARC for the store domain) wait for Phase 4, which sends the first shopper email.
 - **Holiday mode** shows its banner; pausing orders comes with orders in Phase 4.
@@ -111,6 +111,8 @@ As planned (plan §10), with one change: **until `CF_STORE_TOKEN` is set, every 
 - **Theme fonts in the live preview:** switching to Hind Siliguri shows after the draft saves and the preview reloads, not instantly like colours.
 
 ### Decisions that differ from the plan
+
+- **The production deploy creates the demo stores** (with their catalog, a published preset and, for demo-fashion, the test tracking IDs and chat links) the first time, and writes their store hosts to KV. Until now they existed only locally and on previews. They have no owner; the platform owner manages them through support access.
 
 - **The demo stores' languages are the other way round from plan §12:** `demo-fashion` is English and `demo-grocery` Bangla, as they have been since Phase 0. Swapping them would only rename which store tests which language.
 - **Without the purge token, pages aren't cached** (above); the plan expected them to expire within a day. ADR 0018 is amended.

@@ -13,11 +13,18 @@
 // - Database, as the migration role from DATABASE_URL_MIGRATIONS: the
 //   migrations, then the mm_app login role and its Hyperdrive config. The
 //   password is generated here and stored only in the role and the config.
+// - The two demo stores with their catalog and theme (phase-3-plan §12),
+//   once, and their store hosts in KV. demo-fashion carries the owner's
+//   test tracking IDs and chat links (phase-3-plan §1); edits in the admin
+//   are kept.
 import { runMigrations } from '@managemind/db/migrate';
+import { DEMO_TENANTS, seed } from '@managemind/db/seed';
 import pg from 'pg';
 import { mask, notice, parseArgs, requireEnv, setOutput } from '../lib/actions';
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare, type LifecycleRule } from '../lib/cloudflare';
+import { seedDemoCatalog } from '../demo/catalog';
+import { kvSync } from '../platform/commands';
 
 const HYPERDRIVE = 'managemind-production';
 const QUEUES = [
@@ -38,6 +45,14 @@ const LIFECYCLE: LifecycleRule[] = [
   { id: 'backups-weekly-35d', prefix: 'backups/weekly/', deleteAfterDays: 35 },
   { id: 'abort-incomplete-uploads-1d', prefix: '', abortUploadsAfterDays: 1 },
 ];
+/** The owner's test IDs and chat links (Oct 17), shown on demo-fashion after consent. */
+const DEMO_STOREFRONT = {
+  'demo-fashion': {
+    indexing: false,
+    tracking: { metaPixelId: '1648539040045157', ga4Id: 'G-HWPVYZDVYL' },
+    chat: { whatsapp: '01748419892', messenger: 'aradbinpage', show: 'all' },
+  },
+};
 /** Serializes provisioning runs (a manual run during a deploy). */
 const PROVISION_LOCK = 72_616_003;
 
@@ -62,6 +77,20 @@ try {
   await owner.query('select pg_advisory_lock($1)', [PROVISION_LOCK]);
   await runMigrations(ownerUrl);
   notice('Migrations applied');
+
+  const seeded = await seed(ownerUrl);
+  const filled = await seedDemoCatalog(owner, DEMO_STOREFRONT);
+  const storeDomain = process.env.STORE_DOMAIN;
+  if (storeDomain && (seeded.length || filled.length)) {
+    const targets = {
+      sendEvents: async () => {},
+      kvPut: (entries: readonly { key: string; value: string }[]) => cf.kvPutMany(kv, entries),
+      kvDelete: (keys: readonly string[]) => cf.kvDeleteMany(kv, keys),
+    };
+    for (const t of DEMO_TENANTS) await kvSync(owner, targets, storeDomain, t.id);
+  }
+  if (seeded.length) notice(`Demo stores created: ${seeded.join(', ')}`);
+  if (filled.length) notice(`Demo catalog added to ${filled.join(', ')}`);
 
   const existing = await cf.findHyperdrive(HYPERDRIVE);
   let id = existing?.id;

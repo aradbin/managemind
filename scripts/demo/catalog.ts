@@ -21,6 +21,7 @@ import {
   setProductOptions,
   type TenantTx,
   updateAttribute,
+  updateStoreProfile,
   updateVariant,
   withTenant,
 } from '@managemind/core';
@@ -223,8 +224,16 @@ const ownerActor = (tenantId: string): Actor => ({
   storeRole: 'owner',
 });
 
-/** Adds the demo catalog to each demo store that doesn't have it yet; returns the slugs filled. */
-export async function seedDemoCatalog(client: pg.Client): Promise<string[]> {
+/**
+ * Adds the demo catalog to each demo store that doesn't have it yet; returns
+ * the slugs filled. `storefront` gives a store its storefront settings
+ * (tracking IDs, chat) when its catalog is first added; later edits in the
+ * admin are kept.
+ */
+export async function seedDemoCatalog(
+  client: pg.Client,
+  storefront: Partial<Record<string, unknown>> = {},
+): Promise<string[]> {
   const filled: string[] = [];
   // The core relies on row-level security, which the migration role bypasses:
   // each transaction runs as app_rw, like the API (ADR 0009).
@@ -365,6 +374,8 @@ export async function seedDemoCatalog(client: pg.Client): Promise<string[]> {
       );
     }
 
+    const settings = storefront[demo.slug];
+    if (settings) await run((tx) => updateStoreProfile(tx, actor, { storefront: settings }));
     await run((tx) => applyThemePreset(tx, actor, demo.preset));
     await run((tx) => publishTheme(tx, actor));
     filled.push(demo.slug);
