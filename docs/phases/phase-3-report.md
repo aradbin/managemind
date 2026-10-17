@@ -43,7 +43,7 @@ Phase 3 is built, tested and in production: every store gets a server-rendered s
 | Criterion | Status |
 | --- | --- |
 | Two stores with different themes and languages served from the same deployment, each on its own domain | **Met in production (Oct 17).** `https://shop-test.asrexpress.com` serves demo-fashion (fashion preset, primary colour `#8b1e3f`, `lang="en"`), with a valid certificate from Cloudflare for SaaS, and its canonical URL, hreflang links and sitemap all on that host. `https://demo-grocery.managemind.store` serves demo-grocery (grocery preset, `#1b6e3a`, `lang="bn"`). `demo-fashion.managemind.store/products/red-jamdani-saree` answers 301 to the same path on the custom domain. The owner connected the domain in the admin (Settings → Domains, through support access): Connected, then Primary |
-| A cached product page is served without any database query (verified in logs) | **Met in production (Oct 17).** Six requests to `shop-test.asrexpress.com/products/blue-cotton-saree`: the first `x-cache: miss`, the rest `hit`. Workers Logs for that window show the storefront Worker invoked for them (CPU median 1 ms) and the API's `GET /v1/store/pages/products/blue-cotton-saree` invoked **once** (69 ms of CPU, the miss). The API is the only path to the database, so the hits made no query. The deploy's own check saw the same on demo-fashion's home page: 0.84 s for the miss, 0.07 s for the hits |
+| A cached product page is served without any database query (verified in logs) | **Met in production (Oct 17).** Purges work too: the owner changed a price in demo-fashion's admin and the cached product page on `shop-test.asrexpress.com` showed it within a minute (ADR 0007 decision 8). Six requests to `shop-test.asrexpress.com/products/blue-cotton-saree`: the first `x-cache: miss`, the rest `hit`. Workers Logs for that window show the storefront Worker invoked for them (CPU median 1 ms) and the API's `GET /v1/store/pages/products/blue-cotton-saree` invoked **once** (69 ms of CPU, the miss). The API is the only path to the database, so the hits made no query. The deploy's own check saw the same on demo-fashion's home page: 0.84 s for the miss, 0.07 s for the hits |
 
 PLAN.md items without their own criterion:
 
@@ -105,7 +105,6 @@ As planned (plan §10). `CF_STORE_TOKEN` is set, so pages are cached and purged.
 
 ### Not built yet, or smaller than planned
 
-- **A purge on the custom hostname** (ADR 0007 decision 8) isn't observed yet: it needs a real edit in demo-fashion's admin (a price, say) and the page re-checked within a minute. The purge consumer runs, and purges by tag cover custom hostnames on the same zone.
 - **The maintenance page isn't themed**: it uses the platform's plain page, so it works even when a store's settings can't load.
 - **Shopper email sender records** (SPF, DKIM, DMARC for the store domain) wait for Phase 4, which sends the first shopper email.
 - **Holiday mode** shows its banner; pausing orders comes with orders in Phase 4.
