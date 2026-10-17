@@ -12,6 +12,7 @@ export * from './orders/index';
 export * from './outbox';
 export * from './platform';
 export * from './pricing/index';
+export * from './promotions/index';
 export * from './storefront/index';
 export * from './tenancy/index';
 export * from './tenant';

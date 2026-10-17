@@ -5,6 +5,7 @@ export const bn: Record<keyof typeof en, string> = {
   'app.name': '{platform} অ্যাডমিন',
   'nav.home': 'হোম',
   'nav.orders': 'অর্ডার',
+  'nav.promotions': 'অফার',
   'nav.customers': 'ক্রেতা',
   'delivery.title': 'ডেলিভারি',
   'delivery.description': 'জোন, চার্জ আর কোন জোনে কোন এলাকা',

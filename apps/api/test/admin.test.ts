@@ -15,6 +15,7 @@ import {
   createImportJob,
   createPage,
   createProduct,
+  createPromotion,
   createShipment,
   createTenant,
   createZone,
@@ -320,6 +321,13 @@ describe('isolation suite', () => {
     };
     const address = await inB((tx) => addAddress(tx, bOwner, customer.id, bAddress));
     const zone = await inB((tx) => createZone(tx, bOwner, { name: { en: 'B zone' }, fee: 100 }));
+    const promotion = await inB((tx) =>
+      createPromotion(tx, bOwner, {
+        title: { en: 'B promo' },
+        kind: 'code',
+        action: { type: 'amount_off_order', amount: 100 },
+      }),
+    );
     await inB((tx) => blockPhone(tx, bOwner, { phone: '+8801700007777', reason: 'B only' }));
 
     /** Store B's resource for each route with an ID; a new route must add one. */
@@ -413,6 +421,10 @@ describe('isolation suite', () => {
       'PATCH /v1/admin/delivery-zones/{id}': { id: zone.id, body: { fee: 1 } },
       'DELETE /v1/admin/delivery-zones/{id}': { id: zone.id },
       'DELETE /v1/admin/blocked-phones/{phone}': { id: '+8801700007777' },
+      'GET /v1/admin/promotions/{id}': { id: promotion.id },
+      'PATCH /v1/admin/promotions/{id}': { id: promotion.id, body: { priority: 1 } },
+      'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
+      'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

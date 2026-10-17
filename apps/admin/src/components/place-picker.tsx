@@ -30,10 +30,13 @@ export function PlacePicker({
   value,
   onChange,
   disabled,
+  withLine = true,
 }: {
   value: PlaceDraft;
   onChange: (next: PlaceDraft) => void;
   disabled?: boolean;
+  /** False where only the area matters (fees, the promotions test cart). */
+  withLine?: boolean;
 }) {
   const { t, locale } = useLocale();
   const id = useId();
@@ -115,14 +118,16 @@ export function PlacePicker({
           </select>
         </div>
       </div>
-      <Field
-        label={t('place.line')}
-        hint={t('place.lineHint')}
-        value={value.line}
-        maxLength={250}
-        disabled={disabled}
-        onChange={(e) => onChange({ ...value, line: e.target.value })}
-      />
+      {withLine && (
+        <Field
+          label={t('place.line')}
+          hint={t('place.lineHint')}
+          value={value.line}
+          maxLength={250}
+          disabled={disabled}
+          onChange={(e) => onChange({ ...value, line: e.target.value })}
+        />
+      )}
     </div>
   );
 }

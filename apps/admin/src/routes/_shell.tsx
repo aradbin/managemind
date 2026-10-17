@@ -5,6 +5,7 @@ import { formatDateTime } from '@managemind/shared/i18n';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from '@tanstack/react-router';
 import {
+  BadgePercent,
   ExternalLink,
   Home,
   type LucideIcon,
@@ -53,6 +54,7 @@ interface NavItem {
     | '/orders'
     | '/products'
     | '/customers'
+    | '/promotions'
     | '/online-store'
     | '/settings'
     | '/account'
@@ -69,6 +71,7 @@ const NAV: NavItem[] = [
   { to: '/orders', label: 'nav.orders', icon: ShoppingBag },
   { to: '/products', label: 'nav.catalog', icon: Package },
   { to: '/customers', label: 'nav.customers', icon: Users },
+  { to: '/promotions', label: 'nav.promotions', icon: BadgePercent },
   { to: '/online-store', label: 'nav.onlineStore', icon: Palette },
   { to: '/settings', label: 'nav.settings', icon: Settings },
   { to: '/account', label: 'nav.account', icon: User, sidebarOnly: true },
@@ -80,6 +83,7 @@ const COLUMNS: Record<number, string> = {
   5: 'grid-cols-5',
   6: 'grid-cols-6',
   7: 'grid-cols-7',
+  8: 'grid-cols-8',
 };
 const PLATFORM: NavItem = { to: '/platform', label: 'nav.platform', icon: Shield };
 const MAILBOX: NavItem = { to: '/dev/mailbox', label: 'dev.mailbox', icon: Mail };

@@ -6,6 +6,7 @@ export const en = {
   'app.name': '{platform} admin',
   'nav.home': 'Home',
   'nav.orders': 'Orders',
+  'nav.promotions': 'Promotions',
   'nav.customers': 'Customers',
   'delivery.title': 'Delivery',
   'delivery.description': 'Zones, fees and the areas each covers',

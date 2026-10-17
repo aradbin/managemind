@@ -141,7 +141,7 @@ function FeeCalculator() {
       <h2 id="calc-h" className="font-semibold">
         {t('delivery.calculator')}
       </h2>
-      <PlacePicker value={place} onChange={(p) => setPlace({ ...p, line: 'x' })} />
+      <PlacePicker value={place} onChange={setPlace} withLine={false} />
       <Field
         label={t('delivery.weightKg')}
         inputMode="decimal"

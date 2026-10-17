@@ -6997,6 +6997,402 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The campaign list with uses, orders, discounts and sales (promotions.read) */
+        get: {
+            parameters: {
+                query?: {
+                    state?: "draft" | "scheduled" | "live" | "paused" | "ended";
+                    kind?: "automatic" | "code";
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Promotions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Promotion"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a promotion (promotions.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        title: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        /** @enum {string} */
+                        kind: "automatic" | "code";
+                        /**
+                         * @default draft
+                         * @enum {string}
+                         */
+                        status?: "draft" | "active" | "paused" | "ended";
+                        /**
+                         * Format: date-time
+                         * @default null
+                         */
+                        startsAt?: string | null;
+                        /**
+                         * Format: date-time
+                         * @default null
+                         */
+                        endsAt?: string | null;
+                        /** @default 0 */
+                        priority?: number;
+                        /** @default false */
+                        exclusive?: boolean;
+                        /** @default null */
+                        maxDiscount?: number | null;
+                        /** @default null */
+                        usageLimit?: number | null;
+                        /** @default null */
+                        perCustomerLimit?: number | null;
+                        /** @default {} */
+                        conditions?: {
+                            minSubtotal?: number;
+                            minQuantity?: number;
+                            items?: {
+                                productIds?: string[];
+                                variantIds?: string[];
+                                categoryIds?: string[];
+                                collectionIds?: string[];
+                            };
+                            zoneIds?: string[];
+                            /** @enum {boolean} */
+                            firstOrder?: true;
+                            customerPhones?: string[];
+                            customerTags?: string[];
+                            paymentMethods?: ("cod" | "manual")[];
+                        };
+                        action: {
+                            /** @enum {string} */
+                            type: "percent_off_order";
+                            percentBp: number;
+                        } | {
+                            /** @enum {string} */
+                            type: "percent_off_items";
+                            percentBp: number;
+                            target: {
+                                productIds?: string[];
+                                variantIds?: string[];
+                                categoryIds?: string[];
+                                collectionIds?: string[];
+                            };
+                        } | {
+                            /** @enum {string} */
+                            type: "amount_off_order";
+                            amount: number;
+                        } | {
+                            /** @enum {string} */
+                            type: "amount_off_items";
+                            amount: number;
+                            target: {
+                                productIds?: string[];
+                                variantIds?: string[];
+                                categoryIds?: string[];
+                                collectionIds?: string[];
+                            };
+                        } | {
+                            /** @enum {string} */
+                            type: "buy_x_get_y";
+                            buy: {
+                                quantity: number;
+                                items: {
+                                    productIds?: string[];
+                                    variantIds?: string[];
+                                    categoryIds?: string[];
+                                    collectionIds?: string[];
+                                };
+                            };
+                            get: {
+                                quantity: number;
+                                items?: {
+                                    productIds?: string[];
+                                    variantIds?: string[];
+                                    categoryIds?: string[];
+                                    collectionIds?: string[];
+                                };
+                                percentBp: number;
+                            };
+                            maxUses?: number;
+                        } | {
+                            /** @enum {string} */
+                            type: "delivery_percent_off";
+                            percentBp: number;
+                        } | {
+                            /** @enum {string} */
+                            type: "delivery_amount_off";
+                            amount: number;
+                        };
+                        code?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Promotion"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/promotions/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The test cart: which promotions apply to a cart, and why the others don’t */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        areaId?: number | null;
+                        /** @enum {string} */
+                        paymentMethod?: "cod" | "manual";
+                        phone?: string;
+                        code?: string;
+                        /** @description The promotion being built (promotionInput), tried as if live */
+                        draft?: {
+                            [key: string]: unknown;
+                        };
+                        /** Format: uuid */
+                        promotionId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            quote: components["schemas"]["OrderQuote"];
+                            results: {
+                                /** Format: uuid */
+                                promotionId: string;
+                                title: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                applied: boolean;
+                                amount: number;
+                                reason: string | null;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/promotions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A promotion (promotions.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Promotion */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Promotion"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit a promotion, or end it with status "ended" (promotions.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Promotion"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/promotions/{id}/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A promotion’s codes and their uses (promotions.read) */
+        get: {
+            parameters: {
+                query?: {
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Codes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                code: string;
+                                usageLimit: number | null;
+                                usageCount: number;
+                                createdAt: string;
+                            }[];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Generate a batch of unique codes, up to 5,000 (promotions.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        count: number;
+                        /** @default  */
+                        prefix?: string;
+                        /** @default 1 */
+                        usageLimit?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Codes */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            created: number;
+                            codes: string[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/invitations/accept": {
         parameters: {
             query?: never;
@@ -9796,6 +10192,46 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+        };
+        Promotion: {
+            /** Format: uuid */
+            id: string;
+            title: {
+                bn?: string;
+                en?: string;
+            };
+            /** @enum {string} */
+            kind: "automatic" | "code";
+            /** @enum {string} */
+            status: "draft" | "active" | "paused" | "ended";
+            /** @enum {string} */
+            state: "draft" | "scheduled" | "live" | "paused" | "ended";
+            startsAt: string | null;
+            endsAt: string | null;
+            priority: number;
+            exclusive: boolean;
+            maxDiscount: number | null;
+            usageLimit: number | null;
+            usageCount: number;
+            perCustomerLimit: number | null;
+            /** @description promotionConditions (shared/orders/promotions.ts) */
+            conditions: {
+                [key: string]: unknown;
+            };
+            /** @description promotionAction (shared/orders/promotions.ts) */
+            action: {
+                type: string;
+            } & {
+                [key: string]: unknown;
+            };
+            /** @description The shared code, if any */
+            code: string | null;
+            codeCount: number;
+            orders: number;
+            discountTotal: number;
+            sales: number;
+            createdAt: string;
+            updatedAt: string;
         };
         TenantSummary: {
             /** Format: uuid */

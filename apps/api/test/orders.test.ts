@@ -199,3 +199,48 @@ describe('settings for selling', () => {
     expect(next.displayNumber).toMatch(/^AR-\d+$/);
   });
 });
+
+describe('promotions over HTTP', () => {
+  it('builds a campaign, tries it on the test cart, generates codes and lists the figures', async () => {
+    const b = await staff(ownerEmail);
+    const draft = {
+      title: { en: 'Free delivery over ৳2,000' },
+      kind: 'automatic',
+      status: 'active',
+      conditions: { minSubtotal: 200_000 },
+      action: { type: 'delivery_percent_off', percentBp: 10_000 },
+    };
+    const tried = (await (
+      await b.post('/api/admin/promotions/test', {
+        lines: [{ variantId: variant, quantity: 1 }],
+        areaId: 513,
+        draft,
+      })
+    ).json()) as Json;
+    expect(tried.results).toEqual([
+      expect.objectContaining({ applied: false, reason: 'min_subtotal' }),
+    ]);
+    const created = await b.post('/api/admin/promotions', draft);
+    expect(created.status).toBe(201);
+    const promo = (await created.json()) as Json;
+    expect(promo).toMatchObject({ state: 'live', orders: 0, sales: 0 });
+
+    const coded = (await (
+      await b.post('/api/admin/promotions', {
+        title: { en: 'VIP' },
+        kind: 'code',
+        action: { type: 'percent_off_order', percentBp: 500 },
+      })
+    ).json()) as Json;
+    const batch = await b.post(`/api/admin/promotions/${coded.id}/codes`, { count: 25 });
+    expect(batch.status).toBe(201);
+    expect(((await batch.json()) as Json).codes).toHaveLength(25);
+    const codes = (await (await b.get(`/api/admin/promotions/${coded.id}/codes`)).json()) as Json;
+    expect(codes.items).toHaveLength(25);
+
+    const ended = await b.call('PATCH', `/api/admin/promotions/${promo.id}`, { status: 'ended' });
+    expect(((await ended.json()) as Json).state).toBe('ended');
+    const list = (await (await b.get('/api/admin/promotions?state=ended')).json()) as Json;
+    expect(list.map((p: Json) => p.id)).toEqual([promo.id]);
+  });
+});

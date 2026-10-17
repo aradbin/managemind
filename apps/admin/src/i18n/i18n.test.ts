@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type AdminKey, loadLocale, messages, translate } from './index';
 import './online-store';
 import './orders';
+import './promotions';
 
 await loadLocale('en');
 await loadLocale('bn');

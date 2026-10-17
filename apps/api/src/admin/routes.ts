@@ -37,6 +37,7 @@ import { DOMAIN_ROUTES, registerDomains } from './domains';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 import { ORDER_ROUTES, registerOrders } from './orders';
+import { PROMOTION_ROUTES, registerPromotions } from './promotions';
 import { storeUrls } from './store-urls';
 import { registerStorefrontAdmin, STOREFRONT_ROUTES } from './storefront';
 
@@ -132,6 +133,7 @@ export const ADMIN_ROUTES = {
   ...STOREFRONT_ROUTES,
   ...DOMAIN_ROUTES,
   ...ORDER_ROUTES,
+  ...PROMOTION_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -397,6 +399,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerStorefrontAdmin(admin);
   registerDomains(admin);
   registerOrders(admin);
+  registerPromotions(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

@@ -292,6 +292,8 @@ export interface QuoteInput {
         unitPrices: Record<string, number>;
       }
     | undefined;
+  /** The admin's test cart (§3.13): promotions to try as if live, such as one being built. */
+  extraRules?: readonly PromotionRule[] | undefined;
 }
 
 export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
@@ -302,6 +304,10 @@ export async function quote(tx: TenantTx, input: QuoteInput): Promise<Quote> {
   const loaded = input.edit
     ? { rules: await promotionsById(tx, input.edit.promotions), code: null }
     : await loadPromotions(tx, input.code, input.phone);
+  if (input.extraRules?.length) {
+    const extra = new Set(input.extraRules.map((r) => r.id));
+    loaded.rules = [...loaded.rules.filter((r) => !extra.has(r.id)), ...input.extraRules];
+  }
   const facts = await customerFacts(tx, input.phone);
 
   // The zone: the staff's choice, else the area's.

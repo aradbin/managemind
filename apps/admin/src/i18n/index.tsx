@@ -8,9 +8,14 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useState
 import type { en } from './en';
 import type { onlineStoreEn } from './online-store-en';
 import type { ordersEn } from './orders-en';
+import type { promotionsEn } from './promotions-en';
 
 /** Every key, including those of catalogs loaded with their pages. */
-export type AdminKey = keyof typeof en | keyof typeof onlineStoreEn | keyof typeof ordersEn;
+export type AdminKey =
+  | keyof typeof en
+  | keyof typeof onlineStoreEn
+  | keyof typeof ordersEn
+  | keyof typeof promotionsEn;
 const catalogs = {
   en: {} as Record<AdminKey, Message>,
   bn: {} as Partial<Record<AdminKey, Message>>,

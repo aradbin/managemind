@@ -248,7 +248,7 @@ const OrderState = z
     deliveryStatus: z.string(),
   })
   .openapi('OrderState');
-const QuoteView = z
+export const QuoteView = z
   .object({
     lines: z.array(
       z.object({
@@ -730,7 +730,7 @@ const state = (o: {
 });
 
 /** A quote without the engine's internals. */
-const quoteView = (q: Awaited<ReturnType<typeof previewManualOrder>>['quote']) => ({
+export const quoteView = (q: Awaited<ReturnType<typeof previewManualOrder>>['quote']) => ({
   lines: q.lines.map((l) => ({
     key: l.key,
     variantId: l.variantId,
