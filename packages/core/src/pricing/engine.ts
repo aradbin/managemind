@@ -58,8 +58,8 @@ export interface CustomerFacts {
 
 export interface ManualDiscount {
   /** Poisha; or `percentBp` of what's left after promotions. */
-  amount?: number;
-  percentBp?: number;
+  amount?: number | undefined;
+  percentBp?: number | undefined;
   reason: string;
 }
 

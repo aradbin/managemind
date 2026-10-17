@@ -59,6 +59,10 @@ export interface Env {
   CF_STORE_TOKEN?: string;
   /** The store zone's ID, set by the deploy, for purges and custom hostnames. */
   STORE_ZONE_ID?: string;
+  /** Turnstile's site key, sent to checkout and sign-in pages (phase-4-plan §3.15). */
+  TURNSTILE_SITE_KEY?: string;
+  /** Turnstile's secret (a Worker secret); without it the check is skipped. */
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
@@ -77,6 +81,8 @@ export const apiConfig = baseConfig
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
     DEV_TOKEN: z.string().min(16).optional(),
+    TURNSTILE_SITE_KEY: z.string().min(1).optional(),
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
     STOREFRONT_ORIGIN: z
       .url({ protocol: /^https?$/ })
       .transform((u) => u.replace(/\/$/, ''))

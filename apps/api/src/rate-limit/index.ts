@@ -49,6 +49,19 @@ export const RULES = {
   'domain-check:tenant': { windows: [{ limit: 20, seconds: HOUR }] },
   /** Storefront search misses from one shopper (phase-3-plan §3.7); cached results cost nothing. */
   'search:ip': { windows: [{ limit: 30, seconds: MINUTE }] },
+  /** Orders placed per store and phone; the windows are the store's settings (phase-4-plan §3.15). */
+  'checkout:phone': { windows: [] },
+  /** Orders placed per store and IP. */
+  'checkout:ip': { windows: [] },
+  /** Order tracking from one IP (phase-4-plan §6.1). */
+  'track:ip': { windows: [{ limit: 30, seconds: HOUR }] },
+  /** Tracking one order number: 5 wrong phones lock it for an hour, so numbers can't be walked. */
+  'track:number': {
+    windows: [{ limit: 20, seconds: HOUR }],
+    lockout: { failures: 5, windowSeconds: HOUR, lockSeconds: HOUR },
+  },
+  /** Cart changes from one IP: generous, only to stop scripts filling the database. */
+  'cart:ip': { windows: [{ limit: 300, seconds: HOUR }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */
   'media-fetch:tenant': {
     windows: [
@@ -71,8 +84,11 @@ export async function limiterName(rule: RuleName, value: string): Promise<string
 }
 
 export interface Limiter {
-  /** Counts an attempt; throws rate_limited (with `retryAfter` in seconds) when refused. */
-  check(rule: RuleName, value: string): Promise<void>;
+  /**
+   * Counts an attempt; throws rate_limited (with `retryAfter` in seconds) when
+   * refused. `windows` replaces the rule's own, for limits a store sets.
+   */
+  check(rule: RuleName, value: string, windows?: Window[]): Promise<void>;
   /** Records a failed verification for a rule with a lockout. */
   fail(rule: RuleName, value: string): Promise<void>;
   /** Clears failures and lockout after a successful verification. */
@@ -96,10 +112,12 @@ export function createLimiter(ns: LimiterNamespace, onError: (e: unknown) => voi
   const stub = async (rule: RuleName, value: string) =>
     ns.getByName(await limiterName(rule, value));
   return {
-    async check(rule, value) {
+    async check(rule, value, windows) {
+      const list = windows ?? [...RULES[rule].windows];
+      if (!list.length) return;
       let result: HitResult;
       try {
-        result = await (await stub(rule, value)).hit([...RULES[rule].windows]);
+        result = await (await stub(rule, value)).hit(list);
       } catch (e) {
         onError(e);
         return;

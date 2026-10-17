@@ -4,6 +4,12 @@
 import { schema } from '@managemind/db';
 import { AppError, checkSlug, uuidv7 } from '@managemind/shared';
 import {
+  type CheckoutSettings,
+  type CodSettings,
+  checkoutSettings,
+  codSettings,
+} from '@managemind/shared/orders';
+import {
   defaultTenantSettings,
   type StoreProfile,
   type TaxSettings,
@@ -147,6 +153,10 @@ export interface Store {
   storefront: StorefrontSettings;
   /** Bangla or Western digits on the storefront. */
   display: TenantSettings['display'];
+  /** Checkout fields, limits and shopper accounts (phase-4-plan §4). */
+  checkout: CheckoutSettings;
+  /** Cash on delivery. */
+  cod: CodSettings;
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -171,6 +181,8 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     tax: settings.tax,
     storefront: settings.storefront,
     display: settings.display,
+    checkout: settings.checkout,
+    cod: settings.cod,
   };
 }
 
@@ -205,6 +217,10 @@ export interface StoreProfilePatch {
   storefront?: unknown;
   /** Replaces the display settings. */
   display?: unknown;
+  /** Replaces the checkout settings (phase-4-plan §4). */
+  checkout?: unknown;
+  /** Replaces the cash-on-delivery settings. */
+  cod?: unknown;
 }
 
 /** Edits name, default locale, profile, VAT, storefront and display settings (`settings.write`); refused while suspended. */
@@ -233,9 +249,14 @@ export async function updateStoreProfile(
       patch.display !== undefined
         ? parseSection('display', tenantSettings.shape.display, patch.display)
         : current.display,
+    checkout:
+      patch.checkout !== undefined
+        ? parseSection('checkout', checkoutSettings, patch.checkout)
+        : current.checkout,
+    cod: patch.cod !== undefined ? parseSection('cod', codSettings, patch.cod) : current.cod,
   };
   const fields = (
-    ['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display'] as const
+    ['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display', 'checkout', 'cod'] as const
   ).filter((f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]));
   if (fields.length === 0) return getStore(tx, actor);
 
@@ -250,6 +271,8 @@ export async function updateStoreProfile(
         tax: next.tax,
         storefront: next.storefront,
         display: next.display,
+        checkout: next.checkout,
+        cod: next.cod,
       },
     })
     .where(eq(schema.tenants.id, tx.tenantId));

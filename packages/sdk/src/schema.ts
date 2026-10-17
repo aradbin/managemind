@@ -632,6 +632,508 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/cart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The shopper’s cart, priced now (empty without one) */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/cart/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add to cart; creates the cart and its cookies on the first add */
+        post: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        variantId: string;
+                        quantity: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/cart/lines/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a line */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    variantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Change a quantity; 0 removes the line */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    variantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        quantity: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/store/cart/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Apply a code (one per cart) */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove the code */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/cart/area": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose the delivery area, so totals follow it */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        areaId: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperCart"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What checkout needs: the cart, COD, holiday mode, fields and the Turnstile site key */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Checkout */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CheckoutState"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Place the order (Idempotency-Key required; a retry returns the same order) */
+        post: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                    "idempotency-key": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        contact: {
+                            name: string;
+                            phone: string;
+                            email?: string;
+                        };
+                        address: {
+                            divisionId: number;
+                            districtId: number;
+                            areaId: number;
+                            line: string;
+                        };
+                        note?: string;
+                        /** @enum {string} */
+                        paymentMethod: "cod";
+                        expectedTotal: number;
+                        saveDetails?: boolean;
+                        acceptTerms?: boolean;
+                        turnstileToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Placed */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlacedOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/orders/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The order behind a view token (the confirmation page) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/orders/track": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Find an order by number and phone (rate-limited; 5 wrong phones lock the number) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        number: string;
+                        phone: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TrackedOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/orders/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel your order while the store hasn’t confirmed it (the token from tracking) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ShopperOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/email-otp/send-verification-otp": {
         parameters: {
             query?: never;
@@ -1212,7 +1714,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Edit the store profile, VAT, storefront and display settings (settings.write) */
+        /** Edit the store profile, VAT, storefront, display, checkout and COD settings (settings.write) */
         patch: {
             parameters: {
                 query?: never;
@@ -1312,6 +1814,47 @@ export interface paths {
                         display?: {
                             /** @enum {string} */
                             numerals?: "bengali" | "latin";
+                        };
+                        checkout?: {
+                            /**
+                             * @default optional
+                             * @enum {string}
+                             */
+                            email?: "optional" | "required" | "hidden";
+                            /** @default 10 */
+                            maxQuantityPerLine?: number;
+                            /** @default # */
+                            orderNumberPrefix?: string;
+                            /**
+                             * @default {
+                             *       "perPhoneHour": 3,
+                             *       "perPhoneDay": 10,
+                             *       "perIpHour": 10
+                             *     }
+                             */
+                            rateLimits?: {
+                                /** @default 3 */
+                                perPhoneHour?: number;
+                                /** @default 10 */
+                                perPhoneDay?: number;
+                                /** @default 10 */
+                                perIpHour?: number;
+                            };
+                            /** @default false */
+                            accounts?: boolean;
+                            /** @default false */
+                            termsCheckbox?: boolean;
+                        };
+                        cod?: {
+                            /** @default true */
+                            enabled?: boolean;
+                            /** @default null */
+                            maxOrderValue?: number | null;
+                            /**
+                             * @default never
+                             * @enum {string}
+                             */
+                            advance?: "never" | "always" | "flagged";
                         };
                     };
                 };
@@ -4860,6 +5403,1596 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Orders, newest first, with filters and search (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "pending" | "confirmed" | "processing" | "completed" | "cancelled";
+                    paymentStatus?: "unpaid" | "partially_paid" | "paid";
+                    deliveryStatus?: "not_shipped" | "partially_shipped" | "shipped" | "delivered" | "failed";
+                    zoneId?: string;
+                    source?: "website" | "facebook" | "phone" | "walk_in" | "other";
+                    tag?: string;
+                    cancelledByShopper?: boolean | null;
+                    from?: string;
+                    to?: string;
+                    q?: string;
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["OrderSummary"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A manual order: Facebook, phone or walk-in (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        contact: {
+                            name: string;
+                            phone: string;
+                            email?: string;
+                        };
+                        address: {
+                            divisionId: number;
+                            districtId: number;
+                            areaId: number;
+                            line: string;
+                        } | null;
+                        zoneId?: string | "none" | null;
+                        deliveryFee?: {
+                            amount: number;
+                            reason: string;
+                        };
+                        code?: string;
+                        manualDiscount?: {
+                            amount?: number;
+                            percentBp?: number;
+                            reason: string;
+                        };
+                        payment?: {
+                            /** @enum {string} */
+                            method: "bkash" | "nagad" | "rocket" | "bank" | "cash" | "other";
+                            amount: number;
+                            reference?: string;
+                        };
+                        note?: string;
+                        tags?: string[];
+                        /** @enum {string} */
+                        locale?: "bn" | "en";
+                        /** @default false */
+                        confirm?: boolean;
+                        /** @default false */
+                        completeNow?: boolean;
+                        /** @default false */
+                        allowBlocked?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Placed */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ManualOrderPlaced"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prices a manual order before it is saved, and warns about a blocked phone */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        contact: {
+                            name: string;
+                            phone: string;
+                            email?: string;
+                        };
+                        address: {
+                            divisionId: number;
+                            districtId: number;
+                            areaId: number;
+                            line: string;
+                        } | null;
+                        zoneId?: string | "none" | null;
+                        deliveryFee?: {
+                            amount: number;
+                            reason: string;
+                        };
+                        code?: string;
+                        manualDiscount?: {
+                            amount?: number;
+                            percentBp?: number;
+                            reason: string;
+                        };
+                        payment?: {
+                            /** @enum {string} */
+                            method: "bkash" | "nagad" | "rocket" | "bank" | "cash" | "other";
+                            amount: number;
+                            reference?: string;
+                        };
+                        note?: string;
+                        tags?: string[];
+                        /** @enum {string} */
+                        locale?: "bn" | "en";
+                        /** @default false */
+                        confirm?: boolean;
+                        /** @default false */
+                        completeNow?: boolean;
+                        /** @default false */
+                        allowBlocked?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Quote */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            quote: components["schemas"]["OrderQuote"];
+                            blocked: boolean;
+                            firstOrder: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/print": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Selected orders for invoices and packing slips, with the business details */
+        get: {
+            parameters: {
+                query: {
+                    ids: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderPrint"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** An order with lines, payments, shipments and its timeline (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set the order’s tags (orders.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        tags: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Tags */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            tags: string[];
+                        };
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start processing (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Processing */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel with a reason while nothing is shipped (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit before anything ships (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        address?: {
+                            divisionId: number;
+                            districtId: number;
+                            areaId: number;
+                            line: string;
+                        } | null;
+                        zoneId?: string | "none" | null;
+                        deliveryFee?: {
+                            amount: number;
+                            reason: string;
+                        } | null;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Edited */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a payment already received (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        method: "bkash" | "nagad" | "rocket" | "bank" | "cash" | "other";
+                        amount: number;
+                        reference?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A shipment of chosen lines (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                        }[];
+                        carrier?: string;
+                        trackingNumber?: string;
+                        trackingUrl?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark shipped: the stock is sold from the reservation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Shipped */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/deliver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark delivered, with "cash collected" (default true) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @default true */
+                        cashCollected?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Delivered */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The courier couldn’t deliver */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Failed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A failed shipment came back: back in stock */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Returned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/edit/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The new totals of an edit, without saving it */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        address?: {
+                            divisionId: number;
+                            districtId: number;
+                            areaId: number;
+                            line: string;
+                        } | null;
+                        zoneId?: string | "none" | null;
+                        deliveryFee?: {
+                            amount: number;
+                            reason: string;
+                        } | null;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            quote: components["schemas"]["OrderQuote"];
+                            dropped: {
+                                /** Format: uuid */
+                                promotionId: string;
+                                title: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                            }[];
+                            refundDue: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** An internal note (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Added */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a shipment not yet shipped */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customers, searched by phone or name, filtered by tag (customers.read) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    tag?: string;
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Customers */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["Customer"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a customer (customers.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        name: string;
+                        email?: string | null;
+                        tags?: string[];
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Customer"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A customer with addresses and orders (customers.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Customer */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a customer; past orders keep their details (customers.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a customer (customers.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone?: string;
+                        name?: string;
+                        email?: string | null;
+                        tags?: string[];
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Customer"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/customers/{id}/addresses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an address (customers.write; at most 10) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        phone: string;
+                        divisionId: number;
+                        districtId: number;
+                        areaId: number;
+                        line: string;
+                        label?: string | null;
+                        isDefault?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Added */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerAddress"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{id}/addresses/{addressId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an address */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    addressId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit an address */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    addressId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerAddress"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/geo/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The geography file’s version and path (the admin loads it from the store host) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Version */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            version: string;
+                            path: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/delivery-zones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivery zones (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Zones */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeliveryZone"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a zone (settings.write; at most 20) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        fee: number;
+                        /** @default null */
+                        freeWeightGrams?: number | null;
+                        /** @default null */
+                        feePerExtraKg?: number | null;
+                        /** @default {} */
+                        estimate?: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        /** @default false */
+                        isFallback?: boolean;
+                        /** @default [] */
+                        districtIds?: number[];
+                        /** @default [] */
+                        areaIds?: number[];
+                        /** @default 0 */
+                        position?: number;
+                        /** @default true */
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeliveryZone"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/delivery-zones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a zone; past orders keep its name and fee (settings.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a zone (settings.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeliveryZone"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/delivery-zones/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The fee for an area and weight */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        areaId: number;
+                        weightGrams: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Fee */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            zone: components["schemas"]["DeliveryZone"] & (Record<string, never> | null);
+                            fee: number | null;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/blocked-phones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The phone blocklist (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Blocked phones */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BlockedPhone"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Block a phone with a reason (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Blocked */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BlockedPhone"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/blocked-phones/{phone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unblock a phone (settings.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    phone: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Unblocked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Today’s and this month’s orders and sales, and what is waiting */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Dashboard */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Dashboard"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/invitations/accept": {
         parameters: {
             query?: never;
@@ -5392,6 +7525,123 @@ export interface components {
                 updatedAt: string;
             }[];
         };
+        ShopperCart: {
+            itemCount: number;
+            areaId: number | null;
+            ready: boolean;
+            maxQuantityPerLine: number;
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                slugs: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                image: {
+                    width: number;
+                    height: number;
+                    files: {
+                        width: number;
+                        file: string;
+                    }[];
+                    alt: string | null;
+                } | null;
+                unitPrice: number;
+                compareAtPrice: number | null;
+                quantity: number;
+                total: number;
+                maxQuantity: number | null;
+                /** @enum {string|null} */
+                problem: "unavailable" | "insufficient_stock" | "over_limit" | null;
+            }[];
+            zone: {
+                name: {
+                    bn?: string;
+                    en?: string;
+                };
+                estimate: {
+                    bn?: string;
+                    en?: string;
+                };
+            } | null;
+            deliveryFrom: number | null;
+            totals: {
+                subtotal: number;
+                discountTotal: number;
+                deliveryFee: number;
+                deliveryDiscount: number;
+                vatTotal: number;
+                vatIncluded: boolean;
+                rounding: number;
+                total: number;
+            };
+            promotions: {
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                amount: number;
+                target: string;
+                code?: string;
+            }[];
+            code: {
+                code: string;
+                status: string;
+            } | null;
+            freeDelivery: {
+                threshold: number;
+                remaining: number;
+            } | null;
+        };
+        CheckoutState: {
+            cart: components["schemas"]["ShopperCart"];
+            cod: {
+                enabled: boolean;
+                maxOrderValue: number | null;
+            };
+            holiday: {
+                active: boolean;
+                message: {
+                    bn?: string;
+                    en?: string;
+                };
+            };
+            /** @enum {string} */
+            email: "optional" | "required" | "hidden";
+            termsCheckbox: boolean;
+            accounts: boolean;
+            turnstileSiteKey: string | null;
+        };
+        PlacedOrder: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            status: string;
+            total: number;
+            codAmount: number;
+            phone: string;
+            locale: string;
+            placedAt: string;
+            viewToken: string;
+        };
+        ShopperOrder: {
+            [key: string]: unknown;
+        };
+        TrackedOrder: {
+            order: components["schemas"]["ShopperOrder"];
+            token: string;
+        };
         Me: {
             user: {
                 /** Format: uuid */
@@ -5519,6 +7769,47 @@ export interface components {
             display: {
                 /** @enum {string} */
                 numerals?: "bengali" | "latin";
+            };
+            checkout: {
+                /**
+                 * @default optional
+                 * @enum {string}
+                 */
+                email: "optional" | "required" | "hidden";
+                /** @default 10 */
+                maxQuantityPerLine: number;
+                /** @default # */
+                orderNumberPrefix: string;
+                /**
+                 * @default {
+                 *       "perPhoneHour": 3,
+                 *       "perPhoneDay": 10,
+                 *       "perIpHour": 10
+                 *     }
+                 */
+                rateLimits: {
+                    /** @default 3 */
+                    perPhoneHour: number;
+                    /** @default 10 */
+                    perPhoneDay: number;
+                    /** @default 10 */
+                    perIpHour: number;
+                };
+                /** @default false */
+                accounts: boolean;
+                /** @default false */
+                termsCheckbox: boolean;
+            };
+            cod: {
+                /** @default true */
+                enabled: boolean;
+                /** @default null */
+                maxOrderValue: number | null;
+                /**
+                 * @default never
+                 * @enum {string}
+                 */
+                advance: "never" | "always" | "flagged";
             };
             storeUrl: string;
         };
@@ -7104,6 +9395,401 @@ export interface components {
                 name: string;
                 value: string;
             }[];
+        };
+        OrderSummary: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            status: string;
+            paymentStatus: string;
+            deliveryStatus: string;
+            source: string;
+            name: string;
+            /** @description Masked without customers.read */
+            phone: string;
+            area: {
+                bn?: string;
+                en?: string;
+            } | null;
+            zoneName: {
+                bn?: string;
+                en?: string;
+            } | null;
+            total: number;
+            itemCount: number;
+            tags: string[];
+            cancelledBy: string | null;
+            placedAt: string;
+        };
+        OrderQuote: {
+            lines: {
+                key: string;
+                /** Format: uuid */
+                variantId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                image: {
+                    width: number;
+                    height: number;
+                    files: {
+                        width: number;
+                        file: string;
+                    }[];
+                    alt: string | null;
+                } | null;
+                unitPrice: number;
+                quantity: number;
+                subtotal: number;
+                discount: number;
+                total: number;
+                maxQuantity: number | null;
+                problem: string | null;
+            }[];
+            zone: {
+                /** Format: uuid */
+                id: string;
+                name: {
+                    bn?: string;
+                    en?: string;
+                };
+                estimate: {
+                    bn?: string;
+                    en?: string;
+                };
+            } | null;
+            weightGrams: number;
+            totals: {
+                subtotal: number;
+                discountTotal: number;
+                deliveryFee: number;
+                deliveryDiscount: number;
+                vatTotal: number;
+                vatIncluded: boolean;
+                rounding: number;
+                total: number;
+            };
+            promotions: {
+                /** Format: uuid */
+                promotionId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                amount: number;
+                target: string;
+                code?: string;
+            }[];
+            code: {
+                code: string;
+                status: string;
+            } | null;
+            manualDiscount: {
+                amount: number;
+                reason: string;
+            } | null;
+        };
+        OrderPrint: {
+            store: {
+                name: string;
+                profile: {
+                    [key: string]: unknown;
+                };
+                tax: {
+                    [key: string]: unknown;
+                };
+            };
+            orders: components["schemas"]["OrderDetail"][];
+        };
+        OrderDetail: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            status: string;
+            paymentStatus: string;
+            deliveryStatus: string;
+            returnStatus: string;
+            source: string;
+            locale: string;
+            customer: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                phone: string;
+                email: string | null;
+                orderCount: number;
+            };
+            contact: {
+                name: string;
+                phone: string;
+                email?: string;
+            };
+            address: {
+                divisionId: number;
+                districtId: number;
+                areaId: number;
+                line: string;
+                names: {
+                    division: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    district: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    area: {
+                        bn?: string;
+                        en?: string;
+                    };
+                };
+            } | null;
+            zone: {
+                /** Format: uuid */
+                id: string | null;
+                name: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+            };
+            lines: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                variantId: string;
+                /** Format: uuid */
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                image: {
+                    width: number;
+                    height: number;
+                    files: {
+                        width: number;
+                        file: string;
+                    }[];
+                    alt: string | null;
+                } | null;
+                unitPrice: number;
+                compareAtPrice: number | null;
+                /** @description Only with catalog.cost */
+                costPrice?: number | null;
+                quantity: number;
+                shippedQuantity: number;
+                subtotal: number;
+                discount: number;
+                vatRateBp: number;
+                vat: number;
+                total: number;
+                weightGrams: number | null;
+            }[];
+            adjustments: {
+                /** Format: uuid */
+                id: string;
+                kind: string;
+                target: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                code: string | null;
+                amount: number;
+                reason: string | null;
+            }[];
+            totals: {
+                subtotal: number;
+                discountTotal: number;
+                deliveryFee: number;
+                deliveryDiscount: number;
+                vatTotal: number;
+                vatIncluded: boolean;
+                rounding: number;
+                total: number;
+                paidTotal: number;
+                codDue: number;
+                refundDue: number;
+            };
+            payments: {
+                /** Format: uuid */
+                id: string;
+                provider: string;
+                method: string;
+                status: string;
+                amount: number;
+                reference: string | null;
+                settledAt: string | null;
+                createdAt: string;
+            }[];
+            shipments: {
+                /** Format: uuid */
+                id: string;
+                status: string;
+                carrier: string | null;
+                trackingNumber: string | null;
+                trackingUrl: string | null;
+                shippedAt: string | null;
+                deliveredAt: string | null;
+                failedReason: string | null;
+                lines: {
+                    /** Format: uuid */
+                    orderLineId: string;
+                    quantity: number;
+                }[];
+            }[];
+            timeline: {
+                /** @enum {string} */
+                kind: "history" | "note";
+                /** Format: uuid */
+                id: string;
+                machine?: string;
+                from?: string | null;
+                to?: string | null;
+                event?: string;
+                reason?: string | null;
+                body?: string;
+                actorType?: string;
+                /** Format: uuid */
+                actorId: string | null;
+                data?: unknown;
+                createdAt: string;
+            }[];
+            customerNote: string | null;
+            tags: string[];
+            metadata: {
+                [key: string]: unknown;
+            };
+            cancelReason: string | null;
+            cancelledBy: string | null;
+            placedAt: string;
+            confirmedAt: string | null;
+            completedAt: string | null;
+            cancelledAt: string | null;
+            actions: string[];
+        };
+        ManualOrderPlaced: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            status: string;
+            total: number;
+            codAmount: number;
+            phone: string;
+            locale: string;
+            placedAt: string;
+        };
+        OrderState: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            status: string;
+            paymentStatus: string;
+            deliveryStatus: string;
+        };
+        Customer: {
+            /** Format: uuid */
+            id: string;
+            phone: string;
+            name: string;
+            email: string | null;
+            tags: string[];
+            note: string | null;
+            orderCount: number;
+            totalSpent: number;
+            firstOrderAt: string | null;
+            lastOrderAt: string | null;
+            createdAt: string;
+        };
+        CustomerDetail: components["schemas"]["Customer"] & {
+            addresses: components["schemas"]["CustomerAddress"][];
+            orders: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                status: string;
+                paymentStatus: string;
+                deliveryStatus: string;
+                total: number;
+                placedAt: string;
+            }[];
+        };
+        CustomerAddress: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            phone: string;
+            divisionId: number;
+            districtId: number;
+            areaId: number;
+            line: string;
+            label: string | null;
+            isDefault: boolean;
+        };
+        DeliveryZone: {
+            /** Format: uuid */
+            id: string;
+            name: {
+                bn?: string;
+                en?: string;
+            };
+            fee: number;
+            freeWeightGrams: number | null;
+            feePerExtraKg: number | null;
+            estimate: {
+                bn?: string;
+                en?: string;
+            };
+            isFallback: boolean;
+            position: number;
+            active: boolean;
+            districtIds: number[];
+            areaIds: number[];
+        };
+        BlockedPhone: {
+            phone: string;
+            reason: string;
+            /** Format: uuid */
+            createdBy: string | null;
+            createdAt: string;
+        };
+        Dashboard: {
+            counts: {
+                awaitingConfirmation: number;
+                toShip: number;
+                cancelledByShopper7d: number;
+                lowStock: number;
+            };
+            /** @description Only with reports.read */
+            sales: {
+                today: {
+                    orders: number;
+                    total: number;
+                };
+                month: {
+                    orders: number;
+                    total: number;
+                };
+                days: {
+                    date: string;
+                    orders: number;
+                    total: number;
+                }[];
+            } | null;
         };
         TenantSummary: {
             /** Format: uuid */

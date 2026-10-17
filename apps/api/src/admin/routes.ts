@@ -24,6 +24,7 @@ import {
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
 import { PERMISSIONS, STORE_ROLES } from '@managemind/shared';
+import { checkoutSettings, codSettings } from '@managemind/shared/orders';
 import { storeProfile, taxSettings, tenantSettings } from '@managemind/shared/settings';
 import { storefrontSettings } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
@@ -35,6 +36,7 @@ import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { DOMAIN_ROUTES, registerDomains } from './domains';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
+import { ORDER_ROUTES, registerOrders } from './orders';
 import { storeUrls } from './store-urls';
 import { registerStorefrontAdmin, STOREFRONT_ROUTES } from './storefront';
 
@@ -87,6 +89,8 @@ const Store = z
     tax: taxSettings,
     storefront: storefrontSettings,
     display: tenantSettings.shape.display,
+    checkout: checkoutSettings,
+    cod: codSettings,
     /** The store's home page, for the admin's "View store" link. */
     storeUrl: z.string(),
   })
@@ -127,6 +131,7 @@ export const ADMIN_ROUTES = {
   ...IMPORT_ROUTES,
   ...STOREFRONT_ROUTES,
   ...DOMAIN_ROUTES,
+  ...ORDER_ROUTES,
   me: r({
     method: 'get',
     path: '/me',
@@ -158,7 +163,8 @@ export const ADMIN_ROUTES = {
   updateStore: r({
     method: 'patch',
     path: '/store',
-    summary: 'Edit the store profile, VAT, storefront and display settings (settings.write)',
+    summary:
+      'Edit the store profile, VAT, storefront, display, checkout and COD settings (settings.write)',
     request: body(
       z.object({
         name: z.string().trim().min(1).max(100).optional(),
@@ -167,6 +173,8 @@ export const ADMIN_ROUTES = {
         tax: taxSettings.optional(),
         storefront: storefrontSettings.optional(),
         display: tenantSettings.shape.display.optional(),
+        checkout: checkoutSettings.optional(),
+        cod: codSettings.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
@@ -388,6 +396,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerImports(admin);
   registerStorefrontAdmin(admin);
   registerDomains(admin);
+  registerOrders(admin);
   admin.openapi(R.accept, async (c) => {
     const { token } = c.req.valid('json');
     const { client, user, sessionId } = c.var.staff;

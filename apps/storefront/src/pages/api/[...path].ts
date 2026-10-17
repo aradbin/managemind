@@ -11,6 +11,9 @@ const FORWARDED_HEADERS = [
   'cookie',
   'idempotency-key',
   'accept-language',
+  // Checkout keeps the user agent with the order, and refuses writes from another origin.
+  'user-agent',
+  'origin',
 ];
 
 export const ALL: APIRoute = async ({ request, params, url, locals }) => {
@@ -19,6 +22,9 @@ export const ALL: APIRoute = async ({ request, params, url, locals }) => {
   const headers = new Headers({
     'x-forwarded-host': locals.host,
     'x-request-id': locals.requestId,
+    // Rate limits and the order's IP (phase-4-plan §3.15); the API trusts it
+    // only over the service binding.
+    'x-shopper-ip': locals.shopperIp,
   });
   for (const name of FORWARDED_HEADERS) {
     const value = request.headers.get(name);
