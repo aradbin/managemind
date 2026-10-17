@@ -117,18 +117,47 @@ const compareAtAbovePrice = (v: {
   compareAtPrice?: number | null | undefined;
 }) => v.compareAtPrice == null || v.price === undefined || v.compareAtPrice > v.price;
 
+/**
+ * A scheduled sale (phase-4-plan §3.14): inside the window the shopper pays
+ * the sale price and the regular price is the strikethrough. Null clears it.
+ */
+const saleFields = {
+  salePrice: price.nullable().optional(),
+  saleStartsAt: z.iso.datetime({ offset: true }).nullable().optional(),
+  saleEndsAt: z.iso.datetime({ offset: true }).nullable().optional(),
+};
+
+/** A sale needs both ends of its window, the end after the start. */
+const saleWindow = (v: {
+  salePrice?: number | null | undefined;
+  saleStartsAt?: string | null | undefined;
+  saleEndsAt?: string | null | undefined;
+}) =>
+  v.salePrice == null ||
+  (v.saleStartsAt != null &&
+    v.saleEndsAt != null &&
+    Date.parse(v.saleEndsAt) > Date.parse(v.saleStartsAt));
+
 export const variantPatch = variantFields
+  .extend(saleFields)
   .partial()
-  .refine(compareAtAbovePrice, { message: 'must be above the price', path: ['compareAtPrice'] });
+  .refine(compareAtAbovePrice, { message: 'must be above the price', path: ['compareAtPrice'] })
+  .refine(saleWindow, { message: 'a sale needs a start and a later end', path: ['saleEndsAt'] });
 
 export const bulkVariantPatch = z
   .array(
-    z.object({
-      id: z.uuid(),
-      price: price.optional(),
-      compareAtPrice: price.nullable().optional(),
-      lowStockThreshold: z.int().min(0).max(L.maxStock).nullable().optional(),
-    }),
+    z
+      .object({
+        id: z.uuid(),
+        price: price.optional(),
+        compareAtPrice: price.nullable().optional(),
+        lowStockThreshold: z.int().min(0).max(L.maxStock).nullable().optional(),
+        ...saleFields,
+      })
+      .refine(saleWindow, {
+        message: 'a sale needs a start and a later end',
+        path: ['saleEndsAt'],
+      }),
   )
   .min(1)
   .max(L.bulkVariantEdits);

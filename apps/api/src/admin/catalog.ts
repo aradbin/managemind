@@ -93,6 +93,9 @@ const Variant = z
     barcode: z.string().nullable(),
     price: z.number().int(),
     compareAtPrice: z.number().int().nullable(),
+    salePrice: z.number().int().nullable(),
+    saleStartsAt: z.string().nullable(),
+    saleEndsAt: z.string().nullable(),
     costPrice: z
       .number()
       .int()

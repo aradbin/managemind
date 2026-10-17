@@ -18,6 +18,7 @@ import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 import { purgeMessages } from './purge/consumer';
+import { catchUpSaleEdges, saleEdgeMessages } from './sales';
 
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
@@ -36,6 +37,12 @@ export async function handleQueue(
   const purges = purgeMessages(batch.messages.map((m) => m.body));
   if (env.PURGE && purges.length) {
     await env.PURGE.sendBatch(purges.map((body) => ({ body, contentType: 'json' as const })));
+  }
+  // Sale windows' edges (phase-4-plan §3.14), as delayed messages.
+  const edges = saleEdgeMessages(batch.messages.map((m) => m.body));
+  // sendBatch takes at most 100 messages.
+  for (let i = 0; env.DOMAINS && i < edges.length; i += 100) {
+    await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
   }
   // One sync per store per batch, however many of its events arrived.
   const tenants = new Map<string, Message<OutboxEvent>[]>();
@@ -217,6 +224,13 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'domain recheck failed', { error: String(e) });
       captureMessage('domain recheck failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Sale windows that opened or closed since yesterday, in case a queued edge was lost.
+    try {
+      await catchUpSaleEdges(env, client);
+    } catch (e) {
+      log('error', 'sale catch-up failed', { error: String(e) });
+      captureMessage('sale catch-up failed', { level: 'error', extra: { error: String(e) } });
     }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);

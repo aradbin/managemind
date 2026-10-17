@@ -169,6 +169,13 @@
       "when": 1792243424609,
       "tag": "0023_delivery_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792262231208,
+      "tag": "0024_sale_edges",
+      "breakpoints": true
     }
   ]
 }

@@ -43,6 +43,11 @@ export const EVENTS = {
   'catalog.product.created': z.object({}),
   /** Which parts changed: content, options, variants, prices, media, categories, … */
   'catalog.product.updated': z.object({ fields: z.array(z.string()).max(20) }),
+  /** A sale window opens or closes later (phase-4-plan §3.14); the API queues each edge. */
+  'catalog.sale_scheduled': z.object({
+    productIds: z.array(z.uuid()).min(1).max(200),
+    edges: z.array(z.iso.datetime()).min(1).max(400),
+  }),
   'catalog.product.archived': z.object({}),
   'catalog.product.deleted': z.object({}),
   'catalog.category.changed': z.object({ change: catalogChange }),

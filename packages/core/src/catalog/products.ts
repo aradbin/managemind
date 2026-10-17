@@ -58,6 +58,10 @@ export interface ProductVariant {
   barcode: string | null;
   price: number;
   compareAtPrice: number | null;
+  /** A scheduled sale (phase-4-plan §3.14): the price inside its window. */
+  salePrice: number | null;
+  saleStartsAt: string | null;
+  saleEndsAt: string | null;
   /** Only for `catalog.cost`; left out otherwise. */
   costPrice?: number | null;
   weightGrams: number | null;
@@ -149,6 +153,7 @@ const detailSql = (where: SQL) => sql`
            where vo.variant_id = v.id), '[]'::json),
         'sku', v.sku, 'barcode', v.barcode, 'price', v.price,
         'compareAtPrice', v.compare_at_price, 'costPrice', v.cost_price,
+        'salePrice', v.sale_price, 'saleStartsAt', v.sale_starts_at, 'saleEndsAt', v.sale_ends_at,
         'weightGrams', v.weight_grams, 'trackInventory', v.track_inventory,
         'allowBackorder', v.allow_backorder, 'lowStockThreshold', v.low_stock_threshold,
         'imageMediaId', v.image_media_id, 'position', v.position,
@@ -530,6 +535,55 @@ const variantColumns = (fields: { [K in keyof VariantFields]?: VariantFields[K] 
     ? { lowStockThreshold: fields.lowStockThreshold }
     : {}),
 });
+
+type SaleFields = {
+  salePrice?: number | null | undefined;
+  saleStartsAt?: string | null | undefined;
+  saleEndsAt?: string | null | undefined;
+};
+
+/** A sale's columns: clearing the price clears its window. */
+const saleColumns = (fields: SaleFields) =>
+  fields.salePrice === null
+    ? { salePrice: null, saleStartsAt: null, saleEndsAt: null }
+    : fields.salePrice === undefined
+      ? {}
+      : {
+          salePrice: fields.salePrice,
+          saleStartsAt: new Date(fields.saleStartsAt as string),
+          saleEndsAt: new Date(fields.saleEndsAt as string),
+        };
+
+/** The sale must stay below the regular price, whichever of the two changed. */
+function checkSale(
+  current: VariantRow,
+  fields: SaleFields & { price?: number | undefined },
+  path: string,
+) {
+  const price = fields.price ?? current.price;
+  const sale = fields.salePrice !== undefined ? fields.salePrice : current.salePrice;
+  if (sale !== null && sale >= price) throw invalid(`${path}salePrice`, 'must be below the price');
+}
+
+/** Sale windows that open or close later: the API queues a message for each edge (§3.14). */
+async function scheduleSaleEdges(tx: TenantTx, productId: string, rows: VariantRow[]) {
+  const now = Date.now();
+  const edges = [
+    ...new Set(
+      rows
+        .filter((r) => r.salePrice !== null)
+        .flatMap((r) => [r.saleStartsAt, r.saleEndsAt])
+        .filter((d): d is Date => d !== null && d.getTime() > now)
+        .map((d) => d.toISOString()),
+    ),
+  ];
+  if (!edges.length) return;
+  await emit(tx, 'catalog.sale_scheduled', {
+    aggregateType: 'product',
+    aggregateId: productId,
+    payload: { productIds: [productId], edges },
+  });
+}
 
 /** Creates a product with its single variant; options are set afterwards. */
 export async function createProduct(
@@ -928,14 +982,20 @@ const auditedVariantFields = [
   'trackInventory',
   'allowBackorder',
   'lowStockThreshold',
+  'salePrice',
+  'saleStartsAt',
+  'saleEndsAt',
 ] as const;
 
+/** Dates compare by time, not by object. */
+const plain = (x: unknown) => (x instanceof Date ? x.toISOString() : x);
+
 function variantChanges(before: VariantRow, after: VariantRow) {
-  const keys = auditedVariantFields.filter((k) => before[k] !== after[k]);
+  const keys = auditedVariantFields.filter((k) => plain(before[k]) !== plain(after[k]));
   return {
     keys,
-    before: Object.fromEntries(keys.map((k) => [k, before[k]])),
-    after: Object.fromEntries(keys.map((k) => [k, after[k]])),
+    before: Object.fromEntries(keys.map((k) => [k, plain(before[k])])),
+    after: Object.fromEntries(keys.map((k) => [k, plain(after[k])])),
   };
 }
 
@@ -960,9 +1020,14 @@ export async function updateVariant(
   const price = patch.price ?? current.price;
   if (compareAt !== null && compareAt <= price)
     throw invalid('compareAtPrice', 'must be above the price');
+  checkSale(current, patch, '');
 
   const [updated] = await catalogWrite(() =>
-    tx.db.update(v).set(variantColumns(patch)).where(eq(v.id, variantId)).returning(),
+    tx.db
+      .update(v)
+      .set({ ...variantColumns(patch), ...saleColumns(patch) })
+      .where(eq(v.id, variantId))
+      .returning(),
   );
   if (!updated) throw new AppError('not_found');
   const changes = variantChanges(current, updated);
@@ -981,11 +1046,13 @@ export async function updateVariant(
       aggregateType: 'product',
       aggregateId: current.productId,
       payload: {
-        fields: changes.keys.some((k) => k.endsWith('rice'))
+        fields: changes.keys.some((k) => k.endsWith('rice') || k.startsWith('sale'))
           ? ['variants', 'prices']
           : ['variants'],
       },
     });
+    if (changes.keys.some((k) => k.startsWith('sale')))
+      await scheduleSaleEdges(tx, current.productId, [updated]);
   }
   const product = await getProduct(tx, actor, current.productId);
   const variant = product.variants.find((x) => x.id === variantId);
@@ -993,7 +1060,7 @@ export async function updateVariant(
   return variant;
 }
 
-/** Bulk price, compare-at and threshold edits from the product list (at most 200). */
+/** Bulk price, compare-at, sale and threshold edits from the product list (at most 200). */
 export async function bulkUpdateVariants(
   tx: TenantTx,
   actor: Actor,
@@ -1013,6 +1080,7 @@ export async function bulkUpdateVariants(
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   const products = new Set<string>();
+  const sales = new Map<string, VariantRow[]>();
   let updated = 0;
   for (const [i, edit] of edits.entries()) {
     const current = byId.get(edit.id) as VariantRow;
@@ -1021,10 +1089,11 @@ export async function bulkUpdateVariants(
       edit.compareAtPrice !== undefined ? edit.compareAtPrice : current.compareAtPrice;
     if (compareAt !== null && compareAt <= price)
       throw invalid(`${i}.compareAtPrice`, 'must be above the price');
+    checkSale(current, edit, `${i}.`);
     const { id, ...fields } = edit;
     const [after] = await tx.db
       .update(v)
-      .set(variantColumns(fields))
+      .set({ ...variantColumns(fields), ...saleColumns(fields) })
       .where(eq(v.id, id))
       .returning();
     if (!after) continue;
@@ -1032,6 +1101,11 @@ export async function bulkUpdateVariants(
     if (!changes.keys.length) continue;
     updated += 1;
     products.add(current.productId);
+    if (changes.keys.some((k) => k.startsWith('sale'))) {
+      const list = sales.get(current.productId) ?? [];
+      list.push(after);
+      sales.set(current.productId, list);
+    }
     await recordAudit(tx, {
       ...auditActor(actor, 'staff'),
       action: 'variant.updated',
@@ -1055,5 +1129,6 @@ export async function bulkUpdateVariants(
       payload: { fields: ['variants', 'prices'] },
     });
   }
+  for (const [productId, rows] of sales) await scheduleSaleEdges(tx, productId, rows);
   return { updated };
 }

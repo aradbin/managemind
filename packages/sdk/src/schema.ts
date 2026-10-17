@@ -2622,6 +2622,11 @@ export interface paths {
                         trackInventory?: boolean;
                         allowBackorder?: boolean;
                         lowStockThreshold?: number | null;
+                        salePrice?: number | null;
+                        /** Format: date-time */
+                        saleStartsAt?: string | null;
+                        /** Format: date-time */
+                        saleEndsAt?: string | null;
                     };
                 };
             };
@@ -2668,6 +2673,11 @@ export interface paths {
                         price?: number;
                         compareAtPrice?: number | null;
                         lowStockThreshold?: number | null;
+                        salePrice?: number | null;
+                        /** Format: date-time */
+                        saleStartsAt?: string | null;
+                        /** Format: date-time */
+                        saleEndsAt?: string | null;
                     }[];
                 };
             };
@@ -8346,6 +8356,9 @@ export interface components {
             barcode: string | null;
             price: number;
             compareAtPrice: number | null;
+            salePrice: number | null;
+            saleStartsAt: string | null;
+            saleEndsAt: string | null;
             /** @description Only with catalog.cost */
             costPrice?: number | null;
             weightGrams: number | null;

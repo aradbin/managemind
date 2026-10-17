@@ -2,7 +2,7 @@
 import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
-import type { DomainCheckMessage } from './domains';
+import type { DelayedMessage } from './domains';
 import type { PurgeMessage } from './purge/consumer';
 import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
@@ -19,7 +19,8 @@ export interface Env {
   /** Cache purges, one message per store (ADR 0018); absent in previews. */
   PURGE?: Queue<PurgeMessage>;
   /** Delayed re-checks of new custom domains (ADR 0019); absent in previews. */
-  DOMAINS?: Queue<DomainCheckMessage>;
+  /** The delayed queue: domain re-checks and sale edges (named for its first use). */
+  DOMAINS?: Queue<DelayedMessage>;
   /** The account-wide purge counter, one object named "account" (ADR 0007). */
   PURGE_BUDGET: DurableObjectNamespace<PurgeBudget>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */
