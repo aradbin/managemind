@@ -40,7 +40,8 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
-| 5A onwards | Not started | — |
+| 5A — Online payments, notifications and returns | Plan approved (Oct 18); building | [`phase-5a-plan.md`](phases/phase-5a-plan.md) |
+| 5B onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
 
