@@ -31,7 +31,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 17, 2026)**
+**Status (Oct 18, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 1 — Platform core | Done; in production on `managemind.site` and `*.managemind.store` | [`phase-1-report.md`](phases/phase-1-report.md) |
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
-| 4 — Cart, checkout, orders, promotions and COD | Plan written; waiting for the owner's answers and approval | [`phase-4-plan.md`](phases/phase-4-plan.md) |
+| 4 — Cart, checkout, orders, promotions and COD | Built and tested; waiting for review, the preview run and the owner's Brevo key and Turnstile widget | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -387,7 +387,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 **Rendering and caching (the key to staying free)**
 
 - [x] Catalog pages (home, category, collection, product) are server-rendered once and cached at Cloudflare's edge per tenant and locale; cache is invalidated by outbox events when products, prices or stock change (purge or version bump, as decided in Phase 0). Most shopper traffic then never reaches the API or the database. *Purged by tag ([ADR 0018](adr/0018-page-tags-and-purges.md)); pages are cached only when `CF_STORE_TOKEN` is set (it is).*
-- [ ] Cart, checkout and account parts are small client-side islands calling the API directly; never cached. *Moved to Phase 4 (Phase 3 Q1).*
+- [x] Cart, checkout and account parts are small client-side islands calling the API directly; never cached. *Built in Phase 4 (Phase 3 Q1), through the store host's `/api`.*
 - [x] A public, read-only catalog endpoint set in the API designed for caching (stable URLs, cache headers, ETags).
 
 **Themes**
@@ -398,7 +398,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Pages and SEO**
 
-- [ ] Home, category, collection, product, search, cart, checkout, order confirmation, order tracking (order number + phone), account, static pages (about, contact, policies). *Phase 3 built home, category, collection, product, search and static pages; the rest moved to Phase 4 (Q1).*
+- [x] Home, category, collection, product, search, cart, checkout, order confirmation, order tracking (order number + phone), account, static pages (about, contact, policies). *Phase 3 built home, category, collection, product, search and static pages; Phase 4 the rest (Q1).*
 - [x] Per-tenant sitemap, robots, canonical URLs, Open Graph, schema.org Product and Offer data, hreflang for Bangla and English.
 - [x] Performance targets on a mid-range Android phone over 4G: LCP under 2.5 s, INP under 200 ms, CLS under 0.1; JavaScript on product pages under about 50 KB compressed. *Checked by Lighthouse CI and the E2E on every preview (TBT stands in for INP).*
 
@@ -433,57 +433,57 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Cart**
 
-- [ ] Carts identified by an opaque token (cookie) for guests, linked to the customer after login; expire after inactivity (cron cleanup).
-- [ ] Line items reference variants by ID; the server recomputes every total on every change from current prices, promotions and delivery rules. The client never sends a price.
-- [ ] Validation on every change: variant active, stock available (unless backorder allowed), quantity limits.
+- [x] Carts identified by an opaque token (cookie) for guests, linked to the customer after login; expire after inactivity (cron cleanup).
+- [x] Line items reference variants by ID; the server recomputes every total on every change from current prices, promotions and delivery rules. The client never sends a price.
+- [x] Validation on every change: variant active, stock available (unless backorder allowed), quantity limits.
 
 **Delivery rates (basic)**
 
-- [ ] Delivery zones per tenant built from the global division, district and area reference data (for example inside Dhaka, Dhaka suburbs, outside Dhaka), each with a flat fee and optional weight-based extra.
-- [ ] Free delivery is handled by the promotions engine below (thresholds, zones, products, campaigns).
+- [x] Delivery zones per tenant built from the global division, district and area reference data (for example inside Dhaka, Dhaka suburbs, outside Dhaka), each with a flat fee and optional weight-based extra.
+- [x] Free delivery is handled by the promotions engine below (thresholds, zones, products, campaigns).
 
 **Checkout**
 
-- [ ] Phone-first guest checkout: name, phone (validated Bangladeshi format), optional email, address with division, district, area and street.
-- [ ] One `placeOrder` command with an idempotency key that, in a single transaction: revalidates the cart, reserves stock with conditional updates, freezes snapshots, creates the order and its lines, creates the payment record, writes `order.placed` to the outbox, and marks the cart converted.
-- [ ] Optional fraud basics: order rate limit per phone and IP, a per-tenant blocklist, and an "OTP before COD order, for stores with SMS" toggle.
+- [x] Phone-first guest checkout: name, phone (validated Bangladeshi format), optional email, address with division, district, area and street.
+- [x] One `placeOrder` command with an idempotency key that, in a single transaction: revalidates the cart, reserves stock with conditional updates, freezes snapshots, creates the order and its lines, creates the payment record, writes `order.placed` to the outbox, and marks the cart converted.
+- [x] Optional fraud basics: order rate limit per phone and IP, a per-tenant blocklist, and an "OTP before COD order, for stores with SMS" toggle. *Built, except the OTP toggle, which moved to Phase 5A with SMS (Phase 4 Q11).*
 
-* [ ] Cloudflare Turnstile (free and usually invisible) on sign-in code requests, checkout, return requests and the contact form, so bots cannot place fake orders or trigger SMS and email codes.
+* [x] Cloudflare Turnstile (free and usually invisible) on sign-in code requests, checkout, return requests and the contact form, so bots cannot place fake orders or trigger SMS and email codes. *On checkout and both sign-ins (ADR 0023); return requests join in Phase 5A. Production needs the owner's widget.*
 
 **Orders**
 
-- [ ] Order status: `pending` → `confirmed` → `processing` → `completed`, plus `cancelled`. Payment, delivery and return progress are separate statuses, each with its own state machine, the way Shopify separates order, payment and fulfillment status: payment (unpaid, partially paid, paid, partially refunded, refunded), delivery (not shipped, partially shipped, shipped, delivered, failed) and returns (none, requested, partially returned, returned). Partial returns and failed deliveries never need extra order states.
-- [ ] Status history, internal notes, customer notes, tags.
-- [ ] Admin: order list with filters (status, date, payment, delivery zone), order detail, confirm, cancel (releases stock), mark shipped with tracking number, mark delivered, printable invoice and packing slip.
-- [ ] Order editing before shipping (change quantity, add or remove items) recalculates totals and adjusts reservations, recorded in history.
-- [ ] Customers created or matched by phone within the tenant; customer list and detail with order history; customer import from CSV or Excel (name, phone, email, addresses), matched by phone, for clients moving from spreadsheets or WooCommerce.
+- [x] Order status: `pending` → `confirmed` → `processing` → `completed`, plus `cancelled`. Payment, delivery and return progress are separate statuses, each with its own state machine, the way Shopify separates order, payment and fulfillment status: payment (unpaid, partially paid, paid, partially refunded, refunded), delivery (not shipped, partially shipped, shipped, delivered, failed) and returns (none, requested, partially returned, returned). Partial returns and failed deliveries never need extra order states. *Refunds and the returns machine come with Phase 5A.*
+- [x] Status history, internal notes, customer notes, tags.
+- [x] Admin: order list with filters (status, date, payment, delivery zone), order detail, confirm, cancel (releases stock), mark shipped with tracking number, mark delivered, printable invoice and packing slip.
+- [x] Order editing before shipping (change quantity, add or remove items) recalculates totals and adjusts reservations, recorded in history.
+- [x] Customers created or matched by phone within the tenant; customer list and detail with order history; customer import from CSV or Excel (name, phone, email, addresses), matched by phone, for clients moving from spreadsheets or WooCommerce.
 
-* [ ] Manual order entry for Facebook, phone and walk-in orders: search or create the customer by phone, add products with live stock, apply discounts, choose delivery zone and payment method, and save. Uses the same `placeOrder` command as the storefront, with an order source field (website, Facebook, phone, walk-in, other) for reporting.
-* [ ] Admin home dashboard: today's and this month's orders and sales, orders waiting for confirmation, orders to ship, low-stock items, and a 7-day sales trend. Figures come from lightweight summary queries, cached briefly.
+* [x] Manual order entry for Facebook, phone and walk-in orders: search or create the customer by phone, add products with live stock, apply discounts, choose delivery zone and payment method, and save. Uses the same `placeOrder` command as the storefront, with an order source field (website, Facebook, phone, walk-in, other) for reporting.
+* [x] Admin home dashboard: today's and this month's orders and sales, orders waiting for confirmation, orders to ship, low-stock items, and a 7-day sales trend. Figures come from lightweight summary queries, cached briefly.
 
-- [ ] Shipments: one or more per order, each covering specific lines and quantities, with carrier name, tracking number and its own states (pending, shipped, delivered, failed, returned). Updated by staff in this phase; Phase 7 adds courier booking and automatic status updates on the same records.
-- [ ] Shopper accounts (optional for shoppers) on the Better Auth shopper instance, scoped to the store (accounts unique per store, enforced with `tenant_id` and RLS): sign-in by email code, or phone code when the store has SMS configured; login methods switched on per store; session cookie on the store's own domain; rate-limited. Guests track orders with order number and phone.
+- [x] Shipments: one or more per order, each covering specific lines and quantities, with carrier name, tracking number and its own states (pending, shipped, delivered, failed, returned). Updated by staff in this phase; Phase 7 adds courier booking and automatic status updates on the same records.
+- [x] Shopper accounts (optional for shoppers) on the Better Auth shopper instance, scoped to the store (accounts unique per store, enforced with `tenant_id` and RLS): sign-in by email code, or phone code when the store has SMS configured; login methods switched on per store; session cookie on the store's own domain; rate-limited. Guests track orders with order number and phone. *Email codes only (Phase 4 Q3); phone codes when Phase 5A adds SMS. Production needs the Brevo key (ADR 0020, ADR 0022).*
 
-* [ ] Order export to CSV and Excel, including Steadfast and Pathao bulk-upload formats for booking couriers by hand until Phase 7; bulk printing of invoices and packing slips for selected orders.
-* [ ] Shoppers can cancel their own order from the tracking page until it is confirmed; stock is released and staff are notified.
+* [x] Order export to CSV and Excel, including Steadfast and Pathao bulk-upload formats for booking couriers by hand until Phase 7; bulk printing of invoices and packing slips for selected orders.
+* [x] Shoppers can cancel their own order from the tracking page until it is confirmed; stock is released and staff are notified. *Staff see these on the dashboard and in the order list; notifications come with Phase 5A.*
 
 **Promotions, discounts and free delivery**
 
-- [ ] Sale prices: compare-at price per variant shown as a strikethrough, with optional scheduled start and end dates.
-- [ ] One promotion engine for everything: conditions (minimum subtotal, minimum quantity, specific products, categories or collections, delivery zone, first order, customer phone or group, payment method such as extra discount for online payment, date range) and actions (percent off order or items, fixed amount off, buy X get Y, free or discounted delivery).
-- [ ] Automatic promotions (no code needed) and coupon codes (one shared code or bulk unique codes), with total and per-customer usage limits, priority, stacking rules (exclusive or combinable) and a maximum discount cap.
-- [ ] Free-delivery offers: over a spend threshold, for chosen zones, for chosen products, or for a campaign period.
-- [ ] Discounts allocated to each order line and snapshotted on the order, so partial returns refund the correct amount.
-- [ ] Usage counted with conditional updates so limits hold when many shoppers check out at once.
-- [ ] Storefront shows offers: sale badges, applied discounts in cart, and a progress bar toward free delivery.
-- [ ] Admin: promotion builder with a preview of which carts qualify, campaign list with usage and revenue impact.
+- [x] Sale prices: compare-at price per variant shown as a strikethrough, with optional scheduled start and end dates.
+- [x] One promotion engine for everything: conditions (minimum subtotal, minimum quantity, specific products, categories or collections, delivery zone, first order, customer phone or group, payment method such as extra discount for online payment, date range) and actions (percent off order or items, fixed amount off, buy X get Y, free or discounted delivery).
+- [x] Automatic promotions (no code needed) and coupon codes (one shared code or bulk unique codes), with total and per-customer usage limits, priority, stacking rules (exclusive or combinable) and a maximum discount cap.
+- [x] Free-delivery offers: over a spend threshold, for chosen zones, for chosen products, or for a campaign period.
+- [x] Discounts allocated to each order line and snapshotted on the order, so partial returns refund the correct amount.
+- [x] Usage counted with conditional updates so limits hold when many shoppers check out at once.
+- [x] Storefront shows offers: sale badges, applied discounts in cart, and a progress bar toward free delivery. *The free-delivery progress shows once the area gives a delivery charge.*
+- [x] Admin: promotion builder with a preview of which carts qualify, campaign list with usage and revenue impact.
 
 **Cash on delivery**
 
-- [ ] COD provider: payment created as `pending` at order placement, `paid` when delivered and collected (manual now, courier-driven in Phase 7).
-- [ ] Per-tenant COD settings: enabled, maximum order value, optional advance delivery charge.
+- [x] COD provider: payment created as `pending` at order placement, `paid` when delivered and collected (manual now, courier-driven in Phase 7).
+- [x] Per-tenant COD settings: enabled, maximum order value, optional advance delivery charge. *The advance charge is saved now and enforced once online payment arrives in Phase 5A.*
 
-* [ ] Orders support several payments, for example an online advance for the delivery charge plus cash for the rest; an order is paid when settled payments cover its total. The advance option goes live once SSLCommerz arrives in Phase 5A.
+* [x] Orders support several payments, for example an online advance for the delivery charge plus cash for the rest; an order is paid when settled payments cover its total. The advance option goes live once SSLCommerz arrives in Phase 5A.
 
 **Acceptance criteria**
 
