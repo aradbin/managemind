@@ -2,6 +2,7 @@ export * from './access';
 export * from './audit';
 export * from './cart/index';
 export * from './catalog/index';
+export * from './credentials/index';
 export * from './customers/index';
 export * from './events';
 export * from './idempotency';

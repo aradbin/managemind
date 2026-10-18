@@ -23,7 +23,8 @@
     "./orders": "./src/orders/index.ts",
     "./orders/customer-import": "./src/orders/customer-import.ts",
     "./geo/version": "./src/geo/version.ts",
-    "./notifications": "./src/notifications/index.ts"
+    "./notifications": "./src/notifications/index.ts",
+    "./credentials": "./src/credentials.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
