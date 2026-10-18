@@ -37,13 +37,13 @@ This is PLAN.md's MVP line.
   - takes the next `#1001`-style number (Q4).
 
   Stock is reserved at placement and sold at shipping (Q9).
-- **Shopper accounts** use one Better Auth instance per store host, with a per-store secret and a cookie on `/api` only (ADR 0020). The codes are sent by email through Brevo (ADR 0022). Accounts are off by default (Q3).
+- **Shopper accounts** use one Better Auth instance per store host, with a per-store secret and a cookie on `/api` only (ADR 0020). The codes are sent by email through Brevo, or through Resend until the Brevo key exists (ADR 0022). Accounts are off by default (Q3).
 - **Turnstile** guards checkout and both sign-ins. Each custom domain is added to the widget when it goes live (ADR 0023).
 
 **Four things the owner should know:**
 
 1. **Two owner items are needed before production can use all of this** (§5):
-   - **the Brevo API key:** until it is added, accounts can't be turned on, and the admin says so;
+   - **the Brevo API key:** until it is added, shopper codes go through Resend from `managemind.site` (ADR 0022 amendment), so accounts can still be turned on;
    - **the Turnstile widget, its keys and the Turnstile: Edit permission:** until they are added, checkout and sign-in rely on rate limits alone, and the deploy warns.
 
    Everything else works without them.
@@ -174,7 +174,7 @@ Brevo's 300 a day is far more than sign-in codes need.
    - verify `managemind.store`. Brevo shows the DKIM and SPF records; add DMARC at `p=none`;
    - add `BREVO_API_KEY` as a repository secret.
 
-   The deploy then sets `SHOPPER_EMAIL_PROVIDER=brevo`. Until then, the admin refuses to turn accounts on (ADR 0022).
+   The deploy then sets `SHOPPER_EMAIL_PROVIDER=brevo`. Brevo's SMS verification didn't reach the owner's number (Oct 18), so until the key exists, shopper codes go through Resend from `managemind.site` and accounts can be turned on (ADR 0022 amendment).
 2. **Turnstile:**
    - create one widget with `managemind.store` and `managemind.site`;
    - set the site key as the repository variable `TURNSTILE_SITE_KEY` and the secret as `TURNSTILE_SECRET_KEY`;

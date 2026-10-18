@@ -80,8 +80,23 @@ export function createMailer(
 export const shopperEmailReady = (config: ApiConfig) => config.SHOPPER_EMAIL_PROVIDER !== 'none';
 
 /**
- * Shopper email (ADR 0022): from the store's name at no-reply@ the store
- * domain, through Brevo in production, replies to the store's own address.
+ * The shopper email's From: the store's name, at no-reply@ the store domain
+ * through Brevo, or at the staff sender's address through Resend, whose free
+ * plan verifies only the platform domain (ADR 0022 amendment).
+ */
+export function shopperEmailFrom(config: ApiConfig, storeName: string): string {
+  // Quotes and angle brackets would break the From header.
+  const name = storeName.replace(/["<>]/g, '').slice(0, 60) || config.PLATFORM_NAME;
+  if (config.SHOPPER_EMAIL_PROVIDER === 'resend') {
+    const staff = emailFrom(config);
+    return `${name} <${/<([^>]+)>/.exec(staff)?.[1] ?? staff}>`;
+  }
+  return `${name} <no-reply@${config.STORE_DOMAIN}>`;
+}
+
+/**
+ * Shopper email (ADR 0022): from the store's name, through Brevo or Resend in
+ * production, replies to the store's own address.
  */
 export function createShopperMailer(
   env: Env,
@@ -90,13 +105,14 @@ export function createShopperMailer(
   store: { name: string; replyTo?: string | undefined },
 ): Mailer {
   if (!shopperEmailReady(config)) throw new Error('shopper email is not set up');
+  const viaResend = config.SHOPPER_EMAIL_PROVIDER === 'resend';
   const provider =
     config.SHOPPER_EMAIL_PROVIDER === 'brevo'
       ? brevoProvider({ apiKey: config.BREVO_API_KEY ?? '' })
-      : devMailbox(env, ctx);
-  // Quotes and angle brackets would break the From header.
-  const name = store.name.replace(/["<>]/g, '').slice(0, 60) || config.PLATFORM_NAME;
-  const from = `${name} <no-reply@${config.STORE_DOMAIN}>`;
+      : viaResend
+        ? resendProvider({ apiKey: config.RESEND_API_KEY ?? '' })
+        : devMailbox(env, ctx);
+  const from = shopperEmailFrom(config, store.name);
   return {
     sendLater(message, kind) {
       const send = async () => {
@@ -110,7 +126,10 @@ export function createShopperMailer(
         } catch (e) {
           log('error', 'shopper email failed', { kind, provider: provider.name, error: String(e) });
           captureException(e, { tags: { email_kind: kind } });
+          return;
         }
+        // Through Resend, shopper email shares the staff email's daily quota.
+        if (viaResend) await countEmailSent(env.RATE_LIMITER);
       };
       ctx.waitUntil(send());
     },

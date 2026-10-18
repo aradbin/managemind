@@ -352,18 +352,9 @@ async function stats(trigger: string, label: string, worker = service): Promise<
   );
   const value = (alias: string) =>
     Math.round(calcs.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0);
-  // Requests the Free plan stopped at its CPU limit (ADR 0013).
-  const stopped = await cf.workerLogStats(
-    worker,
-    since,
-    Date.now(),
-    [{ operator: 'count', alias: 'n' }],
-    undefined,
-    { '$metadata.trigger': trigger, '$workers.outcome': 'exceededCpu' },
-  );
   return {
     route: label,
-    stopped: Math.round(stopped[0]?.aggregates[0]?.value ?? 0),
+    stopped: 0,
     n: value('n'),
     p50: value('p50'),
     p90: value('p90'),
@@ -378,6 +369,27 @@ for (let attempt = 0; attempt < 12; attempt++) {
   for (const r of ROUTES) rows.push(await stats(r.trigger, r.label, r.worker));
   if ((rows.find((r) => r.route.startsWith('PATCH /v1/admin/variants'))?.n ?? 0) >= BURST.bulk)
     break;
+}
+
+// Requests the Free plan stopped at its CPU limit (ADR 0013): one grouped
+// query per Worker, once, so the step stays inside the job's time limit.
+for (const worker of new Set(ROUTES.map((r) => r.worker ?? service))) {
+  const calcs = await cf.workerLogStats(
+    worker,
+    since,
+    Date.now(),
+    [{ operator: 'count', alias: 'n' }],
+    '$metadata.trigger',
+    { '$workers.outcome': 'exceededCpu' },
+  );
+  const stopped = new Map(
+    (calcs[0]?.aggregates ?? []).map((a) => [(a.groupKey ?? '').split(' ⬤ ')[0], a.value]),
+  );
+  ROUTES.forEach((r, i) => {
+    const row = rows[i];
+    if (row && (r.worker ?? service) === worker)
+      row.stopped = Math.round(stopped.get(r.trigger) ?? 0);
+  });
 }
 
 const table = [

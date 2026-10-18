@@ -52,8 +52,9 @@ export interface Env {
   /** Resend API key with sending access (a Worker secret). */
   RESEND_API_KEY?: string;
   /**
-   * Shopper email from the store domain (ADR 0022): `brevo` in production
-   * once the key exists, `capture` elsewhere, `none` to keep accounts off.
+   * Shopper email (ADR 0022): `brevo` (from the store domain) once its key
+   * exists, else `resend` (from the platform domain) in production;
+   * `capture` elsewhere; `none` keeps accounts off.
    */
   SHOPPER_EMAIL_PROVIDER?: string;
   /** Brevo API key limited to sending (a Worker secret; phase-4-plan §1). */
@@ -92,7 +93,7 @@ export const apiConfig = baseConfig
       .regex(/^[^<>]+ <[^\s<>@]+@[^\s<>@]+>$/, 'must look like "Name <address>"')
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
-    SHOPPER_EMAIL_PROVIDER: z.enum(['brevo', 'capture', 'none']).optional(),
+    SHOPPER_EMAIL_PROVIDER: z.enum(['brevo', 'resend', 'capture', 'none']).optional(),
     BREVO_API_KEY: z.string().min(1).optional(),
     DEV_TOKEN: z.string().min(16).optional(),
     TURNSTILE_SITE_KEY: z.string().min(1).optional(),
@@ -118,6 +119,8 @@ export const apiConfig = baseConfig
     }
     if (c.SHOPPER_EMAIL_PROVIDER === 'brevo' && !c.BREVO_API_KEY)
       issue('BREVO_API_KEY', 'is required');
+    if (c.SHOPPER_EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY)
+      issue('RESEND_API_KEY', 'is required');
     if (c.ENVIRONMENT === 'production' && c.DEV_TOKEN)
       issue('DEV_TOKEN', 'must not be set in production');
     // Production stores live on their own hosts; the dev selector is off there.
