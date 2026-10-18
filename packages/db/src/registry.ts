@@ -7,6 +7,17 @@
  * the tables it references, so deleting in this order never hits a foreign key.
  */
 export const STORE_TABLES = [
+  // Messages, credentials, returns and refunds (Phase 5A)
+  'messages',
+  'message_templates',
+  'push_subscriptions',
+  'staff_alert_preferences',
+  'provider_credentials',
+  'refund_lines',
+  'refunds',
+  'return_photos',
+  'return_lines',
+  'returns',
   // Orders, payments and shipments (Phase 4)
   'payments',
   'shipment_lines',

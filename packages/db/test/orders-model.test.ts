@@ -58,7 +58,45 @@ describe('payments', () => {
       );
       await expect(
         app.query(`update store.payments set amount = 1 where id = $1`, [p.id]),
-      ).rejects.toThrow(/a paid payment cannot change/);
+      ).rejects.toThrow(/a payment that is paid cannot change/);
+    });
+  });
+
+  it('settle an expired online payment late, and nothing else (phase-5a-plan §3.5)', async () => {
+    await inA(async () => {
+      const order = await newOrder(90010);
+      const p = await one<{ id: string }>(
+        `insert into store.payments (order_id, provider, method, amount, status)
+         values ($1, 'sslcommerz', 'online', 1000, 'expired') returning id`,
+        [order.id],
+      );
+      await refuses(
+        `update store.payments set status = 'voided' where id = $1`,
+        /a payment that is expired cannot change/,
+        [p.id],
+      );
+      await app.query(
+        `update store.payments set status = 'paid', settled_at = now(), gateway_val_id = 'v1' where id = $1`,
+        [p.id],
+      );
+      // The same validation can't settle a second payment.
+      await refuses(
+        `insert into store.payments (order_id, provider, method, amount, status, gateway_val_id)
+         values ($1, 'sslcommerz', 'online', 1000, 'paid', 'v1')`,
+        /payments_gateway_val_id_unique/,
+        [order.id],
+      );
+    });
+  });
+
+  it('keep online payments on the online method', async () => {
+    await inA(async () => {
+      const order = await newOrder(90011);
+      await refuses(
+        `insert into store.payments (order_id, provider, method, amount) values ($1, 'sslcommerz', 'bkash', 1)`,
+        /payments_online_method/,
+        [order.id],
+      );
     });
   });
 

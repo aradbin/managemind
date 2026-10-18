@@ -48,6 +48,10 @@ export const customers = store.table(
     orderCount: integer().notNull().default(0),
     /** Delivered orders only. */
     totalSpent: money().notNull().default(0),
+    /** Shipments that came back undelivered (phase-5a-plan §3.11). */
+    failedDeliveries: integer().notNull().default(0),
+    /** Flagged by staff, whatever the count; clearing resets both. */
+    flagged: boolean().notNull().default(false),
     firstOrderAt: ts(),
     lastOrderAt: ts(),
     createdAt: createdAt(),
@@ -69,7 +73,10 @@ export const customers = store.table(
     check('customers_email_length', sql`char_length(${t.email}) <= 254`),
     check('customers_note_length', sql`char_length(${t.note}) <= 2000`),
     check('customers_tags_count', sql`cardinality(${t.tags}) <= 20`),
-    check('customers_totals_non_negative', sql`${t.orderCount} >= 0 and ${t.totalSpent} >= 0`),
+    check(
+      'customers_totals_non_negative',
+      sql`${t.orderCount} >= 0 and ${t.totalSpent} >= 0 and ${t.failedDeliveries} >= 0`,
+    ),
   ],
 );
 

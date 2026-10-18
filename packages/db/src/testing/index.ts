@@ -101,6 +101,10 @@ export async function prepareTestDatabase(database: string): Promise<void> {
       await runMigrations(ownerUrl);
       await owner.query(`grant app_rw to ${APP_ROLE}`);
       await seed(ownerUrl);
+      // Staff tables (push devices, alert choices) point at a platform user.
+      await owner.query(
+        "insert into platform.users (name, email) values ('Fixture Staff', 'fixture-staff@example.test')",
+      );
       for (const tenant of [TENANT_A, TENANT_B]) {
         await inTenant(owner, tenant, async () => {
           for (const insert of Object.values(FIXTURES)) await owner.query(insert('default'));

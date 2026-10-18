@@ -121,6 +121,7 @@ describe('cleanup_expired', () => {
       shopper_sessions: 0,
       shopper_verifications: 0,
       order_ips: 0,
+      messages: 0,
     });
     const platform = await owner.query(
       `select (select count(*)::int from platform.sessions where token like 'cleanup-%') as sessions,

@@ -1,6 +1,6 @@
 // Delivery zones, carts and orders (phase-4-plan §3.3–§3.9, §4): an order
 // with its lines and snapshots, discounts allocated per line, history,
-// notes, shipments and payments. Orders, payments and shipments are never
+// notes, shipments and payments, including online ones (phase-5a-plan §3.2). Orders, payments and shipments are never
 // soft-deleted (PLAN.md); history is append-only for the app.
 import { sql } from 'drizzle-orm';
 import {
@@ -36,7 +36,13 @@ export const ORDER_STATUSES = [
   'completed',
   'cancelled',
 ] as const;
-export const PAYMENT_STATUSES = ['unpaid', 'partially_paid', 'paid'] as const;
+export const PAYMENT_STATUSES = [
+  'unpaid',
+  'partially_paid',
+  'paid',
+  'partially_refunded',
+  'refunded',
+] as const;
 export const DELIVERY_STATUSES = [
   'not_shipped',
   'partially_shipped',
@@ -44,13 +50,29 @@ export const DELIVERY_STATUSES = [
   'delivered',
   'failed',
 ] as const;
-export const RETURN_STATUSES = ['none'] as const;
-export const ORDER_SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other'] as const;
+export const RETURN_STATUSES = ['none', 'requested', 'partially_returned', 'returned'] as const;
+export const ORDER_SOURCES = [
+  'website',
+  'facebook',
+  'phone',
+  'walk_in',
+  'other',
+  'exchange',
+] as const;
+export const ORDER_FLAGS = ['payment_risk', 'late_payment', 'flagged_phone'] as const;
 export const ADJUSTMENT_KINDS = ['promotion', 'manual'] as const;
 export const ADJUSTMENT_TARGETS = ['items', 'order', 'delivery'] as const;
-export const HISTORY_MACHINES = ['order', 'payment', 'delivery', 'shipment', 'edit'] as const;
+export const HISTORY_MACHINES = [
+  'order',
+  'payment',
+  'delivery',
+  'shipment',
+  'edit',
+  'return',
+  'refund',
+] as const;
 export const SHIPMENT_STATUSES = ['pending', 'shipped', 'delivered', 'failed', 'returned'] as const;
-export const PAYMENT_PROVIDERS = ['cod', 'manual'] as const;
+export const PAYMENT_PROVIDERS = ['cod', 'manual', 'sslcommerz'] as const;
 export const PAYMENT_METHODS = [
   'cod',
   'bkash',
@@ -59,8 +81,9 @@ export const PAYMENT_METHODS = [
   'bank',
   'cash',
   'other',
+  'online',
 ] as const;
-export const PAYMENT_RECORD_STATUSES = ['pending', 'paid', 'voided', 'failed'] as const;
+export const PAYMENT_RECORD_STATUSES = ['pending', 'paid', 'voided', 'failed', 'expired'] as const;
 
 const id = () => uuid().primaryKey().default(sql`uuidv7()`);
 const ts = () => timestamp({ withTimezone: true });
@@ -221,7 +244,7 @@ export const counters = store.table(
   (t) => [
     tenantPolicy(t),
     primaryKey({ columns: [t.tenantId, t.name] }),
-    check('counters_name_valid', sql`${t.name} in ('order_number')`),
+    check('counters_name_valid', sql`${t.name} in ('order_number', 'return_number')`),
   ],
 );
 
@@ -260,6 +283,10 @@ export const orders = store.table(
     total: money().notNull(),
     /** Settled payments. */
     paidTotal: money().notNull().default(0),
+    /** Succeeded refunds (phase-5a-plan §3.13). */
+    refundedTotal: money().notNull().default(0),
+    /** For staff: payment_risk, late_payment, flagged_phone (§3.5, §3.11). */
+    flags: text().array().notNull().default(sql`'{}'::text[]`),
     locale: text().notNull(),
     customerNote: text(),
     tags: text().array().notNull().default(sql`'{}'::text[]`),
@@ -322,6 +349,11 @@ export const orders = store.table(
         and ${t.vatTotal} >= 0 and ${t.total} >= 0 and ${t.paidTotal} >= 0
         and ${t.discountTotal} <= ${t.subtotal} and ${t.deliveryDiscount} <= ${t.deliveryFee}`,
     ),
+    check(
+      'orders_refunded_within_paid',
+      sql`${t.refundedTotal} >= 0 and ${t.refundedTotal} <= ${t.paidTotal}`,
+    ),
+    check('orders_flags_valid', sql`${t.flags} <@ array[${inList(ORDER_FLAGS)}]::text[]`),
     check('orders_customer_note_length', sql`char_length(${t.customerNote}) <= 500`),
     check('orders_cancel_reason_length', sql`char_length(${t.cancelReason}) <= 300`),
     check('orders_tags_count', sql`cardinality(${t.tags}) <= 20`),
@@ -533,6 +565,8 @@ export const shipments = store.table(
     failedAt: ts(),
     failedReason: text(),
     returnedAt: ts(),
+    /** What the failed delivery cost the store (phase-5a-plan §3.11). */
+    returnCost: money(),
     metadata: jsonb().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -545,6 +579,7 @@ export const shipments = store.table(
     index('shipments_tenant_status_idx').on(t.tenantId, t.status),
     oneOf('shipments_status_valid', t.status, SHIPMENT_STATUSES),
     check('shipments_carrier_length', sql`char_length(${t.carrier}) <= 60`),
+    check('shipments_return_cost_non_negative', sql`${t.returnCost} >= 0`),
     check('shipments_tracking_number_length', sql`char_length(${t.trackingNumber}) <= 100`),
     check(
       'shipments_tracking_url_format',
@@ -597,6 +632,11 @@ export const payments = store.table(
     recordedBy: uuid(),
     settledAt: ts(),
     voidedAt: ts(),
+    // SSLCommerz (phase-5a-plan §3.2): our tran_id is the payment's ID.
+    gatewayValId: text(),
+    gatewayBankTranId: text(),
+    /** SSLCommerz's risk_level: 1 is risky. */
+    riskLevel: smallint(),
     metadata: jsonb().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -604,6 +644,10 @@ export const payments = store.table(
   (t) => [
     tenantPolicy(t),
     tenantIdUnique('payments', t),
+    // A validation replayed, from the IPN, the return page or the delayed check, settles once.
+    uniqueIndex('payments_gateway_val_id_unique')
+      .on(t.tenantId, t.provider, t.gatewayValId)
+      .where(sql`gateway_val_id is not null`),
     ref('payments_order_fk', [t.tenantId, t.orderId], [orders.tenantId, orders.id], 'restrict'),
     index('payments_order_idx').on(t.tenantId, t.orderId),
     oneOf('payments_provider_valid', t.provider, PAYMENT_PROVIDERS),
@@ -612,5 +656,10 @@ export const payments = store.table(
     check('payments_amount_non_negative', sql`${t.amount} >= 0`),
     check('payments_reference_length', sql`char_length(${t.reference}) <= 100`),
     check('payments_cod_method', sql`(${t.provider} = 'cod') = (${t.method} = 'cod')`),
+    check('payments_online_method', sql`(${t.provider} = 'sslcommerz') = (${t.method} = 'online')`),
+    check(
+      'payments_gateway_fields_length',
+      sql`char_length(${t.gatewayValId}) <= 100 and char_length(${t.gatewayBankTranId}) <= 100`,
+    ),
   ],
 );
