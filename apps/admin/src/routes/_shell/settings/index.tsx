@@ -5,6 +5,7 @@ import {
   CreditCard,
   Globe,
   Percent,
+  RotateCcw,
   ShoppingCart,
   Store,
   Truck,
@@ -55,6 +56,12 @@ function Page() {
       icon: ShoppingCart,
       title: t('checkoutSettings.title'),
       description: t('checkoutSettings.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/returns' as const,
+      icon: RotateCcw,
+      title: t('returnSettings.title'),
+      description: t('returnSettings.description'),
     },
     usePermission('settings.credentials') && {
       to: '/settings/payments' as const,

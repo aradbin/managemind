@@ -10,6 +10,7 @@ import type { messagesEn } from './messages-en';
 import type { onlineStoreEn } from './online-store-en';
 import type { ordersEn } from './orders-en';
 import type { promotionsEn } from './promotions-en';
+import type { returnsEn } from './returns-en';
 
 /** Every key, including those of catalogs loaded with their pages. */
 export type AdminKey =
@@ -17,7 +18,8 @@ export type AdminKey =
   | keyof typeof messagesEn
   | keyof typeof onlineStoreEn
   | keyof typeof ordersEn
-  | keyof typeof promotionsEn;
+  | keyof typeof promotionsEn
+  | keyof typeof returnsEn;
 const catalogs = {
   en: {} as Record<AdminKey, Message>,
   bn: {} as Partial<Record<AdminKey, Message>>,

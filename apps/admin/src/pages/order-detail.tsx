@@ -19,6 +19,8 @@ import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
+import '../i18n/returns';
+import { RefundDialog } from '../components/refund-dialog';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, readPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
@@ -37,6 +39,8 @@ import {
 import { EditOrderDialog } from './order-edit';
 import { PrintLinks } from './orders';
 import { Thumbnail } from './products';
+import { CreateReturnDialog } from './return-detail';
+import { ReturnStatusChip } from './returns';
 
 /** A command's mutation: refreshes the order, the list and the dashboard after. */
 function useCommand<T>(orderId: string, run: (key: string, input: T) => Promise<unknown>) {
@@ -107,6 +111,7 @@ export function OrderDetailPage() {
           <Lines order={o} />
           <Shipments order={o} />
           <Payments order={o} />
+          <ReturnsAndRefunds order={o} />
           <Timeline order={o} />
         </div>
         <div className="flex flex-col gap-4">
@@ -664,6 +669,82 @@ function PaymentLinkDialog({ order: o, onClose }: { order: OrderDetail; onClose:
         )}
       </div>
     </Dialog>
+  );
+}
+
+/** Returns and refunds (phase-5a-plan §7): start a return, refund an overpaid order. */
+function ReturnsAndRefunds({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const canWrite = usePermission('orders.write');
+  const canRefund = usePermission('payments.refund');
+  const [dialog, setDialog] = useState<'return' | 'refund' | null>(null);
+  // Something went out; the dialog shows what was delivered and can still come back.
+  const canReturn = canWrite && o.status !== 'cancelled' && o.deliveryStatus !== 'not_shipped';
+  const overpaid = canRefund && o.totals.refundDue > 0;
+  if (!o.returns.length && !o.refunds.length && !canReturn && !overpaid) return null;
+  return (
+    <section aria-labelledby="returns-title" className={section}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="returns-title" className="font-semibold">
+          {t('order.returnsAndRefunds')}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {canReturn && (
+            <Button variant="secondary" onClick={() => setDialog('return')}>
+              {t('return.create')}
+            </Button>
+          )}
+          {overpaid && (
+            <Button variant="secondary" onClick={() => setDialog('refund')}>
+              {t('order.refundOverpaid', { amount: formatPrice(o.totals.refundDue, locale) })}
+            </Button>
+          )}
+        </div>
+      </div>
+      {o.returns.length > 0 && (
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          {o.returns.map((r) => (
+            <li key={r.id}>
+              <Link
+                to="/returns/$id"
+                params={{ id: r.id }}
+                className="flex min-h-11 items-center justify-between gap-2 py-2 hover:underline"
+              >
+                <span>R{r.number}</span>
+                <ReturnStatusChip status={r.status} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {o.refunds.length > 0 && (
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          {o.refunds.map((f) => (
+            <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span className="flex flex-col">
+                <span className="font-medium">{t(`refund.method.${f.method}` as AdminKey)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {[f.reference, f.reason, dateTime(locale, f.createdAt)]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+                {f.gatewayError && (
+                  <span className="text-xs text-destructive">{f.gatewayError}</span>
+                )}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-xs">{t(`refund.status.${f.status}` as AdminKey)}</span>−
+                {formatPrice(f.amount, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {dialog === 'return' && <CreateReturnDialog orderId={o.id} onClose={() => setDialog(null)} />}
+      {dialog === 'refund' && (
+        <RefundDialog orderId={o.id} returnId={null} onClose={() => setDialog(null)} />
+      )}
+    </section>
   );
 }
 

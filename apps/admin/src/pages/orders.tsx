@@ -143,6 +143,9 @@ export function OrdersPage() {
         title={t('nav.orders')}
         actions={
           <>
+            <Button variant="secondary" asChild>
+              <Link to="/returns">{t('orders.returns')}</Link>
+            </Button>
             <OrderExportButton filters={search} selected={ids} />
             {canWrite && (
               <Button asChild>

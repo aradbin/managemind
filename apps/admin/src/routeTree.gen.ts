@@ -40,6 +40,8 @@ import { Route as ShellProductsNewRouteImport } from './routes/_shell/products/n
 import { Route as ShellPromotionsIndexRouteImport } from './routes/_shell/promotions/index'
 import { Route as ShellPromotionsIdRouteImport } from './routes/_shell/promotions/$id'
 import { Route as ShellPromotionsNewRouteImport } from './routes/_shell/promotions/new'
+import { Route as ShellReturnsIndexRouteImport } from './routes/_shell/returns/index'
+import { Route as ShellReturnsIdRouteImport } from './routes/_shell/returns/$id'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
 import { Route as ShellSettingsCheckoutRouteImport } from './routes/_shell/settings/checkout'
 import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/settings/delivery'
@@ -48,6 +50,7 @@ import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/setti
 import { Route as ShellSettingsMessagesRouteImport } from './routes/_shell/settings/messages'
 import { Route as ShellSettingsNotificationsRouteImport } from './routes/_shell/settings/notifications'
 import { Route as ShellSettingsPaymentsRouteImport } from './routes/_shell/settings/payments'
+import { Route as ShellSettingsReturnsRouteImport } from './routes/_shell/settings/returns'
 import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
 import { Route as ShellSettingsStoreRouteImport } from './routes/_shell/settings/store'
 import { Route as ShellSettingsTemplatesRouteImport } from './routes/_shell/settings/templates'
@@ -213,6 +216,16 @@ const ShellPromotionsNewRoute = ShellPromotionsNewRouteImport.update({
   path: '/promotions/new',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellReturnsIndexRoute = ShellReturnsIndexRouteImport.update({
+  id: '/returns/',
+  path: '/returns/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReturnsIdRoute = ShellReturnsIdRouteImport.update({
+  id: '/returns/$id',
+  path: '/returns/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -252,6 +265,11 @@ const ShellSettingsNotificationsRoute =
 const ShellSettingsPaymentsRoute = ShellSettingsPaymentsRouteImport.update({
   id: '/settings/payments',
   path: '/settings/payments',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsReturnsRoute = ShellSettingsReturnsRouteImport.update({
+  id: '/settings/returns',
+  path: '/settings/returns',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSettingsStaffRoute = ShellSettingsStaffRouteImport.update({
@@ -328,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/products/new': typeof ShellProductsNewRoute
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
+  '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
@@ -335,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/settings/messages': typeof ShellSettingsMessagesRoute
   '/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/settings/payments': typeof ShellSettingsPaymentsRoute
+  '/settings/returns': typeof ShellSettingsReturnsRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/templates': typeof ShellSettingsTemplatesRoute
@@ -345,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/platform/': typeof ShellPlatformIndexRoute
   '/products/': typeof ShellProductsIndexRoute
   '/promotions/': typeof ShellPromotionsIndexRoute
+  '/returns/': typeof ShellReturnsIndexRoute
   '/settings/': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
@@ -376,6 +397,7 @@ export interface FileRoutesByTo {
   '/products/new': typeof ShellProductsNewRoute
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
+  '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
@@ -383,6 +405,7 @@ export interface FileRoutesByTo {
   '/settings/messages': typeof ShellSettingsMessagesRoute
   '/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/settings/payments': typeof ShellSettingsPaymentsRoute
+  '/settings/returns': typeof ShellSettingsReturnsRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
   '/settings/templates': typeof ShellSettingsTemplatesRoute
@@ -393,6 +416,7 @@ export interface FileRoutesByTo {
   '/platform': typeof ShellPlatformIndexRoute
   '/products': typeof ShellProductsIndexRoute
   '/promotions': typeof ShellPromotionsIndexRoute
+  '/returns': typeof ShellReturnsIndexRoute
   '/settings': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
@@ -427,6 +451,7 @@ export interface FileRoutesById {
   '/_shell/products/new': typeof ShellProductsNewRoute
   '/_shell/promotions/$id': typeof ShellPromotionsIdRoute
   '/_shell/promotions/new': typeof ShellPromotionsNewRoute
+  '/_shell/returns/$id': typeof ShellReturnsIdRoute
   '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/_shell/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
@@ -434,6 +459,7 @@ export interface FileRoutesById {
   '/_shell/settings/messages': typeof ShellSettingsMessagesRoute
   '/_shell/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/_shell/settings/payments': typeof ShellSettingsPaymentsRoute
+  '/_shell/settings/returns': typeof ShellSettingsReturnsRoute
   '/_shell/settings/staff': typeof ShellSettingsStaffRoute
   '/_shell/settings/store': typeof ShellSettingsStoreRoute
   '/_shell/settings/templates': typeof ShellSettingsTemplatesRoute
@@ -444,6 +470,7 @@ export interface FileRoutesById {
   '/_shell/platform/': typeof ShellPlatformIndexRoute
   '/_shell/products/': typeof ShellProductsIndexRoute
   '/_shell/promotions/': typeof ShellPromotionsIndexRoute
+  '/_shell/returns/': typeof ShellReturnsIndexRoute
   '/_shell/settings/': typeof ShellSettingsIndexRoute
   '/_shell/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/_shell/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
@@ -478,6 +505,7 @@ export interface FileRouteTypes {
     | '/products/new'
     | '/promotions/$id'
     | '/promotions/new'
+    | '/returns/$id'
     | '/settings/checkout'
     | '/settings/delivery'
     | '/settings/domains'
@@ -485,6 +513,7 @@ export interface FileRouteTypes {
     | '/settings/messages'
     | '/settings/notifications'
     | '/settings/payments'
+    | '/settings/returns'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/templates'
@@ -495,6 +524,7 @@ export interface FileRouteTypes {
     | '/platform/'
     | '/products/'
     | '/promotions/'
+    | '/returns/'
     | '/settings/'
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
@@ -526,6 +556,7 @@ export interface FileRouteTypes {
     | '/products/new'
     | '/promotions/$id'
     | '/promotions/new'
+    | '/returns/$id'
     | '/settings/checkout'
     | '/settings/delivery'
     | '/settings/domains'
@@ -533,6 +564,7 @@ export interface FileRouteTypes {
     | '/settings/messages'
     | '/settings/notifications'
     | '/settings/payments'
+    | '/settings/returns'
     | '/settings/staff'
     | '/settings/store'
     | '/settings/templates'
@@ -543,6 +575,7 @@ export interface FileRouteTypes {
     | '/platform'
     | '/products'
     | '/promotions'
+    | '/returns'
     | '/settings'
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
@@ -576,6 +609,7 @@ export interface FileRouteTypes {
     | '/_shell/products/new'
     | '/_shell/promotions/$id'
     | '/_shell/promotions/new'
+    | '/_shell/returns/$id'
     | '/_shell/settings/checkout'
     | '/_shell/settings/delivery'
     | '/_shell/settings/domains'
@@ -583,6 +617,7 @@ export interface FileRouteTypes {
     | '/_shell/settings/messages'
     | '/_shell/settings/notifications'
     | '/_shell/settings/payments'
+    | '/_shell/settings/returns'
     | '/_shell/settings/staff'
     | '/_shell/settings/store'
     | '/_shell/settings/templates'
@@ -593,6 +628,7 @@ export interface FileRouteTypes {
     | '/_shell/platform/'
     | '/_shell/products/'
     | '/_shell/promotions/'
+    | '/_shell/returns/'
     | '/_shell/settings/'
     | '/_shell/catalog/collections/$id'
     | '/_shell/online-store/pages/$id'
@@ -828,6 +864,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPromotionsNewRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/returns/': {
+      id: '/_shell/returns/'
+      path: '/returns'
+      fullPath: '/returns/'
+      preLoaderRoute: typeof ShellReturnsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/returns/$id': {
+      id: '/_shell/returns/$id'
+      path: '/returns/$id'
+      fullPath: '/returns/$id'
+      preLoaderRoute: typeof ShellReturnsIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings/': {
       id: '/_shell/settings/'
       path: '/settings'
@@ -882,6 +932,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/payments'
       fullPath: '/settings/payments'
       preLoaderRoute: typeof ShellSettingsPaymentsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/returns': {
+      id: '/_shell/settings/returns'
+      path: '/settings/returns'
+      fullPath: '/settings/returns'
+      preLoaderRoute: typeof ShellSettingsReturnsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/settings/staff': {
@@ -987,6 +1044,7 @@ interface ShellRouteChildren {
   ShellProductsNewRoute: typeof ShellProductsNewRoute
   ShellPromotionsIdRoute: typeof ShellPromotionsIdRoute
   ShellPromotionsNewRoute: typeof ShellPromotionsNewRoute
+  ShellReturnsIdRoute: typeof ShellReturnsIdRoute
   ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
   ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
@@ -994,6 +1052,7 @@ interface ShellRouteChildren {
   ShellSettingsMessagesRoute: typeof ShellSettingsMessagesRoute
   ShellSettingsNotificationsRoute: typeof ShellSettingsNotificationsRoute
   ShellSettingsPaymentsRoute: typeof ShellSettingsPaymentsRoute
+  ShellSettingsReturnsRoute: typeof ShellSettingsReturnsRoute
   ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
   ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
   ShellSettingsTemplatesRoute: typeof ShellSettingsTemplatesRoute
@@ -1003,6 +1062,7 @@ interface ShellRouteChildren {
   ShellOrdersIndexRoute: typeof ShellOrdersIndexRoute
   ShellProductsIndexRoute: typeof ShellProductsIndexRoute
   ShellPromotionsIndexRoute: typeof ShellPromotionsIndexRoute
+  ShellReturnsIndexRoute: typeof ShellReturnsIndexRoute
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
   ShellOnlineStorePagesIdRoute: typeof ShellOnlineStorePagesIdRoute
@@ -1029,6 +1089,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellProductsNewRoute: ShellProductsNewRoute,
   ShellPromotionsIdRoute: ShellPromotionsIdRoute,
   ShellPromotionsNewRoute: ShellPromotionsNewRoute,
+  ShellReturnsIdRoute: ShellReturnsIdRoute,
   ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
   ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
@@ -1036,6 +1097,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsMessagesRoute: ShellSettingsMessagesRoute,
   ShellSettingsNotificationsRoute: ShellSettingsNotificationsRoute,
   ShellSettingsPaymentsRoute: ShellSettingsPaymentsRoute,
+  ShellSettingsReturnsRoute: ShellSettingsReturnsRoute,
   ShellSettingsStaffRoute: ShellSettingsStaffRoute,
   ShellSettingsStoreRoute: ShellSettingsStoreRoute,
   ShellSettingsTemplatesRoute: ShellSettingsTemplatesRoute,
@@ -1045,6 +1107,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellOrdersIndexRoute: ShellOrdersIndexRoute,
   ShellProductsIndexRoute: ShellProductsIndexRoute,
   ShellPromotionsIndexRoute: ShellPromotionsIndexRoute,
+  ShellReturnsIndexRoute: ShellReturnsIndexRoute,
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
   ShellOnlineStorePagesIdRoute: ShellOnlineStorePagesIdRoute,

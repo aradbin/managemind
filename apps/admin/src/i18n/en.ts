@@ -16,6 +16,8 @@ export const en = {
   'payments.description': 'Online payment with your SSLCommerz account',
   'notify.title': 'Notifications',
   'notify.description': 'Messages to customers, their wording, and the delivery log',
+  'returnSettings.title': 'Returns',
+  'returnSettings.description': 'How long customers can return, who pays, and how refunds go',
   'nav.settings': 'Settings',
   'nav.account': 'Account',
   'nav.platform': 'Platform',

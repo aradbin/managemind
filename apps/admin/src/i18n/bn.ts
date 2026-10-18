@@ -15,6 +15,8 @@ export const bn: Record<keyof typeof en, string> = {
   'payments.description': 'আপনার SSLCommerz অ্যাকাউন্টে অনলাইন পেমেন্ট',
   'notify.title': 'নোটিফিকেশন',
   'notify.description': 'ক্রেতাদের বার্তা, তার ভাষা, আর পাঠানোর লগ',
+  'returnSettings.title': 'ফেরত',
+  'returnSettings.description': 'কতদিন ফেরত দেওয়া যায়, খরচ কে দেবেন, আর টাকা কীভাবে ফেরত যায়',
   'nav.settings': 'সেটিংস',
   'nav.account': 'অ্যাকাউন্ট',
   'nav.platform': 'প্ল্যাটফর্ম',
