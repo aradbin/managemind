@@ -50,6 +50,10 @@ const keys: StoreMessageKey[] = [
   'checkout.savedAddress',
   'checkout.newAddress',
   'checkout.signIn',
+  'checkout.advanceHint',
+  'checkout.advanceRequired',
+  'checkout.redirecting',
+  'checkout.payLater',
 ];
 ---
 
@@ -109,7 +113,9 @@ const keys: StoreMessageKey[] = [
       </fieldset>
       <fieldset>
         <legend>{t('checkout.payment')}</legend>
-        <label class="choice"><input type="radio" name="payment" value="cod" checked /> <span><strong>{t('checkout.cod')}</strong><br /><span class="muted small">{t('checkout.codHint')}</span></span></label>
+        <label class="choice" data-pay="cod"><input type="radio" name="payment" value="cod" checked /> <span><strong>{t('checkout.cod')}</strong><br /><span class="muted small">{t('checkout.codHint')}</span></span></label>
+        <label class="choice" data-pay="online" hidden><input type="radio" name="payment" value="online" /> <span><strong>{t('checkout.online')}</strong><br /><span class="muted small">{t('checkout.onlineHint')}</span></span></label>
+        <label class="choice" data-pay="cod_with_advance" hidden><input type="radio" name="payment" value="cod_with_advance" /> <span><strong>{t('checkout.advance')}</strong><br /><span class="muted small" data-advance-hint></span></span></label>
       </fieldset>
       {layout.shop.termsCheckbox && (
         <div class="field">

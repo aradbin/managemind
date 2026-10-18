@@ -2,7 +2,8 @@
 // number, status, lines, totals, the COD amount and its parcels' tracking
 // links, and "Cancel order" while the store hasn't confirmed it. The
 // confirmation's token is in the URL's fragment, which never reaches a
-// server or a log; tracking asks for the number and the phone.
+// server or a log; tracking asks for the number and the phone. An online
+// payment still waiting gets "pay now" (phase-5a-plan §3.3, §8).
 import {
   add,
   api,
@@ -53,6 +54,7 @@ interface OrderView {
     trackingUrl: string | null;
   }[];
   cancellable: boolean;
+  onlineDue: number;
 }
 
 const cfg = config();
@@ -63,6 +65,8 @@ function view(
   o: OrderView,
   cancelToken: string | null,
   onChange: (o: OrderView) => void,
+  /** Pays with the view token on the confirmation, with the track token on tracking. */
+  payToken: string | null = cancelToken,
 ): HTMLElement {
   const fee = o.totals.deliveryFee - o.totals.deliveryDiscount;
   const totalsList = el(
@@ -87,6 +91,23 @@ function view(
       row(t('track.delivery'), t(`delivery.${o.deliveryStatus}`)),
     ),
   ];
+  if (o.onlineDue > 0 && payToken) {
+    const amount = money(o.onlineDue);
+    const pay = el('button', { type: 'button', class: 'button', text: t('pay.now', { amount }) });
+    pay.addEventListener('click', async () => {
+      pay.disabled = true;
+      try {
+        const { url } = await api<{ url: string }>('/payments/retry', {
+          body: { token: payToken },
+        });
+        location.assign(url);
+      } catch {
+        pay.disabled = false;
+        alert(t('cart.error'));
+      }
+    });
+    parts.push(el('p', { class: 'muted', text: t('pay.due', { amount }) }), el('p', {}, pay));
+  }
   if (o.totals.codDue > 0 && o.status !== 'cancelled') {
     parts.push(
       el('p', { class: 'cod-due', text: t('thanks.cod', { amount: money(o.totals.codDue) }) }),
@@ -201,13 +222,33 @@ if (thanks) {
       el('p', { text: t('thanks.missing') }),
       el('p', {}, el('a', { class: 'button', href: cfg.links.track, text: t('track.title') })),
     );
+  // Back from SSLCommerz (the return page's redirect): what happened.
+  const payment = new URLSearchParams(location.search).get('payment');
+  const result =
+    payment === 'paid'
+      ? t('pay.paid')
+      : payment === 'failed'
+        ? t('pay.failed')
+        : payment === 'cancelled'
+          ? t('pay.cancelled')
+          : null;
   if (!token) missing();
   else {
     api<OrderView>('/orders/view', { body: { token } })
       .then((o) => {
         add(
           thanks,
-          view(o, null, () => {}),
+          ...(result
+            ? [
+                el('p', {
+                  class: 'notice',
+                  'data-kind': payment === 'paid' ? 'info' : 'error',
+                  role: 'status',
+                  text: result,
+                }),
+              ]
+            : []),
+          view(o, null, () => {}, token),
           el('p', { class: 'muted', text: t('thanks.next') }),
         );
       })

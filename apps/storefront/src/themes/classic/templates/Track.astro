@@ -10,6 +10,11 @@ const { ctx } = Astro.props;
 const { t } = ctx;
 const keys: StoreMessageKey[] = [
   'track.notFound',
+  'pay.paid',
+  'pay.failed',
+  'pay.cancelled',
+  'pay.due',
+  'pay.now',
   'track.locked',
   'track.status',
   'track.delivery',

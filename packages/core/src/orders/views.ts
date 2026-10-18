@@ -478,6 +478,8 @@ export interface ShopperOrderView {
   }[];
   /** Shoppers can cancel until the store confirms (§3.9). */
   cancellable: boolean;
+  /** An online payment still waiting: the page offers "pay now" (phase-5a-plan §3.3). */
+  onlineDue: number;
   placedAt: string;
 }
 
@@ -523,6 +525,12 @@ export async function shopperOrderView(tx: TenantTx, id: string): Promise<Shoppe
         trackingUrl: s.trackingUrl,
       })),
     cancellable: d.status === 'pending',
+    onlineDue:
+      d.status === 'cancelled'
+        ? 0
+        : d.payments
+            .filter((p) => p.provider === 'sslcommerz' && p.status === 'pending')
+            .reduce((a, p) => a + p.amount, 0),
     placedAt: d.placedAt,
   };
 }
