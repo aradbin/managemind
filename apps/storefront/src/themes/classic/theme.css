@@ -9,6 +9,10 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+/* Hidden means hidden, whatever display a class sets (the checkout form is a grid). */
+[hidden] {
+  display: none !important;
+}
 body {
   margin: 0;
   font-family: var(--font);

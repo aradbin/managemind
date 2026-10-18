@@ -47,8 +47,9 @@ test('browsing the English demo store', async ({ page }) => {
     await expect(page.getByText('2 products')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Yellow muslin saree' })).toHaveCount(0);
 
+    // With JavaScript the sort applies on change; its button is for no-JS visitors.
+    await expect(page.locator('form.sorter').getByRole('button', { name: 'Apply' })).toBeHidden();
     await page.getByLabel('Sort by').selectOption('price_asc');
-    await page.locator('form.sorter').getByRole('button', { name: 'Apply' }).click();
     await expect(page).toHaveURL(/sort=price_asc/);
     await expect(page.locator('main .card-title').first()).toHaveText(/Blue cotton saree/);
     await expectAccessible(page, 'category with filters');
