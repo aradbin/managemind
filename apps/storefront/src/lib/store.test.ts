@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   lookupStore,
+  rememberedStoreFromApi,
   resolveStoreHost,
   type StoreContext,
   type StoreRequest,
@@ -135,5 +136,30 @@ describe('storeFromApi', () => {
     const down = answers(500, 503);
     await expect(storeFromApi(down.call)).rejects.toThrow('store context answered 503');
     expect(down.calls()).toBe(2);
+  });
+});
+
+describe('rememberedStoreFromApi', () => {
+  const store = { id: 'y', slug: 'remembered' } as unknown as StoreContext;
+  it('asks the API once a minute per host, and never remembers "no store"', async () => {
+    let calls = 0;
+    const found = async () => {
+      calls++;
+      return new Response(JSON.stringify(store), { status: 200 });
+    };
+    const host = 'remembered.stores.example.test';
+    expect(await rememberedStoreFromApi(host, found, 1_000)).toEqual(store);
+    expect(await rememberedStoreFromApi(host, found, 30_000)).toEqual(store);
+    expect(calls).toBe(1);
+    expect(await rememberedStoreFromApi(host, found, 62_000)).toEqual(store);
+    expect(calls).toBe(2);
+    const missing = async () => {
+      calls++;
+      return new Response('', { status: 404 });
+    };
+    const gone = 'gone.stores.example.test';
+    expect(await rememberedStoreFromApi(gone, missing, 1_000)).toBeNull();
+    expect(await rememberedStoreFromApi(gone, missing, 2_000)).toBeNull();
+    expect(calls).toBe(4);
   });
 });

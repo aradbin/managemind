@@ -122,3 +122,29 @@ export async function storeFromApi(call: () => Promise<Response>): Promise<Store
   }
   throw problem;
 }
+
+/** Stores found through the API, per isolate, for as long as its answer may be cached. */
+const remembered = new Map<string, { store: StoreContext; until: number }>();
+const REMEMBER_MS = 60_000;
+
+/**
+ * storeFromApi, remembered for a minute per isolate (the API sends
+ * `Cache-Control: max-age=60`), so a page miss on a host the KV map doesn't
+ * hold costs one API call, not two. Only found stores are kept.
+ */
+export async function rememberedStoreFromApi(
+  host: string,
+  call: () => Promise<Response>,
+  now = Date.now(),
+): Promise<StoreContext | null> {
+  const hit = remembered.get(host);
+  if (hit && hit.until > now) return hit.store;
+  const store = await storeFromApi(call);
+  if (store) {
+    if (remembered.size >= 500) remembered.clear();
+    remembered.set(host, { store, until: now + REMEMBER_MS });
+  } else {
+    remembered.delete(host);
+  }
+  return store;
+}

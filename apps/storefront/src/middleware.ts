@@ -16,9 +16,9 @@ import { decide } from './lib/routing';
 import {
   DEV_STORE_COOKIE,
   lookupStore,
+  rememberedStoreFromApi,
   resolveStoreHost,
   type StoreContext,
-  storeFromApi,
 } from './lib/store';
 
 export const PREVIEW_COOKIE = 'mm_preview';
@@ -83,7 +83,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const store: StoreContext | null = await lookupStore(resolution.host, {
     ...(env.EDGE ? { kv: env.EDGE } : {}),
     api: (host) =>
-      storeFromApi(() =>
+      rememberedStoreFromApi(host, () =>
         env.API.fetch('https://api.internal/v1/store/context', {
           headers: { 'x-forwarded-host': host, 'x-request-id': requestId },
         }),

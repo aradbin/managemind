@@ -63,7 +63,19 @@ const STORE_PAGES = [
 ];
 
 const jar = new Map<string, string>();
+/**
+ * One admin API request, tried once more on a 5xx: a request the Free plan
+ * stops at its CPU limit shouldn't end the measurement. Repeats are harmless
+ * here, in the run's own store.
+ */
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
+  const res = await callOnce(method, path, body);
+  if (res.status < 500) return res;
+  await res.body?.cancel();
+  return callOnce(method, path, body);
+}
+
+async function callOnce(method: string, path: string, body?: unknown): Promise<Response> {
   const res = await fetch(`${api}${path}`, {
     method,
     headers: {
