@@ -40,11 +40,22 @@ const signin = document.querySelector<HTMLElement>('[data-signin]');
 const accountBox = document.querySelector<HTMLElement>('[data-account]');
 const emailForm = document.querySelector<HTMLFormElement>('[data-email-form]');
 const codeForm = document.querySelector<HTMLFormElement>('[data-code-form]');
+const phoneForm = document.querySelector<HTMLFormElement>('[data-phone-form]');
+const switcher = document.querySelector<HTMLButtonElement>('[data-switch-signin]');
+const otherButton = document.querySelector<HTMLButtonElement>('[data-other-email]');
 const PHONE = /^(?:\+?88)?0?1[3-9]\d{8}$/;
 const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 const name = (n: [unknown, ...unknown[]]) =>
   String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 let email = '';
+/** Sign-in by email code, or by a code to the phone where the store has SMS (phase-5a-plan §3.14). */
+let mode: 'email' | 'phone' = 'email';
+let phone = '';
+/** 01XXXXXXXXX in any of its usual forms, as +8801XXXXXXXXX. */
+const toE164 = (s: string) =>
+  `+880${latin(s)
+    .replace(/[\s\-.()]/g, '')
+    .replace(/^(?:\+?88)?0?/, '')}`;
 let geo: GeoFile | null = null;
 let check: Check | undefined;
 
@@ -98,13 +109,61 @@ emailForm?.addEventListener('submit', async (e) => {
   }
 });
 
+phoneForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  show('');
+  const typed = String(new FormData(phoneForm).get('phone') ?? '');
+  if (
+    !fieldError(
+      'a-signin-phone',
+      PHONE.test(latin(typed).replace(/[\s\-.()]/g, '')) ? '' : t('checkout.badPhone'),
+    )
+  )
+    return;
+  phone = toE164(typed);
+  try {
+    const token = await check?.token();
+    await api('/auth/phone-number/send-otp', {
+      body: { phoneNumber: phone },
+      ...(token ? { headers: { 'x-turnstile-token': token } } : {}),
+    });
+    phoneForm.hidden = true;
+    if (switcher) switcher.hidden = true;
+    if (codeForm) codeForm.hidden = false;
+    const sent = document.querySelector<HTMLElement>('[data-code-sent]');
+    if (sent)
+      sent.textContent = t('account.codeSentPhone', { phone: digits(`0${phone.slice(4)}`) });
+    byId<HTMLInputElement>('a-code')?.focus();
+  } catch (err) {
+    check?.reset();
+    show(problem(err));
+  }
+});
+
+function useMode(next: 'email' | 'phone') {
+  mode = next;
+  if (emailForm) emailForm.hidden = next !== 'email';
+  if (phoneForm) phoneForm.hidden = next !== 'phone';
+  if (codeForm) codeForm.hidden = true;
+  if (switcher) {
+    switcher.hidden = false;
+    switcher.textContent = t(next === 'email' ? 'account.usePhone' : 'account.useEmail');
+  }
+  if (otherButton)
+    otherButton.textContent = t(next === 'email' ? 'account.otherEmail' : 'account.otherPhone');
+  byId<HTMLInputElement>(next === 'email' ? 'a-email' : 'a-signin-phone')?.focus();
+}
+switcher?.addEventListener('click', () => useMode(mode === 'email' ? 'phone' : 'email'));
+
 codeForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   show('');
   const otp = latin(String(new FormData(codeForm).get('otp') ?? '')).trim();
   if (!fieldError('a-code', /^\d{6}$/.test(otp) ? '' : t('account.badCode'))) return;
   try {
-    await api('/auth/sign-in/email-otp', { body: { email, otp } });
+    if (mode === 'phone')
+      await api('/auth/phone-number/verify', { body: { phoneNumber: phone, code: otp } });
+    else await api('/auth/sign-in/email-otp', { body: { email, otp } });
     await load();
   } catch (err) {
     if (err instanceof ShopError && err.status === 429) show(t('account.tooMany'));
@@ -112,11 +171,7 @@ codeForm?.addEventListener('submit', async (e) => {
   }
 });
 
-document.querySelector('[data-other-email]')?.addEventListener('click', () => {
-  if (codeForm) codeForm.hidden = true;
-  if (emailForm) emailForm.hidden = false;
-  byId<HTMLInputElement>('a-email')?.focus();
-});
+otherButton?.addEventListener('click', () => useMode(mode));
 
 document.querySelector('[data-sign-out]')?.addEventListener('click', async () => {
   try {
@@ -306,6 +361,10 @@ async function load() {
       const key = err.body.turnstileSiteKey;
       const box = document.querySelector<HTMLElement>('[data-turnstile]');
       if (typeof key === 'string' && box && !check) check = mountTurnstile(box, key, cfg.locale);
+      if (err.body.phoneSignIn === true && switcher) {
+        switcher.hidden = false;
+        switcher.textContent = t('account.usePhone');
+      }
       return;
     }
     return show(problem(err));
@@ -313,7 +372,11 @@ async function load() {
   if (signin) signin.hidden = true;
   if (accountBox) accountBox.hidden = false;
   const hello = document.querySelector<HTMLElement>('[data-hello]');
-  if (hello) hello.textContent = t('account.hello', { email: account.profile.email });
+  // A phone account's address is a placeholder: greet it by its number.
+  const who = account.profile.email.endsWith('@phone.invalid')
+    ? digits(`0${account.profile.email.slice(3, 13)}`)
+    : account.profile.email;
+  if (hello) hello.textContent = t('account.hello', { email: who });
   const nameInput = byId<HTMLInputElement>('a-name');
   const phoneInput = byId<HTMLInputElement>('a-phone');
   if (nameInput) nameInput.value = account.profile.name;

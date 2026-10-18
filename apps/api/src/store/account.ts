@@ -23,6 +23,7 @@ import type { Locale } from '@managemind/shared/i18n';
 import type { Context } from 'hono';
 import { createShopperMailer, shopperEmailReady } from '../auth/email';
 import type { AppEnv } from '../env';
+import { sendOtp, smsGatewayFor, verifyOtp } from '../otp/index';
 import { verifyTurnstile } from '../turnstile';
 import { shopSiteKey } from '../turnstile-hosts';
 import {
@@ -47,6 +48,8 @@ const API_AUTH = '/v1/store/auth';
 const SEND_CODE = '/email-otp/send-verification-otp';
 const SIGN_IN = '/sign-in/email-otp';
 const SIGN_OUT = '/sign-out';
+const SEND_PHONE_CODE = '/phone-number/send-otp';
+const PHONE_SIGN_IN = '/phone-number/verify';
 
 const accountsOn = (c: Context<AppEnv>, settings: OrderSettings) =>
   settings.checkout.accounts && shopperEmailReady(c.var.config);
@@ -69,7 +72,19 @@ async function authFor(
     name: settings.name,
     replyTo: settings.settings.profile.contactEmail,
   });
+  // Phone codes where the store has SMS (phase-5a-plan §3.14).
+  const sms = await smsGatewayFor(tx, c.env);
   return createShopperAuth({
+    ...(sms
+      ? {
+          phone: {
+            send: (phone: string) =>
+              sendOtp(c.env, sms, tenantId, phone, settings.name, requestLocale(c, settings)),
+            verify: async (phone: string, code: string) =>
+              (await verifyOtp(c.env, tenantId, phone, code)).ok,
+          },
+        }
+      : {}),
     db: tx.db,
     secret: await storeSecret(config.AUTH_SECRET, tenantId),
     origin: `https://${host}`,
@@ -114,10 +129,22 @@ const asShopper = <T>(
     // The sign-in form needs the host's Turnstile key (§3.15).
     if (!userId)
       throw new AppError('unauthorized', {
-        extensions: { turnstileSiteKey: await shopSiteKey(c, tx) },
+        extensions: {
+          turnstileSiteKey: await shopSiteKey(c, tx),
+          // Where the store has SMS, the form offers a code to the phone (phase-5a-plan §3.14).
+          phoneSignIn: (await smsGatewayFor(tx, c.env)) !== null,
+        },
       });
     return fn(tx, userId);
   });
+
+async function bodyPhone(request: Request): Promise<string | undefined> {
+  const body = (await request
+    .clone()
+    .json()
+    .catch(() => null)) as { phoneNumber?: unknown } | null;
+  return typeof body?.phoneNumber === 'string' ? body.phoneNumber.trim() : undefined;
+}
 
 async function bodyEmail(request: Request): Promise<string | undefined> {
   const body = (await request
@@ -246,6 +273,8 @@ export function registerAccount(app: OpenAPIHono<AppEnv>): void {
     const host = c.req.header('x-forwarded-host') ?? '';
     const ip = shopperIp(c);
     const email = path === SEND_CODE || path === SIGN_IN ? await bodyEmail(c.req.raw) : undefined;
+    const phone =
+      path === SEND_PHONE_CODE || path === PHONE_SIGN_IN ? await bodyPhone(c.req.raw) : undefined;
     const limiter = limiterFor(c);
     const response = await withShopStore(c, async (run, tenantId) => {
       const [settings, siteKey] = await run(
@@ -264,6 +293,15 @@ export function registerAccount(app: OpenAPIHono<AppEnv>): void {
       }
       if (path === SIGN_IN && email)
         await limiter.check('otp-verify:email', `shop:${tenantId}:${email}`);
+      if (path === SEND_PHONE_CODE) {
+        await limiter.check('otp-send:ip', `shop:${ip}`);
+        if (phone) await limiter.check('otp-send:phone', `${tenantId}:${phone}`);
+        if (siteKey)
+          await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, c.req.header('x-turnstile-token'), {
+            host,
+            ip,
+          });
+      }
 
       return run(async (tx) => {
         const auth = await authFor(c, tx, tenantId, settings);
@@ -281,7 +319,7 @@ export function registerAccount(app: OpenAPIHono<AppEnv>): void {
         const res = await auth.handler(request);
         // Read before the body moves into the copy: a used body can't be cloned on Workers.
         const signedIn =
-          path === SIGN_IN && res.ok
+          (path === SIGN_IN || path === PHONE_SIGN_IN) && res.ok
             ? ((await res
                 .clone()
                 .json()

@@ -133,8 +133,14 @@ export const shopperUsers = store.table(
     email: text().notNull(),
     emailVerified: boolean().notNull().default(false),
     image: text(),
-    /** Saved from checkout ("save my details"); not verified until Phase 5A's phone codes. */
+    /** Saved from checkout ("save my details"); never verified, so never used to sign in. */
     phone: text(),
+    /**
+     * A phone account's number, verified by a code (phase-5a-plan §3.14). Kept
+     * apart from `phone`, so a number someone typed can't sign anyone in.
+     */
+    phoneNumber: text(),
+    phoneNumberVerified: boolean().notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -144,6 +150,10 @@ export const shopperUsers = store.table(
     unique('shopper_users_email_unique').on(t.tenantId, t.email),
     check('shopper_users_email_lowercase', sql`${t.email} = lower(${t.email})`),
     phoneCheck('shopper_users_phone_format', t.phone),
+    phoneCheck('shopper_users_phone_number_format', t.phoneNumber),
+    uniqueIndex('shopper_users_phone_number_unique')
+      .on(t.tenantId, t.phoneNumber)
+      .where(sql`phone_number is not null`),
   ],
 );
 

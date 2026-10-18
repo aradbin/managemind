@@ -14,6 +14,13 @@ const { ctx } = Astro.props;
 const { t } = ctx;
 const keys: StoreMessageKey[] = [
   'account.codeSent',
+  'account.codeSentPhone',
+  'account.usePhone',
+  'account.useEmail',
+  'account.otherPhone',
+  'account.otherEmail',
+  'account.phone',
+  'checkout.badPhone',
   'account.badCode',
   'account.tooMany',
   'account.hello',
@@ -51,9 +58,18 @@ const keys: StoreMessageKey[] = [
           <input id="a-email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="a-email-e" />
           <p class="field-error" id="a-email-e"></p>
         </div>
-        <div data-turnstile></div>
         <button type="submit" class="button">{t('account.sendCode')}</button>
       </form>
+      <form class="track" data-phone-form novalidate hidden>
+        <div class="field">
+          <label for="a-signin-phone">{t('account.phone')}</label>
+          <input id="a-signin-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" aria-describedby="a-signin-phone-e" />
+          <p class="field-error" id="a-signin-phone-e"></p>
+        </div>
+        <button type="submit" class="button">{t('account.sendCode')}</button>
+      </form>
+      <div data-turnstile></div>
+      <p><button type="button" class="link-button" data-switch-signin hidden></button></p>
       <form class="track" data-code-form novalidate hidden>
         <p data-code-sent aria-live="polite"></p>
         <div class="field">
