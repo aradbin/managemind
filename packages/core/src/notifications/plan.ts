@@ -50,6 +50,9 @@ interface Triggered {
   shipmentId?: string;
   paymentId?: string;
   problem?: string;
+  returnId?: string;
+  refundId?: string;
+  credit?: { code: string; amount: number };
 }
 
 /** Which message events an outbox event triggers, or null for none. */
@@ -59,6 +62,9 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     by?: string;
     reason?: string;
     problem?: string;
+    creditCode?: string;
+    method?: string;
+    amount?: number;
   };
   const id = event.aggregateId ?? '';
   switch (event.eventType) {
@@ -87,6 +93,34 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
         paymentId: id,
         ...(p.problem ? { problem: p.problem } : {}),
       };
+    // Returns and refunds (§3.12, §3.13). Staff hear about shoppers' requests.
+    case 'return.requested':
+      return {
+        orderId: p.orderId ?? '',
+        shopper: [],
+        staff: p.by === 'shopper' ? ['return_requested'] : [],
+        returnId: id,
+      };
+    case 'return.approved':
+      return { orderId: p.orderId ?? '', shopper: ['return_approved'], staff: [], returnId: id };
+    case 'return.rejected':
+      return { orderId: p.orderId ?? '', shopper: ['return_rejected'], staff: [], returnId: id };
+    case 'return.received':
+      return { orderId: p.orderId ?? '', shopper: ['return_received'], staff: [], returnId: id };
+    case 'refund.succeeded':
+      return {
+        orderId: p.orderId ?? '',
+        shopper: [p.method === 'store_credit' ? 'store_credit_issued' : 'refund_issued'],
+        staff: [],
+        refundId: id,
+      };
+    case 'store_credit.issued':
+      return {
+        orderId: p.orderId ?? '',
+        shopper: ['store_credit_issued'],
+        staff: [],
+        credit: { code: p.creditCode ?? '', amount: p.amount ?? 0 },
+      };
     default:
       return null;
   }
@@ -101,6 +135,50 @@ const PROBLEMS: Record<Locale, Record<string, string>> = {
   bn: {
     risky: 'SSLCommerz কার্ডটিকে ঝুঁকিপূর্ণ বলেছে; নিশ্চিত করার আগে যাচাই করুন',
     late: 'অর্ডার বাতিলের পরে পরিশোধ হয়েছে; টাকা ফেরত দিন বা অর্ডারটি ফিরিয়ে আনুন',
+  },
+};
+
+/** A return's reason in the message's language (§3.12). */
+const REASONS: Record<Locale, Record<string, string>> = {
+  en: {
+    wrong_size: 'wrong size',
+    damaged: 'damaged',
+    wrong_item: 'wrong item',
+    not_as_described: 'not as described',
+    changed_mind: 'changed mind',
+    other: 'other',
+  },
+  bn: {
+    wrong_size: 'সাইজ মেলেনি',
+    damaged: 'ক্ষতিগ্রস্ত',
+    wrong_item: 'ভুল পণ্য',
+    not_as_described: 'বর্ণনার সাথে মেলেনি',
+    changed_mind: 'মত বদলেছেন',
+    other: 'অন্য কারণ',
+  },
+};
+
+/** How a refund was paid, in the message's language (§3.13). */
+const METHODS: Record<Locale, Record<string, string>> = {
+  en: {
+    gateway: 'your original payment',
+    gateway_manual: 'your original payment',
+    bkash: 'bKash',
+    nagad: 'Nagad',
+    rocket: 'Rocket',
+    bank: 'bank transfer',
+    cash: 'cash',
+    store_credit: 'store credit',
+  },
+  bn: {
+    gateway: 'আপনার আগের পেমেন্টে',
+    gateway_manual: 'আপনার আগের পেমেন্টে',
+    bkash: 'বিকাশ',
+    nagad: 'নগদ',
+    rocket: 'রকেট',
+    bank: 'ব্যাংক ট্রান্সফার',
+    cash: 'নগদ টাকা',
+    store_credit: 'স্টোর ক্রেডিট',
   },
 };
 
@@ -154,6 +232,33 @@ export async function planMessages(
     values.tracking_url = shipment?.trackingUrl ?? '';
   }
 
+  let reason: string | null = null;
+  if (triggered.returnId) {
+    const [ret] = await tx.db
+      .select({ number: schema.returns.number, reason: schema.returns.reason })
+      .from(schema.returns)
+      .where(eq(schema.returns.id, triggered.returnId));
+    values.return_number = `R${ret?.number ?? ''}`;
+    reason = ret?.reason ?? null;
+  }
+  let refund: { amount: number; method: string } | null = null;
+  let credit = triggered.credit ?? null;
+  if (triggered.refundId) {
+    const [row] = await tx.db
+      .select({
+        amount: schema.refunds.amount,
+        method: schema.refunds.method,
+        code: schema.promotionCodes.code,
+      })
+      .from(schema.refunds)
+      .leftJoin(schema.promotionCodes, eq(schema.promotionCodes.id, schema.refunds.creditCodeId))
+      .where(eq(schema.refunds.id, triggered.refundId));
+    if (row) {
+      refund = { amount: Number(row.amount), method: row.method };
+      if (row.code) credit = { code: row.code, amount: Number(row.amount) };
+    }
+  }
+
   const t = schema.tenants;
   const [tenant] = await tx.db
     .select({ name: t.name, settings: t.settings })
@@ -177,6 +282,16 @@ export async function planMessages(
     ...(amount === null ? {} : { amount: formatTaka(amount, locale) }),
     ...(triggered.problem
       ? { problem: PROBLEMS[locale][triggered.problem] ?? triggered.problem }
+      : {}),
+    ...(reason ? { reason: REASONS[locale][reason] ?? reason } : {}),
+    ...(refund
+      ? {
+          refund_amount: formatTaka(refund.amount, locale),
+          refund_method: METHODS[locale][refund.method] ?? refund.method,
+        }
+      : {}),
+    ...(credit
+      ? { credit_code: credit.code, credit_amount: formatTaka(credit.amount, locale) }
       : {}),
   });
 

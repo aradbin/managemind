@@ -1,0 +1,1 @@
+ALTER TABLE "store"."promotions" ADD COLUMN "store_credit" boolean DEFAULT false NOT NULL;

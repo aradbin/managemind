@@ -102,6 +102,29 @@ export const EVENTS = {
   'shipment.delivered': z.object({ orderId: z.uuid() }),
   'shipment.failed': z.object({ orderId: z.uuid() }),
   'shipment.returned': z.object({ orderId: z.uuid() }),
+  // Returns and refunds (phase-5a-plan §3.12, §3.13): shopper messages and staff alerts.
+  'return.requested': z.object({
+    orderId: z.uuid(),
+    number: z.number().int(),
+    by: z.enum(['staff', 'shopper']),
+    reason: z.string(),
+  }),
+  'return.approved': z.object({ orderId: z.uuid(), number: z.number().int() }),
+  'return.rejected': z.object({ orderId: z.uuid(), number: z.number().int() }),
+  'return.received': z.object({ orderId: z.uuid(), number: z.number().int() }),
+  'refund.succeeded': z.object({
+    orderId: z.uuid(),
+    amount: z.number().int(),
+    method: z.string(),
+    /** For store credit: the code the shopper is told. */
+    creditCode: z.string().optional(),
+  }),
+  /** What an order left of a store credit code, as a new code (§3.13). */
+  'store_credit.issued': z.object({
+    orderId: z.uuid(),
+    amount: z.number().int(),
+    creditCode: z.string(),
+  }),
   'customer.created': z.object({}),
   'customer.updated': z.object({}),
   'promotion.changed': z.object({ change: catalogChange }),

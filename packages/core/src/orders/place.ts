@@ -26,6 +26,7 @@ import { phoneFlagged } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
+import { reissueCreditRemainder } from '../payments/store-credit';
 import type { ManualDiscount } from '../pricing/engine';
 import { type OrderSettings, orderSettings, type Quote, quote } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
@@ -498,6 +499,10 @@ export async function placeOrder(
       aggregateId: orderId,
       payload: { number },
     });
+  }
+  // A store credit code the order didn't use up comes back as a new one (phase-5a-plan §3.13).
+  for (const p of q.promotions) {
+    if (p.codeId) await reissueCreditRemainder(tx, orderId, p.promotionId, p.amount);
   }
   if (!storefront) {
     await recordAudit(tx, {

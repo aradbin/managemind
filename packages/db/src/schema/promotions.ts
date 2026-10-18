@@ -44,6 +44,11 @@ export const promotions = store.table(
     perCustomerLimit: integer(),
     conditions: jsonb().notNull().default({}),
     action: jsonb().notNull(),
+    /**
+     * A refund as store credit (phase-5a-plan §3.13, Q11): one code for one
+     * phone. What an order leaves unused comes back as a new code.
+     */
+    storeCredit: boolean().notNull().default(false),
     createdAt: ts().notNull().defaultNow(),
     updatedAt: ts().notNull().defaultNow(),
   },
