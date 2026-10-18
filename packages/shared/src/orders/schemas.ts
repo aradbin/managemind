@@ -76,9 +76,19 @@ export const checkoutInput = z
     saveDetails: z.boolean().optional(),
     acceptTerms: z.boolean().optional(),
     turnstileToken: z.string().max(4096).optional(),
+    /** From verifying the phone by SMS, when the store asks for it (phase-5a-plan §3.14). */
+    otpToken: z.string().max(100).optional(),
   })
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;
+
+/** A code by SMS before cash on delivery (phase-5a-plan §3.14). */
+export const otpSendInput = z
+  .object({ phone: phoneNumber(), turnstileToken: z.string().max(4096).optional() })
+  .strict();
+export const otpVerifyInput = z
+  .object({ phone: phoneNumber(), code: z.string().regex(/^\d{6}$/) })
+  .strict();
 
 export const DELIVERY_LIMITS = { zones: 20, areasPerZone: 600 } as const;
 

@@ -17,6 +17,7 @@ import { registerDeepHealth } from './routes/health-deep';
 import { registerStoreContext } from './routes/store-context';
 import { registerAccount } from './store/account';
 import { registerCommerce } from './store/commerce';
+import { registerCheckoutOtp } from './store/otp';
 import { registerStorePages } from './store/pages';
 import { registerShopperReturns } from './store/returns';
 import { registerWebhooks } from './webhooks';
@@ -56,6 +57,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerStorePages(app);
   registerCommerce(app);
   registerShopperReturns(app);
+  registerCheckoutOtp(app);
   registerWebhooks(app);
   registerAccount(app);
   registerAuth(app);

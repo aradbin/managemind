@@ -45,6 +45,7 @@ import type { Context } from 'hono';
 import { queueSink, withClient } from '../db';
 import type { AppEnv } from '../env';
 import { log } from '../log';
+import { otpVerified, smsGatewayFor } from '../otp/index';
 import { gatewayFor, settleFromGateway, startGatewaySession } from '../payments';
 import { createLimiter } from '../rate-limit/index';
 import { verifyTurnstile } from '../turnstile';
@@ -624,9 +625,10 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
     const input = parsed.data;
     const host = c.req.header('x-forwarded-host') ?? '';
     const ip = shopperIp(c);
-    // Turnstile tokens are single-use, so a retry carries a new one: it stays
-    // out of what the idempotency key protects.
-    const { turnstileToken: _t, ...request } = raw;
+    // Turnstile tokens are single-use, so a retry carries a new one, and a
+    // phone code comes after a first try: both stay out of what the
+    // idempotency key protects.
+    const { turnstileToken: _t, otpToken: _o, ...request } = raw;
     const locale = c.req.query('locale') === 'en' ? 'en' : 'bn';
     const result = await withShopStore(c, async (run, tenantId) => {
       // Rate limits and Turnstile first, with no transaction open (§3.15).
@@ -648,6 +650,8 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
       // A signed-in shopper's order shows in their account (§3.11).
       const shopperUserId = await run((tx) => currentShopper(c, tx, tenantId, settings));
       const onlineReady = await run(async (tx) => (await gatewayFor(tx, c.env)) !== null);
+      const smsReady = await run(async (tx) => (await smsGatewayFor(tx, c.env)) !== null);
+      const phoneVerified = await otpVerified(c.env, tenantId, input.contact.phone, input.otpToken);
       const placed = await run((tx) =>
         checkout(tx, shopperActor(shopperUserId), key, request, {
           shopperUserId,
@@ -658,6 +662,8 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
           address: input.address,
           payment: { kind: input.paymentMethod },
           onlineReady,
+          smsReady,
+          otpVerified: phoneVerified,
           note: input.note,
           expectedTotal: input.expectedTotal,
           locale,

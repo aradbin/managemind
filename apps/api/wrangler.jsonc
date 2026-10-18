@@ -38,15 +38,18 @@
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "managemind-files-preview" }],
   // Rate limits (ADR 0006): SQLite-backed, the only kind on the Free plan.
   // The purge counter (ADR 0007): one object for the whole account.
+  // Phone codes (phase-5a-plan §3.14): one object per store and phone.
   "durable_objects": {
     "bindings": [
       { "name": "RATE_LIMITER", "class_name": "RateLimiter" },
-      { "name": "PURGE_BUDGET", "class_name": "PurgeBudget" }
+      { "name": "PURGE_BUDGET", "class_name": "PurgeBudget" },
+      { "name": "OTP_CODES", "class_name": "OtpCodes" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["RateLimiter"] },
-    { "tag": "v2", "new_sqlite_classes": ["PurgeBudget"] }
+    { "tag": "v2", "new_sqlite_classes": ["PurgeBudget"] },
+    { "tag": "v3", "new_sqlite_classes": ["OtpCodes"] }
   ],
   "queues": {
     "producers": [

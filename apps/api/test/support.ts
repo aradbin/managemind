@@ -1,6 +1,7 @@
 import type { OutboxEvent } from '@managemind/core';
 import { testUrls } from '@managemind/db/testing';
 import type { Env } from '../src/env';
+import { OtpState } from '../src/otp/state';
 import type { LimiterNamespace } from '../src/rate-limit/index';
 import { LimiterState, type LockStore } from '../src/rate-limit/limiter';
 
@@ -99,6 +100,38 @@ export function fakeNamespace(): LimiterNamespace & { names: string[] } {
   };
 }
 
+/** The OtpCodes namespace, backed by OtpState in memory; `codes` holds what was sent. */
+export function fakeOtpNamespace() {
+  const objects = new Map<string, OtpState>();
+  const codes = new Map<string, string>();
+  return {
+    codes,
+    getByName(name: string) {
+      let state = objects.get(name);
+      if (!state) {
+        let value: Parameters<ConstructorParameters<typeof OtpState>[0]['put']>[0] | undefined;
+        state = new OtpState({
+          get: async () => value,
+          put: async (v) => {
+            value = v;
+          },
+        });
+        objects.set(name, state);
+      }
+      const s = state;
+      return {
+        issue: async () => {
+          const code = await s.issue();
+          codes.set(name, code);
+          return code;
+        },
+        verify: (code: string) => s.verify(code),
+        check: (token: string) => s.check(token),
+      };
+    },
+  };
+}
+
 export function makeEnv(
   overrides: Partial<Env> = {},
 ): Env & { OUTBOX: FakeQueue; FILES: FakeR2 & R2Bucket } {
@@ -107,6 +140,7 @@ export function makeEnv(
     OUTBOX: new FakeQueue(),
     FILES: new FakeR2() as unknown as R2Bucket,
     RATE_LIMITER: fakeNamespace() as unknown as Env['RATE_LIMITER'],
+    OTP_CODES: fakeOtpNamespace() as unknown as Env['OTP_CODES'],
     ENVIRONMENT: 'preview',
     PLATFORM_NAME: 'managemind',
     PLATFORM_DOMAIN: 'platform.example.test',

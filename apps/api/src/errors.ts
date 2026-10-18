@@ -15,7 +15,8 @@ export function problemResponse(c: Context<AppEnv>, error: unknown): Response {
     errorBaseUrl: config ? `https://${config.PLATFORM_DOMAIN}/errors` : 'about:blank',
     requestId: c.var.requestId,
   });
-  if (problem.status >= 500) {
+  // Something not set up yet is expected, not a crash: logged by its caller, not reported.
+  if (problem.status >= 500 && problem.code !== 'feature_unavailable') {
     captureException(error, { tags: { request_id: c.var.requestId } });
     log('error', 'unhandled error', {
       request_id: c.var.requestId,

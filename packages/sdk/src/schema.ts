@@ -982,6 +982,7 @@ export interface paths {
                         saveDetails?: boolean;
                         acceptTerms?: boolean;
                         turnstileToken?: string;
+                        otpToken?: string;
                     };
                 };
             };
@@ -1390,6 +1391,96 @@ export interface paths {
                             number: string;
                             /** @enum {string} */
                             status: "requested";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout/otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Text a code to the phone (3 an hour; Turnstile where it runs) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        turnstileToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Sent */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout/otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the code; the token goes with the order (5 tries a code) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Verified */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            otpToken: string;
                         };
                     };
                 };

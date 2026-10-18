@@ -3,6 +3,7 @@ import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
 import type { DelayedMessage } from './domains';
+import type { OtpCodes } from './otp/durable-object';
 import type { PurgeMessage } from './purge/consumer';
 import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
@@ -25,6 +26,8 @@ export interface Env {
   DOMAINS?: Queue<DelayedMessage>;
   /** The account-wide purge counter, one object named "account" (ADR 0007). */
   PURGE_BUDGET: DurableObjectNamespace<PurgeBudget>;
+  /** Phone codes before cash on delivery, one object per store and phone (phase-5a-plan §3.14). */
+  OTP_CODES: DurableObjectNamespace<OtpCodes>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */
   FILES: R2Bucket;
   /** Host-to-store map read by the storefront (ADR 0015); absent in previews. */

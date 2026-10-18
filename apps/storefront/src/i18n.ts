@@ -145,6 +145,15 @@ export const en = {
   'checkout.advanceHint': 'Pay {amount} now through SSLCommerz, and the rest to the courier.',
   'checkout.advanceRequired':
     'This store asks for the delivery charge online first. Choose how to pay below.',
+  'checkout.otpNeeded':
+    'This store confirms your phone number first. We’ve sent you a code by SMS.',
+  'checkout.otpLabel': '6-digit code',
+  'checkout.otpVerify': 'Confirm and place order',
+  'checkout.otpResend': 'Send a new code',
+  'checkout.otpSent': 'Code sent. It works for 10 minutes.',
+  'checkout.otpWrong': 'That code isn’t right.',
+  'checkout.otpExpired': 'That code has run out. Send a new one.',
+  'checkout.otpTooMany': 'Too many codes. Please wait an hour.',
   'checkout.redirecting': 'Taking you to SSLCommerz to pay…',
   'checkout.payLater':
     'Your order is saved, but the payment page didn’t open. You can pay from the order page.',
@@ -410,6 +419,14 @@ export const bn: Record<StoreMessageKey, Message> = {
   'checkout.advance': 'ডেলিভারি চার্জ অনলাইনে, বাকিটা ডেলিভারিতে',
   'checkout.advanceHint': 'এখন SSLCommerz-এ {amount} দিন, বাকিটা কুরিয়ারকে।',
   'checkout.advanceRequired': 'এই দোকান আগে ডেলিভারি চার্জ অনলাইনে নেয়। নিচে পরিশোধের উপায় বেছে নিন।',
+  'checkout.otpNeeded': 'এই দোকান আগে আপনার ফোন নম্বর নিশ্চিত করে। এসএমএসে একটি কোড পাঠানো হয়েছে।',
+  'checkout.otpLabel': '৬ অঙ্কের কোড',
+  'checkout.otpVerify': 'নিশ্চিত করে অর্ডার দিন',
+  'checkout.otpResend': 'নতুন কোড পাঠান',
+  'checkout.otpSent': 'কোড পাঠানো হয়েছে। ১০ মিনিট পর্যন্ত চলবে।',
+  'checkout.otpWrong': 'কোডটি সঠিক নয়।',
+  'checkout.otpExpired': 'কোডের মেয়াদ শেষ। নতুন কোড পাঠান।',
+  'checkout.otpTooMany': 'অনেক বেশি কোড। এক ঘণ্টা অপেক্ষা করুন।',
   'checkout.redirecting': 'পরিশোধের জন্য SSLCommerz-এ নেওয়া হচ্ছে…',
   'checkout.payLater':
     'অর্ডারটি সংরক্ষিত হয়েছে, কিন্তু পরিশোধের পেজ খোলেনি। অর্ডারের পেজ থেকে পরিশোধ করতে পারবেন।',

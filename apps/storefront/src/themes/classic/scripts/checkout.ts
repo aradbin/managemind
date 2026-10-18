@@ -337,6 +337,84 @@ const newAttempt = () => {
   } catch {}
 };
 
+/** The phone's code check (phase-5a-plan §3.14), once the store asked for it. */
+let otpToken: string | undefined;
+
+/**
+ * Texts a code to the order's phone and checks it; then the order is placed
+ * again with the token. Shown only when checkout answers `otp_required`.
+ */
+function askForCode(phone: string) {
+  if (!form || form.querySelector('[data-otp]')) return;
+  const status = el('p', { class: 'muted small', role: 'status' });
+  const input = el('input', {
+    id: 'c-otp',
+    inputmode: 'numeric',
+    autocomplete: 'one-time-code',
+    maxlength: '6',
+    pattern: '[0-9]{6}',
+  });
+  const verify = el('button', { type: 'button', class: 'button', text: t('checkout.otpVerify') });
+  const resend = el('button', { type: 'button', class: 'link', text: t('checkout.otpResend') });
+  const box = el(
+    'div',
+    { class: 'field', 'data-otp': true },
+    el('label', { for: 'c-otp', text: t('checkout.otpLabel') }),
+    input,
+    status,
+    el('p', {}, verify, ' ', resend),
+  );
+  const sendCode = async () => {
+    resend.disabled = true;
+    try {
+      check?.reset();
+      const turnstileToken = await check?.token();
+      await api('/checkout/otp', {
+        body: { phone, ...(turnstileToken ? { turnstileToken } : {}) },
+      });
+      status.textContent = t('checkout.otpSent');
+    } catch (err) {
+      status.textContent =
+        err instanceof ShopError && err.code === 'rate_limited'
+          ? t('checkout.otpTooMany')
+          : t('cart.error');
+    } finally {
+      resend.disabled = false;
+    }
+  };
+  verify.addEventListener('click', async () => {
+    const code = input.value.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim();
+    if (!/^\d{6}$/.test(code)) {
+      status.textContent = t('checkout.otpWrong');
+      return;
+    }
+    verify.disabled = true;
+    try {
+      const done = await api<{ otpToken: string }>('/checkout/otp/verify', {
+        body: { phone, code },
+      });
+      otpToken = done.otpToken;
+      box.remove();
+      form?.requestSubmit();
+    } catch (err) {
+      const reason =
+        err instanceof ShopError
+          ? (err.body.errors as { code: string }[] | undefined)?.[0]?.code
+          : '';
+      status.textContent =
+        reason === 'locked' || reason === 'expired'
+          ? t('checkout.otpExpired')
+          : t('checkout.otpWrong');
+    } finally {
+      verify.disabled = false;
+    }
+  });
+  resend.addEventListener('click', sendCode);
+  place?.insertAdjacentElement('beforebegin', box);
+  input.focus();
+  void sendCode();
+}
+
 async function submit(e: SubmitEvent) {
   e.preventDefault();
   if (!place || place.disabled) return;
@@ -349,7 +427,11 @@ async function submit(e: SubmitEvent) {
     const send = async (key: string) => {
       const turnstileToken = await check?.token();
       return api<Placed>('/checkout/orders', {
-        body: { ...body, ...(turnstileToken ? { turnstileToken } : {}) },
+        body: {
+          ...body,
+          ...(turnstileToken ? { turnstileToken } : {}),
+          ...(otpToken ? { otpToken } : {}),
+        },
         headers: { 'idempotency-key': key },
       });
     };
@@ -402,6 +484,10 @@ async function submit(e: SubmitEvent) {
       }
       case 'checkout_paused':
         return show(t('checkout.paused'));
+      case 'otp_required':
+        // The store asks this phone for a code by SMS first (§3.14).
+        askForCode((body.contact as { phone: string }).phone);
+        return show(t('checkout.otpNeeded'), 'info');
       case 'cod_unavailable':
         // This phone (or every phone) pays the delivery charge first (§3.4).
         if (b.reason === 'advance_required') {

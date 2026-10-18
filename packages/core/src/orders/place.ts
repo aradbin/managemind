@@ -22,7 +22,7 @@ import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
 import { addressSnapshot, findOrCreateCustomer } from '../customers/service';
-import { phoneFlagged } from '../fraud/index';
+import { otpRequired, phoneFlagged } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
@@ -85,6 +85,10 @@ export interface PlaceOrderInput {
   allowBlocked?: boolean | undefined;
   /** The store's gateway is set up and checked, so online payment can be offered (§3.4). */
   onlineReady?: boolean | undefined;
+  /** The store has a working SMS gateway, so a phone code can be asked for (§3.14). */
+  smsReady?: boolean | undefined;
+  /** The shopper verified this phone with a code for this order. */
+  otpVerified?: boolean | undefined;
   acceptTerms?: boolean | undefined;
 }
 
@@ -285,6 +289,16 @@ export async function placeOrder(
     throw new AppError('cod_unavailable', {
       extensions: { reason: 'advance_required', advance: deliveryCharge },
     });
+  }
+  // A code by SMS before plain cash on delivery (§3.14), where the store has SMS.
+  if (
+    storefront &&
+    kind === 'cod' &&
+    input.smsReady &&
+    !input.otpVerified &&
+    (await otpRequired(tx, phone, settings.settings))
+  ) {
+    throw new AppError('otp_required');
   }
   const advance = kind === 'manual' ? Math.min(input.payment.amount, total) : 0;
   // A charge below the gateway's minimum is no advance: plain COD (§3.4).

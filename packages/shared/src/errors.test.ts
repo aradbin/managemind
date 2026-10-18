@@ -38,6 +38,16 @@ describe('toProblem', () => {
     expect(problem.code).toBe('internal');
     expect(problem.detail).toBeUndefined();
   });
+
+  it('keeps a setup that is not done yet as itself, so clients can say so', () => {
+    const err = new AppError('feature_unavailable', { detail: 'This store has no SMS' });
+    const problem = toProblem(err, { errorBaseUrl: 'https://example.test/errors' });
+    expect(problem).toMatchObject({
+      status: 503,
+      code: 'feature_unavailable',
+      detail: 'This store has no SMS',
+    });
+  });
 });
 
 describe('problem extensions', () => {
