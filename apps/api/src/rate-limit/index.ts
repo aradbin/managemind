@@ -61,6 +61,10 @@ export const RULES = {
     windows: [{ limit: 20, seconds: HOUR }],
     lockout: { failures: 5, windowSeconds: HOUR, lockSeconds: HOUR },
   },
+  /** Return requests per store and phone (phase-5a-plan §3.12). */
+  'return:phone': { windows: [{ limit: 5, seconds: DAY }] },
+  /** Return photos uploaded from one IP: 3 a request, with retries. */
+  'return-photo:ip': { windows: [{ limit: 30, seconds: HOUR }] },
   /** Cart changes from one IP: generous, only to stop scripts filling the database. */
   'cart:ip': { windows: [{ limit: 300, seconds: HOUR }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */

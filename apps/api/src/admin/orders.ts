@@ -193,6 +193,27 @@ export const OrderDetail = z
     ),
     totals: OrderTotals,
     flags: z.array(z.string()).openapi({ description: 'payment_risk, late_payment' }),
+    refunds: z.array(
+      z.object({
+        id: z.uuid(),
+        method: z.string(),
+        status: z.string(),
+        amount: Money,
+        reference: z.string().nullable(),
+        reason: z.string().nullable(),
+        returnId: z.uuid().nullable(),
+        gatewayError: z.string().nullable(),
+        createdAt: z.string(),
+      }),
+    ),
+    returns: z.array(
+      z.object({
+        id: z.uuid(),
+        number: z.number().int(),
+        status: z.string(),
+        resolution: z.string().nullable(),
+      }),
+    ),
     payments: z.array(
       z.object({
         id: z.uuid(),
@@ -309,7 +330,7 @@ export const QuoteView = z
     manualDiscount: z.object({ amount: Money, reason: z.string() }).nullable(),
   })
   .openapi('OrderQuote');
-const PlacedOrder = z
+export const PlacedOrder = z
   .object({
     id: z.uuid(),
     number: z.number().int(),
@@ -727,7 +748,7 @@ const actor = (c: Context<StaffEnv>) => c.var.staff.actor;
 const write = { write: true } as const;
 
 /** Runs a command under the request's Idempotency-Key, when it has one. */
-function idempotent<T>(
+export function idempotent<T>(
   c: Context<StaffEnv>,
   tx: TenantTx,
   scope: string,

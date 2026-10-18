@@ -4,11 +4,15 @@
 // shopper's return shows the order, and the delayed checks settle or expire.
 import {
   type Actor,
+  confirmOrder,
   createProduct,
+  createShipment,
   createTenant,
+  deliverShipment,
   importKeyring,
   receive,
   saveCredentials,
+  shipShipment,
   systemActor,
   type TenantTx,
   withTenant,
@@ -18,7 +22,12 @@ import { permissionsOf } from '@managemind/shared';
 import type pg from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
-import { handlePaymentChecks, type PaymentCheckMessage } from '../src/payments';
+import {
+  handlePaymentChecks,
+  handleRefundChecks,
+  type PaymentCheckMessage,
+  type RefundCheckMessage,
+} from '../src/payments';
 import { browser, signIn } from './staff';
 import { appUrl, makeCtx, makeEnv, ownerUrl } from './support';
 
@@ -27,8 +36,8 @@ type Json = any;
 
 const CREDENTIALS_KEY = btoa(String.fromCharCode(...new Uint8Array(32).fill(7)));
 class DelayedQueue {
-  sent: { body: PaymentCheckMessage; delaySeconds?: number }[] = [];
-  async send(body: PaymentCheckMessage, options?: { delaySeconds?: number }) {
+  sent: { body: PaymentCheckMessage | RefundCheckMessage; delaySeconds?: number }[] = [];
+  async send(body: PaymentCheckMessage | RefundCheckMessage, options?: { delaySeconds?: number }) {
     this.sent.push({
       body,
       ...(options?.delaySeconds ? { delaySeconds: options.delaySeconds } : {}),
@@ -52,6 +61,9 @@ const gateway = {
   validations: new Map<string, Record<string, unknown>>(),
   transactions: new Map<string, Record<string, unknown>[]>(),
   sessions: [] as URLSearchParams[],
+  refunds: [] as URLSearchParams[],
+  refundAnswer: 'processing' as 'processing' | 'success' | 'failed',
+  refundState: 'processing' as 'processing' | 'refunded' | 'cancelled',
 };
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -76,6 +88,21 @@ function fakeSslcommerz() {
           status: 'INVALID_TRANSACTION',
         },
       );
+    }
+    if (
+      url.pathname === '/validator/api/merchantTransIDvalidationAPI.php' &&
+      url.searchParams.has('refund_amount')
+    ) {
+      gateway.refunds.push(url.searchParams);
+      return gateway.refundAnswer === 'failed'
+        ? json({ status: 'failed', errorReason: 'INVALID SOURCE' })
+        : json({ status: gateway.refundAnswer, refund_ref_id: 'ref-1' });
+    }
+    if (
+      url.pathname === '/validator/api/merchantTransIDvalidationAPI.php' &&
+      url.searchParams.has('refund_ref_id')
+    ) {
+      return json({ status: gateway.refundState, refund_ref_id: 'ref-1' });
     }
     if (url.pathname === '/validator/api/merchantTransIDvalidationAPI.php') {
       const element = gateway.transactions.get(url.searchParams.get('tran_id') ?? '') ?? [];
@@ -397,5 +424,218 @@ describe('payment links', () => {
     expect(gateway.sessions.at(-1)?.get('total_amount')).toBe(`${order.total / 100}.00`);
     // The link shows and pays; only tracking by phone cancels.
     expect((await call(s.host, 'POST', '/v1/store/orders/cancel', { token })).status).toBe(404);
+  });
+});
+
+/** Ships and delivers every line of an order, as staff would. */
+async function deliver(s: Awaited<ReturnType<typeof store>>, orderId: string, cash: boolean) {
+  const actor: Actor = {
+    kind: 'user',
+    userId: '0199d000-0000-7000-8000-0000000000b1',
+    platformRole: null,
+    permissions: permissionsOf('owner'),
+    tenantId: s.id,
+    storeRole: 'owner',
+  };
+  await s.run((tx) => confirmOrder(tx, actor, orderId));
+  const { rows } = await owner.query<{ id: string; quantity: number }>(
+    'select id, quantity from store.order_lines where order_id = $1 order by position',
+    [orderId],
+  );
+  const shipment = await s.run((tx) =>
+    createShipment(tx, actor, orderId, {
+      lines: rows.map((l) => ({ orderLineId: l.id, quantity: l.quantity })),
+    }),
+  );
+  await s.run((tx) => shipShipment(tx, actor, shipment.id));
+  await s.run((tx) => deliverShipment(tx, actor, shipment.id, { cashCollected: cash }));
+  return rows;
+}
+
+async function staffOf(s: Awaited<ReturnType<typeof store>>) {
+  const staff = browser(env);
+  expect((await signIn(staff, owner, s.email)).status).toBe(200);
+  expect((await staff.call('PUT', '/api/admin/me/active-store', { tenantId: s.id })).status).toBe(
+    200,
+  );
+  return staff;
+}
+
+/** A 1×1 PNG. */
+const PNG = Uint8Array.from(
+  atob(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  ),
+  (ch) => ch.charCodeAt(0),
+);
+
+describe('returns and refunds through the API', () => {
+  it('lets a tracked shopper ask with a photo, and staff take it to a refund', async () => {
+    fakeSslcommerz();
+    const s = await store();
+    const { order } = await onlineCheckout(s, 'cod');
+    const [line] = await deliver(s, order.id, true);
+    const tracked: Json = await (
+      await call(s.host, 'POST', '/v1/store/orders/track', {
+        number: order.displayNumber,
+        phone: '01712345678',
+      })
+    ).json();
+    const token = tracked.token as string;
+    const options: Json = await (
+      await call(s.host, 'POST', '/v1/store/returns/options', { token })
+    ).json();
+    expect(options).toMatchObject({ open: true, lines: [{ returnable: 1, excluded: false }] });
+
+    const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', PNG))]
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+    const ctx = makeCtx();
+    const upload = await createApp().request(
+      `/v1/store/returns/photos/${hash}.png`,
+      {
+        method: 'PUT',
+        headers: {
+          'x-forwarded-host': s.host,
+          'x-shopper-ip': '203.0.113.9',
+          'x-order-token': token,
+          'content-type': 'image/png',
+        },
+        body: PNG,
+      },
+      env,
+      ctx,
+    );
+    expect(upload.status, await upload.clone().text()).toBe(201);
+    // A photo for nobody's order is refused.
+    const stranger = await createApp().request(
+      `/v1/store/returns/photos/${hash}.png`,
+      {
+        method: 'PUT',
+        headers: { 'x-forwarded-host': s.host, 'x-order-token': 'nope' },
+        body: PNG,
+      },
+      env,
+      makeCtx(),
+    );
+    expect(stranger.status).toBe(404);
+
+    const asked = await call(s.host, 'POST', '/v1/store/returns', {
+      token,
+      reason: 'wrong_size',
+      lines: [{ orderLineId: line?.id, quantity: 1 }],
+      photos: [`${hash}.png`],
+    });
+    expect(asked.status, await asked.clone().text()).toBe(201);
+    expect(await asked.json()).toEqual({ number: 'R1001', status: 'requested' });
+
+    const staff = await staffOf(s);
+    const list: Json = await (await staff.get('/api/admin/returns')).json();
+    expect(list).toMatchObject([{ displayNumber: 'R1001', status: 'requested', units: 1 }]);
+    const id = list[0].id as string;
+    const detail: Json = await (await staff.get(`/api/admin/returns/${id}`)).json();
+    expect(detail.photos).toHaveLength(1);
+    const photo = await staff.get(`/api/admin/returns/${id}/photos/${detail.photos[0].id}`);
+    expect(photo.status).toBe(200);
+    expect(photo.headers.get('cache-control')).toBe('private, no-store');
+
+    for (const step of ['approve', 'receive']) {
+      expect((await staff.post(`/api/admin/returns/${id}/${step}`)).status).toBe(200);
+    }
+    const inspected = await staff.post(`/api/admin/returns/${id}/inspect`, {
+      lines: [{ orderLineId: line?.id, sellable: 1, damaged: 0 }],
+    });
+    expect(inspected.status).toBe(200);
+    const preview: Json = await (
+      await staff.post(`/api/admin/orders/${order.id}/refunds/preview`, { returnId: id })
+    ).json();
+    const refund = await staff.post(
+      `/api/admin/orders/${order.id}/refunds`,
+      { returnId: id, method: 'bkash', reference: 'BK777' },
+      { 'idempotency-key': `refund-${id}` },
+    );
+    expect(refund.status, await refund.clone().text()).toBe(201);
+    expect(await refund.json()).toMatchObject({ status: 'succeeded', amount: preview.amount });
+    const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
+    expect(after).toMatchObject({
+      returnStatus: 'returned',
+      refunds: [{ method: 'bkash', status: 'succeeded', reference: 'BK777' }],
+      returns: [{ number: 1001, status: 'resolved', resolution: 'refunded' }],
+    });
+    // Nothing left to return.
+    const again: Json = await (
+      await call(s.host, 'POST', '/v1/store/returns/options', { token })
+    ).json();
+    expect(again).toMatchObject({ open: false, lines: [{ returnable: 0 }] });
+  });
+
+  it('refunds an online payment through SSLCommerz, settled by the delayed check', async () => {
+    fakeSslcommerz();
+    const s = await store();
+    const { order } = await onlineCheckout(s);
+    const payment = await paymentOf(order.id);
+    const amount = `${Number(payment?.amount) / 100}.00`;
+    gateway.validations.set('paid-1', {
+      status: 'VALID',
+      tran_id: payment?.id,
+      val_id: 'paid-1',
+      amount,
+      currency_type: 'BDT',
+      currency_amount: amount,
+      value_a: s.id,
+      bank_tran_id: 'BANK-1',
+    });
+    await ipn(s.id, { val_id: 'paid-1', status: 'VALID', tran_id: payment?.id ?? '' });
+    const [line] = await deliver(s, order.id, false);
+
+    const staff = await staffOf(s);
+    const created: Json = await (
+      await staff.post('/api/admin/returns', {
+        orderId: order.id,
+        reason: 'damaged',
+        lines: [{ orderLineId: line?.id, quantity: 1 }],
+      })
+    ).json();
+    await staff.post(`/api/admin/returns/${created.id}/receive`);
+    await staff.post(`/api/admin/returns/${created.id}/inspect`, {
+      lines: [{ orderLineId: line?.id, sellable: 0, damaged: 1 }],
+    });
+    gateway.refundAnswer = 'processing';
+    gateway.refundState = 'processing';
+    const before = delayed.sent.length;
+    const res = await staff.post(`/api/admin/orders/${order.id}/refunds`, {
+      returnId: created.id,
+      method: 'gateway',
+    });
+    const refund: Json = await res.json();
+    expect(res.status, JSON.stringify(refund)).toBe(201);
+    expect(refund.status).toBe('processing');
+    const sent = gateway.refunds.at(-1) as URLSearchParams;
+    expect(sent.get('bank_tran_id')).toBe('BANK-1');
+    expect(sent.get('refund_trans_id')).toBe(refund.id);
+    expect(sent.get('refund_amount')).toBe(`${refund.amount / 100}.00`);
+    const check = delayed.sent.slice(before).at(-1);
+    expect(check?.body).toEqual({
+      kind: 'refund_check',
+      tenantId: s.id,
+      refundId: refund.id,
+      attempt: 1,
+    });
+
+    // SSLCommerz has paid it back by the next check.
+    gateway.refundState = 'refunded';
+    const m = {
+      body: check?.body as RefundCheckMessage,
+      acked: false,
+      ack() {
+        m.acked = true;
+      },
+      retry() {},
+    };
+    await handleRefundChecks([m] as never, env, makeCtx());
+    expect(m.acked).toBe(true);
+    const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
+    expect(after.refunds).toMatchObject([{ method: 'gateway', status: 'succeeded' }]);
+    expect(after.paymentStatus).toBe('refunded');
   });
 });

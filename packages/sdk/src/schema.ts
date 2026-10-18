@@ -1234,6 +1234,172 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/returns/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Whether this order can still be returned, and which lines (the token from tracking) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Options */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            open: boolean;
+                            until: string | null;
+                            reasons: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            lines: {
+                                /** Format: uuid */
+                                orderLineId: string;
+                                title: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                optionLabels: {
+                                    bn?: string;
+                                    en?: string;
+                                }[];
+                                returnable: number;
+                                excluded: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/returns/photos/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A photo for a return request, named by its SHA-256 (2 MB; JPEG, PNG or WebP) */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                    "x-order-token": string;
+                };
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Stored */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            file: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask for a return (rate-limited per phone; Turnstile where the widget runs) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                            /** @enum {string} */
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        }[];
+                        note?: string;
+                        /** @default [] */
+                        photos?: string[];
+                        token: string;
+                        turnstileToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Requested */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            number: string;
+                            /** @enum {string} */
+                            status: "requested";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/auth/email-otp/send-verification-otp": {
         parameters: {
             query?: never;
@@ -7581,6 +7747,621 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns, newest first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                    orderId?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Returns */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A return staff decided on: approved at once (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        /** @enum {string} */
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                            /** @enum {string} */
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        }[];
+                        note?: string;
+                        shopperPaysReturn?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One return (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Return */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a shopper's request (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse a request, with a reason the shopper is told (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Rejected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The goods are on their way back (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description In transit */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The goods are back in the store (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Received */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Each unit sellable or damaged: restocks, and writes damaged units off (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            sellable: number;
+                            damaged: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Inspected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close an inspected return with nothing given back, and why (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Closed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A replacement order, with the returned units as credit (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        note?: string;
+                        /** @default true */
+                        confirm?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Exchanged */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            order: components["schemas"]["ManualOrderPlaced"];
+                            credit: number;
+                            applied: number;
+                            refundDue: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/photos/{photo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A shopper's photo, for staff only (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    photo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The image */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/returnable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What can still be returned, per line (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Lines */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnableLine"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/refunds/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a refund would give back (payments.refund) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        returnId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RefundPreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refund: by the gateway, by hand, or as store credit (payments.refund) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        returnId?: string;
+                        /** @enum {string} */
+                        method: "gateway" | "gateway_manual" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit";
+                        amount?: number;
+                        reason?: string;
+                        reference?: string;
+                        /** Format: uuid */
+                        paymentId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Refunded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Refund"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/credentials": {
         parameters: {
             query?: never;
@@ -11294,6 +12075,26 @@ export interface components {
             };
             /** @description payment_risk, late_payment */
             flags: string[];
+            refunds: {
+                /** Format: uuid */
+                id: string;
+                method: string;
+                status: string;
+                amount: number;
+                reference: string | null;
+                reason: string | null;
+                /** Format: uuid */
+                returnId: string | null;
+                gatewayError: string | null;
+                createdAt: string;
+            }[];
+            returns: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                status: string;
+                resolution: string | null;
+            }[];
             payments: {
                 /** Format: uuid */
                 id: string;
@@ -11468,6 +12269,105 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+        };
+        ReturnSummary: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            /** Format: uuid */
+            orderId: string;
+            orderNumber: string;
+            customerName: string;
+            /** @enum {string} */
+            status: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+            /** @enum {string} */
+            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+            requestedBy: string;
+            units: number;
+            createdAt: string;
+        };
+        ReturnDetail: components["schemas"]["ReturnSummary"] & {
+            note: string | null;
+            shopperPaysReturn: boolean | null;
+            /** @enum {string|null} */
+            resolution: "refunded" | "exchanged" | "store_credit" | "rejected" | null;
+            rejectReason: string | null;
+            /** Format: uuid */
+            exchangeOrderId: string | null;
+            lines: {
+                /** Format: uuid */
+                orderLineId: string;
+                title: {
+                    [key: string]: string;
+                };
+                optionLabels: {
+                    [key: string]: string;
+                }[];
+                quantity: number;
+                /** @enum {string|null} */
+                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | null;
+                restocked: number;
+                writtenOff: number;
+            }[];
+            photos: {
+                /** Format: uuid */
+                id: string;
+                mimeType: string;
+            }[];
+            /** @description What a refund would give back now */
+            credit: number;
+            approvedAt: string | null;
+            receivedAt: string | null;
+            inspectedAt: string | null;
+            resolvedAt: string | null;
+        };
+        ReturnableLine: {
+            /** Format: uuid */
+            orderLineId: string;
+            title: {
+                [key: string]: string;
+            };
+            optionLabels: {
+                [key: string]: string;
+            }[];
+            quantity: number;
+            delivered: number;
+            returnable: number;
+            excluded: boolean;
+        };
+        RefundPreview: {
+            /** Format: uuid */
+            returnId: string | null;
+            lines: {
+                /** Format: uuid */
+                orderLineId: string;
+                title: {
+                    [key: string]: string;
+                };
+                quantity: number;
+                amount: number;
+            }[];
+            delivery: number;
+            amount: number;
+            refundable: number;
+            gatewayPayments: {
+                /** Format: uuid */
+                id: string;
+                amount: number;
+                left: number;
+                bankTranId: string | null;
+            }[];
+        };
+        Refund: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            method: "gateway" | "gateway_manual" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit";
+            /** @enum {string} */
+            status: "pending" | "processing" | "succeeded" | "failed";
+            amount: number;
+            creditCode: string | null;
         };
         Credential: {
             /** @enum {string} */

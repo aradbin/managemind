@@ -261,7 +261,7 @@ describe('acceptance criterion 2: a partial return of a discounted order', () =>
     const preview = await run((tx) => previewRefund(tx, owner, placed.id, { returnId: ret.id }));
     const fee = order.totals.deliveryFee - order.totals.deliveryDiscount;
     expect(fee).toBeGreaterThan(0);
-    expect(preview).toMatchObject({ delivery: fee, amount: la?.lineTotal + fee });
+    expect(preview).toMatchObject({ delivery: fee, amount: (la?.lineTotal as number) + fee });
     await run((tx) => createRefund(tx, owner, placed.id, { returnId: ret.id, method: 'cash' }));
     expect(await run((tx) => getOrder(tx, owner, placed.id))).toMatchObject({
       paymentStatus: 'refunded',

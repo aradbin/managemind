@@ -406,6 +406,22 @@ describe('isolation suite', () => {
       return rows[0]?.id as string;
     });
 
+    // Store B's return and its photo (phase-5a-plan §3.12).
+    const bReturn = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.returns (number, order_id, reason, requested_by)
+             values (9001, ${order.id}, 'damaged', 'staff') returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+    const bPhoto = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.return_photos (return_id, object_key, mime_type, bytes)
+             values (${bReturn}, 'b/returns/x.png', 'image/png', 10) returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
@@ -469,6 +485,24 @@ describe('isolation suite', () => {
       'POST /v1/admin/orders/{id}/notes': { id: order.id, body: { body: 'x' } },
       'PATCH /v1/admin/orders/{id}': { id: order.id, body: { tags: ['x'] } },
       'POST /v1/admin/orders/{id}/payment-link': { id: order.id },
+      'GET /v1/admin/orders/{id}/returnable': { id: order.id },
+      'POST /v1/admin/orders/{id}/refunds/preview': { id: order.id, body: {} },
+      'POST /v1/admin/orders/{id}/refunds': { id: order.id, body: { method: 'cash' } },
+      'GET /v1/admin/returns/{id}': { id: bReturn },
+      'POST /v1/admin/returns/{id}/approve': { id: bReturn },
+      'POST /v1/admin/returns/{id}/reject': { id: bReturn, body: { reason: 'x' } },
+      'POST /v1/admin/returns/{id}/send': { id: bReturn },
+      'POST /v1/admin/returns/{id}/receive': { id: bReturn },
+      'POST /v1/admin/returns/{id}/inspect': {
+        id: bReturn,
+        body: { lines: [{ orderLineId: lineRows[0]?.id, sellable: 1, damaged: 0 }] },
+      },
+      'POST /v1/admin/returns/{id}/close': { id: bReturn, body: { reason: 'x' } },
+      'POST /v1/admin/returns/{id}/exchange': {
+        id: bReturn,
+        body: { lines: [{ variantId: liveVariant, quantity: 1 }] },
+      },
+      'GET /v1/admin/returns/{id}/photos/{photo}': { id: bReturn, second: bPhoto },
       'POST /v1/admin/orders/{id}/payments': {
         id: order.id,
         body: { method: 'cash', amount: 100 },
@@ -531,7 +565,7 @@ describe('isolation suite', () => {
       const path = route.path
         .replace('/v1/admin', '/api/admin')
         .replace(/\{(id|file|phone)\}/, encodeURIComponent(fixture.id))
-        .replace('{addressId}', fixture.second ?? crypto.randomUUID())
+        .replace(/\{(addressId|photo)\}/, fixture.second ?? crypto.randomUUID())
         .replace('{n}', '0')
         .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);

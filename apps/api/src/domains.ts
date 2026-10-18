@@ -23,7 +23,12 @@ import { createMailer } from './auth/email';
 import { queueSink, withClient } from './db';
 import { type ApiConfig, type Env, getConfig } from './env';
 import { log } from './log';
-import { handlePaymentChecks, type PaymentCheckMessage } from './payments';
+import {
+  handlePaymentChecks,
+  handleRefundChecks,
+  type PaymentCheckMessage,
+  type RefundCheckMessage,
+} from './payments';
 import { handleSaleEdges, type SaleEdgeMessage } from './sales';
 
 export interface DomainCheckMessage {
@@ -76,9 +81,14 @@ export function dnsInstructions(
 
 /**
  * The delayed queue: domain re-checks, scheduled sales' window edges
- * (sales.ts) and online payments' checks (payments.ts), told apart by `kind`.
+ * (sales.ts) and online payments' and refunds' checks (payments.ts), told
+ * apart by `kind`.
  */
-export type DelayedMessage = DomainCheckMessage | SaleEdgeMessage | PaymentCheckMessage;
+export type DelayedMessage =
+  | DomainCheckMessage
+  | SaleEdgeMessage
+  | PaymentCheckMessage
+  | RefundCheckMessage;
 
 export async function handleDelayedQueue(
   batch: MessageBatch<DelayedMessage>,
@@ -91,12 +101,18 @@ export async function handleDelayedQueue(
   const payments = batch.messages.filter(
     (m): m is Message<PaymentCheckMessage> => m.body.kind === 'payment_check',
   );
+  const refunds = batch.messages.filter(
+    (m): m is Message<RefundCheckMessage> => m.body.kind === 'refund_check',
+  );
   const domains = batch.messages.filter(
     (m): m is Message<DomainCheckMessage> =>
-      m.body.kind !== 'sale_edge' && m.body.kind !== 'payment_check',
+      m.body.kind !== 'sale_edge' &&
+      m.body.kind !== 'payment_check' &&
+      m.body.kind !== 'refund_check',
   );
   if (sales.length) await handleSaleEdges(sales, env, ctx);
   if (payments.length) await handlePaymentChecks(payments, env, ctx);
+  if (refunds.length) await handleRefundChecks(refunds, env, ctx);
   if (domains.length) await handleDomainQueue({ ...batch, messages: domains }, env, ctx);
 }
 

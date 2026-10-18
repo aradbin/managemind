@@ -3,6 +3,8 @@
 // shopper's return and the delayed checks all end in settleFromGateway),
 // and the 30- and 60-minute checks on the delayed queue.
 import {
+  type Actor,
+  type CreatedRefund,
   expireGatewayPayment,
   gatewayPaymentState,
   gatewaySession,
@@ -10,24 +12,41 @@ import {
   relayEvents,
   type SettleOutcome,
   settleGatewayPayment,
+  settleGatewayRefund,
+  submitGatewayRefund,
+  systemActor,
   type TenantTx,
   withTenant,
 } from '@managemind/core';
 import {
   createSession,
   queryTransaction,
+  refundStatus,
   type SslcommerzCredentials,
+  refund as sendRefund,
   type Validation,
   validate,
 } from '@managemind/providers/sslcommerz';
 import { AppError } from '@managemind/shared';
 import { captureMessage } from '@sentry/cloudflare';
+import { sql } from 'drizzle-orm';
 import type pg from 'pg';
 import { storeUrlsFor } from './admin/store-urls';
 import { queueSink, withClient } from './db';
 import { type Env, getConfig } from './env';
 import { log } from './log';
 import { credentialsKeyring } from './notifications';
+
+/** A delayed check of one gateway refund still processing (§3.13). */
+export interface RefundCheckMessage {
+  kind: 'refund_check';
+  tenantId: string;
+  refundId: string;
+  attempt: number;
+}
+
+/** Every 30 minutes for a day; SSLCommerz usually settles a refund within hours. */
+const REFUND_CHECKS = 48;
 
 /** A delayed check of one online payment (§3.3): at 30 minutes, then at 60. */
 export interface PaymentCheckMessage {
@@ -227,6 +246,114 @@ export async function handlePaymentChecks(
         log('error', 'payment check failed', {
           tenant_id: tenantId,
           payment_id: paymentId,
+          error: String(e),
+        });
+        message.retry();
+      }
+    }
+  });
+}
+
+/**
+ * Sends a gateway refund to SSLCommerz after it was recorded (§3.13), and
+ * records the answer: processing (checked every 30 minutes), done, or
+ * failed with SSLCommerz's reason, after which staff can refund another way
+ * or record one made in the SSLCommerz panel.
+ */
+export async function sendGatewayRefund(
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+  tenantId: string,
+  actor: Actor,
+  refund: CreatedRefund,
+): Promise<'processing' | 'succeeded' | 'failed'> {
+  if (refund.method !== 'gateway' || !refund.gateway) return 'succeeded';
+  const gateway = refund.gateway;
+  return withClient(env, ctx, async (client) => {
+    const creds = await withTenant(client, tenantId, (tx) => gatewayFor(tx, env));
+    let answer: { refundRefId: string; done: boolean } | { error: string };
+    if (!creds) answer = { error: 'SSLCommerz is not set up' };
+    else {
+      try {
+        const sent = await sendRefund(creds, {
+          bankTranId: gateway.bankTranId,
+          refundTransId: refund.id,
+          amount: refund.amount,
+          remarks: 'Refund',
+        });
+        answer =
+          sent.status === 'failed'
+            ? { error: sent.error }
+            : { refundRefId: sent.refundRefId, done: sent.status === 'success' };
+      } catch (e) {
+        answer = { error: `SSLCommerz could not be reached: ${String(e)}`.slice(0, 300) };
+      }
+    }
+    await withTenant(
+      client,
+      tenantId,
+      (tx) => submitGatewayRefund(tx, actor, refund.id, answer),
+      relay(env, client),
+    );
+    if ('error' in answer) {
+      log('warn', 'gateway refund refused', { tenant_id: tenantId, refund_id: refund.id });
+      return 'failed';
+    }
+    if (answer.done) return 'succeeded';
+    await env.DOMAINS?.send(
+      { kind: 'refund_check', tenantId, refundId: refund.id, attempt: 1 },
+      { delaySeconds: CHECK_DELAY_SECONDS },
+    );
+    return 'processing';
+  });
+}
+
+/** Asks SSLCommerz how a processing refund stands, and settles or checks again later. */
+export async function handleRefundChecks(
+  messages: readonly Message<RefundCheckMessage>[],
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  await withClient(env, ctx, async (client) => {
+    for (const message of messages) {
+      const { tenantId, refundId, attempt } = message.body;
+      try {
+        const found = await withTenant(client, tenantId, async (tx) => ({
+          creds: await gatewayFor(tx, env),
+          row: (
+            await tx.db.execute<{ status: string; ref: string | null }>(
+              sql`select status, gateway_refund_ref as ref from store.refunds where id = ${refundId}`,
+            )
+          ).rows[0],
+        }));
+        if (found.row?.status !== 'processing' || !found.row.ref || !found.creds) {
+          message.ack();
+          continue;
+        }
+        const status = await refundStatus(found.creds, found.row.ref);
+        if (status === 'refunded' || status === 'cancelled') {
+          await withTenant(
+            client,
+            tenantId,
+            (tx) => settleGatewayRefund(tx, systemActor, refundId, status),
+            relay(env, client),
+          );
+        } else if (attempt < REFUND_CHECKS) {
+          await env.DOMAINS?.send(
+            { ...message.body, attempt: attempt + 1 },
+            { delaySeconds: CHECK_DELAY_SECONDS },
+          );
+        } else {
+          log('warn', 'gateway refund still processing after a day', {
+            tenant_id: tenantId,
+            refund_id: refundId,
+          });
+        }
+        message.ack();
+      } catch (e) {
+        log('error', 'refund check failed', {
+          tenant_id: tenantId,
+          refund_id: refundId,
           error: String(e),
         });
         message.retry();
