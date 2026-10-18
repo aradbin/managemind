@@ -11,6 +11,7 @@ html {
 }
 /* Hidden means hidden, whatever display a class sets (the checkout form is a grid). */
 [hidden] {
+  /* biome-ignore lint/complexity/noImportantStyles: it must beat every class's display */
   display: none !important;
 }
 body {
