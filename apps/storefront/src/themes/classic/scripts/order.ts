@@ -4,6 +4,8 @@
 // confirmation's token is in the URL's fragment, which never reaches a
 // server or a log; tracking asks for the number and the phone. An online
 // payment still waiting gets "pay now" (phase-5a-plan §3.3, §8).
+
+import type { ReturnOptions } from './returns';
 import {
   add,
   api,
@@ -294,6 +296,7 @@ if (form && out) {
       });
       const draw = (o: OrderView) => fill(out, view(o, r.token, draw));
       draw(r.order);
+      offerReturn(out, r.token);
     } catch (err) {
       if (!notice) return;
       const code = err instanceof ShopError ? err.code : '';
@@ -308,4 +311,38 @@ if (form && out) {
       notice.hidden = false;
     }
   });
+}
+
+/**
+ * "Request a return" under a tracked order, while the store's window is open
+ * (phase-5a-plan §3.12). The form's code loads only when it's opened.
+ */
+function offerReturn(out: HTMLElement, token: string) {
+  api<ReturnOptions>('/returns/options', { body: { token } })
+    .then((options) => {
+      if (!options.open) return;
+      const box = el('section', { class: 'return-box', 'aria-live': 'polite' });
+      const open = el('button', {
+        type: 'button',
+        class: 'button secondary',
+        text: t('return.request'),
+      });
+      open.addEventListener('click', async () => {
+        open.disabled = true;
+        const { mountReturnForm } = await import('./returns');
+        mountReturnForm(box, token, options, cfg.locale, (number) => {
+          box.replaceChildren(
+            el('p', {
+              class: 'notice',
+              'data-kind': 'info',
+              role: 'status',
+              text: t('return.sent', { number }),
+            }),
+          );
+        });
+      });
+      add(box, open);
+      add(out, box);
+    })
+    .catch(() => {});
 }

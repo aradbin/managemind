@@ -1270,6 +1270,7 @@ export interface paths {
                         "application/json": {
                             open: boolean;
                             until: string | null;
+                            turnstileSiteKey: string | null;
                             reasons: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
                             lines: {
                                 /** Format: uuid */

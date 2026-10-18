@@ -47,6 +47,7 @@ export const RETURN_STORE_ROUTES = {
             schema: z.object({
               open: z.boolean(),
               until: z.string().nullable(),
+              turnstileSiteKey: z.string().nullable(),
               reasons: z.array(z.enum(RETURN_REASONS)),
               lines: z.array(
                 z.object({
@@ -117,15 +118,16 @@ export function registerShopperReturns(app: OpenAPIHono<AppEnv>): void {
 
   app.openapi(R.returnOptions, (async (c: Context<AppEnv>) => {
     const { token } = (await c.req.json()) as { token: string };
-    const out = await inShopStore(c, async (tx, tenantId) => {
+    const { out, siteKey } = await inShopStore(c, async (tx, tenantId) => {
       const id = await trackedOrder(c, tenantId, token);
-      return shopperReturnable(tx, id);
+      return { out: await shopperReturnable(tx, id), siteKey: await shopSiteKey(c, tx) };
     });
     c.header('Cache-Control', 'no-store');
     return c.json(
       {
         open: out.open,
         until: out.until,
+        turnstileSiteKey: siteKey,
         reasons: [...RETURN_REASONS],
         lines: out.lines
           .filter((l) => l.delivered > 0)
