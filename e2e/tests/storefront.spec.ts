@@ -6,32 +6,9 @@
 // by the preview's database step (scripts/demo/catalog.ts); previews pick a
 // store with ?store=, which a cookie then remembers. Each page type's own
 // JavaScript is held to the 50 KB budget.
-import { gzipSync } from 'node:zlib';
 import { expect, type Page, test } from '@playwright/test';
-import { expectAccessible } from './helpers';
+import { expectAccessible, expectScriptBudget } from './helpers';
 import { STOREFRONT } from './urls';
-
-/** Our JavaScript on a page, compressed, stays under 50 KB (phase-3-plan §8). */
-const SCRIPT_BUDGET = 50 * 1024;
-
-/**
- * Astro inlines the theme's scripts into each page, so the budget is measured
- * on the rendered page: inline scripts plus any script files, gzipped. Meta's
- * and Google's tags load only after consent and are not ours to count.
- */
-async function expectScriptBudget(page: Page, what: string) {
-  const scripts = await page.evaluate(() =>
-    [...document.querySelectorAll('script')]
-      .filter((s) => !s.type || s.type === 'module' || s.type === 'text/javascript')
-      .map((s) => ({ src: s.src, text: s.textContent ?? '' })),
-  );
-  let bytes = 0;
-  for (const s of scripts) {
-    const body = s.src ? await (await page.request.get(s.src)).body() : Buffer.from(s.text);
-    bytes += gzipSync(body, { level: 9 }).length;
-  }
-  expect(bytes, `JavaScript on ${what} (gzip bytes)`).toBeLessThan(SCRIPT_BUDGET);
-}
 
 async function openStore(page: Page, store: string, path = '/') {
   const res = await page.goto(

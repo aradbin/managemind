@@ -186,6 +186,21 @@ jobs:
           echo "- API: $API_URL/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Storefront: $STOREFRONT_URL" >> "$GITHUB_STEP_SUMMARY"
 
+      # The shop API on a demo store (phase-4-plan §10): the cart answers
+      # through the store's own /api, never cached, and checkout says whether
+      # Turnstile is on. Informational, like the cache check below.
+      - name: Shop API
+        if: steps.workers.outputs.demo_store_url != ''
+        continue-on-error: true
+        env:
+          DEMO_STORE_URL: ${{ steps.workers.outputs.demo_store_url }}
+        run: |
+          u="${DEMO_STORE_URL%/}"
+          headers=$(curl -fsS -o /dev/null -D - "$u/api/cart" | tr -d '\r')
+          grep -qi '^cache-control: no-store' <<< "$headers" || { echo "::warning title=Shop API::the cart answered without no-store"; exit 1; }
+          key=$(curl -fsS "$u/api/checkout" | jq -r '.turnstileSiteKey // "off"')
+          echo "- Shop API: cart and checkout answer on $u (Turnstile: $key)" >> "$GITHUB_STEP_SUMMARY"
+
       # A cache hit on a demo store (phase-3-plan §9), once pages are cached
       # (CF_STORE_TOKEN set). The daily monitor reports the storefront's CPU,
       # which hits dominate. Informational: a missing demo store or catalog

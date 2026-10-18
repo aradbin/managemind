@@ -124,9 +124,9 @@ jobs:
 
       - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
       # The smoke tests, then the Phase 1 flows, the catalog flows (Phase 2),
-      # and the storefront and online-store flows (Phase 3) at a phone and a
-      # desktop viewport with axe on every screen (E2E_RUN and DEV_TOKEN are
-      # in the env).
+      # the storefront and online-store flows (Phase 3), and the shopper,
+      # orders and promotions flows (Phase 4) at a phone and a desktop
+      # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
         env:
@@ -145,7 +145,8 @@ jobs:
           --storefront-url "${{ steps.workers.outputs.storefront_url }}" --since "$E2E_SINCE"
       # Performance budgets (phase-3-plan §8): the demo stores' pages on a
       # phone over throttled 4G, three runs each, the median judged: LCP
-      # 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95, and SEO basics.
+      # 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95, and SEO basics. Phase 4
+      # adds the cart and checkout pages (phase-4-plan §9).
       # @lhci/cli runs from the registry at a pinned version, so installs
       # elsewhere never pull in Lighthouse and its Chrome tooling.
       - name: Lighthouse
@@ -159,7 +160,9 @@ jobs:
             --collect.url="$u/?store=demo-fashion" \
             --collect.url="$u/categories/sarees?store=demo-fashion" \
             --collect.url="$u/products/red-jamdani-saree?store=demo-fashion" \
-            --collect.url="$u/?store=demo-grocery"
+            --collect.url="$u/?store=demo-grocery" \
+            --collect.url="$u/cart?store=demo-grocery" \
+            --collect.url="$u/checkout?store=demo-grocery"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ !cancelled() && steps.lighthouse.outcome != 'skipped' }}
         with:

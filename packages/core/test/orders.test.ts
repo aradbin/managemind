@@ -10,6 +10,7 @@ import {
   addToCart,
   checkout,
   createProduct,
+  createPromotion,
   createTenant,
   getCart,
   inventoryDrift,
@@ -17,6 +18,7 @@ import {
   placeOrder,
   receive,
   setCartArea,
+  setCartCode,
   setCartQuantity,
   shopperActor,
   systemActor,
@@ -434,6 +436,61 @@ describe('acceptance criterion 1: the last unit', () => {
     }
     expect(await stock(a)).toEqual({ on_hand: 1, reserved: 1 });
     expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
+  });
+
+  it('gives a code limited to one use to exactly one of ten shoppers at once', async () => {
+    const a = await product(10_000, 20);
+    const code = `ONCE${Date.now().toString(36).toUpperCase()}`;
+    const promo = await run((tx) =>
+      createPromotion(tx, owner, {
+        title: { en: 'Once' },
+        kind: 'code',
+        status: 'active',
+        code,
+        usageLimit: 1,
+        action: { type: 'amount_off_order', amount: 2_000 },
+      }),
+    );
+    const tokens: string[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      const token = await cartWith([[a, 1]]);
+      await run((tx) => setCartCode(tx, token, { code }));
+      tokens.push(token);
+    }
+    // ৳100 + ৳70 delivery - ৳20 off.
+    const results = await Promise.allSettled(
+      pool.map((client, i) =>
+        run(
+          (tx) =>
+            placeOrder(
+              tx,
+              shopper,
+              order(tokens[i] as string, 15_000, {
+                contact: { name: `C${i}`, phone: `+88017000002${String(i).padStart(2, '0')}` },
+              }),
+            ),
+          client,
+        ),
+      ),
+    );
+    const placed = results.filter((r) => r.status === 'fulfilled');
+    const refused = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
+    expect(placed).toHaveLength(1);
+    expect(refused).toHaveLength(9);
+    for (const r of refused) {
+      expect(r.reason).toMatchObject({
+        code: 'promotion_unavailable',
+        extensions: { promotionId: promo.id },
+      });
+    }
+    const { rows } = await run((tx) =>
+      tx.db.execute<{ n: number }>(
+        sql`select usage_count as n from store.promotions where id = ${promo.id}`,
+      ),
+    );
+    expect(rows[0]?.n).toBe(1);
+    // The nine refused orders released what they reserved.
+    expect(await stock(a)).toEqual({ on_hand: 20, reserved: 1 });
   });
 
   it('gives 20 concurrent orders 20 different numbers', async () => {

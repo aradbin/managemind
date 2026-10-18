@@ -12,6 +12,11 @@
 // the storefront Worker's render plus the API's page endpoint behind it,
 // both measured.
 //
+// Phase 4 (phase-4-plan §9) adds a shopper on the run's own store: cart
+// adds and reads, setting the area, and placeOrder on its own row (the
+// store's checkout limits are raised for the burst), then the admin's order
+// list and order detail.
+//
 //   tsx preview/cpu.ts --pr 12 --api-url <url> --storefront-url <url> --since <epoch ms>
 import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
@@ -31,7 +36,18 @@ const devToken = requireEnv('DEV_TOKEN');
 const owner = `e2e-${requireEnv('E2E_RUN')}-phone-owner@example.test`;
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
 
-const BURST = { me: 60, store: 30, list: 30, read: 30, save: 20, bulk: 15, page: 20 };
+const BURST = {
+  me: 60,
+  store: 30,
+  list: 30,
+  read: 30,
+  save: 20,
+  bulk: 15,
+  page: 20,
+  cart: 30,
+  order: 15,
+  orders: 30,
+};
 
 /** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
 const STORE_PAGES = [
@@ -153,11 +169,77 @@ for (const page of STORE_PAGES) {
     if (!res.ok) throw new Error(`${page.path}: ${res.status}`);
   }
 }
+// The shopper (phase-4-plan §9): through the storefront's /api proxy, as a
+// browser would, on the run's store. Previews run Turnstile with the
+// always-pass test keys, which take Cloudflare's dummy token.
+const admin = await json<{ slug: string; checkout: Record<string, unknown> }>(
+  await call('GET', '/v1/admin/store'),
+  'read store',
+);
+await json(
+  await call('PATCH', '/v1/admin/store', {
+    checkout: {
+      ...admin.checkout,
+      rateLimits: { perPhoneHour: 100, perPhoneDay: 500, perIpHour: 500 },
+    },
+  }),
+  'raise checkout limits',
+);
+const item = await json<{ variants: { id: string }[] }>(
+  await call('POST', '/v1/admin/products', {
+    status: 'active',
+    translations: { bn: { title: 'সিপিইউ পরীক্ষার পণ্য' } },
+    variant: { price: 50_000, trackInventory: false },
+  }),
+  'create shop product',
+);
+const variantId = item.variants[0]?.id as string;
+const DHANMONDI = { divisionId: 6, districtId: 47, areaId: 513 };
+async function shop(method: string, path: string, cookie: Map<string, string>, body?: unknown) {
+  const res = await fetch(`${storefront}/api${path}?store=${admin.slug}`, {
+    method,
+    headers: {
+      ...(cookie.size ? { cookie: [...cookie].map(([k, v]) => `${k}=${v}`).join('; ') } : {}),
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+      ...(path === '/checkout/orders' ? { 'idempotency-key': crypto.randomUUID() } : {}),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  for (const line of res.headers.getSetCookie()) {
+    const [pair = ''] = line.split(';');
+    const at = pair.indexOf('=');
+    if (at > 0) cookie.set(pair.slice(0, at), pair.slice(at + 1));
+  }
+  return res;
+}
+let placedId = '';
+for (let i = 0; i < BURST.order; i++) {
+  const cookie = new Map<string, string>();
+  await json(await shop('POST', '/cart/lines', cookie, { variantId, quantity: 1 }), 'add');
+  await json(await shop('PUT', '/cart/area', cookie, { areaId: DHANMONDI.areaId }), 'area');
+  const cart = await json<{ totals: { total: number } }>(await shop('GET', '/cart', cookie), 'cart');
+  for (let j = 1; j < BURST.cart / BURST.order; j++) await shop('GET', '/cart', cookie);
+  const placed = await json<{ id: string }>(
+    await shop('POST', '/checkout/orders', cookie, {
+      contact: { name: 'CPU', phone: `+8801700${String(900_000 + i)}` },
+      address: { ...DHANMONDI, line: 'House 1, Road 2' },
+      paymentMethod: 'cod',
+      expectedTotal: cart.totals.total,
+      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
+    }),
+    'place order',
+  );
+  placedId = placed.id;
+}
+for (let i = 0; i < BURST.orders; i++) await call('GET', '/v1/admin/orders');
+for (let i = 0; i < BURST.orders; i++) await call('GET', `/v1/admin/orders/${placedId}`);
+
 notice(
   `Sent ${BURST.page} of each storefront page (${STORE_PAGES.map((p) => p.label).join(', ')}), ` +
     `${BURST.me} GET /v1/admin/me, ${BURST.store} PATCH /v1/admin/store, ` +
     `${BURST.list} product lists, ${BURST.read} product reads, ${BURST.save} product saves ` +
-    `and ${BURST.bulk} bulk edits of 6 variants`,
+    `${BURST.bulk} bulk edits of 6 variants, ${BURST.order} orders (cart, area, checkout), ` +
+    `${BURST.cart} cart reads and ${BURST.orders} each of the order list and an order`,
 );
 
 // Workers Logs names an invocation by its method and path, with IDs in the
@@ -176,6 +258,12 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
     label: 'POST /api/auth/email-otp/send-verification-otp',
   },
   { trigger: 'POST /api/auth/sign-in/email-otp', label: 'POST /api/auth/sign-in/email-otp' },
+  { trigger: 'POST /v1/store/cart/lines', label: 'POST /v1/store/cart/lines (add)' },
+  { trigger: 'PUT /v1/store/cart/area', label: 'PUT /v1/store/cart/area' },
+  { trigger: 'GET /v1/store/cart', label: 'GET /v1/store/cart' },
+  { trigger: 'POST /v1/store/checkout/orders', label: 'POST /v1/store/checkout/orders (placeOrder)' },
+  { trigger: 'GET /v1/admin/orders', label: 'GET /v1/admin/orders' },
+  { trigger: 'GET /v1/admin/orders/REDACTED', label: 'GET /v1/admin/orders/{id}' },
   ...STORE_PAGES.flatMap((p) => [
     {
       trigger: `GET ${p.path}`,

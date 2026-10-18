@@ -70,7 +70,7 @@ export function money(amount: number): string {
   const text = formatter.format(
     `${amount < 0 ? '-' : ''}${whole}.${String(fraction).padStart(2, '0')}` as unknown as number,
   );
-  return fraction === 0 ? text.replace(/[.,]?[0০]{2}(?=\D*$)/u, '') : text;
+  return fraction === 0 ? text.replace(/[.,]?[0০]{2}(?=[^0-9০-৯]*$)/u, '') : text;
 }
 
 export const pick = (v: Localized | null | undefined): string =>
