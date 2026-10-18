@@ -7,6 +7,8 @@
 export const PERMISSIONS = [
   'settings.read',
   'settings.write',
+  /** Payment gateway, SMS and email credentials (phase-5a-plan §3.1): Owner and Manager. */
+  'settings.credentials',
   'staff.read',
   'staff.write',
   'staff.manage_owners',

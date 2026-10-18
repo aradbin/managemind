@@ -20,6 +20,7 @@ import {
   type OrderStatus,
   orderMachine,
   orderTagsInput,
+  type PaymentStatus,
   paymentStatusOf,
   type ShipmentStatus,
   shipmentInput,
@@ -40,11 +41,12 @@ export interface OrderRow {
   id: string;
   number: number;
   status: OrderStatus;
-  paymentStatus: 'unpaid' | 'partially_paid' | 'paid';
+  paymentStatus: PaymentStatus;
   deliveryStatus: 'not_shipped' | 'partially_shipped' | 'shipped' | 'delivered' | 'failed';
   customerId: string;
   total: number;
   paidTotal: number;
+  refundedTotal: number;
 }
 
 export async function lockOrder(tx: TenantTx, id: string): Promise<OrderRow> {
@@ -58,12 +60,18 @@ export async function lockOrder(tx: TenantTx, id: string): Promise<OrderRow> {
       customerId: o.customerId,
       total: o.total,
       paidTotal: o.paidTotal,
+      refundedTotal: o.refundedTotal,
     })
     .from(o)
     .where(eq(o.id, id))
     .for('update');
   if (!row) throw new AppError('not_found');
-  return { ...row, total: Number(row.total), paidTotal: Number(row.paidTotal) };
+  return {
+    ...row,
+    total: Number(row.total),
+    paidTotal: Number(row.paidTotal),
+    refundedTotal: Number(row.refundedTotal),
+  };
 }
 
 /** Units of each line that left the store and haven't come back. */
@@ -134,11 +142,14 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
   const { rows: paid } = await tx.db.execute<{ n: string }>(sql`
     select coalesce(sum(amount), 0) as n from store.payments where order_id = ${orderId} and status = 'paid'`);
   const paidTotal = Number(paid[0]?.n ?? 0);
+  const { rows: refunded } = await tx.db.execute<{ n: string }>(sql`
+    select coalesce(sum(amount), 0) as n from store.refunds where order_id = ${orderId} and status = 'succeeded'`);
+  const refundedTotal = Number(refunded[0]?.n ?? 0);
   const { rows: shipped } = await tx.db.execute<{ status: ShipmentStatus; quantity: number }>(sql`
     select s.status, coalesce(sum(sl.quantity), 0)::int as quantity
       from store.shipments s join store.shipment_lines sl on sl.shipment_id = s.id
      where s.order_id = ${orderId} group by s.id, s.status`);
-  const paymentStatus = paymentStatusOf(paidTotal, order.total);
+  const paymentStatus = paymentStatusOf(paidTotal, order.total, refundedTotal);
   const deliveryStatus = deliveryStatusOf(await orderedUnits(tx, orderId), shipped);
   if (paymentStatus !== order.paymentStatus) {
     await recordHistory(tx, actor, {
@@ -147,7 +158,7 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
       from: order.paymentStatus,
       to: paymentStatus,
       event: 'payments_changed',
-      data: { paidTotal },
+      data: { paidTotal, refundedTotal },
     });
   }
   if (deliveryStatus !== order.deliveryStatus) {
@@ -166,9 +177,16 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
          where id = ${order.customerId}`);
     }
   }
-  await tx.db.update(o).set({ paidTotal, paymentStatus, deliveryStatus }).where(eq(o.id, orderId));
-  order = { ...order, paidTotal, paymentStatus, deliveryStatus };
-  if (order.status === 'processing' && deliveryStatus === 'delivered' && paymentStatus === 'paid') {
+  await tx.db
+    .update(o)
+    .set({ paidTotal, refundedTotal, paymentStatus, deliveryStatus })
+    .where(eq(o.id, orderId));
+  order = { ...order, paidTotal, refundedTotal, paymentStatus, deliveryStatus };
+  if (
+    order.status === 'processing' &&
+    deliveryStatus === 'delivered' &&
+    (paymentStatus === 'paid' || paymentStatus === 'partially_refunded')
+  ) {
     order = await moveOrder(tx, actor, order, 'complete');
   }
   return order;

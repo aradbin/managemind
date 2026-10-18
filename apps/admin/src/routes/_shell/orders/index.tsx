@@ -21,6 +21,8 @@ export const Route = createFileRoute('/_shell/orders/')({
         'unpaid',
         'partially_paid',
         'paid',
+        'partially_refunded',
+        'refunded',
       ] as const),
       deliveryStatus: searchOneOf(search.deliveryStatus, [
         'not_shipped',
@@ -35,6 +37,7 @@ export const Route = createFileRoute('/_shell/orders/')({
         'phone',
         'walk_in',
         'other',
+        'exchange',
       ] as const),
       zoneId: searchUuid(search.zoneId),
       tag: searchText(search.tag, 50),

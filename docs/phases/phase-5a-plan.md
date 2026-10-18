@@ -216,7 +216,7 @@ Phase 4 built `fail` and `return` on shipments, with restocking. This phase adds
   - `received → inspected → resolved`.
 
   The resolution is `refunded`, `exchanged`, `store_credit` or `rejected_after_inspection`. Every move goes into the order's history under a new `return` machine.
-- **The order's `return_status`** is derived, like delivery status: `none`, `requested`, `partially_returned` or `returned`. A line can only be returned up to what was delivered minus what earlier returns already cover. The database checks the sum.
+- **The order's `return_status`** is derived, like delivery status: `none`, `requested`, `partially_returned` or `returned`. A line can only be returned up to what was delivered minus what earlier returns already cover. `core` checks the sum with the order locked, as stock moves are checked.
 - **Shopper requests** start from the tracking page. It's signed in with the existing track token (number + phone) or a shopper account.
   - The shopper picks lines, quantities and reasons, and can add photos.
   - Turnstile and the `return:phone` rate limit apply.

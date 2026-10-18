@@ -7,7 +7,7 @@ import { cleanString, locale } from '../catalog/schemas';
 import { cleanText, normalizeTag } from '../catalog/text';
 import { placeNames } from '../geo/index';
 import { phoneNumber } from '../tenant-settings';
-import { ORDER_SOURCES } from './machines';
+import { MANUAL_ORDER_SOURCES, ORDER_SOURCES, PAYMENT_STATUSES, RETURN_STATUSES } from './machines';
 
 const price = z.int().min(0).max(CATALOG_LIMITS.maxPrice);
 
@@ -235,7 +235,7 @@ export const manualDiscountInput = z
 /** A manual order (§3.12): Facebook, phone and walk-in orders. */
 export const manualOrderInput = z
   .object({
-    source: z.enum(ORDER_SOURCES),
+    source: z.enum(MANUAL_ORDER_SOURCES),
     lines: orderLines,
     contact: contactInput,
     /** Null for a walk-in with no delivery. */
@@ -271,7 +271,8 @@ export const manualQuoteInput = manualOrderInput.extend({
 
 export const orderListQuery = z.object({
   status: z.enum(['pending', 'confirmed', 'processing', 'completed', 'cancelled']).optional(),
-  paymentStatus: z.enum(['unpaid', 'partially_paid', 'paid']).optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  returnStatus: z.enum(RETURN_STATUSES).optional(),
   deliveryStatus: z
     .enum(['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'])
     .optional(),

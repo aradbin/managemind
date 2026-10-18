@@ -22,7 +22,8 @@
     "./geo": "./src/geo/index.ts",
     "./orders": "./src/orders/index.ts",
     "./orders/customer-import": "./src/orders/customer-import.ts",
-    "./geo/version": "./src/geo/version.ts"
+    "./geo/version": "./src/geo/version.ts",
+    "./notifications": "./src/notifications/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

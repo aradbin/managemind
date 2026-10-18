@@ -1,7 +1,8 @@
 // An order's four statuses (phase-4-plan §3.6, after Shopify): its own
-// lifecycle, plus payment, delivery and returns. The order and each shipment
-// are state machines; payment and delivery are derived from the payments and
-// shipments, stored as columns and recalculated in the same transaction.
+// lifecycle, plus payment, delivery and returns. The order, each shipment,
+// each payment, each return and each refund are state machines; the order's
+// payment, delivery and return statuses are derived from those rows, stored
+// as columns and recalculated in the same transaction.
 import { toLatinDigits } from '../digits';
 import { defineMachine } from '../state-machine';
 
@@ -52,7 +53,8 @@ export const orderMachine = defineMachine<OrderStatus, OrderEvent, OrderContext>
       complete: {
         to: 'completed',
         guard: (c) =>
-          (c.deliveryStatus === 'delivered' && c.paymentStatus === 'paid') ||
+          (c.deliveryStatus === 'delivered' &&
+            (c.paymentStatus === 'paid' || c.paymentStatus === 'partially_refunded')) ||
           'not delivered and paid yet',
       },
       cancel: {
@@ -84,25 +86,55 @@ export const shipmentMachine = defineMachine<ShipmentStatus, ShipmentEvent>({
   },
 });
 
-export const PAYMENT_RECORD_STATUSES = ['pending', 'paid', 'voided', 'failed'] as const;
+export const PAYMENT_PROVIDERS = ['cod', 'manual', 'sslcommerz'] as const;
+export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];
+
+export const PAYMENT_RECORD_STATUSES = ['pending', 'paid', 'voided', 'failed', 'expired'] as const;
 export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUSES)[number];
 
-/** One payment row: settled once, never changed after (Phase 5A's refunds are new rows). */
-export const paymentMachine = defineMachine<PaymentRecordStatus, 'settle' | 'void' | 'fail'>({
+/**
+ * One payment row: settled once, never changed after; refunds are their own
+ * rows (phase-5a-plan §3.2). An online session that runs out is `expired`,
+ * and still settles if the gateway later reports the money (§3.5, a late payment).
+ */
+export const paymentMachine = defineMachine<
+  PaymentRecordStatus,
+  'settle' | 'void' | 'fail' | 'expire'
+>({
   name: 'payment',
   initial: 'pending',
   states: PAYMENT_RECORD_STATUSES,
   transitions: {
-    pending: { settle: { to: 'paid' }, void: { to: 'voided' }, fail: { to: 'failed' } },
+    pending: {
+      settle: { to: 'paid' },
+      void: { to: 'voided' },
+      fail: { to: 'failed' },
+      expire: { to: 'expired' },
+    },
+    expired: { settle: { to: 'paid' } },
   },
 });
 
-/** Phase 5A adds partially_refunded and refunded. */
-export const PAYMENT_STATUSES = ['unpaid', 'partially_paid', 'paid'] as const;
+export const PAYMENT_STATUSES = [
+  'unpaid',
+  'partially_paid',
+  'paid',
+  'partially_refunded',
+  'refunded',
+] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-/** The order's payment status from what settled payments cover. */
-export function paymentStatusOf(paidTotal: number, total: number): PaymentStatus {
+/**
+ * The order's payment status from what settled payments cover and what was
+ * refunded since (after Shopify's financial status): any refund makes it
+ * `partially_refunded`, and refunding everything paid makes it `refunded`.
+ */
+export function paymentStatusOf(
+  paidTotal: number,
+  total: number,
+  refundedTotal = 0,
+): PaymentStatus {
+  if (refundedTotal > 0) return refundedTotal >= paidTotal ? 'refunded' : 'partially_refunded';
   if (paidTotal >= total) return 'paid';
   return paidTotal > 0 ? 'partially_paid' : 'unpaid';
 }
@@ -145,15 +177,195 @@ export function deliveryStatusOf(
   return failed ? 'failed' : 'not_shipped';
 }
 
-/** Phase 5A adds requested, partially_returned and returned. */
-export const RETURN_STATUSES = ['none'] as const;
+/** The order's return status, derived from its returns like delivery status. */
+export const RETURN_STATUSES = ['none', 'requested', 'partially_returned', 'returned'] as const;
 export type ReturnStatus = (typeof RETURN_STATUSES)[number];
 
+/** One return (phase-5a-plan §3.12). */
+export const RETURN_RECORD_STATUSES = [
+  'requested',
+  'approved',
+  'rejected',
+  'in_transit',
+  'received',
+  'inspected',
+  'resolved',
+] as const;
+export type ReturnRecordStatus = (typeof RETURN_RECORD_STATUSES)[number];
+export const RETURN_EVENTS = [
+  'approve',
+  'reject',
+  'send',
+  'receive',
+  'inspect',
+  'resolve',
+] as const;
+export type ReturnEvent = (typeof RETURN_EVENTS)[number];
+
+/**
+ * requested → approved | rejected; approved → in_transit → received, or
+ * straight to received for a walk-in; received → inspected (which restocks
+ * by condition) → resolved.
+ */
+export const returnMachine = defineMachine<ReturnRecordStatus, ReturnEvent>({
+  name: 'return',
+  initial: 'requested',
+  states: RETURN_RECORD_STATUSES,
+  transitions: {
+    requested: { approve: { to: 'approved' }, reject: { to: 'rejected' } },
+    approved: { send: { to: 'in_transit' }, receive: { to: 'received' } },
+    in_transit: { receive: { to: 'received' } },
+    received: { inspect: { to: 'inspected', effects: ['restock'] } },
+    inspected: { resolve: { to: 'resolved' } },
+  },
+});
+
+/** Returns that no longer ask for anything and returned nothing. */
+const RETURN_CLOSED_EMPTY: readonly ReturnRecordStatus[] = ['rejected'];
+/** Returns whose goods are back in the store. */
+const RETURN_BACK: readonly ReturnRecordStatus[] = ['received', 'inspected', 'resolved'];
+
+export const RETURN_REASONS = [
+  'wrong_size',
+  'damaged',
+  'wrong_item',
+  'not_as_described',
+  'changed_mind',
+  'other',
+] as const;
+export type ReturnReason = (typeof RETURN_REASONS)[number];
+
+/** Reasons the store is at fault for: it pays the return delivery (Q9) and may refund the fee (Q10). */
+export const STORE_FAULT_REASONS: readonly ReturnReason[] = [
+  'damaged',
+  'wrong_item',
+  'not_as_described',
+];
+
+export const RETURN_RESOLUTIONS = ['refunded', 'exchanged', 'store_credit', 'rejected'] as const;
+export type ReturnResolution = (typeof RETURN_RESOLUTIONS)[number];
+
+/** What inspection finds for a unit (§3.12). */
+export const RETURN_CONDITIONS = ['sellable', 'damaged'] as const;
+export type ReturnCondition = (typeof RETURN_CONDITIONS)[number];
+
+export interface ReturnQuantities {
+  status: ReturnRecordStatus;
+  /** The resolution, once resolved. */
+  resolution?: ReturnResolution | null;
+  /** Units of the order in this return. */
+  quantity: number;
+}
+
+/**
+ * The order's return status from its returns: units back in the store count
+ * as returned (all of the order's units: `returned`), and a return still on
+ * its way or waiting for approval makes the order `requested`.
+ */
+export function returnStatusOf(
+  orderedQuantity: number,
+  returns: readonly ReturnQuantities[],
+): ReturnStatus {
+  let back = 0;
+  let open = false;
+  for (const r of returns) {
+    if (RETURN_CLOSED_EMPTY.includes(r.status)) continue;
+    if (r.status === 'resolved' && r.resolution === 'rejected') continue;
+    if (RETURN_BACK.includes(r.status)) back += r.quantity;
+    else open = true;
+  }
+  if (orderedQuantity > 0 && back >= orderedQuantity) return 'returned';
+  if (back > 0) return 'partially_returned';
+  return open ? 'requested' : 'none';
+}
+
+export const REFUND_METHODS = [
+  'gateway',
+  'gateway_manual',
+  'bkash',
+  'nagad',
+  'rocket',
+  'bank',
+  'cash',
+  'store_credit',
+] as const;
+export type RefundMethod = (typeof REFUND_METHODS)[number];
+
+/** What a store can offer; `gateway_manual` records a refund made in the gateway's panel, not a choice. */
+export const OFFERED_REFUND_METHODS = [
+  'gateway',
+  'bkash',
+  'nagad',
+  'rocket',
+  'bank',
+  'cash',
+  'store_credit',
+] as const satisfies readonly RefundMethod[];
+
+export const REFUND_STATUSES = ['pending', 'processing', 'succeeded', 'failed'] as const;
+export type RefundStatus = (typeof REFUND_STATUSES)[number];
+
+/**
+ * One refund (§3.13): a gateway refund goes pending → processing →
+ * succeeded or failed; a manual one is recorded as succeeded.
+ */
+export const refundMachine = defineMachine<RefundStatus, 'submit' | 'succeed' | 'fail'>({
+  name: 'refund',
+  initial: 'pending',
+  states: REFUND_STATUSES,
+  transitions: {
+    pending: { submit: { to: 'processing' }, succeed: { to: 'succeeded' }, fail: { to: 'failed' } },
+    processing: { succeed: { to: 'succeeded' }, fail: { to: 'failed' } },
+  },
+});
+
+/**
+ * What returning `units` more of a line refunds when `alreadyRefunded` of its
+ * `quantity` units were refunded before (§3.13). Shares are cumulative, so
+ * any sequence of partial returns adds up to exactly `lineTotal`, which
+ * already carries the line's allocated discounts and VAT.
+ */
+export function refundShare(
+  lineTotal: number,
+  quantity: number,
+  alreadyRefunded: number,
+  units: number,
+): number {
+  if (!Number.isInteger(units) || units < 1) throw new RangeError('units must be at least 1');
+  if (alreadyRefunded < 0 || alreadyRefunded + units > quantity) {
+    throw new RangeError('more units than the line has left');
+  }
+  const upTo = (n: number) => Math.round((lineTotal * n) / quantity);
+  return upTo(alreadyRefunded + units) - upTo(alreadyRefunded);
+}
+
+/** Flags an order can carry for staff (§3.5, §3.11). */
+export const ORDER_FLAGS = ['payment_risk', 'late_payment', 'flagged_phone'] as const;
+export type OrderFlag = (typeof ORDER_FLAGS)[number];
+
 /** History rows name the machine they belong to. */
-export const HISTORY_MACHINES = ['order', 'payment', 'delivery', 'shipment', 'edit'] as const;
+export const HISTORY_MACHINES = [
+  'order',
+  'payment',
+  'delivery',
+  'shipment',
+  'edit',
+  'return',
+  'refund',
+] as const;
 export type HistoryMachine = (typeof HISTORY_MACHINES)[number];
 
-export const ORDER_SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other'] as const;
+export const ORDER_SOURCES = [
+  'website',
+  'facebook',
+  'phone',
+  'walk_in',
+  'other',
+  'exchange',
+] as const;
+
+/** Where staff say a manual order came from; website and exchange orders are made by the system. */
+export const MANUAL_ORDER_SOURCES = ['facebook', 'phone', 'walk_in', 'other'] as const;
 export type OrderSource = (typeof ORDER_SOURCES)[number];
 
 /** "#" and 1001 by default (Q4): "#1001". */

@@ -27,7 +27,7 @@ export const itemSelection = z
   );
 export type ItemSelection = z.infer<typeof itemSelection>;
 
-export const PAYMENT_METHODS = ['cod', 'manual'] as const;
+export const PAYMENT_METHODS = ['cod', 'manual', 'online'] as const;
 
 const tagList = z
   .array(z.string())

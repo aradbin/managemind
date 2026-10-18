@@ -81,6 +81,7 @@ export async function listOrders(
   const where: SQL[] = [sql`true`];
   if (query.status) where.push(sql`o.status = ${query.status}`);
   if (query.paymentStatus) where.push(sql`o.payment_status = ${query.paymentStatus}`);
+  if (query.returnStatus) where.push(sql`o.return_status = ${query.returnStatus}`);
   if (query.deliveryStatus) where.push(sql`o.delivery_status = ${query.deliveryStatus}`);
   if (query.zoneId) where.push(sql`o.zone_id = ${query.zoneId}`);
   if (query.source) where.push(sql`o.source = ${query.source}`);

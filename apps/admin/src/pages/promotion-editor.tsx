@@ -386,7 +386,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               </div>
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('promo.paymentMethods')}</legend>
-                {(['cod', 'manual'] as const).map((m) => (
+                {(['cod', 'manual', 'online'] as const).map((m) => (
                   <label key={m} className="flex min-h-11 items-center gap-3">
                     <input
                       type="checkbox"
@@ -520,7 +520,7 @@ function TestCart({
   const { t, locale } = useLocale();
   const [lines, setLines] = useState<CartLine[]>([]);
   const [place, setPlace] = useState<PlaceDraft>(emptyPlace);
-  const [payment, setPayment] = useState<'cod' | 'manual'>('cod');
+  const [payment, setPayment] = useState<'cod' | 'manual' | 'online'>('cod');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const parsed = lines.map((l) => ({ variantId: l.variantId, quantity: Number(l.quantity) }));
@@ -605,10 +605,11 @@ function TestCart({
         <select
           className={selectClass}
           value={payment}
-          onChange={(e) => setPayment(e.target.value as 'cod' | 'manual')}
+          onChange={(e) => setPayment(e.target.value as 'cod' | 'manual' | 'online')}
         >
           <option value="cod">{t('promo.payment.cod')}</option>
           <option value="manual">{t('promo.payment.manual')}</option>
+          <option value="online">{t('promo.payment.online')}</option>
         </select>
       </label>
       <div className="grid gap-3 md:grid-cols-2">

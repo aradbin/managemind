@@ -55,7 +55,13 @@ export const dateOnly = (locale: Locale, iso: string) =>
 
 export interface OrderFilters {
   status?: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled' | undefined;
-  paymentStatus?: 'unpaid' | 'partially_paid' | 'paid' | undefined;
+  paymentStatus?:
+    | 'unpaid'
+    | 'partially_paid'
+    | 'paid'
+    | 'partially_refunded'
+    | 'refunded'
+    | undefined;
   deliveryStatus?:
     | 'not_shipped'
     | 'partially_shipped'
@@ -63,7 +69,7 @@ export interface OrderFilters {
     | 'delivered'
     | 'failed'
     | undefined;
-  source?: 'website' | 'facebook' | 'phone' | 'walk_in' | 'other' | undefined;
+  source?: 'website' | 'facebook' | 'phone' | 'walk_in' | 'other' | 'exchange' | undefined;
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;

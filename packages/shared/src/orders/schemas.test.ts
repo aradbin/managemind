@@ -111,7 +111,7 @@ describe('store settings', () => {
       accounts: false,
       termsCheckbox: false,
     });
-    expect(s.cod).toEqual({ enabled: true, maxOrderValue: null, advance: 'never' });
+    expect(s.cod).toEqual({ enabled: true, maxOrderValue: null, advance: 'never', otp: 'off' });
     // Settings saved before Phase 4 still parse.
     expect(tenantSettings.parse({ version: 1 }).checkout.maxQuantityPerLine).toBe(10);
     expect(tenantSettings.safeParse({ checkout: { orderNumberPrefix: 'a b' } }).success).toBe(

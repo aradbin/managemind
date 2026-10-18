@@ -2221,6 +2221,11 @@ export interface paths {
                              * @enum {string}
                              */
                             advance?: "never" | "always" | "flagged";
+                            /**
+                             * @default off
+                             * @enum {string}
+                             */
+                            otp?: "off" | "always" | "flagged" | "first_order";
                         };
                     };
                 };
@@ -5795,10 +5800,11 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "pending" | "confirmed" | "processing" | "completed" | "cancelled";
-                    paymentStatus?: "unpaid" | "partially_paid" | "paid";
+                    paymentStatus?: "unpaid" | "partially_paid" | "paid" | "partially_refunded" | "refunded";
+                    returnStatus?: "none" | "requested" | "partially_returned" | "returned";
                     deliveryStatus?: "not_shipped" | "partially_shipped" | "shipped" | "delivered" | "failed";
                     zoneId?: string;
-                    source?: "website" | "facebook" | "phone" | "walk_in" | "other";
+                    source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange";
                     tag?: string;
                     cancelledByShopper?: boolean | null;
                     from?: string;
@@ -5842,7 +5848,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -5928,7 +5934,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -7463,7 +7469,7 @@ export interface paths {
                             firstOrder?: true;
                             customerPhones?: string[];
                             customerTags?: string[];
-                            paymentMethods?: ("cod" | "manual")[];
+                            paymentMethods?: ("cod" | "manual" | "online")[];
                         };
                         action: {
                             /** @enum {string} */
@@ -8484,7 +8490,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -8622,6 +8628,11 @@ export interface components {
                  * @enum {string}
                  */
                 advance: "never" | "always" | "flagged";
+                /**
+                 * @default off
+                 * @enum {string}
+                 */
+                otp: "off" | "always" | "flagged" | "first_order";
             };
             storeUrl: string;
         };

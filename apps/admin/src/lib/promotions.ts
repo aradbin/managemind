@@ -104,7 +104,7 @@ export interface Draft {
   firstOrder: boolean;
   customerTags: string;
   customerPhones: string;
-  paymentMethods: ('cod' | 'manual')[];
+  paymentMethods: ('cod' | 'manual' | 'online')[];
 }
 
 export const newDraft = (): Draft => ({
