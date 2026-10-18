@@ -76,6 +76,12 @@ export interface Env {
   TURNSTILE_SITE_KEY?: string;
   /** Turnstile's secret (a Worker secret); without it the check is skipped. */
   TURNSTILE_SECRET_KEY?: string;
+  /**
+   * 32 bytes in base64 that encrypt stores' gateway, SMS and email
+   * credentials (a Worker secret; phase-5a-plan §3.1). Without it no store
+   * can save any, so online payment and SMS stay off.
+   */
+  CREDENTIALS_KEY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';

@@ -154,3 +154,4 @@ export function smsParts(text: string): SmsParts {
   const length = text.length;
   return { encoding: 'unicode', length, parts: length <= 70 ? 1 : Math.ceil(length / 67) };
 }
+export { defaultTemplate, type Template } from './defaults';

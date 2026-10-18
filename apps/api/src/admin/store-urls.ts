@@ -8,6 +8,7 @@ import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
+import type { ApiConfig } from '../env';
 import type { StaffEnv } from './context';
 
 export interface StoreUrls {
@@ -18,9 +19,18 @@ export interface StoreUrls {
   store: string;
   /** The theme preview with a token. */
   preview: (token: string) => string;
+  /** A shopper page by path, such as `track` (phase-5a-plan §3.6's message links). */
+  page: (path: string) => string;
 }
 
-export async function storeUrls(c: Context<StaffEnv>, tx: TenantTx): Promise<StoreUrls> {
+export const storeUrls = (c: Context<StaffEnv>, tx: TenantTx): Promise<StoreUrls> =>
+  storeUrlsFor(c.var.config, tx);
+
+/** The same without a request: for queue consumers and jobs. */
+export async function storeUrlsFor(
+  config: Pick<ApiConfig, 'STORE_DOMAIN' | 'STOREFRONT_ORIGIN'>,
+  tx: TenantTx,
+): Promise<StoreUrls> {
   const t = schema.tenants;
   const d = schema.tenantDomains;
   const [row] = await tx.db.select({ slug: t.slug }).from(t).where(eq(t.id, tx.tenantId));
@@ -29,9 +39,9 @@ export async function storeUrls(c: Context<StaffEnv>, tx: TenantTx): Promise<Sto
     .select({ hostname: d.hostname })
     .from(d)
     .where(and(eq(d.tenantId, tx.tenantId), eq(d.isPrimary, true), eq(d.status, 'active')));
-  const defaultHost = `${row.slug}.${c.var.config.STORE_DOMAIN}`;
+  const defaultHost = `${row.slug}.${config.STORE_DOMAIN}`;
   const primaryHost = primary?.hostname ?? defaultHost;
-  const origin = c.var.config.STOREFRONT_ORIGIN;
+  const origin = config.STOREFRONT_ORIGIN;
   const token = (value: string) => encodeURIComponent(value);
   if (origin) {
     return {
@@ -39,6 +49,7 @@ export async function storeUrls(c: Context<StaffEnv>, tx: TenantTx): Promise<Sto
       primaryHost,
       store: `${origin}/?store=${row.slug}`,
       preview: (value) => `${origin}/__preview?store=${row.slug}&token=${token(value)}`,
+      page: (path) => `${origin}/${path}?store=${row.slug}`,
     };
   }
   return {
@@ -46,5 +57,6 @@ export async function storeUrls(c: Context<StaffEnv>, tx: TenantTx): Promise<Sto
     primaryHost,
     store: `https://${primaryHost}/`,
     preview: (value) => `https://${primaryHost}/__preview?token=${token(value)}`,
+    page: (path) => `https://${primaryHost}/${path}`,
   };
 }

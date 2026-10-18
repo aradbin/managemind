@@ -73,6 +73,17 @@ export class LimiterState {
     return { allowed: true, retryAfter: 0, count };
   }
 
+  /** The highest current count across windows, without counting (the email quota guard). */
+  peek(windows: readonly Window[], now = Date.now()): number {
+    let count = 0;
+    for (const w of windows) {
+      const entry = this.counts.get(w.seconds);
+      if (entry && entry.start === windowStart(now, w.seconds))
+        count = Math.max(count, entry.count);
+    }
+    return count;
+  }
+
   /** Records a failed verification; locks the key when the policy's limit is reached. */
   async fail(policy: LockoutPolicy, now = Date.now()): Promise<{ locked: boolean }> {
     const start = windowStart(now, policy.windowSeconds);

@@ -281,5 +281,38 @@ export function domainProblemEmail(input: DomainProblemEmail): RenderedEmail {
   });
 }
 
+const MESSAGE_FOOTER: Record<Locale, string> = {
+  en: 'You get this email because of your order at {store}. Reply to reach the store.',
+  bn: '{store}-এ আপনার অর্ডারের জন্য এই ইমেইল পাঠানো হয়েছে। দোকানের সঙ্গে যোগাযোগ করতে উত্তর দিন।',
+};
+
+export interface StoreMessageEmail {
+  locale: Locale;
+  storeName: string;
+  /** Already filled in (phase-5a-plan §3.7); escaped here. */
+  subject: string;
+  /** Filled in, plain text; paragraphs separated by blank lines. */
+  body: string;
+}
+
+/**
+ * A store's order, payment, return or refund email (phase-5a-plan §3.6), in
+ * the same layout as the platform's emails, with the store's name on top.
+ * The values were filled in plain, and the layout escapes the whole text.
+ */
+export function storeMessageEmail(input: StoreMessageEmail): RenderedEmail {
+  const paragraphs = input.body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return render(input.subject, {
+    locale: input.locale,
+    platformName: input.storeName,
+    paragraphs,
+    values: { store: input.storeName },
+    footer: MESSAGE_FOOTER[input.locale],
+  });
+}
+
 /** For tests: every template's copy, per locale. */
 export const TEMPLATE_COPY = COPY;

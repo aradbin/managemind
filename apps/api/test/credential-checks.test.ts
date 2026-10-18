@@ -1,0 +1,49 @@
+import { describe, expect, it } from 'vitest';
+import { credentialCheck } from '../src/credential-checks';
+
+const respond =
+  (status: number, body: unknown): typeof fetch =>
+  async () =>
+    new Response(JSON.stringify(body), { status });
+
+const email = (provider: 'resend' | 'brevo', from = 'orders@shop.test') => ({
+  kind: 'email' as const,
+  provider,
+  mode: null,
+  secrets: { apiKey: 'k' },
+  config: { from },
+});
+
+describe('credential checks', () => {
+  it('accept a Resend key whose sending domain is verified', async () => {
+    const ok = respond(200, { data: [{ name: 'shop.test', status: 'verified' }] });
+    await expect(credentialCheck(ok)(email('resend'))).resolves.toBeUndefined();
+  });
+
+  it('refuse a bad Resend key, or a domain it has not verified', async () => {
+    await expect(credentialCheck(respond(401, {}))(email('resend'))).rejects.toThrow(/refused/);
+    const pending = respond(200, { data: [{ name: 'shop.test', status: 'pending' }] });
+    await expect(credentialCheck(pending)(email('resend'))).rejects.toThrow(/not verified/);
+    const other = respond(200, { data: [{ name: 'other.test', status: 'verified' }] });
+    await expect(credentialCheck(other)(email('resend'))).rejects.toThrow(/not a domain/);
+  });
+
+  it('accept a Brevo sender on the same domain, and refuse an inactive one', async () => {
+    const ok = respond(200, { senders: [{ email: 'hello@shop.test', active: true }] });
+    await expect(credentialCheck(ok)(email('brevo'))).resolves.toBeUndefined();
+    const off = respond(200, { senders: [{ email: 'orders@shop.test', active: false }] });
+    await expect(credentialCheck(off)(email('brevo'))).rejects.toThrow(/not an active sender/);
+  });
+
+  it("refuse providers that can't be connected yet", async () => {
+    await expect(
+      credentialCheck(respond(200, {}))({
+        kind: 'sms',
+        provider: 'sms_net_bd',
+        mode: null,
+        secrets: { apiKey: 'k' },
+        config: {},
+      }),
+    ).rejects.toThrow(/can't be connected yet/);
+  });
+});

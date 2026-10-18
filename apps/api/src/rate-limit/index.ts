@@ -9,6 +9,7 @@ import type { HitResult, LockoutPolicy, Window } from './limiter';
 export interface LimiterNamespace {
   getByName(name: string): {
     hit(windows: Window[]): Promise<HitResult>;
+    peek(windows: Window[]): Promise<number>;
     fail(policy: LockoutPolicy): Promise<{ locked: boolean }>;
     clear(): Promise<void>;
   };

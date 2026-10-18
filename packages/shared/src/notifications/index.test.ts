@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CHANNELS,
+  defaultTemplate,
+  MESSAGE_EVENTS,
   notificationSettings,
   renderTemplate,
+  SHOPPER_EVENTS,
+  STAFF_EVENTS,
   smsParts,
   templateVariables,
   unknownVariables,
@@ -53,5 +58,30 @@ describe('notification settings', () => {
     const s = notificationSettings.parse({});
     expect(s.sms).toEqual(['order_placed', 'order_shipped']);
     expect(s.email).toContain('refund_issued');
+  });
+});
+
+describe('default templates', () => {
+  it('use only their events’ variables, in both languages', () => {
+    for (const event of MESSAGE_EVENTS) {
+      for (const channel of CHANNELS) {
+        for (const locale of ['bn', 'en'] as const) {
+          const t = defaultTemplate(event, channel, locale);
+          if (!t) continue;
+          expect(
+            unknownVariables(event, `${t.subject ?? ''} ${t.body}`),
+            `${event} ${channel}`,
+          ).toEqual([]);
+        }
+      }
+    }
+  });
+
+  it('give every shopper event an email and an SMS, and every staff event a push', () => {
+    for (const event of SHOPPER_EVENTS) {
+      expect(defaultTemplate(event, 'email', 'bn')?.subject).toBeTruthy();
+      expect(defaultTemplate(event, 'sms', 'en')).not.toBeNull();
+    }
+    for (const event of STAFF_EVENTS) expect(defaultTemplate(event, 'push', 'bn')).not.toBeNull();
   });
 });

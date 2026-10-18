@@ -432,6 +432,10 @@ describe('isolation suite', () => {
         'the name is the uploaded bytes’ hash, and the file lands in the caller’s own store',
       'POST /v1/admin/theme/presets/{name}':
         'the name is a preset, not a stored row; it only ever changes the caller’s own draft',
+      'PUT /v1/admin/credentials/{kind}':
+        'the kind is one of three fixed names, resolved inside the caller’s own store',
+      'DELETE /v1/admin/credentials/{kind}':
+        'the kind is one of three fixed names, resolved inside the caller’s own store',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));

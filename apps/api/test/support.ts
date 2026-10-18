@@ -91,6 +91,7 @@ export function fakeNamespace(): LimiterNamespace & { names: string[] } {
       const s = state;
       return {
         hit: (w) => s.hit(w),
+        peek: async (w) => s.peek(w),
         fail: (p) => s.fail(p),
         clear: () => s.clear(),
       };

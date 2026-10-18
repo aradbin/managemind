@@ -120,17 +120,22 @@ jobs:
         if: steps.scope.outputs.deploy == 'true'
         env:
           AUTH_SECRET_PREVIEW: ${{ secrets.AUTH_SECRET_PREVIEW }}
+          CREDENTIALS_KEY_PREVIEW: ${{ secrets.CREDENTIALS_KEY_PREVIEW }}
         run: |
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           auth="${AUTH_SECRET_PREVIEW:-$(openssl rand -base64 32)}"
+          # Without CREDENTIALS_KEY_PREVIEW each deploy makes a new key, and
+          # credentials saved on the preview last until the next push.
+          credentials="${CREDENTIALS_KEY_PREVIEW:-$(openssl rand -base64 32)}"
+          echo "::add-mask::$credentials"
           # A new dev mailbox token per deploy; later steps (E2E) read it from the env.
           dev_token="$(openssl rand -hex 24)"
           echo "::add-mask::$dev_token"
           echo "DEV_TOKEN=$dev_token" >> "$GITHUB_ENV"
           # Turnstile runs with Cloudflare's published test keys, which always pass.
-          (umask 077; jq -n --arg auth "$auth" --arg dev "$dev_token" \
-            '{AUTH_SECRET: $auth, DEV_TOKEN: $dev,
+          (umask 077; jq -n --arg auth "$auth" --arg dev "$dev_token" --arg credentials "$credentials" \
+            '{AUTH_SECRET: $auth, DEV_TOKEN: $dev, CREDENTIALS_KEY: $credentials,
               TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
               TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"}' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json \

@@ -9,6 +9,7 @@ export * from './idempotency';
 export * from './identity/index';
 export * from './imports/index';
 export * from './inventory/index';
+export * from './notifications/index';
 export * from './orders/index';
 export * from './outbox';
 export * from './platform';
