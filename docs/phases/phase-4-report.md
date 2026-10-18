@@ -135,7 +135,25 @@ These are local numbers. The preview's Lighthouse and CPU steps report theirs wh
 - `placeOrder` on its own row;
 - the admin's order list and order detail.
 
-The step raises that store's checkout limits for the burst, and uses Turnstile's dummy token with the test keys. The plan expects `placeOrder` over the Free plan's 10 ms (§9). It runs under ADR 0013's alarm, and the first stopped request is the trigger for Workers Paid.
+The step raises that store's checkout limits for the burst, and uses Turnstile's dummy token with the test keys. These are the preview's numbers (#56, run on `c80eebc`), CPU time in ms:
+
+| Route | Requests | Stopped | p50 | p90 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| `POST /v1/store/checkout/orders` (`placeOrder`) | 22 | 0 | 64 | 93 | 187 |
+| `POST /v1/store/cart/lines` (add) | 22 | 0 | 27 | 36 | 43 |
+| `PUT /v1/store/cart/area` | 21 | 0 | 24 | 40 | 57 |
+| `GET /v1/store/cart` | 37 | 0 | 19 | 30 | 37 |
+| `GET /v1/admin/orders` | 44 | 0 | 16 | 31 | 37 |
+| `GET /v1/admin/orders/{id}` | 42 | 0 | 24 | 41 | 66 |
+
+As the plan expected (§9), `placeOrder` and the staff order screens are over the Free plan's 10 ms. The cart calls are too, unlike the 6 ms the plan took from ADR 0003. They run under ADR 0013's alarm, and the first stopped request is the trigger for Workers Paid.
+
+**Stopped requests on the preview.** Earlier runs of this pull request had some requests stopped at the CPU limit (`exceededCpu`), including `GET /v1/store/context` and page data. Neither changed in this phase, and production, still on Phase 3 code, runs the store lookup at an 18 ms median with nothing stopped. Two storefront fixes came out of it:
+
+- a failed store lookup used to show the "store not found" page. Now only the API's 404 means no store; anything else is retried once, then fails the page with a 5xx;
+- page data is retried once, and a store found through the API is remembered for a minute.
+
+The CPU step now counts stopped requests per route instead of stopping on the first one.
 
 ## 4. Free-tier impact
 
