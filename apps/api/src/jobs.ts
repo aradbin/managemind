@@ -247,6 +247,12 @@ export async function runDailyJobs(
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
     await checkInventoryDrift(client);
+    // Shoppers' return photos, 90 days after their return closed (phase-5a-plan §3.12).
+    try {
+      await cleanUpReturnPhotos(env, client);
+    } catch (e) {
+      log('error', 'return photo cleanup failed', { error: String(e) });
+    }
     // Custom domains: pending ones until active or 7 days old, active ones for breakage (ADR 0019).
     try {
       await recheckDomains(env, ctx, client);
@@ -289,6 +295,29 @@ export async function cleanUpMedia(
     files += keys.length;
   }
   if (files) log('info', 'media cleanup', { files });
+  return { files };
+}
+
+/**
+ * Return photos 90 days after their return closed (phase-5a-plan §3.12):
+ * the rows go, then the files no other photo uses. A failed R2 delete only
+ * orphans a file no row points at.
+ */
+export async function cleanUpReturnPhotos(
+  env: Pick<Env, 'FILES'>,
+  client: Parameters<Parameters<typeof withClient>[2]>[0],
+): Promise<{ files: number }> {
+  let files = 0;
+  for (let round = 0; round < 10; round++) {
+    const { rows } = await client.query<{ object_key: string }>(
+      'select * from app.return_photo_cleanup(500)',
+    );
+    if (rows.length === 0) break;
+    const keys = rows.map((r) => r.object_key);
+    for (let i = 0; i < keys.length; i += 1000) await env.FILES.delete(keys.slice(i, i + 1000));
+    files += keys.length;
+  }
+  if (files) log('info', 'return photo cleanup', { files });
   return { files };
 }
 

@@ -18,10 +18,11 @@ import {
   withTenant,
 } from '@managemind/core';
 import { connect } from '@managemind/db/testing';
-import { permissionsOf } from '@managemind/shared';
+import { objectKey, permissionsOf } from '@managemind/shared';
 import type pg from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
+import { cleanUpReturnPhotos } from '../src/jobs';
 import {
   handlePaymentChecks,
   handleRefundChecks,
@@ -567,6 +568,18 @@ describe('returns and refunds through the API', () => {
       await call(s.host, 'POST', '/v1/store/returns/options', { token })
     ).json();
     expect(again).toMatchObject({ open: false, lines: [{ returnable: 0 }] });
+
+    // 90 days after the return closed, its photo goes, row and file.
+    const key = objectKey('file', s.id, `returns/${hash}.png`);
+    expect(env.FILES.objects.has(key)).toBe(true);
+    await owner.query(
+      `update store.returns set resolved_at = now() - interval '91 days' where id = $1`,
+      [id],
+    );
+    expect(await cleanUpReturnPhotos(env, owner)).toEqual({ files: 1 });
+    expect(env.FILES.objects.has(key)).toBe(false);
+    const left = await owner.query('select 1 from store.return_photos where return_id = $1', [id]);
+    expect(left.rowCount).toBe(0);
   });
 
   it('refunds an online payment through SSLCommerz, settled by the delayed check', async () => {

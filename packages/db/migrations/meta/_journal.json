@@ -218,6 +218,13 @@
       "when": 1792344434597,
       "tag": "0030_shopper_phone",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792344752279,
+      "tag": "0031_return_photo_cleanup",
+      "breakpoints": true
     }
   ]
 }
