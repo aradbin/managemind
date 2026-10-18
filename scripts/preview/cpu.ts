@@ -68,6 +68,10 @@ async function call(method: string, path: string, body?: unknown): Promise<Respo
     method,
     headers: {
       origin: api,
+      // Previews run Turnstile with the always-pass test keys, which take the dummy token.
+      ...(path.endsWith('/send-verification-otp')
+        ? { 'x-turnstile-token': 'XXXX.DUMMY.TOKEN.XXXX' }
+        : {}),
       ...(jar.size ? { cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') } : {}),
       ...(body === undefined ? {} : { 'content-type': 'application/json' }),
     },
@@ -92,7 +96,11 @@ async function latestCode(): Promise<string> {
 }
 
 // Sign in, pick the store, then the bursts.
-await call('POST', '/api/auth/email-otp/send-verification-otp', { email: owner, type: 'sign-in' });
+const sent = await call('POST', '/api/auth/email-otp/send-verification-otp', {
+  email: owner,
+  type: 'sign-in',
+});
+if (!sent.ok) throw new Error(`send code: ${sent.status} ${await sent.text()}`);
 await sleep(3000);
 const signedIn = await call('POST', '/api/auth/sign-in/email-otp', {
   email: owner,
