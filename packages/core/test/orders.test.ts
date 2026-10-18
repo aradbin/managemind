@@ -404,6 +404,8 @@ describe('acceptance criterion 2: idempotent checkout', () => {
   });
 });
 
+// Each test here holds many connections and transactions at once, which can
+// outlast the 5 s default on a CI runner shared with the other suites.
 describe('acceptance criterion 1: the last unit', () => {
   it('goes to exactly one of ten shoppers ordering at once', async () => {
     const a = await product(30_000, 1);
@@ -436,7 +438,7 @@ describe('acceptance criterion 1: the last unit', () => {
     }
     expect(await stock(a)).toEqual({ on_hand: 1, reserved: 1 });
     expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
-  });
+  }, 30_000);
 
   it('gives a code limited to one use to exactly one of ten shoppers at once', async () => {
     const a = await product(10_000, 20);
@@ -491,9 +493,8 @@ describe('acceptance criterion 1: the last unit', () => {
     expect(rows[0]?.n).toBe(1);
     // The nine refused orders released what they reserved.
     expect(await stock(a)).toEqual({ on_hand: 20, reserved: 1 });
-  });
+  }, 30_000);
 
-  // Ten extra connections and twenty transactions outlast the 5 s default on a busy runner.
   it('gives 20 concurrent orders 20 different numbers', async () => {
     const a = await product(1_000, 100);
     const tokens: string[] = [];

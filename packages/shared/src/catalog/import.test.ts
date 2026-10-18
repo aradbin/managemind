@@ -249,6 +249,10 @@ describe('dryRunImport', () => {
         });
       }
     }
+    // Timed after one warm-up run: the budget is for how the work grows with
+    // 500 products, not for module start-up on a CI runner shared with the
+    // database suites (a cold first call took 2.1 s there, 0.1 s locally).
+    dryRunImport(rows.slice(0, 3), { defaultLocale: 'bn' });
     const started = performance.now();
     const { products, errors } = dryRunImport(rows, { defaultLocale: 'bn' });
     expect(performance.now() - started).toBeLessThan(2_000);
