@@ -31,6 +31,9 @@ function frameAncestors(): string {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Prerendered files (the geography file) are built once and served as static
+  // assets: they belong to no store, and the build has no API to ask.
+  if (context.isPrerendered) return next();
   const url = context.url;
   const requestId = uuidv7();
 
