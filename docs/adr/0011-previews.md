@@ -1,6 +1,6 @@
 # ADR 0011: Pull request previews and their databases
 
-- Status: Accepted
+- Status: Accepted. Amended Oct 18: what a preview runs is budgeted (below).
 - Date: 2026-10-10
 - Builds on: Q1 (Oct 9: shared preview database), ADR 0009 (roles), ADR 0002 (Hyperdrive)
 
@@ -78,3 +78,14 @@ Removing the label deletes `pr-<n>` and its Hyperdrive config on the next deploy
 - **The shared branch follows master's migrations, not production's.** Until `deploy.yml` (PR 18) migrates production, the shared branch can be ahead of production. That is fine for previews.
 - **Unexercised in previews:** queue consumption and the daily batch. Both are covered by the integration tests and run in production.
 - **Spike branch:** the `spike` branch (Phase 0, kept until Phase 1 ends) was created from `production` before this rule existed. Resetting production's `neondb_owner` password once, and updating `DATABASE_URL_MIGRATIONS` to match, closes that gap.
+
+## Amendment (Oct 18): what a preview runs
+
+Every environment shares the account's 100,000 Hyperdrive queries a day. On Oct 18, preview runs used 97% of 125,140 queries, and Hyperdrive refused production's connections until the 00:00 UTC reset (phase-4 report §4). A full run (E2E flows, CPU step, Lighthouse) costs about 25,000 queries. A smoke run costs a few hundred.
+
+1. **A PR that changes only docs** (`docs/` and `*.md`) gets no preview. Its comment says so.
+2. **By default**, a preview deploys and runs only the smoke project.
+3. **The `full-preview` label** adds the E2E flows, the CPU step and Lighthouse, while the UTC day's Hyperdrive count is at most 50,000. Past that, or if the count can't be read, the run is smoke only, and the comment says why. Adding the label starts a run; removing it doesn't.
+4. **Before merging a PR that changes code, it gets one full run.** The label stays on for later pushes, but those check the budget again.
+
+`scripts/preview/scope.ts` decides, and `preview/choose.ts` reads the count from GraphQL Analytics. On Workers Paid, Hyperdrive has no daily limit, and the ceiling can go.

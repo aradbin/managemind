@@ -55,7 +55,7 @@ This is PLAN.md's MVP line.
    - prices in Bengali digits lost the zeros of whole taka (৳600 showed as `৬.০০৳`);
    - a CSS rule that overrode `hidden` put the checkout form on screen with an empty cart. Lighthouse caught that as a layout shift of 0.101, just over the budget.
 4. **The admin's sign-in bundle went down, from 143 to 128 of 150 KiB.** Each language's messages now load on demand (PR 0b), which made room for the order screens and the staff Turnstile widget.
-5. **The Free plan stays until the first client** (owner, Oct 18). A day of preview runs used up the account's free allowances: some preview API requests were stopped at the 10 ms CPU limit, and Hyperdrive queries reached 117% of the daily free 100,000 (§4). Production itself had nothing stopped.
+5. **The Free plan stays until the first client** (owner, Oct 18). A day of preview runs used up the account's free allowances: some preview API requests were stopped at the 10 ms CPU limit, and the Hyperdrive queries passed the daily free 100,000. From then until the 00:00 UTC reset, Hyperdrive refused every connection, so **production's storefronts and admin were down too** (§4). Previews now run the smoke tests only, unless a PR has the `full-preview` label and today's count leaves room (ADR 0011, amended).
 
 ## 1. What was built
 
@@ -168,7 +168,26 @@ The impact is as planned (plan §11). Carts are the new load: they wake the data
 
 Shopper sign-in codes share Resend's 100 emails a day with staff email until the Brevo key exists. The daily alarm watches that quota.
 
-**The usage alarm on Oct 18** reported 116,803 Hyperdrive queries in 24 hours, against the free 100,000. About ten preview runs of #56 caused it: each one runs 21 E2E flows, the CPU bursts and Lighthouse. Production served about 1,600 requests that day. Previews share the account's free allowances with production, so a busy day of pull requests can use them up.
+**The usage alarm on Oct 18** reported 116,803 Hyperdrive queries in 24 hours, against the free 100,000.
+
+**Production went down the same day.** The UTC day's count passed 100,000 between 08:00 and 09:00 and reached 125,140 by 10:00. Hyperdrive then dropped every connection within 3 ms ("Connection terminated unexpectedly"), so every request that needs the database answered 500 until the reset at 00:00 UTC. `/health` stayed green, because it doesn't touch the database.
+
+| Hyperdrive config, Oct 18 00:00–10:00 UTC | Queries |
+| --- | --- |
+| `pr-56`'s own branch (`db-branch`, since deleted) | 83,501 |
+| The shared preview branch | 37,434 |
+| Production | 4,205 |
+
+Previews made 97% of them. A full preview run (21 E2E flows, about 400 CPU-step requests and Lighthouse) costs about 25,000 queries, because each API request is 5–10 statements and Hyperdrive counts every one. Five runs in a day are enough. Even #58, which only changes docs, ran the full suite.
+
+The fix is in `preview.yml` and `scripts/preview/scope.ts`:
+
+- a PR that changes only docs gets no preview;
+- by default a preview deploys and runs the smoke tests, a few hundred queries;
+- the `full-preview` label adds the E2E flows, the CPU step and Lighthouse, but only while the day's count is at most 50,000;
+- when the count can't be read, the run is smoke only.
+
+Production keeps at least half the quota. Add the label once a PR's code is ready for review, not for every push.
 
 ## 5. Known gaps and follow-ups
 
@@ -213,7 +232,7 @@ Shopper sign-in codes share Resend's 100 emails a day with staff email until the
 - **A global `[hidden]` rule belongs in every theme.** Any class that sets `display` otherwise defeats the attribute.
 - **Run the E2E against a locally seeded run before pushing.** A scratch seed plus `--no-deps` gave a 30-second loop for a flow that would otherwise wait for a preview.
 - **Run the full build before pushing, not just the type check.** One fix broke the storefront's build-time prerender, which only `astro build` runs.
-- **Previews share the free allowances with production.** A day of repeated preview runs used up the CPU overrun allowance and the daily Hyperdrive queries. Keep preview runs to a normal pace while on the Free plan.
+- **Previews share the free allowances with production, and a shared quota is an outage waiting to happen.** A day of repeated preview runs used up the daily Hyperdrive queries and took production down. Any test traffic on the account now has a budget that leaves production room, and the full preview run is opt-in.
 
 ## 6. Ready for Phase 5A
 

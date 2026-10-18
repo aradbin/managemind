@@ -3,6 +3,11 @@
 # comment. The database is the shared Neon `preview` branch, or the PR's own
 # branch `pr-<n>` while it has the `db-branch` label. Closing the PR deletes
 # its Workers and its own branch.
+#
+# Every environment shares the account's 100,000 Hyperdrive queries a day, so
+# a preview runs the smoke tests only, a docs-only PR gets none, and the
+# `full-preview` label adds the E2E flows, the CPU step and Lighthouse while
+# today's count leaves room (scripts/preview/scope.ts).
 name: Preview
 
 on:
@@ -28,12 +33,14 @@ env:
 jobs:
   deploy:
     name: Deploy and smoke test
-    # Secrets are not available to forks; other labels change nothing.
+    # Secrets are not available to forks; other labels change nothing, and
+    # removing full-preview needs no new run.
     if: >-
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action) ||
-        github.event.label.name == 'db-branch')
+        github.event.label.name == 'db-branch' ||
+        (github.event.action == 'labeled' && github.event.label.name == 'full-preview'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     concurrency:
@@ -50,8 +57,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 
+      - name: Choose what to run
+        id: scope
+        env:
+          BASE: ${{ github.base_ref }}
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/choose.ts --base "origin/$BASE"
+          ${{ contains(github.event.pull_request.labels.*.name, 'full-preview') && '--full-label' || '' }}
+
       - name: Choose the database
         id: choice
+        if: steps.scope.outputs.deploy == 'true'
         env:
           LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'db-branch') }}
           BASE: ${{ github.base_ref }}
@@ -72,6 +88,7 @@ jobs:
           fi
 
       - name: Sentry settings for the admin build
+        if: steps.scope.outputs.deploy == 'true'
         run: |
           echo "VITE_SENTRY_DSN=$(jq -r .projects.admin.dsn scripts/sentry.json)" >> "$GITHUB_ENV"
           echo "VITE_SENTRY_ENVIRONMENT=preview" >> "$GITHUB_ENV"
@@ -79,9 +96,11 @@ jobs:
           # Turnstile's published always-pass test key (phase-4-plan §3.15).
           echo "VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA" >> "$GITHUB_ENV"
       - run: pnpm turbo run build --filter=./apps/*
+        if: steps.scope.outputs.deploy == 'true'
 
       - name: Database (Neon branch, migrations, seed, Hyperdrive, E2E people)
         id: database
+        if: steps.scope.outputs.deploy == 'true'
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/database.ts
           --pr "$PR" --database ${{ steps.choice.outputs.database }} ${{ steps.choice.outputs.flags }}
@@ -89,6 +108,7 @@ jobs:
 
       - name: Worker configs
         id: workers
+        if: steps.scope.outputs.deploy == 'true'
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/workers.ts
           --pr "$PR" --hyperdrive ${{ steps.database.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
@@ -97,6 +117,7 @@ jobs:
       # repository secret, each deploy makes a new one: preview sign-ins and
       # authenticator setups then last only until the next push.
       - name: Deploy the API
+        if: steps.scope.outputs.deploy == 'true'
         env:
           AUTH_SECRET_PREVIEW: ${{ secrets.AUTH_SECRET_PREVIEW }}
         run: |
@@ -116,28 +137,36 @@ jobs:
             --secrets-file "$secrets"
       - name: Deploy the storefront
         id: deployed
+        if: steps.scope.outputs.deploy == 'true'
         run: pnpm --filter @managemind/storefront exec wrangler deploy
 
       - name: Remove the PR's own database (label removed)
-        if: steps.choice.outputs.database == 'shared'
+        if: steps.scope.outputs.deploy == 'true' && steps.choice.outputs.database == 'shared'
         run: pnpm --filter @managemind/scripts exec tsx preview/teardown.ts --pr "$PR" --database-only
 
       - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
-      # The smoke tests, then the Phase 1 flows, the catalog flows (Phase 2),
-      # the storefront and online-store flows (Phase 3), and the shopper,
-      # orders and promotions flows (Phase 4) at a phone and a desktop
+        if: steps.scope.outputs.deploy == 'true'
+      # The smoke tests. A full run adds the Phase 1 flows, the catalog flows
+      # (Phase 2), the storefront and online-store flows (Phase 3), and the
+      # shopper, orders and promotions flows (Phase 4) at a phone and a desktop
       # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
+        if: steps.scope.outputs.deploy == 'true'
         env:
           API_URL: ${{ steps.workers.outputs.api_url }}
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
+          FULL: ${{ steps.scope.outputs.full }}
         run: |
           echo "E2E_SINCE=$(date +%s%3N)" >> "$GITHUB_ENV"
-          pnpm --filter @managemind/e2e e2e
-      # ADR 0003's measurement on every preview: informational, never blocks.
+          if [ "$FULL" = true ]; then
+            pnpm --filter @managemind/e2e e2e
+          else
+            pnpm --filter @managemind/e2e e2e --project=smoke
+          fi
+      # ADR 0003's measurement on a full run: informational, never blocks.
       - name: CPU per route
-        if: steps.smoke.outcome == 'success'
+        if: steps.scope.outputs.full == 'true' && steps.smoke.outcome == 'success'
         continue-on-error: true
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/cpu.ts --pr "$PR"
@@ -151,7 +180,7 @@ jobs:
       # elsewhere never pull in Lighthouse and its Chrome tooling.
       - name: Lighthouse
         id: lighthouse
-        if: steps.smoke.outcome == 'success'
+        if: steps.scope.outputs.full == 'true' && steps.smoke.outcome == 'success'
         env:
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
         run: |
@@ -178,6 +207,8 @@ jobs:
 
       - name: Comment the preview URLs
         if: ${{ !cancelled() && steps.choice.outcome == 'success' }}
+        env:
+          CHECKS: ${{ steps.scope.outputs.describe }}
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/comment.ts --pr "$PR"
           --status ${{ steps.deployed.outcome == 'success' && 'deployed' || 'failed' }}
@@ -185,6 +216,14 @@ jobs:
           --storefront-url "${{ steps.workers.outputs.storefront_url }}"
           --database "${{ steps.choice.outputs.describe }}"
           --smoke ${{ steps.smoke.outcome == 'success' && 'passed' || 'failed' }}
+          --checks "$CHECKS"
+      - name: Comment that there is no preview
+        if: ${{ !cancelled() && steps.scope.outputs.deploy == 'false' }}
+        env:
+          CHECKS: ${{ steps.scope.outputs.describe }}
+        run: >-
+          pnpm --filter @managemind/scripts exec tsx preview/comment.ts --pr "$PR"
+          --status skipped --checks "$CHECKS"
 
   teardown:
     name: Remove the preview

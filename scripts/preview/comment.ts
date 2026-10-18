@@ -1,7 +1,8 @@
 // Creates or updates the PR's single preview comment.
 //
-//   tsx preview/comment.ts --pr 12 --status deployed|failed|removed \
+//   tsx preview/comment.ts --pr 12 --status deployed|failed|removed|skipped \
 //     [--api-url U] [--storefront-url U] [--database D] [--smoke passed|failed]
+//     [--checks <what ran, from preview/choose.ts>]
 import { parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { apiClient } from '../lib/http';
 
@@ -34,9 +35,11 @@ else await github.request('POST', `/repos/${repo}/issues/${pr}/comments`, { body
 function lines(status: string | undefined): string[] {
   if (status === 'removed')
     return ['Removed: the PR is closed, so its preview Workers and database are deleted.'];
+  if (status === 'skipped') return [args.get('checks') ?? 'No preview for this commit.'];
   if (status === 'failed')
     return [`The preview for \`${commit}\` failed to deploy. See the workflow run.`];
-  if (status !== 'deployed') throw new Error('--status deployed|failed|removed is required');
+  if (status !== 'deployed')
+    throw new Error('--status deployed|failed|removed|skipped is required');
   const storefront = args.get('storefront-url') ?? '';
   const api = args.get('api-url') ?? '';
   const smoke = args.get('smoke') === 'passed' ? 'passed' : 'failed';
@@ -51,5 +54,6 @@ function lines(status: string | undefined): string[] {
     `| API health | ${api}/health |`,
     '',
     `Database: ${args.get('database') ?? 'shared preview branch'}.`,
+    ...(args.get('checks') ? ['', args.get('checks') as string] : []),
   ];
 }
