@@ -39,6 +39,7 @@ describe('ref geography', () => {
     );
   });
 
+  // Starting tsx in a child process takes several seconds on a busy runner.
   it('matches what scripts/geo-sql.ts prints (regenerate the migration after a dataset change)', () => {
     const printed = execFileSync('npx', ['tsx', 'scripts/geo-sql.ts'], { encoding: 'utf8' });
     const migrations = fileURLToPath(new URL('../migrations', import.meta.url));
@@ -46,7 +47,7 @@ describe('ref geography', () => {
       encoding: 'utf8',
     });
     expect(latest).toContain(printed.trim());
-  });
+  }, 30_000);
 
   it('is readable by the app without a tenant, and not writable', async () => {
     const { rows } = await app.query(

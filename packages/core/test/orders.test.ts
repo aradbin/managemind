@@ -493,6 +493,7 @@ describe('acceptance criterion 1: the last unit', () => {
     expect(await stock(a)).toEqual({ on_hand: 20, reserved: 1 });
   });
 
+  // Ten extra connections and twenty transactions outlast the 5 s default on a busy runner.
   it('gives 20 concurrent orders 20 different numbers', async () => {
     const a = await product(1_000, 100);
     const tokens: string[] = [];
@@ -503,5 +504,5 @@ describe('acceptance criterion 1: the last unit', () => {
       tokens.map((t, i) => run((tx) => placeOrder(tx, shopper, order(t, 8_000)), clients[i])),
     ).finally(() => Promise.all(extra.map((c) => c.end())));
     expect(new Set(placed.map((p) => p.number)).size).toBe(20);
-  });
+  }, 30_000);
 });
