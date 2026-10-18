@@ -329,6 +329,14 @@ describe('isolation suite', () => {
       }),
     );
     await inB((tx) => blockPhone(tx, bOwner, { phone: '+8801700007777', reason: 'B only' }));
+    const bMessage = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.messages (idempotency_key, event, channel, recipient_type, recipient, locale, status)
+             values (${`b-${crypto.randomUUID()}`}, 'order_placed', 'email', 'shopper', 'b@example.test', 'en', 'failed')
+             returning id`,
+      );
+      return rows[0]?.id as string;
+    });
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
@@ -425,6 +433,7 @@ describe('isolation suite', () => {
       'PATCH /v1/admin/promotions/{id}': { id: promotion.id, body: { priority: 1 } },
       'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
       'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
+      'POST /v1/admin/messages/{id}/resend': { id: bMessage },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -436,6 +445,8 @@ describe('isolation suite', () => {
         'the kind is one of three fixed names, resolved inside the caller’s own store',
       'DELETE /v1/admin/credentials/{kind}':
         'the kind is one of three fixed names, resolved inside the caller’s own store',
+      'DELETE /v1/admin/templates/{event}/{channel}/{locale}':
+        'the key names a template of the caller’s own store, never a row of another',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));

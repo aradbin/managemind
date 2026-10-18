@@ -12,13 +12,21 @@ import {
   createProduct,
   createTenant,
   formatTaka,
+  getAlertChoices,
+  listMessages,
+  listTemplates,
   markMessage,
   type OutboxEvent,
   placeOrder,
   planMessages,
+  previewTemplate,
   receive,
   recordMessages,
   renderMessage,
+  requeueMessage,
+  resetTemplate,
+  saveTemplate,
+  setAlertChoices,
   setCartArea,
   shopperActor,
   systemActor,
@@ -217,5 +225,98 @@ describe('notifications', () => {
     expect(formatTaka(60_000, 'en')).toBe('৳600');
     expect(formatTaka(60_050, 'en')).toBe('৳600.50');
     expect(formatTaka(60_000, 'bn')).toBe('৬০০৳');
+  });
+});
+
+describe('templates, alert choices and the log', () => {
+  it('save a store template, refuse unknown variables, preview, and reset', async () => {
+    const sms = { event: 'order_shipped', channel: 'sms', locale: 'bn' } as const;
+    await expect(
+      run((tx) => saveTemplate(tx, owner, { ...sms, body: 'Sent {order_number} {bogus}' })),
+    ).rejects.toMatchObject({ code: 'validation_failed' });
+    await expect(
+      run((tx) => saveTemplate(tx, actorAs('staff'), { ...sms, body: 'Sent {order_number}' })),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await run((tx) => saveTemplate(tx, owner, { ...sms, body: 'পাঠানো হয়েছে {order_number}' }));
+    const list = await run((tx) => listTemplates(tx, owner));
+    expect(
+      list.find((t) => t.event === 'order_shipped' && t.channel === 'sms' && t.locale === 'bn'),
+    ).toMatchObject({ custom: true, body: 'পাঠানো হয়েছে {order_number}' });
+    const preview = previewTemplate(owner, { ...sms, body: 'পাঠানো হয়েছে {order_number}' });
+    expect(preview.body).toBe('পাঠানো হয়েছে #১০০১');
+    expect(preview.sms).toMatchObject({ encoding: 'unicode', parts: 1 });
+    await run((tx) => resetTemplate(tx, owner, sms));
+    const after = await run((tx) => listTemplates(tx, owner));
+    expect(
+      after.find((t) => t.event === 'order_shipped' && t.channel === 'sms' && t.locale === 'bn')
+        ?.custom,
+    ).toBe(false);
+  });
+
+  it('needs a subject for email, and refuses a channel the event is not sent by', async () => {
+    await expect(
+      run((tx) =>
+        saveTemplate(tx, owner, {
+          event: 'order_placed',
+          channel: 'email',
+          locale: 'en',
+          body: 'x',
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'validation_failed' });
+    await expect(
+      run((tx) =>
+        saveTemplate(tx, owner, { event: 'new_order', channel: 'sms', locale: 'en', body: 'x' }),
+      ),
+    ).rejects.toMatchObject({ code: 'validation_failed' });
+  });
+
+  it("keep each staff member's alert choices, with push on by default", async () => {
+    const { rows } = await app.query<{ user_id: string }>(
+      'select user_id from platform.memberships where tenant_id = $1',
+      [store],
+    );
+    const me = { ...owner, userId: rows[0]?.user_id as string };
+    const before = await run((tx) => getAlertChoices(tx, me));
+    expect(before.find((c) => c.event === 'new_order')).toEqual({
+      event: 'new_order',
+      push: true,
+      email: false,
+    });
+    await run((tx) =>
+      setAlertChoices(tx, me, [{ event: 'new_order', push: false, email: true }]),
+    );
+    expect(
+      (await run((tx) => getAlertChoices(tx, me))).find((c) => c.event === 'new_order'),
+    ).toEqual({ event: 'new_order', push: false, email: true });
+  });
+
+  it('mask shoppers in the log for staff without customers.read', async () => {
+    const placed = await order('mask@example.test');
+    const event = await eventFor('order.placed', placed.id);
+    const planned = await run((tx) => planMessages(tx, event, options));
+    await run((tx) => recordMessages(tx, planned));
+    const viewer = await run((tx) => listMessages(tx, actorAs('viewer'), { orderId: placed.id }));
+    const email = viewer.find((m) => m.channel === 'email');
+    expect(email?.recipient).toBe('m•••@example.test');
+    const own = await run((tx) => listMessages(tx, owner, { orderId: placed.id }));
+    expect(own.find((m) => m.channel === 'email')?.recipient).toBe('mask@example.test');
+  });
+
+  it('send only a failed message again', async () => {
+    const placed = await order('again@example.test');
+    const event = await eventFor('order.placed', placed.id);
+    const planned = await run((tx) => planMessages(tx, event, options));
+    const [queued, ...others] = await run((tx) => recordMessages(tx, planned));
+    const id = queued?.id as string;
+    for (const other of others) {
+      await run((tx) => markMessage(tx, other.id, { status: 'sent', provider: 'capture' }));
+    }
+    await expect(run((tx) => requeueMessage(tx, owner, id))).rejects.toMatchObject({
+      code: 'conflict',
+    });
+    await run((tx) => markMessage(tx, id, { status: 'failed', reason: 'bounced', retry: false }));
+    expect(await run((tx) => requeueMessage(tx, owner, id))).toEqual({ eventId: event.id });
+    expect((await run((tx) => recordMessages(tx, planned))).map((q) => q.id)).toEqual([id]);
   });
 });

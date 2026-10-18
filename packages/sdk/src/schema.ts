@@ -7379,6 +7379,414 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's provider credentials, without secrets (settings.credentials) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Credentials */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Credential"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Check with the provider, then save (settings.credentials) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: "sslcommerz" | "sms" | "email";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        provider: string;
+                        /** @enum {string} */
+                        mode?: "sandbox" | "live";
+                        secrets: {
+                            [key: string]: unknown;
+                        };
+                        /** @default {} */
+                        config?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Credential"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove (settings.credentials) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: "sslcommerz" | "sms" | "email";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The delivery log, newest first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    orderId?: string;
+                    status?: "queued" | "sent" | "failed" | "skipped";
+                    channel?: "email" | "sms" | "push";
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Messages */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Message"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messages/{id}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a failed message again (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's templates, its own or the default (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Templates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageTemplate"][];
+                    };
+                };
+            };
+        };
+        /** Save the store's own wording (settings.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        /** @enum {string} */
+                        channel: "email" | "sms" | "push";
+                        /** @enum {string} */
+                        locale: "bn" | "en";
+                        subject?: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageTemplate"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A template filled with sample values, and its SMS parts */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        /** @enum {string} */
+                        channel: "email" | "sms" | "push";
+                        /** @enum {string} */
+                        locale: "bn" | "en";
+                        subject?: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplatePreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates/{event}/{channel}/{locale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Back to the default wording (settings.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    event: string;
+                    channel: "email" | "sms" | "push";
+                    locale: "bn" | "en";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reset */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your alert choices in this store */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Alert choices */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlertChoice"][];
+                    };
+                };
+            };
+        };
+        /** Change your alert choices in this store */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        push: boolean;
+                        email: boolean;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Alert choices */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlertChoice"][];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/promotions": {
         parameters: {
             query?: never;
@@ -10619,6 +11027,67 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+        };
+        Credential: {
+            /** @enum {string} */
+            kind: "sslcommerz" | "sms" | "email";
+            provider: string;
+            /** @enum {string|null} */
+            mode: "sandbox" | "live" | null;
+            /** @description The last 4 characters of the store ID or key */
+            hint: string;
+            config: {
+                [key: string]: unknown;
+            };
+            checkedAt: string | null;
+            checkError: string | null;
+            updatedAt: string;
+        };
+        Message: {
+            /** Format: uuid */
+            id: string;
+            event: string;
+            /** @enum {string} */
+            channel: "email" | "sms" | "push";
+            /** @enum {string} */
+            recipientType: "shopper" | "staff";
+            /** @description Masked without customers.read */
+            recipient: string;
+            /** Format: uuid */
+            orderId: string | null;
+            /** @enum {string} */
+            status: "queued" | "sent" | "failed" | "skipped";
+            reason: string | null;
+            attempts: number;
+            provider: string | null;
+            sentAt: string | null;
+            createdAt: string;
+        };
+        MessageTemplate: {
+            event: string;
+            /** @enum {string} */
+            channel: "email" | "sms" | "push";
+            /** @enum {string} */
+            locale: "bn" | "en";
+            subject: string | null;
+            body: string;
+            custom: boolean;
+            variables: string[];
+        };
+        TemplatePreview: {
+            subject: string;
+            body: string;
+            sms: {
+                /** @enum {string} */
+                encoding: "gsm" | "unicode";
+                length: number;
+                parts: number;
+            } | null;
+        };
+        AlertChoice: {
+            event: string;
+            push: boolean;
+            email: boolean;
         };
         Promotion: {
             /** Format: uuid */
