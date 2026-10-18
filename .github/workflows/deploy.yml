@@ -113,9 +113,10 @@ jobs:
           if [ -z "$CF_STORE_TOKEN" ]; then
             echo "::warning title=CF_STORE_TOKEN::not set: store pages are not purged after changes, and custom domains are off"
           fi
-          # Shopper email (ADR 0022): with the key, accounts can be turned on.
+          # Shopper email (ADR 0022): Brevo, from the store domain, once its key
+          # exists; until then Resend, from the platform domain.
           if [ -z "$BREVO_API_KEY" ]; then
-            echo "::warning title=BREVO_API_KEY::not set: shopper accounts can't be turned on"
+            echo "::notice title=Shopper email::BREVO_API_KEY not set: shopper sign-in codes go through Resend, from the platform domain"
           fi
           if [ -z "$TURNSTILE_SITE_KEY" ]; then
             echo "::warning title=Turnstile::TURNSTILE_SITE_KEY (variable) or TURNSTILE_SECRET_KEY (secret) not set: checkout and sign-in rely on rate limits alone"
@@ -127,7 +128,7 @@ jobs:
             --arg account "$CLOUDFLARE_ACCOUNT_ID" \
             '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}
               + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)
-              + (if $brevo == "" then {} else {BREVO_API_KEY: $brevo, SHOPPER_EMAIL_PROVIDER: "brevo"} end)
+              + (if $brevo == "" then {SHOPPER_EMAIL_PROVIDER: "resend"} else {BREVO_API_KEY: $brevo, SHOPPER_EMAIL_PROVIDER: "brevo"} end)
               + (if $tsite == "" then {} else
                   {TURNSTILE_SITE_KEY: $tsite, TURNSTILE_SECRET_KEY: $tsecret, CF_ACCOUNT_ID: $account} end)' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \

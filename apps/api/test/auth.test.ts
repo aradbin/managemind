@@ -7,7 +7,7 @@ import { twoFactor } from 'better-auth/plugins';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { apiPath, createApp } from '../src/app';
-import { emailFrom } from '../src/auth/email';
+import { emailFrom, shopperEmailFrom } from '../src/auth/email';
 import {
   capPlatformExpiry,
   challengeEmailCodeSignIns,
@@ -154,6 +154,33 @@ describe('auth and email settings', () => {
     expect(emailFrom({ ...config, EMAIL_FROM: 'Support <help@example.test>' })).toBe(
       'Support <help@example.test>',
     );
+  });
+
+  it('sends shopper email as the store, from the store domain or through Resend', () => {
+    const store = { ...base, STORE_DOMAIN: 'stores.example.test' };
+    const brevo = apiConfig.parse({
+      ...store,
+      ENVIRONMENT: 'development',
+      SHOPPER_EMAIL_PROVIDER: 'brevo',
+      BREVO_API_KEY: 'key',
+    });
+    expect(shopperEmailFrom(brevo, 'Demo "Grocery" <bd>')).toBe(
+      'Demo Grocery bd <no-reply@stores.example.test>',
+    );
+    const resend = apiConfig.parse({
+      ...store,
+      ENVIRONMENT: 'development',
+      SHOPPER_EMAIL_PROVIDER: 'resend',
+      RESEND_API_KEY: 'key',
+    });
+    // Resend's free plan verifies only the platform domain: the staff sender's address.
+    expect(shopperEmailFrom(resend, 'ডেমো গ্রোসারি')).toBe('ডেমো গ্রোসারি <no-reply@example.test>');
+    expect(shopperEmailFrom({ ...resend, EMAIL_FROM: 'Support <help@example.test>' }, 'Demo')).toBe(
+      'Demo <help@example.test>',
+    );
+    expect(problems({ ENVIRONMENT: 'development', SHOPPER_EMAIL_PROVIDER: 'resend' })).toEqual([
+      'RESEND_API_KEY',
+    ]);
   });
 });
 

@@ -21,3 +21,12 @@ Phase 4's first shopper email is the account sign-in code. It must come from the
 
 - The owner creates the Brevo account, verifies `managemind.store` (Brevo shows the DKIM and SPF records; the provisioning step can add them through the Cloudflare API), adds DMARC at `p=none`, and sets `BREVO_API_KEY` as a Worker secret with `SHOPPER_EMAIL_PROVIDER=brevo`.
 - 300 a day is plenty for sign-in codes; order notifications (Phase 5A) will need the paid tier or a second provider, decided then.
+
+## Amendment (2026-10-18): Resend until Brevo is set up
+
+Brevo's account verification sends a code by SMS, and it didn't arrive on the owner's Bangladeshi number, so the Brevo key isn't there yet. Until it is, shopper email goes through Resend, which already sends staff email.
+
+1. **`SHOPPER_EMAIL_PROVIDER=resend`** is what the deploy sets when `BREVO_API_KEY` is missing. With the key, it sets `brevo`, as before.
+2. **From the platform domain.** Resend's free plan verifies one domain, `managemind.site`, so the email goes out under the store's name at the staff sender's address (`ডেমো গ্রোসারি <no-reply@managemind.site>`). Replies still go to the store's own address when it has one.
+3. **One quota.** Shopper codes count against the same Resend daily quota as staff email (100 a day on the free plan), and the daily alarm watches it. That is plenty until the first clients. Order notifications (Phase 5A) still need Brevo or a paid plan.
+4. **Switching to Brevo** needs no code change: adding `BREVO_API_KEY` and deploying moves shopper email to the store domain.
