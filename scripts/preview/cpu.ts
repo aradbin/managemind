@@ -195,31 +195,40 @@ for (const page of STORE_PAGES) {
 // The shopper (phase-4-plan §9): through the storefront's /api proxy, as a
 // browser would, on the run's store. Previews run Turnstile with the
 // always-pass test keys, which take Cloudflare's dummy token.
-const admin = await json<{ slug: string; checkout: Record<string, unknown> }>(
-  await call('GET', '/v1/admin/store'),
-  'read store',
-);
-await json(
-  await call('PATCH', '/v1/admin/store', {
-    checkout: {
-      ...admin.checkout,
-      rateLimits: { perPhoneHour: 100, perPhoneDay: 500, perIpHour: 500 },
-    },
-  }),
-  'raise checkout limits',
-);
-const item = await json<{ variants: { id: string }[] }>(
-  await call('POST', '/v1/admin/products', {
-    status: 'active',
-    translations: { bn: { title: 'সিপিইউ পরীক্ষার পণ্য' } },
-    variant: { price: 50_000, trackInventory: false },
-  }),
-  'create shop product',
-);
-const variantId = item.variants[0]?.id as string;
+// If its setup is stopped too, the shopper's burst is skipped and reported,
+// and the table still covers everything else.
+async function shopperSetup() {
+  const admin = await json<{ slug: string; checkout: Record<string, unknown> }>(
+    await call('GET', '/v1/admin/store'),
+    'read store',
+  );
+  await json(
+    await call('PATCH', '/v1/admin/store', {
+      checkout: {
+        ...admin.checkout,
+        rateLimits: { perPhoneHour: 100, perPhoneDay: 500, perIpHour: 500 },
+      },
+    }),
+    'raise checkout limits',
+  );
+  const item = await json<{ variants: { id: string }[] }>(
+    await call('POST', '/v1/admin/products', {
+      status: 'active',
+      translations: { bn: { title: 'সিপিইউ পরীক্ষার পণ্য' } },
+      variant: { price: 50_000, trackInventory: false },
+    }),
+    'create shop product',
+  );
+  return { slug: admin.slug, variantId: item.variants[0]?.id as string };
+}
+const setup = await shopperSetup().catch((e: unknown) => {
+  failures.push(`shopper setup: ${e instanceof Error ? e.message : String(e)}`);
+  return null;
+});
+const variantId = setup?.variantId ?? '';
 const DHANMONDI = { divisionId: 6, districtId: 47, areaId: 513 };
 async function shop(method: string, path: string, cookie: Map<string, string>, body?: unknown) {
-  const res = await fetch(`${storefront}/api${path}?store=${admin.slug}`, {
+  const res = await fetch(`${storefront}/api${path}?store=${setup?.slug}`, {
     method,
     headers: {
       ...(cookie.size ? { cookie: [...cookie].map(([k, v]) => `${k}=${v}`).join('; ') } : {}),
@@ -236,7 +245,7 @@ async function shop(method: string, path: string, cookie: Map<string, string>, b
   return res;
 }
 let placedId = '';
-for (let i = 0; i < BURST.order; i++) {
+for (let i = 0; setup && i < BURST.order; i++) {
   try {
     await shopOnce(i);
   } catch (e) {
