@@ -7,6 +7,7 @@
     "./hostnames": "./src/hostnames/index.ts",
     "./turnstile": "./src/turnstile/index.ts",
     "./push": "./src/push/index.ts",
+    "./sms": "./src/sms/index.ts",
     "./sslcommerz": "./src/payments/sslcommerz.ts"
   },
   "scripts": {

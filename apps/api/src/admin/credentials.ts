@@ -4,9 +4,11 @@ import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   isCredentialKind,
   listCredentials,
+  loadCredentials,
   removeCredentials,
   saveCredentials,
 } from '@managemind/core';
+import { smsProviderFor } from '@managemind/providers/sms';
 import { AppError } from '@managemind/shared';
 import { CREDENTIAL_KINDS, credentialInput } from '@managemind/shared/credentials';
 import { credentialCheck } from '../credential-checks';
@@ -60,6 +62,24 @@ export const CREDENTIAL_ROUTES = {
       200: { content: { 'application/json': { schema: Credential } }, description: 'Saved' },
     },
   }),
+  smsBalance: r({
+    method: 'get',
+    path: '/credentials/sms/balance',
+    summary: "The SMS gateway's balance, when it reports one (settings.credentials)",
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              balance: z.number().nullable(),
+              error: z.string().nullable(),
+            }),
+          },
+        },
+        description: 'Balance',
+      },
+    },
+  }),
   removeCredential: r({
     method: 'delete',
     path: '/credentials/{kind}',
@@ -97,6 +117,19 @@ export function registerCredentials(admin: OpenAPIHono<StaffEnv>): void {
       { write: true },
     );
     return c.json(saved, 200);
+  });
+  admin.openapi(R.smsBalance, async (c) => {
+    if (!c.var.staff.actor.permissions.has('settings.credentials')) throw new AppError('forbidden');
+    const keyring = await credentialsKeyring(c.env);
+    const saved = await inStore(c, (tx) => loadCredentials(tx, keyring, 'sms'));
+    if (!saved) throw new AppError('not_found');
+    try {
+      const balance = await smsProviderFor(saved.provider, saved.secrets, saved.config).balance();
+      return c.json({ balance, error: null }, 200);
+    } catch (e) {
+      // Shown next to the gateway, as the check that saved it passed then.
+      return c.json({ balance: null, error: e instanceof Error ? e.message : String(e) }, 200);
+    }
   });
   admin.openapi(R.removeCredential, async (c) => {
     const { kind } = c.req.valid('param');

@@ -1,8 +1,9 @@
 // Checks a store's credentials with the provider before they are saved
 // (phase-5a-plan §3.1): a key that the provider refuses, or an email sender
-// it hasn't verified, never reaches the vault. SMS gateways add their
-// checks here in plan PR 12.
+// it hasn't verified, never reaches the vault. An SMS key must read its
+// balance; a generic gateway can only be checked by sending, so it isn't.
 import type { CredentialCheck } from '@managemind/core';
+import { smsProviderFor } from '@managemind/providers/sms';
 import { createSession } from '@managemind/providers/sslcommerz';
 
 type Fetch = typeof fetch;
@@ -98,6 +99,16 @@ export function credentialCheck(f: Fetch = fetch): CredentialCheck {
         return checkResend(String(c.secrets.apiKey), String(c.config.from), f);
       case 'brevo':
         return checkBrevo(String(c.secrets.apiKey), String(c.config.from), f);
+      case 'sms_net_bd':
+      case 'bulksmsbd':
+        try {
+          await smsProviderFor(c.provider, c.secrets, c.config, f).balance();
+        } catch (e) {
+          throw new Error(e instanceof Error ? e.message : String(e));
+        }
+        return;
+      case 'sms_http':
+        return;
       default:
         throw new Error(`${c.provider} can't be connected yet`);
     }

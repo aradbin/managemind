@@ -4,6 +4,7 @@
 // outcome. A store's own email key sends from its own domain, falling back
 // to the platform sender if it fails; the platform's shared daily quota
 // skips shopper order updates past 70% (§3.8) so sign-in codes keep working.
+
 import {
   importKeyring,
   type Keyring,
@@ -32,6 +33,7 @@ import {
   storeMessageEmail,
 } from '@managemind/providers/email';
 import { sendPush, type VapidKeys } from '@managemind/providers/push';
+import { SmsError, type SmsProvider, smsProviderFor } from '@managemind/providers/sms';
 import { tenantSettings } from '@managemind/shared/settings';
 import { eq } from 'drizzle-orm';
 import { storeUrlsFor } from './admin/store-urls';
@@ -72,6 +74,8 @@ interface StoreSender {
   replyTo?: string | undefined;
   /** The store's own email service, when it saved one. */
   own: { provider: EmailProvider; from: string } | null;
+  /** The store's SMS gateway, when it saved one (phase-5a-plan §3.6). */
+  sms: SmsProvider | null;
 }
 
 /** Plans, records, sends and logs one event's messages. Throws to have the queue retry. */
@@ -97,7 +101,14 @@ export async function notify(
         const devices = message.channel === 'push' ? await pushTargets(tx, message.recipient) : [];
         if (rendered) prepared.push({ message, ...rendered, devices });
       }
-      return { prepared, store: await storeSender(tx, keyring, config.PLATFORM_NAME) };
+      const sender = await storeSender(tx, keyring, config.PLATFORM_NAME);
+      return {
+        prepared,
+        store: {
+          ...sender,
+          sms: sms ? smsProviderFor(sms.provider, sms.secrets, sms.config) : null,
+        },
+      };
     }),
   );
   if (!prepared.length) return;
@@ -127,7 +138,7 @@ async function storeSender(
   tx: TenantTx,
   keyring: Keyring | null,
   platformName: string,
-): Promise<StoreSender> {
+): Promise<Omit<StoreSender, 'sms'>> {
   const t = schema.tenants;
   const [row] = await tx.db
     .select({ name: t.name, settings: t.settings })
@@ -168,8 +179,24 @@ async function send(
   const { message } = p;
   if (message.channel === 'email') return sendEmailMessage(env, ctx, p, store);
   if (message.channel === 'push') return sendPushMessage(env, p, devices);
-  // SMS gateways plug in here (plan PR 12).
-  return { status: 'failed', reason: 'sms sending is not available yet', retry: false };
+  return sendSmsMessage(p, store);
+}
+
+/** One SMS through the store's own gateway; the store pays for it (§3.6). */
+async function sendSmsMessage(p: Prepared, store: StoreSender): Promise<MessageOutcome> {
+  if (!store.sms) return { status: 'skipped', reason: 'no_gateway' };
+  try {
+    const sent = await store.sms.send(p.message.recipient, p.body);
+    return { status: 'sent', provider: store.sms.name, providerMessageId: sent.id };
+  } catch (e) {
+    const err = e instanceof SmsError ? e : new SmsError('unknown', { retryable: true });
+    return {
+      status: 'failed',
+      reason: err.message.slice(0, 300),
+      retry: err.retryable,
+      provider: store.sms.name,
+    };
+  }
 }
 
 /** The platform's VAPID keys, or null until the owner adds them (phase-5a-plan §1). */

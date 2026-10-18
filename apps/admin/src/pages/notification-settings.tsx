@@ -13,7 +13,7 @@ import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { useLocale } from '../i18n';
+import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/messages';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
@@ -28,6 +28,7 @@ export function NotificationSettingsPage() {
     <div className="flex max-w-2xl flex-col gap-8">
       <PageHeader title={t('notify.title')} description={t('notify.intro')} />
       <ShopperChannels />
+      <SmsGateway />
       <StoreEmail />
       <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
         <li>
@@ -341,6 +342,297 @@ function StoreEmail() {
         onConfirm={() => remove.mutate()}
       >
         <p>{t('notify.removeBody')}</p>
+      </ConfirmDialog>
+    </section>
+  );
+}
+
+type SmsProviderName = 'sms_net_bd' | 'bulksmsbd' | 'sms_http';
+
+/** The store's SMS gateway (§3.6): it pays for its own messages. Checked by reading its balance. */
+function SmsGateway() {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const canEdit = usePermission('settings.credentials');
+  const list = useQuery({ ...credentialsQuery, enabled: canEdit });
+  const saved = list.data?.find((c) => c.kind === 'sms') ?? null;
+  const balance = useQuery({
+    queryKey: ['sms-balance'],
+    queryFn: async () => unwrap(await api.GET('/v1/admin/credentials/sms/balance')),
+    enabled: canEdit && saved !== null && saved.provider !== 'sms_http',
+    staleTime: 60_000,
+  });
+  const [editing, setEditing] = useState(false);
+  const [provider, setProvider] = useState<SmsProviderName>('sms_net_bd');
+  const [apiKey, setApiKey] = useState('');
+  const [senderId, setSenderId] = useState('');
+  const [http, setHttp] = useState({
+    url: '',
+    method: 'POST' as 'GET' | 'POST',
+    toField: 'to',
+    messageField: 'message',
+    authHeader: '',
+    authValue: '',
+    successText: '',
+  });
+  const [missing, setMissing] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const refresh = () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: credentialsQuery.queryKey }),
+      queryClient.invalidateQueries({ queryKey: ['sms-balance'] }),
+    ]);
+  const body = () =>
+    provider === 'sms_http'
+      ? {
+          provider,
+          secrets: http.authValue.trim() ? { authValue: http.authValue.trim() } : {},
+          config: {
+            url: http.url.trim(),
+            method: http.method,
+            toField: http.toField.trim(),
+            messageField: http.messageField.trim(),
+            ...(http.authHeader.trim() ? { authHeader: http.authHeader.trim() } : {}),
+            ...(http.successText.trim() ? { successText: http.successText.trim() } : {}),
+          },
+        }
+      : {
+          provider,
+          secrets: { apiKey: apiKey.trim() },
+          config: senderId.trim() ? { senderId: senderId.trim() } : {},
+        };
+  const save = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.PUT('/v1/admin/credentials/{kind}', {
+          params: { path: { kind: 'sms' } },
+          body: body(),
+        }),
+      ),
+    onSuccess: async () => {
+      setEditing(false);
+      setApiKey('');
+      toast(t('sms.saved'));
+      await refresh();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.DELETE('/v1/admin/credentials/{kind}', { params: { path: { kind: 'sms' } } }),
+      ),
+    onSuccess: async () => {
+      setRemoving(false);
+      await refresh();
+    },
+  });
+  if (!canEdit) return null;
+  if (list.isPending) return <p role="status">{t('loading')}</p>;
+  if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
+  const errors = fieldErrors(save.error);
+  const showForm = editing || !saved;
+  const incomplete =
+    provider === 'sms_http'
+      ? !http.url.trim().startsWith('https://') || !http.toField.trim() || !http.messageField.trim()
+      : !apiKey.trim() || (provider === 'bulksmsbd' && !senderId.trim());
+  const name = (p: string) => t(`sms.provider.${p}` as AdminKey);
+  return (
+    <section aria-labelledby="sms-h" className="flex flex-col gap-3">
+      <h2 id="sms-h" className="text-lg font-semibold">
+        {t('sms.title')}
+      </h2>
+      <p className="text-sm text-muted-foreground">{t('sms.hint')}</p>
+      {saved && (
+        <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+          <p className="font-medium">{t('sms.connected', { provider: name(saved.provider) })}</p>
+          {balance.data?.balance != null && (
+            <p className="text-sm text-muted-foreground">
+              {t('sms.balance', {
+                balance: balance.data.balance.toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-BD'),
+              })}
+            </p>
+          )}
+          {balance.data?.error && <Notice tone="error">{balance.data.error}</Notice>}
+          {saved.checkedAt && (
+            <p className="text-sm text-muted-foreground">
+              {t('payments.checked', { when: dateTime(locale, saved.checkedAt) })}
+            </p>
+          )}
+          {!editing && (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {t('payments.change')}
+              </Button>
+              <Button variant="secondary" onClick={() => setRemoving(true)}>
+                {t('payments.remove')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+      {showForm && (
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (incomplete) {
+              setMissing(true);
+              return;
+            }
+            setMissing(false);
+            save.mutate();
+          }}
+        >
+          <fieldset disabled={save.isPending} className="flex flex-col gap-4">
+            <fieldset className="flex flex-col gap-1">
+              <legend className="mb-1 text-sm font-medium">{t('notify.provider')}</legend>
+              {(['sms_net_bd', 'bulksmsbd', 'sms_http'] as const).map((p) => (
+                <label key={p} className="flex min-h-11 items-center gap-3">
+                  <input
+                    type="radio"
+                    name="sms-provider"
+                    className="size-5"
+                    checked={provider === p}
+                    onChange={() => setProvider(p)}
+                  />
+                  {name(p)}
+                </label>
+              ))}
+            </fieldset>
+            {provider !== 'sms_http' && (
+              <>
+                <Field
+                  label={t('notify.apiKey')}
+                  type="password"
+                  autoComplete="off"
+                  value={apiKey}
+                  maxLength={200}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  error={missing && !apiKey.trim() ? t('form.required') : undefined}
+                />
+                <Field
+                  label={t('sms.senderId')}
+                  hint={t(
+                    provider === 'bulksmsbd' ? 'sms.senderIdRequired' : 'sms.senderIdOptional',
+                  )}
+                  value={senderId}
+                  maxLength={20}
+                  onChange={(e) => setSenderId(e.target.value)}
+                  error={
+                    missing && provider === 'bulksmsbd' && !senderId.trim()
+                      ? t('form.required')
+                      : undefined
+                  }
+                />
+                {provider === 'bulksmsbd' && <Notice>{t('sms.bulksmsbdIp')}</Notice>}
+              </>
+            )}
+            {provider === 'sms_http' && (
+              <>
+                <Field
+                  label={t('sms.url')}
+                  hint={t('sms.urlHint')}
+                  type="url"
+                  value={http.url}
+                  maxLength={500}
+                  onChange={(e) => setHttp({ ...http, url: e.target.value })}
+                  error={
+                    missing && !http.url.trim().startsWith('https://')
+                      ? t('form.invalid')
+                      : undefined
+                  }
+                />
+                <fieldset className="flex gap-4">
+                  <legend className="mb-1 text-sm font-medium">{t('sms.method')}</legend>
+                  {(['POST', 'GET'] as const).map((m) => (
+                    <label key={m} className="flex min-h-11 items-center gap-2">
+                      <input
+                        type="radio"
+                        name="sms-method"
+                        className="size-5"
+                        checked={http.method === m}
+                        onChange={() => setHttp({ ...http, method: m })}
+                      />
+                      {m}
+                    </label>
+                  ))}
+                </fieldset>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field
+                    label={t('sms.toField')}
+                    value={http.toField}
+                    maxLength={50}
+                    onChange={(e) => setHttp({ ...http, toField: e.target.value })}
+                  />
+                  <Field
+                    label={t('sms.messageField')}
+                    value={http.messageField}
+                    maxLength={50}
+                    onChange={(e) => setHttp({ ...http, messageField: e.target.value })}
+                  />
+                  <Field
+                    label={t('sms.authHeader')}
+                    value={http.authHeader}
+                    maxLength={50}
+                    onChange={(e) => setHttp({ ...http, authHeader: e.target.value })}
+                  />
+                  <Field
+                    label={t('sms.authValue')}
+                    type="password"
+                    autoComplete="off"
+                    value={http.authValue}
+                    maxLength={500}
+                    onChange={(e) => setHttp({ ...http, authValue: e.target.value })}
+                  />
+                </div>
+                <Field
+                  label={t('sms.successText')}
+                  hint={t('sms.successTextHint')}
+                  value={http.successText}
+                  maxLength={100}
+                  onChange={(e) => setHttp({ ...http, successText: e.target.value })}
+                />
+              </>
+            )}
+          </fieldset>
+          {errors.secrets && (
+            <Notice tone="error">
+              {t('payments.refused', { reason: errors.secrets.message })}
+            </Notice>
+          )}
+          {save.error && !errors.secrets && (
+            <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={save.isPending}>
+              {save.isPending ? t('payments.checking') : t('payments.save')}
+            </Button>
+            {saved && (
+              <Button
+                variant="secondary"
+                disabled={save.isPending}
+                onClick={() => {
+                  setEditing(false);
+                  save.reset();
+                }}
+              >
+                {t('action.cancel')}
+              </Button>
+            )}
+          </div>
+        </form>
+      )}
+      <ConfirmDialog
+        open={removing}
+        onOpenChange={setRemoving}
+        title={t('sms.removeTitle')}
+        confirmLabel={t('payments.remove')}
+        busy={remove.isPending}
+        error={remove.error ? saveErrorMessage(remove.error, t) : undefined}
+        onConfirm={() => remove.mutate()}
+      >
+        <p>{t('sms.removeBody')}</p>
       </ConfirmDialog>
     </section>
   );

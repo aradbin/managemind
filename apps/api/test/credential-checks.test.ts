@@ -49,15 +49,19 @@ describe('credential checks', () => {
     await expect(credentialCheck(bad)(ssl)).rejects.toThrow(/Store Credential Error/);
   });
 
-  it("refuse providers that can't be connected yet", async () => {
-    await expect(
-      credentialCheck(respond(200, {}))({
-        kind: 'sms',
-        provider: 'sms_net_bd',
-        mode: null,
-        secrets: { apiKey: 'k' },
-        config: {},
-      }),
-    ).rejects.toThrow(/can't be connected yet/);
+  it('accept an SMS key that reads its balance, and refuse one that doesn’t', async () => {
+    const sms = (provider: 'sms_net_bd' | 'bulksmsbd') => ({
+      kind: 'sms' as const,
+      provider,
+      mode: null,
+      secrets: { apiKey: 'k' },
+      config: { senderId: 'SHOP' },
+    });
+    const ok = respond(200, { error: 0, msg: 'Success', data: { balance: '10.00' } });
+    await expect(credentialCheck(ok)(sms('sms_net_bd'))).resolves.toBeUndefined();
+    const bad = respond(200, { error: 405, msg: 'Authorization required' });
+    await expect(credentialCheck(bad)(sms('sms_net_bd'))).rejects.toThrow(/Authorization required/);
+    const wall = respond(200, { response_code: 1032 });
+    await expect(credentialCheck(wall)(sms('bulksmsbd'))).rejects.toThrow(/1032/);
   });
 });

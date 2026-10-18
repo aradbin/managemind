@@ -5,9 +5,11 @@ import {
   addToCart,
   createProduct,
   createTenant,
+  importKeyring,
   type OutboxEvent,
   placeOrder,
   receive,
+  saveCredentials,
   setCartArea,
   shopperActor,
   systemActor,
@@ -124,6 +126,46 @@ describe('sending notifications', () => {
         { channel: 'sms', status: 'skipped', reason: 'no_gateway' },
       ]),
     );
+  });
+
+  it('texts the shopper through the store’s own gateway once it has one', async () => {
+    const key = btoa(String.fromCharCode(...new Uint8Array(32).fill(5)));
+    const env = makeEnv({ CREDENTIALS_KEY: key });
+    await withTenant(app, store, async (tx) =>
+      saveCredentials(
+        tx,
+        staff(),
+        await importKeyring(key),
+        'sms',
+        { provider: 'sms_net_bd', secrets: { apiKey: 'k' }, config: { senderId: 'SHOP' } },
+        async () => {},
+      ),
+    );
+    const sent: URLSearchParams[] = [];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (!String(input).startsWith('https://api.sms.net.bd/')) return realFetch(input, init);
+      sent.push(new URLSearchParams(String(init?.body)));
+      return new Response(JSON.stringify({ error: 0, msg: 'ok', data: { request_id: 7 } }));
+    }) as typeof fetch;
+    try {
+      const { order, event } = await placedOrder(`sms${Date.now()}@example.test`);
+      const ctx = makeCtx();
+      await notify(env, ctx, event);
+      await notify(env, ctx, event);
+      await ctx.settle();
+      expect(sent).toHaveLength(1);
+      expect(sent[0]?.get('to')).toBe('8801712000222');
+      expect(sent[0]?.get('msg')).toContain(`#${order.number}`);
+      const { rows } = await owner.query<{ status: string; provider: string }>(
+        `select status, provider from store.messages where order_id = $1 and channel = 'sms'`,
+        [order.id],
+      );
+      expect(rows).toEqual([{ status: 'sent', provider: 'sms_net_bd' }]);
+    } finally {
+      globalThis.fetch = realFetch;
+      await owner.query(`delete from store.provider_credentials where tenant_id = $1`, [store]);
+    }
   });
 
   it('counts platform email against the shared quota, except shopper email through Brevo', () => {
