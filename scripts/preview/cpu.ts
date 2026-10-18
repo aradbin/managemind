@@ -169,12 +169,15 @@ for (let i = 0; i < BURST.bulk; i++) {
     withOptions.variants.map((v) => ({ id: v.id, price: 125_000 + i * 100 })),
   );
 }
+// A request the Free plan stops for CPU is a result to report, not a reason
+// to stop measuring: failures are counted and listed in the summary.
+const failures: string[] = [];
 for (const page of STORE_PAGES) {
   for (let i = 0; i < BURST.page; i++) {
     const query = `${page.query ? `${page.query}&` : ''}store=demo-fashion`;
     const res = await fetch(`${storefront}${page.path}?${query}`);
     await res.arrayBuffer();
-    if (!res.ok) throw new Error(`${page.path}: ${res.status}`);
+    if (!res.ok) failures.push(`${page.label} page: ${res.status}`);
   }
 }
 // The shopper (phase-4-plan §9): through the storefront's /api proxy, as a
@@ -222,6 +225,13 @@ async function shop(method: string, path: string, cookie: Map<string, string>, b
 }
 let placedId = '';
 for (let i = 0; i < BURST.order; i++) {
+  try {
+    await shopOnce(i);
+  } catch (e) {
+    failures.push(`order ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+async function shopOnce(i: number) {
   const cookie = new Map<string, string>();
   await json(await shop('POST', '/cart/lines', cookie, { variantId, quantity: 1 }), 'add');
   await json(await shop('PUT', '/cart/area', cookie, { areaId: DHANMONDI.areaId }), 'area');
@@ -243,7 +253,12 @@ for (let i = 0; i < BURST.order; i++) {
   placedId = placed.id;
 }
 for (let i = 0; i < BURST.orders; i++) await call('GET', '/v1/admin/orders');
-for (let i = 0; i < BURST.orders; i++) await call('GET', `/v1/admin/orders/${placedId}`);
+for (let i = 0; placedId && i < BURST.orders; i++) {
+  await call('GET', `/v1/admin/orders/${placedId}`);
+}
+if (failures.length) {
+  notice(`${failures.length} requests in the bursts failed: ${failures.slice(0, 10).join('; ')}`);
+}
 
 notice(
   `Sent ${BURST.page} of each storefront page (${STORE_PAGES.map((p) => p.label).join(', ')}), ` +
@@ -290,7 +305,15 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
 
 // Workers Logs takes a little while to make new events queryable.
 const service = apiWorker(pr);
-type Row = { route: string; n: number; p50: number; p90: number; p99: number; max: number };
+type Row = {
+  route: string;
+  n: number;
+  stopped: number;
+  p50: number;
+  p90: number;
+  p99: number;
+  max: number;
+};
 async function stats(trigger: string, label: string, worker = service): Promise<Row> {
   const calcs = await cf.workerLogStats(
     worker,
@@ -308,8 +331,18 @@ async function stats(trigger: string, label: string, worker = service): Promise<
   );
   const value = (alias: string) =>
     Math.round(calcs.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0);
+  // Requests the Free plan stopped at its CPU limit (ADR 0013).
+  const stopped = await cf.workerLogStats(
+    worker,
+    since,
+    Date.now(),
+    [{ operator: 'count', alias: 'n' }],
+    undefined,
+    { '$metadata.trigger': trigger, '$workers.outcome': 'exceededCpu' },
+  );
   return {
     route: label,
+    stopped: Math.round(stopped[0]?.aggregates[0]?.value ?? 0),
     n: value('n'),
     p50: value('p50'),
     p90: value('p90'),
@@ -329,9 +362,11 @@ for (let attempt = 0; attempt < 12; attempt++) {
 const table = [
   `### CPU per route on ${service} and ${storefrontWorker(pr)} (Workers Logs, ms)`,
   '',
-  '| Route | Requests | p50 | p90 | p99 | Max |',
-  '| --- | --- | --- | --- | --- | --- |',
-  ...rows.map((r) => `| \`${r.route}\` | ${r.n} | ${r.p50} | ${r.p90} | ${r.p99} | ${r.max} |`),
+  '| Route | Requests | Stopped for CPU | p50 | p90 | p99 | Max |',
+  '| --- | --- | --- | --- | --- | --- | --- |',
+  ...rows.map(
+    (r) => `| \`${r.route}\` | ${r.n} | ${r.stopped} | ${r.p50} | ${r.p90} | ${r.p99} | ${r.max} |`,
+  ),
   '',
   'Storefront pages are all misses on previews (no page cache); a hit is measured by the production smoke. A row with 0 requests means Workers Logs names that trigger differently.',
   'Limits (ADR 0003): 10 ms per request on the Free plan, with headroom for occasional overruns; the daily alarm fires at request CPU above 250 ms p99 (API) or 100 ms p90 (storefront).',
