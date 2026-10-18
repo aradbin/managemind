@@ -217,7 +217,10 @@ for (let i = 0; i < BURST.order; i++) {
   const cookie = new Map<string, string>();
   await json(await shop('POST', '/cart/lines', cookie, { variantId, quantity: 1 }), 'add');
   await json(await shop('PUT', '/cart/area', cookie, { areaId: DHANMONDI.areaId }), 'area');
-  const cart = await json<{ totals: { total: number } }>(await shop('GET', '/cart', cookie), 'cart');
+  const cart = await json<{ totals: { total: number } }>(
+    await shop('GET', '/cart', cookie),
+    'cart',
+  );
   for (let j = 1; j < BURST.cart / BURST.order; j++) await shop('GET', '/cart', cookie);
   const placed = await json<{ id: string }>(
     await shop('POST', '/checkout/orders', cookie, {
@@ -261,7 +264,10 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
   { trigger: 'POST /v1/store/cart/lines', label: 'POST /v1/store/cart/lines (add)' },
   { trigger: 'PUT /v1/store/cart/area', label: 'PUT /v1/store/cart/area' },
   { trigger: 'GET /v1/store/cart', label: 'GET /v1/store/cart' },
-  { trigger: 'POST /v1/store/checkout/orders', label: 'POST /v1/store/checkout/orders (placeOrder)' },
+  {
+    trigger: 'POST /v1/store/checkout/orders',
+    label: 'POST /v1/store/checkout/orders (placeOrder)',
+  },
   { trigger: 'GET /v1/admin/orders', label: 'GET /v1/admin/orders' },
   { trigger: 'GET /v1/admin/orders/REDACTED', label: 'GET /v1/admin/orders/{id}' },
   ...STORE_PAGES.flatMap((p) => [
