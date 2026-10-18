@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { lookupStore, resolveStoreHost, type StoreContext, type StoreRequest } from './store';
+import {
+  lookupStore,
+  resolveStoreHost,
+  type StoreContext,
+  type StoreRequest,
+  storeFromApi,
+} from './store';
 
 const base: StoreRequest = {
   host: 'managemind-storefront.example.workers.dev',
@@ -97,5 +103,37 @@ describe('lookupStore', () => {
       await lookupStore(host, { kv: broken as never, api, onKvError: (e) => errors.push(e) }),
     ).toEqual(fromApi);
     expect(errors).toHaveLength(1);
+  });
+});
+
+describe('storeFromApi', () => {
+  const store = { id: 'x', slug: 'demo-grocery' } as unknown as StoreContext;
+  const answers = (...list: (number | Error)[]) => {
+    let calls = 0;
+    const call = async () => {
+      const next = list[calls++] as number | Error;
+      if (next instanceof Error) throw next;
+      return new Response(next === 200 ? JSON.stringify(store) : '', { status: next });
+    };
+    return { call, calls: () => calls };
+  };
+
+  it('reads a store, and takes a 404 as no store, without retrying either', async () => {
+    const found = answers(200);
+    expect(await storeFromApi(found.call)).toEqual(store);
+    const missing = answers(404);
+    expect(await storeFromApi(missing.call)).toBeNull();
+    expect(found.calls() + missing.calls()).toBe(2);
+  });
+
+  it('retries a failed or stopped call once, then fails rather than answering no store', async () => {
+    const recovered = answers(503, 200);
+    expect(await storeFromApi(recovered.call)).toEqual(store);
+    expect(recovered.calls()).toBe(2);
+    const thrown = answers(new Error('exceeded CPU'), 200);
+    expect(await storeFromApi(thrown.call)).toEqual(store);
+    const down = answers(500, 503);
+    await expect(storeFromApi(down.call)).rejects.toThrow('store context answered 503');
+    expect(down.calls()).toBe(2);
   });
 });
