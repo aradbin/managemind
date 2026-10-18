@@ -2,11 +2,11 @@
 
 - Date: 2026-10-18
 - Plan: `docs/phases/phase-4-plan.md` (approved; the owner's questions settled on the plan's recommendations)
-- Branch: `claude/cool-wozniak-ojwd8c`, with one commit per plan step, as in Phases 2 and 3. No pull request has been opened yet. Previews and production checks run once one is.
+- Pull requests: #56, all of Phase 4 with one commit per plan step (as in Phases 2 and 3) and its own preview database (`db-branch`); #57, shopper sign-in codes through Resend while the Brevo key is pending. Both merged and deployed on Oct 18.
 
 ## Summary
 
-Phase 4 is built and tested on the branch. A shopper can now:
+Phase 4 is done and in production (Oct 18). A shopper can now:
 
 - add products to a cart;
 - check out by phone as a guest, or signed in with an emailed code;
@@ -40,22 +40,22 @@ This is PLAN.md's MVP line.
 - **Shopper accounts** use one Better Auth instance per store host, with a per-store secret and a cookie on `/api` only (ADR 0020). The codes are sent by email through Brevo, or through Resend until the Brevo key exists (ADR 0022). Accounts are off by default (Q3).
 - **Turnstile** guards checkout and both sign-ins. Each custom domain is added to the widget when it goes live (ADR 0023).
 
-**Four things the owner should know:**
+**Five things the owner should know:**
 
-1. **Two owner items are needed before production can use all of this** (§5):
-   - **the Brevo API key:** until it is added, shopper codes go through Resend from `managemind.site` (ADR 0022 amendment), so accounts can still be turned on;
-   - **the Turnstile widget, its keys and the Turnstile: Edit permission:** until they are added, checkout and sign-in rely on rate limits alone, and the deploy warns.
+1. **Everything is live (Oct 18).** The production deploy runs with no warnings:
+   - **Turnstile** is on, with the owner's widget;
+   - **shopper sign-in codes go through Resend** from `managemind.site`, under the store's name. Brevo's SMS verification never reached the owner's number. Adding the Brevo key later moves them to `managemind.store` with no code change (ADR 0022 amendment).
 
-   Everything else works without them.
-2. **The acceptance criteria are met in tests, locally** (§2):
+   Shopper accounts stay off per store until the owner ticks them in Settings → Checkout.
+2. **The acceptance criteria are met in tests, on the preview and in production** (§2):
    - the core suite checks them against real Postgres with RLS;
-   - the new E2E checks them through the real store host.
-
-   The preview and production checks run once a pull request is open and merged.
+   - the preview's E2E checks them through the real store host;
+   - the owner placed a COD order on demo-grocery in production and took it to delivered in the admin (Oct 18).
 3. **The E2E found two real bugs before they shipped:**
    - prices in Bengali digits lost the zeros of whole taka (৳600 showed as `৬.০০৳`);
    - a CSS rule that overrode `hidden` put the checkout form on screen with an empty cart. Lighthouse caught that as a layout shift of 0.101, just over the budget.
 4. **The admin's sign-in bundle went down, from 143 to 128 of 150 KiB.** Each language's messages now load on demand (PR 0b), which made room for the order screens and the staff Turnstile widget.
+5. **The Free plan stays until the first client** (owner, Oct 18). A day of preview runs used up the account's free allowances: some preview API requests were stopped at the 10 ms CPU limit, and Hyperdrive queries reached 117% of the daily free 100,000 (§4). Production itself had nothing stopped.
 
 ## 1. What was built
 
@@ -76,15 +76,18 @@ This is PLAN.md's MVP line.
 | 10, 14 | `7f88d05` | Shopper accounts on many hosts, the `brevo` adapter, the account page, checkout prefill and saved addresses; ADRs 0020 and 0022 (migration 0025) |
 | 15 | `524c3b1` | Turnstile on checkout and both sign-ins; the widget's hostnames follow custom domains; previews use the test keys; ADR 0023 (migration 0026) |
 | 22 | `5f6d2a7`, `c9bc432`, `a8b8d71` | CI: the orders, promotions and accounts E2E with axe; the JavaScript budget, Lighthouse and the CPU step on the new pages and routes; smoke and production shop checks; the usage-limit concurrency test; the two fixes above |
-| 23 | this commit | This report, PLAN.md and README status |
+| 22, on the preview | `f2d5217` to `1e35d44` (#56) | Fixes from the preview runs: the CPU step's sign-in token and resilience; timeouts for heavy tests; a failed store lookup no longer shows "store not found"; page data retried once; store lookups remembered for a minute |
+| 23 | `cad88ee` (#56) | This report, PLAN.md and README status |
+| — | `bc22bc4`, `9ba656e` (#57) | Shopper codes through Resend until the Brevo key exists (ADR 0022 amendment); the preview job's time limit goes to 30 minutes |
+| — | this commit | Phase 4 closed after the production check |
 
 ## 2. Acceptance criteria
 
 | Criterion | Status |
 | --- | --- |
-| Two shoppers ordering the last unit at the same moment: exactly one succeeds | **Met in tests.** `core`: ten `placeOrder` calls on ten connections for one unit. One order exists, the other nine get `insufficient_stock`, reserved is 1 and `inventoryDrift` is empty. E2E, run locally: two shoppers check out a last unit at once through the store's `/api`. One gets the order. The other is refused with the line out of stock: `insufficient_stock` at the stock lock, or `cart_invalid` at the quote if the winner has already committed. Stock reads on hand 1, reserved 1. **On the preview:** runs with the pull request |
-| Retrying `placeOrder` with the same idempotency key returns the same order and never creates two | **Met in tests.** `core`: a sequential retry, a concurrent duplicate, and a reused key with another body. E2E, local: the winner's request repeated with the same key returns the same ID and number, and the stock is unchanged |
-| A full COD order can go from placed to delivered in the admin, with stock and history correct at every step | **Met in the local E2E** at both viewports. A manual order is confirmed (reserved 2) and shipped in two parcels (on hand 19, then 18; reserved 1, then 0). It is marked delivered with the cash collected, which makes the payment `paid` and the order `completed`. The timeline shows each step. `core` checks `inventoryDrift` after every step. **In production:** waits for the deploy |
+| Two shoppers ordering the last unit at the same moment: exactly one succeeds | **Met in tests.** `core`: ten `placeOrder` calls on ten connections for one unit. One order exists, the other nine get `insufficient_stock`, reserved is 1 and `inventoryDrift` is empty. E2E, run locally: two shoppers check out a last unit at once through the store's `/api`. One gets the order. The other is refused with the line out of stock: `insufficient_stock` at the stock lock, or `cart_invalid` at the quote if the winner has already committed. Stock reads on hand 1, reserved 1. **Met on the preview** (#56): the same E2E passed through the deployed store host at both viewports, on every run |
+| Retrying `placeOrder` with the same idempotency key returns the same order and never creates two | **Met in tests.** `core`: a sequential retry, a concurrent duplicate, and a reused key with another body. E2E, local and on the preview (#56): the winner's request repeated with the same key returns the same ID and number, and the stock is unchanged |
+| A full COD order can go from placed to delivered in the admin, with stock and history correct at every step | **Met in the local E2E** at both viewports. A manual order is confirmed (reserved 2) and shipped in two parcels (on hand 19, then 18; reserved 1, then 0). It is marked delivered with the cash collected, which makes the payment `paid` and the order `completed`. The timeline shows each step. `core` checks `inventoryDrift` after every step. The preview (#56) passed the same E2E. **Met in production (Oct 18):** the owner placed a COD order on `demo-grocery.managemind.store`, then confirmed, shipped and delivered it with the cash collected in the admin. The order shows Completed and the product's stock went down by one |
 
 PLAN.md items without their own criterion:
 
@@ -107,15 +110,15 @@ PLAN.md items without their own criterion:
 | `db` | 757, 75 skipped (475) |
 | `core` | 156 (105) |
 | `providers` | 30 (25) |
-| `api` | 138 (114) |
+| `api` | 139 (114) |
 | `admin` | 18 (15) |
 | `storefront` | 24 (24) |
 | `scripts` | 5 (5) |
-| E2E, local | Smoke: 9 of 9. Storefront flows: 4 of 4. The new orders flows: 2 of 2, at a phone and a desktop viewport, against a locally seeded run, with Turnstile test keys. The Phase 1, catalog and online-store flows were not re-run locally |
+| E2E, preview (#56, #57) | All 21: smoke, the Phase 1 flows, catalog, storefront, online store, and the new orders flows, at a phone and a desktop viewport, with Turnstile test keys |
 
 ## 3. Measurements
 
-These are local numbers. The preview's Lighthouse and CPU steps report theirs when a pull request runs.
+Lighthouse passed its budgets on the preview on all six pages, including the cart and checkout. The table's Lighthouse rows are local numbers.
 
 | Measure | Result | Budget |
 | --- | --- | --- |
@@ -163,24 +166,18 @@ The impact is as planned (plan §11). Carts are the new load: they wake the data
 - converted carts after 7 days;
 - order IP addresses and user agents after 90 days.
 
-Brevo's 300 a day is far more than sign-in codes need.
+Shopper sign-in codes share Resend's 100 emails a day with staff email until the Brevo key exists. The daily alarm watches that quota.
+
+**The usage alarm on Oct 18** reported 116,803 Hyperdrive queries in 24 hours, against the free 100,000. About ten preview runs of #56 caused it: each one runs 21 E2E flows, the CPU bursts and Lighthouse. Production served about 1,600 requests that day. Previews share the account's free allowances with production, so a busy day of pull requests can use them up.
 
 ## 5. Known gaps and follow-ups
 
 ### Waiting on the owner
 
-1. **Brevo:**
-   - create the account;
-   - verify `managemind.store`. Brevo shows the DKIM and SPF records; add DMARC at `p=none`;
-   - add `BREVO_API_KEY` as a repository secret.
-
-   The deploy then sets `SHOPPER_EMAIL_PROVIDER=brevo`. Brevo's SMS verification didn't reach the owner's number (Oct 18), so until the key exists, shopper codes go through Resend from `managemind.site` and accounts can be turned on (ADR 0022 amendment).
-2. **Turnstile:**
-   - create one widget with `managemind.store` and `managemind.site`;
-   - set the site key as the repository variable `TURNSTILE_SITE_KEY` and the secret as `TURNSTILE_SECRET_KEY`;
-   - add Account → Turnstile: Edit to `CF_STORE_TOKEN`.
-
-   The deploy passes the site key to the API and the admin's build, with `CLOUDFLARE_ACCOUNT_ID`. A free widget lists 10 hostnames, which leaves 8 for custom domains. A domain that doesn't fit falls back to rate limits, and the domains page says so (ADR 0023).
+1. **Brevo: optional now.** Brevo's SMS verification didn't reach the owner's number (Oct 18), so shopper codes go through Resend (ADR 0022 amendment). To move them to `managemind.store` later:
+   - verify `managemind.store` in Brevo. Brevo shows the DKIM and SPF records; add DMARC at `p=none`;
+   - add `BREVO_API_KEY` as a repository secret and run the deploy.
+2. **Turnstile: done (Oct 18).** The widget covers `managemind.store` and `managemind.site`. A free widget lists 10 hostnames, which leaves 8 for custom domains. A domain that doesn't fit falls back to rate limits, and the domains page says so (ADR 0023).
 3. **The geography list:** 8 divisions, 64 districts and 559 areas, waiting for the owner's approval (Q5). Corrections are data.
 4. **Steadfast and Pathao sample files** from their merchant panels. The export follows their public templates until then.
 5. **Market defaults:**
@@ -215,6 +212,8 @@ Brevo's 300 a day is far more than sign-in codes need.
   - the sort button that the storefront E2E had been clicking although it should have been hidden.
 - **A global `[hidden]` rule belongs in every theme.** Any class that sets `display` otherwise defeats the attribute.
 - **Run the E2E against a locally seeded run before pushing.** A scratch seed plus `--no-deps` gave a 30-second loop for a flow that would otherwise wait for a preview.
+- **Run the full build before pushing, not just the type check.** One fix broke the storefront's build-time prerender, which only `astro build` runs.
+- **Previews share the free allowances with production.** A day of repeated preview runs used up the CPU overrun allowance and the daily Hyperdrive queries. Keep preview runs to a normal pace while on the Free plan.
 
 ## 6. Ready for Phase 5A
 
