@@ -208,6 +208,12 @@ export const shipmentInput = z
   .strict();
 export const deliverInput = z.object({ cashCollected: z.boolean().default(true) }).strict();
 export const failInput = z.object({ reason: cleanString(300) }).strict();
+/** A failed shipment back in the store (phase-5a-plan §3.11): what the trip cost, if not the fee. */
+export const shipmentReturnInput = z
+  .object({ returnCost: z.int().min(0).max(CATALOG_LIMITS.maxPrice).optional() })
+  .strict();
+/** Staff flag a customer by hand, or clear the flag, which resets the failed deliveries. */
+export const customerFlagInput = z.object({ flagged: z.boolean() }).strict();
 
 export const MANUAL_METHODS = ['bkash', 'nagad', 'rocket', 'bank', 'cash', 'other'] as const;
 

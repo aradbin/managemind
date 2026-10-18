@@ -142,6 +142,21 @@ export const ordersEn = {
   'order.noDelivery': 'No delivery: collected in the shop.',
   'order.masked': 'Contact details are partly hidden for your role.',
   'order.payments': 'Payments',
+  'dashboard.more': 'More',
+  'dashboard.returns': 'Returns',
+  'dashboard.reports': 'Reports',
+  'order.flag.phone':
+    'This phone is flagged: deliveries to it came back before, or staff flagged it.',
+  'order.flag.phoneLink': 'See the customer',
+  'order.returnCost': 'What the trip cost (৳)',
+  'order.returnCostHint': 'The delivery fee by default. Reports total it by zone.',
+  'customer.flaggedByHand':
+    'Flagged by staff. Orders from this phone ask for the delivery charge in advance or a code, as the store chose.',
+  'customer.flaggedByFailures':
+    'Flagged: {count} delivery(s) came back. Orders from this phone ask for the delivery charge in advance or a code, as the store chose.',
+  'customer.failedDeliveries': '{count} delivery(s) came back.',
+  'customer.clearFlag': 'Clear the flag',
+  'customer.flag': 'Flag this customer',
   'order.flag.risk':
     'SSLCommerz marked this card payment as risky. Check with the customer before you ship.',
   'order.flag.late':

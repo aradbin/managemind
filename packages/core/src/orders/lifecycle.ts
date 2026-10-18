@@ -25,6 +25,7 @@ import {
   type ShipmentStatus,
   shipmentInput,
   shipmentMachine,
+  shipmentReturnInput,
 } from '@managemind/shared/orders';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
@@ -579,13 +580,30 @@ export async function failShipment(
 /**
  * A failed shipment came back: its units are back in stock with a `return`
  * movement, and reserved for the order again, so it can be sent once more
- * or cancelled (which releases them). Phase 5A adds inspection by condition.
+ * or cancelled (which releases them). What the trip cost is recorded (the
+ * order's delivery fee unless staff say otherwise), and the customer's
+ * failed deliveries go up by one, which can flag the phone (phase-5a-plan §3.11).
  */
-export async function returnShipment(tx: TenantTx, actor: Actor, id: string): Promise<OrderRow> {
+export async function returnShipment(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  input: unknown = {},
+): Promise<OrderRow> {
   authorize(actor, 'orders.write');
+  const { returnCost } = parseInput(shipmentReturnInput, input);
   const shipment = await lockShipment(tx, id);
-  await lockOrder(tx, shipment.orderId);
+  const order = await lockOrder(tx, shipment.orderId);
   await moveShipment(tx, actor, shipment, 'return');
+  await tx.db.execute(sql`
+    update store.shipments s
+       set return_cost = coalesce(${returnCost ?? null}::bigint,
+                                  (select greatest(0, o.delivery_fee - o.delivery_discount)
+                                     from store.orders o where o.id = s.order_id))
+     where s.id = ${id}`);
+  await tx.db.execute(sql`
+    update store.customers set failed_deliveries = failed_deliveries + 1
+     where id = ${order.customerId}`);
   const lines = await shipmentLines(tx, id);
   const ref = { referenceType: 'shipment', referenceId: id };
   await applyMovements(

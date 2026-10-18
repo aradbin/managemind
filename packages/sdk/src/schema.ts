@@ -7004,7 +7004,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A failed shipment came back: back in stock */
+        /** A failed shipment came back: back in stock, with what the trip cost */
         post: {
             parameters: {
                 query?: never;
@@ -7016,7 +7016,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        returnCost?: number;
+                    };
+                };
+            };
             responses: {
                 /** @description Returned */
                 200: {
@@ -7351,6 +7357,50 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/admin/customers/{id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Flag by hand, or clear (which resets failed deliveries) (customers.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        flagged: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Flag set */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerDetail"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/customers/{id}/addresses": {
@@ -8448,6 +8498,45 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns, refunds, failed deliveries and payment mix for a date range (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reports */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Reports"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -12324,8 +12413,13 @@ export interface components {
             firstOrderAt: string | null;
             lastOrderAt: string | null;
             createdAt: string;
+            failedDeliveries: number;
+            /** @description Flagged by staff by hand */
+            flagged: boolean;
         };
         CustomerDetail: components["schemas"]["Customer"] & {
+            /** @description By hand or by failed deliveries: asks for an advance or a code */
+            phoneFlagged: boolean;
             addresses: components["schemas"]["CustomerAddress"][];
             orders: {
                 /** Format: uuid */
@@ -12499,6 +12593,45 @@ export interface components {
             status: "pending" | "processing" | "succeeded" | "failed";
             amount: number;
             creditCode: string | null;
+        };
+        Reports: {
+            from: string;
+            to: string;
+            returnsByProduct: {
+                /** Format: uuid */
+                productId: string;
+                title: {
+                    [key: string]: string;
+                };
+                delivered: number;
+                returned: number;
+            }[];
+            returnsByReason: {
+                reason: string;
+                returns: number;
+                units: number;
+            }[];
+            refundsByMethod: {
+                method: string;
+                refunds: number;
+                amount: number;
+            }[];
+            failedByZone: {
+                /** Format: uuid */
+                zoneId: string | null;
+                zone: {
+                    [key: string]: string;
+                } | null;
+                shipped: number;
+                failed: number;
+                cost: number;
+            }[];
+            payments: {
+                /** @enum {string} */
+                kind: "online" | "cod" | "manual" | "mixed";
+                orders: number;
+                revenue: number;
+            }[];
         };
         Credential: {
             /** @enum {string} */

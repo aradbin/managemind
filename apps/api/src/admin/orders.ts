@@ -36,6 +36,7 @@ import {
   recordPayment,
   returnShipment,
   runIdempotent,
+  setCustomerFlag,
   setOrderTags,
   shipShipment,
   startProcessing,
@@ -49,6 +50,7 @@ import { AppError } from '@managemind/shared';
 import { GEO_VERSION, geoFilePath } from '@managemind/shared/geo';
 import {
   addressInput,
+  customerFlagInput,
   customerInput,
   customerPatch,
   deliverInput,
@@ -64,6 +66,7 @@ import {
   orderTagsInput,
   reasonInput,
   shipmentInput,
+  shipmentReturnInput,
   signOrderToken,
 } from '@managemind/shared/orders';
 import type { Context } from 'hono';
@@ -356,6 +359,8 @@ const Customer = z
     firstOrderAt: z.string().nullable(),
     lastOrderAt: z.string().nullable(),
     createdAt: z.string(),
+    failedDeliveries: z.number().int(),
+    flagged: z.boolean().openapi({ description: 'Flagged by staff by hand' }),
   })
   .openapi('Customer');
 const CustomerAddress = z
@@ -372,6 +377,9 @@ const CustomerAddress = z
   })
   .openapi('CustomerAddress');
 const CustomerDetail = Customer.extend({
+  phoneFlagged: z
+    .boolean()
+    .openapi({ description: 'By hand or by failed deliveries: asks for an advance or a code' }),
   addresses: z.array(CustomerAddress),
   orders: z.array(
     z.object({
@@ -601,8 +609,15 @@ export const ORDER_ROUTES = {
   return: r({
     method: 'post',
     path: '/shipments/{id}/return',
-    summary: 'A failed shipment came back: back in stock',
-    request: { params: Id, headers: IdemHeader },
+    summary: 'A failed shipment came back: back in stock, with what the trip cost',
+    request: {
+      params: Id,
+      headers: IdemHeader,
+      body: {
+        content: { 'application/json': { schema: shipmentReturnInput } },
+        required: false,
+      },
+    },
     responses: json(OrderState, 'Returned'),
   }),
   deleteShipment: r({
@@ -642,6 +657,13 @@ export const ORDER_ROUTES = {
     summary: 'Edit a customer (customers.write)',
     request: { params: Id, ...body(customerPatch) },
     responses: json(Customer, 'Updated'),
+  }),
+  flagCustomer: r({
+    method: 'put',
+    path: '/customers/{id}/flag',
+    summary: 'Flag by hand, or clear (which resets failed deliveries) (customers.write)',
+    request: { params: Id, ...body(customerFlagInput) },
+    responses: json(CustomerDetail, 'Flag set'),
   }),
   deleteCustomer: r({
     method: 'delete',
@@ -921,7 +943,7 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     state,
   );
   command(R.fail, 'fail', (tx, c, input) => failShipment(tx, actor(c), id(c), input), state);
-  command(R.return, 'return', (tx, c) => returnShipment(tx, actor(c), id(c)), state);
+  command(R.return, 'return', (tx, c, input) => returnShipment(tx, actor(c), id(c), input), state);
 
   admin.openapi(R.editPreview, async (c) => {
     const input = c.req.valid('json');
@@ -964,6 +986,13 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.updateCustomer, async (c) => {
     const input = c.req.valid('json');
     return c.json(await inStore(c, (tx) => updateCustomer(tx, actor(c), id(c), input), write), 200);
+  });
+  admin.openapi(R.flagCustomer, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => setCustomerFlag(tx, actor(c), id(c), input), write),
+      200,
+    );
   });
   admin.openapi(R.deleteCustomer, async (c) => {
     await inStore(c, (tx) => deleteCustomer(tx, actor(c), id(c)), write);

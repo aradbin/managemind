@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Notice } from '../components/notice';
+import { usePermission } from '../components/permission-gate';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { formatPrice } from '../lib/catalog';
@@ -16,6 +17,7 @@ import { type Dashboard, dashboardQuery } from '../lib/orders';
 export function DashboardView() {
   const { t, locale } = useLocale();
   const data = useQuery(dashboardQuery);
+  const canReports = usePermission('reports.read');
   if (data.isPending) return <p role="status">{t('loading')}</p>;
   if (data.isError) return <Notice tone="error">{errorMessage(data.error, t)}</Notice>;
   const { counts, sales } = data.data;
@@ -92,6 +94,16 @@ export function DashboardView() {
         </ul>
       </section>
       {sales && <WeekChart days={sales.days} locale={locale} />}
+      <nav aria-label={t('dashboard.more')} className="flex flex-wrap gap-3 text-sm">
+        <Link to="/returns" className="underline">
+          {t('dashboard.returns')}
+        </Link>
+        {canReports && (
+          <Link to="/reports" className="underline">
+            {t('dashboard.reports')}
+          </Link>
+        )}
+      </nav>
     </div>
   );
 }

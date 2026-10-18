@@ -140,6 +140,20 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'order.noDelivery': 'ডেলিভারি নেই: দোকান থেকে নেওয়া।',
   'order.masked': 'আপনার ভূমিকার জন্য যোগাযোগের তথ্য আংশিক লুকানো।',
   'order.payments': 'পেমেন্ট',
+  'dashboard.more': 'আরও',
+  'dashboard.returns': 'ফেরত',
+  'dashboard.reports': 'রিপোর্ট',
+  'order.flag.phone': 'এই ফোন চিহ্নিত: আগে এখানে ডেলিভারি ফেরত এসেছে, বা স্টাফ চিহ্নিত করেছেন।',
+  'order.flag.phoneLink': 'ক্রেতাকে দেখুন',
+  'order.returnCost': 'যাওয়া-আসার খরচ (৳)',
+  'order.returnCostHint': 'স্বাভাবিকভাবে ডেলিভারি চার্জ। রিপোর্টে জোন অনুযায়ী মোট দেখায়।',
+  'customer.flaggedByHand':
+    'স্টাফ চিহ্নিত করেছেন। এই ফোনের অর্ডারে দোকানের নিয়ম অনুযায়ী অগ্রিম ডেলিভারি চার্জ বা কোড চাওয়া হয়।',
+  'customer.flaggedByFailures':
+    'চিহ্নিত: {count}টি ডেলিভারি ফেরত এসেছে। এই ফোনের অর্ডারে দোকানের নিয়ম অনুযায়ী অগ্রিম ডেলিভারি চার্জ বা কোড চাওয়া হয়।',
+  'customer.failedDeliveries': '{count}টি ডেলিভারি ফেরত এসেছে।',
+  'customer.clearFlag': 'চিহ্ন সরান',
+  'customer.flag': 'এই ক্রেতাকে চিহ্নিত করুন',
   'order.flag.risk': 'SSLCommerz এই কার্ড পেমেন্টকে ঝুঁকিপূর্ণ বলেছে। পাঠানোর আগে ক্রেতার সাথে কথা বলুন।',
   'order.flag.late':
     'পেমেন্টের সময় শেষ হওয়ার পর একটি অনলাইন পেমেন্ট এসেছে। টাকা ফেরত দিন, বা অর্ডারটি চালিয়ে যান।',

@@ -22,7 +22,7 @@ import '../i18n/orders';
 import '../i18n/returns';
 import { RefundDialog } from '../components/refund-dialog';
 import { api, unwrap } from '../lib/api';
-import { formatPrice, readPrice } from '../lib/catalog';
+import { formatPrice, priceInput, readPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
   dateTime,
@@ -98,6 +98,14 @@ export function OrderDetailPage() {
         <OrderActions order={o} />
       </div>
       {o.flags.includes('payment_risk') && <Notice tone="error">{t('order.flag.risk')}</Notice>}
+      {o.flags.includes('flagged_phone') && (
+        <Notice tone="error">
+          {t('order.flag.phone')}{' '}
+          <Link to="/customers/$id" params={{ id: o.customer.id }} className="underline">
+            {t('order.flag.phoneLink')}
+          </Link>
+        </Notice>
+      )}
       {o.flags.includes('late_payment') && <Notice tone="error">{t('order.flag.late')}</Notice>}
       {o.status === 'cancelled' && (
         <Notice tone="error">
@@ -379,9 +387,14 @@ function ShipmentRow({
   const { t, locale } = useLocale();
   const toast = useToast();
   const canWrite = usePermission('orders.write');
-  const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | 'back' | null>(null);
   const [cash, setCash] = useState(true);
   const [reason, setReason] = useState('');
+  // What the trip cost (phase-5a-plan §3.11): the delivery fee unless staff say otherwise.
+  const [costText, setCostText] = useState(
+    priceInput(Math.max(0, o.totals.deliveryFee - o.totals.deliveryDiscount)),
+  );
+  const cost = readPrice(costText);
   const ship = useCommand(o.id, async (key) =>
     unwrap(
       await api.POST('/v1/admin/shipments/{id}/ship', {
@@ -389,10 +402,11 @@ function ShipmentRow({
       }),
     ),
   );
-  const back = useCommand(o.id, async (key) =>
+  const back = useCommand(o.id, async (key, returnCost: number) =>
     unwrap(
       await api.POST('/v1/admin/shipments/{id}/return', {
         params: { path: { id: s.id }, ...withKey(key).params },
+        body: { returnCost },
       }),
     ),
   );
@@ -463,13 +477,7 @@ function ShipmentRow({
             </>
           )}
           {s.status === 'failed' && (
-            <Button
-              variant="secondary"
-              disabled={back.isPending}
-              onClick={() =>
-                back.mutate(undefined, { onSuccess: () => toast(t('order.returned')) })
-              }
-            >
+            <Button variant="secondary" onClick={() => setDialog('back')}>
               {t('order.markReturned')}
             </Button>
           )}
@@ -527,6 +535,32 @@ function ShipmentRow({
           value={reason}
           maxLength={300}
           onChange={(e) => setReason(e.target.value)}
+        />
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={dialog === 'back'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('order.markReturned')}
+        confirmLabel={t('order.markReturned')}
+        destructive={false}
+        canConfirm={cost !== undefined && cost !== null}
+        busy={back.isPending}
+        error={back.error ? orderErrorMessage(back.error, t) : undefined}
+        onConfirm={() =>
+          back.mutate(cost ?? 0, {
+            onSuccess: () => {
+              setDialog(null);
+              toast(t('order.returned'));
+            },
+          })
+        }
+      >
+        <Field
+          label={t('order.returnCost')}
+          hint={t('order.returnCostHint')}
+          inputMode="decimal"
+          value={costText}
+          onChange={(e) => setCostText(e.target.value)}
         />
       </ConfirmDialog>
       <ConfirmDialog

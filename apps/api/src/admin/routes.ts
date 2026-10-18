@@ -49,6 +49,7 @@ import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 import { MESSAGE_ROUTES, registerMessages } from './messages';
 import { ORDER_ROUTES, registerOrders } from './orders';
 import { PROMOTION_ROUTES, registerPromotions } from './promotions';
+import { REPORT_ROUTES, registerReports } from './reports';
 import { RETURN_ROUTES, registerReturns } from './returns';
 import { storeUrls } from './store-urls';
 import { registerStorefrontAdmin, STOREFRONT_ROUTES } from './storefront';
@@ -149,6 +150,7 @@ export const ADMIN_ROUTES = {
   ...DOMAIN_ROUTES,
   ...ORDER_ROUTES,
   ...RETURN_ROUTES,
+  ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
@@ -457,6 +459,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerDomains(admin);
   registerOrders(admin);
   registerReturns(admin);
+  registerReports(admin);
   registerCredentials(admin);
   registerMessages(admin);
   registerPromotions(admin);

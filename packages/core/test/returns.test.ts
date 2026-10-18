@@ -20,7 +20,10 @@ import {
   createTenant,
   deliverShipment,
   exchangeReturn,
+  failShipment,
+  getCustomer,
   getOrder,
+  getReports,
   getReturn,
   inspectReturn,
   inventoryDrift,
@@ -28,8 +31,10 @@ import {
   placeOrder,
   previewRefund,
   receive,
+  returnShipment,
   setCartArea,
   setCartCode,
+  setCustomerFlag,
   shipShipment,
   shopperActor,
   shopperReturnable,
@@ -515,5 +520,83 @@ describe('store credit and exchanges', () => {
       resolution: 'exchanged',
       exchangeOrderId: ex.order.id,
     });
+  });
+});
+
+describe('failed deliveries, flagged phones and reports (§3.11, §3.15)', () => {
+  it('counts a shipment that came back, with its cost, and flags the phone', async () => {
+    const a = await product(20_000);
+    const phone = '+8801712345690';
+    let token: string | null = null;
+    const added = await run((tx) => addToCart(tx, token, { variantId: a, quantity: 1 }, 'en'));
+    token = added.token ?? token;
+    const cart = await run((tx) => setCartArea(tx, token, { areaId: 513 }));
+    const placed = await run((tx) =>
+      placeOrder(tx, shopperActor(), {
+        channel: 'storefront',
+        source: 'website',
+        cartToken: token,
+        contact: { name: 'Rahim', phone },
+        address,
+        payment: { kind: 'cod' },
+        expectedTotal: cart.quote.totals.total,
+        locale: 'en',
+      }),
+    );
+    await run((tx) => confirmOrder(tx, owner, placed.id));
+    const [line] = await lines(placed.id);
+    const shipment = await run((tx) =>
+      createShipment(tx, owner, placed.id, { lines: [{ orderLineId: line?.id, quantity: 1 }] }),
+    );
+    await run((tx) => shipShipment(tx, owner, shipment.id));
+    await run((tx) => failShipment(tx, owner, shipment.id, { reason: 'refused' }));
+    await run((tx) => returnShipment(tx, owner, shipment.id));
+    const order = await run((tx) => getOrder(tx, owner, placed.id));
+    const cost = await run(async (tx) => {
+      const { rows } = await tx.db.execute<{ return_cost: string }>(
+        sql`select return_cost from store.shipments where id = ${shipment.id}`,
+      );
+      return Number(rows[0]?.return_cost);
+    });
+    expect(cost).toBe(order.totals.deliveryFee - order.totals.deliveryDiscount);
+
+    const customer = await run((tx) => getCustomer(tx, owner, order.customer.id));
+    // The default rule flags after one failed delivery.
+    expect(customer).toMatchObject({ failedDeliveries: 1, flagged: false, phoneFlagged: true });
+    const cleared = await run((tx) => setCustomerFlag(tx, owner, customer.id, { flagged: false }));
+    expect(cleared).toMatchObject({ failedDeliveries: 0, phoneFlagged: false });
+    const flagged = await run((tx) => setCustomerFlag(tx, owner, customer.id, { flagged: true }));
+    expect(flagged).toMatchObject({ flagged: true, phoneFlagged: true });
+
+    // The next order from the phone shows the flag.
+    let next: string | null = null;
+    const again = await run((tx) => addToCart(tx, next, { variantId: a, quantity: 1 }, 'en'));
+    next = again.token ?? next;
+    const nextCart = await run((tx) => setCartArea(tx, next, { areaId: 513 }));
+    const second = await run((tx) =>
+      placeOrder(tx, shopperActor(), {
+        channel: 'storefront',
+        source: 'website',
+        cartToken: next,
+        contact: { name: 'Rahim', phone },
+        address,
+        payment: { kind: 'cod' },
+        expectedTotal: nextCart.quote.totals.total,
+        locale: 'en',
+      }),
+    );
+    expect((await run((tx) => getOrder(tx, owner, second.id))).flags).toContain('flagged_phone');
+
+    const today = new Date().toISOString().slice(0, 10);
+    const reports = await run((tx) => getReports(tx, owner, { from: today, to: today }));
+    expect(reports.failedByZone.reduce((n, z) => n + z.failed, 0)).toBeGreaterThanOrEqual(1);
+    expect(reports.refundsByMethod.map((r) => r.method)).toEqual(
+      expect.arrayContaining(['bkash', 'cash', 'store_credit']),
+    );
+    expect(reports.returnsByReason.length).toBeGreaterThan(0);
+    expect(reports.payments.find((p) => p.kind === 'cod')?.orders).toBeGreaterThan(0);
+    await expect(
+      run((tx) => getReports(tx, actorAs('staff'), { from: today, to: today })),
+    ).rejects.toMatchObject({ code: 'forbidden' });
   });
 });

@@ -514,6 +514,11 @@ export async function placeOrder(
       payload: { number },
     });
   }
+  // A flagged phone shows on the order, for staff (phase-5a-plan §3.11).
+  if (await phoneFlagged(tx, phone, settings.settings)) {
+    await tx.db.execute(sql`
+      update store.orders set flags = array_append(flags, 'flagged_phone') where id = ${orderId}`);
+  }
   // A store credit code the order didn't use up comes back as a new one (phase-5a-plan §3.13).
   for (const p of q.promotions) {
     if (p.codeId) await reissueCreditRemainder(tx, orderId, p.promotionId, p.amount);

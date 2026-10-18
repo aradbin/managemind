@@ -17,6 +17,7 @@ import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
 import { Route as ShellInventoryRouteImport } from './routes/_shell/inventory'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
+import { Route as ShellReportsRouteImport } from './routes/_shell/reports'
 import { Route as PrintOrdersRouteImport } from './routes/print.orders'
 import { Route as ShellCatalogAttributesRouteImport } from './routes/_shell/catalog/attributes'
 import { Route as ShellCatalogCategoriesRouteImport } from './routes/_shell/catalog/categories'
@@ -98,6 +99,11 @@ const ShellInventoryRoute = ShellInventoryRouteImport.update({
 const ShellPlatformRoute = ShellPlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsRoute = ShellReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => ShellRoute,
 } as any)
 const PrintOrdersRoute = PrintOrdersRouteImport.update({
@@ -329,6 +335,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
   '/platform': typeof ShellPlatformRouteWithChildren
+  '/reports': typeof ShellReportsRoute
   '/print/orders': typeof PrintOrdersRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
+  '/reports': typeof ShellReportsRoute
   '/print/orders': typeof PrintOrdersRoute
   '/': typeof ShellIndexRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
@@ -433,6 +441,7 @@ export interface FileRoutesById {
   '/_shell/account': typeof ShellAccountRoute
   '/_shell/inventory': typeof ShellInventoryRoute
   '/_shell/platform': typeof ShellPlatformRouteWithChildren
+  '/_shell/reports': typeof ShellReportsRoute
   '/print/orders': typeof PrintOrdersRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/catalog/attributes': typeof ShellCatalogAttributesRoute
@@ -488,6 +497,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/inventory'
     | '/platform'
+    | '/reports'
     | '/print/orders'
     | '/catalog/attributes'
     | '/catalog/categories'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/account'
     | '/inventory'
+    | '/reports'
     | '/print/orders'
     | '/'
     | '/catalog/attributes'
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/_shell/account'
     | '/_shell/inventory'
     | '/_shell/platform'
+    | '/_shell/reports'
     | '/print/orders'
     | '/_shell/'
     | '/_shell/catalog/attributes'
@@ -701,6 +713,13 @@ declare module '@tanstack/react-router' {
       path: '/platform'
       fullPath: '/platform'
       preLoaderRoute: typeof ShellPlatformRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports': {
+      id: '/_shell/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ShellReportsRouteImport
       parentRoute: typeof ShellRoute
     }
     '/print/orders': {
@@ -1029,6 +1048,7 @@ interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
   ShellInventoryRoute: typeof ShellInventoryRoute
   ShellPlatformRoute: typeof ShellPlatformRouteWithChildren
+  ShellReportsRoute: typeof ShellReportsRoute
   ShellIndexRoute: typeof ShellIndexRoute
   ShellCatalogAttributesRoute: typeof ShellCatalogAttributesRoute
   ShellCatalogCategoriesRoute: typeof ShellCatalogCategoriesRoute
@@ -1074,6 +1094,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
   ShellInventoryRoute: ShellInventoryRoute,
   ShellPlatformRoute: ShellPlatformRouteWithChildren,
+  ShellReportsRoute: ShellReportsRoute,
   ShellIndexRoute: ShellIndexRoute,
   ShellCatalogAttributesRoute: ShellCatalogAttributesRoute,
   ShellCatalogCategoriesRoute: ShellCatalogCategoriesRoute,
