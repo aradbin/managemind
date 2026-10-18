@@ -5,7 +5,6 @@
 // or a reload sends the same key and never makes two orders.
 import { type Cart, lineName, problemText, totals } from './cart-view';
 import {
-  add,
   api,
   config,
   digits,
@@ -18,6 +17,7 @@ import {
   t,
   tracker,
 } from './shop';
+import { type Check, mountTurnstile } from './turnstile';
 
 interface GeoFile {
   v: string;
@@ -68,8 +68,7 @@ const name = (n: [unknown, ...unknown[]]) =>
   String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 
 let cart: Cart | null = null;
-let turnstileToken: string | undefined;
-let turnstileWidget: string | undefined;
+let check: Check | undefined;
 
 function show(message: string, kind: 'error' | 'info' = 'error') {
   if (!notice) return;
@@ -236,37 +235,6 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
   );
 }
 
-type Turnstile = {
-  render: (el: HTMLElement, o: Record<string, unknown>) => string;
-  reset: (id?: string) => void;
-};
-
-/** Turnstile, loaded only here and only when the store's host has a site key. */
-function setupTurnstile(siteKey: string) {
-  const box = document.querySelector<HTMLElement>('[data-turnstile]');
-  if (!box) return;
-  const w = window as unknown as { turnstile?: Turnstile; mmTurnstile?: () => void };
-  w.mmTurnstile = () => {
-    turnstileWidget = w.turnstile?.render(box, {
-      sitekey: siteKey,
-      language: cfg.locale,
-      appearance: 'interaction-only',
-      callback: (token: string) => {
-        turnstileToken = token;
-      },
-      'expired-callback': () => {
-        turnstileToken = undefined;
-      },
-    });
-  };
-  const s = document.createElement('script');
-  s.src =
-    'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=mmTurnstile';
-  s.async = true;
-  s.defer = true;
-  add(document.head, s);
-}
-
 const PHONE = /^(?:\+?88)?0?1[3-9]\d{8}$/;
 const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
@@ -355,17 +323,21 @@ async function submit(e: SubmitEvent) {
   place.disabled = true;
   place.textContent = t('checkout.placing');
   try {
-    const send = (key: string) =>
-      api<Placed>('/checkout/orders', {
+    const send = async (key: string) => {
+      const turnstileToken = await check?.token();
+      return api<Placed>('/checkout/orders', {
         body: { ...body, ...(turnstileToken ? { turnstileToken } : {}) },
         headers: { 'idempotency-key': key },
       });
+    };
     let placed: Placed;
     try {
       placed = await send(attemptKey());
     } catch (err) {
       // The cart changed since the last attempt under this key: a new attempt.
       if (!(err instanceof ShopError && err.code === 'idempotency_key_reused')) throw err;
+      // The first try spent its token.
+      check?.reset();
       newAttempt();
       placed = await send(attemptKey());
     }
@@ -382,9 +354,7 @@ async function submit(e: SubmitEvent) {
   } catch (err) {
     place.disabled = false;
     place.textContent = t('checkout.place');
-    const w = window as unknown as { turnstile?: Turnstile };
-    if (turnstileWidget) w.turnstile?.reset(turnstileWidget);
-    turnstileToken = undefined;
+    check?.reset();
     if (!(err instanceof ShopError)) return show(t('cart.error'));
     const b = err.body;
     switch (err.code) {
@@ -456,7 +426,9 @@ async function start() {
       el('p', {}, el('a', { href: cfg.links.account, text: t('checkout.signIn') })),
     );
   }
-  if (state.turnstileSiteKey) setupTurnstile(state.turnstileSiteKey);
+  const box = document.querySelector<HTMLElement>('[data-turnstile]');
+  if (state.turnstileSiteKey && box)
+    check = mountTurnstile(box, state.turnstileSiteKey, cfg.locale);
   form.addEventListener('submit', (e) => void submit(e));
   tracker()?.beginCheckout(
     state.cart.lines.map((l) => ({

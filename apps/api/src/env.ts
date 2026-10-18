@@ -69,6 +69,8 @@ export interface Env {
   CF_STORE_TOKEN?: string;
   /** The store zone's ID, set by the deploy, for purges and custom hostnames. */
   STORE_ZONE_ID?: string;
+  /** The Cloudflare account, for the Turnstile widget's hostname list (phase-4-plan §3.15). */
+  CF_ACCOUNT_ID?: string;
   /** Turnstile's site key, sent to checkout and sign-in pages (phase-4-plan §3.15). */
   TURNSTILE_SITE_KEY?: string;
   /** Turnstile's secret (a Worker secret); without it the check is skipped. */

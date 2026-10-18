@@ -15,14 +15,14 @@ export class AuthError extends Error {
   }
 }
 
-async function call<T>(path: string, body?: unknown): Promise<T> {
+async function call<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
   const res = await fetch(
     `/api/auth${path}`,
     body === undefined
       ? {}
       : {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', ...headers },
           body: JSON.stringify(body),
         },
   );
@@ -45,9 +45,13 @@ export interface Session {
 }
 
 export const auth = {
-  /** Always answers the same, known address or not (§5.5). */
-  sendCode: (email: string) =>
-    call<{ success: boolean }>('/email-otp/send-verification-otp', { email, type: 'sign-in' }),
+  /** Always answers the same, known address or not (§5.5). The Turnstile token goes in a header. */
+  sendCode: (email: string, turnstileToken?: string) =>
+    call<{ success: boolean }>(
+      '/email-otp/send-verification-otp',
+      { email, type: 'sign-in' },
+      turnstileToken ? { 'x-turnstile-token': turnstileToken } : undefined,
+    ),
   /** With two-factor login on, no session yet: the challenge comes next. */
   signIn: (email: string, otp: string) =>
     call<{ twoFactorRedirect?: boolean }>('/sign-in/email-otp', { email, otp }),

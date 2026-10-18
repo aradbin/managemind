@@ -36,6 +36,7 @@ export const bn: Record<keyof typeof en, string> = {
   'signIn.changeEmail': 'অন্য ইমেইল ব্যবহার করুন',
   'signIn.resend': 'নতুন কোড পাঠান',
   'signIn.resendIn': '{seconds} সেকেন্ড পরে নতুন কোড পাঠাতে পারবেন।',
+  'signIn.check': 'নিচের যাচাইটি সম্পন্ন করে আবার চেষ্টা করুন।',
   'signIn.invalidCode': 'কোডটি ভুল বা মেয়াদ শেষ। সর্বশেষ ইমেইলটি দেখুন, অথবা নতুন কোড পাঠান।',
   'signIn.tooManyTries': 'এই কোড দিয়ে অনেকবার চেষ্টা হয়েছে। নতুন কোড পাঠান।',
   'twoFactor.title': 'টু-ফ্যাক্টর লগইন',

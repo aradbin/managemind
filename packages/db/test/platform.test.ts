@@ -38,6 +38,7 @@ const EXPECTED: Record<string, { table: string[]; update?: string[] }> = {
       'provider_ref',
       'ssl_status',
       'status',
+      'turnstile',
       'verified_at',
     ],
   },

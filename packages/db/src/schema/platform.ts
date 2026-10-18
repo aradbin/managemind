@@ -83,6 +83,12 @@ export const tenantDomains = platform.table(
     checkAttempts: integer().notNull().default(0),
     /** Cloudflare's reason, when the domain failed or needs attention. */
     failureReason: text(),
+    /**
+     * On the Turnstile widget's hostname list (phase-4-plan §3.15). A free
+     * widget holds 10 hostnames; a domain that doesn't fit relies on rate
+     * limits alone, and the admin says so.
+     */
+    turnstile: boolean().notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

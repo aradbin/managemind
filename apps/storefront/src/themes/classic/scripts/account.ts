@@ -3,6 +3,7 @@
 // addresses. Everything goes through /api/account and /api/auth on the
 // store's own host; the session cookie never leaves /api.
 import { api, config, digits, el, fill, money, ShopError, t } from './shop';
+import { type Check, mountTurnstile } from './turnstile';
 
 interface Address {
   id: string;
@@ -45,6 +46,7 @@ const name = (n: [unknown, ...unknown[]]) =>
   String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 let email = '';
 let geo: GeoFile | null = null;
+let check: Check | undefined;
 
 function show(message: string) {
   if (!notice) return;
@@ -60,8 +62,12 @@ function fieldError(id: string, message: string) {
   return !message;
 }
 
-const problem = (e: unknown) =>
-  e instanceof ShopError && e.status === 429 ? t('account.tooMany') : t('cart.error');
+function problem(e: unknown) {
+  if (!(e instanceof ShopError)) return t('cart.error');
+  if (e.status === 429) return t('account.tooMany');
+  const fields = (e.body.errors ?? []) as { path?: string }[];
+  return fields.some((f) => f.path === 'turnstileToken') ? t('checkout.check') : t('cart.error');
+}
 
 // ---- Sign-in ----------------------------------------------------------------------------
 
@@ -76,13 +82,18 @@ emailForm?.addEventListener('submit', async (e) => {
   )
     return;
   try {
-    await api('/auth/email-otp/send-verification-otp', { body: { email, type: 'sign-in' } });
+    const token = await check?.token();
+    await api('/auth/email-otp/send-verification-otp', {
+      body: { email, type: 'sign-in' },
+      ...(token ? { headers: { 'x-turnstile-token': token } } : {}),
+    });
     emailForm.hidden = true;
     if (codeForm) codeForm.hidden = false;
     const sent = document.querySelector<HTMLElement>('[data-code-sent]');
     if (sent) sent.textContent = t('account.codeSent', { email });
     byId<HTMLInputElement>('a-code')?.focus();
   } catch (err) {
+    check?.reset();
     show(problem(err));
   }
 });
@@ -292,6 +303,9 @@ async function load() {
     if (err instanceof ShopError && err.status === 401) {
       if (signin) signin.hidden = false;
       if (accountBox) accountBox.hidden = true;
+      const key = err.body.turnstileSiteKey;
+      const box = document.querySelector<HTMLElement>('[data-turnstile]');
+      if (typeof key === 'string' && box && !check) check = mountTurnstile(box, key, cfg.locale);
       return;
     }
     return show(problem(err));

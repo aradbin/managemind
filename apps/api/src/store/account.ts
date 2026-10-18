@@ -24,6 +24,7 @@ import type { Context } from 'hono';
 import { createShopperMailer, shopperEmailReady } from '../auth/email';
 import type { AppEnv } from '../env';
 import { verifyTurnstile } from '../turnstile';
+import { shopSiteKey } from '../turnstile-hosts';
 import {
   CART_COOKIE,
   cartCookies,
@@ -110,7 +111,11 @@ const asShopper = <T>(
     const settings = await orderSettings(tx);
     if (!accountsOn(c, settings)) throw new AppError('not_found');
     const userId = await currentShopper(c, tx, tenantId, settings);
-    if (!userId) throw new AppError('unauthorized');
+    // The sign-in form needs the host's Turnstile key (§3.15).
+    if (!userId)
+      throw new AppError('unauthorized', {
+        extensions: { turnstileSiteKey: await shopSiteKey(c, tx) },
+      });
     return fn(tx, userId);
   });
 
@@ -243,16 +248,19 @@ export function registerAccount(app: OpenAPIHono<AppEnv>): void {
     const email = path === SEND_CODE || path === SIGN_IN ? await bodyEmail(c.req.raw) : undefined;
     const limiter = limiterFor(c);
     const response = await withShopStore(c, async (run, tenantId) => {
-      const settings = await run((tx) => orderSettings(tx));
+      const [settings, siteKey] = await run(
+        async (tx) => [await orderSettings(tx), await shopSiteKey(c, tx)] as const,
+      );
       if (!accountsOn(c, settings)) throw new AppError('not_found');
       // Limits and Turnstile before any auth work, with no transaction open (§3.15).
       if (path === SEND_CODE) {
         await limiter.check('otp-send:ip', `shop:${ip}`);
         if (email) await limiter.check('otp-send:email', `shop:${tenantId}:${email}`);
-        await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, c.req.header('x-turnstile-token'), {
-          host,
-          ip,
-        });
+        if (siteKey)
+          await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, c.req.header('x-turnstile-token'), {
+            host,
+            ip,
+          });
       }
       if (path === SIGN_IN && email)
         await limiter.check('otp-verify:email', `shop:${tenantId}:${email}`);

@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     "./email": "./src/email/index.ts",
-    "./hostnames": "./src/hostnames/index.ts"
+    "./hostnames": "./src/hostnames/index.ts",
+    "./turnstile": "./src/turnstile/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

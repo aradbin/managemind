@@ -19,6 +19,7 @@ import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
+import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
 
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
@@ -45,6 +46,7 @@ export async function handleQueue(
     await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
   }
   // One sync per store per batch, however many of its events arrived.
+  const widget = turnstileWidget(env);
   const tenants = new Map<string, Message<OutboxEvent>[]>();
   for (const message of batch.messages) {
     log('info', 'event received', {
@@ -53,7 +55,7 @@ export async function handleQueue(
       tenant_id: message.body.tenantId,
       attempts: message.attempts,
     });
-    if (env.EDGE && touchesHosts(message.body)) {
+    if ((env.EDGE && touchesHosts(message.body)) || (widget && touchesDomains(message.body))) {
       const list = tenants.get(message.body.tenantId) ?? [];
       list.push(message);
       tenants.set(message.body.tenantId, list);
@@ -64,17 +66,20 @@ export async function handleQueue(
   const storeDomain = getConfig(env).STORE_DOMAIN;
   for (const [tenantId, messages] of tenants) {
     try {
-      const result = await syncTenantHosts(
-        env,
-        env.EDGE as KVNamespace,
-        ctx,
-        tenantId,
-        storeDomain,
-      );
-      log('info', 'kv hosts synced', { tenant_id: tenantId, ...result });
+      if (env.EDGE && messages.some((m) => touchesHosts(m.body))) {
+        const result = await syncTenantHosts(env, env.EDGE, ctx, tenantId, storeDomain);
+        log('info', 'kv hosts synced', { tenant_id: tenantId, ...result });
+      }
+      // The Turnstile widget's hostnames follow the store's custom domains.
+      if (widget && messages.some((m) => touchesDomains(m.body))) {
+        const result = await withClient(env, ctx, (client) =>
+          syncTurnstileHosts(client, widget, tenantId),
+        );
+        log('info', 'turnstile hosts synced', { tenant_id: tenantId, ...result });
+      }
       for (const m of messages) m.ack();
     } catch (e) {
-      log('error', 'kv host sync failed', { tenant_id: tenantId, error: String(e) });
+      log('error', 'host sync failed', { tenant_id: tenantId, error: String(e) });
       for (const m of messages) m.retry();
     }
   }

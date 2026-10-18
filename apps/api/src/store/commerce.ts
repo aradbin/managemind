@@ -44,6 +44,7 @@ import { queueSink, withClient } from '../db';
 import type { AppEnv } from '../env';
 import { createLimiter } from '../rate-limit/index';
 import { verifyTurnstile } from '../turnstile';
+import { shopSiteKey } from '../turnstile-hosts';
 import { currentShopper } from './account';
 
 export const CART_COOKIE = 'mm_cart';
@@ -541,7 +542,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
                 addresses: await shopperAddresses(tx, userId),
               }
             : null,
-        turnstileSiteKey: c.env.TURNSTILE_SITE_KEY ?? null,
+        turnstileSiteKey: await shopSiteKey(c, tx),
       };
     });
     c.header('Cache-Control', 'no-store');
@@ -570,7 +571,9 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
     const locale = c.req.query('locale') === 'en' ? 'en' : 'bn';
     const result = await withShopStore(c, async (run, tenantId) => {
       // Rate limits and Turnstile first, with no transaction open (§3.15).
-      const settings = await run((tx) => orderSettings(tx));
+      const [settings, siteKey] = await run(
+        async (tx) => [await orderSettings(tx), await shopSiteKey(c, tx)] as const,
+      );
       const limits = settings.checkout.rateLimits;
       const limiter = limiterFor(c);
       await limiter.check('checkout:phone', `${tenantId}:${input.contact.phone}`, [
@@ -580,7 +583,9 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
       await limiter.check('checkout:ip', `${tenantId}:${ip}`, [
         { limit: limits.perIpHour, seconds: 3600 },
       ]);
-      await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, input.turnstileToken, { host, ip });
+      // A custom domain the widget doesn't list relies on the limits alone.
+      if (siteKey)
+        await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, input.turnstileToken, { host, ip });
       // A signed-in shopper's order shows in their account (§3.11).
       const shopperUserId = await run((tx) => currentShopper(c, tx, tenantId, settings));
       const placed = await run((tx) =>

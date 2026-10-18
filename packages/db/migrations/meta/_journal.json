@@ -183,6 +183,13 @@
       "when": 1792262951394,
       "tag": "0025_shopper_addresses",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792264372196,
+      "tag": "0026_domain_turnstile",
+      "breakpoints": true
     }
   ]
 }

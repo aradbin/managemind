@@ -243,6 +243,8 @@ export const onlineStoreEn = {
   'domains.remove': 'Disconnect',
   'domains.removeConfirm': 'Disconnect {domain}?',
   'domains.removeBody': 'Shoppers can’t reach your store at this domain any more.',
+  'domains.noTurnstile':
+    'The bot check is off on this domain (the platform’s limit is reached); checkout and sign-in rely on rate limits here.',
   'domains.problem': 'Problem: {reason}',
   'domains.lastChecked': 'Last checked {time}',
 } as const;

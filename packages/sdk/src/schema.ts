@@ -10205,6 +10205,7 @@ export interface components {
             lastCheckedAt: string | null;
             checkAttempts: number;
             failureReason: string | null;
+            turnstile: boolean | null;
             createdAt: string;
             dns: {
                 /** @enum {string} */

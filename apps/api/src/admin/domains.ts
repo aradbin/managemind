@@ -15,6 +15,7 @@ import { captureException } from '@sentry/cloudflare';
 import type { Context } from 'hono';
 import { dnsInstructions, hostnameProvider, scheduleDomainChecks } from '../domains';
 import { createLimiter } from '../rate-limit/index';
+import { turnstileWidget } from '../turnstile-hosts';
 import { inStore, type StaffEnv } from './context';
 import { storeUrls } from './store-urls';
 
@@ -31,6 +32,8 @@ const DomainSchema = z
     lastCheckedAt: z.string().nullable(),
     checkAttempts: z.number().int(),
     failureReason: z.string().nullable(),
+    /** On the Turnstile widget; null when Turnstile isn't set up on the platform. */
+    turnstile: z.boolean().nullable(),
     createdAt: z.string(),
     /** What to add at the client's DNS provider. */
     dns: z.array(DnsRecord),
@@ -113,6 +116,7 @@ export function registerDomains(admin: OpenAPIHono<StaffEnv>): void {
     const { ownershipRecord, ...rest } = d;
     return {
       ...rest,
+      turnstile: turnstileWidget(c.env) ? d.turnstile : null,
       dns: dnsInstructions(d.hostname, ownershipRecord, c.var.config.STORE_DOMAIN),
     };
   };

@@ -37,6 +37,7 @@ export const en = {
   'signIn.changeEmail': 'Use another email',
   'signIn.resend': 'Send a new code',
   'signIn.resendIn': 'You can send a new code in {seconds} seconds.',
+  'signIn.check': 'Complete the check below, then try again.',
   'signIn.invalidCode':
     'That code is wrong or has expired. Check the latest email, or send a new code.',
   'signIn.tooManyTries': 'Too many tries with this code. Send a new code.',
