@@ -351,8 +351,15 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
         c,
         async (tx) => {
           // The advance is paid online and the OTP goes by SMS (phase-5a-plan §3.4, §3.14):
-          // neither can be asked for before the store's gateway works.
-          if (patch.cod && patch.cod.advance !== 'never' && !(await gatewayFor(tx, c.env))) {
+          // neither can be turned on before the store's gateway works. A rule
+          // saved earlier stays, and checkout skips it until the gateway works.
+          const before = patch.cod ? (await getStore(tx, c.var.staff.actor)).cod : null;
+          if (
+            patch.cod &&
+            patch.cod.advance !== 'never' &&
+            patch.cod.advance !== before?.advance &&
+            !(await gatewayFor(tx, c.env))
+          ) {
             throw new AppError('validation_failed', {
               detail: 'Set up SSLCommerz first: the advance is paid online',
               fields: [
@@ -363,6 +370,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
           if (
             patch.cod &&
             patch.cod.otp !== 'off' &&
+            patch.cod.otp !== before?.otp &&
             !(await loadCredentials(tx, await credentialsKeyring(c.env), 'sms'))
           ) {
             throw new AppError('validation_failed', {

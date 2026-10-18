@@ -405,7 +405,16 @@ export const ordersEn = {
   'checkoutSettings.advance.always': 'Always',
   'checkoutSettings.advance.flagged': 'Only for flagged customers',
   'checkoutSettings.advanceHint':
-    'Saved now; the storefront asks for it once online payment arrives. Until then, record advances on the order.',
+    'Paid online at checkout through SSLCommerz. Charges under ৳10 are left for delivery.',
+  'checkoutSettings.needsGateway': 'Connect SSLCommerz first: the advance is paid online.',
+  'checkoutSettings.otp': 'Confirm the phone with a code',
+  'checkoutSettings.otp.off': 'Never',
+  'checkoutSettings.otp.always': 'Every cash-on-delivery order',
+  'checkoutSettings.otp.flagged': 'Only for flagged customers',
+  'checkoutSettings.otp.first_order': 'A customer’s first order',
+  'checkoutSettings.otpHint':
+    'The customer gets a code by SMS before the order is placed. Each code is one SMS from your gateway.',
+  'checkoutSettings.needsSms': 'Connect an SMS gateway first: the code goes by SMS.',
   'checkoutSettings.limits': 'Order limits',
   'checkoutSettings.limitsHint': 'Orders placed on the storefront. Staff orders aren’t limited.',
   'checkoutSettings.perPhoneHour': 'Per phone, per hour',

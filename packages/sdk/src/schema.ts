@@ -2327,6 +2327,66 @@ export interface paths {
                              */
                             otp?: "off" | "always" | "flagged" | "first_order";
                         };
+                        fraud?: {
+                            /** @default 1 */
+                            flagAfterFailed?: number;
+                        };
+                        returns?: {
+                            /** @default true */
+                            shopperRequests?: boolean;
+                            /** @default 7 */
+                            windowDays?: number;
+                            /** @default [] */
+                            excludedCategoryIds?: string[];
+                            /**
+                             * @default [
+                             *       "wrong_size",
+                             *       "changed_mind",
+                             *       "other"
+                             *     ]
+                             */
+                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            /**
+                             * @default [
+                             *       "gateway",
+                             *       "bkash",
+                             *       "nagad",
+                             *       "rocket",
+                             *       "bank",
+                             *       "cash",
+                             *       "store_credit"
+                             *     ]
+                             */
+                            refundMethods?: ("gateway" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit")[];
+                            /** @default true */
+                            refundDeliveryFee?: boolean;
+                        };
+                        notifications?: {
+                            /**
+                             * @default [
+                             *       "order_placed",
+                             *       "order_shipped"
+                             *     ]
+                             */
+                            sms?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                            /**
+                             * @default [
+                             *       "order_placed",
+                             *       "order_confirmed",
+                             *       "order_shipped",
+                             *       "order_delivered",
+                             *       "order_cancelled",
+                             *       "payment_received",
+                             *       "payment_expired",
+                             *       "return_approved",
+                             *       "return_rejected",
+                             *       "return_received",
+                             *       "refund_issued",
+                             *       "store_credit_issued"
+                             *     ]
+                             */
+                            email?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                        };
                     };
                 };
             };
@@ -9309,6 +9369,66 @@ export interface components {
                  * @enum {string}
                  */
                 otp: "off" | "always" | "flagged" | "first_order";
+            };
+            fraud: {
+                /** @default 1 */
+                flagAfterFailed: number;
+            };
+            returns: {
+                /** @default true */
+                shopperRequests: boolean;
+                /** @default 7 */
+                windowDays: number;
+                /** @default [] */
+                excludedCategoryIds: string[];
+                /**
+                 * @default [
+                 *       "wrong_size",
+                 *       "changed_mind",
+                 *       "other"
+                 *     ]
+                 */
+                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                /**
+                 * @default [
+                 *       "gateway",
+                 *       "bkash",
+                 *       "nagad",
+                 *       "rocket",
+                 *       "bank",
+                 *       "cash",
+                 *       "store_credit"
+                 *     ]
+                 */
+                refundMethods: ("gateway" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit")[];
+                /** @default true */
+                refundDeliveryFee: boolean;
+            };
+            notifications: {
+                /**
+                 * @default [
+                 *       "order_placed",
+                 *       "order_shipped"
+                 *     ]
+                 */
+                sms: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                /**
+                 * @default [
+                 *       "order_placed",
+                 *       "order_confirmed",
+                 *       "order_shipped",
+                 *       "order_delivered",
+                 *       "order_cancelled",
+                 *       "payment_received",
+                 *       "payment_expired",
+                 *       "return_approved",
+                 *       "return_rejected",
+                 *       "return_received",
+                 *       "refund_issued",
+                 *       "store_credit_issued"
+                 *     ]
+                 */
+                email: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
             };
             storeUrl: string;
         };

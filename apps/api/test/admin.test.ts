@@ -164,6 +164,15 @@ describe('admin API', () => {
       ).status,
     ).toBe(422);
 
+    // A rule saved before the check (phase 4) doesn't block other saves.
+    await owner.query(
+      `update platform.tenants set settings = jsonb_set(settings, '{cod}', $2::jsonb) where id = $1`,
+      [a.id, JSON.stringify({ ...cod, advance: 'always' })],
+    );
+    expect(
+      (await user.call('PATCH', '/api/admin/store', { cod: { ...cod, advance: 'always' } })).status,
+    ).toBe(200);
+
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async () =>
       new Response(

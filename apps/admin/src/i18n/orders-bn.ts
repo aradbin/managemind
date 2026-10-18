@@ -401,7 +401,16 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'checkoutSettings.advance.always': 'সবসময়',
   'checkoutSettings.advance.flagged': 'শুধু চিহ্নিত ক্রেতাদের',
   'checkoutSettings.advanceHint':
-    'এখন সেভ থাকবে; অনলাইন পেমেন্ট এলে দোকান এটা চাইবে। ততদিন অর্ডারে অগ্রিম লিখে রাখুন।',
+    'চেকআউটে SSLCommerz-এ অনলাইনে দেওয়া হয়। ৳১০-এর কম চার্জ ডেলিভারিতে নেওয়া হয়।',
+  'checkoutSettings.needsGateway': 'আগে SSLCommerz যুক্ত করুন: অগ্রিম অনলাইনে দেওয়া হয়।',
+  'checkoutSettings.otp': 'কোড দিয়ে ফোন নিশ্চিত করা',
+  'checkoutSettings.otp.off': 'কখনো না',
+  'checkoutSettings.otp.always': 'প্রতিটি ক্যাশ অন ডেলিভারি অর্ডারে',
+  'checkoutSettings.otp.flagged': 'শুধু চিহ্নিত ক্রেতাদের',
+  'checkoutSettings.otp.first_order': 'ক্রেতার প্রথম অর্ডারে',
+  'checkoutSettings.otpHint':
+    'অর্ডারের আগে ক্রেতা এসএমএসে একটি কোড পান। প্রতিটি কোড আপনার গেটওয়ের একটি এসএমএস।',
+  'checkoutSettings.needsSms': 'আগে এসএমএস গেটওয়ে যুক্ত করুন: কোড এসএমএসে যায়।',
   'checkoutSettings.limits': 'অর্ডারের সীমা',
   'checkoutSettings.limitsHint': 'দোকানের ওয়েবসাইটের অর্ডারে। কর্মীদের নেওয়া অর্ডারে সীমা নেই।',
   'checkoutSettings.perPhoneHour': 'প্রতি ফোনে, ঘণ্টায়',

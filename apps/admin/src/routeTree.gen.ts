@@ -45,8 +45,12 @@ import { Route as ShellSettingsCheckoutRouteImport } from './routes/_shell/setti
 import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/settings/delivery'
 import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
+import { Route as ShellSettingsMessagesRouteImport } from './routes/_shell/settings/messages'
+import { Route as ShellSettingsNotificationsRouteImport } from './routes/_shell/settings/notifications'
+import { Route as ShellSettingsPaymentsRouteImport } from './routes/_shell/settings/payments'
 import { Route as ShellSettingsStaffRouteImport } from './routes/_shell/settings/staff'
 import { Route as ShellSettingsStoreRouteImport } from './routes/_shell/settings/store'
+import { Route as ShellSettingsTemplatesRouteImport } from './routes/_shell/settings/templates'
 import { Route as ShellSettingsVatRouteImport } from './routes/_shell/settings/vat'
 import { Route as ShellCatalogCollectionsIndexRouteImport } from './routes/_shell/catalog/collections/index'
 import { Route as ShellCatalogCollectionsIdRouteImport } from './routes/_shell/catalog/collections/$id'
@@ -234,6 +238,22 @@ const ShellSettingsLocationRoute = ShellSettingsLocationRouteImport.update({
   path: '/settings/location',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSettingsMessagesRoute = ShellSettingsMessagesRouteImport.update({
+  id: '/settings/messages',
+  path: '/settings/messages',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsNotificationsRoute =
+  ShellSettingsNotificationsRouteImport.update({
+    id: '/settings/notifications',
+    path: '/settings/notifications',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellSettingsPaymentsRoute = ShellSettingsPaymentsRouteImport.update({
+  id: '/settings/payments',
+  path: '/settings/payments',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsStaffRoute = ShellSettingsStaffRouteImport.update({
   id: '/settings/staff',
   path: '/settings/staff',
@@ -242,6 +262,11 @@ const ShellSettingsStaffRoute = ShellSettingsStaffRouteImport.update({
 const ShellSettingsStoreRoute = ShellSettingsStoreRouteImport.update({
   id: '/settings/store',
   path: '/settings/store',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsTemplatesRoute = ShellSettingsTemplatesRouteImport.update({
+  id: '/settings/templates',
+  path: '/settings/templates',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSettingsVatRoute = ShellSettingsVatRouteImport.update({
@@ -307,8 +332,12 @@ export interface FileRoutesByFullPath {
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
+  '/settings/messages': typeof ShellSettingsMessagesRoute
+  '/settings/notifications': typeof ShellSettingsNotificationsRoute
+  '/settings/payments': typeof ShellSettingsPaymentsRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
+  '/settings/templates': typeof ShellSettingsTemplatesRoute
   '/settings/vat': typeof ShellSettingsVatRoute
   '/customers/': typeof ShellCustomersIndexRoute
   '/online-store/': typeof ShellOnlineStoreIndexRoute
@@ -351,8 +380,12 @@ export interface FileRoutesByTo {
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
+  '/settings/messages': typeof ShellSettingsMessagesRoute
+  '/settings/notifications': typeof ShellSettingsNotificationsRoute
+  '/settings/payments': typeof ShellSettingsPaymentsRoute
   '/settings/staff': typeof ShellSettingsStaffRoute
   '/settings/store': typeof ShellSettingsStoreRoute
+  '/settings/templates': typeof ShellSettingsTemplatesRoute
   '/settings/vat': typeof ShellSettingsVatRoute
   '/customers': typeof ShellCustomersIndexRoute
   '/online-store': typeof ShellOnlineStoreIndexRoute
@@ -398,8 +431,12 @@ export interface FileRoutesById {
   '/_shell/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
+  '/_shell/settings/messages': typeof ShellSettingsMessagesRoute
+  '/_shell/settings/notifications': typeof ShellSettingsNotificationsRoute
+  '/_shell/settings/payments': typeof ShellSettingsPaymentsRoute
   '/_shell/settings/staff': typeof ShellSettingsStaffRoute
   '/_shell/settings/store': typeof ShellSettingsStoreRoute
+  '/_shell/settings/templates': typeof ShellSettingsTemplatesRoute
   '/_shell/settings/vat': typeof ShellSettingsVatRoute
   '/_shell/customers/': typeof ShellCustomersIndexRoute
   '/_shell/online-store/': typeof ShellOnlineStoreIndexRoute
@@ -445,8 +482,12 @@ export interface FileRouteTypes {
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
+    | '/settings/messages'
+    | '/settings/notifications'
+    | '/settings/payments'
     | '/settings/staff'
     | '/settings/store'
+    | '/settings/templates'
     | '/settings/vat'
     | '/customers/'
     | '/online-store/'
@@ -489,8 +530,12 @@ export interface FileRouteTypes {
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
+    | '/settings/messages'
+    | '/settings/notifications'
+    | '/settings/payments'
     | '/settings/staff'
     | '/settings/store'
+    | '/settings/templates'
     | '/settings/vat'
     | '/customers'
     | '/online-store'
@@ -535,8 +580,12 @@ export interface FileRouteTypes {
     | '/_shell/settings/delivery'
     | '/_shell/settings/domains'
     | '/_shell/settings/location'
+    | '/_shell/settings/messages'
+    | '/_shell/settings/notifications'
+    | '/_shell/settings/payments'
     | '/_shell/settings/staff'
     | '/_shell/settings/store'
+    | '/_shell/settings/templates'
     | '/_shell/settings/vat'
     | '/_shell/customers/'
     | '/_shell/online-store/'
@@ -814,6 +863,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSettingsLocationRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/settings/messages': {
+      id: '/_shell/settings/messages'
+      path: '/settings/messages'
+      fullPath: '/settings/messages'
+      preLoaderRoute: typeof ShellSettingsMessagesRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/notifications': {
+      id: '/_shell/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof ShellSettingsNotificationsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/payments': {
+      id: '/_shell/settings/payments'
+      path: '/settings/payments'
+      fullPath: '/settings/payments'
+      preLoaderRoute: typeof ShellSettingsPaymentsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings/staff': {
       id: '/_shell/settings/staff'
       path: '/settings/staff'
@@ -826,6 +896,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/store'
       fullPath: '/settings/store'
       preLoaderRoute: typeof ShellSettingsStoreRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/templates': {
+      id: '/_shell/settings/templates'
+      path: '/settings/templates'
+      fullPath: '/settings/templates'
+      preLoaderRoute: typeof ShellSettingsTemplatesRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/settings/vat': {
@@ -914,8 +991,12 @@ interface ShellRouteChildren {
   ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
+  ShellSettingsMessagesRoute: typeof ShellSettingsMessagesRoute
+  ShellSettingsNotificationsRoute: typeof ShellSettingsNotificationsRoute
+  ShellSettingsPaymentsRoute: typeof ShellSettingsPaymentsRoute
   ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
   ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
+  ShellSettingsTemplatesRoute: typeof ShellSettingsTemplatesRoute
   ShellSettingsVatRoute: typeof ShellSettingsVatRoute
   ShellCustomersIndexRoute: typeof ShellCustomersIndexRoute
   ShellOnlineStoreIndexRoute: typeof ShellOnlineStoreIndexRoute
@@ -952,8 +1033,12 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,
+  ShellSettingsMessagesRoute: ShellSettingsMessagesRoute,
+  ShellSettingsNotificationsRoute: ShellSettingsNotificationsRoute,
+  ShellSettingsPaymentsRoute: ShellSettingsPaymentsRoute,
   ShellSettingsStaffRoute: ShellSettingsStaffRoute,
   ShellSettingsStoreRoute: ShellSettingsStoreRoute,
+  ShellSettingsTemplatesRoute: ShellSettingsTemplatesRoute,
   ShellSettingsVatRoute: ShellSettingsVatRoute,
   ShellCustomersIndexRoute: ShellCustomersIndexRoute,
   ShellOnlineStoreIndexRoute: ShellOnlineStoreIndexRoute,
