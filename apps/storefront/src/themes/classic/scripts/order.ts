@@ -1,0 +1,255 @@
+// The confirmation page and tracking (phase-4-plan §3.16): the order's
+// number, status, lines, totals, the COD amount and its parcels' tracking
+// links, and "Cancel order" while the store hasn't confirmed it. The
+// confirmation's token is in the URL's fragment, which never reaches a
+// server or a log; tracking asks for the number and the phone.
+import {
+  add,
+  api,
+  config,
+  digits,
+  el,
+  fill,
+  imageUrl,
+  type Localized,
+  money,
+  pick,
+  ShopError,
+  t,
+} from './shop';
+
+interface OrderView {
+  displayNumber: string;
+  status: string;
+  deliveryStatus: string;
+  contact: { name: string; phone: string };
+  address: {
+    line: string;
+    names: { division: Localized; district: Localized; area: Localized };
+  } | null;
+  lines: {
+    title: Localized;
+    optionLabels: Localized[];
+    image: { files: { width: number; file: string }[] } | null;
+    unitPrice: number;
+    quantity: number;
+    total: number;
+  }[];
+  adjustments: { title: Localized; amount: number; target: string }[];
+  totals: {
+    subtotal: number;
+    discountTotal: number;
+    deliveryFee: number;
+    deliveryDiscount: number;
+    vatTotal: number;
+    vatIncluded: boolean;
+    total: number;
+    codDue: number;
+  };
+  shipments: {
+    status: string;
+    carrier: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+  }[];
+  cancellable: boolean;
+}
+
+const cfg = config();
+const row = (label: string, value: string, cls = 'row') =>
+  el('div', { class: cls }, el('dt', { text: label }), el('dd', { text: value }));
+
+function view(
+  o: OrderView,
+  cancelToken: string | null,
+  onChange: (o: OrderView) => void,
+): HTMLElement {
+  const fee = o.totals.deliveryFee - o.totals.deliveryDiscount;
+  const totalsList = el(
+    'dl',
+    { class: 'totals' },
+    row(t('cart.subtotal'), money(o.totals.subtotal)),
+    ...o.adjustments
+      .filter((a) => a.target !== 'delivery')
+      .map((a) => row(pick(a.title) || t('cart.discount'), `−${money(a.amount)}`, 'row discount')),
+    row(t('cart.delivery'), fee === 0 && o.totals.deliveryFee > 0 ? t('cart.free') : money(fee)),
+    ...(o.totals.vatTotal > 0 && !o.totals.vatIncluded
+      ? [row(t('cart.vat'), money(o.totals.vatTotal))]
+      : []),
+    row(t('cart.total'), money(o.totals.total), 'row total'),
+  );
+  const parts: (Node | null)[] = [
+    el(
+      'dl',
+      { class: 'order-head' },
+      row(t('thanks.number'), o.displayNumber),
+      row(t('track.status'), t(`status.${o.status}`)),
+      row(t('track.delivery'), t(`delivery.${o.deliveryStatus}`)),
+    ),
+  ];
+  if (o.totals.codDue > 0 && o.status !== 'cancelled') {
+    parts.push(
+      el('p', { class: 'cod-due', text: t('thanks.cod', { amount: money(o.totals.codDue) }) }),
+    );
+  }
+  parts.push(
+    el('h2', { text: t('thanks.items') }),
+    el(
+      'ul',
+      { class: 'lines', role: 'list' },
+      ...o.lines.map((l) => {
+        const src = imageUrl(l.image, 160);
+        return el(
+          'li',
+          { class: 'line' },
+          src
+            ? el('img', {
+                src,
+                alt: '',
+                width: '56',
+                height: '56',
+                class: 'line-image',
+                loading: 'lazy',
+              })
+            : el('span', { class: 'line-image' }),
+          el(
+            'div',
+            { class: 'line-body' },
+            el('span', { text: pick(l.title) }),
+            l.optionLabels.length
+              ? el('p', { class: 'muted small', text: l.optionLabels.map(pick).join(' / ') })
+              : null,
+            el('p', {
+              class: 'muted small',
+              text: `${money(l.unitPrice)} × ${digits(String(l.quantity))}`,
+            }),
+          ),
+          el('p', { class: 'line-total', text: money(l.total) }),
+        );
+      }),
+    ),
+    totalsList,
+  );
+  if (o.address) {
+    const n = o.address.names;
+    parts.push(
+      el('h2', { text: t('thanks.deliverTo') }),
+      el('p', {
+        text: `${o.contact.name}, ${o.address.line}, ${pick(n.area)}, ${pick(n.district)}`,
+      }),
+    );
+  }
+  if (o.shipments.length) {
+    parts.push(
+      el('h2', { text: t('track.shipments') }),
+      el(
+        'ul',
+        { role: 'list' },
+        ...o.shipments.map((s) =>
+          el(
+            'li',
+            {},
+            [t(`shipment.${s.status}`), s.carrier, s.trackingNumber].filter(Boolean).join(' · '),
+            s.trackingUrl
+              ? el(
+                  'span',
+                  {},
+                  ' ',
+                  el('a', {
+                    href: s.trackingUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    text: t('track.courier'),
+                  }),
+                )
+              : null,
+          ),
+        ),
+      ),
+    );
+  }
+  if (o.cancellable && cancelToken) {
+    const button = el('button', {
+      type: 'button',
+      class: 'button secondary',
+      text: t('track.cancel'),
+    });
+    button.addEventListener('click', async () => {
+      if (!confirm(t('track.cancelConfirm'))) return;
+      button.disabled = true;
+      try {
+        onChange(await api<OrderView>('/orders/cancel', { body: { token: cancelToken } }));
+      } catch {
+        button.disabled = false;
+        alert(t('cart.error'));
+      }
+    });
+    parts.push(el('p', {}, button));
+  }
+  if (o.status === 'cancelled')
+    parts.unshift(el('p', { class: 'notice', role: 'status', text: t('track.cancelled') }));
+  return el('div', { class: 'order-view' }, ...parts.filter((p): p is Node => p !== null));
+}
+
+// The confirmation page: the view token from the fragment.
+const thanks = document.querySelector<HTMLElement>('[data-thanks]');
+if (thanks) {
+  const token = location.hash.slice(1);
+  const missing = () =>
+    add(
+      thanks,
+      el('p', { text: t('thanks.missing') }),
+      el('p', {}, el('a', { class: 'button', href: cfg.links.track, text: t('track.title') })),
+    );
+  if (!token) missing();
+  else {
+    api<OrderView>('/orders/view', { body: { token } })
+      .then((o) => {
+        add(
+          thanks,
+          view(o, null, () => {}),
+          el('p', { class: 'muted', text: t('thanks.next') }),
+        );
+      })
+      .catch(missing);
+  }
+}
+
+// Tracking: number and phone, then the order with a cancel button while pending.
+const form = document.querySelector<HTMLFormElement>('[data-track]');
+const out = document.querySelector<HTMLElement>('[data-order]');
+const notice = document.querySelector<HTMLElement>('[data-notice]');
+if (form && out) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const number = String(data.get('number') ?? '').trim();
+    const phone = String(data.get('phone') ?? '').trim();
+    const numberError = document.getElementById('t-number-e');
+    const phoneError = document.getElementById('t-phone-e');
+    if (numberError) numberError.textContent = number ? '' : t('checkout.required');
+    if (phoneError) phoneError.textContent = phone ? '' : t('checkout.required');
+    if (!number || !phone) return;
+    if (notice) notice.hidden = true;
+    fill(out);
+    try {
+      const r = await api<{ order: OrderView; token: string }>('/orders/track', {
+        body: { number, phone },
+      });
+      const draw = (o: OrderView) => fill(out, view(o, r.token, draw));
+      draw(r.order);
+    } catch (err) {
+      if (!notice) return;
+      const code = err instanceof ShopError ? err.code : '';
+      notice.textContent =
+        code === 'rate_limited'
+          ? t('track.locked')
+          : code === 'validation_failed'
+            ? t('checkout.badPhone')
+            : code === 'not_found'
+              ? t('track.notFound')
+              : t('cart.error');
+      notice.hidden = false;
+    }
+  });
+}

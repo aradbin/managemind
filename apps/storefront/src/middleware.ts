@@ -13,7 +13,13 @@ import { captureException } from '@sentry/cloudflare';
 import { CACHE_TAGS_HEADER } from './lib/cache';
 import { previewParents } from './lib/preview';
 import { decide } from './lib/routing';
-import { DEV_STORE_COOKIE, lookupStore, resolveStoreHost, type StoreContext } from './lib/store';
+import {
+  DEV_STORE_COOKIE,
+  lookupStore,
+  rememberedStoreFromApi,
+  resolveStoreHost,
+  type StoreContext,
+} from './lib/store';
 
 export const PREVIEW_COOKIE = 'mm_preview';
 const PREVIEW_TOKEN = /^[0-9a-f-]{36}\.\d{1,12}\.[A-Za-z0-9_-]{43}$/;
@@ -25,6 +31,9 @@ function frameAncestors(): string {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Prerendered files (the geography file) are built once and served as static
+  // assets: they belong to no store, and the build has no API to ask.
+  if (context.isPrerendered) return next();
   const url = context.url;
   const requestId = uuidv7();
 
@@ -73,12 +82,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const store: StoreContext | null = await lookupStore(resolution.host, {
     ...(env.EDGE ? { kv: env.EDGE } : {}),
-    api: async (host) => {
-      const res = await env.API.fetch('https://api.internal/v1/store/context', {
-        headers: { 'x-forwarded-host': host, 'x-request-id': requestId },
-      });
-      return res.status === 200 ? ((await res.json()) as StoreContext) : null;
-    },
+    api: (host) =>
+      rememberedStoreFromApi(host, () =>
+        env.API.fetch('https://api.internal/v1/store/context', {
+          headers: { 'x-forwarded-host': host, 'x-request-id': requestId },
+        }),
+      ),
     onKvError: (e) => captureException(e, { tags: { request_id: requestId } }),
   });
 

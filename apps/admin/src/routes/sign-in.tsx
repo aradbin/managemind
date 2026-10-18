@@ -11,6 +11,7 @@ import { meQuery } from '../lib/api';
 import { AuthError, auth, safeRedirect } from '../lib/auth';
 import { errorMessage } from '../lib/errors';
 import { useFinishSignIn } from '../lib/sign-in';
+import { useTurnstile } from '../lib/turnstile';
 
 /** Seconds before "send a new code" works again; the server limits sends too. */
 const RESEND_SECONDS = 60;
@@ -29,7 +30,8 @@ export const Route = createFileRoute('/sign-in')({
 });
 
 function SignIn() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const check = useTurnstile(locale);
   const { redirect: to } = Route.useSearch();
   const router = useRouter();
   const finish = useFinishSignIn();
@@ -51,13 +53,19 @@ function SignIn() {
     setBusy(true);
     setError(undefined);
     try {
-      await auth.sendCode(email.trim());
+      await auth.sendCode(email.trim(), await check.token());
       setStep('code');
       setCode('');
       setWait(RESEND_SECONDS);
     } catch (err) {
-      setError(errorMessage(err, t));
+      setError(
+        err instanceof AuthError && err.code === 'validation_failed'
+          ? t('signIn.check')
+          : errorMessage(err, t),
+      );
     } finally {
+      // Tokens are single-use: a fresh one for the next send.
+      check.reset();
       setBusy(false);
     }
   }
@@ -152,6 +160,8 @@ function SignIn() {
           </div>
         </form>
       )}
+      {/* Outside the forms: a resend from the code step needs a token too. */}
+      <div ref={check.box} />
     </main>
   );
 }

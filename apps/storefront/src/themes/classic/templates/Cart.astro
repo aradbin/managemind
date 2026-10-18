@@ -1,0 +1,55 @@
+---
+import type { StoreMessageKey } from '../../../i18n';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = [
+  'cart.empty',
+  'cart.continue',
+  'cart.error',
+  'cart.quantity',
+  'cart.decrease',
+  'cart.increase',
+  'cart.remove',
+  'cart.unavailable',
+  'cart.insufficient',
+  'cart.overLimit',
+  'cart.code',
+  'cart.apply',
+  'cart.removeCode',
+  'cart.codeApplied',
+  'cart.code.not_found',
+  'cart.code.inactive',
+  'cart.code.used_up',
+  'cart.code.min_subtotal',
+  'cart.code.better_offer',
+  'cart.code.other',
+  'cart.subtotal',
+  'cart.discount',
+  'cart.delivery',
+  'cart.deliveryFrom',
+  'cart.free',
+  'cart.vatIncluded',
+  'cart.vat',
+  'cart.rounding',
+  'cart.total',
+  'cart.freeDelivery',
+  'cart.checkout',
+  'cart.fix',
+  'product.regular',
+];
+---
+
+<ShopPage ctx={ctx} kind="cart" title={t('cart.title')} keys={keys}>
+  <h1>{t('cart.title')}</h1>
+  <div class="shop" data-cart aria-live="polite">
+    <p class="muted" data-loading>{t('cart.loading')}</p>
+    <noscript><p>{t('cart.noscript')}</p></noscript>
+  </div>
+  <script src="../scripts/cart.ts"></script>
+</ShopPage>

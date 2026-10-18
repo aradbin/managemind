@@ -6,6 +6,8 @@
 interface VariantData {
   id: string;
   values: string[];
+  /** Poisha, for the add-to-cart event. */
+  amount: number;
   price: string;
   compare: string | null;
   available: boolean;
@@ -40,8 +42,64 @@ track?.addEventListener(
 
 const picker = document.querySelector<HTMLFormElement>('[data-variant-picker]');
 const data = document.getElementById('mm-variants');
+const variants = JSON.parse(data?.textContent ?? '[]') as VariantData[];
+const buy = document.querySelector<HTMLElement>('[data-buy]');
+const addButton = document.querySelector<HTMLButtonElement>('[data-add-to-cart]');
+
+/** The chosen variant can be added only when it is available (phase-4-plan §3.16). */
+function choose(variant: VariantData | undefined) {
+  if (!buy || !addButton) return;
+  buy.dataset.variant = variant?.available ? variant.id : '';
+  addButton.disabled = !variant?.available;
+  addButton.textContent = (variant?.available ? buy.dataset.add : buy.dataset.soldOut) ?? '';
+}
+
+if (buy && addButton) {
+  const added = buy.querySelector<HTMLElement>('[data-added]');
+  const failed = buy.querySelector<HTMLElement>('[data-add-error]');
+  addButton.addEventListener('click', async () => {
+    const variantId = buy.dataset.variant;
+    if (!variantId) return;
+    addButton.disabled = true;
+    addButton.textContent = buy.dataset.adding ?? '';
+    if (failed) failed.textContent = '';
+    try {
+      const res = await fetch(`/api/cart/lines?locale=${buy.dataset.locale}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ variantId, quantity: 1 }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const cart = (await res.json()) as { itemCount: number };
+      for (const badge of document.querySelectorAll<HTMLElement>('[data-cart-count]')) {
+        const n = String(cart.itemCount);
+        badge.textContent = badge.hasAttribute('data-bengali')
+          ? n.replace(/\d/g, (x) => '০১২৩৪৫৬৭৮৯'[Number(x)] ?? x)
+          : n;
+        badge.hidden = cart.itemCount === 0;
+      }
+      if (added) added.hidden = false;
+      const v = variants.find((x) => x.id === variantId);
+      const tracker = (window as unknown as { mmTracker?: { addToCart: (i: unknown) => void } })
+        .mmTracker;
+      tracker?.addToCart({
+        id: variantId,
+        name: buy.dataset.productName ?? '',
+        price: v?.amount ?? 0,
+        quantity: 1,
+      });
+    } catch {
+      if (added) added.hidden = true;
+      if (failed) failed.textContent = failed.dataset.message ?? '';
+    } finally {
+      addButton.disabled = !buy.dataset.variant;
+      addButton.textContent = (buy.dataset.variant ? buy.dataset.add : buy.dataset.soldOut) ?? '';
+    }
+  });
+}
+
 if (picker && data) {
-  const variants = JSON.parse(data.textContent ?? '[]') as VariantData[];
   const priceEl = document.querySelector<HTMLElement>('[data-price]');
   const compareEl = document.querySelector<HTMLElement>('[data-compare]');
   const compareValue = document.querySelector<HTMLElement>('[data-compare-value]');
@@ -57,6 +115,7 @@ if (picker && data) {
     const variant = variants.find(
       (v) => values.every((id) => v.values.includes(id)) && v.values.length === values.length,
     );
+    choose(variant);
     if (!stock || !priceEl) return;
     if (!variant) {
       stock.textContent = stock.dataset.none ?? '';

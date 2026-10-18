@@ -18,6 +18,8 @@ import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 import { purgeMessages } from './purge/consumer';
+import { catchUpSaleEdges, saleEdgeMessages } from './sales';
+import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
 
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
@@ -37,7 +39,14 @@ export async function handleQueue(
   if (env.PURGE && purges.length) {
     await env.PURGE.sendBatch(purges.map((body) => ({ body, contentType: 'json' as const })));
   }
+  // Sale windows' edges (phase-4-plan §3.14), as delayed messages.
+  const edges = saleEdgeMessages(batch.messages.map((m) => m.body));
+  // sendBatch takes at most 100 messages.
+  for (let i = 0; env.DOMAINS && i < edges.length; i += 100) {
+    await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
+  }
   // One sync per store per batch, however many of its events arrived.
+  const widget = turnstileWidget(env);
   const tenants = new Map<string, Message<OutboxEvent>[]>();
   for (const message of batch.messages) {
     log('info', 'event received', {
@@ -46,7 +55,7 @@ export async function handleQueue(
       tenant_id: message.body.tenantId,
       attempts: message.attempts,
     });
-    if (env.EDGE && touchesHosts(message.body)) {
+    if ((env.EDGE && touchesHosts(message.body)) || (widget && touchesDomains(message.body))) {
       const list = tenants.get(message.body.tenantId) ?? [];
       list.push(message);
       tenants.set(message.body.tenantId, list);
@@ -57,17 +66,20 @@ export async function handleQueue(
   const storeDomain = getConfig(env).STORE_DOMAIN;
   for (const [tenantId, messages] of tenants) {
     try {
-      const result = await syncTenantHosts(
-        env,
-        env.EDGE as KVNamespace,
-        ctx,
-        tenantId,
-        storeDomain,
-      );
-      log('info', 'kv hosts synced', { tenant_id: tenantId, ...result });
+      if (env.EDGE && messages.some((m) => touchesHosts(m.body))) {
+        const result = await syncTenantHosts(env, env.EDGE, ctx, tenantId, storeDomain);
+        log('info', 'kv hosts synced', { tenant_id: tenantId, ...result });
+      }
+      // The Turnstile widget's hostnames follow the store's custom domains.
+      if (widget && messages.some((m) => touchesDomains(m.body))) {
+        const result = await withClient(env, ctx, (client) =>
+          syncTurnstileHosts(client, widget, tenantId),
+        );
+        log('info', 'turnstile hosts synced', { tenant_id: tenantId, ...result });
+      }
       for (const m of messages) m.ack();
     } catch (e) {
-      log('error', 'kv host sync failed', { tenant_id: tenantId, error: String(e) });
+      log('error', 'host sync failed', { tenant_id: tenantId, error: String(e) });
       for (const m of messages) m.retry();
     }
   }
@@ -217,6 +229,13 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'domain recheck failed', { error: String(e) });
       captureMessage('domain recheck failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Sale windows that opened or closed since yesterday, in case a queued edge was lost.
+    try {
+      await catchUpSaleEdges(env, client);
+    } catch (e) {
+      log('error', 'sale catch-up failed', { error: String(e) });
+      captureMessage('sale catch-up failed', { level: 'error', extra: { error: String(e) } });
     }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);

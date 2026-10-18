@@ -52,3 +52,24 @@ test('an admin client-side route is served without the Worker', async ({ request
   expect(res.status()).toBe(200);
   expect(await res.text()).toContain('<div id="root">');
 });
+
+// Phase 4 (phase-4-plan §10): the shop API answers through the store's own
+// /api, never cached, and an anonymous read makes no cart.
+test('the cart and checkout answer on a demo store', async ({ request }) => {
+  const cart = await request.get(`${STOREFRONT}/api/cart?store=demo-grocery`);
+  expect(cart.status()).toBe(200);
+  expect(cart.headers()['cache-control']).toBe('no-store');
+  expect(await cart.json()).toMatchObject({ itemCount: 0, lines: [] });
+  expect(cart.headers()['set-cookie'] ?? '').not.toContain('mm_cart');
+  const checkout = await request.get(`${STOREFRONT}/api/checkout?store=demo-grocery`);
+  expect(checkout.status()).toBe(200);
+  expect(Object.keys(await checkout.json())).toContain('turnstileSiteKey');
+});
+
+test('a write from another site is refused', async ({ request }) => {
+  const res = await request.post(`${STOREFRONT}/api/cart/lines?store=demo-grocery`, {
+    headers: { origin: 'https://evil.example' },
+    data: { variantId: '00000000-0000-4000-8000-000000000000', quantity: 1 },
+  });
+  expect(res.status()).toBe(403);
+});

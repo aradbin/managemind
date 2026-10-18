@@ -77,5 +77,20 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },
+    // The orders, promotions and accounts flows (phase-4-plan §10), after the online-store flows.
+    {
+      name: 'orders-phone',
+      testMatch: /orders\.spec\.ts/,
+      dependencies: ['online-store-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'orders-desktop',
+      testMatch: /orders\.spec\.ts/,
+      dependencies: ['online-store-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
   ],
 });

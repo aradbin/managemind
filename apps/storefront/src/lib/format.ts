@@ -17,7 +17,7 @@ export const displayFor = (locale: Locale, numerals: Numerals | null): Display =
 /** "৳1,250" or "৳1,250.50" (en), "১,২৫০৳" (bn). */
 export function price(amount: number, d: Display): string {
   const text = format({ amount, currency: 'BDT' }, d.locale, { numerals: d.numerals });
-  return amount % 100 === 0 ? text.replace(/[.,]?[0০]{2}(?=\D*$)/u, '') : text;
+  return amount % 100 === 0 ? text.replace(/[.,]?[0০]{2}(?=[^0-9০-৯]*$)/u, '') : text;
 }
 
 /** A price range, or one price when they're equal. */

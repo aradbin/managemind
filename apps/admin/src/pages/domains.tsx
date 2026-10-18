@@ -201,6 +201,9 @@ function DomainCard({ domain, canWrite }: { domain: Domain; canWrite: boolean })
           {t('domains.problem', { reason: domain.failureReason })}
         </p>
       )}
+      {domain.status === 'active' && domain.turnstile === false && (
+        <p className="text-sm text-muted-foreground">{t('domains.noTurnstile')}</p>
+      )}
       {domain.status !== 'active' && (
         <div className="flex flex-col gap-2">
           <p className="text-sm">{t('domains.dns')}</p>

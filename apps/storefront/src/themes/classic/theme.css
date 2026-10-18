@@ -9,6 +9,11 @@
 html {
   -webkit-text-size-adjust: 100%;
 }
+/* Hidden means hidden, whatever display a class sets (the checkout form is a grid). */
+[hidden] {
+  /* biome-ignore lint/complexity/noImportantStyles: it must beat every class's display */
+  display: none !important;
+}
 body {
   margin: 0;
   font-family: var(--font);
@@ -824,4 +829,335 @@ dl.specs-list dd {
 .message {
   text-align: center;
   padding: 48px 16px;
+}
+
+/* Shopper pages (phase-4-plan §3.16): cart, checkout, confirmation, tracking */
+.cart-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--c-text);
+  padding: 6px;
+}
+.cart-count {
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.cart-count[hidden] {
+  display: none;
+}
+.account-link {
+  font-size: 0.95rem;
+}
+.muted {
+  color: color-mix(in srgb, var(--c-text) 70%, transparent);
+}
+.small {
+  font-size: 0.875rem;
+}
+.narrow {
+  max-width: 720px;
+}
+.button.wide {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 14px 18px;
+}
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+button.link {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  color: var(--c-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.notice {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c-sale) 12%, var(--c-background));
+  border-left: 4px solid var(--c-sale);
+}
+.notice[data-kind="info"] {
+  background: var(--c-surface);
+  border-left-color: var(--c-primary);
+}
+.notice[hidden] {
+  display: none;
+}
+.shop-grid {
+  display: grid;
+  gap: 24px;
+}
+@media (min-width: 900px) {
+  .shop-grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+}
+.lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.line {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
+}
+.line-image {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+.line-body p {
+  margin: 2px 0;
+}
+.line-total {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.line-problem {
+  color: var(--c-sale);
+  font-weight: 600;
+}
+.line-problem:empty {
+  display: none;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.stepper input {
+  width: 56px;
+  text-align: center;
+  padding: 8px 4px;
+  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
+  border-radius: var(--radius);
+}
+.step {
+  width: 40px;
+  height: 40px;
+  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.summary {
+  background: var(--c-surface);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.totals {
+  margin: 0 0 14px;
+}
+.totals .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.totals dt {
+  margin: 0;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.totals dd {
+  margin: 0;
+}
+.totals .discount dd {
+  color: var(--c-sale);
+}
+.totals .total {
+  border-top: 1px solid color-mix(in srgb, var(--c-text) 20%, transparent);
+  margin-top: 6px;
+  padding-top: 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.free-delivery {
+  margin-bottom: 12px;
+}
+.free-delivery p {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.free-delivery meter {
+  width: 100%;
+  height: 10px;
+}
+.coupon {
+  margin-bottom: 14px;
+}
+.coupon .inline {
+  display: flex;
+  gap: 8px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.coupon input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
+  border-radius: var(--radius);
+  text-transform: uppercase;
+}
+.code-chip {
+  display: inline-block;
+  margin: 0 6px 0 0;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font-weight: 700;
+}
+.checkout fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.checkout legend {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--c-text) 35%, transparent);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font: inherit;
+  color: inherit;
+}
+.field [aria-invalid="true"] {
+  border-color: var(--c-sale);
+  box-shadow: 0 0 0 1px var(--c-sale);
+}
+.field-error {
+  color: var(--c-sale);
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+}
+.field-error:empty {
+  display: none;
+}
+.choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: 400;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.choice input {
+  width: auto;
+  margin-top: 4px;
+}
+.mini-lines {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.mini-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  flex-wrap: wrap;
+}
+.order-head {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 16px;
+}
+.order-head .row {
+  display: flex;
+  gap: 8px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.order-head dt {
+  font-weight: 600;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.order-head dd {
+  margin: 0;
+}
+.cod-due {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.order-view .line {
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+}
+.order-view .line-image {
+  width: 56px;
+  height: 56px;
+}
+.track {
+  max-width: 420px;
+}
+.buy {
+  margin: 16px 0;
+  max-width: 420px;
+}
+.added {
+  margin: 8px 0 0;
+}
+.added[hidden] {
+  display: none;
+}
+/* The account page (phase-4-plan §3.11). */
+.link-button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.orders,
+.addresses {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.orders li,
+.addresses li {
+  padding: 12px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
 }

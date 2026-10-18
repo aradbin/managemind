@@ -18,7 +18,7 @@ import { products, variants } from './catalog';
 import { media } from './media';
 import { store, tenantColumns, tenantPolicy } from './tenant-table';
 
-export const IMPORT_KINDS = ['products'] as const;
+export const IMPORT_KINDS = ['products', 'customers'] as const;
 export const IMPORT_STATUSES = [
   'staging',
   'running',
@@ -68,7 +68,7 @@ export const importJobs = store.table(
     tenantPolicy(t),
     unique('import_jobs_tenant_id_unique').on(t.tenantId, t.id),
     index('import_jobs_tenant_created_idx').on(t.tenantId, sql`created_at desc`),
-    check('import_jobs_kind_valid', sql`${t.kind} in ('products')`),
+    check('import_jobs_kind_valid', sql`${t.kind} in ('products', 'customers')`),
     check(
       'import_jobs_status_valid',
       sql`${t.status} in ('staging', 'running', 'images', 'done', 'failed', 'cancelled')`,

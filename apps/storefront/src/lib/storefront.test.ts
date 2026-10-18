@@ -85,6 +85,10 @@ describe('formatting', () => {
     expect(price(125050, displayFor('en', null))).toBe('৳1,250.50');
     expect(price(125000, displayFor('bn', null))).toBe('১,২৫০৳');
     expect(price(125000, displayFor('bn', 'latin'))).toBe('1,250৳');
+    // Zeros in the taka stay: only the decimals go.
+    expect(price(60000, displayFor('bn', null))).toBe('৬০০৳');
+    expect(price(10000000, displayFor('bn', null))).toBe('১,০০,০০০৳');
+    expect(price(60000, displayFor('en', null))).toBe('৳600');
     expect(priceRange(10000, 25000, displayFor('en', null))).toBe('৳100 – ৳250');
     expect(priceRange(10000, 10000, displayFor('en', null))).toBe('৳100');
   });

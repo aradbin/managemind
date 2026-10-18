@@ -11,6 +11,7 @@ import { withClient } from '../db';
 import type { AppEnv } from '../env';
 import { log } from '../log';
 import { createLimiter, type Limiter, type RuleName } from '../rate-limit/index';
+import { verifyTurnstile } from '../turnstile';
 import { createMailer } from './email';
 import { AUTH_BASE_PATH, CODE_SECONDS, createStaffAuth, type StaffAuth } from './staff';
 
@@ -109,6 +110,14 @@ export function registerAuth(app: OpenAPIHono<AppEnv>): void {
     if (path === SEND_CODE) {
       await limiter.check('otp-send:ip', ip);
       if (email) await limiter.check('otp-send:email', email);
+      // Turnstile (phase-4-plan §3.15), on the admin's host. The admin's build
+      // gets the same site key (VITE_TURNSTILE_SITE_KEY) from the same variable.
+      if (c.env.TURNSTILE_SITE_KEY) {
+        await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, c.req.header('x-turnstile-token'), {
+          host: new URL(adminOrigin(c)).host,
+          ip,
+        });
+      }
     }
     if (path === SIGN_IN && email) await limiter.check('otp-verify:email', email);
 

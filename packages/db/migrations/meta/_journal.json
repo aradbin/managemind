@@ -134,6 +134,62 @@
       "when": 1792164419023,
       "tag": "0018_storefront_content_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792242586332,
+      "tag": "0019_geography",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792242600330,
+      "tag": "0020_geography_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792243169798,
+      "tag": "0021_orders",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792243223511,
+      "tag": "0022_orders_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792243424609,
+      "tag": "0023_delivery_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792262231208,
+      "tag": "0024_sale_edges",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792262951394,
+      "tag": "0025_shopper_addresses",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792264372196,
+      "tag": "0026_domain_turnstile",
+      "breakpoints": true
     }
   ]
 }

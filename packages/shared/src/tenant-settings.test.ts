@@ -15,6 +15,15 @@ describe('tenantSettings', () => {
         chat: { greeting: {}, show: 'all' },
         holiday: null,
       },
+      checkout: {
+        email: 'optional',
+        maxQuantityPerLine: 10,
+        orderNumberPrefix: '#',
+        rateLimits: { perPhoneHour: 3, perPhoneDay: 10, perIpHour: 10 },
+        accounts: false,
+        termsCheckbox: false,
+      },
+      cod: { enabled: true, maxOrderValue: null, advance: 'never' },
     });
     expect(tenantSettings.parse({})).toEqual(defaultTenantSettings());
   });

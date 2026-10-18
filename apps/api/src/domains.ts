@@ -23,6 +23,7 @@ import { createMailer } from './auth/email';
 import { queueSink, withClient } from './db';
 import { type ApiConfig, type Env, getConfig } from './env';
 import { log } from './log';
+import { handleSaleEdges, type SaleEdgeMessage } from './sales';
 
 export interface DomainCheckMessage {
   kind: 'domain_check';
@@ -72,9 +73,30 @@ export function dnsInstructions(
   ];
 }
 
+/**
+ * The delayed queue: domain re-checks, and scheduled sales' window edges
+ * (sales.ts), told apart by `kind`.
+ */
+export type DelayedMessage = DomainCheckMessage | SaleEdgeMessage;
+
+export async function handleDelayedQueue(
+  batch: MessageBatch<DelayedMessage>,
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): Promise<void> {
+  const sales = batch.messages.filter(
+    (m): m is Message<SaleEdgeMessage> => m.body.kind === 'sale_edge',
+  );
+  const domains = batch.messages.filter(
+    (m): m is Message<DomainCheckMessage> => m.body.kind !== 'sale_edge',
+  );
+  if (sales.length) await handleSaleEdges(sales, env, ctx);
+  if (domains.length) await handleDomainQueue({ ...batch, messages: domains }, env, ctx);
+}
+
 /** Delayed re-checks: a domain no longer pending needs nothing more. */
 export async function handleDomainQueue(
-  batch: MessageBatch<DomainCheckMessage>,
+  batch: Pick<MessageBatch<DomainCheckMessage>, 'messages'>,
   env: Env,
   ctx: Pick<ExecutionContext, 'waitUntil'>,
 ): Promise<void> {

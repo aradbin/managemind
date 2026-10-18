@@ -1,5 +1,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ChevronRight, Globe, Percent, Store, Users, Warehouse } from 'lucide-react';
+import {
+  ChevronRight,
+  Globe,
+  Percent,
+  ShoppingCart,
+  Store,
+  Truck,
+  Users,
+  Warehouse,
+} from 'lucide-react';
 import { PageHeader } from '../../../components/page-header';
 import { usePermission } from '../../../components/permission-gate';
 import { useLocale } from '../../../i18n';
@@ -32,6 +41,18 @@ function Page() {
       icon: Percent,
       title: t('vat.title'),
       description: t('vat.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/delivery' as const,
+      icon: Truck,
+      title: t('delivery.title'),
+      description: t('delivery.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/checkout' as const,
+      icon: ShoppingCart,
+      title: t('checkoutSettings.title'),
+      description: t('checkoutSettings.description'),
     },
     usePermission('inventory.read') && {
       to: '/settings/location' as const,

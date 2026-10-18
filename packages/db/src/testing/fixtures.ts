@@ -118,4 +118,74 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   import_images: (tenant) =>
     `insert into store.import_images (tenant_id, job_id, row, product_id, url, position)
      values (${tenant}, ${first('import_jobs')}, 2, ${first('products')}, 'https://example.test/a.jpg', 0)`,
+  // Phase 4: delivery, customers, shoppers, carts, promotions and orders.
+  delivery_zones: (tenant) =>
+    `insert into store.delivery_zones (tenant_id, name, fee) values (${tenant}, '{"en": "Fixture"}', 7000)`,
+  delivery_zone_areas: (tenant) =>
+    `insert into store.delivery_zone_areas (tenant_id, zone_id, district_id)
+     values (${tenant}, ${first('delivery_zones', "name->>'en' = 'Fixture'")}, 1)`,
+  customers: (tenant) =>
+    `insert into store.customers (tenant_id, phone, name) values (${tenant}, '+8801700000001', 'Fixture')`,
+  customer_addresses: (tenant) =>
+    `insert into store.customer_addresses (tenant_id, customer_id, name, phone, division_id, district_id, area_id, line)
+     values (${tenant}, ${first('customers')}, 'Fixture', '+8801700000001', 6, 47, (select id from ref.areas where code = 'dhaka.dhanmondi'), 'House 1')`,
+  blocked_phones: (tenant) =>
+    `insert into store.blocked_phones (tenant_id, phone, reason) values (${tenant}, '+8801700000009', 'fixture')`,
+  shopper_users: (tenant) =>
+    `insert into store.shopper_users (tenant_id, name, email) values (${tenant}, 'Fixture', 'fixture-' || gen_random_uuid() || '@example.test')`,
+  shopper_addresses: (tenant) =>
+    `insert into store.shopper_addresses (tenant_id, user_id, name, phone, division_id, district_id, area_id, line)
+     values (${tenant}, ${first('shopper_users')}, 'Fixture', '+8801700000001', 6, 47, 513, 'Road 1')`,
+  shopper_sessions: (tenant) =>
+    `insert into store.shopper_sessions (tenant_id, user_id, token, expires_at)
+     values (${tenant}, ${first('shopper_users')}, gen_random_uuid()::text, now() + interval '1 day')`,
+  shopper_accounts: (tenant) =>
+    `insert into store.shopper_accounts (tenant_id, user_id, account_id, provider_id)
+     values (${tenant}, ${first('shopper_users')}, gen_random_uuid()::text, 'email-otp')`,
+  shopper_verifications: (tenant) =>
+    `insert into store.shopper_verifications (tenant_id, identifier, value, expires_at)
+     values (${tenant}, 'fixture', 'fixture', now() + interval '1 day')`,
+  carts: (tenant) =>
+    `insert into store.carts (tenant_id, token_hash) values (${tenant}, encode(sha256(gen_random_uuid()::text::bytea), 'hex'))`,
+  cart_lines: (tenant) =>
+    `insert into store.cart_lines (tenant_id, cart_id, variant_id, quantity)
+     values (${tenant}, ${first('carts')}, ${first('variants')}, 1)`,
+  counters: (tenant) =>
+    `insert into store.counters (tenant_id, name, value) values (${tenant}, 'order_number', 1000)`,
+  promotions: (tenant) =>
+    `insert into store.promotions (tenant_id, title, kind, action)
+     values (${tenant}, '{"en": "Fixture"}', 'code', '{"type": "percent_off_order", "percentBp": 1000}')`,
+  promotion_codes: (tenant) =>
+    `insert into store.promotion_codes (tenant_id, promotion_id, code)
+     values (${tenant}, ${first('promotions')}, 'FX' || substr(md5(random()::text), 1, 8))`,
+  promotion_customer_usage: (tenant) =>
+    `insert into store.promotion_customer_usage (tenant_id, promotion_id, phone, count)
+     values (${tenant}, ${first('promotions')}, '+8801700000001', 1)`,
+  orders: (tenant) =>
+    `insert into store.orders (tenant_id, number, source, customer_id, phone, contact, subtotal, total, locale)
+     values (${tenant}, (select coalesce(max(number), 1000) + 1 from store.orders where tenant_id = app.current_tenant_id()),
+             'website', ${first('customers')}, '+8801700000001', '{"name": "Fixture", "phone": "+8801700000001"}', 100000, 100000, 'en')`,
+  order_lines: (tenant) =>
+    `insert into store.order_lines (tenant_id, order_id, variant_id, product_id, title, unit_price, quantity, line_subtotal, line_total)
+     values (${tenant}, ${first('orders')}, ${first('variants')}, (select product_id from store.variants where id = ${first('variants')}),
+             '{"en": "Fixture"}', 100000, 1, 100000, 100000)`,
+  order_adjustments: (tenant) =>
+    `insert into store.order_adjustments (tenant_id, order_id, kind, target, title, amount)
+     values (${tenant}, ${first('orders')}, 'manual', 'order', '{"en": "Fixture"}', 100)`,
+  order_line_adjustments: (tenant) =>
+    `insert into store.order_line_adjustments (tenant_id, order_line_id, adjustment_id, amount)
+     values (${tenant}, ${first('order_lines')}, ${first('order_adjustments')}, 100)`,
+  order_history: (tenant) =>
+    `insert into store.order_history (tenant_id, order_id, machine, to_status, event, actor_type)
+     values (${tenant}, ${first('orders')}, 'order', 'pending', 'place', 'system')`,
+  order_notes: (tenant) =>
+    `insert into store.order_notes (tenant_id, order_id, body) values (${tenant}, ${first('orders')}, 'Fixture')`,
+  shipments: (tenant) =>
+    `insert into store.shipments (tenant_id, order_id) values (${tenant}, ${first('orders')})`,
+  shipment_lines: (tenant) =>
+    `insert into store.shipment_lines (tenant_id, shipment_id, order_line_id, quantity)
+     values (${tenant}, ${first('shipments')}, ${first('order_lines')}, 1)`,
+  payments: (tenant) =>
+    `insert into store.payments (tenant_id, order_id, provider, method, amount)
+     values (${tenant}, ${first('orders')}, 'cod', 'cod', 100000)`,
 };

@@ -17,11 +17,13 @@ import {
   unstartImport,
 } from '@managemind/core';
 import { AppError, objectKey } from '@managemind/shared';
+import { CUSTOMER_IMPORT_LIMITS } from '@managemind/shared/orders/customer-import';
 import type { Context } from 'hono';
 import { inStore, type StaffEnv } from './context';
 
 /** A staged chunk's size limit: 10 products of up to 100 variants fit comfortably. */
 export const MAX_CHUNK_BYTES = 1024 * 1024;
+const PRODUCTS_PER_CHUNK = 100;
 
 export const chunkKey = (tenantId: string, jobId: string, n: number) =>
   objectKey('tmp-upload', tenantId, `imports/${jobId}/${n}.json`);
@@ -29,6 +31,7 @@ export const chunkKey = (tenantId: string, jobId: string, n: number) =>
 const Job = z
   .object({
     id: z.uuid(),
+    kind: z.enum(['products', 'customers']),
     status: z.enum(['staging', 'running', 'images', 'done', 'failed', 'cancelled']),
     fileName: z.string(),
     chunkCount: z.number().int(),
@@ -72,16 +75,18 @@ export const IMPORT_ROUTES = {
   imports: r({
     method: 'get',
     path: '/imports',
-    summary: 'The latest imports (catalog.read)',
+    summary: 'The latest imports of one kind (catalog.read, or customers.read)',
+    request: { query: z.object({ kind: z.enum(['products', 'customers']).optional() }) },
     responses: json(z.array(Job), 'Imports'),
   }),
   createImport: r({
     method: 'post',
     path: '/imports',
     summary:
-      'Create an import job (catalog.write; stock columns need inventory.write; accepts Idempotency-Key)',
+      'Create an import job (catalog.write, or customers.write; stock columns need inventory.write; accepts Idempotency-Key)',
     request: body(
       z.object({
+        kind: z.enum(['products', 'customers']).optional(),
         fileName: z.string().trim().min(1).max(255),
         chunkCount: z.number().int().min(1).max(1000),
         total: z.number().int().min(1).max(100_000),
@@ -102,10 +107,11 @@ export const IMPORT_ROUTES = {
   stageChunk: r({
     method: 'put',
     path: '/imports/{id}/chunks/{n}',
-    summary: 'Stage one chunk of products (the dry run’s output; at most 1 MB)',
+    summary:
+      'Stage one chunk: up to 100 products or 500 customers (the dry run’s output; at most 1 MB)',
     request: {
       params: z.object({ id: z.uuid(), n: z.coerce.number().int().min(0).max(999) }),
-      ...body(z.array(z.unknown()).min(1).max(100)),
+      ...body(z.array(z.unknown()).min(1).max(CUSTOMER_IMPORT_LIMITS.chunk)),
     },
     responses: { 204: { description: 'Staged' } },
   }),
@@ -198,7 +204,7 @@ export function registerImports(admin: OpenAPIHono<StaffEnv>): void {
   const write = { write: true };
 
   admin.openapi(R.imports, async (c) =>
-    c.json(await inStore(c, (tx) => listImportJobs(tx, actor(c))), 200),
+    c.json(await inStore(c, (tx) => listImportJobs(tx, actor(c), c.req.valid('query').kind)), 200),
   );
   admin.openapi(R.createImport, async (c) => {
     const input = c.req.valid('json');
@@ -226,7 +232,12 @@ export function registerImports(admin: OpenAPIHono<StaffEnv>): void {
       throw new AppError('payload_too_large');
     const products = c.req.valid('json');
     const job = await inStore(c, (tx) => getImportJob(tx, actor(c), id), write);
-    if (!actor(c).permissions.has('catalog.write')) throw new AppError('forbidden');
+    if (!actor(c).permissions.has(job.kind === 'customers' ? 'customers.write' : 'catalog.write'))
+      throw new AppError('forbidden');
+    if (job.kind === 'products' && products.length > PRODUCTS_PER_CHUNK)
+      throw new AppError('validation_failed', {
+        fields: [{ path: '', code: 'too_big', message: `at most ${PRODUCTS_PER_CHUNK} products` }],
+      });
     if (job.status !== 'staging')
       throw new AppError('illegal_transition', { detail: `the import is ${job.status}` });
     if (n >= job.chunkCount) throw new AppError('not_found');

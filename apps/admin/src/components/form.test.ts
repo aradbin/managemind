@@ -1,6 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { loadLocale } from '../i18n';
 import { ApiError } from '../lib/api';
 import {
   applyServerErrors,
@@ -9,6 +10,9 @@ import {
   optionalPhone,
   optionalText,
 } from './form';
+
+await loadLocale('en');
+await loadLocale('bn');
 
 describe('form schemas', () => {
   const schema = z.object({

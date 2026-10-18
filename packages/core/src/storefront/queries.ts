@@ -68,6 +68,8 @@ export interface StoreLayout {
   pages: StorePageLink[];
   storefront: StorefrontSettings;
   numerals: 'bengali' | 'latin' | null;
+  /** What the shopper pages need to know (phase-4-plan §3.16). */
+  shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };
 }
 
 async function storeRow(tx: TenantTx) {
@@ -137,6 +139,11 @@ export async function storeLayout(
       pages,
       storefront: row.settings.storefront,
       numerals: row.settings.display.numerals ?? null,
+      shop: {
+        accounts: row.settings.checkout.accounts,
+        termsCheckbox: row.settings.checkout.termsCheckbox,
+        email: row.settings.checkout.email,
+      },
     },
     tags: [storeTag(tx.tenantId)],
   };

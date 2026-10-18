@@ -11,7 +11,18 @@ export const EVENTS = {
   'tenant.created': z.object({ slug: z.string(), name: z.string() }),
   /** Which of name, defaultLocale and profile changed. */
   'tenant.updated': z.object({
-    fields: z.array(z.enum(['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display'])),
+    fields: z.array(
+      z.enum([
+        'name',
+        'defaultLocale',
+        'profile',
+        'tax',
+        'storefront',
+        'display',
+        'checkout',
+        'cod',
+      ]),
+    ),
   }),
   'tenant.status_changed': z.object({
     from: tenantStatus,
@@ -32,6 +43,11 @@ export const EVENTS = {
   'catalog.product.created': z.object({}),
   /** Which parts changed: content, options, variants, prices, media, categories, … */
   'catalog.product.updated': z.object({ fields: z.array(z.string()).max(20) }),
+  /** A sale window opens or closes later (phase-4-plan §3.14); the API queues each edge. */
+  'catalog.sale_scheduled': z.object({
+    productIds: z.array(z.uuid()).min(1).max(200),
+    edges: z.array(z.iso.datetime()).min(1).max(400),
+  }),
   'catalog.product.archived': z.object({}),
   'catalog.product.deleted': z.object({}),
   'catalog.category.changed': z.object({ change: catalogChange }),
@@ -49,6 +65,36 @@ export const EVENTS = {
   /** `navigation`: the title, slug or publication changed, so every page's footer did. */
   'catalog.page.changed': z.object({ change: catalogChange, navigation: z.boolean() }),
   'theme.published': z.object({}),
+  // Orders, payments, shipments, customers and promotions (phase-4-plan §4).
+  // No consumer acts on them yet; Phase 5A's notifications will.
+  'order.placed': z.object({
+    number: z.number().int(),
+    source: z.string(),
+    total: z.number().int(),
+  }),
+  'order.confirmed': z.object({ number: z.number().int() }),
+  'order.processing': z.object({ number: z.number().int() }),
+  'order.completed': z.object({ number: z.number().int() }),
+  'order.cancelled': z.object({
+    number: z.number().int(),
+    by: z.enum(['staff', 'platform', 'system', 'shopper']),
+  }),
+  'order.edited': z.object({ number: z.number().int(), total: z.number().int() }),
+  'payment.recorded': z.object({
+    orderId: z.uuid(),
+    provider: z.string(),
+    amount: z.number().int(),
+  }),
+  'payment.settled': z.object({ orderId: z.uuid(), amount: z.number().int() }),
+  'payment.voided': z.object({ orderId: z.uuid() }),
+  'shipment.created': z.object({ orderId: z.uuid() }),
+  'shipment.shipped': z.object({ orderId: z.uuid() }),
+  'shipment.delivered': z.object({ orderId: z.uuid() }),
+  'shipment.failed': z.object({ orderId: z.uuid() }),
+  'shipment.returned': z.object({ orderId: z.uuid() }),
+  'customer.created': z.object({}),
+  'customer.updated': z.object({}),
+  'promotion.changed': z.object({ change: catalogChange }),
 } as const;
 
 /** Events that change which hosts point at a store, or what they say (§4.3). */

@@ -41,6 +41,11 @@ jobs:
       # Production's domains (phase-1-plan §10); repository variables override them.
       PLATFORM_DOMAIN: ${{ vars.PLATFORM_DOMAIN || 'managemind.site' }}
       STORE_DOMAIN: ${{ vars.STORE_DOMAIN || 'managemind.store' }}
+      # Turnstile (phase-4-plan §3.15): the widget's site key is a repository
+      # variable, its secret a repository secret. The admin's build and the
+      # API take the key from here, so staff sign-in can't ask for a check the
+      # page doesn't show.
+      TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SECRET_KEY != '' && vars.TURNSTILE_SITE_KEY || '' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -56,6 +61,7 @@ jobs:
           echo "VITE_SENTRY_DSN=$(jq -r .projects.admin.dsn scripts/sentry.json)" >> "$GITHUB_ENV"
           echo "VITE_SENTRY_ENVIRONMENT=production" >> "$GITHUB_ENV"
           echo "VITE_SENTRY_RELEASE=$COMMIT_SHA" >> "$GITHUB_ENV"
+          echo "VITE_TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY" >> "$GITHUB_ENV"
       - run: pnpm turbo run build --filter=./apps/*
         env:
           SENTRY_SOURCEMAPS: 1
@@ -99,16 +105,31 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           CF_STORE_TOKEN: ${{ secrets.CF_STORE_TOKEN }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
           if [ -z "$CF_STORE_TOKEN" ]; then
             echo "::warning title=CF_STORE_TOKEN::not set: store pages are not purged after changes, and custom domains are off"
           fi
+          # Shopper email (ADR 0022): with the key, accounts can be turned on.
+          if [ -z "$BREVO_API_KEY" ]; then
+            echo "::warning title=BREVO_API_KEY::not set: shopper accounts can't be turned on"
+          fi
+          if [ -z "$TURNSTILE_SITE_KEY" ]; then
+            echo "::warning title=Turnstile::TURNSTILE_SITE_KEY (variable) or TURNSTILE_SECRET_KEY (secret) not set: checkout and sign-in rely on rate limits alone"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
-            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend} + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)' > "$secrets")
+            --arg brevo "$BREVO_API_KEY" --arg tsite "$TURNSTILE_SITE_KEY" --arg tsecret "$TURNSTILE_SECRET_KEY" \
+            --arg account "$CLOUDFLARE_ACCOUNT_ID" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}
+              + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)
+              + (if $brevo == "" then {} else {BREVO_API_KEY: $brevo, SHOPPER_EMAIL_PROVIDER: "brevo"} end)
+              + (if $tsite == "" then {} else
+                  {TURNSTILE_SITE_KEY: $tsite, TURNSTILE_SECRET_KEY: $tsecret, CF_ACCOUNT_ID: $account} end)' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy dist/worker/index.js --no-bundle \
             -c wrangler.production.json --secrets-file "$secrets"
       # The page cache is on only when purges can run (ADR 0018); until the
@@ -164,6 +185,21 @@ jobs:
           echo "- Admin: $ADMIN_URL" >> "$GITHUB_STEP_SUMMARY"
           echo "- API: $API_URL/health" >> "$GITHUB_STEP_SUMMARY"
           echo "- Storefront: $STOREFRONT_URL" >> "$GITHUB_STEP_SUMMARY"
+
+      # The shop API on a demo store (phase-4-plan §10): the cart answers
+      # through the store's own /api, never cached, and checkout says whether
+      # Turnstile is on. Informational, like the cache check below.
+      - name: Shop API
+        if: steps.workers.outputs.demo_store_url != ''
+        continue-on-error: true
+        env:
+          DEMO_STORE_URL: ${{ steps.workers.outputs.demo_store_url }}
+        run: |
+          u="${DEMO_STORE_URL%/}"
+          headers=$(curl -fsS -o /dev/null -D - "$u/api/cart" | tr -d '\r')
+          grep -qi '^cache-control: no-store' <<< "$headers" || { echo "::warning title=Shop API::the cart answered without no-store"; exit 1; }
+          key=$(curl -fsS "$u/api/checkout" | jq -r '.turnstileSiteKey // "off"')
+          echo "- Shop API: cart and checkout answer on $u (Turnstile: $key)" >> "$GITHUB_STEP_SUMMARY"
 
       # A cache hit on a demo store (phase-3-plan §9), once pages are cached
       # (CF_STORE_TOKEN set). The daily monitor reports the storefront's CPU,

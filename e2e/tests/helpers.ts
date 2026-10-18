@@ -1,7 +1,7 @@
 // What the E2E flows share: the dev mailbox, signing in with a code, TOTP,
 // the admin's own Bangla messages, and the axe check every screen gets.
 import { createHmac } from 'node:crypto';
-import { deflateSync } from 'node:zlib';
+import { deflateSync, gzipSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 import { bn } from '../../apps/admin/src/i18n/bn';
@@ -87,6 +87,30 @@ export async function expectAccessible(page: Page, screen: string): Promise<void
         `${v.id} (${v.impact}): ${v.nodes.map((n) => `${n.target.join(' ')} ${n.html.slice(0, 160)}`).join(' | ')}`,
     );
   expect(found, `accessibility on ${screen}`).toEqual([]);
+}
+
+/** Our JavaScript on a store page, compressed, stays under 50 KB (phase-3-plan §8). */
+const SCRIPT_BUDGET = 50 * 1024;
+
+/**
+ * Astro inlines the theme's scripts into each page, so the budget is measured
+ * on the rendered page: inline scripts plus any script files, gzipped. Meta's
+ * and Google's tags load only after consent, and Turnstile only on the pages
+ * that need it; they are not ours to count.
+ */
+export async function expectScriptBudget(page: Page, what: string): Promise<void> {
+  const scripts = await page.evaluate(() =>
+    [...document.querySelectorAll('script')]
+      .filter((s) => !s.type || s.type === 'module' || s.type === 'text/javascript')
+      .filter((s) => !s.src.startsWith('https://challenges.cloudflare.com/'))
+      .map((s) => ({ src: s.src, text: s.textContent ?? '' })),
+  );
+  let bytes = 0;
+  for (const s of scripts) {
+    const body = s.src ? await (await page.request.get(s.src)).body() : Buffer.from(s.text);
+    bytes += gzipSync(body, { level: 9 }).length;
+  }
+  expect(bytes, `JavaScript on ${what} (gzip bytes)`).toBeLessThan(SCRIPT_BUDGET);
 }
 
 /** A solid-colour PNG, for the image upload (the admin resizes it like a phone photo). */

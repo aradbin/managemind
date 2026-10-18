@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useLocale } from '../../i18n';
 import { meQuery } from '../../lib/api';
+import { DashboardView } from '../../pages/dashboard';
 
 export const Route = createFileRoute('/_shell/')({ component: Page });
 
@@ -18,8 +19,8 @@ function Page() {
   }
   return (
     <>
-      <h1 className="mb-2 text-xl font-semibold">{t('home.title')}</h1>
-      <p className="text-muted-foreground">{t('home.placeholder')}</p>
+      <h1 className="mb-4 text-xl font-semibold">{t('home.title')}</h1>
+      {me.activeStore && <DashboardView />}
     </>
   );
 }

@@ -2,6 +2,7 @@
 // secret (sign-in codes, invitation links) are sent after the response with
 // waitUntil, never through the outbox, so no live code sits in the database.
 import {
+  brevoProvider,
   captureProvider,
   type EmailMessage,
   type EmailProvider,
@@ -26,6 +27,11 @@ export function emailProvider(
   if (config.EMAIL_PROVIDER === 'resend') {
     return resendProvider({ apiKey: config.RESEND_API_KEY ?? '' });
   }
+  return devMailbox(env, ctx);
+}
+
+/** Saves emails to platform.dev_emails, read through the dev mailbox (never in production). */
+function devMailbox(env: Env, ctx: Pick<ExecutionContext, 'waitUntil'>): EmailProvider {
   // The capture provider runs after the response, when the request's own
   // connection is closed, so each save opens its own.
   return captureProvider((message) =>
@@ -64,6 +70,47 @@ export function createMailer(
           return;
         }
         await countEmailSent(env.RATE_LIMITER);
+      };
+      ctx.waitUntil(send());
+    },
+  };
+}
+
+/** Whether shopper email can go out, so accounts can be on (ADR 0022). */
+export const shopperEmailReady = (config: ApiConfig) => config.SHOPPER_EMAIL_PROVIDER !== 'none';
+
+/**
+ * Shopper email (ADR 0022): from the store's name at no-reply@ the store
+ * domain, through Brevo in production, replies to the store's own address.
+ */
+export function createShopperMailer(
+  env: Env,
+  config: ApiConfig,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+  store: { name: string; replyTo?: string | undefined },
+): Mailer {
+  if (!shopperEmailReady(config)) throw new Error('shopper email is not set up');
+  const provider =
+    config.SHOPPER_EMAIL_PROVIDER === 'brevo'
+      ? brevoProvider({ apiKey: config.BREVO_API_KEY ?? '' })
+      : devMailbox(env, ctx);
+  // Quotes and angle brackets would break the From header.
+  const name = store.name.replace(/["<>]/g, '').slice(0, 60) || config.PLATFORM_NAME;
+  const from = `${name} <no-reply@${config.STORE_DOMAIN}>`;
+  return {
+    sendLater(message, kind) {
+      const send = async () => {
+        try {
+          await sendEmail(provider, {
+            ...message,
+            from,
+            ...(store.replyTo ? { replyTo: store.replyTo } : {}),
+            tags: { kind, ...message.tags },
+          });
+        } catch (e) {
+          log('error', 'shopper email failed', { kind, provider: provider.name, error: String(e) });
+          captureException(e, { tags: { email_kind: kind } });
+        }
       };
       ctx.waitUntil(send());
     },

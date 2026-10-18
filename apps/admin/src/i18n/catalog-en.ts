@@ -335,6 +335,15 @@ export const catalogEn = {
   'location.intro': 'The name and address of the place your stock is counted.',
   'location.name': 'Name',
 
+  'products.sale': 'Scheduled sale',
+  'products.saleHint':
+    'A sale price per variant, for one window. Shoppers pay it inside the window, with the regular price struck through. Clear a sale price to end its sale.',
+  'products.saleStart': 'Sale starts',
+  'products.saleEnd': 'Sale ends',
+  'products.salePercent': 'Sale: percent off the price',
+  'products.salePrice': 'Sale price',
+  'products.saleWindow': 'Give the sale a start and a later end.',
+  'products.saleBelow': '{item}: the sale price must be below the price.',
   'export.button': 'Export',
   'export.title': 'Export products',
   'export.description': 'The products in the current list, in the same columns the import reads.',

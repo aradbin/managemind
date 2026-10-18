@@ -1,0 +1,74 @@
+---
+import type { StoreMessageKey } from '../../../i18n';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = [
+  'track.notFound',
+  'track.locked',
+  'track.status',
+  'track.delivery',
+  'track.cancel',
+  'track.cancelConfirm',
+  'track.cancelled',
+  'track.shipments',
+  'track.courier',
+  'status.pending',
+  'status.confirmed',
+  'status.processing',
+  'status.completed',
+  'status.cancelled',
+  'delivery.not_shipped',
+  'delivery.partially_shipped',
+  'delivery.shipped',
+  'delivery.delivered',
+  'delivery.failed',
+  'shipment.shipped',
+  'shipment.delivered',
+  'shipment.failed',
+  'shipment.returned',
+  'cart.subtotal',
+  'cart.discount',
+  'cart.delivery',
+  'cart.free',
+  'cart.vatIncluded',
+  'cart.vat',
+  'cart.rounding',
+  'cart.total',
+  'cart.error',
+  'thanks.number',
+  'thanks.cod',
+  'thanks.items',
+  'thanks.deliverTo',
+  'checkout.required',
+  'checkout.badPhone',
+];
+---
+
+<ShopPage ctx={ctx} kind="track" title={t('track.title')} keys={keys}>
+  <div class="shop narrow">
+    <h1>{t('track.title')}</h1>
+    <p>{t('track.intro')}</p>
+    <form class="track" data-track novalidate>
+      <div class="field">
+        <label for="t-number">{t('track.number')}</label>
+        <input id="t-number" name="number" required maxlength="30" autocomplete="off" aria-describedby="t-number-e" />
+        <p class="field-error" id="t-number-e"></p>
+      </div>
+      <div class="field">
+        <label for="t-phone">{t('track.phone')}</label>
+        <input id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" aria-describedby="t-phone-e" />
+        <p class="field-error" id="t-phone-e"></p>
+      </div>
+      <button type="submit" class="button">{t('track.submit')}</button>
+    </form>
+    <p class="notice" data-notice role="alert" hidden></p>
+    <div data-order aria-live="polite"></div>
+  </div>
+  <script src="../scripts/order.ts"></script>
+</ShopPage>

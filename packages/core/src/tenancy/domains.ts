@@ -116,6 +116,8 @@ export interface Domain {
   checkAttempts: number;
   /** Why it failed, or what's wrong with an active domain (a flag for the admin). */
   failureReason: string | null;
+  /** On the Turnstile widget (phase-4-plan §3.15); off, the host relies on rate limits alone. */
+  turnstile: boolean;
   createdAt: string;
 }
 
@@ -132,6 +134,7 @@ const toDomain = (row: Row): Domain => ({
   lastCheckedAt: row.lastCheckedAt?.toISOString() ?? null,
   checkAttempts: row.checkAttempts,
   failureReason: row.failureReason,
+  turnstile: row.turnstile,
   createdAt: row.createdAt.toISOString(),
 });
 

@@ -8,6 +8,7 @@ import { collectionRules, MEDIA_EXTENSIONS, type MediaType } from '@managemind/s
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { LISTING_LIMITS, type ListingQuery } from '@managemind/shared/storefront/listing';
 import { type SQL, sql } from 'drizzle-orm';
+import { effectivePriceSql } from '../orders/variants';
 import type { TenantTx } from '../tenant';
 import { rulesSql } from './collections';
 import type { Locale } from './common';
@@ -83,9 +84,12 @@ const cardJson = (lang: Lang) => sql`json_build_object(
   'slug', coalesce(tl.slug, td.slug),
   'title', coalesce(tl.title, td.title),
   'priceMin', p.price_min, 'priceMax', p.price_max,
-  'compareAt', (select cv.compare_at_price from store.variants cv
+  -- The cheapest variant's strikethrough: its regular price while on sale (§3.14).
+  'compareAt', (select case when ${effectivePriceSql('cv')} < cv.price then cv.price
+                            else cv.compare_at_price end
+                  from store.variants cv
                  where cv.product_id = p.id and cv.archived_at is null
-                 order by cv.price, cv.position limit 1),
+                 order by ${effectivePriceSql('cv')}, cv.position limit 1),
   'available', ${PRODUCT_AVAILABLE},
   'brand', (select coalesce(bl.label, bd.label)
               from store.product_attributes pa
@@ -636,7 +640,9 @@ export async function publishedProduct(
               join store.product_option_values ov on ov.id = vo.value_id
               join store.product_options o on o.id = ov.option_id
              where vo.variant_id = v.id), '[]'::json),
-          'sku', v.sku, 'price', v.price, 'compareAtPrice', v.compare_at_price,
+          'sku', v.sku, 'price', ${effectivePriceSql('v')},
+          'compareAtPrice', case when ${effectivePriceSql('v')} < v.price then v.price
+                                 else v.compare_at_price end,
           'available', ${VARIANT_AVAILABLE(sql`v`)},
           'imageMediaId', v.image_media_id)
           order by v.position)

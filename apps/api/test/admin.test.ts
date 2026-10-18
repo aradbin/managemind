@@ -5,16 +5,24 @@
 import {
   type Actor,
   actorFor,
+  addAddress,
   addDomain,
+  blockPhone,
   createAttribute,
   createCategory,
   createCollection,
+  createCustomer,
   createImportJob,
   createPage,
   createProduct,
+  createPromotion,
+  createShipment,
   createTenant,
+  createZone,
   grantSupportAccess,
   listLocations,
+  placeOrder,
+  receive,
   systemActor,
   transitionTenant,
   withTenant,
@@ -23,6 +31,7 @@ import { createDb } from '@managemind/db';
 import { connect } from '@managemind/db/testing';
 import { pendingHostnames } from '@managemind/providers/hostnames';
 import { permissionsOf } from '@managemind/shared';
+import { sql } from 'drizzle-orm';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ADMIN_ROUTES } from '../src/admin/routes';
@@ -264,8 +273,65 @@ describe('isolation suite', () => {
       ),
     );
 
+    // Store B's orders, shipments, customers, zones and blocklist (Phase 4).
+    const live = await inB((tx) =>
+      createProduct(tx, bOwner, {
+        status: 'active',
+        translations: { en: { title: 'B live' } },
+        variant: { price: 1000 },
+      }),
+    );
+    const liveVariant = live.variants[0]?.id as string;
+    await inB((tx) =>
+      receive(tx, bOwner, { variantId: liveVariant, quantity: 5, reason: 'received' }),
+    );
+    const order = await inB((tx) =>
+      placeOrder(tx, bOwner, {
+        channel: 'admin',
+        source: 'phone',
+        lines: [{ variantId: liveVariant, quantity: 1 }],
+        contact: { name: 'B shopper', phone: '+8801700009999' },
+        address: null,
+        zone: 'none',
+        payment: { kind: 'cod' },
+        locale: 'en',
+        confirm: true,
+      }),
+    );
+    const { rows: lineRows } = await inB((tx) =>
+      tx.db.execute<{ id: string }>(
+        sql`select id from store.order_lines where order_id = ${order.id} limit 1`,
+      ),
+    );
+    const shipment = await inB((tx) =>
+      createShipment(tx, bOwner, order.id, {
+        lines: [{ orderLineId: lineRows[0]?.id, quantity: 1 }],
+      }),
+    );
+    const customer = await inB((tx) =>
+      createCustomer(tx, bOwner, { phone: '+8801700008888', name: 'B customer' }),
+    );
+    const bAddress = {
+      name: 'B',
+      phone: '+8801700008888',
+      divisionId: 6,
+      districtId: 47,
+      areaId: 513,
+      line: 'B road',
+    };
+    const address = await inB((tx) => addAddress(tx, bOwner, customer.id, bAddress));
+    const zone = await inB((tx) => createZone(tx, bOwner, { name: { en: 'B zone' }, fee: 100 }));
+    const promotion = await inB((tx) =>
+      createPromotion(tx, bOwner, {
+        title: { en: 'B promo' },
+        kind: 'code',
+        action: { type: 'amount_off_order', amount: 100 },
+      }),
+    );
+    await inB((tx) => blockPhone(tx, bOwner, { phone: '+8801700007777', reason: 'B only' }));
+
     /** Store B's resource for each route with an ID; a new route must add one. */
-    const fixtures: Record<string, { id: string; body?: unknown }> = {
+    const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
       'DELETE /v1/admin/members/{id}': { id: bMember.memberId },
       'POST /v1/admin/invitations/{id}/resend': { id: bInvitation },
@@ -312,6 +378,53 @@ describe('isolation suite', () => {
       'POST /v1/admin/domains/{id}/check': { id: domain.id },
       'POST /v1/admin/domains/{id}/primary': { id: domain.id },
       'DELETE /v1/admin/domains/{id}': { id: domain.id },
+      'GET /v1/admin/orders/{id}': { id: order.id },
+      'POST /v1/admin/orders/{id}/confirm': { id: order.id },
+      'POST /v1/admin/orders/{id}/process': { id: order.id },
+      'POST /v1/admin/orders/{id}/cancel': { id: order.id, body: { reason: 'x' } },
+      'POST /v1/admin/orders/{id}/edit/preview': {
+        id: order.id,
+        body: { lines: [{ variantId: liveVariant, quantity: 2 }] },
+      },
+      'POST /v1/admin/orders/{id}/edit': {
+        id: order.id,
+        body: { lines: [{ variantId: liveVariant, quantity: 2 }] },
+      },
+      'POST /v1/admin/orders/{id}/notes': { id: order.id, body: { body: 'x' } },
+      'PATCH /v1/admin/orders/{id}': { id: order.id, body: { tags: ['x'] } },
+      'POST /v1/admin/orders/{id}/payments': {
+        id: order.id,
+        body: { method: 'cash', amount: 100 },
+      },
+      'POST /v1/admin/orders/{id}/shipments': {
+        id: order.id,
+        body: { lines: [{ orderLineId: lineRows[0]?.id, quantity: 1 }] },
+      },
+      'POST /v1/admin/shipments/{id}/ship': { id: shipment.id },
+      'POST /v1/admin/shipments/{id}/deliver': { id: shipment.id, body: {} },
+      'POST /v1/admin/shipments/{id}/fail': { id: shipment.id, body: { reason: 'x' } },
+      'POST /v1/admin/shipments/{id}/return': { id: shipment.id },
+      'DELETE /v1/admin/shipments/{id}': { id: shipment.id },
+      'GET /v1/admin/customers/{id}': { id: customer.id },
+      'PATCH /v1/admin/customers/{id}': { id: customer.id, body: { name: 'x' } },
+      'DELETE /v1/admin/customers/{id}': { id: customer.id },
+      'POST /v1/admin/customers/{id}/addresses': { id: customer.id, body: bAddress },
+      'PATCH /v1/admin/customers/{id}/addresses/{addressId}': {
+        id: customer.id,
+        second: address.id,
+        body: { line: 'x' },
+      },
+      'DELETE /v1/admin/customers/{id}/addresses/{addressId}': {
+        id: customer.id,
+        second: address.id,
+      },
+      'PATCH /v1/admin/delivery-zones/{id}': { id: zone.id, body: { fee: 1 } },
+      'DELETE /v1/admin/delivery-zones/{id}': { id: zone.id },
+      'DELETE /v1/admin/blocked-phones/{phone}': { id: '+8801700007777' },
+      'GET /v1/admin/promotions/{id}': { id: promotion.id },
+      'PATCH /v1/admin/promotions/{id}': { id: promotion.id, body: { priority: 1 } },
+      'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
+      'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -332,7 +445,8 @@ describe('isolation suite', () => {
       if (!fixture) continue;
       const path = route.path
         .replace('/v1/admin', '/api/admin')
-        .replace(/\{(id|file)\}/, fixture.id)
+        .replace(/\{(id|file|phone)\}/, encodeURIComponent(fixture.id))
+        .replace('{addressId}', fixture.second ?? crypto.randomUUID())
         .replace('{n}', '0')
         .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);
@@ -350,6 +464,16 @@ describe('isolation suite', () => {
       [product.id, category.id, attribute.id],
     );
     expect(catalog.rows[0]).toEqual({ status: 'draft', categories: 1, attributes: 1 });
+    // Store B's order and customer are untouched too.
+    const orders = await inB((tx) =>
+      tx.db.execute(
+        sql`select (select status from store.orders where id = ${order.id}) as status,
+                   (select count(*)::int from store.order_notes where order_id = ${order.id}) as notes,
+                   (select deleted_at is null from store.customers where id = ${customer.id}) as customer,
+                   (select count(*)::int from store.blocked_phones) as blocked`,
+      ),
+    );
+    expect(orders.rows[0]).toEqual({ status: 'processing', notes: 0, customer: true, blocked: 1 });
     // A bulk edit naming B's variant is refused too.
     expect(
       (await user.call('PATCH', '/api/admin/variants', [{ id: variant, price: 5 }])).status,

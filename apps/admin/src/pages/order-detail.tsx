@@ -1,0 +1,975 @@
+// One order (phase-4-plan §7): its four statuses, lines with discounts,
+// totals, the customer, payments, shipments and the timeline, with only the
+// actions the state machines allow (the API lists them). Every command sends
+// an Idempotency-Key, kept for the dialog's life, so a retry after a dropped
+// connection doesn't do it twice.
+import { MANUAL_METHODS } from '@managemind/shared/orders';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useParams } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { ConfirmDialog } from '../components/confirm-dialog';
+import { Field } from '../components/field';
+import { Notice } from '../components/notice';
+import { StatusChip } from '../components/order-status';
+import { usePermission } from '../components/permission-gate';
+import { useToast } from '../components/toast';
+import { Button } from '../components/ui/button';
+import { Dialog } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { type AdminKey, useLocale } from '../i18n';
+import '../i18n/orders';
+import { api, unwrap } from '../lib/api';
+import { formatPrice, readPrice } from '../lib/catalog';
+import { errorMessage } from '../lib/errors';
+import {
+  dateTime,
+  idempotencyKey,
+  lineLabel,
+  type OrderDetail,
+  orderErrorMessage,
+  orderQuery,
+  pickText,
+  placeLine,
+  type Shipment,
+  withKey,
+} from '../lib/orders';
+import { EditOrderDialog } from './order-edit';
+import { PrintLinks } from './orders';
+import { Thumbnail } from './products';
+
+/** A command's mutation: refreshes the order, the list and the dashboard after. */
+function useCommand<T>(orderId: string, run: (key: string, input: T) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  const [key, setKey] = useState(idempotencyKey);
+  const mutation = useMutation({
+    mutationFn: (input: T) => run(key, input),
+    onSuccess: async () => {
+      setKey(idempotencyKey());
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['order', orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ]);
+    },
+  });
+  return mutation;
+}
+
+const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+
+export function OrderDetailPage() {
+  const { id } = useParams({ strict: false }) as { id: string };
+  const { t, locale } = useLocale();
+  const order = useQuery(orderQuery(id));
+  if (order.isPending) return <p role="status">{t('loading')}</p>;
+  if (order.isError) return <Notice tone="error">{errorMessage(order.error, t)}</Notice>;
+  const o = order.data;
+  return (
+    <div className="flex max-w-6xl flex-col gap-4">
+      <div>
+        <Link
+          to="/orders"
+          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
+        >
+          <ArrowLeft aria-hidden className="size-4" />
+          {t('nav.orders')}
+        </Link>
+      </div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-xl font-semibold">{t('order.title', { number: o.displayNumber })}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t('order.placedOn', {
+              date: dateTime(locale, o.placedAt),
+              source: t(`source.${o.source}` as AdminKey),
+            })}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            <StatusChip kind="order" status={o.status} />
+            <StatusChip kind="payment" status={o.paymentStatus} />
+            <StatusChip kind="delivery" status={o.deliveryStatus} />
+          </div>
+        </div>
+        <OrderActions order={o} />
+      </div>
+      {o.status === 'cancelled' && (
+        <Notice tone="error">
+          {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
+            reason: o.cancelReason ?? '—',
+          })}
+        </Notice>
+      )}
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-4">
+          <Lines order={o} />
+          <Shipments order={o} />
+          <Payments order={o} />
+          <Timeline order={o} />
+        </div>
+        <div className="flex flex-col gap-4">
+          <CustomerCard order={o} />
+          <Tags order={o} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrderActions({ order: o }: { order: OrderDetail }) {
+  const { t } = useLocale();
+  const toast = useToast();
+  const [dialog, setDialog] = useState<'cancel' | 'edit' | 'ship' | 'pay' | null>(null);
+  const confirm = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/confirm', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const process = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/process', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const has = (a: string) => o.actions.includes(a);
+  const error = confirm.error ?? process.error;
+  return (
+    <div className="flex flex-col items-end gap-2">
+      <div className="flex flex-wrap gap-2">
+        <PrintLinks ids={[o.id]} />
+        {has('edit') && (
+          <Button variant="secondary" onClick={() => setDialog('edit')}>
+            {t('order.edit')}
+          </Button>
+        )}
+        {has('cancel') && (
+          <Button variant="secondary" onClick={() => setDialog('cancel')}>
+            {t('order.cancel')}
+          </Button>
+        )}
+        {has('record_payment') && o.paymentStatus !== 'paid' && (
+          <Button variant="secondary" onClick={() => setDialog('pay')}>
+            {t('order.recordPayment')}
+          </Button>
+        )}
+        {has('process') && (
+          <Button
+            variant="secondary"
+            disabled={process.isPending}
+            onClick={() =>
+              process.mutate(undefined, { onSuccess: () => toast(t('order.processed')) })
+            }
+          >
+            {t('order.process')}
+          </Button>
+        )}
+        {has('create_shipment') && o.lines.some((l) => l.shippedQuantity < l.quantity) && (
+          <Button onClick={() => setDialog('ship')}>{t('order.createShipment')}</Button>
+        )}
+        {has('confirm') && (
+          <Button
+            disabled={confirm.isPending}
+            onClick={() =>
+              confirm.mutate(undefined, { onSuccess: () => toast(t('order.confirmed')) })
+            }
+          >
+            {t('order.confirm')}
+          </Button>
+        )}
+      </div>
+      {error && <Notice tone="error">{orderErrorMessage(error, t)}</Notice>}
+      {dialog === 'cancel' && <CancelDialog order={o} onClose={() => setDialog(null)} />}
+      {dialog === 'ship' && <ShipmentDialog order={o} onClose={() => setDialog(null)} />}
+      {dialog === 'pay' && <PaymentDialog order={o} onClose={() => setDialog(null)} />}
+      {dialog === 'edit' && <EditOrderDialog order={o} onClose={() => setDialog(null)} />}
+    </div>
+  );
+}
+
+function Lines({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const money = (n: number) => formatPrice(n, locale);
+  const tt = o.totals;
+  const rows: [string, ReactNode][] = [
+    [t('order.subtotal'), money(tt.subtotal)],
+    ...o.adjustments
+      .filter((a) => a.target !== 'delivery')
+      .map((a): [string, ReactNode] => [
+        [pickText(a.title, locale), a.code ? `(${a.code})` : '', a.reason ? `— ${a.reason}` : '']
+          .filter(Boolean)
+          .join(' '),
+        `−${money(a.amount)}`,
+      ]),
+    [
+      o.zone.name
+        ? t('order.deliveryTo', { zone: pickText(o.zone.name, locale) })
+        : t('order.delivery'),
+      tt.deliveryDiscount
+        ? `${money(tt.deliveryFee - tt.deliveryDiscount)} (${t('order.was', { amount: money(tt.deliveryFee) })})`
+        : money(tt.deliveryFee),
+    ],
+    ...(tt.vatTotal
+      ? [
+          [t(tt.vatIncluded ? 'order.vatIncluded' : 'order.vat'), money(tt.vatTotal)] as [
+            string,
+            ReactNode,
+          ],
+        ]
+      : []),
+    ...(tt.rounding ? [[t('order.rounding'), money(tt.rounding)] as [string, ReactNode]] : []),
+  ];
+  return (
+    <section aria-labelledby="lines-title" className={section}>
+      <h2 id="lines-title" className="font-semibold">
+        {t('order.items')}
+      </h2>
+      <ul className="flex flex-col divide-y divide-border">
+        {o.lines.map((l) => (
+          <li key={l.id} className="flex gap-3 py-2">
+            <Thumbnail file={l.image?.files[0]?.file} />
+            <div className="flex flex-1 flex-col">
+              <Link
+                to="/products/$id"
+                params={{ id: l.productId }}
+                className="underline-offset-2 hover:underline"
+              >
+                {lineLabel(l, locale)}
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                {[l.sku, t('order.shippedOf', { shipped: l.shippedQuantity, count: l.quantity })]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </div>
+            <div className="flex flex-col items-end text-sm">
+              <span>
+                {money(l.unitPrice)} × {l.quantity}
+              </span>
+              {l.discount > 0 && <span className="text-success">−{money(l.discount)}</span>}
+              <span className="font-medium">{money(l.total)}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <dl className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+        <div className="flex justify-between gap-4 text-base font-semibold">
+          <dt>{t('order.total')}</dt>
+          <dd>{money(tt.total)}</dd>
+        </div>
+        {tt.paidTotal > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">{t('order.paid')}</dt>
+            <dd>{money(tt.paidTotal)}</dd>
+          </div>
+        )}
+        {tt.codDue > 0 && (
+          <div className="flex justify-between gap-4 font-medium">
+            <dt>{t('order.codDue')}</dt>
+            <dd>{money(tt.codDue)}</dd>
+          </div>
+        )}
+        {tt.refundDue > 0 && (
+          <div className="flex justify-between gap-4 font-medium text-danger">
+            <dt>{t('order.refundDue')}</dt>
+            <dd>{money(tt.refundDue)}</dd>
+          </div>
+        )}
+      </dl>
+      {o.customerNote && (
+        <p className="rounded-md bg-muted p-3 text-sm">
+          <span className="font-medium">{t('order.customerNote')}: </span>
+          {o.customerNote}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function CustomerCard({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const canCustomers = usePermission('customers.read');
+  return (
+    <section aria-labelledby="customer-title" className={section}>
+      <h2 id="customer-title" className="font-semibold">
+        {t('order.customer')}
+      </h2>
+      <div className="flex flex-col gap-1 text-sm">
+        {canCustomers ? (
+          <Link
+            to="/customers/$id"
+            params={{ id: o.customer.id }}
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            {o.contact.name}
+          </Link>
+        ) : (
+          <span className="font-medium">{o.contact.name}</span>
+        )}
+        {canCustomers ? (
+          <a href={`tel:${o.contact.phone}`} className="underline-offset-2 hover:underline">
+            {o.contact.phone}
+          </a>
+        ) : (
+          <span>{o.contact.phone}</span>
+        )}
+        {o.contact.email && <span>{o.contact.email}</span>}
+        <span className="text-muted-foreground">
+          {o.customer.orderCount <= 1
+            ? t('order.firstOrder')
+            : t('order.orderCount', { count: o.customer.orderCount })}
+        </span>
+      </div>
+      <h3 className="text-sm font-semibold">{t('order.address')}</h3>
+      {o.address ? (
+        <address className="text-sm not-italic">
+          {o.address.line}
+          <br />
+          {placeLine(o.address.names, locale)}, {pickText(o.address.names.division, locale)}
+        </address>
+      ) : (
+        <p className="text-sm text-muted-foreground">{t('order.noDelivery')}</p>
+      )}
+      {!canCustomers && <p className="text-xs text-muted-foreground">{t('order.masked')}</p>}
+    </section>
+  );
+}
+
+function Shipments({ order: o }: { order: OrderDetail }) {
+  const { t } = useLocale();
+  if (!o.shipments.length) return null;
+  return (
+    <section aria-labelledby="shipments-title" className={section}>
+      <h2 id="shipments-title" className="font-semibold">
+        {t('order.shipments')}
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {o.shipments.map((s, i) => (
+          <ShipmentRow key={s.id} order={o} shipment={s} n={i + 1} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ShipmentRow({
+  order: o,
+  shipment: s,
+  n,
+}: {
+  order: OrderDetail;
+  shipment: Shipment;
+  n: number;
+}) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const canWrite = usePermission('orders.write');
+  const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | null>(null);
+  const [cash, setCash] = useState(true);
+  const [reason, setReason] = useState('');
+  const ship = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/shipments/{id}/ship', {
+        params: { path: { id: s.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const back = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/shipments/{id}/return', {
+        params: { path: { id: s.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const deliver = useCommand(o.id, async (key, cashCollected: boolean) =>
+    unwrap(
+      await api.POST('/v1/admin/shipments/{id}/deliver', {
+        params: { path: { id: s.id }, ...withKey(key).params },
+        body: { cashCollected },
+      }),
+    ),
+  );
+  const fail = useCommand(o.id, async (key, why: string) =>
+    unwrap(
+      await api.POST('/v1/admin/shipments/{id}/fail', {
+        params: { path: { id: s.id }, ...withKey(key).params },
+        body: { reason: why },
+      }),
+    ),
+  );
+  const remove = useCommand(o.id, async () =>
+    unwrap(await api.DELETE('/v1/admin/shipments/{id}', { params: { path: { id: s.id } } })),
+  );
+  const error = ship.error ?? back.error;
+  const lines = s.lines.map((sl) => {
+    const line = o.lines.find((l) => l.id === sl.orderLineId);
+    return `${line ? lineLabel(line, locale) : '?'} × ${sl.quantity}`;
+  });
+  return (
+    <li className="flex flex-col gap-2 rounded-md bg-muted/50 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{t('order.shipmentN', { n })}</span>
+        <StatusChip kind="shipment" status={s.status} />
+        {s.carrier && <span className="text-sm">{s.carrier}</span>}
+        {s.trackingNumber &&
+          (s.trackingUrl ? (
+            <a href={s.trackingUrl} target="_blank" rel="noreferrer" className="text-sm underline">
+              {s.trackingNumber}
+            </a>
+          ) : (
+            <span className="text-sm">{s.trackingNumber}</span>
+          ))}
+      </div>
+      <p className="text-sm">{lines.join(', ')}</p>
+      {s.failedReason && <p className="text-sm text-danger">{s.failedReason}</p>}
+      {canWrite && o.status !== 'cancelled' && (
+        <div className="flex flex-wrap gap-2">
+          {s.status === 'pending' && (
+            <>
+              <Button
+                disabled={ship.isPending}
+                onClick={() =>
+                  ship.mutate(undefined, { onSuccess: () => toast(t('order.shipped')) })
+                }
+              >
+                {t('order.markShipped')}
+              </Button>
+              <Button variant="ghost" onClick={() => setDialog('delete')}>
+                {t('action.delete')}
+              </Button>
+            </>
+          )}
+          {s.status === 'shipped' && (
+            <>
+              <Button onClick={() => setDialog('deliver')}>{t('order.markDelivered')}</Button>
+              <Button variant="secondary" onClick={() => setDialog('fail')}>
+                {t('order.markFailed')}
+              </Button>
+            </>
+          )}
+          {s.status === 'failed' && (
+            <Button
+              variant="secondary"
+              disabled={back.isPending}
+              onClick={() =>
+                back.mutate(undefined, { onSuccess: () => toast(t('order.returned')) })
+              }
+            >
+              {t('order.markReturned')}
+            </Button>
+          )}
+        </div>
+      )}
+      {error && <Notice tone="error">{orderErrorMessage(error, t)}</Notice>}
+      <ConfirmDialog
+        open={dialog === 'deliver'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('order.markDelivered')}
+        confirmLabel={t('order.markDelivered')}
+        destructive={false}
+        busy={deliver.isPending}
+        error={deliver.error ? orderErrorMessage(deliver.error, t) : undefined}
+        onConfirm={() =>
+          deliver.mutate(cash, {
+            onSuccess: () => {
+              setDialog(null);
+              toast(t('order.delivered'));
+            },
+          })
+        }
+      >
+        {o.totals.codDue > 0 && (
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="checkbox"
+              className="size-5"
+              checked={cash}
+              onChange={(e) => setCash(e.target.checked)}
+            />
+            {t('order.cashCollected', { amount: formatPrice(o.totals.codDue, locale) })}
+          </label>
+        )}
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={dialog === 'fail'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('order.markFailed')}
+        confirmLabel={t('order.markFailed')}
+        canConfirm={reason.trim().length > 0}
+        busy={fail.isPending}
+        error={fail.error ? orderErrorMessage(fail.error, t) : undefined}
+        onConfirm={() =>
+          fail.mutate(reason.trim(), {
+            onSuccess: () => {
+              setDialog(null);
+              setReason('');
+            },
+          })
+        }
+      >
+        <Field
+          label={t('order.failReason')}
+          value={reason}
+          maxLength={300}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={dialog === 'delete'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('order.deleteShipment')}
+        confirmLabel={t('action.delete')}
+        busy={remove.isPending}
+        error={remove.error ? orderErrorMessage(remove.error, t) : undefined}
+        onConfirm={() => remove.mutate(undefined, { onSuccess: () => setDialog(null) })}
+      />
+    </li>
+  );
+}
+
+function Payments({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  if (!o.payments.length) return null;
+  return (
+    <section aria-labelledby="payments-title" className={section}>
+      <h2 id="payments-title" className="font-semibold">
+        {t('order.payments')}
+      </h2>
+      <ul className="flex flex-col divide-y divide-border text-sm">
+        {o.payments.map((p) => (
+          <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+            <span className="flex flex-col">
+              <span className="font-medium">{t(`method.${p.method}` as AdminKey)}</span>
+              <span className="text-xs text-muted-foreground">
+                {[p.reference, dateTime(locale, p.settledAt ?? p.createdAt)]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </span>
+            <span className="flex items-center gap-2">
+              <StatusChip kind="payment" status={p.status} />
+              {formatPrice(p.amount, locale)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Timeline({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const canWrite = usePermission('orders.write');
+  const [body, setBody] = useState('');
+  const note = useCommand(o.id, async (_key, text: string) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/notes', {
+        params: { path: { id: o.id } },
+        body: { body: text },
+      }),
+    ),
+  );
+  const describe = (e: OrderDetail['timeline'][number]) => {
+    if (e.kind === 'note') return e.body ?? '';
+    return [historyText(e, t), e.reason].filter(Boolean).join(' — ');
+  };
+  const actor = (e: OrderDetail['timeline'][number]) =>
+    e.kind === 'note' ? t('history.note') : t(`actor.${e.actorType ?? 'system'}` as AdminKey);
+  return (
+    <section aria-labelledby="timeline-title" className={section}>
+      <h2 id="timeline-title" className="font-semibold">
+        {t('order.timeline')}
+      </h2>
+      {canWrite && (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!body.trim()) return;
+            note.mutate(body.trim(), {
+              onSuccess: () => {
+                setBody('');
+                toast(t('order.noteAdded'));
+              },
+            });
+          }}
+        >
+          <label htmlFor="order-note" className="text-sm font-medium">
+            {t('order.addNote')}
+          </label>
+          <textarea
+            id="order-note"
+            rows={2}
+            maxLength={2000}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="rounded-md border border-border bg-background p-3 text-base"
+          />
+          <div>
+            <Button type="submit" variant="secondary" disabled={note.isPending || !body.trim()}>
+              {t('order.saveNote')}
+            </Button>
+          </div>
+          {note.error && <Notice tone="error">{orderErrorMessage(note.error, t)}</Notice>}
+        </form>
+      )}
+      <ol className="flex flex-col gap-3 border-l border-border pl-4">
+        {[...o.timeline].reverse().map((e) => (
+          <li key={e.id} className="flex flex-col text-sm">
+            <span className={e.kind === 'note' ? 'whitespace-pre-wrap' : 'font-medium'}>
+              {describe(e)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {actor(e)} · {dateTime(locale, e.createdAt)}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** A history row in words: what changed, by the machine it belongs to. */
+function historyText(
+  e: OrderDetail['timeline'][number],
+  t: (key: AdminKey, params?: Record<string, string | number>) => string,
+): string {
+  const to = e.to ?? '';
+  switch (e.machine) {
+    case 'order':
+      return e.event === 'place'
+        ? t('history.placed')
+        : t('history.order', { status: t(`orderStatus.${to}` as AdminKey) });
+    case 'payment':
+      return t('history.payment', { status: t(`paymentStatus.${to}` as AdminKey) });
+    case 'delivery':
+      return t('history.delivery', { status: t(`deliveryStatus.${to}` as AdminKey) });
+    case 'shipment':
+      if (!e.to) return t('history.shipmentDeleted');
+      if (!e.from) return t('history.shipmentCreated');
+      return t('history.shipment', { status: t(`shipmentStatus.${to}` as AdminKey) });
+    case 'edit':
+      return t('history.edited');
+    default:
+      return e.event ?? '';
+  }
+}
+
+function Tags({ order: o }: { order: OrderDetail }) {
+  const { t } = useLocale();
+  const canWrite = usePermission('orders.write');
+  const [text, setText] = useState(o.tags.join(', '));
+  const save = useCommand(o.id, async (_key, tags: string[]) =>
+    unwrap(
+      await api.PATCH('/v1/admin/orders/{id}', { params: { path: { id: o.id } }, body: { tags } }),
+    ),
+  );
+  return (
+    <section aria-labelledby="tags-title" className={section}>
+      <h2 id="tags-title" className="font-semibold">
+        {t('order.tags')}
+      </h2>
+      {canWrite ? (
+        <form
+          className="flex flex-col gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate(
+              text
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean),
+            );
+          }}
+        >
+          <Input
+            aria-label={t('order.tags')}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={t('order.tagsHint')}
+          />
+          <div>
+            <Button type="submit" variant="secondary" disabled={save.isPending}>
+              {t('action.save')}
+            </Button>
+          </div>
+          {save.isSuccess && <p className="text-sm text-muted-foreground">{t('account.saved')}</p>}
+          {save.error && <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>}
+        </form>
+      ) : (
+        <p className="text-sm">{o.tags.join(', ') || '—'}</p>
+      )}
+    </section>
+  );
+}
+
+function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const [reason, setReason] = useState('');
+  const cancel = useCommand(o.id, async (key, why: string) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/cancel', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+        body: { reason: why },
+      }),
+    ),
+  );
+  return (
+    <ConfirmDialog
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={t('order.cancelTitle', { number: o.displayNumber })}
+      confirmLabel={t('order.cancel')}
+      canConfirm={reason.trim().length > 0}
+      busy={cancel.isPending}
+      error={cancel.error ? orderErrorMessage(cancel.error, t) : undefined}
+      onConfirm={() =>
+        cancel.mutate(reason.trim(), {
+          onSuccess: () => {
+            toast(t('order.cancelled'));
+            onClose();
+          },
+        })
+      }
+    >
+      <p className="text-sm">
+        {t('order.cancelEffects')}
+        {o.totals.paidTotal > 0 &&
+          ` ${t('order.cancelRefund', { amount: formatPrice(o.totals.paidTotal, locale) })}`}
+      </p>
+      <Field
+        label={t('order.cancelReason')}
+        value={reason}
+        maxLength={300}
+        onChange={(e) => setReason(e.target.value)}
+      />
+    </ConfirmDialog>
+  );
+}
+
+function ShipmentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const open = o.lines.filter((l) => l.shippedQuantity < l.quantity);
+  // Units already in a pending shipment can't go in another.
+  const pending = new Map<string, number>();
+  for (const s of o.shipments) {
+    if (s.status !== 'pending') continue;
+    for (const l of s.lines)
+      pending.set(l.orderLineId, (pending.get(l.orderLineId) ?? 0) + l.quantity);
+  }
+  const left = (lineId: string, quantity: number, shipped: number) =>
+    Math.max(0, quantity - shipped - (pending.get(lineId) ?? 0));
+  const [qty, setQty] = useState<Record<string, string>>(() =>
+    Object.fromEntries(open.map((l) => [l.id, String(left(l.id, l.quantity, l.shippedQuantity))])),
+  );
+  const [carrier, setCarrier] = useState('');
+  const [tracking, setTracking] = useState('');
+  const [url, setUrl] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const create = useCommand(o.id, async (key, body: Parameters<typeof createBody>[0]) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/shipments', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+        body: createBody(body),
+      }),
+    ),
+  );
+  function submit() {
+    const lines = open
+      .map((l) => ({ orderLineId: l.id, quantity: Number(qty[l.id] ?? 0) }))
+      .filter((l) => l.quantity > 0);
+    const bad = open.some((l) => {
+      const n = Number(qty[l.id] ?? 0);
+      return !Number.isInteger(n) || n < 0 || n > left(l.id, l.quantity, l.shippedQuantity);
+    });
+    if (bad || !lines.length || (url && !/^https?:\/\//.test(url.trim()))) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
+    create.mutate(
+      { lines, carrier, trackingNumber: tracking, trackingUrl: url },
+      {
+        onSuccess: () => {
+          toast(t('order.shipmentCreated'));
+          onClose();
+        },
+      },
+    );
+  }
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()} title={t('order.createShipment')}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm font-medium">{t('order.shipmentLines')}</legend>
+          {open.map((l) => (
+            <div key={l.id} className="flex items-center gap-3 text-sm">
+              <span className="flex-1">
+                {lineLabel(l, locale)}
+                <span className="block text-xs text-muted-foreground">
+                  {t('order.toShip', { count: left(l.id, l.quantity, l.shippedQuantity) })}
+                </span>
+              </span>
+              <Input
+                className="w-20"
+                inputMode="numeric"
+                aria-label={t('order.quantityOf', { item: lineLabel(l, locale) })}
+                value={qty[l.id] ?? ''}
+                onChange={(e) => setQty({ ...qty, [l.id]: e.target.value })}
+              />
+            </div>
+          ))}
+        </fieldset>
+        <Field
+          label={t('order.carrier')}
+          value={carrier}
+          maxLength={60}
+          onChange={(e) => setCarrier(e.target.value)}
+          hint={t('order.carrierHint')}
+        />
+        <Field
+          label={t('order.trackingNumber')}
+          value={tracking}
+          maxLength={100}
+          onChange={(e) => setTracking(e.target.value)}
+        />
+        <Field
+          label={t('order.trackingUrl')}
+          type="url"
+          value={url}
+          maxLength={500}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        {invalid && <Notice tone="error">{t('order.shipmentInvalid')}</Notice>}
+        {create.error && <Notice tone="error">{orderErrorMessage(create.error, t)}</Notice>}
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
+          <Button type="submit" disabled={create.isPending}>
+            {t('order.createShipment')}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+function createBody(v: {
+  lines: { orderLineId: string; quantity: number }[];
+  carrier: string;
+  trackingNumber: string;
+  trackingUrl: string;
+}) {
+  return {
+    lines: v.lines,
+    ...(v.carrier.trim() ? { carrier: v.carrier.trim() } : {}),
+    ...(v.trackingNumber.trim() ? { trackingNumber: v.trackingNumber.trim() } : {}),
+    ...(v.trackingUrl.trim() ? { trackingUrl: v.trackingUrl.trim() } : {}),
+  };
+}
+
+function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const due = Math.max(0, o.totals.total - o.totals.paidTotal);
+  const [method, setMethod] = useState<(typeof MANUAL_METHODS)[number]>('bkash');
+  const [amount, setAmount] = useState(String(due / 100));
+  const [reference, setReference] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const pay = useCommand(
+    o.id,
+    async (key, body: { method: typeof method; amount: number; reference?: string }) =>
+      unwrap(
+        await api.POST('/v1/admin/orders/{id}/payments', {
+          params: { path: { id: o.id }, ...withKey(key).params },
+          body,
+        }),
+      ),
+  );
+  return (
+    <Dialog
+      open
+      onOpenChange={(v) => !v && onClose()}
+      title={t('order.recordPayment')}
+      description={t('order.recordPaymentHint', { amount: formatPrice(due, locale) })}
+    >
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const value = readPrice(amount);
+          if (!value) {
+            setInvalid(true);
+            return;
+          }
+          setInvalid(false);
+          pay.mutate(
+            { method, amount: value, ...(reference.trim() ? { reference: reference.trim() } : {}) },
+            {
+              onSuccess: () => {
+                toast(t('order.paymentRecorded'));
+                onClose();
+              },
+            },
+          );
+        }}
+      >
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          {t('order.method')}
+          <select
+            className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+            value={method}
+            onChange={(e) => setMethod(e.target.value as typeof method)}
+          >
+            {MANUAL_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {t(`method.${m}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Field
+          label={t('order.amount')}
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          error={invalid ? t('form.invalid') : undefined}
+        />
+        <Field
+          label={t('order.reference')}
+          hint={t('order.referenceHint')}
+          value={reference}
+          maxLength={100}
+          onChange={(e) => setReference(e.target.value)}
+        />
+        {pay.error && <Notice tone="error">{orderErrorMessage(pay.error, t)}</Notice>}
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
+          <Button type="submit" disabled={pay.isPending}>
+            {t('order.recordPayment')}
+          </Button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}

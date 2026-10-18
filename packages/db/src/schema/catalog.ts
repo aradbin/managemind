@@ -251,6 +251,10 @@ export const variants = store.table(
     price: money().notNull(),
     compareAtPrice: money(),
     costPrice: money(),
+    /** A scheduled sale (phase-4-plan §3.14): inside the window the shopper pays this. */
+    salePrice: money(),
+    saleStartsAt: ts(),
+    saleEndsAt: ts(),
     weightGrams: integer(),
     trackInventory: boolean().notNull().default(true),
     allowBackorder: boolean().notNull().default(false),
@@ -288,6 +292,11 @@ export const variants = store.table(
     check(
       'variants_counts_non_negative',
       sql`coalesce(${t.weightGrams}, 0) >= 0 and coalesce(${t.lowStockThreshold}, 0) >= 0`,
+    ),
+    check(
+      'variants_sale_valid',
+      sql`${t.salePrice} is null or (${t.salePrice} >= 0 and ${t.salePrice} < ${t.price}
+        and ${t.saleStartsAt} is not null and ${t.saleEndsAt} > ${t.saleStartsAt})`,
     ),
     check('variants_sku_length', sql`char_length(${t.sku}) between 1 and 64`),
     check('variants_barcode_length', sql`char_length(${t.barcode}) between 1 and 64`),

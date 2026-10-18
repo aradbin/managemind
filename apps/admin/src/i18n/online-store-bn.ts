@@ -238,6 +238,8 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'domains.remove': 'বিচ্ছিন্ন করুন',
   'domains.removeConfirm': '{domain} বিচ্ছিন্ন করবেন?',
   'domains.removeBody': 'এই ডোমেইন দিয়ে ক্রেতারা আর আপনার দোকানে আসতে পারবেন না।',
+  'domains.noTurnstile':
+    'এই ডোমেইনে বট যাচাই বন্ধ (প্ল্যাটফর্মের সীমা পূর্ণ); এখানে চেকআউট ও সাইন-ইন শুধু রেট লিমিটের ওপর নির্ভর করে।',
   'domains.problem': 'সমস্যা: {reason}',
   'domains.lastChecked': 'শেষ দেখা হয়েছে {time}',
 };

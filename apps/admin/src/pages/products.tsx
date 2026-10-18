@@ -1,11 +1,14 @@
 // The product list (phase-2-plan §7, PR 9): search and filters, cards on
 // phones and a table from md, and selection for a bulk price edit.
+
+import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
 import { useInfiniteQuery, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ImageOff, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
+import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -49,12 +52,13 @@ export function ProductsPage() {
 
   const setFilter = (patch: Partial<ProductSearch>) =>
     navigate({
+      from: '/products/',
       to: '/products',
       search: (prev: ProductSearch) => {
         const next = { ...prev, ...patch };
         return Object.fromEntries(
           Object.entries(next).filter(([, v]) => v !== undefined && v !== '' && v !== false),
-        );
+        ) as ProductSearch;
       },
       replace: true,
     });
@@ -302,10 +306,22 @@ interface Row {
   price: string;
   compareAt: string;
   threshold: string;
-  original: { price: number; compareAtPrice: number | null; lowStockThreshold: number | null };
+  sale: string;
+  original: {
+    price: number;
+    compareAtPrice: number | null;
+    lowStockThreshold: number | null;
+    salePrice: number | null;
+    saleStartsAt: string | null;
+    saleEndsAt: string | null;
+  };
 }
 
-/** Price, compare-at and low-stock threshold for every variant of the selected products. */
+/**
+ * Price, compare-at, low-stock threshold and a scheduled sale (phase-4-plan
+ * §3.14) for every variant of the selected products; the sale's window is
+ * one for the whole batch.
+ */
 function BulkPriceDialog({
   productIds,
   onClose,
@@ -320,6 +336,9 @@ function BulkPriceDialog({
   const loading = results.some((r) => r.isPending);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [percent, setPercent] = useState('');
+  const [salePercent, setSalePercent] = useState('');
+  const [saleStart, setSaleStart] = useState('');
+  const [saleEnd, setSaleEnd] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -334,15 +353,27 @@ function BulkPriceDialog({
               price: priceInput(v.price),
               compareAt: priceInput(v.compareAtPrice),
               threshold: v.lowStockThreshold === null ? '' : String(v.lowStockThreshold),
+              sale: priceInput(v.salePrice),
               original: {
                 price: v.price,
                 compareAtPrice: v.compareAtPrice,
                 lowStockThreshold: v.lowStockThreshold,
+                salePrice: v.salePrice,
+                saleStartsAt: v.saleStartsAt,
+                saleEndsAt: v.saleEndsAt,
               },
             }))
           : [],
       ),
     );
+    // The batch's window starts as the first sale already set, if any.
+    const first = results
+      .flatMap((r) => r.data?.variants ?? [])
+      .find((v) => v.saleStartsAt && v.saleEndsAt);
+    if (first?.saleStartsAt && first.saleEndsAt) {
+      setSaleStart(utcToDhaka(first.saleStartsAt));
+      setSaleEnd(utcToDhaka(first.saleEndsAt));
+    }
   }, [loading, rows, results, locale]);
 
   const set = (id: string, patch: Partial<Row>) =>
@@ -359,8 +390,28 @@ function BulkPriceDialog({
     );
   }
 
+  function applySalePercent() {
+    const p = Number(salePercent.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))));
+    if (!Number.isFinite(p) || p <= 0 || p >= 100 || !rows) return;
+    setRows(
+      rows.map((r) => {
+        const price = readPrice(r.price);
+        return typeof price === 'number'
+          ? { ...r, sale: priceInput(Math.round((price * (100 - p)) / 100)) }
+          : r;
+      }),
+    );
+  }
+
   async function save() {
     if (!rows) return;
+    const anySale = rows.some((r) => r.sale.trim());
+    if (anySale && (!saleStart || !saleEnd || saleEnd <= saleStart)) {
+      setError(t('products.saleWindow'));
+      return;
+    }
+    const startsAt = saleStart ? dhakaToUtc(saleStart) : null;
+    const endsAt = saleEnd ? dhakaToUtc(saleEnd) : null;
     const edits = [];
     for (const r of rows) {
       const price = readPrice(r.price);
@@ -379,15 +430,36 @@ function BulkPriceDialog({
         setError(t('variant.compareAtAbove', { item: r.label }));
         return;
       }
+      const sale = readPrice(r.sale);
+      if (sale === undefined || (sale !== null && sale >= price)) {
+        setError(t('products.saleBelow', { item: r.label }));
+        return;
+      }
       const edit: {
         id: string;
         price?: number;
         compareAtPrice?: number | null;
         lowStockThreshold?: number | null;
+        salePrice?: number | null;
+        saleStartsAt?: string | null;
+        saleEndsAt?: string | null;
       } = { id: r.id };
       if (price !== r.original.price) edit.price = price;
       if (compareAt !== r.original.compareAtPrice) edit.compareAtPrice = compareAt;
       if (threshold !== r.original.lowStockThreshold) edit.lowStockThreshold = threshold;
+      const sameWindow =
+        r.original.saleStartsAt !== null &&
+        startsAt !== null &&
+        Date.parse(r.original.saleStartsAt) === Date.parse(startsAt) &&
+        r.original.saleEndsAt !== null &&
+        endsAt !== null &&
+        Date.parse(r.original.saleEndsAt) === Date.parse(endsAt);
+      if (sale === null && r.original.salePrice !== null) edit.salePrice = null;
+      if (sale !== null && (sale !== r.original.salePrice || !sameWindow)) {
+        edit.salePrice = sale;
+        edit.saleStartsAt = startsAt;
+        edit.saleEndsAt = endsAt;
+      }
       if (Object.keys(edit).length > 1) edits.push(edit);
     }
     if (!edits.length) return onClose(false);
@@ -432,11 +504,46 @@ function BulkPriceDialog({
               {t('products.bulkApply')}
             </Button>
           </div>
+          <fieldset className="flex flex-col gap-3 rounded-md border border-border p-3">
+            <legend className="px-1 text-sm font-medium">{t('products.sale')}</legend>
+            <p className="text-sm text-muted-foreground">{t('products.saleHint')}</p>
+            <div className="grid gap-2 md:grid-cols-2">
+              <Field
+                label={t('products.saleStart')}
+                type="datetime-local"
+                value={saleStart}
+                onChange={(e) => setSaleStart(e.target.value)}
+              />
+              <Field
+                label={t('products.saleEnd')}
+                type="datetime-local"
+                value={saleEnd}
+                onChange={(e) => setSaleEnd(e.target.value)}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex flex-1 flex-col gap-1.5">
+                <label htmlFor="bulk-sale-percent" className="text-sm font-medium">
+                  {t('products.salePercent')}
+                </label>
+                <Input
+                  id="bulk-sale-percent"
+                  inputMode="decimal"
+                  value={salePercent}
+                  onChange={(e) => setSalePercent(e.target.value)}
+                  placeholder="20"
+                />
+              </div>
+              <Button variant="secondary" onClick={applySalePercent}>
+                {t('products.bulkApply')}
+              </Button>
+            </div>
+          </fieldset>
           <ul className="flex flex-col gap-3">
             {rows.map((r) => (
               <li key={r.id} className="flex flex-col gap-2 rounded-md border border-border p-3">
                 <span className="text-sm font-medium">{r.label}</span>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                   <Input
                     aria-label={`${t('product.price')} — ${r.label}`}
                     inputMode="decimal"
@@ -456,6 +563,13 @@ function BulkPriceDialog({
                     value={r.threshold}
                     placeholder={t('variant.lowStock')}
                     onChange={(e) => set(r.id, { threshold: e.target.value })}
+                  />
+                  <Input
+                    aria-label={`${t('products.salePrice')} — ${r.label}`}
+                    inputMode="decimal"
+                    value={r.sale}
+                    placeholder={t('products.salePrice')}
+                    onChange={(e) => set(r.id, { sale: e.target.value })}
                   />
                 </div>
               </li>

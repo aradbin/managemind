@@ -96,7 +96,9 @@ const ctx =
     : null;
 const theme = ctx ? THEMES[ctx.theme.name] : null;
 const noindex = !body?.layout.storefront.indexing || Boolean(previewToken);
-if (ok && (ok.status === 404 || !route)) Astro.response.status = 404;
+// The account page exists only where the store turned accounts on (§3.11).
+const accountOff = route?.kind === 'account' && !body?.layout.shop.accounts;
+if (ok && (ok.status === 404 || !route || accountOff)) Astro.response.status = 404;
 const page = body?.page;
 ---
 
@@ -104,6 +106,12 @@ const page = body?.page;
 {message === 'not_found' && <StoreMessage kind="not_found" name={store?.name ?? ''} host={host} />}
 {!message && result?.kind === 'error' && result.status === 429 && <StoreMessage kind="busy" name={store?.name ?? ''} host={host} />}
 {ctx && theme && (() => {
+  // Shopper pages are shells around the layout; their scripts fetch the rest.
+  if (route?.kind === 'cart') return <theme.Cart ctx={ctx} />;
+  if (route?.kind === 'checkout') return <theme.Checkout ctx={ctx} />;
+  if (route?.kind === 'thanks') return <theme.Thanks ctx={ctx} />;
+  if (route?.kind === 'track') return <theme.Track ctx={ctx} />;
+  if (route?.kind === 'account') return accountOff ? <theme.NotFound ctx={ctx} /> : <theme.Account ctx={ctx} />;
   if (!route || ok?.status === 404 || page === null || page === undefined) {
     if (route?.kind === 'search') {
       return <theme.Listing ctx={ctx} route={route} title="" listing={null} query={(page as SearchPage | null)?.query ?? { sort: 'featured', page: 1, inStock: false, attributes: {}, options: {} }} noindex />;

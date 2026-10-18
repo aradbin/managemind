@@ -1,0 +1,139 @@
+---
+// The account page (phase-4-plan §3.11, §3.16): a cached shell whose script
+// asks /api/account who is signed in, then shows sign-in by email code, or
+// the shopper's details, orders and saved addresses.
+import type { StoreMessageKey } from '../../../i18n';
+import { href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = [
+  'account.codeSent',
+  'account.badCode',
+  'account.tooMany',
+  'account.hello',
+  'account.saved',
+  'account.noOrders',
+  'account.ordered',
+  'account.noAddresses',
+  'account.default',
+  'account.delete',
+  'checkout.choose',
+  'checkout.required',
+  'checkout.badPhone',
+  'checkout.badEmail',
+  'checkout.check',
+  'cart.error',
+  'status.pending',
+  'status.confirmed',
+  'status.processing',
+  'status.completed',
+  'status.cancelled',
+];
+---
+
+<ShopPage ctx={ctx} kind="account" title={t('account.title')} keys={keys}>
+  <div class="shop narrow">
+    <h1>{t('account.title')}</h1>
+    <noscript><p>{t('cart.noscript')}</p></noscript>
+    <p class="notice" data-notice role="alert" hidden></p>
+
+    <section data-signin hidden>
+      <p>{t('account.signInIntro')}</p>
+      <form class="track" data-email-form novalidate>
+        <div class="field">
+          <label for="a-email">{t('account.email')}</label>
+          <input id="a-email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="a-email-e" />
+          <p class="field-error" id="a-email-e"></p>
+        </div>
+        <div data-turnstile></div>
+        <button type="submit" class="button">{t('account.sendCode')}</button>
+      </form>
+      <form class="track" data-code-form novalidate hidden>
+        <p data-code-sent aria-live="polite"></p>
+        <div class="field">
+          <label for="a-code">{t('account.code')}</label>
+          <input id="a-code" name="otp" inputmode="numeric" autocomplete="one-time-code" required maxlength="6" aria-describedby="a-code-e" />
+          <p class="field-error" id="a-code-e"></p>
+        </div>
+        <button type="submit" class="button">{t('account.signIn')}</button>
+        <button type="button" class="link-button" data-other-email>{t('account.otherEmail')}</button>
+      </form>
+    </section>
+
+    <section data-account hidden>
+      <p class="muted" data-hello></p>
+      <button type="button" class="link-button" data-sign-out>{t('account.signOut')}</button>
+
+      <h2>{t('account.profile')}</h2>
+      <form class="track" data-profile novalidate>
+        <div class="field">
+          <label for="a-name">{t('account.name')}</label>
+          <input id="a-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="a-name-e" />
+          <p class="field-error" id="a-name-e"></p>
+        </div>
+        <div class="field">
+          <label for="a-phone">{t('account.phone')}</label>
+          <input id="a-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" aria-describedby="a-phone-e" />
+          <p class="field-error" id="a-phone-e"></p>
+        </div>
+        <button type="submit" class="button">{t('account.save')}</button>
+        <p class="muted small" data-profile-saved role="status"></p>
+      </form>
+
+      <h2>{t('account.orders')}</h2>
+      <div data-orders aria-live="polite"></div>
+      <p><a href={href(ctx.link, { kind: 'track' })}>{t('track.title')}</a></p>
+
+      <h2>{t('account.addresses')}</h2>
+      <ul class="addresses" data-addresses></ul>
+      <details>
+        <summary>{t('account.addAddress')}</summary>
+        <form class="track" data-address novalidate>
+          <div class="field">
+            <label for="ad-name">{t('account.name')}</label>
+            <input id="ad-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="ad-name-e" />
+            <p class="field-error" id="ad-name-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-phone">{t('account.phone')}</label>
+            <input id="ad-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="ad-phone-e" />
+            <p class="field-error" id="ad-phone-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-division">{t('checkout.division')}</label>
+            <select id="ad-division" name="divisionId" required aria-describedby="ad-division-e"><option value="">{t('checkout.choose')}</option></select>
+            <p class="field-error" id="ad-division-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-district">{t('checkout.district')}</label>
+            <select id="ad-district" name="districtId" required disabled aria-describedby="ad-district-e"><option value="">{t('checkout.choose')}</option></select>
+            <p class="field-error" id="ad-district-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-area">{t('checkout.area')}</label>
+            <select id="ad-area" name="areaId" required disabled aria-describedby="ad-area-e"><option value="">{t('checkout.choose')}</option></select>
+            <p class="field-error" id="ad-area-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-line">{t('checkout.line')}</label>
+            <textarea id="ad-line" name="line" rows="2" maxlength="250" autocomplete="street-address" required aria-describedby="ad-line-e"></textarea>
+            <p class="field-error" id="ad-line-e"></p>
+          </div>
+          <div class="field">
+            <label for="ad-label">{t('account.label')} <span class="muted">{t('checkout.optional')}</span></label>
+            <input id="ad-label" name="label" maxlength="40" />
+          </div>
+          <label class="choice"><input type="checkbox" name="isDefault" /> <span>{t('account.makeDefault')}</span></label>
+          <button type="submit" class="button">{t('account.save')}</button>
+        </form>
+      </details>
+    </section>
+  </div>
+  <script src="../scripts/account.ts"></script>
+</ShopPage>

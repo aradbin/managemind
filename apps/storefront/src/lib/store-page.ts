@@ -2,9 +2,17 @@
 // old slug's redirect points. Pure, so it is unit-tested.
 import type { Locale } from '@managemind/shared/i18n';
 import { listingQueryString, parseListingQuery } from '@managemind/shared/storefront/listing';
-import { LISTING_KINDS, type StoreRoute, storePath } from '@managemind/shared/storefront/urls';
+import {
+  isShell,
+  LISTING_KINDS,
+  type StoreRoute,
+  storePath,
+} from '@managemind/shared/storefront/urls';
 
-const ENDPOINT: Record<StoreRoute['kind'], string> = {
+const ENDPOINT: Record<
+  Exclude<StoreRoute['kind'], 'cart' | 'checkout' | 'thanks' | 'track' | 'account'>,
+  string
+> = {
   home: 'home',
   product: 'products',
   category: 'categories',
@@ -32,9 +40,10 @@ export function apiPath(
   }
   if (locale) extra.set('locale', locale);
   const qs = extra.toString();
-  if (!route) return `/v1/store/pages/layout${qs ? `?${qs}` : ''}`;
+  // Shopper pages are shells: the layout alone, their data comes from /api/* in the browser.
+  if (!route || isShell(route)) return `/v1/store/pages/layout${qs ? `?${qs}` : ''}`;
   const slug = 'slug' in route ? `/${encodeURIComponent(route.slug)}` : '';
-  return `/v1/store/pages/${ENDPOINT[route.kind]}${slug}${qs ? `?${qs}` : ''}`;
+  return `/v1/store/pages/${ENDPOINT[route.kind as keyof typeof ENDPOINT]}${slug}${qs ? `?${qs}` : ''}`;
 }
 
 /** Where an old slug goes: the same kind of page with the current slug, keeping the query. */

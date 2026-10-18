@@ -2,7 +2,7 @@
 import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
-import type { DomainCheckMessage } from './domains';
+import type { DelayedMessage } from './domains';
 import type { PurgeMessage } from './purge/consumer';
 import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
@@ -18,8 +18,11 @@ export interface Env {
   RATE_LIMITER: DurableObjectNamespace<RateLimiter>;
   /** Cache purges, one message per store (ADR 0018); absent in previews. */
   PURGE?: Queue<PurgeMessage>;
-  /** Delayed re-checks of new custom domains (ADR 0019); absent in previews. */
-  DOMAINS?: Queue<DomainCheckMessage>;
+  /**
+   * The delayed queue, named for its first use: custom domains' re-checks
+   * (ADR 0019) and sale windows' edges (phase-4-plan §3.14); absent in previews.
+   */
+  DOMAINS?: Queue<DelayedMessage>;
   /** The account-wide purge counter, one object named "account" (ADR 0007). */
   PURGE_BUDGET: DurableObjectNamespace<PurgeBudget>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */
@@ -48,6 +51,13 @@ export interface Env {
   EMAIL_FROM?: string;
   /** Resend API key with sending access (a Worker secret). */
   RESEND_API_KEY?: string;
+  /**
+   * Shopper email from the store domain (ADR 0022): `brevo` in production
+   * once the key exists, `capture` elsewhere, `none` to keep accounts off.
+   */
+  SHOPPER_EMAIL_PROVIDER?: string;
+  /** Brevo API key limited to sending (a Worker secret; phase-4-plan §1). */
+  BREVO_API_KEY?: string;
   /** Opens the dev mailbox on previews (a Worker secret; never set in production). */
   DEV_TOKEN?: string;
   /**
@@ -59,6 +69,12 @@ export interface Env {
   CF_STORE_TOKEN?: string;
   /** The store zone's ID, set by the deploy, for purges and custom hostnames. */
   STORE_ZONE_ID?: string;
+  /** The Cloudflare account, for the Turnstile widget's hostname list (phase-4-plan §3.15). */
+  CF_ACCOUNT_ID?: string;
+  /** Turnstile's site key, sent to checkout and sign-in pages (phase-4-plan §3.15). */
+  TURNSTILE_SITE_KEY?: string;
+  /** Turnstile's secret (a Worker secret); without it the check is skipped. */
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
@@ -76,7 +92,11 @@ export const apiConfig = baseConfig
       .regex(/^[^<>]+ <[^\s<>@]+@[^\s<>@]+>$/, 'must look like "Name <address>"')
       .optional(),
     RESEND_API_KEY: z.string().min(1).optional(),
+    SHOPPER_EMAIL_PROVIDER: z.enum(['brevo', 'capture', 'none']).optional(),
+    BREVO_API_KEY: z.string().min(1).optional(),
     DEV_TOKEN: z.string().min(16).optional(),
+    TURNSTILE_SITE_KEY: z.string().min(1).optional(),
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
     STOREFRONT_ORIGIN: z
       .url({ protocol: /^https?$/ })
       .transform((u) => u.replace(/\/$/, ''))
@@ -93,6 +113,11 @@ export const apiConfig = baseConfig
       issue('EMAIL_PROVIDER', 'must be resend in production');
     }
     if (c.EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY) issue('RESEND_API_KEY', 'is required');
+    if (c.ENVIRONMENT === 'production' && c.SHOPPER_EMAIL_PROVIDER === 'capture') {
+      issue('SHOPPER_EMAIL_PROVIDER', 'must not be capture in production');
+    }
+    if (c.SHOPPER_EMAIL_PROVIDER === 'brevo' && !c.BREVO_API_KEY)
+      issue('BREVO_API_KEY', 'is required');
     if (c.ENVIRONMENT === 'production' && c.DEV_TOKEN)
       issue('DEV_TOKEN', 'must not be set in production');
     // Production stores live on their own hosts; the dev selector is off there.
@@ -100,7 +125,13 @@ export const apiConfig = baseConfig
       issue('STOREFRONT_ORIGIN', 'must not be set in production');
   })
   // wrangler dev works without setup; deployed Workers always get the real secret.
-  .transform((c) => ({ ...c, AUTH_SECRET: c.AUTH_SECRET ?? DEV_AUTH_SECRET }));
+  .transform((c) => ({
+    ...c,
+    AUTH_SECRET: c.AUTH_SECRET ?? DEV_AUTH_SECRET,
+    // Until the Brevo key exists, production has no shopper email, so no accounts.
+    SHOPPER_EMAIL_PROVIDER:
+      c.SHOPPER_EMAIL_PROVIDER ?? (c.ENVIRONMENT === 'production' ? 'none' : 'capture'),
+  }));
 export type ApiConfig = z.output<typeof apiConfig>;
 
 export const getConfig = (env: Env): ApiConfig => loadConfig(apiConfig, env);

@@ -332,6 +332,15 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'location.intro': 'যেখানে আপনার স্টক গোনা হয় সেই জায়গার নাম ও ঠিকানা।',
   'location.name': 'নাম',
 
+  'products.sale': 'নির্ধারিত সেল',
+  'products.saleHint':
+    'প্রতি ভ্যারিয়েন্টের সেল দাম, একটি সময়ের জন্য। সেই সময়ে ক্রেতারা এই দাম দেন, আর আসল দাম কাটা দেখায়। সেল শেষ করতে সেল দাম মুছে দিন।',
+  'products.saleStart': 'সেল শুরু',
+  'products.saleEnd': 'সেল শেষ',
+  'products.salePercent': 'সেল: দামের ওপর শতাংশ ছাড়',
+  'products.salePrice': 'সেল দাম',
+  'products.saleWindow': 'সেলের শুরু আর পরের একটি শেষ সময় দিন।',
+  'products.saleBelow': '{item}: সেল দাম আসল দামের চেয়ে কম হতে হবে।',
   'export.button': 'এক্সপোর্ট',
   'export.title': 'পণ্য এক্সপোর্ট করুন',
   'export.description': 'বর্তমান তালিকার পণ্যগুলো, ইমপোর্ট যে কলামগুলো পড়ে সেই কলামেই।',

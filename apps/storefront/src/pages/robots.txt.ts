@@ -1,6 +1,6 @@
 // robots.txt per store (phase-3-plan §3.6): everything disallowed until the
-// owner turns indexing on (Q7); then the sitemap, and no API, search or
-// preview pages.
+// owner turns indexing on (Q7); then the sitemap, and no API, search,
+// preview or shopper pages.
 import { env } from 'cloudflare:workers';
 import type { APIRoute } from 'astro';
 import { fetchPage } from '../lib/api';
@@ -33,6 +33,14 @@ export const GET: APIRoute = async ({ locals, url }) => {
       'Disallow: /en/search',
       'Disallow: /bn/search',
       'Disallow: /__preview',
+      // Shopper pages (phase-4-plan §3.16): noindex shells.
+      ...['', '/en', '/bn'].flatMap((p) => [
+        `Disallow: ${p}/cart`,
+        `Disallow: ${p}/checkout`,
+        `Disallow: ${p}/orders/`,
+        `Disallow: ${p}/track`,
+        `Disallow: ${p}/account`,
+      ]),
       '',
       `Sitemap: ${origin}/sitemap.xml`,
       '',

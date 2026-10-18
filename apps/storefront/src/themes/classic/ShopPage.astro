@@ -1,0 +1,45 @@
+---
+// A shopper page's frame (phase-4-plan §3.16): a cached shell with no
+// personal data, noindex, whose script fills it from /api/*. It carries the
+// messages and links its script needs, in the page's language.
+import { geoFilePath } from '@managemind/shared/geo/version';
+import { type ShellKind, storePath } from '@managemind/shared/storefront/urls';
+import type { StoreMessageKey } from '../../i18n';
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+import Layout from './Layout.astro';
+
+interface Props {
+  ctx: PageContext;
+  kind: ShellKind;
+  title: string;
+  /** The messages the page's script uses. */
+  keys: StoreMessageKey[];
+}
+const { ctx, kind, title, keys } = Astro.props;
+const { t, locale, defaultLocale } = ctx;
+const other = locale === 'bn' ? 'en' : 'bn';
+const terms = ctx.layout.pages.find((p) => p.kind === 'terms');
+const shop = {
+  locale,
+  numerals: ctx.d.numerals,
+  prefix: locale === defaultLocale ? '' : `/${locale}`,
+  msg: Object.fromEntries(keys.map((k) => [k, t(k)])),
+  links: {
+    home: href(ctx.link, { kind: 'home' }),
+    cart: href(ctx.link, { kind: 'cart' }),
+    checkout: href(ctx.link, { kind: 'checkout' }),
+    thanks: href(ctx.link, { kind: 'thanks' }),
+    track: href(ctx.link, { kind: 'track' }),
+    account: href(ctx.link, { kind: 'account' }),
+    terms: terms ? href(ctx.link, { kind: 'page', slug: terms.slug }) : null,
+  },
+  shop: ctx.layout.shop,
+  geo: geoFilePath(),
+};
+---
+
+<Layout ctx={ctx} head={{ title: `${title} | ${ctx.layout.store.name}`, canonical: null, alternates: [], noindex: true }} languageHref={storePath({ kind }, other, defaultLocale)}>
+  <slot />
+  <script type="application/json" id="mm-shop" set:html={JSON.stringify(shop).replace(/</g, '\\u003c')} />
+</Layout>

@@ -17,6 +17,12 @@ export const ERROR_CODES = {
   catalog_slug_taken: { status: 409, title: 'Address already in use' },
   insufficient_stock: { status: 409, title: 'Not enough stock' },
   in_use: { status: 409, title: 'Still in use' },
+  // Checkout (phase-4-plan §6.2): the response says what changed.
+  price_changed: { status: 409, title: 'Prices changed' },
+  promotion_unavailable: { status: 409, title: 'Offer no longer available' },
+  cod_unavailable: { status: 422, title: 'Cash on delivery is not available for this order' },
+  checkout_paused: { status: 423, title: 'The store is not taking orders right now' },
+  cart_invalid: { status: 409, title: 'Some items in the cart are no longer available' },
   limit_exceeded: { status: 422, title: 'Limit reached' },
   payload_too_large: { status: 413, title: 'Too large' },
   unsupported_media_type: { status: 415, title: 'Unsupported file type' },
@@ -48,10 +54,17 @@ export class AppError extends Error {
   readonly status: number;
   readonly detail: string | undefined;
   readonly fields: readonly FieldError[] | undefined;
+  /** Extension members of the problem (RFC 9457 §3.2), such as a checkout's new totals. */
+  readonly extensions: Record<string, unknown> | undefined;
 
   constructor(
     code: ErrorCode,
-    options: { detail?: string; fields?: readonly FieldError[]; cause?: unknown } = {},
+    options: {
+      detail?: string;
+      fields?: readonly FieldError[];
+      extensions?: Record<string, unknown>;
+      cause?: unknown;
+    } = {},
   ) {
     super(options.detail ?? ERROR_CODES[code].title, { cause: options.cause });
     this.name = 'AppError';
@@ -59,6 +72,7 @@ export class AppError extends Error {
     this.status = ERROR_CODES[code].status;
     this.detail = options.detail;
     this.fields = options.fields;
+    this.extensions = options.extensions;
   }
 }
 
@@ -71,6 +85,7 @@ export interface ProblemDetails {
   /** The request ID, so a report can be matched to logs. */
   instance?: string;
   errors?: readonly FieldError[];
+  [extension: string]: unknown;
 }
 
 /**
@@ -93,5 +108,7 @@ export function toProblem(
   if (known?.detail) problem.detail = known.detail;
   if (known?.fields?.length) problem.errors = known.fields;
   if (context.requestId) problem.instance = context.requestId;
+  // Extensions never replace the standard members.
+  for (const [k, v] of Object.entries(known?.extensions ?? {})) if (!(k in problem)) problem[k] = v;
   return problem;
 }

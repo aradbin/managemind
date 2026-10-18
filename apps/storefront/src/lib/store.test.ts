@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { lookupStore, resolveStoreHost, type StoreContext, type StoreRequest } from './store';
+import {
+  lookupStore,
+  rememberedStoreFromApi,
+  resolveStoreHost,
+  type StoreContext,
+  type StoreRequest,
+  storeFromApi,
+} from './store';
 
 const base: StoreRequest = {
   host: 'managemind-storefront.example.workers.dev',
@@ -97,5 +104,62 @@ describe('lookupStore', () => {
       await lookupStore(host, { kv: broken as never, api, onKvError: (e) => errors.push(e) }),
     ).toEqual(fromApi);
     expect(errors).toHaveLength(1);
+  });
+});
+
+describe('storeFromApi', () => {
+  const store = { id: 'x', slug: 'demo-grocery' } as unknown as StoreContext;
+  const answers = (...list: (number | Error)[]) => {
+    let calls = 0;
+    const call = async () => {
+      const next = list[calls++] as number | Error;
+      if (next instanceof Error) throw next;
+      return new Response(next === 200 ? JSON.stringify(store) : '', { status: next });
+    };
+    return { call, calls: () => calls };
+  };
+
+  it('reads a store, and takes a 404 as no store, without retrying either', async () => {
+    const found = answers(200);
+    expect(await storeFromApi(found.call)).toEqual(store);
+    const missing = answers(404);
+    expect(await storeFromApi(missing.call)).toBeNull();
+    expect(found.calls() + missing.calls()).toBe(2);
+  });
+
+  it('retries a failed or stopped call once, then fails rather than answering no store', async () => {
+    const recovered = answers(503, 200);
+    expect(await storeFromApi(recovered.call)).toEqual(store);
+    expect(recovered.calls()).toBe(2);
+    const thrown = answers(new Error('exceeded CPU'), 200);
+    expect(await storeFromApi(thrown.call)).toEqual(store);
+    const down = answers(500, 503);
+    await expect(storeFromApi(down.call)).rejects.toThrow('store context answered 503');
+    expect(down.calls()).toBe(2);
+  });
+});
+
+describe('rememberedStoreFromApi', () => {
+  const store = { id: 'y', slug: 'remembered' } as unknown as StoreContext;
+  it('asks the API once a minute per host, and never remembers "no store"', async () => {
+    let calls = 0;
+    const found = async () => {
+      calls++;
+      return new Response(JSON.stringify(store), { status: 200 });
+    };
+    const host = 'remembered.stores.example.test';
+    expect(await rememberedStoreFromApi(host, found, 1_000)).toEqual(store);
+    expect(await rememberedStoreFromApi(host, found, 30_000)).toEqual(store);
+    expect(calls).toBe(1);
+    expect(await rememberedStoreFromApi(host, found, 62_000)).toEqual(store);
+    expect(calls).toBe(2);
+    const missing = async () => {
+      calls++;
+      return new Response('', { status: 404 });
+    };
+    const gone = 'gone.stores.example.test';
+    expect(await rememberedStoreFromApi(gone, missing, 1_000)).toBeNull();
+    expect(await rememberedStoreFromApi(gone, missing, 2_000)).toBeNull();
+    expect(calls).toBe(4);
   });
 });

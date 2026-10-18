@@ -13,8 +13,11 @@ import {
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
 export interface Actor {
-  /** `system` is the platform CLI and background jobs. */
-  kind: 'user' | 'system';
+  /**
+   * `system` is the platform CLI and background jobs; `shopper` is a shopper
+   * on the storefront, acting only on their own cart and orders (Phase 4).
+   */
+  kind: 'user' | 'system' | 'shopper';
   userId: string | null;
   platformRole: PlatformRole | null;
   /** What the actor may do in its active store; empty outside a store. */
@@ -128,14 +131,35 @@ export function requirePlatformRole(actor: Actor, role: PlatformRole): void {
   if (actor.platformRole !== role) throw new AppError('forbidden');
 }
 
+/**
+ * A shopper on the storefront: no store permissions, so no staff service
+ * accepts it. `userId` is the shopper account, when signed in.
+ */
+export const shopperActor = (shopperUserId: string | null = null): Actor => ({
+  kind: 'shopper',
+  userId: shopperUserId,
+  platformRole: null,
+  permissions: new Set(),
+});
+
 /** How the actor appears in audit logs: the CLI and jobs as `system`. */
 export function auditActor<T extends 'staff' | 'platform'>(
   actor: Actor,
   as: T,
-): { actorType: T | 'system' | 'platform'; actorId?: string } {
+): {
+  actorType: T | 'system' | 'platform' | (T extends 'staff' ? 'shopper' : never);
+  actorId?: string;
+} {
   return {
     // Support staff in a store appear as the platform, never as store staff (§5.4).
-    actorType: actor.kind === 'system' ? 'system' : actor.supportGrantId ? 'platform' : as,
+    actorType:
+      actor.kind === 'system'
+        ? 'system'
+        : actor.kind === 'shopper' && as === 'staff'
+          ? ('shopper' as T extends 'staff' ? 'shopper' : never)
+          : actor.supportGrantId
+            ? 'platform'
+            : as,
     ...(actor.userId ? { actorId: actor.userId } : {}),
   };
 }

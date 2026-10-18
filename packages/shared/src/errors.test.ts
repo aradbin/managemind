@@ -39,3 +39,13 @@ describe('toProblem', () => {
     expect(problem.detail).toBeUndefined();
   });
 });
+
+describe('problem extensions', () => {
+  it('carries extension members without replacing the standard ones', () => {
+    const problem = toProblem(
+      new AppError('price_changed', { extensions: { totals: { total: 100 }, status: 200 } }),
+      { errorBaseUrl: 'https://x.test/errors' },
+    );
+    expect(problem).toMatchObject({ code: 'price_changed', status: 409, totals: { total: 100 } });
+  });
+});

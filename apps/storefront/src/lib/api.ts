@@ -36,16 +36,26 @@ export interface ApiContext {
   shopperIp: string;
 }
 
-/** GET an API path for the store at `host`; problems come back as their code. */
+/**
+ * GET an API path for the store at `host`; problems come back as their code.
+ * A 5xx or a failed call is tried once more: on the Free plan an API request
+ * can be stopped at its CPU limit (ADR 0013), and a GET is safe to repeat.
+ */
 export async function fetchPage<T>(ctx: ApiContext, path: string): Promise<PageFetch<T>> {
-  const res = await ctx.api.fetch(`https://api.internal${path}`, {
-    headers: {
-      'x-forwarded-host': ctx.host,
-      'x-request-id': ctx.requestId,
-      'x-shopper-ip': ctx.shopperIp,
-      accept: 'application/json',
-    },
-  });
+  const call = () =>
+    ctx.api.fetch(`https://api.internal${path}`, {
+      headers: {
+        'x-forwarded-host': ctx.host,
+        'x-request-id': ctx.requestId,
+        'x-shopper-ip': ctx.shopperIp,
+        accept: 'application/json',
+      },
+    });
+  let res = await call().catch(() => null);
+  if (!res || res.status >= 500) {
+    await res?.body?.cancel();
+    res = await call();
+  }
   if (res.status === 200 || res.status === 404) {
     const body = (await res.json()) as PageResponse<T> & { code?: string };
     // A 404 problem (no store at this host) has no layout.
