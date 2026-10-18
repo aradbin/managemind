@@ -134,6 +134,56 @@ describe('admin API', () => {
     expect((await user.call('DELETE', `/api/admin/members/${m.memberId}`)).status).toBe(423);
   });
 
+  it('saves the fraud, returns and notifications sections; the advance waits for SSLCommerz', async () => {
+    const a = await store();
+    const key = btoa(String.fromCharCode(...new Uint8Array(32).fill(3)));
+    const user = await staffIn(a.email, a.id, browser(makeEnv({ CREDENTIALS_KEY: key })));
+    const saved = await user.call('PATCH', '/api/admin/store', {
+      fraud: { flagAfterFailed: 2 },
+      returns: { windowDays: 10 },
+      notifications: { sms: ['order_placed'], email: ['order_placed', 'order_shipped'] },
+    });
+    expect(saved.status).toBe(200);
+    expect(await saved.json()).toMatchObject({
+      fraud: { flagAfterFailed: 2 },
+      returns: { windowDays: 10, shopperRequests: true },
+      notifications: { sms: ['order_placed'] },
+    });
+
+    const cod = { enabled: true, maxOrderValue: null, advance: 'flagged', otp: 'off' };
+    const refused = await user.call('PATCH', '/api/admin/store', { cod });
+    expect(refused.status).toBe(422);
+    expect(((await refused.json()) as Json).errors).toEqual([
+      expect.objectContaining({ path: 'cod.advance', code: 'needs_gateway' }),
+    ]);
+    expect(
+      (
+        await user.call('PATCH', '/api/admin/store', {
+          cod: { ...cod, advance: 'never', otp: 'flagged' },
+        })
+      ).status,
+    ).toBe(422);
+
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({ status: 'SUCCESS', GatewayPageURL: 'https://gw', sessionkey: 'k' }),
+      )) as typeof fetch;
+    try {
+      const put = await user.call('PUT', '/api/admin/credentials/sslcommerz', {
+        provider: 'sslcommerz',
+        mode: 'sandbox',
+        secrets: { storeId: 'shop1234', storePassword: 'pw' },
+      });
+      expect(put.status).toBe(200);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    const allowed = await user.call('PATCH', '/api/admin/store', { cod });
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toMatchObject({ cod: { advance: 'flagged' } });
+  });
+
   it('lists members in pages, changes roles and removes members', async () => {
     const a = await store();
     const staff = await member(a.id, 'staff');

@@ -13,6 +13,7 @@ import {
   listInvitations,
   listMembers,
   listMyStores,
+  loadCredentials,
   removeMember,
   resendInvitation,
   revokeInvitation,
@@ -24,13 +25,21 @@ import {
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
 import { AppError, PERMISSIONS, STORE_ROLES } from '@managemind/shared';
-import { checkoutSettings, codSettings } from '@managemind/shared/orders';
+import { notificationSettings } from '@managemind/shared/notifications';
+import {
+  checkoutSettings,
+  codSettings,
+  fraudSettings,
+  returnSettings,
+} from '@managemind/shared/orders';
 import { storeProfile, taxSettings, tenantSettings } from '@managemind/shared/settings';
 import { storefrontSettings } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMailer, shopperEmailReady } from '../auth/email';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
+import { credentialsKeyring } from '../notifications';
+import { gatewayFor } from '../payments';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
@@ -94,6 +103,9 @@ const Store = z
     display: tenantSettings.shape.display,
     checkout: checkoutSettings,
     cod: codSettings,
+    fraud: fraudSettings,
+    returns: returnSettings,
+    notifications: notificationSettings,
     /** The store's home page, for the admin's "View store" link. */
     storeUrl: z.string(),
   })
@@ -181,6 +193,9 @@ export const ADMIN_ROUTES = {
         display: tenantSettings.shape.display.optional(),
         checkout: checkoutSettings.optional(),
         cod: codSettings.optional(),
+        fraud: fraudSettings.optional(),
+        returns: returnSettings.optional(),
+        notifications: notificationSettings.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
@@ -334,10 +349,32 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
     return c.json(
       await inStore(
         c,
-        async (tx) => ({
-          ...(await updateStoreProfile(tx, c.var.staff.actor, patch)),
-          storeUrl: (await storeUrls(c, tx)).store,
-        }),
+        async (tx) => {
+          // The advance is paid online and the OTP goes by SMS (phase-5a-plan §3.4, §3.14):
+          // neither can be asked for before the store's gateway works.
+          if (patch.cod && patch.cod.advance !== 'never' && !(await gatewayFor(tx, c.env))) {
+            throw new AppError('validation_failed', {
+              detail: 'Set up SSLCommerz first: the advance is paid online',
+              fields: [
+                { path: 'cod.advance', code: 'needs_gateway', message: 'SSLCommerz is not set up' },
+              ],
+            });
+          }
+          if (
+            patch.cod &&
+            patch.cod.otp !== 'off' &&
+            !(await loadCredentials(tx, await credentialsKeyring(c.env), 'sms'))
+          ) {
+            throw new AppError('validation_failed', {
+              detail: 'Set up an SMS gateway first: the code goes by SMS',
+              fields: [{ path: 'cod.otp', code: 'needs_sms', message: 'No SMS gateway is set up' }],
+            });
+          }
+          return {
+            ...(await updateStoreProfile(tx, c.var.staff.actor, patch)),
+            storeUrl: (await storeUrls(c, tx)).store,
+          };
+        },
         { write: true },
       ),
       200,

@@ -3,11 +3,16 @@
 // tenant transaction, writes its audit entries and emits its event there.
 import { schema } from '@managemind/db';
 import { AppError, checkSlug, uuidv7 } from '@managemind/shared';
+import { type NotificationSettings, notificationSettings } from '@managemind/shared/notifications';
 import {
   type CheckoutSettings,
   type CodSettings,
   checkoutSettings,
   codSettings,
+  type FraudSettings,
+  fraudSettings,
+  type ReturnSettings,
+  returnSettings,
 } from '@managemind/shared/orders';
 import {
   defaultTenantSettings,
@@ -157,6 +162,12 @@ export interface Store {
   checkout: CheckoutSettings;
   /** Cash on delivery. */
   cod: CodSettings;
+  /** When a phone is flagged (phase-5a-plan §3.11). */
+  fraud: FraudSettings;
+  /** The return policy (phase-5a-plan §3.10). */
+  returns: ReturnSettings;
+  /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
+  notifications: NotificationSettings;
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -183,6 +194,9 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     display: settings.display,
     checkout: settings.checkout,
     cod: settings.cod,
+    fraud: settings.fraud,
+    returns: settings.returns,
+    notifications: settings.notifications,
   };
 }
 
@@ -221,6 +235,12 @@ export interface StoreProfilePatch {
   checkout?: unknown;
   /** Replaces the cash-on-delivery settings. */
   cod?: unknown;
+  /** Replaces the phone flag settings (phase-5a-plan §3.11). */
+  fraud?: unknown;
+  /** Replaces the return policy (phase-5a-plan §3.10). */
+  returns?: unknown;
+  /** Replaces the shopper message channels (phase-5a-plan §3.6). */
+  notifications?: unknown;
 }
 
 /** Edits name, default locale, profile, VAT, storefront and display settings (`settings.write`); refused while suspended. */
@@ -254,9 +274,31 @@ export async function updateStoreProfile(
         ? parseSection('checkout', checkoutSettings, patch.checkout)
         : current.checkout,
     cod: patch.cod !== undefined ? parseSection('cod', codSettings, patch.cod) : current.cod,
+    fraud:
+      patch.fraud !== undefined ? parseSection('fraud', fraudSettings, patch.fraud) : current.fraud,
+    returns:
+      patch.returns !== undefined
+        ? parseSection('returns', returnSettings, patch.returns)
+        : current.returns,
+    notifications:
+      patch.notifications !== undefined
+        ? parseSection('notifications', notificationSettings, patch.notifications)
+        : current.notifications,
   };
   const fields = (
-    ['name', 'defaultLocale', 'profile', 'tax', 'storefront', 'display', 'checkout', 'cod'] as const
+    [
+      'name',
+      'defaultLocale',
+      'profile',
+      'tax',
+      'storefront',
+      'display',
+      'checkout',
+      'cod',
+      'fraud',
+      'returns',
+      'notifications',
+    ] as const
   ).filter((f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]));
   if (fields.length === 0) return getStore(tx, actor);
 
@@ -273,6 +315,9 @@ export async function updateStoreProfile(
         display: next.display,
         checkout: next.checkout,
         cod: next.cod,
+        fraud: next.fraud,
+        returns: next.returns,
+        notifications: next.notifications,
       },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
