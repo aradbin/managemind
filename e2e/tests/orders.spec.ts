@@ -1,18 +1,18 @@
-// The Phase 4 flows on the preview (phase-4-plan §10), on the run's own store:
-// the owner adds a code promotion and checks it with the test cart; a shopper
-// adds two products, sees the free-delivery progress, applies the code,
-// chooses an area, places a COD order, sees the confirmation, then tracks it
-// by number and phone and cancels it. Two shoppers race for a last unit
-// through the store's /api and exactly one gets it, and a retried checkout
-// with the same key gives the same order (acceptance criteria 1 and 2).
-// Staff enter a manual order, confirm it,
-// export it in Steadfast's format, print an invoice and a packing slip, ship
-// it in two parcels, mark it delivered with the cash collected and see it
-// completed, with the stock checked at each step and every step on the
-// timeline (acceptance criterion 3). Last, the owner turns shopper accounts on and a shopper signs in
-// with an emailed code. Axe on every new page and screen, and the store's
-// JavaScript budget on the cart, checkout and account pages, at a phone and a
-// desktop viewport. Previews run Turnstile with Cloudflare's always-pass keys.
+// The Phase 4 flows on the preview (phase-4-plan §10), on the run's own store.
+// The owner adds a code promotion and checks it with the test cart. A shopper
+// adds two products, applies the code, chooses an area, sees the free-delivery
+// progress, places a COD order, sees the confirmation, then tracks it by number
+// and phone and cancels it. Two shoppers race for a last unit through the
+// store's /api and exactly one gets it, and a retried checkout with the same
+// key gives the same order (acceptance criteria 1 and 2). Staff enter a manual
+// order, confirm it, export it in Steadfast's format, print an invoice and a
+// packing slip, ship it in two parcels, mark it delivered with the cash
+// collected and see it completed, with the stock checked at each step and
+// every step on the timeline (acceptance criterion 3). Last, the owner turns
+// shopper accounts on and a shopper signs in with an emailed code. Axe on every
+// new page and screen, and the store's JavaScript budget on the cart, checkout
+// and account pages, at a phone and a desktop viewport. Previews run Turnstile
+// with Cloudflare's always-pass keys.
 import { readFile } from 'node:fs/promises';
 import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
 import { bn } from '../../apps/admin/src/i18n/bn';
