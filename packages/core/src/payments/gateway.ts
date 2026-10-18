@@ -8,8 +8,9 @@ import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import { paymentMachine } from '@managemind/shared/orders';
 import { eq, sql } from 'drizzle-orm';
-import { type Actor, systemActor } from '../access';
-import { cancelOrder, refreshOrder } from '../orders/lifecycle';
+import { type Actor, authorize, systemActor } from '../access';
+import { cancelOrder, refreshOrder, syncCodAmount } from '../orders/lifecycle';
+import { MIN_ONLINE_AMOUNT } from '../orders/place';
 import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 
@@ -148,7 +149,10 @@ export async function settleGatewayPayment(
       metadata: { cardType: v.cardType, cardIssuer: v.cardIssuer },
     })
     .where(eq(p.id, payment.id));
-  await refreshOrder(tx, gatewayActor, payment.orderId);
+  const order = await refreshOrder(tx, gatewayActor, payment.orderId);
+  // What's left to collect on delivery drops by what was paid online (a
+  // payment link, §3.3 step 7). A cancelled order collects nothing.
+  if (order.status !== 'cancelled') await syncCodAmount(tx, payment.orderId, order.total);
   const problem = late ? 'late' : risky ? 'risky' : null;
   if (problem) {
     const flag = late ? 'late_payment' : 'payment_risk';
@@ -183,18 +187,20 @@ export async function gatewayPaymentState(
 
 /**
  * At 60 minutes (§3.3, Q4): a payment still pending expires, and its order
- * is cancelled, releasing the stock. The shopper hears "payment not
+ * is cancelled, releasing the stock (not for a payment link). The shopper hears "payment not
  * received" once, not also "cancelled". A late IPN can still settle it.
  */
 export async function expireGatewayPayment(tx: TenantTx, paymentId: string): Promise<boolean> {
   const p = schema.payments;
   const [payment] = await tx.db
-    .select({ status: p.status, orderId: p.orderId, provider: p.provider })
+    .select({ status: p.status, orderId: p.orderId, provider: p.provider, metadata: p.metadata })
     .from(p)
     .where(eq(p.id, paymentId))
     .for('update');
   if (payment?.provider !== 'sslcommerz' || payment.status !== 'pending') return false;
   await tx.db.update(p).set({ status: 'expired' }).where(eq(p.id, paymentId));
+  // A payment link was extra: the order stands, with the rest due on delivery.
+  if ((payment.metadata as { link?: boolean }).link) return true;
   const [order] = await tx.db
     .select({ status: schema.orders.status })
     .from(schema.orders)
@@ -225,4 +231,57 @@ export async function pendingGatewayPayment(tx: TenantTx, orderId: string): Prom
        and o.status <> 'cancelled'
      order by p.created_at desc limit 1`);
   return rows[0]?.id ?? null;
+}
+
+/**
+ * A payment link from the order page (§3.3 step 7): a pending online payment
+ * for what's unpaid, which the shopper pays from the link. A link already
+ * waiting is reused, so sending it twice can't charge twice.
+ */
+export async function createPaymentLink(
+  tx: TenantTx,
+  actor: Actor,
+  orderId: string,
+): Promise<{ paymentId: string; amount: number }> {
+  // Owners, managers and staff (§6.3): it adds a payment, so viewers can't.
+  authorize(actor, 'payments.read');
+  authorize(actor, 'orders.write');
+  const [order] = await tx.db
+    .select({
+      status: schema.orders.status,
+      total: schema.orders.total,
+      paidTotal: schema.orders.paidTotal,
+    })
+    .from(schema.orders)
+    .where(eq(schema.orders.id, orderId))
+    .for('update');
+  if (!order) throw new AppError('not_found');
+  if (order.status === 'cancelled' || order.status === 'completed') {
+    throw new AppError('illegal_transition', { detail: `The order is ${order.status}` });
+  }
+  const p = schema.payments;
+  const waiting = await pendingGatewayPayment(tx, orderId);
+  if (waiting) {
+    const [row] = await tx.db.select({ amount: p.amount }).from(p).where(eq(p.id, waiting));
+    return { paymentId: waiting, amount: Number(row?.amount ?? 0) };
+  }
+  const due = Number(order.total) - Number(order.paidTotal);
+  if (due < MIN_ONLINE_AMOUNT) {
+    throw new AppError('conflict', {
+      detail: due <= 0 ? 'The order is paid' : 'Below the gateway’s ৳10 minimum',
+    });
+  }
+  const [row] = await tx.db
+    .insert(p)
+    .values({
+      orderId,
+      provider: 'sslcommerz',
+      method: 'online',
+      amount: due,
+      recordedBy: actor.userId,
+      metadata: { link: true },
+    })
+    .returning({ id: p.id });
+  if (!row) throw new AppError('internal');
+  return { paymentId: row.id, amount: due };
 }

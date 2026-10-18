@@ -197,7 +197,10 @@ export interface OrderDetail {
     /** What the courier collects. */
     codDue: number;
     refundDue: number;
+    refundedTotal: number;
   };
+  /** payment_risk, late_payment (phase-5a-plan §3.5). */
+  flags: string[];
   payments: {
     id: string;
     provider: string;
@@ -207,6 +210,14 @@ export interface OrderDetail {
     reference: string | null;
     settledAt: string | null;
     createdAt: string;
+    /** SSLCommerz's details (phase-5a-plan §7); null for other providers and without payments.read. */
+    gateway: {
+      valId: string | null;
+      bankTranId: string | null;
+      risky: boolean;
+      cardType: string | null;
+      link: boolean;
+    } | null;
   }[];
   shipments: {
     id: string;
@@ -273,7 +284,8 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       select id, kind, target, title, code, amount, reason from store.order_adjustments
        where order_id = ${id} order by created_at, id`),
     tx.db.execute<Record<string, unknown>>(sql`
-      select id, provider, method, status, amount, reference, settled_at, created_at from store.payments
+      select id, provider, method, status, amount, reference, settled_at, created_at,
+             gateway_val_id, gateway_bank_tran_id, risk_level, metadata from store.payments
        where order_id = ${id} order by created_at, id`),
     tx.db.execute<Record<string, unknown>>(sql`
       select s.id, s.status, s.carrier, s.tracking_number, s.tracking_url, s.shipped_at, s.delivered_at, s.failed_reason,
@@ -389,8 +401,10 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       total,
       paidTotal,
       codDue,
-      refundDue: Math.max(0, paidTotal - total),
+      refundDue: Math.max(0, paidTotal - Number(r.refunded_total ?? 0) - total),
+      refundedTotal: Number(r.refunded_total ?? 0),
     },
+    flags: (r.flags as string[] | null) ?? [],
     payments: payments.rows.map((p) => ({
       id: p.id as string,
       provider: p.provider as string,
@@ -400,6 +414,16 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       reference: (p.reference as string) ?? null,
       settledAt: iso(p.settled_at),
       createdAt: iso(p.created_at) as string,
+      gateway:
+        p.provider === 'sslcommerz'
+          ? {
+              valId: (p.gateway_val_id as string) ?? null,
+              bankTranId: (p.gateway_bank_tran_id as string) ?? null,
+              risky: p.risk_level === 1,
+              cardType: ((p.metadata as { cardType?: string } | null)?.cardType as string) ?? null,
+              link: Boolean((p.metadata as { link?: boolean } | null)?.link),
+            }
+          : null,
     })),
     shipments: shipments.rows.map((s) => ({
       id: s.id as string,
@@ -436,7 +460,10 @@ export async function getOrder(tx: TenantTx, actor: Actor, id: string): Promise<
     out = { ...out, lines: out.lines.map(({ costPrice: _c, ...l }) => l) };
   }
   if (!actor.permissions.has('payments.read')) {
-    out = { ...out, payments: out.payments.map((p) => ({ ...p, reference: null })) };
+    out = {
+      ...out,
+      payments: out.payments.map((p) => ({ ...p, reference: null, gateway: null })),
+    };
   }
   if (!actor.permissions.has('orders.write')) out = { ...out, actions: [] };
   return out;

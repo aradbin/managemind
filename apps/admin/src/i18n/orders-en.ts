@@ -142,6 +142,20 @@ export const ordersEn = {
   'order.noDelivery': 'No delivery: collected in the shop.',
   'order.masked': 'Contact details are partly hidden for your role.',
   'order.payments': 'Payments',
+  'order.flag.risk':
+    'SSLCommerz marked this card payment as risky. Check with the customer before you ship.',
+  'order.flag.late':
+    'An online payment arrived after the payment window closed. Give it back, or carry on with the order.',
+  'order.paymentLink': 'Payment link',
+  'order.paymentLinkIntro':
+    'The customer pays {amount} online from this link. It works until {date}; what they pay comes off the cash on delivery.',
+  'order.paymentLinkMessage': 'Pay {amount} for order {number} here: {url}',
+  'order.copyLink': 'Copy message',
+  'order.copied': 'Copied.',
+  'order.viaLink': 'Payment link',
+  'order.bankTran': 'Bank ref. {id}',
+  'order.valId': 'Validation {id}',
+  'order.risky': 'Marked risky by SSLCommerz',
   'order.timeline': 'Timeline',
   'order.addNote': 'Add an internal note',
   'order.saveNote': 'Add note',

@@ -468,6 +468,7 @@ describe('isolation suite', () => {
       },
       'POST /v1/admin/orders/{id}/notes': { id: order.id, body: { body: 'x' } },
       'PATCH /v1/admin/orders/{id}': { id: order.id, body: { tags: ['x'] } },
+      'POST /v1/admin/orders/{id}/payment-link': { id: order.id },
       'POST /v1/admin/orders/{id}/payments': {
         id: order.id,
         body: { method: 'cash', amount: 100 },

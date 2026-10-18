@@ -188,6 +188,8 @@ export const en = {
   'track.phone': 'Mobile number',
   'track.submit': 'Track order',
   'track.notFound': 'No order matches this number and mobile number.',
+  'track.linkExpired':
+    'This payment link has expired. Find your order below, or ask the store for a new link.',
   'track.locked': 'Too many tries. Please try again in an hour.',
   'track.status': 'Status',
   'track.delivery': 'Delivery',
@@ -425,6 +427,7 @@ export const bn: Record<StoreMessageKey, Message> = {
   'track.phone': 'মোবাইল নম্বর',
   'track.submit': 'অর্ডার দেখুন',
   'track.notFound': 'এই নম্বর ও মোবাইল নম্বরে কোনো অর্ডার নেই।',
+  'track.linkExpired': 'এই পেমেন্ট লিংকের মেয়াদ শেষ। নিচে আপনার অর্ডার খুঁজুন, বা দোকানের কাছে নতুন লিংক চান।',
   'track.locked': 'অনেকবার চেষ্টা হয়েছে। এক ঘণ্টা পর আবার চেষ্টা করুন।',
   'track.status': 'অবস্থা',
   'track.delivery': 'ডেলিভারি',

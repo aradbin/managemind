@@ -6506,6 +6506,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/orders/{id}/payment-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A link the shopper pays the unpaid amount from, online (payments.read, orders.write; reuses one waiting) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The link */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            amount: number;
+                            expiresAt: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/orders/{id}/shipments": {
         parameters: {
             query?: never;
@@ -11248,7 +11290,10 @@ export interface components {
                 paidTotal: number;
                 codDue: number;
                 refundDue: number;
+                refundedTotal: number;
             };
+            /** @description payment_risk, late_payment */
+            flags: string[];
             payments: {
                 /** Format: uuid */
                 id: string;
@@ -11259,6 +11304,14 @@ export interface components {
                 reference: string | null;
                 settledAt: string | null;
                 createdAt: string;
+                /** @description SSLCommerz details, with payments.read */
+                gateway: {
+                    valId: string | null;
+                    bankTranId: string | null;
+                    risky: boolean;
+                    cardType: string | null;
+                    link: boolean;
+                } | null;
             }[];
             shipments: {
                 /** Format: uuid */

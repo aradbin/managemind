@@ -9,6 +9,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
   addToCart,
+  cancelOrder,
+  createPaymentLink,
   createProduct,
   createTenant,
   expireGatewayPayment,
@@ -16,6 +18,7 @@ import {
   gatewaySession,
   placeOrder,
   receive,
+  recordPayment,
   setCartArea,
   settleGatewayPayment,
   shopperActor,
@@ -56,7 +59,7 @@ beforeAll(async () => {
 });
 afterAll(() => app.end());
 
-async function onlineOrder(kind: 'online' | 'cod_with_advance' = 'online', stock = 5) {
+async function onlineOrder(kind: 'online' | 'cod_with_advance' | 'cod' = 'online', stock = 5) {
   const p = await run((tx) =>
     createProduct(tx, owner(), {
       status: 'active',
@@ -254,6 +257,81 @@ describe('unpaid online orders', () => {
       status: 'cancelled',
       payment_status: 'paid',
       flags: ['late_payment'],
+    });
+  });
+});
+
+describe('payment links (§3.3 step 7)', () => {
+  const pending = (orderId: string) =>
+    run(async (tx) => {
+      const { rows } = await tx.db.execute<{ provider: string; status: string; amount: string }>(
+        sql`select provider, status, amount from store.payments where order_id = ${orderId}
+             order by created_at, id`,
+      );
+      return rows.map((r) => ({ ...r, amount: Number(r.amount) }));
+    });
+
+  it('asks for what is unpaid, once; paying it clears what the courier collects', async () => {
+    const { order } = await onlineOrder('cod');
+    const link = await run((tx) => createPaymentLink(tx, owner(), order.id));
+    expect(link.amount).toBe(order.total);
+    // Sent twice, it is still one payment.
+    expect(await run((tx) => createPaymentLink(tx, owner(), order.id))).toEqual(link);
+
+    const result = await run((tx) => settleGatewayPayment(tx, valid(link.paymentId, order.total)));
+    expect(result).toMatchObject({ kind: 'settled', problem: null });
+    expect(await pending(order.id)).toEqual([
+      expect.objectContaining({ provider: 'cod', status: 'voided' }),
+      expect.objectContaining({ provider: 'sslcommerz', status: 'paid', amount: order.total }),
+    ]);
+    expect(await orderRow(order.id)).toMatchObject({ status: 'pending', payment_status: 'paid' });
+    await expect(run((tx) => createPaymentLink(tx, owner(), order.id))).rejects.toMatchObject({
+      code: 'conflict',
+    });
+  });
+
+  it('leaves only the rest to collect after an advance', async () => {
+    const { order } = await onlineOrder('cod_with_advance');
+    const advance = order.onlinePayment?.id as string;
+    await run((tx) =>
+      settleGatewayPayment(tx, valid(advance, order.onlinePayment?.amount as number)),
+    );
+    const rest = order.total - (order.onlinePayment?.amount as number);
+    const link = await run((tx) => createPaymentLink(tx, owner(), order.id));
+    expect(link.amount).toBe(rest);
+    await run((tx) => settleGatewayPayment(tx, valid(link.paymentId, rest)));
+    expect((await pending(order.id)).filter((p) => p.status === 'pending')).toEqual([]);
+  });
+
+  it('expires without cancelling the order, which stays cash on delivery', async () => {
+    const { order } = await onlineOrder('cod');
+    const link = await run((tx) => createPaymentLink(tx, owner(), order.id));
+    expect(await run((tx) => expireGatewayPayment(tx, link.paymentId))).toBe(true);
+    expect(await orderRow(order.id)).toMatchObject({ status: 'pending' });
+    expect(await pending(order.id)).toEqual([
+      expect.objectContaining({ provider: 'cod', status: 'pending', amount: order.total }),
+      expect.objectContaining({ provider: 'sslcommerz', status: 'expired' }),
+    ]);
+  });
+
+  it('stops waiting once the order is paid another way', async () => {
+    const { order } = await onlineOrder('cod');
+    const link = await run((tx) => createPaymentLink(tx, owner(), order.id));
+    await run((tx) =>
+      recordPayment(tx, owner(), order.id, { method: 'bkash', amount: order.total }),
+    );
+    expect(await payment(link.paymentId)).toMatchObject({ status: 'expired' });
+  });
+
+  it('refuses a cancelled order, and staff without payments.read', async () => {
+    const { order } = await onlineOrder('cod');
+    const viewer: Actor = { ...owner(), permissions: permissionsOf('viewer') };
+    await expect(run((tx) => createPaymentLink(tx, viewer, order.id))).rejects.toMatchObject({
+      code: 'forbidden',
+    });
+    await run((tx) => cancelOrder(tx, owner(), order.id, { reason: 'Changed mind' }));
+    await expect(run((tx) => createPaymentLink(tx, owner(), order.id))).rejects.toMatchObject({
+      code: 'illegal_transition',
     });
   });
 });

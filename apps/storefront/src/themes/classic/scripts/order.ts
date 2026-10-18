@@ -257,9 +257,24 @@ if (thanks) {
 }
 
 // Tracking: number and phone, then the order with a cancel button while pending.
+// A payment link from the store (phase-5a-plan §3.3) opens it with "pay now":
+// its token is in the fragment, and can't cancel.
 const form = document.querySelector<HTMLFormElement>('[data-track]');
 const out = document.querySelector<HTMLElement>('[data-order]');
 const notice = document.querySelector<HTMLElement>('[data-notice]');
+const linkToken = location.hash.slice(1);
+if (form && out && linkToken) {
+  api<OrderView>('/orders/view', { body: { token: linkToken } })
+    .then((o) => {
+      const draw = (next: OrderView) => fill(out, view(next, null, draw, linkToken));
+      draw(o);
+    })
+    .catch(() => {
+      if (!notice) return;
+      notice.textContent = t('track.linkExpired');
+      notice.hidden = false;
+    });
+}
 if (form && out) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

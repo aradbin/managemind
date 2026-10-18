@@ -352,6 +352,15 @@ export function cookie(c: Context<AppEnv>, name: string): string | null {
 }
 
 /** The cart cookie (HttpOnly, /api only) and the count cookie the header reads. */
+/** The order a view, tracking or payment link token is for; only tracking also cancels. */
+async function orderOfToken(tenantId: string, token: string, secret: string) {
+  return (
+    (await verifyOrderToken('view', tenantId, token, secret)) ??
+    (await verifyOrderToken('track', tenantId, token, secret)) ??
+    (await verifyOrderToken('pay', tenantId, token, secret))
+  );
+}
+
 export function cartCookies(token: string | null, count: number): string[] {
   const base = 'Secure; SameSite=Lax';
   return [
@@ -728,9 +737,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
     const { token } = (await c.req.json()) as { token: string };
     await limiterFor(c).check('cart:ip', shopperIp(c));
     const { tenantId, paymentId } = await inShopStore(c, async (tx, tenantId) => {
-      const orderId =
-        (await verifyOrderToken('view', tenantId, token, c.var.config.AUTH_SECRET)) ??
-        (await verifyOrderToken('track', tenantId, token, c.var.config.AUTH_SECRET));
+      const orderId = await orderOfToken(tenantId, token, c.var.config.AUTH_SECRET);
       if (!orderId) throw new AppError('not_found');
       const paymentId = await pendingGatewayPayment(tx, orderId);
       if (!paymentId) throw new AppError('conflict', { detail: 'Nothing is waiting to be paid' });
@@ -750,9 +757,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
   app.openapi(R.viewOrder, (async (c: Context<AppEnv>) => {
     const { token } = (await c.req.json()) as { token: string };
     const view = await inShopStore(c, async (tx, tenantId) => {
-      const id =
-        (await verifyOrderToken('view', tenantId, token, c.var.config.AUTH_SECRET)) ??
-        (await verifyOrderToken('track', tenantId, token, c.var.config.AUTH_SECRET));
+      const id = await orderOfToken(tenantId, token, c.var.config.AUTH_SECRET);
       if (!id) throw new AppError('not_found');
       return shopperOrderView(tx, id);
     });

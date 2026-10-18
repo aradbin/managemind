@@ -181,6 +181,14 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
     .update(o)
     .set({ paidTotal, refundedTotal, paymentStatus, deliveryStatus })
     .where(eq(o.id, orderId));
+  if (paidTotal >= order.total) {
+    // Paid in full: an online payment still waiting (a payment link) is no
+    // longer wanted. Expired, not voided, so money that arrives anyway is
+    // still recorded, as a late payment to give back (phase-5a-plan §3.5).
+    await tx.db.execute(sql`
+      update store.payments set status = 'expired'
+       where order_id = ${orderId} and provider = 'sslcommerz' and status = 'pending'`);
+  }
   order = { ...order, paidTotal, refundedTotal, paymentStatus, deliveryStatus };
   if (
     order.status === 'processing' &&

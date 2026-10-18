@@ -19,6 +19,7 @@ import type pg from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 import { handlePaymentChecks, type PaymentCheckMessage } from '../src/payments';
+import { browser, signIn } from './staff';
 import { appUrl, makeCtx, makeEnv, ownerUrl } from './support';
 
 // biome-ignore lint/suspicious/noExplicitAny: response bodies; the assertions check their shape
@@ -125,7 +126,7 @@ async function store() {
       async () => {},
     ),
   );
-  return { id, host: `${slug}.${env.STORE_DOMAIN}`, variant, run };
+  return { id, host: `${slug}.${env.STORE_DOMAIN}`, variant, run, email: `${slug}@example.test` };
 }
 
 async function call(
@@ -158,7 +159,10 @@ async function call(
   return res;
 }
 
-async function onlineCheckout(s: Awaited<ReturnType<typeof store>>) {
+async function onlineCheckout(
+  s: Awaited<ReturnType<typeof store>>,
+  paymentMethod: 'online' | 'cod' = 'online',
+) {
   const jar: string[] = [];
   const shop = async (
     method: string,
@@ -183,7 +187,7 @@ async function onlineCheckout(s: Awaited<ReturnType<typeof store>>) {
     {
       contact: { name: 'Rina', phone: '01712345678' },
       address: { divisionId: 6, districtId: 47, areaId: 513, line: 'House 1' },
-      paymentMethod: 'online',
+      paymentMethod,
       expectedTotal: state.cart.totals.total,
     },
     { 'idempotency-key': `k-${crypto.randomUUID()}` },
@@ -362,5 +366,36 @@ describe('online payment through the API', () => {
       [unpaid.order.id],
     );
     expect(rows[0]?.status).toBe('cancelled');
+  });
+});
+
+describe('payment links', () => {
+  it('lets staff send a link the shopper pays from, which can’t cancel the order', async () => {
+    fakeSslcommerz();
+    const s = await store();
+    const { order } = await onlineCheckout(s, 'cod');
+    const staff = browser(env);
+    expect((await signIn(staff, owner, s.email)).status).toBe(200);
+    expect((await staff.call('PUT', '/api/admin/me/active-store', { tenantId: s.id })).status).toBe(
+      200,
+    );
+    const res = await staff.post(`/api/admin/orders/${order.id}/payment-link`);
+    const link: Json = await res.json();
+    expect(res.status, JSON.stringify(link)).toBe(200);
+    expect(link.amount).toBe(order.total);
+    expect(link.url).toMatch(new RegExp(`^https://${s.host.replace(/\./g, '\\.')}/track#`));
+    const token = link.url.split('#')[1];
+
+    const view: Json = await (
+      await call(s.host, 'POST', '/v1/store/orders/view', { token })
+    ).json();
+    expect(view.onlineDue).toBe(order.total);
+    const pay: Json = await (
+      await call(s.host, 'POST', '/v1/store/payments/retry', { token })
+    ).json();
+    expect(pay.url).toBe('https://sandbox.sslcommerz.com/gw/x');
+    expect(gateway.sessions.at(-1)?.get('total_amount')).toBe(`${order.total / 100}.00`);
+    // The link shows and pays; only tracking by phone cancels.
+    expect((await call(s.host, 'POST', '/v1/store/orders/cancel', { token })).status).toBe(404);
   });
 });
