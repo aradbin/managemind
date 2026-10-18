@@ -973,8 +973,11 @@ export interface paths {
                             line: string;
                         };
                         note?: string;
-                        /** @enum {string} */
-                        paymentMethod: "cod";
+                        /**
+                         * @default cod
+                         * @enum {string}
+                         */
+                        paymentMethod?: "cod" | "online" | "cod_with_advance";
                         expectedTotal: number;
                         saveDetails?: boolean;
                         acceptTerms?: boolean;
@@ -990,6 +993,103 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["PlacedOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/payments/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The shopper back from SSLCommerz: settle from its validation, then show the order */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "success" | "failed" | "cancelled";
+                        /** Format: uuid */
+                        tranId: string;
+                        valId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The order to show */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            viewToken: string;
+                            paid: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/payments/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A new SSLCommerz session for an order's pending online payment */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The gateway page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                        };
                     };
                 };
             };
@@ -8961,6 +9061,11 @@ export interface components {
                 enabled: boolean;
                 maxOrderValue: number | null;
             };
+            online: {
+                enabled: boolean;
+                /** @enum {string} */
+                advance: "never" | "always" | "flagged";
+            };
             holiday: {
                 active: boolean;
                 message: {
@@ -9003,6 +9108,7 @@ export interface components {
             locale: string;
             placedAt: string;
             viewToken: string;
+            payUrl: string | null;
         };
         ShopperOrder: {
             [key: string]: unknown;

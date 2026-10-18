@@ -49,11 +49,17 @@ interface Triggered {
   staff: StaffEvent[];
   shipmentId?: string;
   paymentId?: string;
+  problem?: string;
 }
 
 /** Which message events an outbox event triggers, or null for none. */
 export function triggeredBy(event: OutboxEvent): Triggered | null {
-  const p = (event.payload ?? {}) as { orderId?: string; by?: string };
+  const p = (event.payload ?? {}) as {
+    orderId?: string;
+    by?: string;
+    reason?: string;
+    problem?: string;
+  };
   const id = event.aggregateId ?? '';
   switch (event.eventType) {
     case 'order.placed':
@@ -61,9 +67,10 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     case 'order.confirmed':
       return { orderId: id, shopper: ['order_confirmed'], staff: [] };
     case 'order.cancelled':
+      // An unpaid online order says why it was cancelled, in one message.
       return {
         orderId: id,
-        shopper: ['order_cancelled'],
+        shopper: [p.reason === 'payment_expired' ? 'payment_expired' : 'order_cancelled'],
         staff: p.by === 'shopper' ? ['shopper_cancelled'] : [],
       };
     case 'shipment.shipped':
@@ -72,16 +79,30 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
       return { orderId: p.orderId ?? '', shopper: ['order_delivered'], staff: [], shipmentId: id };
     case 'payment.settled':
       // Only online payments: COD settles at delivery, which has its own message.
+      // A risky card or a late payment asks staff to check (§3.5).
       return {
         orderId: p.orderId ?? '',
-        shopper: ['payment_received'],
-        staff: ['online_payment'],
+        shopper: p.problem === 'late' ? [] : ['payment_received'],
+        staff: [p.problem ? 'payment_problem' : 'online_payment'],
         paymentId: id,
+        ...(p.problem ? { problem: p.problem } : {}),
       };
     default:
       return null;
   }
 }
+
+/** What a payment problem says to staff (§3.5). */
+const PROBLEMS: Record<Locale, Record<string, string>> = {
+  en: {
+    risky: 'SSLCommerz marked the card as risky; check before confirming',
+    late: 'Paid after the order was cancelled; refund it or restore the order',
+  },
+  bn: {
+    risky: 'SSLCommerz কার্ডটিকে ঝুঁকিপূর্ণ বলেছে; নিশ্চিত করার আগে যাচাই করুন',
+    late: 'অর্ডার বাতিলের পরে পরিশোধ হয়েছে; টাকা ফেরত দিন বা অর্ডারটি ফিরিয়ে আনুন',
+  },
+};
 
 /** "৳600", not "৳600.00": whole taka without the zeros, as the storefront shows them. */
 export const formatTaka = (amount: number, locale: Locale) =>
@@ -154,6 +175,9 @@ export async function planMessages(
     order_url: options.trackUrl,
     source: order.source,
     ...(amount === null ? {} : { amount: formatTaka(amount, locale) }),
+    ...(triggered.problem
+      ? { problem: PROBLEMS[locale][triggered.problem] ?? triggered.problem }
+      : {}),
   });
 
   const planned: PlannedMessage[] = [];

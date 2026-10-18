@@ -22,6 +22,7 @@ import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
 import { addressSnapshot, findOrCreateCustomer } from '../customers/service';
+import { phoneFlagged } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
@@ -43,7 +44,14 @@ export type ManualPaymentMethod = (typeof MANUAL_PAYMENT_METHODS)[number];
 export type OrderPayment =
   | { kind: 'cod' }
   /** Already received (Facebook orders paid in advance, walk-ins): the rest, if any, is COD. */
-  | { kind: 'manual'; method: ManualPaymentMethod; amount: number; reference?: string | null };
+  | { kind: 'manual'; method: ManualPaymentMethod; amount: number; reference?: string | null }
+  /** Everything through the store's gateway (phase-5a-plan §3.3). */
+  | { kind: 'online' }
+  /** The delivery charge through the gateway, the rest cash on delivery (§3.4). */
+  | { kind: 'cod_with_advance' };
+
+/** SSLCommerz takes at least ৳10 (phase-5a-plan §3.3). */
+export const MIN_ONLINE_AMOUNT = 1000;
 
 export interface PlaceOrderInput {
   channel: 'storefront' | 'admin';
@@ -74,6 +82,8 @@ export interface PlaceOrderInput {
   confirm?: boolean | undefined;
   /** Admin: staff saw the blocklist warning and went ahead. */
   allowBlocked?: boolean | undefined;
+  /** The store's gateway is set up and checked, so online payment can be offered (§3.4). */
+  onlineReady?: boolean | undefined;
   acceptTerms?: boolean | undefined;
 }
 
@@ -86,6 +96,8 @@ export interface PlacedOrder {
   total: number;
   /** What the courier collects at the door. */
   codAmount: number;
+  /** The pending online payment to start a gateway session for, if any (§3.3). */
+  onlinePayment: { id: string; amount: number } | null;
   phone: string;
   locale: Locale;
   placedAt: string;
@@ -182,7 +194,6 @@ export async function placeOrder(
     cartId = cart.id;
     code = cart.code;
     lines = await cartLines(tx, cart.id);
-    if (!settings.cod.enabled) throw new AppError('cod_unavailable');
     if (settings.checkout.email === 'required' && !input.contact.email) {
       throw new AppError('validation_failed', {
         fields: [{ path: 'contact.email', code: 'required', message: 'required' }],
@@ -228,7 +239,12 @@ export async function placeOrder(
     deliveryFeeOverride: input.deliveryFeeOverride?.amount,
     code,
     phone,
-    paymentMethod: input.payment.kind,
+    paymentMethod:
+      input.payment.kind === 'online'
+        ? 'online'
+        : input.payment.kind === 'manual'
+          ? 'manual'
+          : 'cod',
     manualDiscount: storefront ? null : input.manualDiscount,
     maxQuantityPerLine: storefront ? settings.checkout.maxQuantityPerLine : null,
     settings,
@@ -247,8 +263,43 @@ export async function placeOrder(
     });
   }
   const total = q.totals.total;
-  const advance = input.payment.kind === 'manual' ? Math.min(input.payment.amount, total) : 0;
-  const codAmount = total - advance;
+  const kind = input.payment.kind;
+  if ((kind === 'online' || kind === 'cod_with_advance') && !input.onlineReady) {
+    throw new AppError('validation_failed', {
+      fields: [
+        { path: 'payment', code: 'unavailable', message: 'online payment is not available' },
+      ],
+    });
+  }
+  // The delivery charge after delivery discounts: the advance (§3.4).
+  const deliveryCharge = Math.max(0, q.totals.deliveryFee - q.totals.deliveryDiscount);
+  if (
+    storefront &&
+    kind === 'cod' &&
+    input.onlineReady &&
+    deliveryCharge >= MIN_ONLINE_AMOUNT &&
+    (settings.cod.advance === 'always' ||
+      (settings.cod.advance === 'flagged' && (await phoneFlagged(tx, phone, settings.settings))))
+  ) {
+    throw new AppError('cod_unavailable', {
+      extensions: { reason: 'advance_required', advance: deliveryCharge },
+    });
+  }
+  const advance = kind === 'manual' ? Math.min(input.payment.amount, total) : 0;
+  // A charge below the gateway's minimum is no advance: plain COD (§3.4).
+  const onlineAmount =
+    kind === 'online'
+      ? total
+      : kind === 'cod_with_advance' && deliveryCharge >= MIN_ONLINE_AMOUNT
+        ? deliveryCharge
+        : 0;
+  if (kind === 'online' && total < MIN_ONLINE_AMOUNT) {
+    throw new AppError('validation_failed', {
+      fields: [{ path: 'payment', code: 'too_small', message: 'online payment starts at ৳10' }],
+    });
+  }
+  const codAmount = total - advance - onlineAmount;
+  if (storefront && codAmount > 0 && !settings.cod.enabled) throw new AppError('cod_unavailable');
   if (codAmount > 0 && settings.cod.maxOrderValue !== null && total > settings.cod.maxOrderValue) {
     if (storefront)
       throw new AppError('cod_unavailable', {
@@ -394,6 +445,15 @@ export async function placeOrder(
       payload: { orderId, provider: 'manual', amount: advance },
     });
   }
+  let onlinePayment: PlacedOrder['onlinePayment'] = null;
+  if (onlineAmount > 0) {
+    // Its ID is the gateway's tran_id (§3.2).
+    const [row] = await tx.db
+      .insert(schema.payments)
+      .values({ orderId, provider: 'sslcommerz', method: 'online', amount: onlineAmount })
+      .returning({ id: schema.payments.id });
+    onlinePayment = { id: row?.id as string, amount: onlineAmount };
+  }
   if (codAmount > 0) {
     await tx.db
       .insert(schema.payments)
@@ -455,6 +515,7 @@ export async function placeOrder(
     status,
     total,
     codAmount,
+    onlinePayment,
     phone,
     locale: input.locale,
     placedAt: new Date(order.placedAt).toISOString(),

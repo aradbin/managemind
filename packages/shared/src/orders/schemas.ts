@@ -61,7 +61,8 @@ export const checkoutInput = z
     contact: contactInput,
     address: placeInput,
     note: optionalText(500),
-    paymentMethod: z.literal('cod'),
+    /** Cash on delivery, online, or the delivery charge online (phase-5a-plan §3.3, §3.4). */
+    paymentMethod: z.enum(['cod', 'online', 'cod_with_advance']).default('cod'),
     /** The total the shopper saw, compared on the server (§3.1). */
     expectedTotal: price,
     saveDetails: z.boolean().optional(),

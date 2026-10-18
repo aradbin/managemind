@@ -223,7 +223,7 @@ export async function cancelOrder(
   tx: TenantTx,
   actor: Actor,
   id: string,
-  input: { reason: string },
+  input: { reason: string; cause?: 'payment_expired' },
 ): Promise<OrderRow> {
   const byShopper = actor.kind === 'shopper';
   if (!byShopper) authorize(actor, 'orders.write');
@@ -288,7 +288,11 @@ export async function cancelOrder(
   await emit(tx, 'order.cancelled', {
     aggregateType: 'order',
     aggregateId: id,
-    payload: { number: order.number, by: who.actorType },
+    payload: {
+      number: order.number,
+      by: who.actorType,
+      ...(input.cause ? { reason: input.cause } : {}),
+    },
   });
   if (!byShopper) {
     await recordAudit(tx, {

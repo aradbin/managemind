@@ -35,6 +35,20 @@ describe('credential checks', () => {
     await expect(credentialCheck(off)(email('brevo'))).rejects.toThrow(/not an active sender/);
   });
 
+  it('accept SSLCommerz credentials that start a session, and refuse others', async () => {
+    const ssl = {
+      kind: 'sslcommerz' as const,
+      provider: 'sslcommerz' as const,
+      mode: 'sandbox' as const,
+      secrets: { storeId: 'test1', storePassword: 'pw' },
+      config: {},
+    };
+    const ok = respond(200, { status: 'SUCCESS', GatewayPageURL: 'https://gw', sessionkey: 'k' });
+    await expect(credentialCheck(ok)(ssl)).resolves.toBeUndefined();
+    const bad = respond(200, { status: 'FAILED', failedreason: 'Store Credential Error' });
+    await expect(credentialCheck(bad)(ssl)).rejects.toThrow(/Store Credential Error/);
+  });
+
   it("refuse providers that can't be connected yet", async () => {
     await expect(
       credentialCheck(respond(200, {}))({

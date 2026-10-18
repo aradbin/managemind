@@ -1,8 +1,9 @@
 // Checks a store's credentials with the provider before they are saved
 // (phase-5a-plan §3.1): a key that the provider refuses, or an email sender
-// it hasn't verified, never reaches the vault. Each later adapter adds its
-// check here (SSLCommerz in plan PR 7, SMS gateways in PR 12).
+// it hasn't verified, never reaches the vault. SMS gateways add their
+// checks here in plan PR 12.
 import type { CredentialCheck } from '@managemind/core';
+import { createSession } from '@managemind/providers/sslcommerz';
 
 type Fetch = typeof fetch;
 
@@ -46,9 +47,53 @@ async function checkBrevo(apiKey: string, from: string, f: Fetch): Promise<void>
   if (!ok) throw new Error(`${from} is not an active sender in Brevo`);
 }
 
+/**
+ * SSLCommerz: a ৳10 session with the store's ID and password (§3.1). The
+ * session is never paid, and SSLCommerz lets it lapse.
+ */
+async function checkSslcommerz(
+  storeId: string,
+  storePassword: string,
+  mode: 'sandbox' | 'live',
+  f: Fetch,
+): Promise<void> {
+  try {
+    await createSession(
+      { storeId, storePassword, mode },
+      {
+        tranId: `check-${crypto.randomUUID()}`,
+        amount: 1000,
+        successUrl: 'https://example.invalid/ok',
+        failUrl: 'https://example.invalid/fail',
+        cancelUrl: 'https://example.invalid/cancel',
+        ipnUrl: 'https://example.invalid/ipn',
+        tenantId: 'check',
+        productName: 'Credentials check',
+        customer: {
+          name: 'Check',
+          phone: '01700000000',
+          email: null,
+          address: 'Dhaka',
+          city: 'Dhaka',
+        },
+      },
+      f,
+    );
+  } catch (e) {
+    throw new Error(`SSLCommerz (${mode}) refused: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 export function credentialCheck(f: Fetch = fetch): CredentialCheck {
   return async (c) => {
     switch (c.provider) {
+      case 'sslcommerz':
+        return checkSslcommerz(
+          String(c.secrets.storeId),
+          String(c.secrets.storePassword),
+          c.mode ?? 'sandbox',
+          f,
+        );
       case 'resend':
         return checkResend(String(c.secrets.apiKey), String(c.config.from), f);
       case 'brevo':

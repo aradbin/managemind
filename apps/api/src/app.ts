@@ -18,6 +18,7 @@ import { registerStoreContext } from './routes/store-context';
 import { registerAccount } from './store/account';
 import { registerCommerce } from './store/commerce';
 import { registerStorePages } from './store/pages';
+import { registerWebhooks } from './webhooks';
 
 /**
  * The admin reaches the API under its own host as /api/* (phase-1-plan §3.5):
@@ -53,6 +54,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerStoreContext(app);
   registerStorePages(app);
   registerCommerce(app);
+  registerWebhooks(app);
   registerAccount(app);
   registerAuth(app);
   registerAdmin(app);

@@ -14,7 +14,9 @@ import {
   clearCartCode,
   findOrderForTracking,
   getCart,
+  orderOfGatewayPayment,
   orderSettings,
+  pendingGatewayPayment,
   relayEvents,
   removeFromCart,
   resolveHost,
@@ -42,6 +44,8 @@ import { captureException } from '@sentry/cloudflare';
 import type { Context } from 'hono';
 import { queueSink, withClient } from '../db';
 import type { AppEnv } from '../env';
+import { log } from '../log';
+import { gatewayFor, settleFromGateway, startGatewaySession } from '../payments';
 import { createLimiter } from '../rate-limit/index';
 import { verifyTurnstile } from '../turnstile';
 import { shopSiteKey } from '../turnstile-hosts';
@@ -123,6 +127,11 @@ const CheckoutState = z
   .object({
     cart: ShopperCart,
     cod: z.object({ enabled: z.boolean(), maxOrderValue: z.number().int().nullable() }),
+    /** What can be paid online (phase-5a-plan §3.3, §3.4); off without a working gateway. */
+    online: z.object({
+      enabled: z.boolean(),
+      advance: z.enum(['never', 'always', 'flagged']),
+    }),
     holiday: z.object({ active: z.boolean(), message: Localized }),
     email: z.enum(['optional', 'required', 'hidden']),
     termsCheckbox: z.boolean(),
@@ -164,6 +173,8 @@ const PlacedOrder = z
     placedAt: z.string(),
     /** Valid for 24 hours: the confirmation page keeps it in its URL's fragment. */
     viewToken: z.string(),
+    /** The gateway page to pay at, for an online payment; null if the session failed. */
+    payUrl: z.string().nullable(),
   })
   .openapi('PlacedOrder');
 const ShopperOrder = z.record(z.string(), z.unknown()).openapi('ShopperOrder');
@@ -254,6 +265,41 @@ export const COMMERCE_ROUTES = {
     },
     responses: {
       201: { content: { 'application/json': { schema: PlacedOrder } }, description: 'Placed' },
+    },
+  }),
+  paymentReturn: r({
+    method: 'post',
+    path: '/v1/store/payments/return',
+    summary: 'The shopper back from SSLCommerz: settle from its validation, then show the order',
+    request: {
+      headers: Host,
+      ...body(
+        z.object({
+          status: z.enum(['success', 'failed', 'cancelled']),
+          tranId: z.uuid(),
+          valId: z.string().max(100).optional(),
+        }),
+      ),
+    },
+    responses: {
+      200: {
+        content: {
+          'application/json': { schema: z.object({ viewToken: z.string(), paid: z.boolean() }) },
+        },
+        description: 'The order to show',
+      },
+    },
+  }),
+  retryPayment: r({
+    method: 'post',
+    path: '/v1/store/payments/retry',
+    summary: "A new SSLCommerz session for an order's pending online payment",
+    request: { headers: Host, ...body(z.object({ token: z.string().max(200) })) },
+    responses: {
+      200: {
+        content: { 'application/json': { schema: z.object({ url: z.string() }) } },
+        description: 'The gateway page',
+      },
     },
   }),
   viewOrder: r({
@@ -526,6 +572,10 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
       return {
         cart: toShopperCart(view, settings.checkout.maxQuantityPerLine),
         cod: { enabled: settings.cod.enabled, maxOrderValue: settings.cod.maxOrderValue },
+        online: {
+          enabled: (await gatewayFor(tx, c.env)) !== null,
+          advance: settings.cod.advance,
+        },
         holiday: {
           active: holidayActive(settings.holiday),
           message: settings.holiday?.message ?? {},
@@ -588,6 +638,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
         await verifyTurnstile(c.env.TURNSTILE_SECRET_KEY, input.turnstileToken, { host, ip });
       // A signed-in shopper's order shows in their account (§3.11).
       const shopperUserId = await run((tx) => currentShopper(c, tx, tenantId, settings));
+      const onlineReady = await run(async (tx) => (await gatewayFor(tx, c.env)) !== null);
       const placed = await run((tx) =>
         checkout(tx, shopperActor(shopperUserId), key, request, {
           shopperUserId,
@@ -596,7 +647,8 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
           cartToken: cookie(c, CART_COOKIE),
           contact: input.contact,
           address: input.address,
-          payment: { kind: 'cod' },
+          payment: { kind: input.paymentMethod },
+          onlineReady,
           note: input.note,
           expectedTotal: input.expectedTotal,
           locale,
@@ -605,7 +657,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
           acceptTerms: input.acceptTerms,
         }),
       );
-      const order = placed.body as { id: string };
+      const order = placed.body as { id: string; onlinePayment?: { id: string } | null };
       if (shopperUserId && input.saveDetails && !placed.replayed) {
         await run((tx) =>
           saveCheckoutDetails(tx, shopperUserId, {
@@ -615,11 +667,29 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
           }),
         );
       }
+      // The gateway session comes after the order is saved (§3.3): if SSLCommerz
+      // refuses or is slow, the order stays and the page offers a retry.
+      let payUrl: string | null = null;
+      if (order.onlinePayment) {
+        try {
+          payUrl = await startGatewaySession(
+            c.env,
+            c.executionCtx,
+            tenantId,
+            order.onlinePayment.id,
+            c.req.header('host'),
+          );
+        } catch (e) {
+          log('warn', 'gateway session failed', { tenant_id: tenantId, error: String(e) });
+        }
+      }
+      const { onlinePayment: _p, ...rest } = order;
       return {
         replayed: placed.replayed,
         body: {
-          ...order,
+          ...rest,
           viewToken: await signOrderToken('view', tenantId, order.id, c.var.config.AUTH_SECRET),
+          payUrl,
         },
       };
     });
@@ -627,6 +697,54 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
     c.header('Cache-Control', 'no-store');
     if (result.replayed) c.header('Idempotent-Replayed', 'true');
     return c.json(result.body, 201);
+  }) as never);
+
+  // The return pages only show (§3.3): settling uses SSLCommerz's own
+  // validation of the val_id, exactly as the IPN does.
+  app.openapi(R.paymentReturn, (async (c: Context<AppEnv>) => {
+    const input = (await c.req.json()) as { status: string; tranId: string; valId?: string };
+    const tenantId = await inShopStore(c, async (_tx, id) => id);
+    if (input.status === 'success' && input.valId) {
+      try {
+        await settleFromGateway(c.env, c.executionCtx, tenantId, input.valId, 'return');
+      } catch (e) {
+        // SSLCommerz unreachable: the IPN or the 30-minute check settles it.
+        log('warn', 'return validation failed', { tenant_id: tenantId, error: String(e) });
+      }
+    }
+    const found = await inShopStore(c, (tx) => orderOfGatewayPayment(tx, input.tranId));
+    if (!found) throw new AppError('not_found');
+    c.header('Cache-Control', 'no-store');
+    return c.json(
+      {
+        viewToken: await signOrderToken('view', tenantId, found.orderId, c.var.config.AUTH_SECRET),
+        paid: found.paid,
+      },
+      200,
+    );
+  }) as never);
+
+  app.openapi(R.retryPayment, (async (c: Context<AppEnv>) => {
+    const { token } = (await c.req.json()) as { token: string };
+    await limiterFor(c).check('cart:ip', shopperIp(c));
+    const { tenantId, paymentId } = await inShopStore(c, async (tx, tenantId) => {
+      const orderId =
+        (await verifyOrderToken('view', tenantId, token, c.var.config.AUTH_SECRET)) ??
+        (await verifyOrderToken('track', tenantId, token, c.var.config.AUTH_SECRET));
+      if (!orderId) throw new AppError('not_found');
+      const paymentId = await pendingGatewayPayment(tx, orderId);
+      if (!paymentId) throw new AppError('conflict', { detail: 'Nothing is waiting to be paid' });
+      return { tenantId, paymentId };
+    });
+    const url = await startGatewaySession(
+      c.env,
+      c.executionCtx,
+      tenantId,
+      paymentId,
+      c.req.header('host'),
+    );
+    c.header('Cache-Control', 'no-store');
+    return c.json({ url }, 200);
   }) as never);
 
   app.openapi(R.viewOrder, (async (c: Context<AppEnv>) => {
