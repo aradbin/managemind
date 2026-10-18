@@ -35,7 +35,7 @@ jobs:
       (!contains(fromJSON('["labeled","unlabeled"]'), github.event.action) ||
         github.event.label.name == 'db-branch')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     concurrency:
       group: preview-${{ github.event.pull_request.number }}
       cancel-in-progress: true
