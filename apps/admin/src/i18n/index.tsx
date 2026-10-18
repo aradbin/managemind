@@ -6,6 +6,7 @@
 import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import type { en } from './en';
+import type { messagesEn } from './messages-en';
 import type { onlineStoreEn } from './online-store-en';
 import type { ordersEn } from './orders-en';
 import type { promotionsEn } from './promotions-en';
@@ -13,6 +14,7 @@ import type { promotionsEn } from './promotions-en';
 /** Every key, including those of catalogs loaded with their pages. */
 export type AdminKey =
   | keyof typeof en
+  | keyof typeof messagesEn
   | keyof typeof onlineStoreEn
   | keyof typeof ordersEn
   | keyof typeof promotionsEn;

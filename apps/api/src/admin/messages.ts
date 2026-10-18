@@ -3,23 +3,30 @@
 // member's own alert choices.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  addPushDevice,
   alertChoicesInput,
   getAlertChoices,
   listMessages,
+  listPushDevices,
   listTemplates,
   messageListQuery,
   type OutboxEvent,
   previewTemplate,
+  pushSubscriptionInput,
+  pushTargets,
+  removePushDevice,
   requeueMessage,
   resetTemplate,
   saveTemplate,
   setAlertChoices,
+  settlePushTargets,
   templateInput,
 } from '@managemind/core';
 import { schema } from '@managemind/db';
+import { sendPush } from '@managemind/providers/push';
 import { AppError } from '@managemind/shared';
 import { eq } from 'drizzle-orm';
-import { notify } from '../notifications';
+import { notify, vapidKeys } from '../notifications';
 import { inStore, type StaffEnv } from './context';
 
 const r = <
@@ -77,6 +84,14 @@ const Preview = z
       .nullable(),
   })
   .openapi('TemplatePreview');
+const PushDevice = z
+  .object({
+    id: z.uuid(),
+    userAgent: z.string().nullable(),
+    createdAt: z.string(),
+    lastUsedAt: z.string().nullable(),
+  })
+  .openapi('PushDevice');
 const AlertChoice = z
   .object({ event: z.string(), push: z.boolean(), email: z.boolean() })
   .openapi('AlertChoice');
@@ -142,6 +157,35 @@ export const MESSAGE_ROUTES = {
     request: body(alertChoicesInput),
     responses: json(z.array(AlertChoice), 'Alert choices'),
   }),
+  push: r({
+    method: 'get',
+    path: '/me/push',
+    summary: "The platform's push key (null while push is off) and your devices in this store",
+    responses: json(
+      z.object({ publicKey: z.string().nullable(), devices: z.array(PushDevice) }),
+      'Push',
+    ),
+  }),
+  addPushDevice: r({
+    method: 'post',
+    path: '/me/push-devices',
+    summary: "Save this browser's push subscription",
+    request: body(pushSubscriptionInput),
+    responses: json(PushDevice, 'Saved'),
+  }),
+  removePushDevice: r({
+    method: 'delete',
+    path: '/me/push-devices/{id}',
+    summary: 'Remove one of your devices',
+    request: { params: z.object({ id: z.uuid() }) },
+    responses: { 204: { description: 'Removed' } },
+  }),
+  testPush: r({
+    method: 'post',
+    path: '/me/push-devices/test',
+    summary: 'Send a test alert to your devices in this store',
+    responses: json(z.object({ sent: z.number().int(), gone: z.number().int() }), 'Sent'),
+  }),
 } as const;
 
 export function registerMessages(admin: OpenAPIHono<StaffEnv>): void {
@@ -195,6 +239,50 @@ export function registerMessages(admin: OpenAPIHono<StaffEnv>): void {
     const key = c.req.valid('param');
     await inStore(c, (tx) => resetTemplate(tx, actor(c), key), { write: true });
     return c.body(null, 204);
+  });
+  admin.openapi(R.push, async (c) =>
+    c.json(
+      {
+        publicKey: vapidKeys(c.env)?.publicKey ?? null,
+        devices: await inStore(c, (tx) => listPushDevices(tx, actor(c))),
+      },
+      200,
+    ),
+  );
+  admin.openapi(R.addPushDevice, async (c) =>
+    c.json(await inStore(c, (tx) => addPushDevice(tx, actor(c), c.req.valid('json'))), 200),
+  );
+  admin.openapi(R.removePushDevice, async (c) => {
+    const { id } = c.req.valid('param');
+    await inStore(c, (tx) => removePushDevice(tx, actor(c), id));
+    return c.body(null, 204);
+  });
+  admin.openapi(R.testPush, async (c) => {
+    const keys = vapidKeys(c.env);
+    if (!keys) throw new AppError('feature_unavailable', { detail: 'Push is not set up yet' });
+    const userId = actor(c).userId as string;
+    const targets = await inStore(c, async (tx) => {
+      await listPushDevices(tx, actor(c));
+      return pushTargets(tx, userId);
+    });
+    const used: string[] = [];
+    const gone: string[] = [];
+    const message = {
+      title: c.var.staff.user.locale === 'bn' ? 'পরীক্ষা' : 'Test alert',
+      body:
+        c.var.staff.user.locale === 'bn'
+          ? 'এই ডিভাইসে নতুন অর্ডারের খবর আসবে।'
+          : 'New orders will show up on this device.',
+      url: '/',
+      tag: 'test',
+    };
+    for (const t of targets) {
+      const result = await sendPush(t, message, keys);
+      if (result === 'sent') used.push(t.id);
+      else if (result === 'gone') gone.push(t.id);
+    }
+    await inStore(c, (tx) => settlePushTargets(tx, used, gone));
+    return c.json({ sent: used.length, gone: gone.length }, 200);
   });
   admin.openapi(R.alerts, async (c) =>
     c.json(await inStore(c, (tx) => getAlertChoices(tx, actor(c))), 200),

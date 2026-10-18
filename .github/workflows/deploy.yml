@@ -108,6 +108,8 @@ jobs:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           CREDENTIALS_KEY: ${{ secrets.CREDENTIALS_KEY }}
+          VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
@@ -127,13 +129,18 @@ jobs:
           if [ -z "$CREDENTIALS_KEY" ]; then
             echo "::warning title=CREDENTIALS_KEY::not set: stores can't save payment, SMS or email credentials, so online payment and SMS are off"
           fi
+          if [ -z "$VAPID_PUBLIC_KEY" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
+            echo "::warning title=Web push::VAPID_PUBLIC_KEY (variable) or VAPID_PRIVATE_KEY (secret) not set: staff alerts come by email only"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
             --arg brevo "$BREVO_API_KEY" --arg tsite "$TURNSTILE_SITE_KEY" --arg tsecret "$TURNSTILE_SECRET_KEY" \
             --arg account "$CLOUDFLARE_ACCOUNT_ID" --arg credentials "$CREDENTIALS_KEY" \
+            --arg vpub "$VAPID_PUBLIC_KEY" --arg vpriv "$VAPID_PRIVATE_KEY" \
             '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}
               + (if $credentials == "" then {} else {CREDENTIALS_KEY: $credentials} end)
+              + (if $vpub == "" or $vpriv == "" then {} else {VAPID_PUBLIC_KEY: $vpub, VAPID_PRIVATE_KEY: $vpriv} end)
               + (if $store == "" then {} else {CF_STORE_TOKEN: $store} end)
               + (if $brevo == "" then {SHOPPER_EMAIL_PROVIDER: "resend"} else {BREVO_API_KEY: $brevo, SHOPPER_EMAIL_PROVIDER: "brevo"} end)
               + (if $tsite == "" then {} else

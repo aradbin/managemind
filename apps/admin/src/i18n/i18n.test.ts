@@ -1,6 +1,7 @@
 import { placeholders } from '@managemind/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import { type AdminKey, loadLocale, messages, translate } from './index';
+import './messages';
 import './online-store';
 import './orders';
 import './promotions';

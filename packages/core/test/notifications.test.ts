@@ -7,6 +7,7 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  addPushDevice,
   addToCart,
   cancelOrder,
   createProduct,
@@ -14,20 +15,24 @@ import {
   formatTaka,
   getAlertChoices,
   listMessages,
+  listPushDevices,
   listTemplates,
   markMessage,
   type OutboxEvent,
   placeOrder,
   planMessages,
   previewTemplate,
+  pushTargets,
   receive,
   recordMessages,
+  removePushDevice,
   renderMessage,
   requeueMessage,
   resetTemplate,
   saveTemplate,
   setAlertChoices,
   setCartArea,
+  settlePushTargets,
   shopperActor,
   systemActor,
   type TenantTx,
@@ -283,9 +288,7 @@ describe('templates, alert choices and the log', () => {
       push: true,
       email: false,
     });
-    await run((tx) =>
-      setAlertChoices(tx, me, [{ event: 'new_order', push: false, email: true }]),
-    );
+    await run((tx) => setAlertChoices(tx, me, [{ event: 'new_order', push: false, email: true }]));
     expect(
       (await run((tx) => getAlertChoices(tx, me))).find((c) => c.event === 'new_order'),
     ).toEqual({ event: 'new_order', push: false, email: true });
@@ -318,5 +321,38 @@ describe('templates, alert choices and the log', () => {
     await run((tx) => markMessage(tx, id, { status: 'failed', reason: 'bounced', retry: false }));
     expect(await run((tx) => requeueMessage(tx, owner, id))).toEqual({ eventId: event.id });
     expect((await run((tx) => recordMessages(tx, planned))).map((q) => q.id)).toEqual([id]);
+  });
+});
+
+describe('push devices', () => {
+  it("are each staff member's own, and go when the push service says so", async () => {
+    const { rows } = await app.query<{ user_id: string }>(
+      'select user_id from platform.memberships where tenant_id = $1',
+      [store],
+    );
+    const me = { ...owner, userId: rows[0]?.user_id as string };
+    const subscription = {
+      endpoint: `https://fcm.googleapis.com/fcm/send/${Date.now()}`,
+      keys: {
+        p256dh:
+          'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
+        auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+      },
+    };
+    const device = await run((tx) => addPushDevice(tx, me, subscription));
+    // Subscribing again from the same browser updates the device.
+    await run((tx) => addPushDevice(tx, me, subscription));
+    expect(await run((tx) => listPushDevices(tx, me))).toHaveLength(1);
+    expect(await run((tx) => pushTargets(tx, me.userId))).toEqual([
+      expect.objectContaining({ id: device.id, endpoint: subscription.endpoint }),
+    ]);
+    // Someone else can't remove it.
+    await expect(
+      run((tx) =>
+        removePushDevice(tx, { ...me, userId: '0199d000-0000-7000-8000-0000000000ff' }, device.id),
+      ),
+    ).rejects.toMatchObject({ code: 'not_found' });
+    await run((tx) => settlePushTargets(tx, [], [device.id]));
+    expect(await run((tx) => listPushDevices(tx, me))).toEqual([]);
   });
 });

@@ -6,7 +6,8 @@
 /** The key from `CREDENTIALS_KEY`, and the version written with every blob. */
 export interface Keyring {
   version: number;
-  key: CryptoKey;
+  /** A Web Crypto AES-GCM key (typed this way so Node's types accept it too). */
+  key: Awaited<ReturnType<typeof crypto.subtle.importKey>>;
 }
 
 export interface Sealed {

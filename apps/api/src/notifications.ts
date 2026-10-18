@@ -11,10 +11,13 @@ import {
   type MessageOutcome,
   markMessage,
   type OutboxEvent,
+  type PushTarget,
   planMessages,
+  pushTargets,
   type QueuedMessage,
   recordMessages,
   renderMessage,
+  settlePushTargets,
   type TenantTx,
   triggeredBy,
   withTenant,
@@ -28,6 +31,7 @@ import {
   sendEmail,
   storeMessageEmail,
 } from '@managemind/providers/email';
+import { sendPush, type VapidKeys } from '@managemind/providers/push';
 import { tenantSettings } from '@managemind/shared/settings';
 import { eq } from 'drizzle-orm';
 import { storeUrlsFor } from './admin/store-urls';
@@ -59,6 +63,8 @@ interface Prepared {
   message: QueuedMessage;
   subject: string;
   body: string;
+  /** The staff member's devices, for push. */
+  devices: PushTarget[];
 }
 
 interface StoreSender {
@@ -88,7 +94,8 @@ export async function notify(
       const prepared: Prepared[] = [];
       for (const message of queued) {
         const rendered = await renderMessage(tx, message);
-        if (rendered) prepared.push({ message, ...rendered });
+        const devices = message.channel === 'push' ? await pushTargets(tx, message.recipient) : [];
+        if (rendered) prepared.push({ message, ...rendered, devices });
       }
       return { prepared, store: await storeSender(tx, keyring, config.PLATFORM_NAME) };
     }),
@@ -96,12 +103,14 @@ export async function notify(
   if (!prepared.length) return;
 
   const outcomes = new Map<string, MessageOutcome>();
+  const devices = { used: [] as string[], gone: [] as string[] };
   for (const p of prepared) {
-    outcomes.set(p.message.id, await send(env, ctx, p, store));
+    outcomes.set(p.message.id, await send(env, ctx, p, store, devices));
   }
   await withClient(env, ctx, (client) =>
     withTenant(client, event.tenantId, async (tx) => {
       for (const [id, outcome] of outcomes) await markMessage(tx, id, outcome);
+      await settlePushTargets(tx, devices.used, devices.gone);
     }),
   );
   const retry = [...outcomes.values()].some((o) => o.status === 'failed' && o.retry);
@@ -154,15 +163,66 @@ async function send(
   ctx: Pick<ExecutionContext, 'waitUntil'>,
   p: Prepared,
   store: StoreSender,
+  devices: { used: string[]; gone: string[] },
 ): Promise<MessageOutcome> {
   const { message } = p;
   if (message.channel === 'email') return sendEmailMessage(env, ctx, p, store);
-  // SMS gateways (plan PR 12) and web push (PR 6) plug in here.
+  if (message.channel === 'push') return sendPushMessage(env, p, devices);
+  // SMS gateways plug in here (plan PR 12).
+  return { status: 'failed', reason: 'sms sending is not available yet', retry: false };
+}
+
+/** The platform's VAPID keys, or null until the owner adds them (phase-5a-plan §1). */
+export function vapidKeys(env: Env): VapidKeys | null {
+  const config = getConfig(env);
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return null;
+  const address = /<([^>]+)>/.exec(emailFrom(config))?.[1] ?? `no-reply@${config.PLATFORM_DOMAIN}`;
   return {
-    status: 'failed',
-    reason: `${message.channel} sending is not available yet`,
-    retry: false,
+    publicKey: env.VAPID_PUBLIC_KEY,
+    privateKey: env.VAPID_PRIVATE_KEY,
+    subject: `mailto:${address}`,
   };
+}
+
+/** One push per device of the staff member; sent when any device took it (§3.9). */
+async function sendPushMessage(
+  env: Env,
+  p: Prepared,
+  devices: { used: string[]; gone: string[] },
+): Promise<MessageOutcome> {
+  const keys = vapidKeys(env);
+  if (!keys) return { status: 'skipped', reason: 'no_push_key' };
+  if (!p.devices.length) return { status: 'skipped', reason: 'no_device' };
+  const payload = {
+    title: p.subject,
+    body: p.body,
+    // The admin opens the order (its route is /orders/<id>).
+    url: `/orders/${p.message.orderId}`,
+    tag: `order-${p.message.orderId}`,
+  };
+  let sent = 0;
+  let lastError: { error: string; retryable: boolean } | null = null;
+  for (const device of p.devices) {
+    const result = await sendPush(device, payload, keys);
+    if (result === 'sent') {
+      sent++;
+      devices.used.push(device.id);
+    } else if (result === 'gone') {
+      devices.gone.push(device.id);
+    } else {
+      lastError = result;
+    }
+  }
+  if (sent) return { status: 'sent', provider: 'webpush' };
+  if (lastError) {
+    return {
+      status: 'failed',
+      reason: lastError.error,
+      retry: lastError.retryable,
+      provider: 'webpush',
+    };
+  }
+  return { status: 'skipped', reason: 'no_device' };
 }
 
 /**

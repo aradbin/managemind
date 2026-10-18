@@ -329,6 +329,15 @@ describe('isolation suite', () => {
       }),
     );
     await inB((tx) => blockPhone(tx, bOwner, { phone: '+8801700007777', reason: 'B only' }));
+    const bDevice = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.push_subscriptions (user_id, endpoint, p256dh, auth)
+             select id, ${`https://push.example.test/${crypto.randomUUID()}`}, 'k', 'a'
+               from platform.users order by created_at limit 1
+             returning id`,
+      );
+      return rows[0]?.id as string;
+    });
     const bMessage = await inB(async (tx) => {
       const { rows } = await tx.db.execute<{ id: string }>(
         sql`insert into store.messages (idempotency_key, event, channel, recipient_type, recipient, locale, status)
@@ -434,6 +443,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
       'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
       'POST /v1/admin/messages/{id}/resend': { id: bMessage },
+      'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

@@ -113,6 +113,12 @@ jobs:
           pnpm --filter @managemind/scripts exec tsx preview/workers.ts
           --pr "$PR" --hyperdrive ${{ steps.database.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
 
+      # Previews' own keys when the secrets are missing: credentials and push
+      # devices saved on a preview then last until its next push.
+      - name: Preview keys
+        id: keys
+        if: steps.scope.outputs.deploy == 'true'
+        run: pnpm --filter @managemind/scripts keys --outputs
       # Previews sign with their own secret. Without the AUTH_SECRET_PREVIEW
       # repository secret, each deploy makes a new one: preview sign-ins and
       # authenticator setups then last only until the next push.
@@ -125,17 +131,16 @@ jobs:
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           auth="${AUTH_SECRET_PREVIEW:-$(openssl rand -base64 32)}"
-          # Without CREDENTIALS_KEY_PREVIEW each deploy makes a new key, and
-          # credentials saved on the preview last until the next push.
-          credentials="${CREDENTIALS_KEY_PREVIEW:-$(openssl rand -base64 32)}"
-          echo "::add-mask::$credentials"
+          credentials="${CREDENTIALS_KEY_PREVIEW:-${{ steps.keys.outputs.credentials_key }}}"
           # A new dev mailbox token per deploy; later steps (E2E) read it from the env.
           dev_token="$(openssl rand -hex 24)"
           echo "::add-mask::$dev_token"
           echo "DEV_TOKEN=$dev_token" >> "$GITHUB_ENV"
           # Turnstile runs with Cloudflare's published test keys, which always pass.
           (umask 077; jq -n --arg auth "$auth" --arg dev "$dev_token" --arg credentials "$credentials" \
+            --arg vpub "${{ steps.keys.outputs.vapid_public }}" --arg vpriv "${{ steps.keys.outputs.vapid_private }}" \
             '{AUTH_SECRET: $auth, DEV_TOKEN: $dev, CREDENTIALS_KEY: $credentials,
+              VAPID_PUBLIC_KEY: $vpub, VAPID_PRIVATE_KEY: $vpriv,
               TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
               TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"}' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json \

@@ -82,6 +82,10 @@ export interface Env {
    * can save any, so online payment and SMS stay off.
    */
   CREDENTIALS_KEY?: string;
+  /** The platform's VAPID public key for web push (a repository variable; phase-5a-plan §3.9). */
+  VAPID_PUBLIC_KEY?: string;
+  /** Its private key (a Worker secret); without both, staff push is off. */
+  VAPID_PRIVATE_KEY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';
