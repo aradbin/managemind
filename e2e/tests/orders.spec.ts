@@ -2,10 +2,14 @@
 // the owner adds a code promotion and checks it with the test cart; a shopper
 // adds two products, sees the free-delivery progress, applies the code,
 // chooses an area, places a COD order, sees the confirmation, then tracks it
-// by number and phone and cancels it. Staff enter a manual order, confirm it,
+// by number and phone and cancels it. Two shoppers race for a last unit
+// through the store's /api and exactly one gets it, and a retried checkout
+// with the same key gives the same order (acceptance criteria 1 and 2).
+// Staff enter a manual order, confirm it,
 // export it in Steadfast's format, print an invoice and a packing slip, ship
 // it in two parcels, mark it delivered with the cash collected and see it
-// completed. Last, the owner turns shopper accounts on and a shopper signs in
+// completed, with the stock checked at each step and every step on the
+// timeline (acceptance criterion 3). Last, the owner turns shopper accounts on and a shopper signs in
 // with an emailed code. Axe on every new page and screen, and the store's
 // JavaScript budget on the cart, checkout and account pages, at a phone and a
 // desktop viewport. Previews run Turnstile with Cloudflare's always-pass keys.
@@ -67,6 +71,16 @@ async function adminCall<T>(
   return (await res.json()) as T;
 }
 
+/** A variant's stock across locations, as the admin reports it. */
+async function stockOf(request: APIRequestContext, title: string, variantId: string) {
+  const res = await request.get(`${API}/v1/admin/inventory?q=${encodeURIComponent(title)}`);
+  const { items } = (await res.json()) as {
+    items: { variantId: string; onHand: number; reserved: number }[];
+  };
+  const row = items.find((i) => i.variantId === variantId);
+  return { onHand: row?.onHand, reserved: row?.reserved };
+}
+
 async function choosePlace(page: Page, ids: { division: string; district: string; area: string }) {
   await page.getByLabel(m('place.division'), { exact: true }).selectOption(ids.division);
   await page.getByLabel(m('place.district'), { exact: true }).selectOption(ids.district);
@@ -76,6 +90,7 @@ async function choosePlace(page: Page, ids: { division: string; district: string
 test('orders, promotions and accounts', async ({
   page,
   browser,
+  playwright,
   viewport: size,
   hasTouch,
 }, info) => {
@@ -213,6 +228,82 @@ test('orders, promotions and accounts', async ({
     await shopper.context().close();
   });
 
+  await test.step('two shoppers race for the last unit; a retried checkout gives the same order', async () => {
+    // Acceptance criteria 1 and 2 (phase-4-plan §13), through the real store
+    // host. Previews' Turnstile test secret accepts Cloudflare's dummy token.
+    const title = `শেষ পিস ${RUN}`;
+    const last = await adminCall<{ variants: { id: string }[] }>(
+      page.request,
+      'post',
+      '/v1/admin/products',
+      {
+        status: 'active',
+        translations: { bn: { title, slug: `e2e-last-${viewport}` } },
+        variant: { price: 30_000 },
+      },
+    );
+    const variantId = last.variants[0]?.id as string;
+    await adminCall(page.request, 'post', '/v1/admin/inventory/adjustments', [
+      { mode: 'delta', variantId, quantity: 1, reason: 'received' },
+    ]);
+    const shoppers = await Promise.all(
+      [0, 1].map(() => playwright.request.newContext({ baseURL: STOREFRONT })),
+    );
+    const api = (path: string) => `/api${path}?store=${p.slug}`;
+    const bodies: Record<string, unknown>[] = [];
+    for (const [i, shopper] of shoppers.entries()) {
+      expect(
+        (await shopper.post(api('/cart/lines'), { data: { variantId, quantity: 1 } })).ok(),
+      ).toBe(true);
+      expect(
+        (await shopper.put(api('/cart/area'), { data: { areaId: Number(DHAKA.area) } })).ok(),
+      ).toBe(true);
+      const cart = (await (await shopper.get(api('/cart'))).json()) as {
+        totals: { total: number };
+      };
+      bodies.push({
+        contact: { name: `দৌড় ${i}`, phone: `018${String(Date.now()).slice(-7)}${i}` },
+        address: { divisionId: 6, districtId: 47, areaId: Number(DHAKA.area), line: 'বাড়ি ৫' },
+        paymentMethod: 'cod',
+        expectedTotal: cart.totals.total,
+        turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
+      });
+    }
+    const keys = [crypto.randomUUID(), crypto.randomUUID()];
+    const place = (i: number) =>
+      shoppers[i]?.post(api('/checkout/orders'), {
+        data: bodies[i],
+        headers: { 'idempotency-key': keys[i] as string },
+      }) as Promise<Awaited<ReturnType<APIRequestContext['post']>>>;
+    const results = await Promise.all([place(0), place(1)]);
+    const won = results.findIndex((r) => r.ok());
+    expect(won, 'one of the two orders went through').toBeGreaterThanOrEqual(0);
+    const lost = results[1 - won];
+    expect(lost?.status()).toBe(409);
+    // Refused at the stock lock if both got that far, or at the quote if the
+    // winner had already committed: either way the line is out of stock.
+    const refusal = (await lost?.json()) as {
+      code: string;
+      lines?: { variantId: string; problem?: string; available?: number }[];
+    };
+    expect(['insufficient_stock', 'cart_invalid']).toContain(refusal.code);
+    expect(refusal.lines?.[0]).toMatchObject(
+      refusal.code === 'cart_invalid'
+        ? { variantId, problem: 'insufficient_stock' }
+        : { variantId, available: 0 },
+    );
+    expect(await stockOf(page.request, title, variantId)).toEqual({ onHand: 1, reserved: 1 });
+
+    const first = (await results[won]?.json()) as { id: string; displayNumber: string };
+    const again = await place(won);
+    expect(again.ok()).toBe(true);
+    expect((await again.json()) as { id: string; displayNumber: string }).toEqual(
+      expect.objectContaining({ id: first.id, displayNumber: first.displayNumber }),
+    );
+    expect(await stockOf(page.request, title, variantId)).toEqual({ onHand: 1, reserved: 1 });
+    await Promise.all(shoppers.map((c) => c.dispose()));
+  });
+
   await test.step('staff see the cancelled order, then enter a manual order', async () => {
     await page.goto(`${API}/orders`);
     await expect(page.getByRole('heading', { name: m('nav.orders'), level: 1 })).toBeVisible();
@@ -233,11 +324,22 @@ test('orders, promotions and accounts', async ({
     await page.getByLabel(m('place.line')).fill('বাড়ি ৩, সড়ক ৪');
     await expect(page.getByText(m('newOrder.summaryEmpty'))).toBeHidden();
     await expectAccessible(page, 'new order');
+    // The shopper's cancelled order gave its unit back.
+    const item = products[0]?.title as string;
+    expect(await stockOf(page.request, item, variants[0] as string)).toEqual({
+      onHand: 20,
+      reserved: 0,
+    });
     await page.getByRole('button', { name: m('newOrder.saveConfirm') }).click();
     await expect(
       page.getByRole('heading', { name: pattern(m('order.title')), level: 1 }),
     ).toBeVisible();
     await expectAccessible(page, 'order detail');
+    // Placed and confirmed: two units reserved.
+    expect(await stockOf(page.request, item, variants[0] as string)).toEqual({
+      onHand: 20,
+      reserved: 2,
+    });
   });
 
   await test.step('they export it for Steadfast and print an invoice and a packing slip', async () => {
@@ -276,7 +378,8 @@ test('orders, promotions and accounts', async ({
 
   await test.step('they ship it in two parcels, deliver it with the cash and see it completed', async () => {
     const item = products[0]?.title as string;
-    for (const quantity of ['1', '1']) {
+    const variantId = variants[0] as string;
+    for (const [i, quantity] of ['1', '1'].entries()) {
       await page
         .getByRole('button', { name: m('order.createShipment') })
         .first()
@@ -289,6 +392,10 @@ test('orders, promotions and accounts', async ({
       await expect(toast(page, m('order.shipmentCreated'))).toBeVisible();
       await page.getByRole('button', { name: m('order.markShipped') }).click();
       await expect(toast(page, m('order.shipped'))).toBeVisible();
+      // Each parcel shipped sells its unit: off the shelf and out of reserved.
+      await expect
+        .poll(() => stockOf(page.request, item, variantId))
+        .toEqual({ onHand: 19 - i, reserved: 1 - i });
     }
     // The first parcel brings the cash for the whole order.
     await page
@@ -309,6 +416,13 @@ test('orders, promotions and accounts', async ({
       .click();
     await expect(page.getByText(m('orderStatus.completed')).first()).toBeVisible();
     await expect(page.getByText(m('paymentStatus.paid')).first()).toBeVisible();
+    expect(await stockOf(page.request, item, variantId)).toEqual({ onHand: 18, reserved: 0 });
+    // The timeline has every step, from placed to completed.
+    const timeline = page.getByRole('region', { name: m('order.timeline') });
+    await expect(timeline.getByText(m('history.placed'))).toBeVisible();
+    await expect(
+      timeline.getByText(m('history.order', { status: m('orderStatus.completed') })),
+    ).toBeVisible();
     await expectAccessible(page, 'completed order');
   });
 
