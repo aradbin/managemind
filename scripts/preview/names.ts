@@ -5,7 +5,6 @@
 export type Database = 'shared' | 'own';
 
 export const SHARED_BRANCH = 'preview';
-export const PREVIEW_QUEUE = 'managemind-outbox-preview';
 
 export const branchName = (pr: number, db: Database) =>
   db === 'shared' ? SHARED_BRANCH : `pr-${pr}`;
@@ -13,7 +12,11 @@ export const hyperdriveName = (pr: number, db: Database) =>
   db === 'shared' ? 'managemind-preview' : `managemind-pr-${pr}`;
 export const apiWorker = (pr: number) => `managemind-api-pr-${pr}`;
 export const storefrontWorker = (pr: number) => `managemind-storefront-pr-${pr}`;
-/** Each preview consumes its own import queue (a queue has one consumer), unlike the outbox. */
+/**
+ * Each preview consumes its own outbox and import queues (a queue has one
+ * consumer): its events send its notifications, to the dev mailbox.
+ */
+export const outboxQueue = (pr: number) => `managemind-outbox-pr-${pr}`;
 export const importQueue = (pr: number) => `managemind-imports-pr-${pr}`;
 export const importDeadLetters = (pr: number) => `managemind-imports-pr-${pr}-dlq`;
 

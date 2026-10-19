@@ -34,7 +34,7 @@ Three findings changed that design.
   - `STORE_DOMAIN` set to the workers.dev domain;
   - the PR's Hyperdrive config;
   - no Cron Trigger, so previews never use one of the account's 5;
-  - no queue consumer. Outbox events go to `managemind-outbox-preview`, which nothing consumes, and expire there;
+  - its own outbox queue, `managemind-outbox-pr-<n>`, which it consumes (amended Oct 19, Phase 5A). The events send the preview's notifications to the dev mailbox. A preview binds no `EDGE` store and no Turnstile token, so nothing else happens. Closing the PR deletes the queue;
   - version preview URLs off.
 - **Cleanup:** closing the PR deletes both Workers. Previews add 2 scripts per open PR against the free plan's 100.
 

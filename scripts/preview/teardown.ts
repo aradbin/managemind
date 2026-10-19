@@ -11,6 +11,7 @@ import {
   hyperdriveName,
   importDeadLetters,
   importQueue,
+  outboxQueue,
   storefrontWorker,
 } from './names';
 
@@ -22,9 +23,9 @@ const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDF
 if (!args.has('database-only')) {
   // The storefront binds to the API, so it goes first. Cloudflare won't
   // delete a Worker that consumes a queue, nor a queue a Worker still binds:
-  // so the import queues' consumers are detached, then the API Worker
-  // deleted, then the queues.
-  const queues = [importQueue(pr), importDeadLetters(pr)];
+  // so the queues' consumers are detached, then the API Worker deleted,
+  // then the queues.
+  const queues = [outboxQueue(pr), importQueue(pr), importDeadLetters(pr)];
   await cf.deleteWorker(storefrontWorker(pr));
   for (const queue of queues) await cf.detachQueueConsumers(queue);
   await cf.deleteWorker(apiWorker(pr));
