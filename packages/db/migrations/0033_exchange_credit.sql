@@ -1,0 +1,1 @@
+ALTER TABLE "store"."returns" ADD COLUMN "exchange_credit" bigint;

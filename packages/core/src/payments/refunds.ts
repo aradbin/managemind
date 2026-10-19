@@ -145,11 +145,33 @@ async function computeRefund(
   // a reason the store pays the return for, and only once (Q10).
   let delivery = 0;
   const { settings } = await orderSettings(tx);
-  const [ret] = await tx.db
-    .select({ shopperPays: schema.returns.shopperPaysReturn })
-    .from(schema.returns)
-    .where(eq(schema.returns.id, returnId));
-  if (settings.returns.refundDeliveryFee && ret?.shopperPays === false && so.delivery === 0) {
+  const { rows: rets } = await tx.db.execute<{
+    shopper_pays: boolean | null;
+    resolution: string | null;
+    exchange_credit: string | null;
+    exchange_cancelled: boolean | null;
+  }>(sql`
+    select r.shopper_pays_return as shopper_pays, r.resolution, r.exchange_credit,
+           x.status = 'cancelled' as exchange_cancelled
+      from store.returns r left join store.orders x on x.id = r.exchange_order_id
+     where r.id = ${returnId}`);
+  const ret = rets[0];
+  // An exchange already used part of the credit on the replacement order,
+  // which shipped free instead of the fee coming back: only the rest is due,
+  // unless the replacement was cancelled.
+  if (ret?.resolution === 'exchanged') {
+    const used = ret.exchange_cancelled ? 0 : Number(ret.exchange_credit ?? 0);
+    const left = Math.max(0, lines.reduce((a, l) => a + l.amount, 0) - used);
+    return {
+      returnId,
+      lines,
+      delivery: 0,
+      amount: Math.min(left, refundable),
+      refundable,
+      gatewayPayments: gateway,
+    };
+  }
+  if (settings.returns.refundDeliveryFee && ret?.shopper_pays === false && so.delivery === 0) {
     const { rows: units } = await tx.db.execute<{ ordered: number; refunded: number }>(sql`
       select coalesce((select sum(quantity) from store.order_lines where order_id = ${orderId}), 0)::int as ordered,
              coalesce((select sum(fl.quantity) from store.refund_lines fl join store.refunds x on x.id = fl.refund_id
@@ -367,7 +389,7 @@ export async function submitGatewayRefund(
   tx: TenantTx,
   actor: Actor,
   refundId: string,
-  answer: { refundRefId: string; done: boolean } | { error: string },
+  answer: { refundRefId: string; done: boolean } | { error: string } | { unknown: string },
 ): Promise<void> {
   const [row] = await tx.db
     .select({ status: f.status, orderId: f.orderId, amount: f.amount })
@@ -375,6 +397,14 @@ export async function submitGatewayRefund(
     .where(eq(f.id, refundId))
     .for('update');
   if (!row) throw new AppError('not_found');
+  // No answer (a timeout, a 5xx): SSLCommerz may have refunded, so the refund
+  // stays counted, as processing, until a resend of the same ID tells.
+  if ('unknown' in answer) {
+    await moveRefund(tx, actor, refundId, row, 'submit', {
+      gatewayError: answer.unknown.slice(0, 300),
+    });
+    return;
+  }
   if ('error' in answer) {
     await moveRefund(tx, actor, refundId, row, 'fail', {
       gatewayError: answer.error.slice(0, 300),
@@ -383,6 +413,18 @@ export async function submitGatewayRefund(
   }
   await tx.db.update(f).set({ gatewayRefundRef: answer.refundRefId }).where(eq(f.id, refundId));
   await moveRefund(tx, actor, refundId, row, answer.done ? 'succeed' : 'submit');
+}
+
+/** What SSLCommerz answered to a resend of a refund whose first answer never came. */
+export async function recordGatewayRefundRef(
+  tx: TenantTx,
+  refundId: string,
+  refundRefId: string,
+): Promise<void> {
+  await tx.db
+    .update(f)
+    .set({ gatewayRefundRef: refundRefId, gatewayError: null, updatedAt: sql`now()` })
+    .where(and(eq(f.id, refundId), eq(f.status, 'processing')));
 }
 
 /** A processing gateway refund's outcome, from the refund query. */

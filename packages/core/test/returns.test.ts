@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
   addToCart,
+  cancelOrder,
   confirmOrder,
   createProduct,
   createPromotion,
@@ -481,6 +482,91 @@ describe('store credit and exchanges', () => {
       return rows[0]?.usage_count;
     });
     expect(uses).toBe(1);
+
+    // Cancelling the order gives the first code back and ends the remainder,
+    // so a cancel can't mint credit.
+    const codeState = (code: string) =>
+      run(async (tx) => {
+        const { rows } = await tx.db.execute<{ usage_count: number; status: string }>(
+          sql`select c.usage_count, p.status from store.promotion_codes c
+                join store.promotions p on p.id = c.promotion_id where c.code = ${code}`,
+        );
+        return rows[0];
+      });
+    await run((tx) => cancelOrder(tx, owner, spent.id, { reason: 'changed mind' }));
+    expect(await codeState(credit.creditCode as string)).toMatchObject({ usage_count: 0 });
+    expect(await codeState(issued?.creditCode as string)).toMatchObject({
+      usage_count: 1,
+      status: 'ended',
+    });
+  });
+
+  it('keeps a spent remainder and gives back what a cancelled order used as a new code', async () => {
+    const a = await product(30_000);
+    const phone = '+8801712345609';
+    const {
+      placed,
+      lines: [la],
+    } = await deliveredOrder([[a, 1]], phone, '');
+    const ret = await receivedReturn(placed.id, [{ orderLineId: la?.id as string, quantity: 1 }]);
+    await run((tx) =>
+      inspectReturn(tx, owner, ret.id, {
+        lines: [{ orderLineId: la?.id, sellable: 1, damaged: 0 }],
+      }),
+    );
+    const credit = await run((tx) =>
+      createRefund(tx, owner, placed.id, { returnId: ret.id, method: 'store_credit' }),
+    );
+    const cheap = await product(15_000);
+    const spend = async (code: string) => {
+      let token: string | null = null;
+      const added = await run((tx) =>
+        addToCart(tx, token, { variantId: cheap, quantity: 1 }, 'en'),
+      );
+      token = added.token ?? token;
+      await run((tx) => setCartCode(tx, token, { code }));
+      await run((tx) => setCartArea(tx, token, { areaId: 513 }));
+      const place = (expectedTotal: number) =>
+        run((tx) =>
+          placeOrder(tx, shopperActor(), {
+            channel: 'storefront',
+            source: 'website',
+            cartToken: token,
+            contact: { name: 'Rahim', phone },
+            address,
+            payment: { kind: 'cod' },
+            expectedTotal,
+            locale: 'en',
+          }),
+        );
+      const changed = await place(0).catch((e) => e);
+      const order = await place(changed.extensions.totals.total);
+      const { rows } = await run((tx) =>
+        tx.db.execute<{ payload: { amount: number; creditCode: string } }>(
+          sql`select payload from store.outbox where event_type = 'store_credit.issued'
+               and aggregate_id = ${order.id} order by id`,
+        ),
+      );
+      return { order, issued: rows.map((r) => r.payload) };
+    };
+    const first = await spend(credit.creditCode as string);
+    const remainder = first.issued[0]?.creditCode as string;
+    await spend(remainder);
+    await run((tx) => cancelOrder(tx, owner, first.order.id, { reason: 'changed mind' }));
+    const { rows } = await run((tx) =>
+      tx.db.execute<{ usage_count: number }>(
+        sql`select usage_count from store.promotion_codes where code = ${credit.creditCode}`,
+      ),
+    );
+    // The first code stays used; the ৳50 the cancelled order took comes back on its own.
+    expect(rows[0]?.usage_count).toBe(1);
+    const after = await run((tx) =>
+      tx.db.execute<{ payload: { amount: number } }>(
+        sql`select payload from store.outbox where event_type = 'store_credit.issued'
+             and aggregate_id = ${first.order.id} order by id`,
+      ),
+    );
+    expect(after.rows.map((r) => r.payload.amount)).toEqual([credit.amount - 5_000, 5_000]);
   });
 
   it('exchanges for a new order, crediting the returned units', async () => {
@@ -520,6 +606,12 @@ describe('store credit and exchanges', () => {
       resolution: 'exchanged',
       exchangeOrderId: ex.order.id,
     });
+    // The whole credit went on the replacement: nothing is left to refund.
+    const after = await run((tx) => previewRefund(tx, owner, placed.id, { returnId: ret.id }));
+    expect(after).toMatchObject({ amount: 0, delivery: 0 });
+    await expect(
+      run((tx) => createRefund(tx, owner, placed.id, { returnId: ret.id, method: 'cash' })),
+    ).rejects.toMatchObject({ code: 'conflict' });
   });
 });
 

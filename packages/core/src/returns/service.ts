@@ -464,7 +464,7 @@ export async function resolveReturn(
   actor: Actor,
   ret: LockedReturn,
   resolution: ReturnResolution,
-  extra: { exchangeOrderId?: string; reason?: string } = {},
+  extra: { exchangeOrderId?: string; exchangeCredit?: number; reason?: string } = {},
 ): Promise<void> {
   if (!returnMachine.can(ret.status, 'resolve', undefined)) {
     throw new AppError('illegal_transition', {
@@ -479,6 +479,7 @@ export async function resolveReturn(
       resolvedAt: sql`now()`,
       updatedAt: sql`now()`,
       ...(extra.exchangeOrderId ? { exchangeOrderId: extra.exchangeOrderId } : {}),
+      ...(extra.exchangeCredit !== undefined ? { exchangeCredit: extra.exchangeCredit } : {}),
       ...(extra.reason ? { rejectReason: extra.reason } : {}),
     })
     .where(eq(r.id, ret.id));
@@ -631,7 +632,10 @@ export async function exchangeReturn(
     },
     settings,
   );
-  await resolveReturn(tx, actor, ret, 'exchanged', { exchangeOrderId: order.id });
+  await resolveReturn(tx, actor, ret, 'exchanged', {
+    exchangeOrderId: order.id,
+    exchangeCredit: applied,
+  });
   return { order, credit, applied, refundDue: credit - applied };
 }
 

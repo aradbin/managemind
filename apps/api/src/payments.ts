@@ -9,6 +9,7 @@ import {
   gatewayPaymentState,
   gatewaySession,
   loadCredentials,
+  recordGatewayRefundRef,
   relayEvents,
   type SettleOutcome,
   settleGatewayPayment,
@@ -23,6 +24,7 @@ import {
   queryTransaction,
   refundStatus,
   type SslcommerzCredentials,
+  SslcommerzError,
   refund as sendRefund,
   type Validation,
   validate,
@@ -271,7 +273,7 @@ export async function sendGatewayRefund(
   const gateway = refund.gateway;
   return withClient(env, ctx, async (client) => {
     const creds = await withTenant(client, tenantId, (tx) => gatewayFor(tx, env));
-    let answer: { refundRefId: string; done: boolean } | { error: string };
+    let answer: { refundRefId: string; done: boolean } | { error: string } | { unknown: string };
     if (!creds) answer = { error: 'SSLCommerz is not set up' };
     else {
       try {
@@ -286,7 +288,11 @@ export async function sendGatewayRefund(
             ? { error: sent.error }
             : { refundRefId: sent.refundRefId, done: sent.status === 'success' };
       } catch (e) {
-        answer = { error: `SSLCommerz could not be reached: ${String(e)}`.slice(0, 300) };
+        // No answer isn't a refusal: it may have gone through (see handleRefundChecks).
+        answer =
+          e instanceof SslcommerzError && e.retryable
+            ? { unknown: `No answer from SSLCommerz yet: ${e.message}`.slice(0, 300) }
+            : { error: `SSLCommerz refused: ${String(e)}`.slice(0, 300) };
       }
     }
     await withTenant(
@@ -299,7 +305,7 @@ export async function sendGatewayRefund(
       log('warn', 'gateway refund refused', { tenant_id: tenantId, refund_id: refund.id });
       return 'failed';
     }
-    if (answer.done) return 'succeeded';
+    if ('refundRefId' in answer && answer.done) return 'succeeded';
     await env.DOMAINS?.send(
       { kind: 'refund_check', tenantId, refundId: refund.id, attempt: 1 },
       { delaySeconds: CHECK_DELAY_SECONDS },
@@ -321,16 +327,58 @@ export async function handleRefundChecks(
         const found = await withTenant(client, tenantId, async (tx) => ({
           creds: await gatewayFor(tx, env),
           row: (
-            await tx.db.execute<{ status: string; ref: string | null }>(
-              sql`select status, gateway_refund_ref as ref from store.refunds where id = ${refundId}`,
+            await tx.db.execute<{
+              status: string;
+              ref: string | null;
+              amount: string;
+              bank_tran_id: string | null;
+            }>(
+              sql`select r.status, r.gateway_refund_ref as ref, r.amount,
+                         p.gateway_bank_tran_id as bank_tran_id
+                    from store.refunds r left join store.payments p on p.id = r.payment_id
+                   where r.id = ${refundId}`,
             )
           ).rows[0],
         }));
-        if (found.row?.status !== 'processing' || !found.row.ref || !found.creds) {
+        const row = found.row;
+        if (row?.status !== 'processing' || !found.creds || (!row.ref && !row.bank_tran_id)) {
           message.ack();
           continue;
         }
-        const status = await refundStatus(found.creds, found.row.ref);
+        let ref = row.ref;
+        if (!ref) {
+          // The first request got no answer: the same refund ID again. A
+          // refund SSLCommerz already took comes back as it is or refused as
+          // a duplicate (left processing, for staff to check its panel); any
+          // other refusal means the first never arrived.
+          let again: Awaited<ReturnType<typeof sendRefund>> | null = null;
+          try {
+            again = await sendRefund(found.creds, {
+              bankTranId: row.bank_tran_id as string,
+              refundTransId: refundId,
+              amount: Number(row.amount),
+              remarks: 'Refund',
+            });
+          } catch (e) {
+            if (!(e instanceof SslcommerzError && e.retryable)) throw e;
+          }
+          if (again && again.status !== 'failed') {
+            ref = again.refundRefId;
+            await withTenant(client, tenantId, (tx) =>
+              recordGatewayRefundRef(tx, refundId, again.refundRefId),
+            );
+          } else if (again && !/duplicate|already/i.test(again.error)) {
+            await withTenant(
+              client,
+              tenantId,
+              (tx) => settleGatewayRefund(tx, systemActor, refundId, 'cancelled'),
+              relay(env, client),
+            );
+            message.ack();
+            continue;
+          }
+        }
+        const status = ref ? await refundStatus(found.creds, ref) : 'unknown';
         if (status === 'refunded' || status === 'cancelled') {
           await withTenant(
             client,

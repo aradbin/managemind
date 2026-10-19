@@ -4,6 +4,7 @@ import {
   invitationEmail,
   type RenderedEmail,
   signInCodeEmail,
+  storeMessageEmail,
   supportAccessEmail,
   TEMPLATE_COPY,
 } from './templates';
@@ -83,5 +84,18 @@ describe('email templates', () => {
     expect(email.text).toContain('The owner asked why an order is missing');
     // 08:30 UTC is 14:30 in Dhaka.
     expect(email.text).toMatch(locale === 'bn' ? /২:৩০/ : /2:30/);
+  });
+
+  it('escape a store message whole, since a shopper wrote part of it', () => {
+    const email = storeMessageEmail({
+      locale: 'en',
+      storeName: 'Tea & Co',
+      subject: 'Order #1001',
+      body: 'Hi <a href="https://evil.example">pay here</a>,\n\nYour order is confirmed.',
+    });
+    expect(email.html).not.toContain('<a href="https://evil.example">');
+    expect(email.html).toContain('Hi &lt;a href=');
+    expect(email.html).toContain('Tea &amp; Co');
+    expect(email.text).toContain('Hi <a href="https://evil.example">pay here</a>,');
   });
 });

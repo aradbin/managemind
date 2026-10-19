@@ -33,6 +33,7 @@ import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
 import { applyMovements, type Movement } from '../inventory/service';
 import { emit } from '../outbox';
+import { revokeCreditRemainder } from '../payments/store-credit';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
 
@@ -321,12 +322,22 @@ export async function giveBackPromotionUses(tx: TenantTx, orderId: string, only?
     promotion_id: string;
     code_id: string | null;
     phone: string;
+    amount: string;
+    store_credit: boolean | null;
   }>(sql`
-    select a.promotion_id, a.code_id, o.phone from store.order_adjustments a
+    select a.promotion_id, a.code_id, o.phone, a.amount, p.store_credit
+      from store.order_adjustments a
       join store.orders o on o.id = a.order_id
+      left join store.promotions p on p.id = a.promotion_id
      where a.order_id = ${orderId} and a.promotion_id is not null
        ${only ? sql`and a.promotion_id = any(${sql.param(only)}::uuid[])` : sql``}`);
   for (const r of rows) {
+    // A credit code's remainder goes first, or the credit would exist twice (phase-5a-plan §3.13).
+    if (
+      r.store_credit &&
+      !(await revokeCreditRemainder(tx, orderId, r.promotion_id, Math.abs(Number(r.amount))))
+    )
+      continue;
     await tx.db.execute(sql`
       update store.promotions set usage_count = greatest(0, usage_count - 1) where id = ${r.promotion_id}`);
     await tx.db.execute(sql`

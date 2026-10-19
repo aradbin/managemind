@@ -86,6 +86,8 @@ export const returns = store.table(
     rejectReason: text(),
     /** The replacement order, for an exchange. */
     exchangeOrderId: uuid(),
+    /** For an exchange: the credit taken off the replacement order; only the rest can be refunded. */
+    exchangeCredit: money(),
     approvedAt: ts(),
     receivedAt: ts(),
     inspectedAt: ts(),

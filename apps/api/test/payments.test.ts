@@ -63,7 +63,7 @@ const gateway = {
   transactions: new Map<string, Record<string, unknown>[]>(),
   sessions: [] as URLSearchParams[],
   refunds: [] as URLSearchParams[],
-  refundAnswer: 'processing' as 'processing' | 'success' | 'failed',
+  refundAnswer: 'processing' as 'processing' | 'success' | 'failed' | 'timeout',
   refundState: 'processing' as 'processing' | 'refunded' | 'cancelled',
 };
 const realFetch = globalThis.fetch;
@@ -95,6 +95,7 @@ function fakeSslcommerz() {
       url.searchParams.has('refund_amount')
     ) {
       gateway.refunds.push(url.searchParams);
+      if (gateway.refundAnswer === 'timeout') return new Response('', { status: 504 });
       return gateway.refundAnswer === 'failed'
         ? json({ status: 'failed', errorReason: 'INVALID SOURCE' })
         : json({ status: gateway.refundAnswer, refund_ref_id: 'ref-1' });
@@ -582,7 +583,8 @@ describe('returns and refunds through the API', () => {
     expect(left.rowCount).toBe(0);
   });
 
-  it('refunds an online payment through SSLCommerz, settled by the delayed check', async () => {
+  /** An online order paid through SSLCommerz, delivered, returned and inspected. */
+  async function inspectedOnlineReturn() {
     fakeSslcommerz();
     const s = await store();
     const { order } = await onlineCheckout(s);
@@ -613,11 +615,16 @@ describe('returns and refunds through the API', () => {
     await staff.post(`/api/admin/returns/${created.id}/inspect`, {
       lines: [{ orderLineId: line?.id, sellable: 0, damaged: 1 }],
     });
+    return { s, order, staff, returnId: created.id as string };
+  }
+
+  it('refunds an online payment through SSLCommerz, settled by the delayed check', async () => {
+    const { s, order, staff, returnId } = await inspectedOnlineReturn();
     gateway.refundAnswer = 'processing';
     gateway.refundState = 'processing';
     const before = delayed.sent.length;
     const res = await staff.post(`/api/admin/orders/${order.id}/refunds`, {
-      returnId: created.id,
+      returnId,
       method: 'gateway',
     });
     const refund: Json = await res.json();
@@ -650,5 +657,43 @@ describe('returns and refunds through the API', () => {
     const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
     expect(after.refunds).toMatchObject([{ method: 'gateway', status: 'succeeded' }]);
     expect(after.paymentStatus).toBe('refunded');
+  });
+
+  it('keeps a refund SSLCommerz never answered, and learns its fate by sending it again', async () => {
+    const { order, staff, returnId } = await inspectedOnlineReturn();
+    gateway.refundAnswer = 'timeout';
+    const before = delayed.sent.length;
+    const res = await staff.post(`/api/admin/orders/${order.id}/refunds`, {
+      returnId,
+      method: 'gateway',
+    });
+    const refund: Json = await res.json();
+    expect(res.status, JSON.stringify(refund)).toBe(201);
+    expect(refund.status).toBe('processing');
+    // It may have gone through, so it still counts: nothing more to refund.
+    const preview: Json = await (
+      await staff.post(`/api/admin/orders/${order.id}/refunds/preview`, { returnId })
+    ).json();
+    expect(preview.amount).toBe(0);
+
+    // The check sends the same refund ID again, then asks how it went.
+    gateway.refundAnswer = 'processing';
+    gateway.refundState = 'refunded';
+    const sentBefore = gateway.refunds.length;
+    const m = {
+      body: delayed.sent.slice(before).at(-1)?.body as RefundCheckMessage,
+      acked: false,
+      ack() {
+        m.acked = true;
+      },
+      retry() {},
+    };
+    await handleRefundChecks([m] as never, env, makeCtx());
+    expect(m.acked).toBe(true);
+    expect(gateway.refunds.slice(sentBefore).map((q) => q.get('refund_trans_id'))).toEqual([
+      refund.id,
+    ]);
+    const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
+    expect(after.refunds).toMatchObject([{ method: 'gateway', status: 'succeeded' }]);
   });
 });

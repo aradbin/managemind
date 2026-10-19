@@ -35,13 +35,17 @@ interface Layout {
   code?: string;
   button?: { label: string; href: string };
   footer: string;
+  /** The paragraphs are text from outside (a store's filled-in template), so all of it is escaped. */
+  textParagraphs?: boolean;
 }
 
 function render(subjectTemplate: string, layout: Layout): RenderedEmail {
   const { values } = layout;
   const subject = fill(subjectTemplate, values, false);
   const p = (s: string) =>
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${fill(s, values, true)}</p>`;
+    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${
+      layout.textParagraphs ? escapeHtml(fill(s, values, false)) : fill(s, values, true)
+    }</p>`;
   const code = layout.code
     ? `<p style="margin:0 0 16px;font:700 28px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:4px">${escapeHtml(layout.code)}</p>`
     : '';
@@ -298,7 +302,8 @@ export interface StoreMessageEmail {
 /**
  * A store's order, payment, return or refund email (phase-5a-plan §3.6), in
  * the same layout as the platform's emails, with the store's name on top.
- * The values were filled in plain, and the layout escapes the whole text.
+ * The values were filled in plain (a shopper's name among them), so the
+ * layout escapes the whole text, not only the values.
  */
 export function storeMessageEmail(input: StoreMessageEmail): RenderedEmail {
   const paragraphs = input.body
@@ -311,6 +316,7 @@ export function storeMessageEmail(input: StoreMessageEmail): RenderedEmail {
     paragraphs,
     values: { store: input.storeName },
     footer: MESSAGE_FOOTER[input.locale],
+    textParagraphs: true,
   });
 }
 
