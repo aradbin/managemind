@@ -13,7 +13,9 @@ import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { pickText } from '../lib/orders';
 
-const day = (d: Date) => d.toISOString().slice(0, 10);
+// The server reads the range as Dhaka dates, so today is Dhaka's today.
+const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
+const day = (d: Date) => DHAKA_DAY.format(d);
 
 function Table({
   caption,
@@ -37,7 +39,6 @@ function Table({
             <thead className="bg-muted/50">
               <tr>
                 {head.map((h, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: a fixed header; two columns share a name
                   <th key={i} scope="col" className={`p-2 font-medium ${i ? 'text-right' : ''}`}>
                     {h}
                   </th>
@@ -46,14 +47,9 @@ function Table({
             </thead>
             <tbody>
               {rows.map((r, j) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: rows are recomputed, never reordered
                 <tr key={j} className="border-t border-border">
                   {r.map((cell, i) => (
-                    <td
-                      // biome-ignore lint/suspicious/noArrayIndexKey: cells follow the fixed header
-                      key={i}
-                      className={`p-2 ${i ? 'text-right tabular-nums' : ''}`}
-                    >
+                    <td key={i} className={`p-2 ${i ? 'text-right tabular-nums' : ''}`}>
                       {cell}
                     </td>
                   ))}
