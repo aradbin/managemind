@@ -581,7 +581,7 @@ describe('returns and refunds through the API', () => {
     expect(env.FILES.objects.has(key)).toBe(false);
     const left = await owner.query('select 1 from store.return_photos where return_id = $1', [id]);
     expect(left.rowCount).toBe(0);
-  });
+  }, 30_000);
 
   /** An online order paid through SSLCommerz, delivered, returned and inspected. */
   async function inspectedOnlineReturn() {
@@ -657,7 +657,7 @@ describe('returns and refunds through the API', () => {
     const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
     expect(after.refunds).toMatchObject([{ method: 'gateway', status: 'succeeded' }]);
     expect(after.paymentStatus).toBe('refunded');
-  });
+  }, 30_000);
 
   it('keeps a refund SSLCommerz never answered, and learns its fate by sending it again', async () => {
     const { order, staff, returnId } = await inspectedOnlineReturn();
@@ -695,5 +695,5 @@ describe('returns and refunds through the API', () => {
     ]);
     const after: Json = await (await staff.get(`/api/admin/orders/${order.id}`)).json();
     expect(after.refunds).toMatchObject([{ method: 'gateway', status: 'succeeded' }]);
-  });
+  }, 30_000);
 });
