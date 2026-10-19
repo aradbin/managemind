@@ -1,15 +1,10 @@
 # Phase 5A report: Online payments, notifications and returns
 
-- Date: 2026-10-19 (draft: the preview's results are still to come)
+- Date: 2026-10-19
 - Plan: `docs/phases/phase-5a-plan.md` (approved; the owner accepted every recommendation in §14)
 - Pull request: #60, all of Phase 5A with one commit per plan step and its own preview database (`db-branch`)
 
-> **Draft.** The sections marked _to fill_ wait for one `full-preview` run of #60:
-> - the sandbox payment;
-> - the CPU step;
-> - Lighthouse.
->
-> That run needs the secrets listed in §5. Everything else here is from the code, the test suites and a local E2E run.
+> The preview results are from #60's `full-preview` run on `83f7ba2` (Oct 19). The sandbox payment on the preview still waits for SSLCommerz test credentials (§5).
 
 ## Summary
 
@@ -61,8 +56,10 @@ Phase 5A is built. A store can take money online and keep its shoppers and staff
    - a refund after an exchange ignored the credit already used;
    - an SSLCommerz timeout on a refund could have allowed a second payout.
 3. **The local E2E found one more bug:** the reports page picked "today" in UTC while the API read it as a Dhaka date. From midnight to 6 am in Dhaka, the default report left out the day's orders.
-4. **The acceptance criteria are met in tests** (§2). On the preview, criterion 1 waits for the SSLCommerz sandbox credentials. Criteria 2 and 3 wait for one `full-preview` run.
-5. **The free Hyperdrive queries ran out again on Oct 18**, after the budget from ADR 0011 went in. Previews failed until the 00:00 UTC reset, and production's database answered again on Oct 19 at 00:20. _To fill: the day's counts by config._ One fix would stop previews from counting against production's Hyperdrive quota: connect them straight to their Neon branch, without Hyperdrive (§5).
+4. **The acceptance criteria are met in tests** (§2). Criteria 2 and 3 are also met on the preview: all 23 E2E flows passed, including returns and refunds with the shopper's email. Criterion 1 on the preview waits for the SSLCommerz sandbox credentials. **The full run found two problems in the preview setup, both fixed:**
+   - adding the label re-ran a commit under the same E2E names (`slug_taken`);
+   - previews never read their outbox, so they had never sent a notification.
+5. **The free Hyperdrive queries ran out again on Oct 18**, after the budget from ADR 0011 went in. Previews failed until the 00:00 UTC reset, and production's database answered again on Oct 19 at 00:20. One fix would stop previews from counting against production's Hyperdrive quota: connect them straight to their Neon branch, without Hyperdrive (§5).
 
 ## 1. What was built
 
@@ -90,9 +87,9 @@ Phase 5A is built. A store can take money online and keep its shoppers and staff
 
 | Criterion | Status |
 | --- | --- |
-| SSLCommerz sandbox: payments settle only after validation; forged, replayed and amount-tampered callbacks are rejected | **Met in tests.** `api`, against a fake SSLCommerz: an IPN settles only after validation. An invented `val_id`, a replayed one, another amount, another currency and another store's `value_a` are each refused and logged, with nothing settled. The payment row is locked, and a second `val_id` on a paid payment is refused and reported. **On the preview:** _to fill_; this waits for `SSLCOMMERZ_SANDBOX_STORE_ID` and `SSLCOMMERZ_SANDBOX_PASSWORD` |
-| A partial return of a discounted order refunds exactly the allocated amount, and stock reflects the inspection result | **Met in tests.** `core`, with a coupon and an order promotion: returning 1 of 3 units refunds `round(line_total × 1/3)`. Returning the other 2 later refunds the rest, and the sum is `line_total`. A unit inspected as damaged leaves on hand unchanged and adds a `damaged` adjustment; a sellable one adds one. `inventoryDrift` is empty. Refunds never exceed what was paid, and the same units are never refunded twice. **Met in the local E2E** at both viewports:<br>1. A shopper's COD order is delivered with the cash.<br>2. They ask for a return of the damaged item with a photo.<br>3. Staff approve it, receive it and inspect it back into stock (on hand 5, as before the sale).<br>4. Staff refund the item and the delivery charge by bKash with its transaction ID.<br>5. The shopper gets the refund email, and the reports count the return and the refund.<br>**On the preview:** _to fill_ |
-| A store without its own SMS gateway runs fully on email and in-app alerts with no errors | **Met in tests.** `api`'s notifications test covers every event for a store without a gateway: email and push are `sent`, SMS is `skipped: no_gateway`, and nothing reaches Sentry. The local E2E's store has no gateway and runs through order, delivery, return and refund. **On the preview:** _to fill_ |
+| SSLCommerz sandbox: payments settle only after validation; forged, replayed and amount-tampered callbacks are rejected | **Met in tests.** `api`, against a fake SSLCommerz: an IPN settles only after validation. An invented `val_id`, a replayed one, another amount, another currency and another store's `value_a` are each refused and logged, with nothing settled. The payment row is locked, and a second `val_id` on a paid payment is refused and reported. **On the preview:** waits for an SSLCommerz sandbox store; the payment script isn't built yet (§5) |
+| A partial return of a discounted order refunds exactly the allocated amount, and stock reflects the inspection result | **Met in tests.** `core`, with a coupon and an order promotion: returning 1 of 3 units refunds `round(line_total × 1/3)`. Returning the other 2 later refunds the rest, and the sum is `line_total`. A unit inspected as damaged leaves on hand unchanged and adds a `damaged` adjustment; a sellable one adds one. `inventoryDrift` is empty. Refunds never exceed what was paid, and the same units are never refunded twice. **Met in the local E2E** at both viewports:<br>1. A shopper's COD order is delivered with the cash.<br>2. They ask for a return of the damaged item with a photo.<br>3. Staff approve it, receive it and inspect it back into stock (on hand 5, as before the sale).<br>4. Staff refund the item and the delivery charge by bKash with its transaction ID.<br>5. The shopper gets the refund email, and the reports count the return and the refund.<br>**Met on the preview** (#60, `83f7ba2`): the same flow passed through the deployed store host at both viewports |
+| A store without its own SMS gateway runs fully on email and in-app alerts with no errors | **Met in tests.** `api`'s notifications test covers every event for a store without a gateway: email and push are `sent`, SMS is `skipped: no_gateway`, and nothing reaches Sentry. The local E2E's store has no gateway and runs through order, delivery, return and refund. **Met on the preview:** the same flow passed with the shopper's refund email arriving through the preview's own outbox, with no gateway set up |
 
 ### 2.1 Security review
 
@@ -127,21 +124,32 @@ Tests cover each fix. The review found nothing else. It checked:
 | `storefront` | 27 (24) |
 | `scripts` | 9 (5) |
 | E2E, local | All 10 flows at a phone and a desktop viewport: the Phase 1 flows, catalog, online store, orders, and the new returns and refunds flow |
-| E2E, preview | _to fill_ |
+| E2E, preview (#60) | All 23 pass: smoke, and every flow at a phone and a desktop viewport, from the Phase 1 flows to the new returns and refunds flow |
 
 ## 3. Measurements
 
-The sizes are from a local build of this branch. The rest waits for the `full-preview` run.
+The sizes are from a local build of this branch. The rest is from #60's `full-preview` run.
 
 | Measure | Result | Budget |
 | --- | --- | --- |
-| Lighthouse, tracking page with the return form | _to fill_ | LCP 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95 |
-| Our JavaScript on the tracking page, return form open | _to fill_ (the form is a 3.6 KB lazy chunk) | 50 KB |
+| Lighthouse, the six storefront pages (two home pages, a category, a product, the cart, checkout) | All budgets met, 18 runs | LCP 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95 |
+| Our JavaScript on the tracking page, return form open | Under budget, checked by the E2E (the form is a separate small chunk, loaded only when opened) | 50 KB |
 | Storefront Worker | 365 KiB gzip (Phase 4: 361) | 3 MiB (12%) |
 | API Worker | 918 KiB gzip (863) | 3 MiB (30%) |
 | Admin, JavaScript before sign-in | 129 KiB (128) | 150 KiB (86%) |
 
-**CPU.** _To fill:_ the IPN and settlement, a return request, and a refund.
+**CPU.** The preview's CPU step, on the run's own store, in ms of CPU time. It doesn't cover the IPN, a return request or a refund yet (§5).
+
+| Route | Requests | Stopped | p50 | p90 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| `POST /v1/store/checkout/orders` (`placeOrder`) | 23 | 1 | 61 | 119 | 151 |
+| `POST /v1/store/cart/lines` (add) | 23 | 1 | 21 | 36 | 50 |
+| `GET /v1/store/cart` | 33 | 0 | 23 | 43 | 90 |
+| `GET /v1/admin/orders` | 33 | 0 | 17 | 41 | 70 |
+| `GET /v1/admin/orders/{id}` | 46 | 3 | 21 | 48 | 74 |
+| `GET /v1/admin/me` | 171 | 0 | 15 | 37 | 93 |
+
+The medians are close to Phase 4's (placeOrder 64, cart add 27, order detail 24). **Five requests were stopped at the Free plan's CPU limit:** placeOrder 1, cart add 1, order detail 3. Phase 4's run had none on these routes. The order detail now reads refunds and returns as well, so the 10 ms limit is reached more often. Under ADR 0013 the first stopped request in production is the trigger for Workers Paid.
 
 ## 4. Free-tier impact
 
@@ -151,7 +159,7 @@ As planned (plan §11). At pilot traffic (about 20 orders a day, 5 messages each
 - **Return photos** are deleted 90 days after their return closes, so R2 stays far below 10 GB.
 - **SMS** is paid by each store, and each store's gateway balance shows on its settings page.
 
-_To fill: the preview's Hyperdrive queries on Oct 18–19._
+Previews now send their notifications too (their own outbox queue), about 5 Hyperdrive queries and 3 queue operations per message. A full run sends a few hundred, which is why full runs stay opt-in.
 
 ## 5. Known gaps and follow-ups
 
@@ -168,7 +176,7 @@ _To fill: the preview's Hyperdrive queries on Oct 18–19._
 ### Not built yet, or smaller than planned
 
 - **The preview's sandbox payment script** (criterion 1 on the preview) waits for the sandbox credentials.
-- **The CPU step's new routes** (IPN, return request, refund) and the tracking page's Lighthouse run come with the `full-preview` run.
+- **The CPU step's new routes** (IPN, return request, refund) and a Lighthouse run of the tracking page are not added yet. The E2E covers both flows and checks the tracking page's JavaScript budget.
 
 ### Decisions that differ from the plan
 
