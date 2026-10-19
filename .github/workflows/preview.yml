@@ -158,8 +158,9 @@ jobs:
         if: steps.scope.outputs.deploy == 'true'
       # The smoke tests. A full run adds the Phase 1 flows, the catalog flows
       # (Phase 2), the storefront and online-store flows (Phase 3), and the
-      # shopper, orders and promotions flows (Phase 4) at a phone and a desktop
-      # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
+      # shopper, orders and promotions flows (Phase 4), and the returns and
+      # refunds flow (Phase 5A) at a phone and a desktop viewport with axe on
+      # every screen (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
         if: steps.scope.outputs.deploy == 'true'

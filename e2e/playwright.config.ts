@@ -92,5 +92,20 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },
+    // The returns and refunds flows (phase-5a-plan §10), after the orders flows.
+    {
+      name: 'returns-phone',
+      testMatch: /returns\.spec\.ts/,
+      dependencies: ['orders-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'returns-desktop',
+      testMatch: /returns\.spec\.ts/,
+      dependencies: ['orders-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
   ],
 });
