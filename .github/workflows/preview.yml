@@ -72,8 +72,10 @@ jobs:
           LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'db-branch') }}
           BASE: ${{ github.base_ref }}
         run: |
-          # Names the E2E's seeded stores and people, new for every run (e2e-seed.ts).
-          echo "E2E_RUN=${COMMIT_SHA::7}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          # Names the E2E's seeded stores and people, new for every run
+          # (e2e-seed.ts, 4-12 characters): a label added later runs the same
+          # commit again, so the run number is in it as well as the attempt.
+          echo "E2E_RUN=${COMMIT_SHA::6}${GITHUB_RUN_NUMBER}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
           if [ "$LABELED" = true ]; then
             echo "database=own" >> "$GITHUB_OUTPUT"
             echo "describe=own Neon branch pr-$PR (db-branch label)" >> "$GITHUB_OUTPUT"
