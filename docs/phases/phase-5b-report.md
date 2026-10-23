@@ -2,9 +2,9 @@
 
 - Date: 2026-10-23
 - Plan: `docs/phases/phase-5b-plan.md` (approved with the owner's answers in §14)
-- Branch: `ccr-10a63bd3-71oz1w`, one commit per plan step. **No pull request yet, and nothing is deployed.**
+- Pull request: #66, all of Phase 5B with one commit per plan step and its own preview database (`db-branch`). **Not merged or deployed yet.**
 
-> This report covers the build (plan PR 20). The results below are from tests and the local E2E. A `full-preview` run, the load test's one run on a preview, and the pilot's results come after the pull request (§5).
+> This report covers the build (plan PR 20). The results below are from tests and the local E2E; #66's `full-preview` run and the load test's run on its preview are added when they finish, and the pilot's results at its end.
 
 ## Summary
 
@@ -29,7 +29,7 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 
 **What the owner should know:**
 
-1. **Nothing is deployed, and there is no pull request yet.** The branch has 23 commits and migrations 0034–0038. Ask for the pull request when you want it; one `full-preview` run then fills §2 and §3 with preview results.
+1. **Nothing is deployed yet.** #66 has 23 commits and migrations 0034–0038, and its `full-preview` run fills §2 and §3 with preview results.
 2. **The security review found one serious bug, three medium ones and two small ones, all fixed** (§2.1):
    - a store reopened and closed again could be purged at once, on its first closure's approval;
    - exports included shoppers' password hashes and sign-in tokens;
@@ -144,17 +144,16 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 
 ### Waiting on the owner
 
-1. **The pull request**, and the `full-preview` label for its one full run.
-2. **The real plans and prices** (Q5) and **our invoice details** (Q8): legal name, address, trade license, BIN and VAT rate, bank account and bKash number. Both are needed before the first invoice.
-3. **The support email, WhatsApp number and abuse address**, entered under Platform → Terms after the deploy.
-4. **The backup keys** (Q15): `pnpm --filter @managemind/scripts exec tsx backup/cli.ts` explains them. The public key goes in `BACKUP_AGE_RECIPIENT`, the private key in `BACKUP_AGE_KEY` and a password manager. Until then, the backup workflow fails at its first step.
-5. **Optionally, `GITHUB_DISPATCH_TOKEN`** (Q10), so jobs start at once rather than at the daily run.
-6. **Phase 5A's keys in production:** `CREDENTIALS_KEY` (with an offline copy), `VAPID_PRIVATE_KEY` and `VAPID_PUBLIC_KEY`.
-7. **Our SSLCommerz account** (`PLATFORM_SSLCOMMERZ_*`), for invoices paid online. Until then, payments are recorded by hand.
-8. **Workers Paid** when the first pilot client signs (Q2).
-9. **A local legal review** of the four legal page templates, and the signed platform terms.
-10. **A person who has never used the admin**, to onboard the first pilot client for criterion 1.
-11. **The load test's one run on a preview.** It sends about 3,000 requests to a deployed preview, so it waits for your go-ahead.
+1. **The real plans and prices** (Q5) and **our invoice details** (Q8): legal name, address, trade license, BIN and VAT rate, bank account and bKash number. Both are needed before the first invoice.
+2. **The support email, WhatsApp number and abuse address**, entered under Platform → Terms after the deploy.
+3. **The backup keys** (Q15): make the pair once with `age-keygen -o backup.key` (ADR 0028). The public key (`age1…`) goes in the `BACKUP_AGE_RECIPIENT` variable, the whole key file in the `BACKUP_AGE_KEY` secret, and a copy offline. Until then, the nightly backup and the restore test skip with a warning, and Neon's own history is the only backup.
+4. **Optionally, `GITHUB_DISPATCH_TOKEN`** (Q10), so jobs start at once rather than at the daily run.
+5. **Phase 5A's keys in production:** `CREDENTIALS_KEY` (with an offline copy), `VAPID_PRIVATE_KEY` and `VAPID_PUBLIC_KEY`.
+6. **Our SSLCommerz account** (`PLATFORM_SSLCOMMERZ_*`), for invoices paid online. Until then, payments are recorded by hand.
+7. **Workers Paid** when the first pilot client signs (Q2).
+8. **A local legal review** of the four legal page templates, and the signed platform terms.
+9. **A person who has never used the admin**, to onboard the first pilot client for criterion 1.
+10. **The load test's one run on a preview.** It sends about 3,000 requests to a deployed preview, so it waits for your go-ahead.
 
 ### Not built yet, or smaller than planned
 
