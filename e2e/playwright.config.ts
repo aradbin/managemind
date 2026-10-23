@@ -37,16 +37,20 @@ export default defineConfig({
     },
     // Launch readiness (phase-5b-plan §10): onboarding, billing and closing,
     // with the launch super admin the seed made. Serial, so no retries.
+    // Closing a store and issuing an invoice each take a few seconds on a
+    // preview, which has no Hyperdrive.
     {
       name: 'launch-phone',
       testMatch: /launch\.spec\.ts/,
       retries: 0,
+      expect: { timeout: 15_000 },
       use: { viewport: { width: 390, height: 844 }, hasTouch: true },
     },
     {
       name: 'launch-desktop',
       testMatch: /launch\.spec\.ts/,
       retries: 0,
+      expect: { timeout: 15_000 },
       use: { viewport: { width: 1280, height: 800 } },
     },
     // A shopper's flows on the demo stores (phase-3-plan §9); no seed needed.

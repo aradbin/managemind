@@ -230,5 +230,7 @@ export async function createStore(page: Page, store: NewStore): Promise<void> {
   await next();
   if (store.preset) await page.getByLabel(t('newStore.preset')).selectOption(store.preset);
   await page.getByRole('button', { name: t('newStore.create') }).click();
-  await expect(page.getByRole('heading', { name: store.name })).toBeVisible();
+  // Creating a store seeds its defaults and preset catalog: on a preview,
+  // which has no Hyperdrive, that alone takes a few seconds.
+  await expect(page.getByRole('heading', { name: store.name })).toBeVisible({ timeout: 30_000 });
 }
