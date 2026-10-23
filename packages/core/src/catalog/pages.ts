@@ -184,7 +184,12 @@ export async function createPage(tx: TenantTx, actor: Actor, input: unknown): Pr
   const data = parseInput(pageCreate, input);
   const { defaultLocale } = await storeCatalogContext(tx);
   requireDefault(data.translations, defaultLocale);
-  const [count] = await tx.db.select({ n: sql<number>`count(*)::int` }).from(pg);
+  // The store filter as well as RLS: the CLI and preview seeding run as the
+  // migration role, which bypasses RLS on Neon.
+  const [count] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(pg)
+    .where(eq(pg.tenantId, tx.tenantId));
   if ((count?.n ?? 0) >= MAX_PAGES) throw new AppError('limit_exceeded');
 
   const [row] = await catalogWrite(() =>

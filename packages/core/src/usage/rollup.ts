@@ -19,18 +19,24 @@ export async function measureDay(tx: TenantTx, day: string): Promise<DayUsage> {
   const to = sql`((${day}::date) + 1)::timestamp at time zone 'Asia/Dhaka'`;
   const { rows } = await tx.db.execute<Record<UsageMetric, string | number | null>>(sql`
     select
-      (select count(*) from store.orders o where o.placed_at >= ${from} and o.placed_at < ${to}) as orders,
+      (select count(*) from store.orders o
+        where o.tenant_id = ${tx.tenantId} and o.placed_at >= ${from} and o.placed_at < ${to}) as orders,
       (select coalesce(sum(o.total), 0) from store.orders o
-        where o.placed_at >= ${from} and o.placed_at < ${to}) as order_total,
-      (select count(*) from store.messages m where m.channel = 'email' and m.status = 'sent'
+        where o.tenant_id = ${tx.tenantId} and o.placed_at >= ${from} and o.placed_at < ${to}) as order_total,
+      (select count(*) from store.messages m
+        where m.tenant_id = ${tx.tenantId} and m.channel = 'email' and m.status = 'sent'
         and m.sent_at >= ${from} and m.sent_at < ${to}) as emails,
-      (select count(*) from store.messages m where m.channel = 'sms' and m.status = 'sent'
+      (select count(*) from store.messages m
+        where m.tenant_id = ${tx.tenantId} and m.channel = 'sms' and m.status = 'sent'
         and m.sent_at >= ${from} and m.sent_at < ${to}) as sms,
       (select coalesce(sum((f->>'bytes')::bigint), 0) from store.media md
-         cross join jsonb_array_elements(md.files) f where md.created_at < ${to})
-      + (select coalesce(sum(p.bytes), 0) from store.return_photos p where p.created_at < ${to})
+         cross join jsonb_array_elements(md.files) f
+        where md.tenant_id = ${tx.tenantId} and md.created_at < ${to})
+      + (select coalesce(sum(p.bytes), 0) from store.return_photos p
+        where p.tenant_id = ${tx.tenantId} and p.created_at < ${to})
         as storage_bytes,
-      (select count(*) from store.products p where p.status <> 'archived' and p.created_at < ${to})
+      (select count(*) from store.products p
+        where p.tenant_id = ${tx.tenantId} and p.status <> 'archived' and p.created_at < ${to})
         as products,
       (select count(*) from platform.memberships m
         where m.tenant_id = ${tx.tenantId} and m.created_at < ${to}) as staff,

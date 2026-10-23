@@ -58,31 +58,35 @@ export async function setupChecklist(tx: TenantTx): Promise<Checklist> {
     select
       exists (
         select 1 from store.products p
-          join store.variants v on v.product_id = p.id and v.archived_at is null
-          left join store.inventory_levels l on l.variant_id = v.id
-         where p.status = 'active'
+          join store.variants v on v.tenant_id = p.tenant_id and v.product_id = p.id
+            and v.archived_at is null
+          left join store.inventory_levels l on l.tenant_id = v.tenant_id and l.variant_id = v.id
+         where p.tenant_id = ${tx.tenantId} and p.status = 'active'
            and (not v.track_inventory or l.on_hand - l.reserved > 0)
       ) as in_stock,
       not exists (
-        select 1 from store.delivery_zones z where z.active and z.fee <= 0
-      ) and exists (select 1 from store.delivery_zones z where z.active) as zones_priced,
+        select 1 from store.delivery_zones z where z.tenant_id = ${tx.tenantId} and z.active and z.fee <= 0
+      ) and exists (
+        select 1 from store.delivery_zones z where z.tenant_id = ${tx.tenantId} and z.active
+      ) as zones_priced,
       exists (
         select 1 from store.delivery_zones z
-         where z.updated_at > z.created_at
-            or z.created_at > (select t.created_at from platform.tenants t where t.id = ${tx.tenantId})
+         where z.tenant_id = ${tx.tenantId} and (z.updated_at > z.created_at
+            or z.created_at > (select t.created_at from platform.tenants t where t.id = ${tx.tenantId}))
       ) as zones_edited,
       exists (
         select 1 from store.provider_credentials c
-         where c.kind = 'sslcommerz' and c.checked_at is not null and c.check_error is null
+         where c.tenant_id = ${tx.tenantId} and c.kind = 'sslcommerz' and c.checked_at is not null and c.check_error is null
       ) as sslcommerz_ok,
       (select case when c.checked_at is not null and c.check_error is null then 'ok' else 'failing' end
-         from store.provider_credentials c where c.kind = 'email') as email_key,
+         from store.provider_credentials c
+        where c.tenant_id = ${tx.tenantId} and c.kind = 'email') as email_key,
       exists (
         select 1 from store.provider_credentials c
-         where c.kind = 'sms' and c.checked_at is not null and c.check_error is null
+         where c.tenant_id = ${tx.tenantId} and c.kind = 'sms' and c.checked_at is not null and c.check_error is null
       ) as sms_ok,
       (select count(distinct kind)::int from store.pages
-        where published and kind = any(${sql.param(LEGAL)}::text[])) as legal_published,
+        where tenant_id = ${tx.tenantId} and published and kind = any(${sql.param(LEGAL)}::text[])) as legal_published,
       exists (
         select 1 from platform.tenant_domains d
          where d.tenant_id = ${tx.tenantId} and d.status = 'active'
