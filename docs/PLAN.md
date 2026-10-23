@@ -41,7 +41,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
-| 5B — Launch readiness and pilot | Plan drafted (Oct 23); waiting for the owner's answers | [`phase-5b-plan.md`](phases/phase-5b-plan.md) |
+| 5B — Launch readiness and pilot | Plan approved (Oct 23); being built | [`phase-5b-plan.md`](phases/phase-5b-plan.md) |
 | 6 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
