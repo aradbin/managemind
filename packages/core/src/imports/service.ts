@@ -26,6 +26,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, auditActor, authorize, systemActor } from '../access';
 import { recordAudit } from '../audit';
+import { storeEntitlements } from '../billing/entitlements';
 import {
   ensureAttributeValue,
   replaceProductAttributes,
@@ -34,6 +35,7 @@ import {
 import { writeNameTranslations } from '../catalog/collections';
 import { type Locale, parseInput, pgError, storeCatalogContext } from '../catalog/common';
 import { refreshPriceRange } from '../catalog/prices';
+import { countProducts } from '../catalog/products';
 import { chooseSlug, recordSlugChange } from '../catalog/slugs';
 import { type OnHandTarget, setOnHand } from '../inventory/service';
 import { emit } from '../outbox';
@@ -378,6 +380,13 @@ async function recordErrors(tx: TenantTx, jobId: string, errors: ImportError[]):
 
 // ---- Processing a chunk -------------------------------------------------------------
 
+/** How many more products the store's plan allows, read once per chunk. */
+async function productsLeft(tx: TenantTx): Promise<number | null> {
+  const max = (await storeEntitlements(tx)).limits.products;
+  if (max === null) return null;
+  return Math.max(0, max - (await countProducts(tx)));
+}
+
 interface ChunkContext {
   jobId: string;
   locale: Locale;
@@ -391,6 +400,8 @@ interface ChunkContext {
   attributes: Map<string, { id: string; type: string }>;
   categories: Map<string, string>;
   stock: OnHandTarget[];
+  /** New products the plan still allows (phase-5b-plan §3.5); null is unlimited. */
+  productsLeft: number | null;
 }
 
 /** An error in one product, reported on its row. */
@@ -584,6 +595,7 @@ async function chunkContext(
     handles: new Map(handleRows.rows.map((r) => [r.slug, r.product_id])),
     attributes: new Map(attributeRows.map((a) => [a.key, { id: a.id, type: a.type }])),
     categories: new Map(),
+    productsLeft: await productsLeft(tx),
     stock: [],
   };
 }
@@ -655,6 +667,12 @@ async function writeProduct(
       })
       .where(eq(p.id, existing));
   } else {
+    if (ctx.productsLeft !== null) {
+      if (ctx.productsLeft <= 0) {
+        throw new RowError(product.row, 'handle', 'plan_limit', 'the plan allows no more products');
+      }
+      ctx.productsLeft -= 1;
+    }
     await tx.db
       .insert(p)
       .values({ id: productId, status: product.status, vatCategory: product.vatCategory });

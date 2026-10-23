@@ -39,6 +39,7 @@ import { eq, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { type Actor, auditActor, authorize, requirePlatformRole } from '../access';
 import { recordAudit } from '../audit';
+import { requireFeature } from '../billing/entitlements';
 import { type SubscriptionInput, writeSubscription } from '../billing/plans';
 import { createPage } from '../catalog/pages';
 import { emit } from '../outbox';
@@ -373,6 +374,11 @@ export async function updateStoreProfile(
     ] as const
   ).filter((f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]));
   if (fields.length === 0) return getStore(tx, actor);
+  // Shopper accounts are a plan feature: turning them on needs it, and a
+  // store that has them keeps them after a downgrade (phase-5b-plan §3.5).
+  if (next.checkout.accounts && !current.checkout.accounts) {
+    await requireFeature(tx, 'shopperAccounts');
+  }
 
   await tx.db
     .update(schema.tenants)

@@ -117,6 +117,15 @@ export const en = {
   'action.close': 'Close',
   'action.retry': 'Try again',
   'confirm.typeToConfirm': 'Type {word} to confirm.',
+  'error.planLimit':
+    'Your plan allows {max} {what}. To get more, upgrade your plan: Settings → Plan and billing.',
+  'error.planLimit.products': 'products',
+  'error.planLimit.staff': 'staff accounts',
+  'error.planLimit.customDomains': 'custom domains',
+  'error.planLimit.storageMb': 'MB of images',
+  'error.notInPlan':
+    'This isn’t in your plan. To use it, upgrade your plan: Settings → Plan and billing.',
+  'error.termsRequired': 'Accept the platform terms first (the notice at the top of the page).',
   'error.suspended': 'This store is suspended, so changes are turned off.',
   'error.forbidden': 'You don’t have permission to do this.',
   'store.switch': 'Switch store',

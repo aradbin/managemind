@@ -1,9 +1,12 @@
 // Onboarding (phase-5b-plan §3.2): a store with its plan, preset and
 // defaults in one transaction, and the setup checklist.
+
+import { PLACEHOLDER_PLANS } from '@managemind/shared/billing';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  createPlan,
   createTenant,
   getSubscription,
   holdSubscription,
@@ -24,7 +27,15 @@ let owner: pg.Client;
 let plans: Plan[];
 beforeAll(async () => {
   [app, owner] = await Promise.all([connectApp(), connectOwner()]);
+  // Other files add plans to this database too, so seedPlans (only when there
+  // are none) may find some: the placeholders are made here when missing.
   await withPlatform(app, (tx) => seedPlans(tx));
+  const have = new Set(
+    (await withPlatform(app, (tx) => listPlans(tx, systemActor))).map((p) => p.code),
+  );
+  for (const p of PLACEHOLDER_PLANS) {
+    if (!have.has(p.code)) await withPlatform(app, (tx) => createPlan(tx, systemActor, p));
+  }
   plans = await withPlatform(app, (tx) => listPlans(tx, systemActor));
 });
 afterAll(() => Promise.all([app.end(), owner.end()]));
@@ -52,10 +63,14 @@ function newStore(extra: Partial<Parameters<typeof createTenant>[2]> = {}) {
 }
 
 describe('plans', () => {
-  it('seeds the placeholder plans once', async () => {
-    expect(plans.map((p) => p.code).sort()).toEqual(['growth', 'pilot', 'starter']);
+  it('seeds the placeholder plans only while there are none', async () => {
+    expect(plans.map((p) => p.code)).toEqual(
+      expect.arrayContaining(['growth', 'pilot', 'starter']),
+    );
     expect(await withPlatform(app, (tx) => seedPlans(tx))).toEqual([]);
-    await expect(withPlatform(app, (tx) => listPlans(tx, support))).resolves.toHaveLength(3);
+    // Offered first: the Pilot plan isn't offered.
+    const listed = await withPlatform(app, (tx) => listPlans(tx, support));
+    expect(listed.at(-1)?.offered).toBe(false);
   });
 });
 

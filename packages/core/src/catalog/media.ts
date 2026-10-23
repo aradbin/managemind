@@ -14,6 +14,7 @@ import {
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import { invalid, parseInput, type Translated } from './common';
@@ -69,6 +70,15 @@ export async function registerMedia(
 ): Promise<Media> {
   authorize(actor, 'catalog.write');
   const data = parseInput(mediaCreate, input);
+  // Storage is a staff limit (phase-5b-plan §3.5); shoppers' return photos
+  // count toward it but are never refused.
+  const adding = data.files.reduce((n, f) => n + f.bytes, 0);
+  await requireWithinLimit(
+    tx,
+    'storageMb',
+    async () => (await storageBytes(tx)) / 2 ** 20,
+    adding / 2 ** 20,
+  );
   for (const [i, file] of data.files.entries()) {
     const stored = await fileCheck(mediaFileName(file.sha256, data.mime));
     if (!stored) throw invalid(`files.${i}`, 'not uploaded', 'not_found');
@@ -95,6 +105,16 @@ export async function registerMedia(
   if (data.alt) await writeAlt(tx, id, data.alt);
   const [media] = await readMedia(tx, [id]);
   return media as Media;
+}
+
+/** What the store's images and return photos take, in bytes. */
+export async function storageBytes(tx: TenantTx): Promise<number> {
+  const { rows } = await tx.db.execute<{ bytes: string | number }>(sql`
+    select (select coalesce(sum((f->>'bytes')::bigint), 0) from store.media md
+              cross join jsonb_array_elements(md.files) f where md.tenant_id = ${tx.tenantId})
+         + (select coalesce(sum(p.bytes), 0) from store.return_photos p
+             where p.tenant_id = ${tx.tenantId}) as bytes`);
+  return Number(rows[0]?.bytes ?? 0);
 }
 
 async function writeAlt(

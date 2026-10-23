@@ -18,6 +18,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireFeature } from '../billing/entitlements';
 import { parseInput } from '../catalog/common';
 import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
@@ -99,6 +100,11 @@ export async function saveCredentials(
   check: CredentialCheck,
 ): Promise<CredentialSummary> {
   authorize(actor, 'settings.credentials');
+  // The store's own gateway, SMS and email key are plan features (phase-5b-plan §3.5).
+  await requireFeature(
+    tx,
+    kind === 'sslcommerz' ? 'sslcommerz' : kind === 'sms' ? 'sms' : 'customEmailKey',
+  );
   const v = parseInput(credentialInput, input);
   const provider = providerOf(kind, v.provider);
   if (!provider) throw invalid('provider', `not a ${kind} provider`);
