@@ -37,8 +37,7 @@ switch (command) {
     const cf = cloudflare();
     const keys = [`backups/daily/${day}.dump.age`];
     // Sunday in Dhaka also keeps a weekly copy (the bucket keeps 4 of those).
-    if (new Date(`${day}T12:00:00Z`).getUTCDay() === 0)
-      keys.push(`backups/weekly/${day}.dump.age`);
+    if (new Date(`${day}T12:00:00Z`).getUTCDay() === 0) keys.push(`backups/weekly/${day}.dump.age`);
     for (const key of keys) await cf.r2Put(bucket, key, body, 'application/octet-stream');
     summary(
       `### Backup ${day}\n\n| Copy | Size | SHA-256 |\n| --- | --- | --- |\n${keys
