@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Status: Phases 0–4 are done ([reports](docs/phases/))
+- Status: Phases 0–4 are done; Phase 5A is built and deployed, with online payment, SMS and push off until their keys are added; the Phase 5B plan waits for approval ([plans and reports](docs/phases/))
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development
@@ -61,7 +61,8 @@ Dependency updates come from Renovate (`renovate.json`): one weekly group for mi
 `.github/workflows/preview.yml` gives every pull request its own Workers, `managemind-api-pr-<n>` and `managemind-storefront-pr-<n>` on workers.dev. It runs the Playwright smoke test (`e2e/`) against them and posts the URLs in a PR comment. Open a demo store with `?store=demo-fashion` or `?store=demo-grocery`.
 
 - **Database:** the shared Neon branch `preview`. Add the `db-branch` label for the PR's own branch `pr-<n>`, which you need when the PR changes migrations.
-- **Imports:** each preview consumes its own import queue, `managemind-imports-pr-<n>` (and its dead-letter queue), so spreadsheet imports run on previews too.
+- **Queues:** each preview consumes its own outbox queue, `managemind-outbox-pr-<n>`, and import queue, `managemind-imports-pr-<n>` (with its dead-letter queue), so notifications and spreadsheet imports run on previews too.
+- **What runs:** every environment shares the account's 100,000 Hyperdrive queries a day, so a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows, the CPU step and Lighthouse while today's count leaves room ([ADR 0011](docs/adr/0011-previews.md), amended Oct 18).
 - **Cleanup:** closing the PR deletes its Workers, its import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
 
 Run the smoke test against local Workers (both `wrangler dev` servers running):
@@ -80,8 +81,25 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 3. It smoke-tests `/health`, `/health/deep` and the storefront.
 
 - **Without deploying:** `provision.yml` runs step 1 by hand, and can rotate the `mm_app` password.
+- **Secrets and variables:** see the table below. A missing optional one never fails the deploy: it warns and leaves its feature off.
 - **Domains:** the `PLATFORM_DOMAIN` and `STORE_DOMAIN` repository variables (`managemind.site` and `managemind.store`) put the admin on `admin.managemind.site`, webhooks and health checks on `api.managemind.site`, and every store on `<slug>.managemind.store`.
 - **When a deploy goes wrong:** follow [docs/runbooks/rollback.md](docs/runbooks/rollback.md).
+
+| Name | Kind | Needed for | Without it |
+| --- | --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Secret, variable | Every deploy and workflow | Nothing deploys |
+| `DATABASE_URL_MIGRATIONS` | Secret | Migrations, provisioning and the Platform CLI | Nothing deploys |
+| `AUTH_SECRET` | Secret | Staff and shopper sessions; never regenerated, since a new one signs everyone out | The API deploy stops |
+| `RESEND_API_KEY` | Secret | Staff email, and shopper email until Brevo's key exists ([ADR 0014](docs/adr/0014-email-provider.md), [ADR 0022](docs/adr/0022-shopper-email.md)) | The API deploy stops |
+| `BREVO_API_KEY` | Secret | Shopper email from `managemind.store` | Shopper email goes through Resend from `managemind.site` |
+| `CF_STORE_TOKEN` | Secret | Page cache purges and custom domains ([ADR 0018](docs/adr/0018-page-tags-and-purges.md), [ADR 0019](docs/adr/0019-custom-domains.md)) | Store pages aren't cached, and custom domains are off |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Variable, secret | Turnstile on checkout, sign-in and return requests ([ADR 0023](docs/adr/0023-turnstile-hostnames.md)) | Rate limits alone |
+| `CREDENTIALS_KEY` | Secret, **with a copy kept offline** | Stores' SSLCommerz, SMS and email credentials ([ADR 0024](docs/adr/0024-credentials-vault.md)) | Online payment and SMS are off |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
+| `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
+| `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches and the usage alarm | No previews, no Neon numbers in the alarm |
+
+`pnpm --filter @managemind/scripts keys` prints a new `CREDENTIALS_KEY` and VAPID pair to copy. Make them once: a new `CREDENTIALS_KEY` makes every saved store credential unreadable. Previews use `CREDENTIALS_KEY_PREVIEW` and `AUTH_SECRET_PREVIEW` when they are set, and fresh keys for each deploy otherwise.
 
 ## Errors
 

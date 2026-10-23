@@ -31,7 +31,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 18, 2026)**
+**Status (Oct 23, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
@@ -40,8 +40,9 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 2 — Catalog, media and inventory | Done | [`phase-2-report.md`](phases/phase-2-report.md) |
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
-| 5A — Online payments, notifications and returns | Plan approved (Oct 18); building | [`phase-5a-plan.md`](phases/phase-5a-plan.md) |
-| 5B onwards | Not started | — |
+| 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
+| 5B — Launch readiness and pilot | Plan drafted (Oct 23); waiting for the owner's answers | [`phase-5b-plan.md`](phases/phase-5b-plan.md) |
+| 6 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
 
@@ -498,31 +499,31 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **SSLCommerz provider**
 
-- [ ] Each client uses their own SSLCommerz merchant account; credentials stored encrypted per tenant, sandbox and live modes.
-- [ ] Flow: create a gateway session server-side, redirect the shopper, receive the IPN webhook, call SSLCommerz's validation API, then verify transaction ID, amount, currency and status before marking the payment `paid`. Redirect pages only display status.
-- [ ] Webhook processing is idempotent (unique constraint on the gateway transaction ID) and works even if the shopper closes the browser.
-- [ ] A delayed queue message, sent when the payment starts, re-validates it after 30 minutes if it is still pending, and after about 60 minutes cancels the unpaid order and releases its reserved stock (no polling); refunds from the admin through the gateway's refund API.
+- [x] Each client uses their own SSLCommerz merchant account; credentials stored encrypted per tenant, sandbox and live modes.
+- [x] Flow: create a gateway session server-side, redirect the shopper, receive the IPN webhook, call SSLCommerz's validation API, then verify transaction ID, amount, currency and status before marking the payment `paid`. Redirect pages only display status.
+- [x] Webhook processing is idempotent (unique constraint on the gateway transaction ID) and works even if the shopper closes the browser. *The unique key is SSLCommerz's validation ID (`val_id`), per store.*
+- [x] A delayed queue message, sent when the payment starts, re-validates it after 30 minutes if it is still pending, and after about 60 minutes cancels the unpaid order and releases its reserved stock (no polling); refunds from the admin through the gateway's refund API. *Refunds also work through the SSLCommerz panel, with the reference recorded, while the live refund API may need a fixed IP (phase-5a-plan Q2).*
 
 **Notifications**
 
-- [ ] Message providers chosen per store. **Email:** the platform's default sender (free tier, store domain, store name as sender, reply-to set to the store's own address), or the store's own email service API key, falling back to the platform sender if it fails. **SMS:** only through the store's own Bangladeshi SMS gateway account in the MVP, with adapters for one or two popular gateways plus a generic HTTP adapter; stores without SMS simply skip SMS features. Platform-provided SMS with prepaid credits comes later.
-- [ ] Events: order placed, confirmed, shipped, delivered and cancelled, delivered through the outbox and Queues.
-- [ ] Templates per tenant and locale with safe variable substitution; a delivery log with status and retries per message.
-- [ ] The free email allowance is shared by all stores: track daily volume against the provider's cap, send transactional messages first, and alert at 70%.
+- [x] Message providers chosen per store. **Email:** the platform's default sender (free tier, store domain, store name as sender, reply-to set to the store's own address), or the store's own email service API key, falling back to the platform sender if it fails. **SMS:** only through the store's own Bangladeshi SMS gateway account in the MVP, with adapters for one or two popular gateways plus a generic HTTP adapter; stores without SMS simply skip SMS features. Platform-provided SMS with prepaid credits comes later.
+- [x] Events: order placed, confirmed, shipped, delivered and cancelled, delivered through the outbox and Queues.
+- [x] Templates per tenant and locale with safe variable substitution; a delivery log with status and retries per message. *Defaults in code, overrides per store ([ADR 0025](adr/0025-notifications.md)).*
+- [x] The free email allowance is shared by all stores: track daily volume against the provider's cap, send transactional messages first, and alert at 70%.
 
-* [ ] New-order alerts for the seller: instant web push to the installed admin app, plus email and optional SMS, chosen per staff member; also alerts for SSLCommerz payments received and return requests.
+* [x] New-order alerts for the seller: instant web push to the installed admin app, plus email and optional SMS, chosen per staff member; also alerts for SSLCommerz payments received and return requests.
 
 **Returns, exchanges, failed deliveries and refunds**
 
-- [ ] Return policy per tenant: return window after delivery, eligible categories, who pays return delivery, accepted refund methods.
-- [ ] Return requests created by staff, or by the shopper from the order tracking page: choose lines and quantities, reason (wrong size, damaged, wrong item, not as described, changed mind), optional photos stored in R2.
-- [ ] Return state machine: requested, approved or rejected, in transit, received, inspected, resolved (refunded, exchanged, store credit, or rejected after inspection), with full history.
-- [ ] Exchanges: a replacement order linked to the return, stock reserved for it, and any price difference charged or refunded.
-- [ ] Failed delivery (return to origin): when a COD customer refuses or cannot be reached, mark the fulfillment returned, restock, record the lost delivery cost and flag the phone number. Per-tenant option to require an advance delivery charge from flagged numbers.
-- [ ] Restock by inspected condition: sellable items go back to available stock; damaged items are written off with a stock movement reason.
-- [ ] Refunds calculated from each line's allocated discount and delivery share. Online payments refund through the SSLCommerz refund API; COD refunds are recorded as manual refunds (bKash, Nagad, bank, cash) with a reference number; store credit is an option.
-- [ ] Notifications for return approved, item received, and refund issued.
-- [ ] Reports: return rate by product and reason, refund totals, failed-delivery rate and cost by delivery zone.
+- [x] Return policy per tenant: return window after delivery, eligible categories, who pays return delivery, accepted refund methods.
+- [x] Return requests created by staff, or by the shopper from the order tracking page: choose lines and quantities, reason (wrong size, damaged, wrong item, not as described, changed mind), optional photos stored in R2.
+- [x] Return state machine: requested, approved or rejected, in transit, received, inspected, resolved (refunded, exchanged, store credit, or rejected after inspection), with full history.
+- [x] Exchanges: a replacement order linked to the return, stock reserved for it, and any price difference charged or refunded.
+- [x] Failed delivery (return to origin): when a COD customer refuses or cannot be reached, mark the fulfillment returned, restock, record the lost delivery cost and flag the phone number. Per-tenant option to require an advance delivery charge from flagged numbers.
+- [x] Restock by inspected condition: sellable items go back to available stock; damaged items are written off with a stock movement reason.
+- [x] Refunds calculated from each line's allocated discount and delivery share. Online payments refund through the SSLCommerz refund API; COD refunds are recorded as manual refunds (bKash, Nagad, bank, cash) with a reference number; store credit is an option. *Store credit is a single-use code for the shopper's phone, not a wallet (phase-5a-plan Q11).*
+- [x] Notifications for return approved, item received, and refund issued.
+- [x] Reports: return rate by product and reason, refund totals, failed-delivery rate and cost by delivery zone. *Computed when asked, with no stored aggregates; also online versus COD share.*
 
 **Acceptance criteria**
 

@@ -2,7 +2,7 @@
 
 - Date: 2026-10-19
 - Plan: `docs/phases/phase-5a-plan.md` (approved; the owner accepted every recommendation in §14)
-- Pull request: #60, all of Phase 5A with one commit per plan step and its own preview database (`db-branch`)
+- Pull request: #60, all of Phase 5A with one commit per plan step and its own preview database (`db-branch`). Merged and deployed on Oct 23
 
 > The preview results are from #60's `full-preview` run on `83f7ba2` (Oct 19). The sandbox payment on the preview still waits for SSLCommerz test credentials (§5).
 
@@ -49,7 +49,7 @@ Phase 5A is built. A store can take money online and keep its shoppers and staff
 
 **What the owner should know:**
 
-1. **Production is on Phase 4 until #60 merges.** Phase 5A needs three secrets and one variable in the repository before it deploys with online payment, SMS and push on (§5). Without them the deploy still works: online payment and SMS stay off and push isn't offered, as a missing Turnstile key leaves Turnstile off.
+1. **Phase 5A is in production since Oct 23, with online payment, SMS and push off.** The deploy passed its smoke checks, but the repository doesn't have the three secrets and one variable these need yet (§5). Until they are added, online payment and SMS stay off and push isn't offered, as a missing Turnstile key leaves Turnstile off. Returns, refunds by hand, email notifications and the reports work now.
 2. **A security review of the phase found two serious bugs and two smaller ones, and all four are fixed** (§2.1):
    - a shopper's name could put a link into store emails;
    - cancelling an order that used part of a store credit code minted credit;
@@ -82,6 +82,7 @@ Phase 5A is built. A store can take money online and keep its shoppers and staff
 | — | `7c01ea3`, `4186889` | Fixes from the security review (migrations 0032–0033), and the reports date fix |
 | 15 | _this PR_ | CI: the returns and refunds E2E at both viewports with axe |
 | 16 | _this PR_ | This report |
+| — | after #60 | Status after the merge and deploy; §6 filled for the Phase 5B plan |
 
 ## 2. Acceptance criteria
 
@@ -168,7 +169,7 @@ Previews now send their notifications too (their own outbox queue), about 5 Hype
 1. **Secrets for the deploy** (`pnpm --filter @managemind/scripts keys` prints the keys):
    - `CREDENTIALS_KEY` as a repository secret, with a copy in a password manager (Q15);
    - `VAPID_PRIVATE_KEY` as a secret and `VAPID_PUBLIC_KEY` as a variable.
-2. **The SSLCommerz sandbox**: `SSLCOMMERZ_SANDBOX_STORE_ID` and `SSLCOMMERZ_SANDBOX_PASSWORD` as secrets, for the preview's payment E2E. Please also ask SSLCommerz whether the refund API works without a fixed IP (Q2). Until then, staff refund in the panel and record the reference.
+2. **The SSLCommerz sandbox**: `SSLCOMMERZ_SANDBOX_STORE_ID` and `SSLCOMMERZ_SANDBOX_STORE_PASSWORD` as secrets (the names in plan §1), for the preview's payment E2E. Please also ask SSLCommerz whether the refund API works without a fixed IP (Q2). Until then, staff refund in the panel and record the reference.
 3. **An SMS gateway test account** with sms.net.bd or BulkSMSBD (Q7). The adapters follow the gateways' published APIs, and are tested against fakes.
 4. **The `full-preview` label** on the repository, for the one full run that fills this report.
 5. **The default message wording** in Settings → Templates (plan PR 5).
@@ -197,4 +198,15 @@ Previews and production share the account's 100,000 free Hyperdrive queries a da
 
 ## 6. Ready for Phase 5B
 
-_To fill once the plan for the next phase exists._
+Phase 5B (launch readiness and pilot, `docs/phases/phase-5b-plan.md`) can build on:
+
+- the store lifecycle machine, whose `close` and `purge` moves were declared in Phase 1 for this phase;
+- `STORE_TABLES` and `PLATFORM_TENANT_ROWS`, the purge order that CI already checks against the schema;
+- the credentials vault, for the platform's own SSLCommerz account and invoice payment links;
+- SSLCommerz sessions and `settleGatewayPayment`, for paying invoices online;
+- the delivery log and the email quota counter, for metering emails per store;
+- the daily usage alarm, whose numbers the platform dashboard can show;
+- the R2 lifecycle rules for `exports/` and `backups/`, set since Phase 0;
+- the static page kinds (terms, privacy, returns, delivery), for the legal templates.
+
+Before the pilot, Phase 5B also takes this report's open items: the preview's sandbox payment script, the CPU step's new routes, and the decision on previews without Hyperdrive (phase-5b-plan §12, Q3).
