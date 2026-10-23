@@ -323,6 +323,11 @@ export const ordersEn = {
   'customers.deleteBody':
     'Their saved addresses go too. Past orders keep the name, phone and address they were placed with.',
   'customers.deleted': 'Customer deleted.',
+  'customers.anonymize': 'Delete personal data',
+  'customers.anonymizeTitle': 'Delete {name}’s personal data?',
+  'customers.anonymizeBody':
+    'Do this when the shopper asks the store to delete their data. Their name, phone, email and street go from the customer and from their orders, with their addresses, account, messages and return photos; unused store credit ends. Order totals stay for your sales and tax records. This can’t be undone. Type their phone number to confirm.',
+  'customers.anonymized': 'Their personal data is deleted.',
   'customer.name': 'Name',
   'customer.phone': 'Phone',
   'customer.email': 'Email',

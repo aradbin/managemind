@@ -8,6 +8,7 @@ import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   addAddress,
   addOrderNote,
+  anonymizeCustomer,
   blockPhone,
   cancelOrder,
   confirmOrder,
@@ -672,6 +673,14 @@ export const ORDER_ROUTES = {
     request: { params: Id },
     responses: ok('Deleted'),
   }),
+  anonymizeCustomer: r({
+    method: 'post',
+    path: '/customers/{id}/anonymize',
+    summary:
+      "A shopper's deletion request: their personal data goes, the sales stay (customers.delete)",
+    request: { params: Id },
+    responses: ok('Anonymized'),
+  }),
   addAddress: r({
     method: 'post',
     path: '/customers/{id}/addresses',
@@ -996,6 +1005,14 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   });
   admin.openapi(R.deleteCustomer, async (c) => {
     await inStore(c, (tx) => deleteCustomer(tx, actor(c), id(c)), write);
+    return c.body(null, 204);
+  });
+  admin.openapi(R.anonymizeCustomer, async (c) => {
+    const done = await inStore(c, (tx) => anonymizeCustomer(tx, actor(c), id(c)), write);
+    // Their return photos go once the rows have.
+    if (done.photoKeys.length) {
+      c.executionCtx.waitUntil(c.env.FILES.delete(done.photoKeys).catch(() => {}));
+    }
     return c.body(null, 204);
   });
   admin.openapi(R.addAddress, async (c) => {

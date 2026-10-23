@@ -30,6 +30,9 @@ const money = () => bigint({ mode: 'number' });
 const tenantIdUnique = (table: string, t: { tenantId: AnyPgColumn; id: AnyPgColumn }) =>
   unique(`${table}_tenant_id_unique`).on(t.tenantId, t.id);
 /** E.164 Bangladeshi mobile numbers (shared/phone.ts normalizes every input). */
+/** An anonymized customer's phone: 01 then 0 is no operator's prefix, so never a real number. */
+export const ANONYMIZED_PHONE = '+8801000000000';
+
 const phoneCheck = (name: string, column: AnyPgColumn) =>
   check(name, sql`${column} ~ '^\\+8801[3-9][0-9]{8}$'`);
 
@@ -68,7 +71,11 @@ export const customers = store.table(
       sql`app.search_text(${t.name}) gin_trgm_ops`,
     ),
     index('customers_tenant_last_order_idx').on(t.tenantId, sql`last_order_at desc nulls last`),
-    phoneCheck('customers_phone_format', t.phone),
+    // An anonymized customer keeps a placeholder no real number can be (phase-5b-plan §3.13).
+    check(
+      'customers_phone_format',
+      sql`${t.phone} ~ '^\\+8801[3-9][0-9]{8}$' or (${t.deletedAt} is not null and ${t.phone} = '+8801000000000')`,
+    ),
     check('customers_name_length', sql`char_length(${t.name}) between 1 and 100`),
     check('customers_email_length', sql`char_length(${t.email}) <= 254`),
     check('customers_note_length', sql`char_length(${t.note}) <= 2000`),

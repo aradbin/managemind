@@ -1,7 +1,8 @@
 # Store jobs (phase-5b-plan §3.9–§3.12, ADR 0027): exports, purges and demo
-# or test stores' resets, with the demo stores' weekly reset on Fridays. The platform screen and Settings write a pending row in
-# platform.tenant_jobs; the API starts this workflow with
-# GITHUB_DISPATCH_TOKEN, and the daily run picks up anything left (no token,
+# or test stores' resets, with the demo stores' weekly reset on Fridays. The
+# platform screen and Settings write a pending row in platform.tenant_jobs;
+# the API starts this workflow with GITHUB_DISPATCH_TOKEN, and the daily run
+# picks up anything left (no token,
 # GitHub didn't answer, or a runner was lost). The script connects to Neon
 # directly with the migration role and reaches R2 and the outbox queue
 # through Cloudflare's API, so it uses no Hyperdrive queries and no Worker CPU.

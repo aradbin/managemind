@@ -544,6 +544,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/shipments/{id}/return': { id: shipment.id },
       'DELETE /v1/admin/shipments/{id}': { id: shipment.id },
       'GET /v1/admin/customers/{id}': { id: customer.id },
+      'POST /v1/admin/customers/{id}/anonymize': { id: customer.id },
       'PATCH /v1/admin/customers/{id}': { id: customer.id, body: { name: 'x' } },
       'PUT /v1/admin/customers/{id}/flag': { id: customer.id, body: { flagged: true } },
       'DELETE /v1/admin/customers/{id}': { id: customer.id },

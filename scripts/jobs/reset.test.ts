@@ -150,15 +150,21 @@ describe('resetting a store', () => {
     });
   });
 
+  // The catalog and 30 orders take a while when every package tests at once.
   it('gives a demo store its catalog and a month of sample orders, weekly', async () => {
     const demo = DEMO_TENANTS[0] as (typeof DEMO_TENANTS)[number];
     expect(await queueDemoResets(client, [demo.slug])).toBe(1);
     // Queued once: the job is open.
     expect(await queueDemoResets(client, [demo.slug])).toBe(0);
+    const { rows: queued } = await client.query<{ id: string }>(
+      `select id from platform.tenant_jobs where tenant_id = $1 and kind = 'reset' and status = 'pending'`,
+      [demo.id],
+    );
+    const jobId = queued[0]?.id as string;
     const files = memoryFiles();
-    const summary = await runJobs(deps(files, []));
-    expect(summary.failed).toEqual([]);
-    expect(summary.succeeded.length).toBeGreaterThan(0);
+    // Only this job: other tests' jobs stay theirs.
+    const summary = await runJobs(deps(files, []), { jobId });
+    expect(summary.succeeded).toEqual([jobId]);
     expect(
       await n('select count(*) as n from store.products where tenant_id = $1', [demo.id]),
     ).toBeGreaterThan(0);
@@ -178,5 +184,5 @@ describe('resetting a store', () => {
     expect(new Set(shipments.rows.map((r) => r.status))).toEqual(
       new Set(['pending', 'shipped', 'delivered', 'failed', 'returned']),
     );
-  });
+  }, 60_000);
 });

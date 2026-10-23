@@ -289,7 +289,8 @@ export function CustomerDetailPage() {
   const queryClient = useQueryClient();
   const canWrite = usePermission('customers.write');
   const customer = useQuery(customerQuery(id));
-  const [dialog, setDialog] = useState<'edit' | 'delete' | 'address' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'delete' | 'anonymize' | 'address' | null>(null);
+  const canAnonymize = usePermission('customers.delete');
   const [address, setAddress] = useState<CustomerAddress | undefined>();
   const remove = useMutation({
     mutationFn: async () =>
@@ -297,6 +298,16 @@ export function CustomerDetailPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast(t('customers.deleted'));
+      navigate({ to: '/customers' });
+    },
+  });
+  // A shopper's deletion request (phase-5b-plan §3.13).
+  const anonymize = useMutation({
+    mutationFn: async () =>
+      unwrap(await api.POST('/v1/admin/customers/{id}/anonymize', { params: { path: { id } } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast(t('customers.anonymized'));
       navigate({ to: '/customers' });
     },
   });
@@ -337,6 +348,11 @@ export function CustomerDetailPage() {
               <Button variant="ghost" onClick={() => setDialog('delete')}>
                 {t('action.delete')}
               </Button>
+              {canAnonymize && (
+                <Button variant="ghost" onClick={() => setDialog('anonymize')}>
+                  {t('customers.anonymize')}
+                </Button>
+              )}
             </>
           )
         }
@@ -466,6 +482,18 @@ export function CustomerDetailPage() {
         onConfirm={() => remove.mutate()}
       >
         <p>{t('customers.deleteBody')}</p>
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={dialog === 'anonymize'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('customers.anonymizeTitle', { name: c.name })}
+        confirmLabel={t('customers.anonymize')}
+        confirmText={c.phone}
+        busy={anonymize.isPending}
+        error={anonymize.error ? orderErrorMessage(anonymize.error, t) : undefined}
+        onConfirm={() => anonymize.mutate()}
+      >
+        <p>{t('customers.anonymizeBody')}</p>
       </ConfirmDialog>
     </div>
   );
