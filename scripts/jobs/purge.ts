@@ -157,6 +157,41 @@ async function save(deps: PurgeDeps, jobId: string, progress: Progress, step: st
   await deps.onStep?.(step);
 }
 
+/**
+ * Deletes a store's rows in STORE_TABLES order, 1,000 a statement, from
+ * `from` on, calling `onBatch` after each. With `keepSystem`, the built-in
+ * brand attribute and its names stay (an open store's reset: the database
+ * refuses to delete them while the store is open).
+ */
+export async function deleteStoreRows(
+  client: pg.Client,
+  tenantId: string,
+  from: string | null,
+  onBatch: (table: string, deleted: number) => Promise<void>,
+  options: { keepSystem?: boolean } = {},
+): Promise<void> {
+  const start = from ? Math.max(0, STORE_TABLES.indexOf(from as never)) : 0;
+  for (const table of STORE_TABLES.slice(start)) {
+    const kept = !options.keepSystem
+      ? ''
+      : table === 'attributes'
+        ? ' and not is_system'
+        : table === 'attribute_translations'
+          ? ' and attribute_id in (select id from store.attributes where not is_system)'
+          : '';
+    for (;;) {
+      const res = await client.query(
+        `delete from store."${table}" where ctid = any(array(
+           select ctid from store."${table}" where tenant_id = $1${kept} limit ${BATCH}))`,
+        [tenantId],
+      );
+      const n = res.rowCount ?? 0;
+      await onBatch(table, n);
+      if (n < BATCH) break;
+    }
+  }
+}
+
 /** The approved purge: deletes, verifies, and returns what it did. */
 export async function purgeStore(
   deps: PurgeDeps,
@@ -195,20 +230,10 @@ export async function purgeStore(
   const from = steps.indexOf(progress.step ?? 'tables');
 
   if (from <= 0) {
-    const start = progress.table ? Math.max(0, STORE_TABLES.indexOf(progress.table as never)) : 0;
-    for (const table of STORE_TABLES.slice(start)) {
-      for (;;) {
-        const res = await client.query(
-          `delete from store."${table}" where ctid = any(array(
-             select ctid from store."${table}" where tenant_id = $1 limit ${BATCH}))`,
-          [tenantId],
-        );
-        const n = res.rowCount ?? 0;
-        deleted.tables[table] = (deleted.tables[table] ?? 0) + n;
-        await save(deps, job.id, { ...progress, step: 'tables', table }, `table:${table}`);
-        if (n < BATCH) break;
-      }
-    }
+    await deleteStoreRows(client, tenantId, progress.table ?? null, async (table, n) => {
+      deleted.tables[table] = (deleted.tables[table] ?? 0) + n;
+      await save(deps, job.id, { ...progress, step: 'tables', table }, `table:${table}`);
+    });
   }
 
   if (from <= 1) {

@@ -103,6 +103,28 @@ describe('the purge through the platform API', () => {
   });
 });
 
+describe('resetting a store through the platform API', () => {
+  it('resets a demo or test store with its address typed, never a client store', async () => {
+    const admin = await platformUser('super_admin');
+    const { id, slug } = await testStore(admin);
+    const reset = (tenantId: string, body: Json) =>
+      admin.post(`/api/platform/tenants/${tenantId}/reset`, body);
+    expect((await reset(id, { slug: 'other' })).status).toBe(422);
+    const queued = await reset(id, { slug });
+    expect(queued.status).toBe(202);
+    expect((await queued.json()) as Json).toMatchObject({ kind: 'reset', status: 'pending' });
+    const clientSlug = unique();
+    const client = (await (
+      await admin.post('/api/platform/tenants', {
+        slug: clientSlug,
+        name: 'Client Shop',
+        owner: { email: `${clientSlug}@example.test`, name: 'Owner' },
+      })
+    ).json()) as Json;
+    expect((await reset(client.id, { slug: clientSlug })).status).toBe(409);
+  });
+});
+
 describe('messages for stores that are gone', () => {
   it('drops a purged store’s messages, and keeps a closed store’s lifecycle and billing', async () => {
     const admin = await platformUser('super_admin');

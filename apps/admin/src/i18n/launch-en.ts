@@ -199,4 +199,9 @@ export const launchEn = {
   'purge.running': 'Purging: {step}.',
   'purge.done': 'Purged on {date}. Verified: no rows, files or keys of the store are left.',
   'purge.failed': 'The purge stopped: {error}. It runs again on the next attempt.',
+  'jobs.reset': 'Reset the store',
+  'jobs.resetTitle': 'Reset {name}?',
+  'jobs.resetBody':
+    'Every product, order, customer and file goes, and the store starts again with its defaults; a demo store gets its sample catalog and orders back. Its people and settings stay. Type the store’s address to confirm.',
+  'jobs.resetQueued': 'Reset queued. It runs in a few minutes.',
 } as const;

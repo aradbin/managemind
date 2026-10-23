@@ -1,14 +1,15 @@
 // The tenant-jobs workflow's entry point (phase-5b-plan §3.9):
-//   pnpm --filter @managemind/scripts jobs [--job <id>]
+//   pnpm --filter @managemind/scripts jobs [--job <id>] [--demo-reset]
 // Connects to Neon directly with the migration role, as the Platform
 // workflow does; files go through Cloudflare's R2 API; the owners' email
 // event goes straight to the outbox queue.
 import type { OutboxEvent } from '@managemind/core';
+import { DEMO_TENANTS } from '@managemind/db/seed';
 import pg from 'pg';
 import { notice, parseArgs, requireEnv, warning } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import type { ObjectStore } from './export';
-import { runJobs } from './runner';
+import { queueDemoResets, runJobs } from './runner';
 
 const args = parseArgs(process.argv.slice(2));
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
@@ -35,6 +36,13 @@ const queueId = await cf.queueId(queue).catch((e: unknown) => {
 const client = new pg.Client({ connectionString: requireEnv('DATABASE_URL_MIGRATIONS') });
 await client.connect();
 try {
+  if (args.has('demo-reset')) {
+    const queued = await queueDemoResets(
+      client,
+      DEMO_TENANTS.map((t) => t.slug),
+    );
+    notice(`demo stores: ${queued} reset(s) queued`);
+  }
   const summary = await runJobs(
     {
       client,

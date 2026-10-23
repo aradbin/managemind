@@ -196,6 +196,7 @@ describe('cache tags', () => {
       storeTag(t),
     ]);
     expect(purgeTagsFor(ev('theme.published'))).toEqual([storeTag(t)]);
+    expect(purgeTagsFor(ev('tenant.reset', { jobId: p }))).toEqual([storeTag(t)]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['tax'] }))).toEqual([]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['profile'] }))).toEqual([storeTag(t)]);
     expect(

@@ -136,3 +136,34 @@ export async function getJob(tx: { db: TenantTx['db'] }, id: string): Promise<Te
 /** When a finished export's link and file expire. */
 export const exportExpiry = (finishedAt: Date) =>
   new Date(finishedAt.getTime() + EXPORT_DAYS * 86_400_000);
+
+/**
+ * A demo or test store's reset (§3.12): every product, order, customer and
+ * file goes, the store and its people stay, and it starts again with the
+ * defaults (and a demo store with its sample catalog and orders). The
+ * store's address is typed to confirm.
+ */
+export async function requestReset(
+  tx: TenantTx,
+  actor: Actor,
+  input: { slug: string },
+): Promise<{ job: TenantJob; created: boolean }> {
+  requirePlatformRole(actor, 'super_admin');
+  const [store] = await tx.db
+    .select({ slug: schema.tenants.slug, kind: schema.tenants.kind, status: schema.tenants.status })
+    .from(schema.tenants)
+    .where(eq(schema.tenants.id, tx.tenantId));
+  if (!store) throw new AppError('store_not_found');
+  if (store.kind === 'client') {
+    throw new AppError('illegal_transition', { detail: 'only demo and test stores are reset' });
+  }
+  if (store.status !== 'active' && store.status !== 'suspended') {
+    throw new AppError('illegal_transition', { detail: `the store is ${store.status}` });
+  }
+  if (input.slug.trim().toLowerCase() !== store.slug) {
+    throw new AppError('validation_failed', {
+      fields: [{ path: 'slug', code: 'mismatch', message: "type the store's address to confirm" }],
+    });
+  }
+  return queueJob(tx, tx.tenantId, 'reset', actor.userId);
+}

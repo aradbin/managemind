@@ -92,6 +92,8 @@ export function purgeTagsFor(event: PurgeEvent): string[] {
       const ids = Array.isArray(payload.productIds) ? (payload.productIds as string[]) : [];
       return [...ids.map((id) => productTag(t, id)), listsTag(t)];
     }
+    case 'tenant.reset':
+      return [storeTag(t)];
     case 'catalog.page.changed':
       return payload.navigation === true || !event.aggregateId
         ? [storeTag(t)]

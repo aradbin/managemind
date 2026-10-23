@@ -29,6 +29,7 @@ import {
   reopenTenant,
   requestExport,
   requestPurge,
+  requestReset,
   revokeSupportAccess,
   setPlatformRole,
   setSubscription,
@@ -300,6 +301,13 @@ export const PLATFORM_ROUTES = {
       ),
     },
     responses: json(Purge, 'Approved', 202),
+  }),
+  reset: r({
+    method: 'post',
+    path: '/tenants/{id}/reset',
+    summary: 'Reset a demo or test store: its data goes, the defaults come back (super_admin)',
+    request: { params: Id, ...body(z.object({ slug: z.string().trim().min(1).max(63) })) },
+    responses: json(Job, 'Queued', 202),
   }),
   reopen: r({
     method: 'post',
@@ -797,6 +805,18 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     dispatchJobs(c.env, c.executionCtx);
     if (!found) throw new AppError('not_found');
     return c.json(await purgeOut(c.env, found), 202);
+  });
+  platform.openapi(R.reset, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSuperAdmin(c);
+    const { job, created } = await withTenant(
+      c.var.staff.client,
+      id,
+      (tx) => requestReset(tx, c.var.staff.actor, c.req.valid('json')),
+      { requestId: c.var.requestId },
+    );
+    if (created) dispatchJobs(c.env, c.executionCtx);
+    return c.json(await jobOut(c.env, job), 202);
   });
   platform.openapi(R.reopen, async (c) => {
     const { id } = c.req.valid('param');

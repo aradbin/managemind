@@ -439,7 +439,17 @@ export function CloseOrReopen({ tenant }: { tenant: TenantRef }) {
 }
 
 /** The store's exports (and later purges and resets), with progress and the download link. */
-export function JobsSection({ tenantId, superAdmin }: { tenantId: string; superAdmin: boolean }) {
+export function JobsSection({
+  tenantId,
+  superAdmin,
+  resettable,
+}: {
+  tenantId: string;
+  superAdmin: boolean;
+  /** A demo or test store that is open: its name and slug, for the reset's confirmation. */
+  resettable?: { name: string; slug: string } | undefined;
+}) {
+  const [resetting, setResetting] = useState(false);
   const { t, locale } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -464,6 +474,20 @@ export function JobsSection({ tenantId, superAdmin }: { tenantId: string; superA
       await queryClient.invalidateQueries({ queryKey: key });
     },
   });
+  const reset = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/reset', {
+          params: { path: { id: tenantId } },
+          body: { slug: resettable?.slug ?? '' },
+        }),
+      ),
+    onSuccess: async () => {
+      toast(t('jobs.resetQueued'));
+      setResetting(false);
+      await queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
   const open = jobs.data?.some(
     (j) => j.kind === 'export' && (j.status === 'pending' || j.status === 'running'),
   );
@@ -474,18 +498,42 @@ export function JobsSection({ tenantId, superAdmin }: { tenantId: string; superA
           {t('jobs.title')}
         </h2>
         {superAdmin && (
-          <Button
-            variant="secondary"
-            disabled={exportNow.isPending || open}
-            onClick={() => exportNow.mutate()}
-          >
-            {t('jobs.export')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {resettable && (
+              <Button variant="danger" onClick={() => setResetting(true)}>
+                {t('jobs.reset')}
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              disabled={exportNow.isPending || open}
+              onClick={() => exportNow.mutate()}
+            >
+              {t('jobs.export')}
+            </Button>
+          </div>
         )}
       </div>
       {jobs.isError && <Notice tone="error">{errorMessage(jobs.error, t)}</Notice>}
       {exportNow.isError && <Notice tone="error">{errorMessage(exportNow.error, t)}</Notice>}
       {jobs.data?.length === 0 && <p className="text-muted-foreground">{t('jobs.none')}</p>}
+      {resettable && (
+        <ConfirmDialog
+          open={resetting}
+          onOpenChange={(next) => {
+            setResetting(next);
+            if (!next) reset.reset();
+          }}
+          title={t('jobs.resetTitle', { name: resettable.name })}
+          confirmLabel={t('jobs.reset')}
+          confirmText={resettable.slug}
+          busy={reset.isPending}
+          error={reset.isError ? saveErrorMessage(reset.error, t) : undefined}
+          onConfirm={() => reset.mutate()}
+        >
+          <p>{t('jobs.resetBody')}</p>
+        </ConfirmDialog>
+      )}
       {!!jobs.data?.length && (
         <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
           {jobs.data.map((j) => {

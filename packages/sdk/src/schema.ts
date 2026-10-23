@@ -10499,6 +10499,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/tenants/{id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset a demo or test store: its data goes, the defaults come back (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        slug: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/tenants/{id}/reopen": {
         parameters: {
             query?: never;

@@ -14,13 +14,14 @@ import {
 import type pg from 'pg';
 import { type ExportResult, exportStore, type ObjectStore } from './export';
 import { dryRun, JobRefused, type KvStore, purgeStore } from './purge';
+import { resetStore } from './reset';
 
 /** A running job not touched for this long lost its runner and is claimed again. */
 const STALE_MINUTES = 90;
 const MAX_ATTEMPTS = 3;
 
 /** The kinds this runner knows; others stay pending for the runner that does. */
-export const RUNNABLE: readonly JobKind[] = ['export', 'purge'];
+export const RUNNABLE: readonly JobKind[] = ['export', 'purge', 'reset'];
 
 export interface ClaimedJob {
   id: string;
@@ -115,7 +116,9 @@ async function failJob(
   job: ClaimedJob,
   error: unknown,
 ): Promise<'retry' | 'failed'> {
-  const message = (error instanceof Error ? error.message : String(error)).slice(0, 1000);
+  const detail = (error as { detail?: unknown } | null)?.detail;
+  const base = error instanceof Error ? error.message : String(error);
+  const message = (typeof detail === 'string' ? `${base}: ${detail}` : base).slice(0, 1000);
   const final = error instanceof JobRefused || job.attempts >= MAX_ATTEMPTS;
   await client.query(
     `update platform.tenant_jobs
@@ -165,6 +168,15 @@ export async function runJobs(
         await finishExport(deps.client, job, result, deps.sink);
         log(`  ${result.bytes} bytes, ${result.files} files, link for ${EXPORT_DAYS} days`);
       }
+      if (job.kind === 'reset') {
+        const result = await resetStore(deps, job, (step) =>
+          saveProgress(deps.client, job.id, { phase: 'reset', step }),
+        );
+        await finishReset(deps.client, job, result);
+        log(
+          `  ${result.deleted.rows} rows and ${result.deleted.files} files deleted, ${result.orders} sample orders`,
+        );
+      }
       if (job.kind === 'purge' && (await runPurge(deps, job)) === 'waiting') {
         summary.waiting.push(job.id);
         log('  dry run saved; waiting for approval');
@@ -174,7 +186,9 @@ export async function runJobs(
       summary.succeeded.push(job.id);
     } catch (e) {
       const outcome = await failJob(deps.client, job, e);
-      log(`  ${outcome === 'failed' ? 'failed' : 'will retry'}: ${String(e)}`);
+      log(
+        `  ${outcome === 'failed' ? 'failed' : 'will retry'}: ${String(e)} ${(e as { detail?: string }).detail ?? ''}`,
+      );
       (outcome === 'failed' ? summary.failed : summary.retried).push(job.id);
     }
     if (options.jobId) break;
@@ -239,4 +253,40 @@ async function runPurge(deps: RunDeps, job: ClaimedJob): Promise<'waiting' | 'pu
     throw e;
   }
   return 'purged';
+}
+
+async function finishReset(client: pg.Client, job: ClaimedJob, result: object): Promise<void> {
+  await client.query('begin');
+  try {
+    await client.query(
+      `update platform.tenant_jobs
+          set status = 'succeeded', finished_at = now(), result = $2, progress = '{"phase":"done"}'
+        where id = $1`,
+      [job.id, result],
+    );
+    await client.query(
+      `insert into platform.audit_log (tenant_id, actor_type, action, entity_type, entity_id, after)
+       values ($1, 'system', 'tenant.reset', 'tenant_job', $2, $3)`,
+      [job.tenantId, job.id, result],
+    );
+    await client.query('commit');
+  } catch (e) {
+    await client.query('rollback').catch(() => {});
+    throw e;
+  }
+}
+
+/** The weekly reset of the demo stores (Friday mornings in Dhaka): their jobs, queued. */
+export async function queueDemoResets(
+  client: pg.Client,
+  slugs: readonly string[],
+): Promise<number> {
+  const { rowCount } = await client.query(
+    `insert into platform.tenant_jobs (tenant_id, kind)
+     select id, 'reset' from platform.tenants
+      where slug = any($1::text[]) and kind = 'demo' and status in ('active', 'suspended')
+     on conflict do nothing`,
+    [slugs],
+  );
+  return rowCount ?? 0;
 }

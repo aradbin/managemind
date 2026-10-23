@@ -75,6 +75,24 @@ export interface CreatedTenant {
 /** The legal pages every store starts with, as drafts (§3.2 step 5, §3.15). */
 const LEGAL_KINDS = ['terms', 'privacy', 'returns', 'delivery'] as const;
 
+/**
+ * What every store starts with, in its transaction: the brand attribute, a
+ * stock location and the delivery zones (migrations 0011, 0023), and the
+ * legal pages as drafts. A reset (§3.12) runs it again: the defaults that
+ * survived are kept.
+ */
+export async function seedStoreDefaults(tx: TenantTx, actor: Actor): Promise<void> {
+  await tx.db.execute(sql`select app.create_store_defaults()`);
+  const setup: Actor = { ...actor, permissions: permissionsOf('owner') };
+  for (const k of LEGAL_KINDS) {
+    await createPage(tx, setup, {
+      kind: k,
+      published: false,
+      translations: { bn: { title: PAGE_TITLES[k].bn }, en: { title: PAGE_TITLES[k].en } },
+    });
+  }
+}
+
 /** The Postgres error under a Drizzle query error, if any. */
 const pgError = (e: unknown) => {
   const err = (e as { cause?: unknown })?.cause ?? e;
@@ -151,17 +169,7 @@ export async function createTenant(
           role: 'owner',
           invitedBy: actor.userId,
         });
-        // What every store starts with: the brand attribute, a stock location
-        // and the delivery zones (migrations 0011, 0023).
-        await tx.db.execute(sql`select app.create_store_defaults()`);
-        const setup: Actor = { ...actor, permissions: permissionsOf('owner') };
-        for (const k of LEGAL_KINDS) {
-          await createPage(tx, setup, {
-            kind: k,
-            published: false,
-            translations: { bn: { title: PAGE_TITLES[k].bn }, en: { title: PAGE_TITLES[k].en } },
-          });
-        }
+        await seedStoreDefaults(tx, actor);
         const subscription = input.subscription
           ? await writeSubscription(tx, actor, input.subscription)
           : null;

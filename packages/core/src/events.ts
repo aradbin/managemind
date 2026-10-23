@@ -37,6 +37,8 @@ export const EVENTS = {
   // store's custom domains; reopening restores neither by itself.
   'tenant.closed': z.object({ purgeAfter: z.iso.datetime() }),
   'tenant.reopened': z.object({}),
+  /** A demo or test store started again (phase-5b-plan §3.12): its whole cache goes. */
+  'tenant.reset': z.object({ jobId: z.uuid() }),
   'tenant.purged': z.object({ purgeId: z.uuid() }),
   /** A store export is ready (phase-5b-plan §3.10): its owners are emailed the link. */
   'tenant.exported': z.object({ jobId: z.uuid(), expiresAt: z.iso.datetime() }),

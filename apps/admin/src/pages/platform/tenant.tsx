@@ -114,6 +114,12 @@ export function TenantPage() {
           <JobsSection
             tenantId={tenant.data.id}
             superAdmin={me.user.platformRole === 'super_admin'}
+            resettable={
+              tenant.data.kind !== 'client' &&
+              (tenant.data.status === 'active' || tenant.data.status === 'suspended')
+                ? { name: tenant.data.name, slug: tenant.data.slug }
+                : undefined
+            }
           />
           <PurgeSection
             tenant={tenant.data}

@@ -50,7 +50,9 @@ async function closedStore(tx: PlatformTx, tenantId: string) {
     .where(eq(schema.tenants.id, tenantId));
   if (!store) throw new AppError('store_not_found');
   if (store.status !== 'closed') {
-    throw new AppError('illegal_transition', { detail: `the store is ${store.status}, not closed` });
+    throw new AppError('illegal_transition', {
+      detail: `the store is ${store.status}, not closed`,
+    });
   }
   return store;
 }
