@@ -1,0 +1,1 @@
+ALTER TABLE "store"."pages" ADD COLUMN "follows_template" boolean DEFAULT false NOT NULL;

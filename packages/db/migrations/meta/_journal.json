@@ -260,6 +260,13 @@
       "when": 1792771646288,
       "tag": "0036_phase_5b_anonymize",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792772741916,
+      "tag": "0037_phase_5b_legal_templates",
+      "breakpoints": true
     }
   ]
 }

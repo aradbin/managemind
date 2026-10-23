@@ -155,6 +155,8 @@ export const onlineStoreEn = {
   'pages.titleIn': 'Title in {language}',
   'pages.body': 'Content',
   'pages.published': 'Published',
+  'pages.followsTemplate':
+    'This page is filled from your store’s details and settings (returns, delivery zones, payment) and changes when they do. Its wording is a draft for your own legal review. Editing the text takes the page over: it then stays as you wrote it.',
   'pages.publishedHint': 'Shown in the store and its footer',
   'pages.hidden': 'Hidden',
   'pages.position': 'Order in the footer',

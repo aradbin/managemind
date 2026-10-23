@@ -11,6 +11,7 @@ import {
   CHECKLIST_ITEMS,
   changeRole,
   getStore,
+  getSupport,
   invite,
   leaveStore,
   listInvitations,
@@ -164,6 +165,23 @@ export const ADMIN_ROUTES = {
   ...CREDENTIAL_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
+  help: r({
+    method: 'get',
+    path: '/help',
+    summary:
+      "The help menu: the guide, support email and WhatsApp, and the platform's documents (any staff)",
+    responses: json(
+      z.object({
+        helpUrl: z.string().nullable(),
+        email: z.string().nullable(),
+        whatsapp: z.string().nullable(),
+        termsUrl: z.string().nullable(),
+        privacyUrl: z.string().nullable(),
+        dpaUrl: z.string().nullable(),
+      }),
+      'Help',
+    ),
+  }),
   me: r({
     method: 'get',
     path: '/me',
@@ -376,6 +394,25 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   const R = ADMIN_ROUTES;
 
   admin.openapi(R.me, async (c) => c.json(await me(c), 200));
+  admin.openapi(R.help, async (c) => {
+    const { client } = c.var.staff;
+    const support = await withPlatform(client, (tx) => getSupport(tx));
+    // The terms in force now: the newest version whose date has come.
+    const { rows } = await client.query<{ url: string }>(
+      'select url from platform.terms_versions where effective_at <= now() order by effective_at desc limit 1',
+    );
+    return c.json(
+      {
+        helpUrl: support.helpUrl ?? null,
+        email: support.email ?? null,
+        whatsapp: support.whatsapp ?? null,
+        termsUrl: rows[0]?.url ?? null,
+        privacyUrl: support.privacyUrl ?? null,
+        dpaUrl: support.dpaUrl ?? null,
+      },
+      200,
+    );
+  });
   admin.openapi(R.updateMe, async (c) => {
     const { client, actor } = c.var.staff;
     await withPlatform(client, (tx) => updateMyProfile(tx, actor, compact(c.req.valid('json'))));

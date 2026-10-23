@@ -42,6 +42,11 @@ export const pages = store.table(
     published: boolean().notNull().default(false),
     /** Order in the footer. */
     position: integer().notNull().default(0),
+    /**
+     * A legal page filled from its template each time it's shown
+     * (phase-5b-plan §3.15); editing it takes it over and clears this.
+     */
+    followsTemplate: boolean().notNull().default(false),
     createdAt: ts().notNull().defaultNow(),
     updatedAt: ts().notNull().defaultNow(),
   },

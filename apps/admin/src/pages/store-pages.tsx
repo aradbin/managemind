@@ -171,7 +171,14 @@ function NewPage({ existing, onClose }: { existing: StorePage[]; onClose: () => 
 
 type Draft = Record<
   Lang,
-  { title: string; slug: string; body: RichTextDoc | null; present: boolean }
+  {
+    title: string;
+    slug: string;
+    body: RichTextDoc | null;
+    present: boolean;
+    /** The text was changed here: a templated page sends it only then. */
+    edited: boolean;
+  }
 >;
 
 export function StorePageEditorPage({ id }: { id: string }) {
@@ -221,12 +228,16 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
         slug: tr?.slug ?? '',
         body: (tr?.body as RichTextDoc | null) ?? null,
         present: Boolean(tr),
+        edited: false,
       };
     };
     return { bn: from('bn'), en: from('en') };
   });
   const set = (lang: Lang, patch: Partial<Draft[Lang]>) =>
-    setDraft((d) => ({ ...d, [lang]: { ...d[lang], ...patch, present: true } }));
+    setDraft((d) => ({
+      ...d,
+      [lang]: { ...d[lang], ...patch, present: true, edited: d[lang].edited || 'body' in patch },
+    }));
 
   const save = useMutation({
     mutationFn: async () =>
@@ -242,9 +253,11 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
                   const d = draft[lang];
                   if (!d.title.trim())
                     return [lang, lang === defaultLang ? { title: d.title } : null];
+                  // A templated page keeps following its template until its text is edited.
+                  const body = !page.followsTemplate || d.edited ? { body: d.body } : {};
                   return [
                     lang,
-                    { title: d.title.trim(), ...(d.slug ? { slug: d.slug } : {}), body: d.body },
+                    { title: d.title.trim(), ...(d.slug ? { slug: d.slug } : {}), ...body },
                   ];
                 }),
             ),
@@ -269,6 +282,7 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
   return (
     <>
       <PageHeader title={title} description={t(`pages.kind.${page.kind}`)} />
+      {page.followsTemplate && <Notice>{t('pages.followsTemplate')}</Notice>}
       <form
         className="flex flex-col gap-5"
         onSubmit={(e) => {

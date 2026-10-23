@@ -204,4 +204,15 @@ export const launchEn = {
   'jobs.resetBody':
     'Every product, order, customer and file goes, and the store starts again with its defaults; a demo store gets its sample catalog and orders back. Its people and settings stay. Type the store’s address to confirm.',
   'jobs.resetQueued': 'Reset queued. It runs in a few minutes.',
+  'psupport.title': 'Support and documents',
+  'psupport.intro':
+    'Shown in every admin’s help menu. The abuse address also goes in the stores’ privacy page template.',
+  'psupport.email': 'Support email',
+  'psupport.whatsapp': 'Support WhatsApp',
+  'psupport.whatsappHint': 'With the country code and no plus: 8801712345678.',
+  'psupport.abuseEmail': 'Abuse address',
+  'psupport.helpUrl': 'Help guide (link)',
+  'psupport.privacyUrl': 'Privacy notice (link)',
+  'psupport.dpaUrl': 'Data processing agreement (link)',
+  'psupport.saved': 'Support details saved.',
 } as const;

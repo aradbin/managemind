@@ -12,6 +12,7 @@ import {
   createTenant,
   getPurge,
   getSubscription,
+  getSupport,
   getTenantDetail,
   grantSupportAccess,
   holdSubscription,
@@ -33,6 +34,8 @@ import {
   revokeSupportAccess,
   setPlatformRole,
   setSubscription,
+  setSupport,
+  supportInput,
   type TenantJob,
   transitionTenant,
   updatePlan,
@@ -158,6 +161,8 @@ const TenantDetail = TenantSummary.extend({
   memberCount: z.number().int(),
 }).openapi('TenantDetail');
 const Reason = z.object({ reason: z.string().trim().min(3).max(500) });
+// Rebuilt with this file's z, which carries .openapi().
+const SupportOut = z.object(supportInput.shape).strict().openapi('PlatformSupport');
 const Purge = z
   .object({
     id: z.uuid(),
@@ -396,6 +401,19 @@ export const PLATFORM_ROUTES = {
         .openapi('PlatformDashboard'),
       'Dashboard',
     ),
+  }),
+  support: r({
+    method: 'get',
+    path: '/support',
+    summary: 'Our support contacts and documents, for the help menu and the templates (support)',
+    responses: json(SupportOut, 'Support'),
+  }),
+  setSupport: r({
+    method: 'put',
+    path: '/support',
+    summary: 'Set our support contacts and documents (super_admin)',
+    request: body(z.record(z.string(), z.unknown())),
+    responses: json(SupportOut, 'Saved'),
   }),
   terms: r({
     method: 'get',
@@ -864,6 +882,18 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
         }
       : null;
     return c.json({ ...data, freeTier }, 200);
+  });
+  platform.openapi(R.support, async (c) => {
+    requireSupport(c);
+    return c.json(await withPlatform(c.var.staff.client, (tx) => getSupport(tx)), 200);
+  });
+  platform.openapi(R.setSupport, async (c) => {
+    const saved = await withPlatform(
+      c.var.staff.client,
+      (tx) => setSupport(tx, c.var.staff.actor, c.req.valid('json')),
+      { requestId: c.var.requestId },
+    );
+    return c.json(saved, 200);
   });
   platform.openapi(R.terms, async (c) =>
     c.json(

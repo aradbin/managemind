@@ -2430,6 +2430,49 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/help": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The help menu: the guide, support email and WhatsApp, and the platform's documents (any staff) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Help */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            helpUrl: string | null;
+                            email: string | null;
+                            whatsapp: string | null;
+                            termsUrl: string | null;
+                            privacyUrl: string | null;
+                            dpaUrl: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/me/active-store": {
         parameters: {
             query?: never;
@@ -10778,6 +10821,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/support": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Our support contacts and documents, for the help menu and the templates (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Support */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSupport"];
+                    };
+                };
+            };
+        };
+        /** Set our support contacts and documents (super_admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformSupport"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/terms": {
         parameters: {
             query?: never;
@@ -13711,6 +13816,7 @@ export interface components {
             kind: "about" | "contact" | "privacy" | "returns" | "delivery" | "terms" | "custom";
             published: boolean;
             position: number;
+            followsTemplate: boolean;
             translations: {
                 bn?: {
                     title: string;
@@ -14646,6 +14752,19 @@ export interface components {
                 };
                 alarms: number;
             } | null;
+        };
+        PlatformSupport: {
+            /** Format: email */
+            email?: string;
+            whatsapp?: string;
+            /** Format: email */
+            abuseEmail?: string;
+            /** Format: uri */
+            helpUrl?: string;
+            /** Format: uri */
+            privacyUrl?: string;
+            /** Format: uri */
+            dpaUrl?: string;
         };
         Plan: {
             /** Format: uuid */

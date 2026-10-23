@@ -27,6 +27,10 @@ export const listsTag = (tenantId: string): string => `s:${tenantId}:lists`;
 export const productTag = (tenantId: string, productId: string): string =>
   `s:${tenantId}:p:${productId}`;
 export const pageTag = (tenantId: string, pageId: string): string => `s:${tenantId}:page:${pageId}`;
+/** The legal pages that follow their template (phase-5b-plan §3.15): filled from the settings. */
+export const legalTag = (tenantId: string): string => `s:${tenantId}:legal`;
+/** Settings the legal templates read, beyond those that purge the whole store. */
+const LEGAL_FIELDS = new Set(['returns', 'cod']);
 
 /** Cloudflare's limits: a Cache-Tag header of at most 16 KB, and 100 tags per purge call. */
 export const CACHE_TAG_HEADER_MAX = 16_000;
@@ -100,8 +104,11 @@ export function purgeTagsFor(event: PurgeEvent): string[] {
         : [pageTag(t, event.aggregateId)];
     case 'tenant.updated': {
       const fields = Array.isArray(payload.fields) ? (payload.fields as string[]) : [];
-      return fields.some((f) => STORE_FIELDS.has(f)) ? [storeTag(t)] : [];
+      if (fields.some((f) => STORE_FIELDS.has(f))) return [storeTag(t)];
+      return fields.some((f) => LEGAL_FIELDS.has(f)) ? [legalTag(t)] : [];
     }
+    case 'delivery.zones.changed':
+      return [legalTag(t)];
     case 'catalog.category.changed':
     case 'catalog.collection.changed':
     case 'catalog.attribute.changed':

@@ -4,6 +4,7 @@
 // share, inspection restocks by condition with the ledger balanced, and
 // refunds never exceed what was paid.
 import { permissionsOf, type StoreRole } from '@managemind/shared';
+import { dhakaDate } from '@managemind/shared/billing';
 import { refundShare } from '@managemind/shared/orders';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
@@ -679,7 +680,8 @@ describe('failed deliveries, flagged phones and reports (§3.11, §3.15)', () =>
     );
     expect((await run((tx) => getOrder(tx, owner, second.id))).flags).toContain('flagged_phone');
 
-    const today = new Date().toISOString().slice(0, 10);
+    // Reports go by the Dhaka date, which runs six hours ahead of UTC.
+    const today = dhakaDate(new Date());
     const reports = await run((tx) => getReports(tx, owner, { from: today, to: today }));
     expect(reports.failedByZone.reduce((n, z) => n + z.failed, 0)).toBeGreaterThanOrEqual(1);
     expect(reports.refundsByMethod.map((r) => r.method)).toEqual(

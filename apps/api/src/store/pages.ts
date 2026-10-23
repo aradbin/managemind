@@ -261,7 +261,7 @@ async function render(
       break;
     }
     case 'page':
-      result = await staticPage(tx, lang, route.slug);
+      result = await staticPage(tx, lang, route.slug, c.var.config.PLATFORM_NAME);
       break;
   }
   const tags = [...layout.tags, ...(result?.tags ?? [])];

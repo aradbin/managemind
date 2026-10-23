@@ -85,11 +85,20 @@ export async function seedStoreDefaults(tx: TenantTx, actor: Actor): Promise<voi
   await tx.db.execute(sql`select app.create_store_defaults()`);
   const setup: Actor = { ...actor, permissions: permissionsOf('owner') };
   for (const k of LEGAL_KINDS) {
-    await createPage(tx, setup, {
+    const page = await createPage(tx, setup, {
       kind: k,
       published: false,
       translations: { bn: { title: PAGE_TITLES[k].bn }, en: { title: PAGE_TITLES[k].en } },
     });
+    // Filled from the store's settings when shown, until the owner edits it (§3.15).
+    await tx.db
+      .update(schema.pages)
+      .set({ followsTemplate: true })
+      .where(eq(schema.pages.id, page.id));
+    await tx.db
+      .update(schema.pageTranslations)
+      .set({ body: null })
+      .where(eq(schema.pageTranslations.pageId, page.id));
   }
 }
 

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
+import { HelpMenu } from '../components/help-menu';
 import { LanguageSwitch } from '../components/language-switch';
 import { usePermission } from '../components/permission-gate';
 import { StoreSwitcher } from '../components/store-switcher';
@@ -134,6 +135,7 @@ function Shell() {
           <div className="flex shrink-0 items-center">
             <ViewStore />
             <LanguageSwitch />
+            <HelpMenu />
             <AccountMenu me={me} />
           </div>
         </header>

@@ -118,6 +118,90 @@ export function PlatformTermsPage() {
           </Form>
         </section>
       )}
+      {me.user.platformRole === 'super_admin' && <SupportSection />}
     </div>
+  );
+}
+
+const optional = (schema: z.ZodString) => z.union([z.literal(''), schema]);
+const supportSchema = z.object({
+  email: optional(z.string().trim().email('form.invalid')),
+  whatsapp: optional(
+    z
+      .string()
+      .trim()
+      .regex(/^8801[3-9]\d{8}$/, 'form.invalid'),
+  ),
+  abuseEmail: optional(z.string().trim().email('form.invalid')),
+  helpUrl: optional(z.string().trim().url('form.invalid')),
+  privacyUrl: optional(z.string().trim().url('form.invalid')),
+  dpaUrl: optional(z.string().trim().url('form.invalid')),
+});
+type SupportForm = z.output<typeof supportSchema>;
+
+/** Our support contacts and documents (phase-5b-plan §3.15, §7). */
+function SupportSection() {
+  const { t } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const support = useQuery({
+    queryKey: ['platform', 'support'],
+    queryFn: async () => unwrap(await api.GET('/v1/platform/support')),
+  });
+  const form = useForm<z.input<typeof supportSchema>, unknown, SupportForm>({
+    resolver: zodResolver(supportSchema),
+    values: {
+      email: support.data?.email ?? '',
+      whatsapp: support.data?.whatsapp ?? '',
+      abuseEmail: support.data?.abuseEmail ?? '',
+      helpUrl: support.data?.helpUrl ?? '',
+      privacyUrl: support.data?.privacyUrl ?? '',
+      dpaUrl: support.data?.dpaUrl ?? '',
+    },
+  });
+  const save = useMutation({
+    mutationFn: async (v: SupportForm) =>
+      unwrap(
+        await api.PUT('/v1/platform/support', {
+          body: Object.fromEntries(Object.entries(v).filter(([, x]) => x !== '')),
+        }),
+      ),
+    onSuccess: async () => {
+      toast(t('psupport.saved'));
+      await queryClient.invalidateQueries({ queryKey: ['platform', 'support'] });
+      await queryClient.invalidateQueries({ queryKey: ['help'] });
+    },
+  });
+  return (
+    <section
+      aria-labelledby="support-h"
+      className="flex flex-col gap-3 border-t border-border pt-6"
+    >
+      <h2 id="support-h" className="text-lg font-semibold">
+        {t('psupport.title')}
+      </h2>
+      <p className="text-muted-foreground">{t('psupport.intro')}</p>
+      {support.isError && <Notice tone="error">{errorMessage(support.error, t)}</Notice>}
+      <Form form={form} onSubmit={(v) => save.mutate(v)}>
+        <TextField name="email" label={t('psupport.email')} type="email" optional />
+        <TextField
+          name="whatsapp"
+          label={t('psupport.whatsapp')}
+          hint={t('psupport.whatsappHint')}
+          inputMode="numeric"
+          optional
+        />
+        <TextField name="abuseEmail" label={t('psupport.abuseEmail')} type="email" optional />
+        <TextField name="helpUrl" label={t('psupport.helpUrl')} type="url" optional />
+        <TextField name="privacyUrl" label={t('psupport.privacyUrl')} type="url" optional />
+        <TextField name="dpaUrl" label={t('psupport.dpaUrl')} type="url" optional />
+        {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        <div>
+          <Button type="submit" disabled={save.isPending}>
+            {t('action.save')}
+          </Button>
+        </div>
+      </Form>
+    </section>
   );
 }

@@ -97,7 +97,7 @@ const addMedia = (tenantId = store) =>
   }, tenantId);
 
 describe('static pages', () => {
-  it('starts a store with policy drafts with suggested headings, one per kind', async () => {
+  it('starts a store with policy drafts that follow their templates, one per kind', async () => {
     // Onboarding adds terms, privacy, returns and delivery as drafts (phase-5b-plan §3.2).
     const drafts = await run((tx) => listPages(tx, owner));
     expect(drafts.map((p) => [p.kind, p.published]).sort()).toEqual([
@@ -107,7 +107,9 @@ describe('static pages', () => {
       ['terms', false],
     ]);
     const draft = drafts.find((p) => p.kind === 'returns');
-    expect(draft?.translations.bn?.body?.content?.[0]).toMatchObject({ type: 'heading' });
+    // Filled from the store's settings when shown (phase-5b-plan §3.15).
+    expect(draft).toMatchObject({ followsTemplate: true });
+    expect(draft?.translations.bn?.body).toBeNull();
     const page = await run((tx) => updatePage(tx, owner, draft?.id as string, { published: true }));
     expect(page.translations.bn?.slug).toBe('রিটার্ন-নীতি');
     await expect(

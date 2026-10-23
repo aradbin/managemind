@@ -8,6 +8,8 @@ import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import {
+  isLegalKind,
+  type LegalKind,
   MAX_PAGES,
   type PageKind,
   pageCreate,
@@ -27,6 +29,7 @@ import {
   storeCatalogContext,
   type Translated,
 } from './common';
+import { legalBody } from './legal';
 import { type Lang, resolveStoreSlug } from './published';
 import { chooseSlug, dropRedirects, recordSlugChange } from './slugs';
 
@@ -46,6 +49,8 @@ export interface Page {
   kind: PageKind;
   published: boolean;
   position: number;
+  /** A legal page filled from its template when shown (phase-5b-plan §3.15). */
+  followsTemplate: boolean;
   translations: Translated<PageTranslation>;
   createdAt: string;
   updatedAt: string;
@@ -67,6 +72,7 @@ async function readPages(tx: TenantTx, id?: string): Promise<Page[]> {
     kind: page.kind,
     published: page.published,
     position: page.position,
+    followsTemplate: page.followsTemplate,
     translations: Object.fromEntries(
       translations
         .filter((t) => t.pageId === page.id)
@@ -245,6 +251,13 @@ export async function updatePage(
     );
   }
   const set: Partial<typeof pg.$inferInsert> = {};
+  // Editing a templated page's text takes it over: it stops following the template.
+  if (
+    before.followsTemplate &&
+    Object.values(data.translations ?? {}).some((t) => t?.body !== undefined)
+  ) {
+    set.followsTemplate = false;
+  }
   if (data.published !== undefined && data.published !== before.published) {
     set.published = data.published;
     navigation = true;
@@ -318,6 +331,8 @@ export type StorePageLink = {
 export type StorePage = StorePageLink & {
   slugs: Partial<Record<Locale, string>>;
   body: RichTextDoc | null;
+  /** Filled from the store's settings: cached under the legal tag too. */
+  followsTemplate: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
   updatedAt: string;
@@ -340,6 +355,7 @@ export async function publishedPageBySlug(
   tx: TenantTx,
   lang: Lang,
   slug: string,
+  options: { platformName: string } = { platformName: 'managemind' },
 ): Promise<{ found: StorePage } | { redirect: string } | null> {
   const isPublished = async (id: string) => {
     const [row] = await tx.db
@@ -352,8 +368,10 @@ export async function publishedPageBySlug(
   if (!hit || 'redirect' in hit) return hit;
   const [page] = await readPages(tx, hit.found);
   if (!page) return null;
-  const t = page.translations[lang.locale] ?? page.translations[lang.fallback];
+  const locale = page.translations[lang.locale] ? lang.locale : lang.fallback;
+  const t = page.translations[locale];
   if (!t) return null;
+  const templated = page.followsTemplate && isLegalKind(page.kind);
   return {
     found: {
       id: page.id,
@@ -361,10 +379,38 @@ export async function publishedPageBySlug(
       slug: t.slug,
       title: t.title,
       slugs: Object.fromEntries(Object.entries(page.translations).map(([l, v]) => [l, v?.slug])),
-      body: t.body,
+      body: templated
+        ? await legalBody(tx, page.kind as LegalKind, locale, options.platformName)
+        : t.body,
+      followsTemplate: templated,
       seoTitle: t.seoTitle,
       seoDescription: t.seoDescription,
       updatedAt: page.updatedAt,
     },
   };
+}
+
+/**
+ * A page for the editor: a legal page that follows its template shows the
+ * text the template fills now, so the owner edits from it.
+ */
+export async function pageForEditing(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  platformName: string,
+): Promise<Page> {
+  const page = await getPage(tx, actor, id);
+  if (!page.followsTemplate || !isLegalKind(page.kind)) return page;
+  const translations = { ...page.translations };
+  for (const locale of ['bn', 'en'] as const) {
+    const t = translations[locale];
+    if (t) {
+      translations[locale] = {
+        ...t,
+        body: await legalBody(tx, page.kind as LegalKind, locale, platformName),
+      };
+    }
+  }
+  return { ...page, translations };
 }
