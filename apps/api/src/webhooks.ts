@@ -2,15 +2,21 @@
 // fields are never trusted: only the val_id is used, to ask SSLCommerz for
 // the validation with the store's credentials. 200 once handled (settled,
 // already settled, or refused); 500 when SSLCommerz can't be reached, so it
-// retries. No session or Turnstile: the validation call is the check.
+// retries. No session or Turnstile: the validation call is the check, and
+// a per-IP limit caps forged notifications (429).
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { isUuid } from '@managemind/shared';
 import { settleInvoicePayment } from './billing';
 import type { AppEnv } from './env';
 import { log } from './log';
 import { settleFromGateway } from './payments';
+import { limiterFor, shopperIp } from './store/commerce';
 
 export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
+  app.use('/v1/webhooks/sslcommerz/*', async (c, next) => {
+    await limiterFor(c).check('ipn:ip', shopperIp(c));
+    await next();
+  });
   // Our own account: invoices paid online (phase-5b-plan §3.7). First, so
   // "platform" never reaches the store route.
   app.post('/v1/webhooks/sslcommerz/platform', async (c) => {

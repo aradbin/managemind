@@ -52,7 +52,7 @@ export function dispatchJobs(env: Env, ctx: Pick<ExecutionContext, 'waitUntil'>)
         'user-agent': 'managemind-api',
         'x-github-api-version': '2022-11-28',
       },
-      body: JSON.stringify({ ref: 'main' }),
+      body: JSON.stringify({ ref: 'master' }),
     })
       .then((res) => {
         if (!res.ok) log('warn', 'jobs dispatch refused', { status: res.status });
@@ -171,10 +171,15 @@ export async function exportEmails(
   });
 }
 
-/** A job as the platform screen and Settings show it, with a finished export's link. */
-export async function jobOut(env: Env, job: TenantJob) {
+/**
+ * A job as the platform screen and Settings show it, with a finished
+ * export's link for those who may download the store's data: its owners and
+ * super admins, never support staff, who see a store's data only through a
+ * granted support session.
+ */
+export async function jobOut(env: Env, job: TenantJob, withLink: boolean) {
   const expiresAt =
-    job.kind === 'export' && job.status === 'succeeded' && job.finishedAt
+    withLink && job.kind === 'export' && job.status === 'succeeded' && job.finishedAt
       ? exportExpiry(job.finishedAt)
       : null;
   const live = expiresAt && expiresAt.getTime() > Date.now() ? expiresAt : null;

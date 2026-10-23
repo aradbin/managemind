@@ -24,6 +24,8 @@ export interface ObjectStore {
 export const OMITTED: Partial<Record<(typeof STORE_TABLES)[number], string>> = {
   provider_credentials: 'sealed secrets, readable only by the platform; enter them again',
   shopper_sessions: 'sign-in sessions',
+  shopper_accounts:
+    'shoppers’ password hashes and sign-in tokens; the shoppers are in shopper_users',
   shopper_verifications: 'one-time sign-in codes',
   push_subscriptions: 'staff devices’ push keys',
   idempotency_keys: 'short-lived request records',

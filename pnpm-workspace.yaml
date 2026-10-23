@@ -65,3 +65,8 @@ catalog:
   write-excel-file: 4.1.1
   wrangler: 4.149.0
   zod: 4.6.7
+
+# Astro 7.3.8 pins zod 4.6.5, which GHSA-mrhx-c7xc-m3w5 covers; the
+# workspace's own zod has the fix. Remove once Astro's update is in.
+overrides:
+  astro>zod: 4.6.7

@@ -110,7 +110,7 @@ describe('store exports', () => {
     expect(await exportTokenValid(env, jobId, expires, token)).toBe(false);
   });
 
-  it('lets a super admin export any store; support sees the jobs', async () => {
+  it('lets a super admin export any store; support sees the jobs but not the link', async () => {
     const { admin, id } = await setup();
     const support = await signedIn(`${unique()}@example.test`, 'support');
     expect((await support.post(`/api/platform/tenants/${id}/export`)).status).toBe(403);
@@ -118,6 +118,12 @@ describe('store exports', () => {
     expect(asked.status).toBe(202);
     const jobs = (await (await support.get(`/api/platform/tenants/${id}/jobs`)).json()) as Json;
     expect(jobs.map((j: Json) => [j.kind, j.status])).toEqual([['export', 'pending']]);
+    // Support staff see a store's data only through a granted support session.
+    await finish(jobs[0].id, id);
+    const seen = async (b: typeof admin) =>
+      ((await (await b.get(`/api/platform/tenants/${id}/jobs`)).json()) as Json)[0].downloadUrl;
+    expect(await seen(support)).toBeNull();
+    expect(await seen(admin)).toMatch(/\/v1\/exports\//);
   });
 
   it('emails the owners the link when an export is ready', async () => {

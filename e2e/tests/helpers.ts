@@ -35,11 +35,19 @@ async function mailbox(to: string): Promise<Mail[]> {
   return (await res.json()) as Mail[];
 }
 
-/** The newest email to `to` after `since` emails were already there. */
-export async function nextMail(to: string, since: number): Promise<Mail> {
+/**
+ * The newest email to `to` after `since` emails were already there, or the
+ * newest of the new ones that `match` accepts.
+ */
+export async function nextMail(
+  to: string,
+  since: number,
+  match: (mail: Mail) => boolean = () => true,
+): Promise<Mail> {
   for (let i = 0; i < 60; i++) {
     const mails = await mailbox(to);
-    if (mails.length > since && mails[0]) return mails[0];
+    const found = mails.slice(0, Math.max(0, mails.length - since)).find(match);
+    if (found) return found;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`no new email for ${to}`);
@@ -47,8 +55,26 @@ export async function nextMail(to: string, since: number): Promise<Mail> {
 
 export const mailCount = async (to: string) => (await mailbox(to)).length;
 
+const watched = new WeakSet<Page>();
+/**
+ * Records the page's Content Security Policy violations from its next
+ * navigation on; expectAccessible fails on any (the admin's _headers).
+ */
+async function watchCsp(page: Page): Promise<void> {
+  if (watched.has(page)) return;
+  watched.add(page);
+  await page.addInitScript(() => {
+    const w = window as unknown as { __csp?: string[] };
+    w.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      w.__csp?.push(`${e.effectiveDirective} ${e.blockedURI}`),
+    );
+  });
+}
+
 /** Signs in on a page already at /sign-in (or sent there). */
 export async function signInHere(page: Page, email: string): Promise<void> {
+  await watchCsp(page);
   await page.getByLabel(t('signIn.email')).fill(email);
   const before = await mailCount(email);
   await page.getByRole('button', { name: t('signIn.send') }).click();
@@ -62,6 +88,7 @@ export async function signInHere(page: Page, email: string): Promise<void> {
 }
 
 export async function signIn(page: Page, email: string): Promise<void> {
+  await watchCsp(page);
   await page.goto(`${API}/sign-in`);
   await signInHere(page, email);
 }
@@ -93,6 +120,8 @@ export async function expectAccessible(page: Page, screen: string): Promise<void
         `${v.id} (${v.impact}): ${v.nodes.map((n) => `${n.target.join(' ')} ${n.html.slice(0, 160)}`).join(' | ')}`,
     );
   expect(found, `accessibility on ${screen}`).toEqual([]);
+  const csp = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+  expect(csp, `Content Security Policy on ${screen}`).toEqual([]);
 }
 
 /** Our JavaScript on a store page, compressed, stays under 50 KB (phase-3-plan §8). */

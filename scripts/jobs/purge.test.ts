@@ -9,6 +9,7 @@ import {
   approvePurge,
   closeTenant,
   createTenant,
+  reopenTenant,
   requestPurge,
   systemActor,
   withPlatform,
@@ -280,5 +281,41 @@ describe('purging a closed store (criterion 3)', () => {
     await expect(withPlatform(client, (tx) => requestPurge(tx, admin, id))).rejects.toMatchObject({
       code: 'illegal_transition',
     });
+  });
+
+  it('cancels a purge when the store reopens, and never runs an approval from before', async () => {
+    const files = memoryFiles();
+    const kv = memoryKv();
+    const { id, slug } = await seededStore(files, kv);
+    const admin = await superAdmin();
+    const close = async () => {
+      const closed = await closeTenant(client, systemActor, id, { slug, reason: 'test over' });
+      await client.query(`update platform.tenant_jobs set status = 'failed' where id = $1`, [
+        closed.exportJobId,
+      ]);
+    };
+    await close();
+    const { purge, job } = await withPlatform(client, (tx) => requestPurge(tx, admin, id));
+    const deps = { client, files, kv, storeDomain: STORE_DOMAIN, sink: null, log: () => {} };
+    expect((await runJobs(deps, { jobId: job.id })).waiting).toEqual([job.id]);
+    await withPlatform(client, (tx) => approvePurge(tx, admin, id, { purgeId: purge.id, slug }));
+
+    await reopenTenant(client, admin, id, { reason: 'they came back' });
+    const status = async () =>
+      (await client.query('select status, error from platform.tenant_jobs where id = $1', [job.id]))
+        .rows[0];
+    expect(await status()).toEqual({
+      status: 'failed',
+      error: 'cancelled: the store was reopened',
+    });
+
+    // Closed again, the old approval purges nothing, even if its job runs.
+    await close();
+    await client.query(`update platform.tenant_jobs set status = 'pending' where id = $1`, [
+      job.id,
+    ]);
+    expect((await runJobs(deps, { jobId: job.id })).failed).toEqual([job.id]);
+    expect((await status())?.error).toMatch(/approved before the store was last closed/);
+    expect((await counts(id)).products).toBeGreaterThan(0);
   });
 });

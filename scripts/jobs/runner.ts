@@ -223,6 +223,19 @@ async function runPurge(deps: RunDeps, job: ClaimedJob): Promise<'waiting' | 'pu
     return 'waiting';
   }
   if (!purge.approved_at) throw new JobRefused('the purge is not approved');
+  // Checked again here, whatever the job row says: an approval from before
+  // the store was last closed, or a grace period not over, purges nothing.
+  const { rows: checks } = await client.query<{ since_close: boolean; due: boolean }>(
+    `select t.closed_at is not null and p.approved_at >= t.closed_at as since_close,
+            t.purge_after is null or t.purge_after <= now() as due
+       from platform.tenants t join platform.tenant_purges p on p.tenant_id = t.id
+      where p.id = $1`,
+    [purge.id],
+  );
+  if (!checks[0]?.since_close) {
+    throw new JobRefused('the purge was approved before the store was last closed');
+  }
+  if (!checks[0].due) throw new JobRefused("the store's grace period is not over");
   const { deleted, verification } = await purgeStore(deps, job);
   await client.query('begin');
   try {

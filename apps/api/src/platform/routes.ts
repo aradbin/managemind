@@ -755,7 +755,8 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     const { id } = c.req.valid('param');
     requireSupport(c);
     const jobs = await withPlatform(c.var.staff.client, (tx) => listJobs(tx, id));
-    return c.json(await Promise.all(jobs.map((j) => jobOut(c.env, j))), 200);
+    const link = c.var.staff.actor.platformRole === 'super_admin';
+    return c.json(await Promise.all(jobs.map((j) => jobOut(c.env, j, link))), 200);
   });
   platform.openapi(R.requestExport, async (c) => {
     const { id } = c.req.valid('param');
@@ -767,7 +768,7 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       { requestId: c.var.requestId },
     );
     if (created) dispatchJobs(c.env, c.executionCtx);
-    return c.json(await jobOut(c.env, job), 202);
+    return c.json(await jobOut(c.env, job, true), 202);
   });
   const purgeOut = async (
     env: AppEnv['Bindings'],
@@ -780,7 +781,8 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     verification: (found.purge.verification as Record<string, unknown> | null) ?? null,
     finishedAt: found.purge.finishedAt,
     createdAt: found.purge.createdAt,
-    job: found.job ? await jobOut(env, found.job) : null,
+    // A purge job has no download link.
+    job: found.job ? await jobOut(env, found.job, false) : null,
   });
   platform.openapi(R.purge, async (c) => {
     const { id } = c.req.valid('param');
@@ -834,7 +836,7 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       { requestId: c.var.requestId },
     );
     if (created) dispatchJobs(c.env, c.executionCtx);
-    return c.json(await jobOut(c.env, job), 202);
+    return c.json(await jobOut(c.env, job, true), 202);
   });
   platform.openapi(R.reopen, async (c) => {
     const { id } = c.req.valid('param');

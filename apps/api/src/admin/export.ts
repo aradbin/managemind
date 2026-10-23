@@ -46,12 +46,12 @@ export function registerExport(admin: OpenAPIHono<StaffEnv>): void {
       const [latest] = await listJobs(tx, tx.tenantId, { kind: 'export', limit: 1 });
       return latest ?? null;
     });
-    return c.json(job ? await jobOut(c.env, job) : null, 200);
+    return c.json(job ? await jobOut(c.env, job, true) : null, 200);
   });
   admin.openapi(EXPORT_ROUTES.requestExport, async (c) => {
     // Owners only (core checks); allowed while the store is suspended.
     const { job, created } = await inStore(c, (tx) => requestExport(tx, c.var.staff.actor));
     if (created) dispatchJobs(c.env, c.executionCtx);
-    return c.json(await jobOut(c.env, job), 202);
+    return c.json(await jobOut(c.env, job, true), 202);
   });
 }

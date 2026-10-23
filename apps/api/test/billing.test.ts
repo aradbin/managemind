@@ -238,12 +238,15 @@ function fakeSslcommerz() {
   }) as typeof fetch;
 }
 
-const ipn = (fields: Record<string, string>) =>
+const ipn = (fields: Record<string, string>, ip?: string) =>
   createApp().request(
     '/v1/webhooks/sslcommerz/platform',
     {
       method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        ...(ip ? { 'cf-connecting-ip': ip } : {}),
+      },
       body: new URLSearchParams(fields).toString(),
     },
     gatewayEnv,
@@ -335,5 +338,20 @@ describe('Settings → Plan and billing', () => {
     expect(payments.rows).toEqual([{ method: 'sslcommerz', gateway_val_id: `real-${id}` }]);
     // Paid: no second session.
     expect((await o.post(`/v1/admin/billing/invoices/${issued.id}/pay`)).status).toBe(409);
+  });
+
+  it('caps the notifications from one IP, which SSLCommerz retries', async () => {
+    const ip = '203.0.113.77';
+    for (let sent = 0; sent < 600; sent += 50) {
+      const batch = await Promise.all(
+        Array.from({ length: 50 }, () => ipn({ status: 'FAILED' }, ip)),
+      );
+      expect(batch.every((r) => r.status === 200)).toBe(true);
+    }
+    const refused = await ipn({ val_id: 'forged', status: 'VALID' }, ip);
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get('retry-after')).toBeTruthy();
+    // Another address is unaffected.
+    expect((await ipn({ status: 'FAILED' }, '203.0.113.78')).status).toBe(200);
   });
 });

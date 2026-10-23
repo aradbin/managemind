@@ -615,6 +615,19 @@ export async function reopenTenant(
               and ${schema.tenantJobs.status} = 'running'`,
         );
       if (running) throw new AppError('conflict', { detail: 'the purge has started' });
+      // A purge asked for before the store reopened ends here: closing it
+      // again starts over, with a new grace period, dry run and approval.
+      await tx.db
+        .update(schema.tenantJobs)
+        .set({
+          status: 'failed',
+          error: 'cancelled: the store was reopened',
+          finishedAt: sql`now()`,
+        })
+        .where(
+          sql`${schema.tenantJobs.tenantId} = ${tenantId} and ${schema.tenantJobs.kind} = 'purge'
+              and ${schema.tenantJobs.status} = 'pending'`,
+        );
       await tx.db
         .update(t)
         .set({ status: 'active', closedAt: null, purgeAfter: null })

@@ -1,6 +1,7 @@
 // Rate limits for the sensitive endpoints only: sign-in codes, two-factor
 // checks, invitations (phase-1-plan §5.5), fetching images by URL
-// (phase-2-plan §3.7) and storefront search misses (phase-3-plan §3.7).
+// (phase-2-plan §3.7), storefront search misses (phase-3-plan §3.7) and
+// payment notifications (phase-5b-plan §12 PR 19).
 // Never on every request.
 import { AppError } from '@managemind/shared';
 import type { HitResult, LockoutPolicy, Window } from './limiter';
@@ -67,6 +68,14 @@ export const RULES = {
   'return:phone': { windows: [{ limit: 5, seconds: DAY }] },
   /** Return photos uploaded from one IP: 3 a request, with retries. */
   'return-photo:ip': { windows: [{ limit: 30, seconds: HOUR }] },
+  /**
+   * Payment notifications from one IP (the security review, phase-5b-plan
+   * §12 PR 19): each costs a validation call to SSLCommerz, so forged ones
+   * are capped, far above what SSLCommerz sends at pilot volume. A refused
+   * order IPN is settled by the return page or the delayed check; a refused
+   * invoice IPN is recorded by hand from the SSLCommerz panel.
+   */
+  'ipn:ip': { windows: [{ limit: 600, seconds: HOUR }] },
   /** Cart changes from one IP: generous, only to stop scripts filling the database. */
   'cart:ip': { windows: [{ limit: 300, seconds: HOUR }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */

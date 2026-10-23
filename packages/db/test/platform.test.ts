@@ -128,7 +128,7 @@ const EXPECTED: Record<string, { table: string[]; update?: string[] }> = {
   reminders: { table: ['INSERT', 'SELECT'] },
   terms_versions: { table: ['INSERT', 'SELECT'] },
   terms_acceptances: { table: ['INSERT', 'SELECT'] },
-  tenant_jobs: { table: ['INSERT', 'SELECT'] },
+  tenant_jobs: { table: ['INSERT', 'SELECT'], update: ['error', 'finished_at', 'status'] },
   tenant_purges: { table: ['INSERT', 'SELECT'], update: ['approved_at', 'approved_by'] },
 };
 

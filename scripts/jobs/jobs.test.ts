@@ -11,6 +11,7 @@ import {
   systemActor,
   withTenant,
 } from '@managemind/core';
+import { STORE_TABLES } from '@managemind/db/registry';
 import { connect, testUrls } from '@managemind/db/testing';
 import { permissionsOf } from '@managemind/shared';
 import { strFromU8, unzipSync } from 'fflate';
@@ -151,6 +152,16 @@ describe('the export job', () => {
     // No staff sign-in data in the members list.
     const members = strFromU8(zip['platform/members.jsonl'] as Uint8Array);
     expect(Object.keys(JSON.parse(members.trim()))).toEqual(['name', 'email', 'role', 'createdAt']);
+  });
+
+  it('leaves out every table with a password, a token or a sealed secret', async () => {
+    const { rows } = await client.query<{ table_name: string; column_name: string }>(
+      `select table_name, column_name from information_schema.columns
+        where table_schema = 'store' and table_name = any($1)
+          and column_name ~ '(password|secret|ciphertext|access_token|refresh_token|id_token|^token$)'`,
+      [STORE_TABLES.filter((t) => !(t in OMITTED))],
+    );
+    expect(rows).toEqual([]);
   });
 
   it('retries a failed run, and fails it on the third attempt', async () => {
