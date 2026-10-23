@@ -1,4 +1,4 @@
-# Store jobs (phase-5b-plan §3.9, ADR 0027): exports now, purges and resets
+# Store jobs (phase-5b-plan §3.9–§3.11, ADR 0027): exports and purges; resets
 # next. The platform screen and Settings write a pending row in
 # platform.tenant_jobs; the API starts this workflow with
 # GITHUB_DISPATCH_TOKEN, and the daily run picks up anything left (no token,
@@ -36,6 +36,8 @@ jobs:
       DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
       R2_BUCKET: managemind-files
       OUTBOX_QUEUE: managemind-outbox
+      KV_NAMESPACE: managemind-edge
+      STORE_DOMAIN: ${{ vars.STORE_DOMAIN || 'managemind.store' }}
       IN_JOB: ${{ inputs.job }}
     steps:
       # The runner's own psql answers in seconds, so a day with nothing to do
@@ -44,9 +46,12 @@ jobs:
         id: pending
         run: |
           : "${DATABASE_URL_MIGRATIONS:?the DATABASE_URL_MIGRATIONS secret is not set}"
+          # The runner's own condition (scripts/jobs/runner.ts): a purge waits between its dry run and the approval.
           count=$(psql "$DATABASE_URL_MIGRATIONS" -tAc "select count(*) from platform.tenant_jobs
-            where kind = 'export' and (status = 'pending'
-              or (status = 'running' and updated_at < now() - interval '90 minutes'))")
+            where kind in ('export', 'purge')
+              and (status = 'pending' or (status = 'running' and updated_at < now() - interval '90 minutes'))
+              and (kind <> 'purge' or exists (select 1 from platform.tenant_purges p
+                    where p.job_id = tenant_jobs.id and (p.dry_run is null or p.approved_at is not null)))")
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "$count job(s) to run"
       - if: steps.pending.outputs.count != '0'

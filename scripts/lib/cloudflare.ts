@@ -220,6 +220,37 @@ export class Cloudflare {
     await this.raw('PUT', this.objectPath(bucket, key), body, contentType);
   }
 
+  /** Deletes R2 objects one by one (the REST API has no bulk delete); a missing one is fine. */
+  async r2Delete(bucket: string, keys: readonly string[]): Promise<void> {
+    for (const key of keys) await this.raw('DELETE', this.objectPath(bucket, key));
+  }
+
+  /** Every KV key under a prefix. */
+  async kvList(namespaceId: string, prefix: string): Promise<string[]> {
+    const names: string[] = [];
+    let cursor: string | undefined;
+    do {
+      const query = new URLSearchParams({ prefix, limit: '1000' });
+      if (cursor) query.set('cursor', cursor);
+      const res = await this.api.request<
+        Envelope<{ name: string }[]> & { result_info?: { cursor?: string } }
+      >('GET', `${this.account}/storage/kv/namespaces/${namespaceId}/keys?${query}`);
+      names.push(...res.result.map((k) => k.name));
+      cursor = res.result_info?.cursor || undefined;
+    } while (cursor);
+    return names;
+  }
+
+  /** A KV namespace's ID by title, without creating it. */
+  async kvNamespaceId(title: string): Promise<string> {
+    const namespaces = await this.get<{ id: string; title: string }[]>(
+      '/storage/kv/namespaces?per_page=100',
+    );
+    const found = namespaces.find((n) => n.title === title);
+    if (!found) throw new Error(`KV namespace ${title} not found`);
+    return found.id;
+  }
+
   private objectPath(bucket: string, key: string) {
     return `${this.account}/r2/buckets/${bucket}/objects/${key.split('/').map(encodeURIComponent).join('/')}`;
   }

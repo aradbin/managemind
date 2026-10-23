@@ -2,12 +2,13 @@
 // every store table as JSON lines in the order a later import inserts them,
 // spreadsheets for the lists a person opens, the store's platform rows, and
 // its files from R2, with a manifest of counts and SHA-256s. The zip goes to
-// exports/<tenant>/<job>.zip, which the R2 rule deletes after 7 days.
+// exports/tenants/<tenant>/<job>.zip, which the R2 rule deletes after 7 days.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { migrationsFolder } from '@managemind/db/migrate';
 import { STORE_TABLES } from '@managemind/db/registry';
+import { objectKey, tenantObjectPrefixes } from '@managemind/shared';
 import { type Zippable, zipSync } from 'fflate';
 import type pg from 'pg';
 
@@ -16,6 +17,7 @@ export interface ObjectStore {
   list(prefix: string): AsyncIterable<{ key: string; size: number }>;
   get(key: string): Promise<Uint8Array | null>;
   put(key: string, body: Uint8Array, contentType: string): Promise<void>;
+  delete(keys: readonly string[]): Promise<void>;
 }
 
 /** Store tables left out, with why; the manifest lists them. */
@@ -189,7 +191,7 @@ export async function exportStore(
   await onProgress({ step: 'platform', done: 1, total: 1 });
 
   // The store's files, as they are in R2 under tenants/<id>/.
-  const prefix = `tenants/${tenantId}/`;
+  const [prefix = ''] = tenantObjectPrefixes(tenantId);
   const keys: string[] = [];
   for await (const o of files.list(prefix)) keys.push(o.key);
   let fileCount = 0;
@@ -222,7 +224,7 @@ export async function exportStore(
   const body = zipSync(zip, { level: 6 });
 
   await onProgress({ step: 'upload', done: 0, total: 1 });
-  const fileKey = `exports/${tenantId}/${jobId}.zip`;
+  const fileKey = objectKey('export', tenantId, `${jobId}.zip`);
   await files.put(fileKey, body, 'application/zip');
   return { fileKey, bytes: body.byteLength, sha256: sha256(body), tables, files: fileCount };
 }

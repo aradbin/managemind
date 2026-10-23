@@ -17,6 +17,12 @@ const files: ObjectStore = {
   list: (prefix) => cf.r2List(bucket, prefix),
   get: (key) => cf.r2Get(bucket, key),
   put: (key, body, type) => cf.r2Put(bucket, key, body, type),
+  delete: (keys) => cf.r2Delete(bucket, keys),
+};
+const kvNamespace = await cf.kvNamespaceId(process.env.KV_NAMESPACE || 'managemind-edge');
+const kv = {
+  list: (prefix: string) => cf.kvList(kvNamespace, prefix),
+  delete: (keys: readonly string[]) => cf.kvDeleteMany(kvNamespace, keys),
 };
 const queue = process.env.OUTBOX_QUEUE || 'managemind-outbox';
 const queueId = await cf.queueId(queue).catch((e: unknown) => {
@@ -33,6 +39,8 @@ try {
     {
       client,
       files,
+      kv,
+      storeDomain: process.env.STORE_DOMAIN || 'managemind.store',
       sink: queueId
         ? { send: (events: readonly OutboxEvent[]) => cf.sendToQueue(queueId, events) }
         : null,
@@ -40,7 +48,7 @@ try {
     args.get('job') ? { jobId: args.get('job') as string } : {},
   );
   notice(
-    `jobs: ${summary.succeeded.length} done, ${summary.retried.length} to retry, ${summary.failed.length} failed`,
+    `jobs: ${summary.succeeded.length} done, ${summary.waiting.length} waiting for approval, ${summary.retried.length} to retry, ${summary.failed.length} failed`,
   );
   if (summary.failed.length) process.exitCode = 1;
 } finally {

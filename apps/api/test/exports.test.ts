@@ -55,7 +55,7 @@ async function setup() {
 
 /** What the workflow does when an export finishes. */
 async function finish(jobId: string, tenantId: string) {
-  const key = `exports/${tenantId}/${jobId}.zip`;
+  const key = `exports/tenants/${tenantId}/${jobId}.zip`;
   await env.FILES.put(key, new Uint8Array([80, 75, 5, 6]));
   await owner.query(
     `update platform.tenant_jobs set status = 'succeeded', file_key = $2, finished_at = now() where id = $1`,

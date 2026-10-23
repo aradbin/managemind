@@ -530,3 +530,172 @@ export function JobsSection({ tenantId, superAdmin }: { tenantId: string; superA
     </section>
   );
 }
+
+type DryRun = {
+  storeRows?: Record<string, number>;
+  files?: Record<string, number>;
+  kvKeys?: number;
+  staffAccounts?: number;
+  exportsKept?: number;
+  customDomains?: { notReleased?: number };
+};
+const sum = (o: Record<string, number> | undefined) =>
+  Object.values(o ?? {}).reduce((a, b) => a + b, 0);
+
+/** A closed store's purge (phase-5b-plan §3.11): the dry run, its report, the approval, the result. */
+export function PurgeSection({
+  tenant,
+  purgeAfter,
+  superAdmin,
+}: {
+  tenant: TenantRef;
+  purgeAfter: string | null;
+  superAdmin: boolean;
+}) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState('');
+  const key = ['platform', 'tenant', tenant.id, 'purge'] as const;
+  const purge = useQuery({
+    queryKey: key,
+    enabled: tenant.status === 'closed' || tenant.status === 'purged',
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/platform/tenants/{id}/purge', { params: { path: { id: tenant.id } } }),
+      ),
+    refetchInterval: (q) => {
+      const p = q.state.data;
+      const waiting = p && !p.finishedAt && (!p.dryRun || p.approvedAt);
+      return waiting ? 15_000 : false;
+    },
+  });
+  const start = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/purge', { params: { path: { id: tenant.id } } }),
+      ),
+    onSuccess: (p) => queryClient.setQueryData(key, p),
+  });
+  const approve = useMutation({
+    mutationFn: async (purgeId: string) =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/purge/approve', {
+          params: { path: { id: tenant.id } },
+          body: { purgeId, slug: tenant.slug, code },
+        }),
+      ),
+    onSuccess: async (p) => {
+      toast(t('purge.approved'));
+      setOpen(false);
+      setCode('');
+      queryClient.setQueryData(key, p);
+      await queryClient.invalidateQueries({ queryKey: ['platform', 'tenant', tenant.id, 'jobs'] });
+    },
+  });
+  if (tenant.status !== 'closed' && tenant.status !== 'purged') return null;
+  const p = purge.data;
+  const dry = (p?.dryRun ?? null) as DryRun | null;
+  const notYet = purgeAfter !== null && Date.parse(purgeAfter) > Date.now();
+  const date = (d: string | Date) => formatDateTime(locale, new Date(d), { dateStyle: 'medium' });
+  const step = (p?.job?.progress as { step?: string; table?: string } | undefined) ?? {};
+  return (
+    <section aria-labelledby="purge-h" className="flex flex-col gap-3">
+      <h2 id="purge-h" className="text-lg font-semibold">
+        {t('purge.title')}
+      </h2>
+      {purge.isError && <Notice tone="error">{errorMessage(purge.error, t)}</Notice>}
+      {p?.finishedAt ? (
+        <Notice>{t('purge.done', { date: date(p.finishedAt) })}</Notice>
+      ) : (
+        <p className="text-muted-foreground">{t('purge.intro')}</p>
+      )}
+      {!p && purge.isSuccess && notYet && purgeAfter && (
+        <p>{t('purge.notYet', { date: date(purgeAfter) })}</p>
+      )}
+      {!p && purge.isSuccess && !notYet && superAdmin && (
+        <div>
+          <Button variant="danger" disabled={start.isPending} onClick={() => start.mutate()}>
+            {t('purge.start')}
+          </Button>
+        </div>
+      )}
+      {start.isError && <Notice tone="error">{errorMessage(start.error, t)}</Notice>}
+      {p && !p.dryRun && <Notice>{t('purge.counting')}</Notice>}
+      {p?.job?.status === 'running' && p.approvedAt && (
+        <Notice>{t('purge.running', { step: step.table ?? step.step ?? '…' })}</Notice>
+      )}
+      {p?.job?.error && !p.finishedAt && (
+        <Notice tone="error">
+          <span lang="en">{t('purge.failed', { error: p.job.error })}</span>
+        </Notice>
+      )}
+      {dry && !p?.finishedAt && (
+        <>
+          <h3 className="font-semibold">{t('purge.report')}</h3>
+          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+            <dt>{t('purge.storeRows')}</dt>
+            <dd className="text-end">{sum(dry.storeRows)}</dd>
+            <dt>{t('purge.files')}</dt>
+            <dd className="text-end">{sum(dry.files)}</dd>
+            <dt>{t('purge.kvKeys')}</dt>
+            <dd className="text-end">{dry.kvKeys ?? 0}</dd>
+            <dt>{t('purge.staffAccounts')}</dt>
+            <dd className="text-end">{dry.staffAccounts ?? 0}</dd>
+            <dt>{t('purge.domains')}</dt>
+            <dd className="text-end">{dry.customDomains?.notReleased ?? 0}</dd>
+            <dt>{t('purge.exportsKept')}</dt>
+            <dd className="text-end">{dry.exportsKept ?? 0}</dd>
+          </dl>
+          <details>
+            <summary className="cursor-pointer">{t('purge.tables')}</summary>
+            <ul lang="en" className="mt-2 columns-2 text-sm">
+              {Object.entries(dry.storeRows ?? {})
+                .filter(([, n]) => n > 0)
+                .map(([table, n]) => (
+                  <li key={table}>
+                    {table}: {n}
+                  </li>
+                ))}
+            </ul>
+          </details>
+          {superAdmin && p && !p.approvedAt && (
+            <div>
+              <Button variant="danger" onClick={() => setOpen(true)}>
+                {t('purge.approve')}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+      {p && (
+        <ConfirmDialog
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) approve.reset();
+          }}
+          title={t('purge.approveTitle', { name: tenant.name })}
+          confirmLabel={t('purge.approve')}
+          confirmText={tenant.slug}
+          canConfirm={/^\d{6}$/.test(code)}
+          busy={approve.isPending}
+          error={approve.isError ? saveErrorMessage(approve.error, t) : undefined}
+          onConfirm={() => approve.mutate(p.id)}
+        >
+          <p>{t('purge.approveBody')}</p>
+          <Field
+            label={t('tenant.code')}
+            hint={t('tenant.codeHint')}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+          />
+        </ConfirmDialog>
+      )}
+    </section>
+  );
+}

@@ -10392,6 +10392,113 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/tenants/{id}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's latest purge: its dry run, approval and verification (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Purge */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantPurge"] | null;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Start a closed store's purge with its dry run; custom domains are released first (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Dry run queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantPurge"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/purge/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve the dry run: the store's slug typed and a fresh two-factor code (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        purgeId: string;
+                        slug: string;
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Approved */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantPurge"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/tenants/{id}/reopen": {
         parameters: {
             query?: never;
@@ -14349,6 +14456,26 @@ export interface components {
                 email: string;
             }[];
             memberCount: number;
+        };
+        TenantPurge: {
+            /** Format: uuid */
+            id: string;
+            dryRun: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            approvedAt: string | null;
+            deleted: {
+                [key: string]: unknown;
+            } | null;
+            verification: {
+                [key: string]: unknown;
+            } | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            job: components["schemas"]["TenantJob"] | null;
         };
         SetupChecklist: {
             items: {

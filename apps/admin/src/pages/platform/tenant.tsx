@@ -23,7 +23,13 @@ import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
 import { switchStore } from '../../lib/store';
 import { StatusBadge } from './status';
-import { CloseOrReopen, JobsSection, SetupSection, SubscriptionSection } from './tenant-launch';
+import {
+  CloseOrReopen,
+  JobsSection,
+  PurgeSection,
+  SetupSection,
+  SubscriptionSection,
+} from './tenant-launch';
 
 const route = getRouteApi('/_shell/platform/tenants/$id');
 
@@ -107,6 +113,13 @@ export function TenantPage() {
           />
           <JobsSection
             tenantId={tenant.data.id}
+            superAdmin={me.user.platformRole === 'super_admin'}
+          />
+          <PurgeSection
+            tenant={tenant.data}
+            purgeAfter={
+              tenant.data.purgeAfter ? new Date(tenant.data.purgeAfter).toISOString() : null
+            }
             superAdmin={me.user.platformRole === 'super_admin'}
           />
           {tenant.data.domains.length > 0 && (

@@ -26,6 +26,16 @@ beforeAll(async () => {
 });
 afterAll(() => client.end());
 
+const noKv = { list: async () => [], delete: async () => {} };
+const base = {
+  get client() {
+    return client;
+  },
+  kv: noKv,
+  storeDomain: 'stores.example.test',
+  log: () => {},
+};
+
 function memoryStore(): ObjectStore & { objects: Map<string, Uint8Array>; failPut: boolean } {
   const objects = new Map<string, Uint8Array>();
   const store = {
@@ -40,6 +50,9 @@ function memoryStore(): ObjectStore & { objects: Map<string, Uint8Array>; failPu
     put: async (key: string, body: Uint8Array) => {
       if (store.failPut) throw new Error('R2 said no');
       objects.set(key, body);
+    },
+    delete: async (keys: readonly string[]) => {
+      for (const k of keys) objects.delete(k);
     },
   };
   return store;
@@ -95,12 +108,15 @@ describe('the export job', () => {
     const job = await queue(a.id);
     const sent: OutboxEvent[] = [];
     const summary = await runJobs(
-      { client, files, sink: { send: async (e) => void sent.push(...e) }, log: () => {} },
+      { ...base, files, sink: { send: async (e) => void sent.push(...e) } },
       { jobId: job.id },
     );
     expect(summary.succeeded).toEqual([job.id]);
     const row = await jobRow(job.id);
-    expect(row).toMatchObject({ status: 'succeeded', file_key: `exports/${a.id}/${job.id}.zip` });
+    expect(row).toMatchObject({
+      status: 'succeeded',
+      file_key: `exports/tenants/${a.id}/${job.id}.zip`,
+    });
     expect(sent.map((e) => e.eventType)).toEqual(['tenant.exported']);
     expect(sent[0]?.payload).toMatchObject({ jobId: job.id });
 
@@ -142,7 +158,7 @@ describe('the export job', () => {
     const files = memoryStore();
     files.failPut = true;
     const job = await queue(s.id);
-    const run = () => runJobs({ client, files, sink: null, log: () => {} }, { jobId: job.id });
+    const run = () => runJobs({ ...base, files, sink: null }, { jobId: job.id });
     expect((await run()).retried).toEqual([job.id]);
     expect(await jobRow(job.id)).toMatchObject({
       status: 'pending',

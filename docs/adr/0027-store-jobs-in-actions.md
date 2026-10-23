@@ -20,7 +20,7 @@ GitHub Actions already runs the Platform CLI with the migration role. A private 
    - Without the token, or when GitHub doesn't answer, the job waits for that daily run.
 3. **The runner claims with `for update skip locked`.** A claimed job is `running`. A running job untouched for 90 minutes lost its runner and is claimed again. A failure goes back to `pending` with the error, and the third failure is final (`failed`). The workflow's concurrency group runs one at a time.
 4. **Progress is saved on the row** after each table and each 50 files, so the platform screen shows it. An export only reads, so a resumed export starts again. A purge (PR 12) resumes from its last finished batch.
-5. **The export** is one zip in R2, `exports/<tenant>/<job>.zip`, which the bucket's rule deletes after 7 days. It holds:
+5. **The export** is one zip in R2, `exports/tenants/<tenant>/<job>.zip`, which the bucket's rule deletes after 7 days. It holds:
    - every store table as JSON lines, in insert order (the reverse of the purge order);
    - spreadsheets (CSV, UTF-8 with a byte order mark) of the lists a person opens;
    - the store's platform rows: the tenant record, domains, members (name, email and role only), subscription, issued invoices and payments, terms acceptances;
@@ -33,7 +33,15 @@ GitHub Actions already runs the Platform CLI with the migration role. A private 
    - Finishing an export writes `tenant.exported` to the outbox in the same commit as the job's result.
    - The runner sends the event straight to the outbox queue through Cloudflare's API; if it can't, the Worker's daily sweep does.
    - The outbox consumer emails each owner the signed link, in their language, saying it holds shoppers' personal data.
-8. **Who may ask:**
+8. **The purge runs twice.**
+   - Asked for on a closed store after its grace period (at once for demo and test stores). The API first releases any custom domain still at Cloudflare for SaaS, since the Worker holds the zone token, and the Turnstile list follows by the outbox.
+   - The first run is the dry run: the store's rows per table, its R2 objects, its KV keys, its unreleased domains, the staff accounts in no other store, and what stays. It is saved on the purge record, and the job waits, pending; the claim skips it until approved.
+   - A super admin approves it with the store's slug typed and a fresh two-factor code; that is audited with the dry run's counts.
+   - The second run refuses a store that isn't closed. It deletes the store rows in `STORE_TABLES` order, 1,000 a statement, saving the table after each batch. Then the files (except an export whose link is still live), the KV keys, and the platform rows by `PLATFORM_TENANT_ROWS`, with staff accounts that belonged only to this store.
+   - Then it verifies: no store rows, no files, no store-prefixed KV keys and no deletable platform rows left. Only then is the store `purged`, in one commit with the purge record, the job's result and an audit entry. No outbox event is written, since the outbox is a store table.
+   - Every step deletes what is still there, so a stopped run resumes and ends the same. A refusal (the store reopened) fails at once instead of retrying.
+9. **Queues drop a gone store's messages.** Cloudflare Queues can't delete one store's messages, so the queue router asks the store's status once per batch. A purged store's messages are acknowledged and dropped. A closed store keeps its lifecycle, domain and billing events, its cache purges, and checks on payments; its shopper and staff notifications, imports and sale edges are dropped.
+10. **Who may ask:**
    - an owner, at most once a day (Q13), from Settings, and not through a support grant;
    - a super admin, at any time;
    - closing a store queues its export.

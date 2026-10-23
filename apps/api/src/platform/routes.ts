@@ -4,11 +4,13 @@
 // to enrolment (403 two_factor_required) and can do nothing else here.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  approvePurge,
   CHECKLIST_ITEMS,
   type Checklist,
   closeTenant,
   createPlan,
   createTenant,
+  getPurge,
   getSubscription,
   getTenantDetail,
   grantSupportAccess,
@@ -19,15 +21,18 @@ import {
   listPlatformStaff,
   listTenants,
   listTermsVersions,
+  type PurgeRecord,
   platformDashboard,
   publishTerms,
   readStoreHealth,
   refreshStoreHealth,
   reopenTenant,
   requestExport,
+  requestPurge,
   revokeSupportAccess,
   setPlatformRole,
   setSubscription,
+  type TenantJob,
   transitionTenant,
   updatePlan,
   withPlatform,
@@ -49,6 +54,7 @@ import { relayTo, type StaffEnv, staffSession } from '../admin/context';
 import { createMailer } from '../auth/email';
 import { requireFreshTwoFactor } from '../auth/fresh-two-factor';
 import { adminOrigin } from '../auth/routes';
+import { releaseDomains } from '../domains';
 import type { AppEnv } from '../env';
 import { dispatchJobs, Job, jobOut } from '../tenant-jobs';
 import { registerPlatformBilling } from './billing';
@@ -151,6 +157,18 @@ const TenantDetail = TenantSummary.extend({
   memberCount: z.number().int(),
 }).openapi('TenantDetail');
 const Reason = z.object({ reason: z.string().trim().min(3).max(500) });
+const Purge = z
+  .object({
+    id: z.uuid(),
+    dryRun: z.record(z.string(), z.unknown()).nullable(),
+    approvedAt: z.date().nullable(),
+    deleted: z.record(z.string(), z.unknown()).nullable(),
+    verification: z.record(z.string(), z.unknown()).nullable(),
+    finishedAt: z.date().nullable(),
+    createdAt: z.date(),
+    job: z.union([Job, z.null()]),
+  })
+  .openapi('TenantPurge');
 
 export const PLATFORM_ROUTES = {
   tenants: r({
@@ -252,6 +270,36 @@ export const PLATFORM_ROUTES = {
     summary: "Export the store's data; the owners are emailed the link (super_admin)",
     request: { params: Id },
     responses: json(Job, 'Queued', 202),
+  }),
+  purge: r({
+    method: 'get',
+    path: '/tenants/{id}/purge',
+    summary: "The store's latest purge: its dry run, approval and verification (support)",
+    request: { params: Id },
+    responses: json(z.union([Purge, z.null()]), 'Purge'),
+  }),
+  requestPurge: r({
+    method: 'post',
+    path: '/tenants/{id}/purge',
+    summary:
+      "Start a closed store's purge with its dry run; custom domains are released first (super_admin)",
+    request: { params: Id },
+    responses: json(Purge, 'Dry run queued', 202),
+  }),
+  approvePurge: r({
+    method: 'post',
+    path: '/tenants/{id}/purge/approve',
+    summary:
+      "Approve the dry run: the store's slug typed and a fresh two-factor code (super_admin)",
+    request: {
+      params: Id,
+      ...body(
+        z
+          .object({ purgeId: z.uuid(), slug: z.string().trim().min(1).max(63) })
+          .extend(FreshCode.shape),
+      ),
+    },
+    responses: json(Purge, 'Approved', 202),
   }),
   reopen: r({
     method: 'post',
@@ -694,6 +742,61 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     );
     if (created) dispatchJobs(c.env, c.executionCtx);
     return c.json(await jobOut(c.env, job), 202);
+  });
+  const purgeOut = async (
+    env: AppEnv['Bindings'],
+    found: { purge: PurgeRecord; job: TenantJob | null },
+  ) => ({
+    id: found.purge.id,
+    dryRun: (found.purge.dryRun as Record<string, unknown> | null) ?? null,
+    approvedAt: found.purge.approvedAt,
+    deleted: (found.purge.deleted as Record<string, unknown> | null) ?? null,
+    verification: (found.purge.verification as Record<string, unknown> | null) ?? null,
+    finishedAt: found.purge.finishedAt,
+    createdAt: found.purge.createdAt,
+    job: found.job ? await jobOut(env, found.job) : null,
+  });
+  platform.openapi(R.purge, async (c) => {
+    const { id } = c.req.valid('param');
+    const found = await withPlatform(c.var.staff.client, (tx) =>
+      getPurge(tx, c.var.staff.actor, id),
+    );
+    return c.json(found ? await purgeOut(c.env, found) : null, 200);
+  });
+  platform.openapi(R.requestPurge, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSuperAdmin(c);
+    // Custom hostnames and the Turnstile list are released here, where the
+    // zone token is; closing did it already unless that failed.
+    const { rows } = await c.var.staff.client.query<{ n: number }>(
+      `select count(*)::int as n from platform.tenant_domains where tenant_id = $1 and status <> 'removed'`,
+      [id],
+    );
+    if ((rows[0]?.n ?? 0) > 0) await releaseDomains(c.env, c.executionCtx, id);
+    const requested = await withPlatform(
+      c.var.staff.client,
+      (tx) => requestPurge(tx, c.var.staff.actor, id),
+      { requestId: c.var.requestId },
+    );
+    if (requested.created) dispatchJobs(c.env, c.executionCtx);
+    return c.json(await purgeOut(c.env, requested), 202);
+  });
+  platform.openapi(R.approvePurge, async (c) => {
+    const { id } = c.req.valid('param');
+    const input = c.req.valid('json');
+    requireSuperAdmin(c);
+    await requireFreshTwoFactor(c, input.code);
+    const found = await withPlatform(
+      c.var.staff.client,
+      async (tx) => {
+        await approvePurge(tx, c.var.staff.actor, id, { purgeId: input.purgeId, slug: input.slug });
+        return getPurge(tx, c.var.staff.actor, id);
+      },
+      { requestId: c.var.requestId },
+    );
+    dispatchJobs(c.env, c.executionCtx);
+    if (!found) throw new AppError('not_found');
+    return c.json(await purgeOut(c.env, found), 202);
   });
   platform.openapi(R.reopen, async (c) => {
     const { id } = c.req.valid('param');
