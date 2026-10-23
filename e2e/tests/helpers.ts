@@ -4,10 +4,16 @@ import { createHmac } from 'node:crypto';
 import { deflateSync, gzipSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
-import { bn } from '../../apps/admin/src/i18n/bn';
+import { billingBn } from '../../apps/admin/src/i18n/billing-bn';
+import { bn as baseBn } from '../../apps/admin/src/i18n/bn';
+import { launchBn } from '../../apps/admin/src/i18n/launch-bn';
+import { onlineStoreBn } from '../../apps/admin/src/i18n/online-store-bn';
+import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { DEV_TOKEN } from './people';
 import { API } from './urls';
 
+// The base messages and the screens' own catalogs (apps/admin/src/i18n).
+const bn = { ...baseBn, ...launchBn, ...billingBn, ...onlineStoreBn, ...ordersBn };
 type Key = keyof typeof bn;
 
 /** An admin message in Bangla, with {placeholders} filled. */
@@ -145,4 +151,55 @@ export function pngImage(width: number, height: number, rgb: [number, number, nu
     chunk('IDAT', pixels),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+export interface NewStore {
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  ownerName: string;
+  kind?: 'client' | 'demo' | 'test';
+  /** Part of the plan's name as the list shows it; no plan when left out. */
+  plan?: string;
+  preset?: 'general' | 'fashion' | 'grocery';
+}
+
+/** Platform → New store, step by step on a phone, all at once on a desktop (phase-5b-plan §3.2). */
+export async function createStore(page: Page, store: NewStore): Promise<void> {
+  await page.goto(`${API}/platform`);
+  await page.getByRole('link', { name: t('newStore.title') }).click();
+  await expect(page.getByRole('heading', { name: t('newStore.title'), level: 1 })).toBeVisible();
+  const next = async () => {
+    const button = page.getByRole('button', { name: t('newStore.next') });
+    if (await button.isVisible()) await button.click();
+  };
+  await page.getByLabel(t('store.name')).fill(store.name);
+  await page.getByLabel(t('tenants.slug')).fill(store.slug);
+  // "<slug>.<store domain> is free", whatever the store domain is here.
+  const [before = '', after = ''] = t('newStore.slugFree', { host: '\u0000' }).split('\u0000');
+  const literal = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  await expect(
+    page.getByText(
+      new RegExp(`^${literal(before)}${literal(store.slug)}\\.\\S+${literal(after)}$`),
+    ),
+  ).toBeVisible();
+  if (store.kind) await page.getByLabel(t('newStore.kind')).selectOption(store.kind);
+  await expectAccessible(page, 'new store');
+  await next();
+  await page.getByLabel(t('tenants.ownerEmail')).fill(store.ownerEmail);
+  await page.getByLabel(t('tenants.ownerName')).fill(store.ownerName);
+  await next();
+  if (store.plan) {
+    const select = page.getByRole('combobox', { name: t('subscription.plan'), exact: true });
+    const value = await select
+      .locator('option', { hasText: store.plan })
+      .first()
+      .getAttribute('value');
+    await select.selectOption(value ?? '');
+    await expect(page.getByLabel(t('newStore.billingDay'))).toBeVisible();
+  }
+  await next();
+  if (store.preset) await page.getByLabel(t('newStore.preset')).selectOption(store.preset);
+  await page.getByRole('button', { name: t('newStore.create') }).click();
+  await expect(page.getByRole('heading', { name: store.name })).toBeVisible();
 }

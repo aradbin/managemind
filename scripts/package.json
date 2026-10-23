@@ -8,7 +8,8 @@
     "platform": "tsx platform/cli.ts",
     "demo:catalog": "tsx demo/catalog.ts",
     "keys": "tsx keys.ts",
-    "jobs": "tsx jobs/run.ts"
+    "jobs": "tsx jobs/run.ts",
+    "load": "tsx load/run.ts"
   },
   "dependencies": {
     "@managemind/core": "workspace:*",

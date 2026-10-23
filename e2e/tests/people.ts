@@ -10,7 +10,12 @@ export function people(project: string) {
     storeName: `E2E ${project} ${RUN}`,
     owner: `${base}-owner@example.test`,
     admin: `${base}-admin@example.test`,
+    platform: `${base}-platform@example.test`,
     staff: `${base}-staff@example.test`,
+    /** The store the launch flows onboard, close and purge. */
+    launchSlug: `${base}-new`,
+    launchName: `E2E ${project} ${RUN} new`,
+    launchOwner: `${base}-new-owner@example.test`,
     secondSlug: `${base}-2`,
     secondName: `E2E ${project} ${RUN} two`,
   };

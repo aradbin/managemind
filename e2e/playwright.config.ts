@@ -35,6 +35,20 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 } },
     },
+    // Launch readiness (phase-5b-plan §10): onboarding, billing and closing,
+    // with the launch super admin the seed made. Serial, so no retries.
+    {
+      name: 'launch-phone',
+      testMatch: /launch\.spec\.ts/,
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true },
+    },
+    {
+      name: 'launch-desktop',
+      testMatch: /launch\.spec\.ts/,
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 } },
+    },
     // A shopper's flows on the demo stores (phase-3-plan §9); no seed needed.
     {
       name: 'storefront-phone',

@@ -17,6 +17,8 @@ export function e2eNames(run: string, project: string) {
     storeName: `E2E ${project} ${run}`,
     owner: `${base}-owner@example.test`,
     admin: `${base}-admin@example.test`,
+    /** The launch flows' super admin (e2e/tests/launch.spec.ts), with its own two-factor setup. */
+    platform: `${base}-platform@example.test`,
   };
 }
 
@@ -40,6 +42,7 @@ export async function seedE2E(client: pg.Client, run: string, storeDomain: strin
       },
     );
     await grantRole(client, { email: n.admin, role: 'super_admin', name: 'E2E Admin' });
+    await grantRole(client, { email: n.platform, role: 'super_admin', name: 'E2E Platform' });
   }
 }
 

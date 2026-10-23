@@ -5,7 +5,16 @@
 // Runs once per viewport project, on that project's own seeded store, with
 // axe on every screen.
 import { type Browser, expect, type Page, test } from '@playwright/test';
-import { expectAccessible, mailCount, nextMail, signIn, signInHere, t, totp } from './helpers';
+import {
+  createStore,
+  expectAccessible,
+  mailCount,
+  nextMail,
+  signIn,
+  signInHere,
+  t,
+  totp,
+} from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API, STOREFRONT } from './urls';
 
@@ -93,15 +102,13 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
   await test.step('the super admin gives the owner a second store, and the owner switches', async () => {
     await admin.goto(`${API}/platform`);
     await expectAccessible(admin, 'platform stores');
-    await admin.getByRole('button', { name: t('tenants.create') }).click();
-    const dialog = admin.getByRole('dialog');
-    await dialog.getByLabel(t('tenants.slug')).fill(p.secondSlug);
-    await dialog.getByLabel(t('store.name')).fill(p.secondName);
-    await dialog.getByLabel(t('tenants.ownerEmail')).fill(p.owner);
-    await dialog.getByLabel(t('tenants.ownerName')).fill('E2E Owner');
-    await expectAccessible(admin, 'create store dialog');
-    await dialog.getByRole('button', { name: t('tenants.create') }).click();
-    await expect(admin.getByRole('heading', { name: p.secondName })).toBeVisible();
+    await createStore(admin, {
+      name: p.secondName,
+      slug: p.secondSlug,
+      ownerEmail: p.owner,
+      ownerName: 'E2E Owner',
+      kind: 'test',
+    });
 
     await owner.goto(`${API}/`);
     await switcher(owner).click();
