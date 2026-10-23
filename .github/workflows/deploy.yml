@@ -112,6 +112,7 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           PLATFORM_SSLCOMMERZ_STORE_ID: ${{ vars.PLATFORM_SSLCOMMERZ_STORE_ID }}
           PLATFORM_SSLCOMMERZ_PASSWORD: ${{ secrets.PLATFORM_SSLCOMMERZ_PASSWORD }}
+          GITHUB_DISPATCH_TOKEN: ${{ secrets.GITHUB_DISPATCH_TOKEN }}
         run: |
           : "${AUTH_SECRET:?the AUTH_SECRET repository secret is not set}"
           : "${RESEND_API_KEY:?the RESEND_API_KEY repository secret is not set}"
@@ -139,6 +140,11 @@ jobs:
           if [ -z "$PLATFORM_SSLCOMMERZ_STORE_ID" ] || [ -z "$PLATFORM_SSLCOMMERZ_PASSWORD" ]; then
             echo "::notice title=Invoice payment::PLATFORM_SSLCOMMERZ_STORE_ID (variable) or PLATFORM_SSLCOMMERZ_PASSWORD (secret) not set: the pay online button on invoices is off"
           fi
+          # Store jobs (phase-5b-plan §3.9): with the token an export starts at
+          # once; without it the Store jobs workflow's daily run picks it up.
+          if [ -z "$GITHUB_DISPATCH_TOKEN" ]; then
+            echo "::notice title=Store jobs::GITHUB_DISPATCH_TOKEN not set: exports start with the Store jobs workflow's daily run"
+          fi
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           (umask 077; jq -n --arg auth "$AUTH_SECRET" --arg resend "$RESEND_API_KEY" --arg store "$CF_STORE_TOKEN" \
@@ -146,7 +152,9 @@ jobs:
             --arg account "$CLOUDFLARE_ACCOUNT_ID" --arg credentials "$CREDENTIALS_KEY" \
             --arg vpub "$VAPID_PUBLIC_KEY" --arg vpriv "$VAPID_PRIVATE_KEY" \
             --arg sslid "$PLATFORM_SSLCOMMERZ_STORE_ID" --arg sslpass "$PLATFORM_SSLCOMMERZ_PASSWORD" \
-            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend}
+            --arg dispatch "$GITHUB_DISPATCH_TOKEN" --arg repo "$GITHUB_REPOSITORY" \
+            '{AUTH_SECRET: $auth, RESEND_API_KEY: $resend, GITHUB_REPOSITORY: $repo}
+              + (if $dispatch == "" then {} else {GITHUB_DISPATCH_TOKEN: $dispatch} end)
               + (if $sslid == "" or $sslpass == "" then {} else
                   {PLATFORM_SSLCOMMERZ_STORE_ID: $sslid, PLATFORM_SSLCOMMERZ_PASSWORD: $sslpass} end)
               + (if $credentials == "" then {} else {CREDENTIALS_KEY: $credentials} end)

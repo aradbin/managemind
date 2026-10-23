@@ -39,7 +39,7 @@ export interface Origin {
 export class Cloudflare {
   private readonly api: ApiClient;
   constructor(
-    token: string,
+    private readonly token: string,
     private readonly accountId: string,
   ) {
     this.api = apiClient('https://api.cloudflare.com/client/v4', token, 'Cloudflare');
@@ -190,6 +190,67 @@ export class Cloudflare {
       `${this.account}/r2/buckets/${bucket}/objects/${key.split('/').map(encodeURIComponent).join('/')}`,
       value,
     );
+  }
+
+  /** Every object under a prefix in an R2 bucket, a page at a time. */
+  async *r2List(bucket: string, prefix: string): AsyncGenerator<{ key: string; size: number }> {
+    let cursor: string | undefined;
+    do {
+      const query = new URLSearchParams({ prefix, per_page: '1000' });
+      if (cursor) query.set('cursor', cursor);
+      const res = await this.api.request<
+        Envelope<{ key: string; size: number }[]> & {
+          result_info?: { cursor?: string; is_truncated?: boolean };
+        }
+      >('GET', `${this.account}/r2/buckets/${bucket}/objects?${query}`);
+      for (const o of res.result) yield { key: o.key, size: o.size };
+      cursor = res.result_info?.is_truncated ? res.result_info.cursor : undefined;
+    } while (cursor);
+  }
+
+  /** One R2 object's bytes, or null when it isn't there. */
+  async r2Get(bucket: string, key: string): Promise<Uint8Array | null> {
+    const res = await this.raw('GET', this.objectPath(bucket, key));
+    if (res.status === 404) return null;
+    return new Uint8Array(await res.arrayBuffer());
+  }
+
+  /** Writes raw bytes to R2 (an export's zip). */
+  async r2Put(bucket: string, key: string, body: Uint8Array, contentType: string): Promise<void> {
+    await this.raw('PUT', this.objectPath(bucket, key), body, contentType);
+  }
+
+  private objectPath(bucket: string, key: string) {
+    return `${this.account}/r2/buckets/${bucket}/objects/${key.split('/').map(encodeURIComponent).join('/')}`;
+  }
+
+  /** A request whose body or answer isn't JSON (R2 objects); retried like the JSON ones. */
+  private async raw(
+    method: string,
+    path: string,
+    body?: Uint8Array,
+    contentType?: string,
+  ): Promise<Response> {
+    for (let attempt = 1; ; attempt++) {
+      const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, {
+        method,
+        headers: {
+          authorization: `Bearer ${this.token}`,
+          ...(contentType ? { 'content-type': contentType } : {}),
+        },
+        ...(body ? { body } : {}),
+      }).catch((e: unknown) => e as Error);
+      const retry = res instanceof Error || res.status === 429 || res.status >= 500;
+      if (retry && attempt < 4) {
+        await sleep(1000 * attempt);
+        continue;
+      }
+      if (res instanceof Error) throw res;
+      if (!res.ok && res.status !== 404) {
+        throw new HttpError(res.status, `Cloudflare ${method} ${path}: ${res.status}`);
+      }
+      return res;
+    }
   }
 
   /** Messages waiting in a queue, as of its latest sample in the last day (GraphQL Analytics). */

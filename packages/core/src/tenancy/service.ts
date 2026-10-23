@@ -45,6 +45,7 @@ import { createPage } from '../catalog/pages';
 import { emit } from '../outbox';
 import { recordPlatformAudit } from '../platform';
 import { type DbClient, type TenantTx, type WithTenantOptions, withTenant } from '../tenant';
+import { queueJob } from './jobs';
 import { tenantLifecycle } from './lifecycle';
 
 type Locale = 'bn' | 'en';
@@ -481,6 +482,8 @@ export interface ClosedTenant {
   to: 'closed';
   closedAt: string;
   purgeAfter: string;
+  /** The export queued on the way out (§3.10). */
+  exportJobId: string;
 }
 
 /**
@@ -557,7 +560,9 @@ export async function closeTenant(
         aggregateId: tenantId,
         payload: { purgeAfter },
       });
-      return { from, to: 'closed', closedAt, purgeAfter };
+      // The owners get their data on the way out (§3.10).
+      const { job } = await queueJob(tx, tenantId, 'export', actor.userId);
+      return { from, to: 'closed', closedAt, purgeAfter, exportJobId: job.id };
     },
     options,
   );

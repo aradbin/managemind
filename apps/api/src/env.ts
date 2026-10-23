@@ -107,6 +107,15 @@ export interface Env {
   PLATFORM_SSLCOMMERZ_PASSWORD?: string;
   /** `sandbox` for testing; live otherwise. */
   PLATFORM_SSLCOMMERZ_MODE?: string;
+  /**
+   * Starts the tenant-jobs workflow when an export, purge or reset is asked
+   * for (phase-5b-plan §3.9; a Worker secret: a fine-grained token with
+   * Actions write on this repository). Without it the workflow's daily run
+   * picks the job up.
+   */
+  GITHUB_DISPATCH_TOKEN?: string;
+  /** owner/repo, for the dispatch (set by the deploy). */
+  GITHUB_REPOSITORY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';

@@ -243,7 +243,8 @@ export function registerBilling(admin: OpenAPIHono<StaffEnv>): void {
     authorize(actor, 'billing.read');
     if (!actor.tenantId) throw new AppError('forbidden', { detail: 'no active store' });
     const admin = adminOrigin(c as unknown as Parameters<typeof adminOrigin>[0]);
-    const api = `https://api.${c.var.config.PLATFORM_DOMAIN}`;
+    // The IPN reaches the API on the admin host, as the stores' IPN does (payments.ts).
+    const api = `https://${c.var.config.ADMIN_HOST ?? new URL(c.req.url).host}`;
     return c.json(
       await startInvoicePayment(c.env, client, actor.tenantId, id, { api, admin }),
       200,

@@ -38,6 +38,8 @@ export const EVENTS = {
   'tenant.closed': z.object({ purgeAfter: z.iso.datetime() }),
   'tenant.reopened': z.object({}),
   'tenant.purged': z.object({ purgeId: z.uuid() }),
+  /** A store export is ready (phase-5b-plan §3.10): its owners are emailed the link. */
+  'tenant.exported': z.object({ jobId: z.uuid(), expiresAt: z.iso.datetime() }),
   'subscription.changed': z.object({ planCode: z.string(), status: z.string() }),
   'invoice.issued': z.object({ invoiceId: z.uuid(), number: z.string(), total: z.number().int() }),
   'invoice.paid': z.object({ invoiceId: z.uuid(), number: z.string() }),

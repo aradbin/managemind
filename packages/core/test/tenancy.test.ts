@@ -11,6 +11,7 @@ import {
   hostEntries,
   type OutboxEvent,
   reopenTenant,
+  requestExport,
   resolveHost,
   systemActor,
   tenantLifecycle,
@@ -292,6 +293,33 @@ describe('closing and reopening (phase-5b-plan §3.1)', () => {
       id,
     ]);
     expect(row).toEqual({ status: 'closed', status_reason: null });
+    // Its export is queued in the same commit (§3.10).
+    const [job] = await one('select kind, status from platform.tenant_jobs where id = $1', [
+      closed.exportJobId,
+    ]);
+    expect(job).toEqual({ kind: 'export', status: 'pending' });
+  });
+
+  it('takes an export request from an owner or a super admin only', async () => {
+    const { id } = await newStore();
+    const as = (actor: Actor) => withTenant(app, id, (tx) => requestExport(tx, actor));
+    const store = (role: 'owner' | 'manager') => ({
+      ...user(),
+      tenantId: id,
+      storeRole: role,
+      permissions: permissionsOf(role),
+    });
+    await expect(as(store('manager'))).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(as(user('support'))).rejects.toMatchObject({ code: 'forbidden' });
+    const first = await as(store('owner'));
+    expect(first.created).toBe(true);
+    // Open: the same job; done today: refused until tomorrow; a super admin any time.
+    expect((await as(store('owner'))).job.id).toBe(first.job.id);
+    await owner.query(`update platform.tenant_jobs set status = 'succeeded' where id = $1`, [
+      first.job.id,
+    ]);
+    await expect(as(store('owner'))).rejects.toMatchObject({ code: 'rate_limited' });
+    expect((await as(user('super_admin'))).created).toBe(true);
   });
 
   it('lets a demo or test store be purged at once', async () => {

@@ -25,6 +25,7 @@ import { log } from './log';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
+import { exportEmails } from './tenant-jobs';
 import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
 
 const HEALTH_EVENTS = new Set<EventType>([
@@ -83,6 +84,16 @@ export async function handleQueue(
       await billingEmails(env, ctx, message.body);
     } catch (e) {
       log('warn', 'billing email will be retried', { event_id: message.body.id, error: String(e) });
+      unsent.add(message.body.id);
+    }
+  }
+  // A finished export's link, to the owners (phase-5b-plan §3.10).
+  for (const message of batch.messages) {
+    if (message.body.eventType !== 'tenant.exported') continue;
+    try {
+      await exportEmails(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'export email will be retried', { event_id: message.body.id, error: String(e) });
       unsent.add(message.body.id);
     }
   }

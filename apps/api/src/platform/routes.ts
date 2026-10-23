@@ -13,6 +13,7 @@ import {
   getTenantDetail,
   grantSupportAccess,
   holdSubscription,
+  listJobs,
   listPlans,
   listPlatformAudit,
   listPlatformStaff,
@@ -23,6 +24,7 @@ import {
   readStoreHealth,
   refreshStoreHealth,
   reopenTenant,
+  requestExport,
   revokeSupportAccess,
   setPlatformRole,
   setSubscription,
@@ -48,6 +50,7 @@ import { createMailer } from '../auth/email';
 import { requireFreshTwoFactor } from '../auth/fresh-two-factor';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
+import { dispatchJobs, Job, jobOut } from '../tenant-jobs';
 import { registerPlatformBilling } from './billing';
 
 const Id = z.object({ id: z.uuid() });
@@ -226,9 +229,29 @@ export const PLATFORM_ROUTES = {
     summary: 'Close a store: the slug typed, a reason and a fresh authenticator code (super_admin)',
     request: { params: Id, ...body(Reason.extend({ slug: z.string().max(40) }).merge(FreshCode)) },
     responses: json(
-      z.object({ from: Status, to: Status, closedAt: z.string(), purgeAfter: z.string() }),
+      z.object({
+        from: Status,
+        to: Status,
+        closedAt: z.string(),
+        purgeAfter: z.string(),
+        exportJobId: z.uuid(),
+      }),
       'Closed',
     ),
+  }),
+  jobs: r({
+    method: 'get',
+    path: '/tenants/{id}/jobs',
+    summary: "The store's exports, purges and resets, newest first (support)",
+    request: { params: Id },
+    responses: json(z.array(Job), 'Jobs'),
+  }),
+  requestExport: r({
+    method: 'post',
+    path: '/tenants/{id}/export',
+    summary: "Export the store's data; the owners are emailed the link (super_admin)",
+    request: { params: Id },
+    responses: json(Job, 'Queued', 202),
   }),
   reopen: r({
     method: 'post',
@@ -242,14 +265,14 @@ export const PLATFORM_ROUTES = {
     path: '/tenants/{id}/checklist',
     summary: "The store's setup checklist as of its last health check (support)",
     request: { params: Id },
-    responses: json(ChecklistOut.nullable(), 'Checklist'),
+    responses: json(z.union([ChecklistOut, z.null()]), 'Checklist'),
   }),
   health: r({
     method: 'get',
     path: '/tenants/{id}/health',
     summary: "The store's last health check (support)",
     request: { params: Id },
-    responses: json(Health.nullable(), 'Health'),
+    responses: json(z.union([Health, z.null()]), 'Health'),
   }),
   refreshHealth: r({
     method: 'post',
@@ -393,7 +416,7 @@ export const PLATFORM_ROUTES = {
     path: '/tenants/{id}/subscription',
     summary: "The store's plan and terms (support)",
     request: { params: Id },
-    responses: json(Subscription.nullable(), 'Subscription'),
+    responses: json(z.union([Subscription, z.null()]), 'Subscription'),
   }),
   setSubscription: r({
     method: 'put',
@@ -651,7 +674,26 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       { slug: input.slug, reason: input.reason },
       { requestId: c.var.requestId, afterCommit: relayTo(c) },
     );
+    dispatchJobs(c.env, c.executionCtx);
     return c.json(closed, 200);
+  });
+  platform.openapi(R.jobs, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSupport(c);
+    const jobs = await withPlatform(c.var.staff.client, (tx) => listJobs(tx, id));
+    return c.json(await Promise.all(jobs.map((j) => jobOut(c.env, j))), 200);
+  });
+  platform.openapi(R.requestExport, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSuperAdmin(c);
+    const { job, created } = await withTenant(
+      c.var.staff.client,
+      id,
+      (tx) => requestExport(tx, c.var.staff.actor),
+      { requestId: c.var.requestId },
+    );
+    if (created) dispatchJobs(c.env, c.executionCtx);
+    return c.json(await jobOut(c.env, job), 202);
   });
   platform.openapi(R.reopen, async (c) => {
     const { id } = c.req.valid('param');

@@ -295,7 +295,7 @@ describe('Settings → Plan and billing', () => {
     expect(session?.get('total_amount')).toBe('450.00');
     expect(session?.get('value_a')).toBe(issued.id);
     expect(session?.get('ipn_url')).toBe(
-      'https://api.platform.example.test/v1/webhooks/sslcommerz/platform',
+      'https://admin.platform.example.test/v1/webhooks/sslcommerz/platform',
     );
 
     const valid = (valId: string, amount: string) =>

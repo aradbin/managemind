@@ -50,6 +50,7 @@ import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
 import { DOMAIN_ROUTES, registerDomains } from './domains';
+import { EXPORT_ROUTES, registerExport } from './export';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 import { MESSAGE_ROUTES, registerMessages } from './messages';
@@ -158,6 +159,7 @@ export const ADMIN_ROUTES = {
   ...ORDER_ROUTES,
   ...RETURN_ROUTES,
   ...BILLING_ROUTES,
+  ...EXPORT_ROUTES,
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...MESSAGE_ROUTES,
@@ -553,6 +555,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerOrders(admin);
   registerReturns(admin);
   registerBilling(admin);
+  registerExport(admin);
   registerReports(admin);
   registerCredentials(admin);
   registerMessages(admin);

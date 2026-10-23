@@ -437,3 +437,96 @@ export function CloseOrReopen({ tenant }: { tenant: TenantRef }) {
     </>
   );
 }
+
+/** The store's exports (and later purges and resets), with progress and the download link. */
+export function JobsSection({ tenantId, superAdmin }: { tenantId: string; superAdmin: boolean }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const key = ['platform', 'tenant', tenantId, 'jobs'] as const;
+  const jobs = useQuery({
+    queryKey: key,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/platform/tenants/{id}/jobs', { params: { path: { id: tenantId } } }),
+      ),
+    // Watch a running job's progress.
+    refetchInterval: (q) =>
+      q.state.data?.some((j) => j.status === 'pending' || j.status === 'running') ? 15_000 : false,
+  });
+  const exportNow = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/export', { params: { path: { id: tenantId } } }),
+      ),
+    onSuccess: async () => {
+      toast(t('jobs.queued'));
+      await queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
+  const open = jobs.data?.some(
+    (j) => j.kind === 'export' && (j.status === 'pending' || j.status === 'running'),
+  );
+  return (
+    <section aria-labelledby="jobs-h" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="jobs-h" className="text-lg font-semibold">
+          {t('jobs.title')}
+        </h2>
+        {superAdmin && (
+          <Button
+            variant="secondary"
+            disabled={exportNow.isPending || open}
+            onClick={() => exportNow.mutate()}
+          >
+            {t('jobs.export')}
+          </Button>
+        )}
+      </div>
+      {jobs.isError && <Notice tone="error">{errorMessage(jobs.error, t)}</Notice>}
+      {exportNow.isError && <Notice tone="error">{errorMessage(exportNow.error, t)}</Notice>}
+      {jobs.data?.length === 0 && <p className="text-muted-foreground">{t('jobs.none')}</p>}
+      {!!jobs.data?.length && (
+        <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
+          {jobs.data.map((j) => {
+            const p = j.progress as { done?: number; total?: number };
+            return (
+              <li key={j.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 p-3">
+                <span className="flex flex-1 flex-col">
+                  <span className="font-medium">
+                    {t(`jobs.kind.${j.kind}` as AdminKey)} ·{' '}
+                    {t(`jobs.status.${j.status}` as AdminKey)}
+                    {j.status === 'running' &&
+                    typeof p.done === 'number' &&
+                    typeof p.total === 'number'
+                      ? ` (${t('jobs.progress', { done: p.done, total: p.total })})`
+                      : ''}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDateTime(locale, new Date(j.createdAt))}
+                    {j.attempts > 1 ? ` · ${t('jobs.attempt', { n: j.attempts })}` : ''}
+                    {j.expiresAt
+                      ? ` · ${t('jobs.until', { date: formatDateTime(locale, new Date(j.expiresAt)) })}`
+                      : ''}
+                  </span>
+                  {j.error && (
+                    <span lang="en" className="text-sm text-danger">
+                      {j.error}
+                    </span>
+                  )}
+                </span>
+                {j.downloadUrl && (
+                  <Button variant="secondary" asChild>
+                    <a href={j.downloadUrl} rel="noopener noreferrer">
+                      {t('jobs.download')}
+                    </a>
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}

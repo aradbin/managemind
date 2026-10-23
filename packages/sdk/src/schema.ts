@@ -8869,6 +8869,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's latest export, with its link while it lasts (owner) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Export */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"] | null;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Export the store's data, at most once a day; the owners are emailed the link (owner) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/reports": {
         parameters: {
             query?: never;
@@ -10247,7 +10303,85 @@ export interface paths {
                             to: "active" | "suspended" | "closed" | "purged";
                             closedAt: string;
                             purgeAfter: string;
+                            /** Format: uuid */
+                            exportJobId: string;
                         };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's exports, purges and resets, newest first (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Jobs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export the store's data; the owners are emailed the link (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"];
                     };
                 };
             };
@@ -10332,7 +10466,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["SetupChecklist"];
+                        "application/json": components["schemas"]["SetupChecklist"] | null;
                     };
                 };
             };
@@ -10370,7 +10504,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["StoreHealth"];
+                        "application/json": components["schemas"]["StoreHealth"] | null;
                     };
                 };
             };
@@ -10676,7 +10810,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Subscription"];
+                        "application/json": components["schemas"]["Subscription"] | null;
                     };
                 };
             };
@@ -11352,7 +11486,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["InvoiceIssuer"];
+                        "application/json": components["schemas"]["InvoiceIssuer"] | null;
                     };
                 };
             };
@@ -14008,6 +14142,28 @@ export interface components {
                 paidOn: string;
             }[];
         };
+        TenantJob: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            kind: "export" | "purge" | "reset";
+            /** @enum {string} */
+            status: "pending" | "running" | "succeeded" | "failed";
+            progress: {
+                [key: string]: unknown;
+            };
+            error: string | null;
+            attempts: number;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            downloadUrl: string | null;
+            /** Format: date-time */
+            expiresAt: string | null;
+        };
         Reports: {
             from: string;
             to: string;
@@ -14204,7 +14360,7 @@ export interface components {
             done: number;
             total: number;
             complete: boolean;
-        } | null;
+        };
         StoreHealth: {
             /** Format: date-time */
             checkedAt: string;
@@ -14224,7 +14380,7 @@ export interface components {
             activity: {
                 [key: string]: unknown;
             };
-        } | null;
+        };
         PlatformDashboard: {
             stores: {
                 active: number;
@@ -14352,7 +14508,7 @@ export interface components {
             status: "trialing" | "active" | "past_due" | "cancelled";
             holdUntil: string | null;
             holdReason: string | null;
-        } | null;
+        };
         PlatformInvoiceSummary: {
             /** Format: uuid */
             id: string;
@@ -14432,7 +14588,7 @@ export interface components {
             };
             bkash?: string;
             nagad?: string;
-        } | null;
+        };
     };
     responses: never;
     parameters: never;

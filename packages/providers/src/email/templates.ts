@@ -129,6 +129,16 @@ const COPY = {
       button: 'Open the admin',
       footer: 'You get this email because {platform} created {store} for you.',
     },
+    exportReady: {
+      subject: 'Your {store} data is ready to download',
+      body: [
+        'The export of {store} from {platform} is ready: the products, orders, customers and settings as data files, spreadsheets for the main lists, and every image.',
+        'It holds your shoppers’ names, phone numbers and addresses. Keep it safe and share it only with people who should see it.',
+        'The link works until {expires}.',
+      ],
+      button: 'Download the export',
+      footer: 'You get this email because you own {store} on {platform}.',
+    },
     invoice: {
       issued: {
         subject: 'Invoice {number} from {platform}: {amount}',
@@ -218,6 +228,16 @@ const COPY = {
       ],
       button: 'অ্যাডমিন খুলুন',
       footer: '{platform} আপনার জন্য {store} দোকান তৈরি করেছে বলে এই ইমেইল পাচ্ছেন।',
+    },
+    exportReady: {
+      subject: '{store}-এর ডেটা ডাউনলোডের জন্য তৈরি',
+      body: [
+        '{platform} থেকে {store}-এর এক্সপোর্ট তৈরি: পণ্য, অর্ডার, ক্রেতা ও সেটিংস ডেটা ফাইলে, প্রধান তালিকাগুলো স্প্রেডশিটে, আর সব ছবি।',
+        'এতে আপনার ক্রেতাদের নাম, ফোন নম্বর ও ঠিকানা আছে। নিরাপদে রাখুন এবং শুধু যাদের দেখা উচিত তাদের সঙ্গে শেয়ার করুন।',
+        'লিংকটি {expires} পর্যন্ত কাজ করবে।',
+      ],
+      button: 'এক্সপোর্ট ডাউনলোড করুন',
+      footer: '{platform}-এ আপনি {store}-এর মালিক বলে এই ইমেইল পাচ্ছেন।',
     },
     invoice: {
       issued: {
@@ -484,5 +504,33 @@ export function invoiceEmail(input: InvoiceEmail): RenderedEmail {
       suspend: date(suspend),
     },
     footer: all.footer,
+  });
+}
+
+export interface ExportReadyEmail {
+  locale: Locale;
+  platformName: string;
+  storeName: string;
+  link: string;
+  expires: Date;
+}
+
+/** A store export is ready (phase-5b-plan §3.10), to its owners. */
+export function exportReadyEmail(input: ExportReadyEmail): RenderedEmail {
+  const copy = COPY[input.locale].exportReady;
+  return render(copy.subject, {
+    locale: input.locale,
+    platformName: input.platformName,
+    paragraphs: [...copy.body],
+    button: { label: copy.button, href: input.link },
+    values: {
+      platform: input.platformName,
+      store: input.storeName,
+      expires: formatDateTime(input.locale, input.expires, {
+        dateStyle: 'long',
+        timeStyle: 'short',
+      }),
+    },
+    footer: copy.footer,
   });
 }

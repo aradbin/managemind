@@ -1,6 +1,7 @@
 import { LOCALES } from '@managemind/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import {
+  exportReadyEmail,
   invitationEmail,
   invoiceEmail,
   type RenderedEmail,
@@ -138,5 +139,24 @@ describe('email templates', () => {
     expect(email.html).toContain('Hi &lt;a href=');
     expect(email.html).toContain('Tea &amp; Co');
     expect(email.text).toContain('Hi <a href="https://evil.example">pay here</a>,');
+  });
+});
+
+describe('export ready email', () => {
+  it('links the export and says until when, in each language', () => {
+    for (const locale of ['en', 'bn'] as const) {
+      const email = exportReadyEmail({
+        locale,
+        platformName: 'managemind',
+        storeName: 'Tea & Co',
+        link: 'https://admin.example.test/v1/exports/x?expires=1&token=t',
+        expires: new Date('2026-10-30T10:00:00Z'),
+      });
+      expect(email.html).toContain(
+        'href="https://admin.example.test/v1/exports/x?expires=1&amp;token=t"',
+      );
+      expect(email.text).toContain('https://admin.example.test/v1/exports/x?expires=1&token=t');
+      expect(email.subject).toContain('Tea & Co');
+    }
   });
 });

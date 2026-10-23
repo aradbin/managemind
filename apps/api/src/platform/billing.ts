@@ -179,7 +179,7 @@ export const PLATFORM_BILLING_ROUTES = {
     method: 'get',
     path: '/billing/issuer',
     summary: 'Our invoice details: name, address, VAT, how to pay (support)',
-    responses: json(Issuer.nullable(), 'Invoice details'),
+    responses: json(z.union([Issuer, z.null()]), 'Invoice details'),
   }),
   setIssuer: r({
     method: 'put',
