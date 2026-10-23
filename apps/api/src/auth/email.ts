@@ -94,6 +94,24 @@ export function shopperEmailFrom(config: ApiConfig, storeName: string): string {
   return `${name} <no-reply@${config.STORE_DOMAIN}>`;
 }
 
+/** The platform's shopper email provider (ADR 0022), or null when shopper email is off. */
+export function shopperEmailProvider(
+  env: Env,
+  config: ApiConfig,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+): EmailProvider | null {
+  switch (config.SHOPPER_EMAIL_PROVIDER) {
+    case 'brevo':
+      return brevoProvider({ apiKey: config.BREVO_API_KEY ?? '' });
+    case 'resend':
+      return resendProvider({ apiKey: config.RESEND_API_KEY ?? '' });
+    case 'capture':
+      return devMailbox(env, ctx);
+    default:
+      return null;
+  }
+}
+
 /**
  * Shopper email (ADR 0022): from the store's name, through Brevo or Resend in
  * production, replies to the store's own address.
@@ -104,14 +122,9 @@ export function createShopperMailer(
   ctx: Pick<ExecutionContext, 'waitUntil'>,
   store: { name: string; replyTo?: string | undefined },
 ): Mailer {
-  if (!shopperEmailReady(config)) throw new Error('shopper email is not set up');
+  const provider = shopperEmailProvider(env, config, ctx);
+  if (!provider) throw new Error('shopper email is not set up');
   const viaResend = config.SHOPPER_EMAIL_PROVIDER === 'resend';
-  const provider =
-    config.SHOPPER_EMAIL_PROVIDER === 'brevo'
-      ? brevoProvider({ apiKey: config.BREVO_API_KEY ?? '' })
-      : viaResend
-        ? resendProvider({ apiKey: config.RESEND_API_KEY ?? '' })
-        : devMailbox(env, ctx);
   const from = shopperEmailFrom(config, store.name);
   return {
     sendLater(message, kind) {

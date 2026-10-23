@@ -7,7 +7,9 @@ import {
   type Actor,
   createProduct,
   createTenant,
+  importKeyring,
   receive,
+  saveCredentials,
   systemActor,
   type TenantTx,
   updateStoreProfile,
@@ -19,12 +21,14 @@ import { defaultCheckoutSettings } from '@managemind/shared/orders';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app';
-import { appUrl, makeCtx, makeEnv, ownerUrl } from './support';
+import { appUrl, fakeOtpNamespace, makeCtx, makeEnv, ownerUrl } from './support';
 
 // biome-ignore lint/suspicious/noExplicitAny: response bodies; the assertions check their shape
 type Json = any;
 
-const env = makeEnv();
+const CREDENTIALS_KEY = btoa(String.fromCharCode(...new Uint8Array(32).fill(4)));
+const otp = fakeOtpNamespace();
+const env = makeEnv({ CREDENTIALS_KEY, OTP_CODES: otp as never });
 let app: pg.Client;
 let owner: pg.Client;
 beforeAll(async () => {
@@ -64,7 +68,18 @@ async function store(accounts = true) {
   );
   const variant = product.variants[0]?.id as string;
   await run((tx) => receive(tx, actor, { variantId: variant, quantity: 5, reason: 'received' }));
-  return { id, host: `${slug}.${env.STORE_DOMAIN}`, variant };
+  const withSms = async () =>
+    run(async (tx) =>
+      saveCredentials(
+        tx,
+        actor,
+        await importKeyring(CREDENTIALS_KEY),
+        'sms',
+        { provider: 'sms_net_bd', secrets: { apiKey: 'k' } },
+        async () => {},
+      ),
+    );
+  return { id, host: `${slug}.${env.STORE_DOMAIN}`, variant, withSms };
 }
 
 function shopper(host: string) {
@@ -160,6 +175,55 @@ describe('shopper accounts', () => {
     expect((await b.call('POST', '/v1/store/auth/update-user', { name: 'x' })).res.status).toBe(
       404,
     );
+  });
+
+  it('signs in by a code to the phone where the store has SMS, as its own account', async () => {
+    const s = await store();
+    const b = shopper(s.host);
+    const phoneNumber = '+8801712345111';
+    const signedOut = await b.call('GET', '/v1/store/account');
+    expect((await signedOut.json()).phoneSignIn).toBe(false);
+    // Without SMS there is no phone sign-in at all.
+    expect(
+      (await b.call('POST', '/v1/store/auth/phone-number/send-otp', { phoneNumber })).res.status,
+    ).toBe(404);
+
+    await s.withSms();
+    expect((await (await b.call('GET', '/v1/store/account')).json()).phoneSignIn).toBe(true);
+    const realFetch = globalThis.fetch;
+    const texts: URLSearchParams[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (!String(input).startsWith('https://api.sms.net.bd/')) return realFetch(input, init);
+      texts.push(new URLSearchParams(String(init?.body)));
+      return new Response(JSON.stringify({ error: 0, msg: 'ok', data: { request_id: 1 } }));
+    }) as typeof fetch;
+    try {
+      const sent = await b.call('POST', '/v1/store/auth/phone-number/send-otp', { phoneNumber });
+      expect(sent.res.status, await sent.res.clone().text()).toBe(200);
+      const code = otp.codes.get(`${s.id}:${phoneNumber}`) as string;
+      expect(texts[0]?.get('msg')).toContain(code);
+      // Not a Bangladeshi mobile: refused before any code.
+      expect(
+        (await b.call('POST', '/v1/store/auth/phone-number/send-otp', { phoneNumber: '+15550000' }))
+          .res.status,
+      ).toBe(400);
+      const wrong = await b.call('POST', '/v1/store/auth/phone-number/verify', {
+        phoneNumber,
+        code: code === '000000' ? '111111' : '000000',
+      });
+      expect(wrong.res.ok).toBe(false);
+      const signedIn = await b.call('POST', '/v1/store/auth/phone-number/verify', {
+        phoneNumber,
+        code,
+      });
+      expect(signedIn.res.status, await signedIn.res.clone().text()).toBe(200);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    const me = await (await b.call('GET', '/v1/store/auth/get-session')).json();
+    expect(me.user).toMatchObject({ phoneNumber, phoneNumberVerified: true });
+    expect(me.user.email).toBe('8801712345111@phone.invalid');
+    expect((await b.call('GET', '/v1/store/account')).res.status).toBe(200);
   });
 
   it('keeps stores apart: the same email is two shoppers, and a cookie works on its own store only', async () => {

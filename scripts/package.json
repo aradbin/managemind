@@ -6,7 +6,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "platform": "tsx platform/cli.ts",
-    "demo:catalog": "tsx demo/catalog.ts"
+    "demo:catalog": "tsx demo/catalog.ts",
+    "keys": "tsx keys.ts"
   },
   "dependencies": {
     "@managemind/core": "workspace:*",

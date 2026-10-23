@@ -77,6 +77,7 @@ export const promotionsBn: Record<keyof typeof promotionsEn, string> = {
   'promo.paymentMethods': 'পেমেন্ট',
   'promo.payment.cod': 'ক্যাশ অন ডেলিভারি',
   'promo.payment.manual': 'আগেই পরিশোধ',
+  'promo.payment.online': 'অনলাইনে পরিশোধ',
 
   'promo.scheduleLimits': 'তারিখ ও সীমা',
   'promo.startsAt': 'শুরু',

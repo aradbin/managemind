@@ -72,8 +72,10 @@ jobs:
           LABELED: ${{ contains(github.event.pull_request.labels.*.name, 'db-branch') }}
           BASE: ${{ github.base_ref }}
         run: |
-          # Names the E2E's seeded stores and people, new for every run (e2e-seed.ts).
-          echo "E2E_RUN=${COMMIT_SHA::7}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+          # Names the E2E's seeded stores and people, new for every run
+          # (e2e-seed.ts, 4-12 characters): a label added later runs the same
+          # commit again, so the run number is in it as well as the attempt.
+          echo "E2E_RUN=${COMMIT_SHA::6}${GITHUB_RUN_NUMBER}${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
           if [ "$LABELED" = true ]; then
             echo "database=own" >> "$GITHUB_OUTPUT"
             echo "describe=own Neon branch pr-$PR (db-branch label)" >> "$GITHUB_OUTPUT"
@@ -113,6 +115,12 @@ jobs:
           pnpm --filter @managemind/scripts exec tsx preview/workers.ts
           --pr "$PR" --hyperdrive ${{ steps.database.outputs.hyperdrive_id }} --commit "$COMMIT_SHA"
 
+      # Previews' own keys when the secrets are missing: credentials and push
+      # devices saved on a preview then last until its next push.
+      - name: Preview keys
+        id: keys
+        if: steps.scope.outputs.deploy == 'true'
+        run: pnpm --filter @managemind/scripts keys --outputs
       # Previews sign with their own secret. Without the AUTH_SECRET_PREVIEW
       # repository secret, each deploy makes a new one: preview sign-ins and
       # authenticator setups then last only until the next push.
@@ -120,17 +128,21 @@ jobs:
         if: steps.scope.outputs.deploy == 'true'
         env:
           AUTH_SECRET_PREVIEW: ${{ secrets.AUTH_SECRET_PREVIEW }}
+          CREDENTIALS_KEY_PREVIEW: ${{ secrets.CREDENTIALS_KEY_PREVIEW }}
         run: |
           secrets="$RUNNER_TEMP/api-secrets.json"
           trap 'rm -f "$secrets"' EXIT
           auth="${AUTH_SECRET_PREVIEW:-$(openssl rand -base64 32)}"
+          credentials="${CREDENTIALS_KEY_PREVIEW:-${{ steps.keys.outputs.credentials_key }}}"
           # A new dev mailbox token per deploy; later steps (E2E) read it from the env.
           dev_token="$(openssl rand -hex 24)"
           echo "::add-mask::$dev_token"
           echo "DEV_TOKEN=$dev_token" >> "$GITHUB_ENV"
           # Turnstile runs with Cloudflare's published test keys, which always pass.
-          (umask 077; jq -n --arg auth "$auth" --arg dev "$dev_token" \
-            '{AUTH_SECRET: $auth, DEV_TOKEN: $dev,
+          (umask 077; jq -n --arg auth "$auth" --arg dev "$dev_token" --arg credentials "$credentials" \
+            --arg vpub "${{ steps.keys.outputs.vapid_public }}" --arg vpriv "${{ steps.keys.outputs.vapid_private }}" \
+            '{AUTH_SECRET: $auth, DEV_TOKEN: $dev, CREDENTIALS_KEY: $credentials,
+              VAPID_PUBLIC_KEY: $vpub, VAPID_PRIVATE_KEY: $vpriv,
               TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
               TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"}' > "$secrets")
           pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json \
@@ -148,8 +160,9 @@ jobs:
         if: steps.scope.outputs.deploy == 'true'
       # The smoke tests. A full run adds the Phase 1 flows, the catalog flows
       # (Phase 2), the storefront and online-store flows (Phase 3), and the
-      # shopper, orders and promotions flows (Phase 4) at a phone and a desktop
-      # viewport with axe on every screen (E2E_RUN and DEV_TOKEN are in the env).
+      # shopper, orders and promotions flows (Phase 4), and the returns and
+      # refunds flow (Phase 5A) at a phone and a desktop viewport with axe on
+      # every screen (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
         if: steps.scope.outputs.deploy == 'true'

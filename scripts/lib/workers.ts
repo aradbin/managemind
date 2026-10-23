@@ -30,7 +30,11 @@ export interface WorkerTarget {
   /** `resend` in production; previews capture emails for the dev mailbox. */
   emailProvider: 'resend' | 'capture';
   commit: string;
-  /** Previews: no Cron Trigger, and outbox events go to this queue, which nothing consumes. */
+  /**
+   * Previews: no Cron Trigger, and outbox events go to the PR's own queue,
+   * which the preview consumes. Previews bind no EDGE store and no Turnstile
+   * token, so consuming it only sends notifications.
+   */
   previewQueue?: string;
   /** Previews: the PR's own import queue (its dead-letter queue is this name + `-dlq`). */
   previewImportQueue?: string;
@@ -95,8 +99,10 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
         { binding: 'OUTBOX', queue: t.previewQueue },
         { binding: 'IMPORTS', queue: imports },
       ],
-      // Imports run on previews too, so the E2E flow can import a file.
+      // Notifications and imports run on previews too, so the E2E flows can
+      // read a shopper's email and import a file.
       consumers: [
+        { queue: t.previewQueue, max_batch_size: 25, max_batch_timeout: 5, max_retries: 3 },
         {
           queue: imports,
           max_batch_size: 1,

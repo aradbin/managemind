@@ -1,8 +1,14 @@
-// Checkout and cash-on-delivery settings (phase-4-plan §4, "Settings"):
-// stored as `checkout` and `cod` in the store's settings JSON.
+// Checkout, cash-on-delivery, fraud and return settings (phase-4-plan §4,
+// phase-5a-plan §3.4, §3.10, §3.11, §3.14): stored as `checkout`, `cod`,
+// `fraud` and `returns` in the store's settings JSON.
 import { z } from 'zod';
 import { CATALOG_LIMITS } from '../catalog/limits';
-import { DEFAULT_ORDER_PREFIX } from './machines';
+import {
+  DEFAULT_ORDER_PREFIX,
+  OFFERED_REFUND_METHODS,
+  RETURN_REASONS,
+  STORE_FAULT_REASONS,
+} from './machines';
 
 export const EMAIL_FIELD_MODES = ['optional', 'required', 'hidden'] as const;
 
@@ -37,6 +43,7 @@ export const checkoutSettings = z
 export type CheckoutSettings = z.infer<typeof checkoutSettings>;
 
 export const COD_ADVANCE_RULES = ['never', 'always', 'flagged'] as const;
+export const COD_OTP_RULES = ['off', 'always', 'flagged', 'first_order'] as const;
 
 export const codSettings = z
   .object({
@@ -44,16 +51,54 @@ export const codSettings = z
     /** Above this total (poisha) COD isn't offered; null for no limit. */
     maxOrderValue: z.int().min(0).max(CATALOG_LIMITS.maxPrice).nullable().default(null),
     /**
-     * An advance delivery charge. Saved now, enforced on the storefront once
-     * online payment exists (Phase 5A); until then staff record advances.
+     * An advance of the delivery charge, paid online (phase-5a-plan §3.4):
+     * from every shopper, from flagged phones, or never. Needs SSLCommerz.
      */
     advance: z.enum(COD_ADVANCE_RULES).default('never'),
+    /** A code by SMS before a COD order (§3.14, Q13); needs the store's SMS gateway. */
+    otp: z.enum(COD_OTP_RULES).default('off'),
   })
   .strict();
 export type CodSettings = z.infer<typeof codSettings>;
 
+/** When a phone is flagged (§3.11, Q12): flags ask for the advance or the OTP. */
+export const fraudSettings = z
+  .object({
+    flagAfterFailed: z.int().min(1).max(20).default(1),
+  })
+  .strict();
+export type FraudSettings = z.infer<typeof fraudSettings>;
+
+const DEFAULT_SHOPPER_PAYS_FOR = RETURN_REASONS.filter((r) => !STORE_FAULT_REASONS.includes(r));
+
+/** The return policy (§3.10, Q9 and Q10). */
+export const returnSettings = z
+  .object({
+    /** Shoppers can ask for a return from the tracking page. */
+    shopperRequests: z.boolean().default(true),
+    /** Days after delivery a shopper can ask; staff can create returns any time. */
+    windowDays: z.int().min(1).max(90).default(7),
+    excludedCategoryIds: z.array(z.uuid()).max(50).default([]),
+    /** Reasons for which the shopper pays the return delivery; the store pays for the rest. */
+    shopperPaysFor: z
+      .array(z.enum(RETURN_REASONS))
+      .max(RETURN_REASONS.length)
+      .default(() => [...DEFAULT_SHOPPER_PAYS_FOR]),
+    refundMethods: z
+      .array(z.enum(OFFERED_REFUND_METHODS))
+      .min(1)
+      .max(OFFERED_REFUND_METHODS.length)
+      .default(() => [...OFFERED_REFUND_METHODS]),
+    /** Refund the delivery fee when the whole order comes back for a reason the store pays for (Q10). */
+    refundDeliveryFee: z.boolean().default(true),
+  })
+  .strict();
+export type ReturnSettings = z.infer<typeof returnSettings>;
+
 export const defaultCheckoutSettings = (): CheckoutSettings => checkoutSettings.parse({});
 export const defaultCodSettings = (): CodSettings => codSettings.parse({});
+export const defaultFraudSettings = (): FraudSettings => fraudSettings.parse({});
+export const defaultReturnSettings = (): ReturnSettings => returnSettings.parse({});
 
 /** Cart limits that are not settings (§3.4). */
 export const CART_LIMITS = {

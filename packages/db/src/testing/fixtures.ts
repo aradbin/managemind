@@ -188,4 +188,37 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   payments: (tenant) =>
     `insert into store.payments (tenant_id, order_id, provider, method, amount)
      values (${tenant}, ${first('orders')}, 'cod', 'cod', 100000)`,
+  // Phase 5A: returns, refunds, credentials and messages.
+  returns: (tenant) =>
+    `insert into store.returns (tenant_id, number, order_id, reason, requested_by)
+     values (${tenant}, (select coalesce(max(number), 1000) + 1 from store.returns where tenant_id = app.current_tenant_id()),
+             ${first('orders')}, 'damaged', 'staff')`,
+  return_lines: (tenant) =>
+    `insert into store.return_lines (tenant_id, return_id, order_line_id, quantity)
+     values (${tenant}, ${first('returns')}, ${first('order_lines')}, 1)`,
+  return_photos: (tenant) =>
+    `insert into store.return_photos (tenant_id, return_id, object_key, mime_type, bytes)
+     values (${tenant}, ${first('returns')}, 'fixture/returns/' || gen_random_uuid() || '.jpg', 'image/jpeg', 1000)`,
+  refunds: (tenant) =>
+    `insert into store.refunds (tenant_id, order_id, method, status, amount)
+     values (${tenant}, ${first('orders')}, 'bkash', 'succeeded', 100)`,
+  refund_lines: (tenant) =>
+    `insert into store.refund_lines (tenant_id, refund_id, order_line_id, quantity, amount)
+     values (${tenant}, ${first('refunds')}, ${first('order_lines')}, 1, 100)`,
+  provider_credentials: (tenant) =>
+    `insert into store.provider_credentials (tenant_id, kind, provider, ciphertext, iv, key_version, hint)
+     values (${tenant}, 'sms', 'sms_net_bd', '\\x00', '\\x000000000000000000000000', 1, 'abcd')`,
+  messages: (tenant) =>
+    `insert into store.messages (tenant_id, idempotency_key, event, channel, recipient_type, recipient, locale)
+     values (${tenant}, 'fixture-' || gen_random_uuid(), 'order_placed', 'sms', 'shopper', '+8801700000001', 'bn')`,
+  message_templates: (tenant) =>
+    `insert into store.message_templates (tenant_id, event, channel, locale, body)
+     values (${tenant}, 'order_placed', 'sms', 'en', 'Order {order_number} placed')`,
+  push_subscriptions: (tenant) =>
+    `insert into store.push_subscriptions (tenant_id, user_id, endpoint, p256dh, auth)
+     values (${tenant}, (select id from platform.users order by id limit 1),
+             'https://push.example.test/' || gen_random_uuid(), 'key', 'auth')`,
+  staff_alert_preferences: (tenant) =>
+    `insert into store.staff_alert_preferences (tenant_id, user_id, event, channel, enabled)
+     values (${tenant}, (select id from platform.users order by id limit 1), 'new_order', 'email', true)`,
 };

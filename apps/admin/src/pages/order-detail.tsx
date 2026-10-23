@@ -19,8 +19,10 @@ import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
+import '../i18n/returns';
+import { RefundDialog } from '../components/refund-dialog';
 import { api, unwrap } from '../lib/api';
-import { formatPrice, readPrice } from '../lib/catalog';
+import { formatPrice, priceInput, readPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
   dateTime,
@@ -37,6 +39,8 @@ import {
 import { EditOrderDialog } from './order-edit';
 import { PrintLinks } from './orders';
 import { Thumbnail } from './products';
+import { CreateReturnDialog } from './return-detail';
+import { ReturnStatusChip } from './returns';
 
 /** A command's mutation: refreshes the order, the list and the dashboard after. */
 function useCommand<T>(orderId: string, run: (key: string, input: T) => Promise<unknown>) {
@@ -93,6 +97,16 @@ export function OrderDetailPage() {
         </div>
         <OrderActions order={o} />
       </div>
+      {o.flags.includes('payment_risk') && <Notice tone="error">{t('order.flag.risk')}</Notice>}
+      {o.flags.includes('flagged_phone') && (
+        <Notice tone="error">
+          {t('order.flag.phone')}{' '}
+          <Link to="/customers/$id" params={{ id: o.customer.id }} className="underline">
+            {t('order.flag.phoneLink')}
+          </Link>
+        </Notice>
+      )}
+      {o.flags.includes('late_payment') && <Notice tone="error">{t('order.flag.late')}</Notice>}
       {o.status === 'cancelled' && (
         <Notice tone="error">
           {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
@@ -105,6 +119,7 @@ export function OrderDetailPage() {
           <Lines order={o} />
           <Shipments order={o} />
           <Payments order={o} />
+          <ReturnsAndRefunds order={o} />
           <Timeline order={o} />
         </div>
         <div className="flex flex-col gap-4">
@@ -372,9 +387,14 @@ function ShipmentRow({
   const { t, locale } = useLocale();
   const toast = useToast();
   const canWrite = usePermission('orders.write');
-  const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | 'back' | null>(null);
   const [cash, setCash] = useState(true);
   const [reason, setReason] = useState('');
+  // What the trip cost (phase-5a-plan §3.11): the delivery fee unless staff say otherwise.
+  const [costText, setCostText] = useState(
+    priceInput(Math.max(0, o.totals.deliveryFee - o.totals.deliveryDiscount)),
+  );
+  const cost = readPrice(costText);
   const ship = useCommand(o.id, async (key) =>
     unwrap(
       await api.POST('/v1/admin/shipments/{id}/ship', {
@@ -382,10 +402,11 @@ function ShipmentRow({
       }),
     ),
   );
-  const back = useCommand(o.id, async (key) =>
+  const back = useCommand(o.id, async (key, returnCost: number) =>
     unwrap(
       await api.POST('/v1/admin/shipments/{id}/return', {
         params: { path: { id: s.id }, ...withKey(key).params },
+        body: { returnCost },
       }),
     ),
   );
@@ -456,13 +477,7 @@ function ShipmentRow({
             </>
           )}
           {s.status === 'failed' && (
-            <Button
-              variant="secondary"
-              disabled={back.isPending}
-              onClick={() =>
-                back.mutate(undefined, { onSuccess: () => toast(t('order.returned')) })
-              }
-            >
+            <Button variant="secondary" onClick={() => setDialog('back')}>
               {t('order.markReturned')}
             </Button>
           )}
@@ -523,6 +538,32 @@ function ShipmentRow({
         />
       </ConfirmDialog>
       <ConfirmDialog
+        open={dialog === 'back'}
+        onOpenChange={(open) => !open && setDialog(null)}
+        title={t('order.markReturned')}
+        confirmLabel={t('order.markReturned')}
+        destructive={false}
+        canConfirm={cost !== undefined && cost !== null}
+        busy={back.isPending}
+        error={back.error ? orderErrorMessage(back.error, t) : undefined}
+        onConfirm={() =>
+          back.mutate(cost ?? 0, {
+            onSuccess: () => {
+              setDialog(null);
+              toast(t('order.returned'));
+            },
+          })
+        }
+      >
+        <Field
+          label={t('order.returnCost')}
+          hint={t('order.returnCostHint')}
+          inputMode="decimal"
+          value={costText}
+          onChange={(e) => setCostText(e.target.value)}
+        />
+      </ConfirmDialog>
+      <ConfirmDialog
         open={dialog === 'delete'}
         onOpenChange={(open) => !open && setDialog(null)}
         title={t('order.deleteShipment')}
@@ -537,12 +578,24 @@ function ShipmentRow({
 
 function Payments({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
-  if (!o.payments.length) return null;
+  const canLink = usePermission('payments.read') && usePermission('orders.write');
+  const [linking, setLinking] = useState(false);
+  const unpaid =
+    o.status !== 'cancelled' && o.status !== 'completed' && o.totals.paidTotal < o.totals.total;
+  if (!o.payments.length && !unpaid) return null;
   return (
     <section aria-labelledby="payments-title" className={section}>
-      <h2 id="payments-title" className="font-semibold">
-        {t('order.payments')}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="payments-title" className="font-semibold">
+          {t('order.payments')}
+        </h2>
+        {canLink && unpaid && (
+          <Button variant="secondary" onClick={() => setLinking(true)}>
+            {t('order.paymentLink')}
+          </Button>
+        )}
+      </div>
+      {linking && <PaymentLinkDialog order={o} onClose={() => setLinking(false)} />}
       <ul className="flex flex-col divide-y divide-border text-sm">
         {o.payments.map((p) => (
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -553,6 +606,21 @@ function Payments({ order: o }: { order: OrderDetail }) {
                   .filter(Boolean)
                   .join(' · ')}
               </span>
+              {p.gateway && (p.gateway.valId || p.gateway.link) && (
+                <span className="break-all text-xs text-muted-foreground">
+                  {[
+                    p.gateway.link && t('order.viaLink'),
+                    p.gateway.cardType,
+                    p.gateway.bankTranId && t('order.bankTran', { id: p.gateway.bankTranId }),
+                    p.gateway.valId && t('order.valId', { id: p.gateway.valId }),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              )}
+              {p.gateway?.risky && (
+                <span className="text-xs font-medium text-destructive">{t('order.risky')}</span>
+              )}
             </span>
             <span className="flex items-center gap-2">
               <StatusChip kind="payment" status={p.status} />
@@ -561,6 +629,155 @@ function Payments({ order: o }: { order: OrderDetail }) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/** A link the shopper pays what's unpaid from (phase-5a-plan §3.3): copy it, or share it. */
+function PaymentLinkDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  // Opening the dialog makes the link; the API reuses one still waiting, so
+  // opening it again never asks twice.
+  const link = useQuery({
+    queryKey: ['payment-link', o.id],
+    queryFn: async () => {
+      const made = unwrap(
+        await api.POST('/v1/admin/orders/{id}/payment-link', { params: { path: { id: o.id } } }),
+      );
+      await queryClient.invalidateQueries({ queryKey: ['order', o.id] });
+      return made;
+    },
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+  const message = link.data
+    ? t('order.paymentLinkMessage', {
+        number: o.displayNumber,
+        amount: formatPrice(link.data.amount, locale),
+        url: link.data.url,
+      })
+    : '';
+  const phone = o.contact.phone.replace(/\D/g, '');
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()} title={t('order.paymentLink')}>
+      <div className="flex flex-col gap-4">
+        {link.isPending && <p role="status">{t('loading')}</p>}
+        {link.isError && <Notice tone="error">{orderErrorMessage(link.error, t)}</Notice>}
+        {link.data && (
+          <>
+            <p>
+              {t('order.paymentLinkIntro', {
+                amount: formatPrice(link.data.amount, locale),
+                date: dateTime(locale, link.data.expiresAt),
+              })}
+            </p>
+            <Input readOnly value={link.data.url} aria-label={t('order.paymentLink')} />
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(message);
+                  toast(t('order.copied'));
+                }}
+              >
+                {t('order.copyLink')}
+              </Button>
+              <a
+                className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium hover:bg-muted"
+                href={`https://wa.me/${phone}?text=${encodeURIComponent(message)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp
+              </a>
+              <a
+                className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium hover:bg-muted"
+                href={`sms:${o.contact.phone}?body=${encodeURIComponent(message)}`}
+              >
+                SMS
+              </a>
+            </div>
+          </>
+        )}
+      </div>
+    </Dialog>
+  );
+}
+
+/** Returns and refunds (phase-5a-plan §7): start a return, refund an overpaid order. */
+function ReturnsAndRefunds({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const canWrite = usePermission('orders.write');
+  const canRefund = usePermission('payments.refund');
+  const [dialog, setDialog] = useState<'return' | 'refund' | null>(null);
+  // Something went out; the dialog shows what was delivered and can still come back.
+  const canReturn = canWrite && o.status !== 'cancelled' && o.deliveryStatus !== 'not_shipped';
+  const overpaid = canRefund && o.totals.refundDue > 0;
+  if (!o.returns.length && !o.refunds.length && !canReturn && !overpaid) return null;
+  return (
+    <section aria-labelledby="returns-title" className={section}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="returns-title" className="font-semibold">
+          {t('order.returnsAndRefunds')}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {canReturn && (
+            <Button variant="secondary" onClick={() => setDialog('return')}>
+              {t('return.create')}
+            </Button>
+          )}
+          {overpaid && (
+            <Button variant="secondary" onClick={() => setDialog('refund')}>
+              {t('order.refundOverpaid', { amount: formatPrice(o.totals.refundDue, locale) })}
+            </Button>
+          )}
+        </div>
+      </div>
+      {o.returns.length > 0 && (
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          {o.returns.map((r) => (
+            <li key={r.id}>
+              <Link
+                to="/returns/$id"
+                params={{ id: r.id }}
+                className="flex min-h-11 items-center justify-between gap-2 py-2 hover:underline"
+              >
+                <span>R{r.number}</span>
+                <ReturnStatusChip status={r.status} />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {o.refunds.length > 0 && (
+        <ul className="flex flex-col divide-y divide-border text-sm">
+          {o.refunds.map((f) => (
+            <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+              <span className="flex flex-col">
+                <span className="font-medium">{t(`refund.method.${f.method}` as AdminKey)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {[f.reference, f.reason, dateTime(locale, f.createdAt)]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+                {f.gatewayError && (
+                  <span className="text-xs text-destructive">{f.gatewayError}</span>
+                )}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-xs">{t(`refund.status.${f.status}` as AdminKey)}</span>−
+                {formatPrice(f.amount, locale)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {dialog === 'return' && <CreateReturnDialog orderId={o.id} onClose={() => setDialog(null)} />}
+      {dialog === 'refund' && (
+        <RefundDialog orderId={o.id} returnId={null} onClose={() => setDialog(null)} />
+      )}
     </section>
   );
 }

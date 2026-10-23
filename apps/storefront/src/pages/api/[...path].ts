@@ -15,6 +15,8 @@ const FORWARDED_HEADERS = [
   'user-agent',
   // Shopper sign-in code requests carry their Turnstile token here (§3.15).
   'x-turnstile-token',
+  // Return photos carry the tracking token here (phase-5a-plan §3.12).
+  'x-order-token',
 ];
 
 /**

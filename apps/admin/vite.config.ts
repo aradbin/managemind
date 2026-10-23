@@ -44,6 +44,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/v1\//, /^\/health/, /^\/openapi\.json/],
         runtimeCaching: [],
+        // Staff alerts (phase-5a-plan §3.9): push and notification clicks.
+        importScripts: ['/push-sw.js'],
       },
     }),
   ],

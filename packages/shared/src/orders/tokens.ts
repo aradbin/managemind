@@ -2,10 +2,15 @@
 // their own order without an account. `view` comes with the placed order
 // (24 hours, in the confirmation page's fragment, so it never reaches a log);
 // `track` comes from tracking by number and phone (1 hour) and also allows
-// cancelling. HMAC-SHA-256 over the purpose, the store, the order and the
+// cancelling. `pay` is a payment link from staff (phase-5a-plan §3.3, 3
+// days): it shows the order and pays it, and can't cancel. HMAC-SHA-256 over the purpose, the store, the order and the
 // expiry: a token of one store or purpose is worthless in another.
 
-export const ORDER_TOKEN_TTL_SECONDS = { view: 24 * 3600, track: 3600 } as const;
+export const ORDER_TOKEN_TTL_SECONDS = {
+  view: 24 * 3600,
+  track: 3600,
+  pay: 3 * 24 * 3600,
+} as const;
 export type OrderTokenPurpose = keyof typeof ORDER_TOKEN_TTL_SECONDS;
 
 const encoder = new TextEncoder();

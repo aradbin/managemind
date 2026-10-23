@@ -23,7 +23,33 @@ describe('tenantSettings', () => {
         accounts: false,
         termsCheckbox: false,
       },
-      cod: { enabled: true, maxOrderValue: null, advance: 'never' },
+      cod: { enabled: true, maxOrderValue: null, advance: 'never', otp: 'off' },
+      fraud: { flagAfterFailed: 1 },
+      returns: {
+        shopperRequests: true,
+        windowDays: 7,
+        excludedCategoryIds: [],
+        shopperPaysFor: ['wrong_size', 'changed_mind', 'other'],
+        refundMethods: ['gateway', 'bkash', 'nagad', 'rocket', 'bank', 'cash', 'store_credit'],
+        refundDeliveryFee: true,
+      },
+      notifications: {
+        sms: ['order_placed', 'order_shipped'],
+        email: [
+          'order_placed',
+          'order_confirmed',
+          'order_shipped',
+          'order_delivered',
+          'order_cancelled',
+          'payment_received',
+          'payment_expired',
+          'return_approved',
+          'return_rejected',
+          'return_received',
+          'refund_issued',
+          'store_credit_issued',
+        ],
+      },
     });
     expect(tenantSettings.parse({})).toEqual(defaultTenantSettings());
   });

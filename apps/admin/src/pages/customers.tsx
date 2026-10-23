@@ -22,7 +22,7 @@ import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
-import { errorMessage } from '../lib/errors';
+import { errorMessage, saveErrorMessage } from '../lib/errors';
 import {
   type Customer,
   type CustomerAddress,
@@ -300,6 +300,17 @@ export function CustomerDetailPage() {
       navigate({ to: '/customers' });
     },
   });
+  // Flag by hand, or clear, which resets the failed deliveries (phase-5a-plan §3.11).
+  const flag = useMutation({
+    mutationFn: async (flagged: boolean) =>
+      unwrap(
+        await api.PUT('/v1/admin/customers/{id}/flag', {
+          params: { path: { id } },
+          body: { flagged },
+        }),
+      ),
+    onSuccess: (saved) => queryClient.setQueryData(customerQuery(id).queryKey, saved),
+  });
   if (customer.isPending) return <p role="status">{t('loading')}</p>;
   if (customer.isError) return <Notice tone="error">{errorMessage(customer.error, t)}</Notice>;
   const c = customer.data;
@@ -330,6 +341,36 @@ export function CustomerDetailPage() {
           )
         }
       />
+      {(c.phoneFlagged || c.failedDeliveries > 0) && (
+        <Notice tone={c.phoneFlagged ? 'error' : 'info'}>
+          <span className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {c.phoneFlagged
+                ? t(c.flagged ? 'customer.flaggedByHand' : 'customer.flaggedByFailures', {
+                    count: c.failedDeliveries,
+                  })
+                : t('customer.failedDeliveries', { count: c.failedDeliveries })}
+            </span>
+            {canWrite && c.phoneFlagged && (
+              <Button
+                variant="secondary"
+                disabled={flag.isPending}
+                onClick={() => flag.mutate(false)}
+              >
+                {t('customer.clearFlag')}
+              </Button>
+            )}
+          </span>
+        </Notice>
+      )}
+      {canWrite && !c.phoneFlagged && (
+        <div>
+          <Button variant="ghost" disabled={flag.isPending} onClick={() => flag.mutate(true)}>
+            {t('customer.flag')}
+          </Button>
+        </div>
+      )}
+      {flag.error && <Notice tone="error">{saveErrorMessage(flag.error, t)}</Notice>}
       <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
           [t('customer.orders'), String(c.orderCount)],

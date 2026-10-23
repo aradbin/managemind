@@ -5,6 +5,7 @@
 import {
   type CheckoutSettings,
   COD_ADVANCE_RULES,
+  COD_OTP_RULES,
   type CodSettings,
   defaultCheckoutSettings,
   defaultCodSettings,
@@ -13,6 +14,7 @@ import {
 } from '@managemind/shared/orders';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
@@ -25,6 +27,7 @@ import '../i18n/orders';
 import { ApiError, api, unwrap } from '../lib/api';
 import { priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { fieldErrors } from '../lib/messaging';
 import { blockedQuery, dateOnly } from '../lib/orders';
 
 const int = (s: string) => {
@@ -110,6 +113,7 @@ export function CheckoutSettingsPage() {
 
   if (store.isPending) return <p role="status">{t('loading')}</p>;
   if (store.isError) return <Notice tone="error">{errorMessage(store.error, t)}</Notice>;
+  const refused = fieldErrors(save.error);
   const err = (bad: boolean) => (bad ? t('form.invalid') : undefined);
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -222,6 +226,31 @@ export function CheckoutSettingsPage() {
               </label>
             ))}
             <p className="text-sm text-muted-foreground">{t('checkoutSettings.advanceHint')}</p>
+            {refused['cod.advance'] && (
+              <Notice tone="error">
+                {t('checkoutSettings.needsGateway')}{' '}
+                <Link to="/settings/payments" className="underline">
+                  {t('payments.title')}
+                </Link>
+              </Notice>
+            )}
+          </fieldset>
+          <fieldset className="flex flex-col gap-1">
+            <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.otp')}</legend>
+            {COD_OTP_RULES.map((r) => (
+              <label key={r} className="flex min-h-11 items-center gap-3">
+                <input
+                  type="radio"
+                  name="otp"
+                  className="size-5"
+                  checked={cod.otp === r}
+                  onChange={() => setCod({ ...cod, otp: r })}
+                />
+                {t(`checkoutSettings.otp.${r}`)}
+              </label>
+            ))}
+            <p className="text-sm text-muted-foreground">{t('checkoutSettings.otpHint')}</p>
+            {refused['cod.otp'] && <Notice tone="error">{t('checkoutSettings.needsSms')}</Notice>}
           </fieldset>
         </fieldset>
 
@@ -252,7 +281,7 @@ export function CheckoutSettingsPage() {
             />
           </div>
         </fieldset>
-        {save.error && (
+        {save.error && !refused['cod.advance'] && !refused['cod.otp'] && (
           <Notice tone="error">
             {save.error instanceof ApiError && save.error.problem?.code === 'feature_unavailable'
               ? t('checkoutSettings.accountsUnavailable')

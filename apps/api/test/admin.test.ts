@@ -134,6 +134,65 @@ describe('admin API', () => {
     expect((await user.call('DELETE', `/api/admin/members/${m.memberId}`)).status).toBe(423);
   });
 
+  it('saves the fraud, returns and notifications sections; the advance waits for SSLCommerz', async () => {
+    const a = await store();
+    const key = btoa(String.fromCharCode(...new Uint8Array(32).fill(3)));
+    const user = await staffIn(a.email, a.id, browser(makeEnv({ CREDENTIALS_KEY: key })));
+    const saved = await user.call('PATCH', '/api/admin/store', {
+      fraud: { flagAfterFailed: 2 },
+      returns: { windowDays: 10 },
+      notifications: { sms: ['order_placed'], email: ['order_placed', 'order_shipped'] },
+    });
+    expect(saved.status).toBe(200);
+    expect(await saved.json()).toMatchObject({
+      fraud: { flagAfterFailed: 2 },
+      returns: { windowDays: 10, shopperRequests: true },
+      notifications: { sms: ['order_placed'] },
+    });
+
+    const cod = { enabled: true, maxOrderValue: null, advance: 'flagged', otp: 'off' };
+    const refused = await user.call('PATCH', '/api/admin/store', { cod });
+    expect(refused.status).toBe(422);
+    expect(((await refused.json()) as Json).errors).toEqual([
+      expect.objectContaining({ path: 'cod.advance', code: 'needs_gateway' }),
+    ]);
+    expect(
+      (
+        await user.call('PATCH', '/api/admin/store', {
+          cod: { ...cod, advance: 'never', otp: 'flagged' },
+        })
+      ).status,
+    ).toBe(422);
+
+    // A rule saved before the check (phase 4) doesn't block other saves.
+    await owner.query(
+      `update platform.tenants set settings = jsonb_set(settings, '{cod}', $2::jsonb) where id = $1`,
+      [a.id, JSON.stringify({ ...cod, advance: 'always' })],
+    );
+    expect(
+      (await user.call('PATCH', '/api/admin/store', { cod: { ...cod, advance: 'always' } })).status,
+    ).toBe(200);
+
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({ status: 'SUCCESS', GatewayPageURL: 'https://gw', sessionkey: 'k' }),
+      )) as typeof fetch;
+    try {
+      const put = await user.call('PUT', '/api/admin/credentials/sslcommerz', {
+        provider: 'sslcommerz',
+        mode: 'sandbox',
+        secrets: { storeId: 'shop1234', storePassword: 'pw' },
+      });
+      expect(put.status).toBe(200);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+    const allowed = await user.call('PATCH', '/api/admin/store', { cod });
+    expect(allowed.status).toBe(200);
+    expect(await allowed.json()).toMatchObject({ cod: { advance: 'flagged' } });
+  });
+
   it('lists members in pages, changes roles and removes members', async () => {
     const a = await store();
     const staff = await member(a.id, 'staff');
@@ -329,6 +388,39 @@ describe('isolation suite', () => {
       }),
     );
     await inB((tx) => blockPhone(tx, bOwner, { phone: '+8801700007777', reason: 'B only' }));
+    const bDevice = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.push_subscriptions (user_id, endpoint, p256dh, auth)
+             select id, ${`https://push.example.test/${crypto.randomUUID()}`}, 'k', 'a'
+               from platform.users order by created_at limit 1
+             returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+    const bMessage = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.messages (idempotency_key, event, channel, recipient_type, recipient, locale, status)
+             values (${`b-${crypto.randomUUID()}`}, 'order_placed', 'email', 'shopper', 'b@example.test', 'en', 'failed')
+             returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+
+    // Store B's return and its photo (phase-5a-plan §3.12).
+    const bReturn = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.returns (number, order_id, reason, requested_by)
+             values (9001, ${order.id}, 'damaged', 'staff') returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+    const bPhoto = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.return_photos (return_id, object_key, mime_type, bytes)
+             values (${bReturn}, 'b/returns/x.png', 'image/png', 10) returning id`,
+      );
+      return rows[0]?.id as string;
+    });
 
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
@@ -392,6 +484,25 @@ describe('isolation suite', () => {
       },
       'POST /v1/admin/orders/{id}/notes': { id: order.id, body: { body: 'x' } },
       'PATCH /v1/admin/orders/{id}': { id: order.id, body: { tags: ['x'] } },
+      'POST /v1/admin/orders/{id}/payment-link': { id: order.id },
+      'GET /v1/admin/orders/{id}/returnable': { id: order.id },
+      'POST /v1/admin/orders/{id}/refunds/preview': { id: order.id, body: {} },
+      'POST /v1/admin/orders/{id}/refunds': { id: order.id, body: { method: 'cash' } },
+      'GET /v1/admin/returns/{id}': { id: bReturn },
+      'POST /v1/admin/returns/{id}/approve': { id: bReturn },
+      'POST /v1/admin/returns/{id}/reject': { id: bReturn, body: { reason: 'x' } },
+      'POST /v1/admin/returns/{id}/send': { id: bReturn },
+      'POST /v1/admin/returns/{id}/receive': { id: bReturn },
+      'POST /v1/admin/returns/{id}/inspect': {
+        id: bReturn,
+        body: { lines: [{ orderLineId: lineRows[0]?.id, sellable: 1, damaged: 0 }] },
+      },
+      'POST /v1/admin/returns/{id}/close': { id: bReturn, body: { reason: 'x' } },
+      'POST /v1/admin/returns/{id}/exchange': {
+        id: bReturn,
+        body: { lines: [{ variantId: liveVariant, quantity: 1 }] },
+      },
+      'GET /v1/admin/returns/{id}/photos/{photo}': { id: bReturn, second: bPhoto },
       'POST /v1/admin/orders/{id}/payments': {
         id: order.id,
         body: { method: 'cash', amount: 100 },
@@ -407,6 +518,7 @@ describe('isolation suite', () => {
       'DELETE /v1/admin/shipments/{id}': { id: shipment.id },
       'GET /v1/admin/customers/{id}': { id: customer.id },
       'PATCH /v1/admin/customers/{id}': { id: customer.id, body: { name: 'x' } },
+      'PUT /v1/admin/customers/{id}/flag': { id: customer.id, body: { flagged: true } },
       'DELETE /v1/admin/customers/{id}': { id: customer.id },
       'POST /v1/admin/customers/{id}/addresses': { id: customer.id, body: bAddress },
       'PATCH /v1/admin/customers/{id}/addresses/{addressId}': {
@@ -425,6 +537,8 @@ describe('isolation suite', () => {
       'PATCH /v1/admin/promotions/{id}': { id: promotion.id, body: { priority: 1 } },
       'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
       'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
+      'POST /v1/admin/messages/{id}/resend': { id: bMessage },
+      'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -432,6 +546,12 @@ describe('isolation suite', () => {
         'the name is the uploaded bytes’ hash, and the file lands in the caller’s own store',
       'POST /v1/admin/theme/presets/{name}':
         'the name is a preset, not a stored row; it only ever changes the caller’s own draft',
+      'PUT /v1/admin/credentials/{kind}':
+        'the kind is one of three fixed names, resolved inside the caller’s own store',
+      'DELETE /v1/admin/credentials/{kind}':
+        'the kind is one of three fixed names, resolved inside the caller’s own store',
+      'DELETE /v1/admin/templates/{event}/{channel}/{locale}':
+        'the key names a template of the caller’s own store, never a row of another',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));
@@ -446,7 +566,7 @@ describe('isolation suite', () => {
       const path = route.path
         .replace('/v1/admin', '/api/admin')
         .replace(/\{(id|file|phone)\}/, encodeURIComponent(fixture.id))
-        .replace('{addressId}', fixture.second ?? crypto.randomUUID())
+        .replace(/\{(addressId|photo)\}/, fixture.second ?? crypto.randomUUID())
         .replace('{n}', '0')
         .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);

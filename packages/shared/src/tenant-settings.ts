@@ -3,7 +3,8 @@
 // are refused, so a typo can never be stored silently. The store's name and
 // default locale are columns, not settings.
 import { z } from 'zod';
-import { checkoutSettings, codSettings } from './orders/settings';
+import { notificationSettings } from './notifications';
+import { checkoutSettings, codSettings, fraudSettings, returnSettings } from './orders/settings';
 import { normalizePhone } from './phone';
 import { storefrontSettings } from './storefront/settings';
 import { themeSchema } from './storefront/theme';
@@ -106,6 +107,12 @@ export const tenantSettings = z
     checkout: checkoutSettings.default(() => checkoutSettings.parse({})),
     /** Cash on delivery (phase-4-plan §3.8). */
     cod: codSettings.default(() => codSettings.parse({})),
+    /** When a phone is flagged (phase-5a-plan §3.11). */
+    fraud: fraudSettings.default(() => fraudSettings.parse({})),
+    /** The return policy (phase-5a-plan §3.10). */
+    returns: returnSettings.default(() => returnSettings.parse({})),
+    /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */
+    notifications: notificationSettings.default(() => notificationSettings.parse({})),
     /** The published theme; absent until the first publish, so the default theme shows. */
     theme: themeSchema.optional(),
     /** The theme editor's working copy (phase-3-plan §3.4). */

@@ -17,6 +17,7 @@ import { recheckDomains } from './domains';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
+import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
 import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
@@ -24,8 +25,9 @@ import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
  * KV map; events that change what shoppers see become cache purges, one
- * message per store on the purge queue (ADR 0018); everything else is logged
- * and acknowledged. Handlers recompute state rather than apply deltas, so
+ * message per store on the purge queue (ADR 0018); order, payment and
+ * shipment events send their messages (phase-5a-plan §3.6); everything else
+ * is logged and acknowledged. Handlers recompute state rather than apply deltas, so
  * redeliveries are harmless. Messages that keep failing go to the
  * dead-letter queue.
  */
@@ -45,6 +47,23 @@ export async function handleQueue(
   for (let i = 0; env.DOMAINS && i < edges.length; i += 100) {
     await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
   }
+  // Messages to shoppers and staff (phase-5a-plan §3.6). The delivery log
+  // keeps a redelivered event from sending twice, so a failure retries the
+  // event and only what it left unsent goes out again.
+  const unsent = new Set<string>();
+  for (const message of batch.messages) {
+    if (!sendsMessages(message.body)) continue;
+    try {
+      await notify(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'notifications will be retried', {
+        event_id: message.body.id,
+        tenant_id: message.body.tenantId,
+        error: String(e),
+      });
+      unsent.add(message.body.id);
+    }
+  }
   // One sync per store per batch, however many of its events arrived.
   const widget = turnstileWidget(env);
   const tenants = new Map<string, Message<OutboxEvent>[]>();
@@ -55,7 +74,12 @@ export async function handleQueue(
       tenant_id: message.body.tenantId,
       attempts: message.attempts,
     });
-    if ((env.EDGE && touchesHosts(message.body)) || (widget && touchesDomains(message.body))) {
+    if (unsent.has(message.body.id)) {
+      message.retry();
+    } else if (
+      (env.EDGE && touchesHosts(message.body)) ||
+      (widget && touchesDomains(message.body))
+    ) {
       const list = tenants.get(message.body.tenantId) ?? [];
       list.push(message);
       tenants.set(message.body.tenantId, list);
@@ -223,6 +247,12 @@ export async function runDailyJobs(
       Object.fromEntries(cleanup.rows.map((r) => [r.name, Number(r.deleted)])),
     );
     await checkInventoryDrift(client);
+    // Shoppers' return photos, 90 days after their return closed (phase-5a-plan §3.12).
+    try {
+      await cleanUpReturnPhotos(env, client);
+    } catch (e) {
+      log('error', 'return photo cleanup failed', { error: String(e) });
+    }
     // Custom domains: pending ones until active or 7 days old, active ones for breakage (ADR 0019).
     try {
       await recheckDomains(env, ctx, client);
@@ -265,6 +295,29 @@ export async function cleanUpMedia(
     files += keys.length;
   }
   if (files) log('info', 'media cleanup', { files });
+  return { files };
+}
+
+/**
+ * Return photos 90 days after their return closed (phase-5a-plan §3.12):
+ * the rows go, then the files no other photo uses. A failed R2 delete only
+ * orphans a file no row points at.
+ */
+export async function cleanUpReturnPhotos(
+  env: Pick<Env, 'FILES'>,
+  client: Parameters<Parameters<typeof withClient>[2]>[0],
+): Promise<{ files: number }> {
+  let files = 0;
+  for (let round = 0; round < 10; round++) {
+    const { rows } = await client.query<{ object_key: string }>(
+      'select * from app.return_photo_cleanup(500)',
+    );
+    if (rows.length === 0) break;
+    const keys = rows.map((r) => r.object_key);
+    for (let i = 0; i < keys.length; i += 1000) await env.FILES.delete(keys.slice(i, i + 1000));
+    files += keys.length;
+  }
+  if (files) log('info', 'return photo cleanup', { files });
   return { files };
 }
 

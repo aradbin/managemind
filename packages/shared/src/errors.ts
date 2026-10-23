@@ -21,6 +21,8 @@ export const ERROR_CODES = {
   price_changed: { status: 409, title: 'Prices changed' },
   promotion_unavailable: { status: 409, title: 'Offer no longer available' },
   cod_unavailable: { status: 422, title: 'Cash on delivery is not available for this order' },
+  /** The phone needs a code by SMS before this cash-on-delivery order (phase-5a-plan §3.14). */
+  otp_required: { status: 428, title: 'Confirm your phone number' },
   checkout_paused: { status: 423, title: 'The store is not taking orders right now' },
   cart_invalid: { status: 409, title: 'Some items in the cart are no longer available' },
   limit_exceeded: { status: 422, title: 'Limit reached' },
@@ -88,15 +90,21 @@ export interface ProblemDetails {
   [extension: string]: unknown;
 }
 
+/** 5xx codes whose detail is written for the caller (a setup that isn't done), so it is kept. */
+const SAFE_UNAVAILABLE: readonly ErrorCode[] = ['feature_unavailable'];
+
 /**
- * Converts any thrown value to problem details. Unknown errors and all 5xx
- * become `internal` with no detail, so messages, stacks and SQL never leak.
+ * Converts any thrown value to problem details. Unknown errors and all other
+ * 5xx become `internal` with no detail, so messages, stacks and SQL never leak.
  */
 export function toProblem(
   error: unknown,
   context: { errorBaseUrl: string; requestId?: string },
 ): ProblemDetails {
-  const known = error instanceof AppError && error.status < 500 ? error : undefined;
+  const known =
+    error instanceof AppError && (error.status < 500 || SAFE_UNAVAILABLE.includes(error.code))
+      ? error
+      : undefined;
   const code: ErrorCode = known?.code ?? 'internal';
   const { status, title } = ERROR_CODES[code];
   const problem: ProblemDetails = {

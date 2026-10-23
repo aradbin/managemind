@@ -3,6 +3,7 @@ import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { baseConfig, hostname, loadConfig } from '@managemind/shared/config';
 import { z } from 'zod';
 import type { DelayedMessage } from './domains';
+import type { OtpCodes } from './otp/durable-object';
 import type { PurgeMessage } from './purge/consumer';
 import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
@@ -25,6 +26,8 @@ export interface Env {
   DOMAINS?: Queue<DelayedMessage>;
   /** The account-wide purge counter, one object named "account" (ADR 0007). */
   PURGE_BUDGET: DurableObjectNamespace<PurgeBudget>;
+  /** Phone codes before cash on delivery, one object per store and phone (phase-5a-plan §3.14). */
+  OTP_CODES: DurableObjectNamespace<OtpCodes>;
   /** Store files in R2 under tenants/<id>/ (product images, ADR 0016). */
   FILES: R2Bucket;
   /** Host-to-store map read by the storefront (ADR 0015); absent in previews. */
@@ -76,6 +79,16 @@ export interface Env {
   TURNSTILE_SITE_KEY?: string;
   /** Turnstile's secret (a Worker secret); without it the check is skipped. */
   TURNSTILE_SECRET_KEY?: string;
+  /**
+   * 32 bytes in base64 that encrypt stores' gateway, SMS and email
+   * credentials (a Worker secret; phase-5a-plan §3.1). Without it no store
+   * can save any, so online payment and SMS stay off.
+   */
+  CREDENTIALS_KEY?: string;
+  /** The platform's VAPID public key for web push (a repository variable; phase-5a-plan §3.9). */
+  VAPID_PUBLIC_KEY?: string;
+  /** Its private key (a Worker secret); without both, staff push is off. */
+  VAPID_PRIVATE_KEY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';

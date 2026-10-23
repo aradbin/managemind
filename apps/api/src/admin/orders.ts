@@ -13,6 +13,7 @@ import {
   confirmOrder,
   createCustomer,
   createManualOrder,
+  createPaymentLink,
   createShipment,
   createZone,
   dashboard,
@@ -35,6 +36,7 @@ import {
   recordPayment,
   returnShipment,
   runIdempotent,
+  setCustomerFlag,
   setOrderTags,
   shipShipment,
   startProcessing,
@@ -48,6 +50,7 @@ import { AppError } from '@managemind/shared';
 import { GEO_VERSION, geoFilePath } from '@managemind/shared/geo';
 import {
   addressInput,
+  customerFlagInput,
   customerInput,
   customerPatch,
   deliverInput,
@@ -57,14 +60,19 @@ import {
   manualPaymentInput,
   manualQuoteInput,
   noteInput,
+  ORDER_TOKEN_TTL_SECONDS,
   orderEditInput,
   orderListQuery,
   orderTagsInput,
   reasonInput,
   shipmentInput,
+  shipmentReturnInput,
+  signOrderToken,
 } from '@managemind/shared/orders';
 import type { Context } from 'hono';
+import { gatewayFor } from '../payments';
 import { inStore, type StaffEnv } from './context';
+import { storeUrlsFor } from './store-urls';
 
 const Id = z.object({ id: z.uuid() });
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
@@ -130,6 +138,7 @@ const OrderTotals = z.object({
   paidTotal: Money,
   codDue: Money,
   refundDue: Money,
+  refundedTotal: Money,
 });
 export const OrderDetail = z
   .object({
@@ -186,6 +195,28 @@ export const OrderDetail = z
       }),
     ),
     totals: OrderTotals,
+    flags: z.array(z.string()).openapi({ description: 'payment_risk, late_payment' }),
+    refunds: z.array(
+      z.object({
+        id: z.uuid(),
+        method: z.string(),
+        status: z.string(),
+        amount: Money,
+        reference: z.string().nullable(),
+        reason: z.string().nullable(),
+        returnId: z.uuid().nullable(),
+        gatewayError: z.string().nullable(),
+        createdAt: z.string(),
+      }),
+    ),
+    returns: z.array(
+      z.object({
+        id: z.uuid(),
+        number: z.number().int(),
+        status: z.string(),
+        resolution: z.string().nullable(),
+      }),
+    ),
     payments: z.array(
       z.object({
         id: z.uuid(),
@@ -196,6 +227,16 @@ export const OrderDetail = z
         reference: z.string().nullable(),
         settledAt: z.string().nullable(),
         createdAt: z.string(),
+        gateway: z
+          .object({
+            valId: z.string().nullable(),
+            bankTranId: z.string().nullable(),
+            risky: z.boolean(),
+            cardType: z.string().nullable(),
+            link: z.boolean(),
+          })
+          .nullable()
+          .openapi({ description: 'SSLCommerz details, with payments.read' }),
       }),
     ),
     shipments: z.array(
@@ -292,7 +333,7 @@ export const QuoteView = z
     manualDiscount: z.object({ amount: Money, reason: z.string() }).nullable(),
   })
   .openapi('OrderQuote');
-const PlacedOrder = z
+export const PlacedOrder = z
   .object({
     id: z.uuid(),
     number: z.number().int(),
@@ -318,6 +359,8 @@ const Customer = z
     firstOrderAt: z.string().nullable(),
     lastOrderAt: z.string().nullable(),
     createdAt: z.string(),
+    failedDeliveries: z.number().int(),
+    flagged: z.boolean().openapi({ description: 'Flagged by staff by hand' }),
   })
   .openapi('Customer');
 const CustomerAddress = z
@@ -334,6 +377,9 @@ const CustomerAddress = z
   })
   .openapi('CustomerAddress');
 const CustomerDetail = Customer.extend({
+  phoneFlagged: z
+    .boolean()
+    .openapi({ description: 'By hand or by failed deliveries: asks for an advance or a code' }),
   addresses: z.array(CustomerAddress),
   orders: z.array(
     z.object({
@@ -521,6 +567,17 @@ export const ORDER_ROUTES = {
     request: { params: Id, headers: IdemHeader, ...body(manualPaymentInput) },
     responses: json(OrderState, 'Recorded'),
   }),
+  paymentLink: r({
+    method: 'post',
+    path: '/orders/{id}/payment-link',
+    summary:
+      'A link the shopper pays the unpaid amount from, online (payments.read, orders.write; reuses one waiting)',
+    request: { params: Id },
+    responses: json(
+      z.object({ url: z.string(), amount: Money, expiresAt: z.string() }),
+      'The link',
+    ),
+  }),
   createShipment: r({
     method: 'post',
     path: '/orders/{id}/shipments',
@@ -552,8 +609,15 @@ export const ORDER_ROUTES = {
   return: r({
     method: 'post',
     path: '/shipments/{id}/return',
-    summary: 'A failed shipment came back: back in stock',
-    request: { params: Id, headers: IdemHeader },
+    summary: 'A failed shipment came back: back in stock, with what the trip cost',
+    request: {
+      params: Id,
+      headers: IdemHeader,
+      body: {
+        content: { 'application/json': { schema: shipmentReturnInput } },
+        required: false,
+      },
+    },
     responses: json(OrderState, 'Returned'),
   }),
   deleteShipment: r({
@@ -593,6 +657,13 @@ export const ORDER_ROUTES = {
     summary: 'Edit a customer (customers.write)',
     request: { params: Id, ...body(customerPatch) },
     responses: json(Customer, 'Updated'),
+  }),
+  flagCustomer: r({
+    method: 'put',
+    path: '/customers/{id}/flag',
+    summary: 'Flag by hand, or clear (which resets failed deliveries) (customers.write)',
+    request: { params: Id, ...body(customerFlagInput) },
+    responses: json(CustomerDetail, 'Flag set'),
   }),
   deleteCustomer: r({
     method: 'delete',
@@ -699,7 +770,7 @@ const actor = (c: Context<StaffEnv>) => c.var.staff.actor;
 const write = { write: true } as const;
 
 /** Runs a command under the request's Idempotency-Key, when it has one. */
-function idempotent<T>(
+export function idempotent<T>(
   c: Context<StaffEnv>,
   tx: TenantTx,
   scope: string,
@@ -838,6 +909,25 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     return getOrder(tx, actor(c), id(c));
   });
   command(R.payment, 'payment', (tx, c, input) => recordPayment(tx, actor(c), id(c), input), state);
+  admin.openapi(R.paymentLink, async (c) => {
+    const tenantId = c.var.staff.actor.tenantId as string;
+    const now = new Date();
+    const link = await inStore(
+      c,
+      async (tx) => {
+        // The order first, so another store's ID is a 404; a refusal after rolls it back.
+        const { amount } = await createPaymentLink(tx, actor(c), id(c));
+        if (!(await gatewayFor(tx, c.env))) {
+          throw new AppError('conflict', { detail: 'Connect SSLCommerz first' });
+        }
+        return { amount, track: (await storeUrlsFor(c.var.config, tx)).page('track') };
+      },
+      { write: true },
+    );
+    const token = await signOrderToken('pay', tenantId, id(c), c.var.config.AUTH_SECRET, now);
+    const expiresAt = new Date(now.getTime() + ORDER_TOKEN_TTL_SECONDS.pay * 1000).toISOString();
+    return c.json({ url: `${link.track}#${token}`, amount: link.amount, expiresAt }, 200);
+  });
   command(
     R.createShipment,
     'shipment',
@@ -853,7 +943,7 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     state,
   );
   command(R.fail, 'fail', (tx, c, input) => failShipment(tx, actor(c), id(c), input), state);
-  command(R.return, 'return', (tx, c) => returnShipment(tx, actor(c), id(c)), state);
+  command(R.return, 'return', (tx, c, input) => returnShipment(tx, actor(c), id(c), input), state);
 
   admin.openapi(R.editPreview, async (c) => {
     const input = c.req.valid('json');
@@ -896,6 +986,13 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.updateCustomer, async (c) => {
     const input = c.req.valid('json');
     return c.json(await inStore(c, (tx) => updateCustomer(tx, actor(c), id(c), input), write), 200);
+  });
+  admin.openapi(R.flagCustomer, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => setCustomerFlag(tx, actor(c), id(c), input), write),
+      200,
+    );
   });
   admin.openapi(R.deleteCustomer, async (c) => {
     await inStore(c, (tx) => deleteCustomer(tx, actor(c), id(c)), write);

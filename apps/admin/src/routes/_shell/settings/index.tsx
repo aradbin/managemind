@@ -1,8 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
+  Bell,
   ChevronRight,
+  CreditCard,
   Globe,
   Percent,
+  RotateCcw,
   ShoppingCart,
   Store,
   Truck,
@@ -53,6 +56,24 @@ function Page() {
       icon: ShoppingCart,
       title: t('checkoutSettings.title'),
       description: t('checkoutSettings.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/returns' as const,
+      icon: RotateCcw,
+      title: t('returnSettings.title'),
+      description: t('returnSettings.description'),
+    },
+    usePermission('settings.credentials') && {
+      to: '/settings/payments' as const,
+      icon: CreditCard,
+      title: t('payments.title'),
+      description: t('payments.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/notifications' as const,
+      icon: Bell,
+      title: t('notify.title'),
+      description: t('notify.description'),
     },
     usePermission('inventory.read') && {
       to: '/settings/location' as const,

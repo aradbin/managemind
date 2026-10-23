@@ -7,7 +7,15 @@ import { cleanString, locale } from '../catalog/schemas';
 import { cleanText, normalizeTag } from '../catalog/text';
 import { placeNames } from '../geo/index';
 import { phoneNumber } from '../tenant-settings';
-import { ORDER_SOURCES } from './machines';
+import {
+  MANUAL_ORDER_SOURCES,
+  ORDER_SOURCES,
+  PAYMENT_STATUSES,
+  REFUND_METHODS,
+  RETURN_REASONS,
+  RETURN_RECORD_STATUSES,
+  RETURN_STATUSES,
+} from './machines';
 
 const price = z.int().min(0).max(CATALOG_LIMITS.maxPrice);
 
@@ -61,15 +69,26 @@ export const checkoutInput = z
     contact: contactInput,
     address: placeInput,
     note: optionalText(500),
-    paymentMethod: z.literal('cod'),
+    /** Cash on delivery, online, or the delivery charge online (phase-5a-plan §3.3, §3.4). */
+    paymentMethod: z.enum(['cod', 'online', 'cod_with_advance']).default('cod'),
     /** The total the shopper saw, compared on the server (§3.1). */
     expectedTotal: price,
     saveDetails: z.boolean().optional(),
     acceptTerms: z.boolean().optional(),
     turnstileToken: z.string().max(4096).optional(),
+    /** From verifying the phone by SMS, when the store asks for it (phase-5a-plan §3.14). */
+    otpToken: z.string().max(100).optional(),
   })
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;
+
+/** A code by SMS before cash on delivery (phase-5a-plan §3.14). */
+export const otpSendInput = z
+  .object({ phone: phoneNumber(), turnstileToken: z.string().max(4096).optional() })
+  .strict();
+export const otpVerifyInput = z
+  .object({ phone: phoneNumber(), code: z.string().regex(/^\d{6}$/) })
+  .strict();
 
 export const DELIVERY_LIMITS = { zones: 20, areasPerZone: 600 } as const;
 
@@ -189,6 +208,12 @@ export const shipmentInput = z
   .strict();
 export const deliverInput = z.object({ cashCollected: z.boolean().default(true) }).strict();
 export const failInput = z.object({ reason: cleanString(300) }).strict();
+/** A failed shipment back in the store (phase-5a-plan §3.11): what the trip cost, if not the fee. */
+export const shipmentReturnInput = z
+  .object({ returnCost: z.int().min(0).max(CATALOG_LIMITS.maxPrice).optional() })
+  .strict();
+/** Staff flag a customer by hand, or clear the flag, which resets the failed deliveries. */
+export const customerFlagInput = z.object({ flagged: z.boolean() }).strict();
 
 export const MANUAL_METHODS = ['bkash', 'nagad', 'rocket', 'bank', 'cash', 'other'] as const;
 
@@ -235,7 +260,7 @@ export const manualDiscountInput = z
 /** A manual order (§3.12): Facebook, phone and walk-in orders. */
 export const manualOrderInput = z
   .object({
-    source: z.enum(ORDER_SOURCES),
+    source: z.enum(MANUAL_ORDER_SOURCES),
     lines: orderLines,
     contact: contactInput,
     /** Null for a walk-in with no delivery. */
@@ -271,7 +296,8 @@ export const manualQuoteInput = manualOrderInput.extend({
 
 export const orderListQuery = z.object({
   status: z.enum(['pending', 'confirmed', 'processing', 'completed', 'cancelled']).optional(),
-  paymentStatus: z.enum(['unpaid', 'partially_paid', 'paid']).optional(),
+  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  returnStatus: z.enum(RETURN_STATUSES).optional(),
   deliveryStatus: z
     .enum(['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'])
     .optional(),
@@ -287,3 +313,105 @@ export const orderListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 export type OrderListQuery = z.infer<typeof orderListQuery>;
+
+// ---- Returns and refunds (phase-5a-plan §3.12, §3.13) ---------------------------------
+
+const returnLines = z
+  .array(
+    z
+      .object({
+        orderLineId: z.uuid(),
+        quantity: z.int().min(1).max(10_000),
+        /** When this line's reason differs from the return's. */
+        reason: z.enum(RETURN_REASONS).optional(),
+      })
+      .strict(),
+  )
+  .min(1)
+  .max(50);
+
+/** A return staff create: approved at once, as they decided it. */
+export const returnInput = z
+  .object({
+    orderId: z.uuid(),
+    reason: z.enum(RETURN_REASONS),
+    lines: returnLines,
+    note: optionalText(500),
+    /** Overrides the policy's answer for who pays the return delivery. */
+    shopperPaysReturn: z.boolean().optional(),
+  })
+  .strict();
+
+/** A shopper's request from the tracking page (§3.12): photos by their hash, uploaded first. */
+export const shopperReturnInput = z
+  .object({
+    reason: z.enum(RETURN_REASONS),
+    lines: returnLines,
+    note: optionalText(500),
+    photos: z
+      .array(z.string().regex(/^[0-9a-f]{64}\.(jpg|png|webp)$/))
+      .max(3)
+      .default([]),
+  })
+  .strict();
+
+export const returnRejectInput = z.object({ reason: cleanString(300) }).strict();
+
+/** What inspection found, per line: units back in stock and units written off. */
+export const inspectInput = z
+  .object({
+    lines: z
+      .array(
+        z
+          .object({
+            orderLineId: z.uuid(),
+            sellable: z.int().min(0).max(10_000),
+            damaged: z.int().min(0).max(10_000),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(50),
+  })
+  .strict();
+
+export const returnListQuery = z
+  .object({
+    status: z.enum(RETURN_RECORD_STATUSES).optional(),
+    reason: z.enum(RETURN_REASONS).optional(),
+    orderId: z.uuid().optional(),
+    /** The createdAt of the last row seen, for the next page. */
+    before: z.iso.datetime().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .strict();
+
+/** What a refund covers: a return's lines, or (without one) an overpaid order. */
+export const refundPreviewInput = z
+  .object({
+    returnId: z.uuid().optional(),
+  })
+  .strict();
+
+export const refundInput = z
+  .object({
+    returnId: z.uuid().optional(),
+    method: z.enum(REFUND_METHODS),
+    /** Lower than the computed amount, with a reason; never higher. */
+    amount: z.int().min(1).max(CATALOG_LIMITS.maxPrice).optional(),
+    reason: optionalText(300),
+    /** The bKash or bank transaction, or the gateway panel's reference. */
+    reference: optionalText(100),
+    /** The online payment refunded, for `gateway` and `gateway_manual`. */
+    paymentId: z.uuid().optional(),
+  })
+  .strict();
+
+/** An exchange (§3.13): the replacement lines, at today's prices; the rest comes from the order. */
+export const exchangeInput = z
+  .object({
+    lines: orderLines,
+    note: optionalText(500),
+    confirm: z.boolean().default(true),
+  })
+  .strict();

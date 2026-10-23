@@ -20,10 +20,12 @@ import {
   type OrderStatus,
   orderMachine,
   orderTagsInput,
+  type PaymentStatus,
   paymentStatusOf,
   type ShipmentStatus,
   shipmentInput,
   shipmentMachine,
+  shipmentReturnInput,
 } from '@managemind/shared/orders';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
@@ -31,6 +33,7 @@ import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
 import { applyMovements, type Movement } from '../inventory/service';
 import { emit } from '../outbox';
+import { revokeCreditRemainder } from '../payments/store-credit';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
 
@@ -40,11 +43,12 @@ export interface OrderRow {
   id: string;
   number: number;
   status: OrderStatus;
-  paymentStatus: 'unpaid' | 'partially_paid' | 'paid';
+  paymentStatus: PaymentStatus;
   deliveryStatus: 'not_shipped' | 'partially_shipped' | 'shipped' | 'delivered' | 'failed';
   customerId: string;
   total: number;
   paidTotal: number;
+  refundedTotal: number;
 }
 
 export async function lockOrder(tx: TenantTx, id: string): Promise<OrderRow> {
@@ -58,12 +62,18 @@ export async function lockOrder(tx: TenantTx, id: string): Promise<OrderRow> {
       customerId: o.customerId,
       total: o.total,
       paidTotal: o.paidTotal,
+      refundedTotal: o.refundedTotal,
     })
     .from(o)
     .where(eq(o.id, id))
     .for('update');
   if (!row) throw new AppError('not_found');
-  return { ...row, total: Number(row.total), paidTotal: Number(row.paidTotal) };
+  return {
+    ...row,
+    total: Number(row.total),
+    paidTotal: Number(row.paidTotal),
+    refundedTotal: Number(row.refundedTotal),
+  };
 }
 
 /** Units of each line that left the store and haven't come back. */
@@ -134,11 +144,14 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
   const { rows: paid } = await tx.db.execute<{ n: string }>(sql`
     select coalesce(sum(amount), 0) as n from store.payments where order_id = ${orderId} and status = 'paid'`);
   const paidTotal = Number(paid[0]?.n ?? 0);
+  const { rows: refunded } = await tx.db.execute<{ n: string }>(sql`
+    select coalesce(sum(amount), 0) as n from store.refunds where order_id = ${orderId} and status = 'succeeded'`);
+  const refundedTotal = Number(refunded[0]?.n ?? 0);
   const { rows: shipped } = await tx.db.execute<{ status: ShipmentStatus; quantity: number }>(sql`
     select s.status, coalesce(sum(sl.quantity), 0)::int as quantity
       from store.shipments s join store.shipment_lines sl on sl.shipment_id = s.id
      where s.order_id = ${orderId} group by s.id, s.status`);
-  const paymentStatus = paymentStatusOf(paidTotal, order.total);
+  const paymentStatus = paymentStatusOf(paidTotal, order.total, refundedTotal);
   const deliveryStatus = deliveryStatusOf(await orderedUnits(tx, orderId), shipped);
   if (paymentStatus !== order.paymentStatus) {
     await recordHistory(tx, actor, {
@@ -147,7 +160,7 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
       from: order.paymentStatus,
       to: paymentStatus,
       event: 'payments_changed',
-      data: { paidTotal },
+      data: { paidTotal, refundedTotal },
     });
   }
   if (deliveryStatus !== order.deliveryStatus) {
@@ -166,9 +179,24 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
          where id = ${order.customerId}`);
     }
   }
-  await tx.db.update(o).set({ paidTotal, paymentStatus, deliveryStatus }).where(eq(o.id, orderId));
-  order = { ...order, paidTotal, paymentStatus, deliveryStatus };
-  if (order.status === 'processing' && deliveryStatus === 'delivered' && paymentStatus === 'paid') {
+  await tx.db
+    .update(o)
+    .set({ paidTotal, refundedTotal, paymentStatus, deliveryStatus })
+    .where(eq(o.id, orderId));
+  if (paidTotal >= order.total) {
+    // Paid in full: an online payment still waiting (a payment link) is no
+    // longer wanted. Expired, not voided, so money that arrives anyway is
+    // still recorded, as a late payment to give back (phase-5a-plan §3.5).
+    await tx.db.execute(sql`
+      update store.payments set status = 'expired'
+       where order_id = ${orderId} and provider = 'sslcommerz' and status = 'pending'`);
+  }
+  order = { ...order, paidTotal, refundedTotal, paymentStatus, deliveryStatus };
+  if (
+    order.status === 'processing' &&
+    deliveryStatus === 'delivered' &&
+    (paymentStatus === 'paid' || paymentStatus === 'partially_refunded')
+  ) {
     order = await moveOrder(tx, actor, order, 'complete');
   }
   return order;
@@ -205,7 +233,7 @@ export async function cancelOrder(
   tx: TenantTx,
   actor: Actor,
   id: string,
-  input: { reason: string },
+  input: { reason: string; cause?: 'payment_expired' },
 ): Promise<OrderRow> {
   const byShopper = actor.kind === 'shopper';
   if (!byShopper) authorize(actor, 'orders.write');
@@ -270,7 +298,11 @@ export async function cancelOrder(
   await emit(tx, 'order.cancelled', {
     aggregateType: 'order',
     aggregateId: id,
-    payload: { number: order.number, by: who.actorType },
+    payload: {
+      number: order.number,
+      by: who.actorType,
+      ...(input.cause ? { reason: input.cause } : {}),
+    },
   });
   if (!byShopper) {
     await recordAudit(tx, {
@@ -290,12 +322,22 @@ export async function giveBackPromotionUses(tx: TenantTx, orderId: string, only?
     promotion_id: string;
     code_id: string | null;
     phone: string;
+    amount: string;
+    store_credit: boolean | null;
   }>(sql`
-    select a.promotion_id, a.code_id, o.phone from store.order_adjustments a
+    select a.promotion_id, a.code_id, o.phone, a.amount, p.store_credit
+      from store.order_adjustments a
       join store.orders o on o.id = a.order_id
+      left join store.promotions p on p.id = a.promotion_id
      where a.order_id = ${orderId} and a.promotion_id is not null
        ${only ? sql`and a.promotion_id = any(${sql.param(only)}::uuid[])` : sql``}`);
   for (const r of rows) {
+    // A credit code's remainder goes first, or the credit would exist twice (phase-5a-plan §3.13).
+    if (
+      r.store_credit &&
+      !(await revokeCreditRemainder(tx, orderId, r.promotion_id, Math.abs(Number(r.amount))))
+    )
+      continue;
     await tx.db.execute(sql`
       update store.promotions set usage_count = greatest(0, usage_count - 1) where id = ${r.promotion_id}`);
     await tx.db.execute(sql`
@@ -549,13 +591,30 @@ export async function failShipment(
 /**
  * A failed shipment came back: its units are back in stock with a `return`
  * movement, and reserved for the order again, so it can be sent once more
- * or cancelled (which releases them). Phase 5A adds inspection by condition.
+ * or cancelled (which releases them). What the trip cost is recorded (the
+ * order's delivery fee unless staff say otherwise), and the customer's
+ * failed deliveries go up by one, which can flag the phone (phase-5a-plan §3.11).
  */
-export async function returnShipment(tx: TenantTx, actor: Actor, id: string): Promise<OrderRow> {
+export async function returnShipment(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  input: unknown = {},
+): Promise<OrderRow> {
   authorize(actor, 'orders.write');
+  const { returnCost } = parseInput(shipmentReturnInput, input);
   const shipment = await lockShipment(tx, id);
-  await lockOrder(tx, shipment.orderId);
+  const order = await lockOrder(tx, shipment.orderId);
   await moveShipment(tx, actor, shipment, 'return');
+  await tx.db.execute(sql`
+    update store.shipments s
+       set return_cost = coalesce(${returnCost ?? null}::bigint,
+                                  (select greatest(0, o.delivery_fee - o.delivery_discount)
+                                     from store.orders o where o.id = s.order_id))
+     where s.id = ${id}`);
+  await tx.db.execute(sql`
+    update store.customers set failed_deliveries = failed_deliveries + 1
+     where id = ${order.customerId}`);
   const lines = await shipmentLines(tx, id);
   const ref = { referenceType: 'shipment', referenceId: id };
   await applyMovements(

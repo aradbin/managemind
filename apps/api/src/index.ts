@@ -8,6 +8,7 @@ import { handleImportDeadLetters, handleImportQueue, handleQueue, runDailyJobs }
 import { handlePurgeQueue, type PurgeMessage } from './purge/consumer';
 
 // Durable Object classes must be exported from the Worker's entry point.
+export { OtpCodes } from './otp/durable-object';
 export { PurgeBudget } from './purge/durable-object';
 export { RateLimiter } from './rate-limit/durable-object';
 

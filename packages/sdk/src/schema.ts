@@ -973,12 +973,16 @@ export interface paths {
                             line: string;
                         };
                         note?: string;
-                        /** @enum {string} */
-                        paymentMethod: "cod";
+                        /**
+                         * @default cod
+                         * @enum {string}
+                         */
+                        paymentMethod?: "cod" | "online" | "cod_with_advance";
                         expectedTotal: number;
                         saveDetails?: boolean;
                         acceptTerms?: boolean;
                         turnstileToken?: string;
+                        otpToken?: string;
                     };
                 };
             };
@@ -990,6 +994,103 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["PlacedOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/payments/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The shopper back from SSLCommerz: settle from its validation, then show the order */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "success" | "failed" | "cancelled";
+                        /** Format: uuid */
+                        tranId: string;
+                        valId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The order to show */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            viewToken: string;
+                            paid: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/payments/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A new SSLCommerz session for an order's pending online payment */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description The gateway page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                        };
                     };
                 };
             };
@@ -1134,6 +1235,263 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/returns/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Whether this order can still be returned, and which lines (the token from tracking) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        token: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Options */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            open: boolean;
+                            until: string | null;
+                            turnstileSiteKey: string | null;
+                            reasons: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            lines: {
+                                /** Format: uuid */
+                                orderLineId: string;
+                                title: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                optionLabels: {
+                                    bn?: string;
+                                    en?: string;
+                                }[];
+                                returnable: number;
+                                excluded: boolean;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/returns/photos/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A photo for a return request, named by its SHA-256 (2 MB; JPEG, PNG or WebP) */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                    "x-order-token": string;
+                };
+                path: {
+                    file: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Stored */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            file: string;
+                        };
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask for a return (rate-limited per phone; Turnstile where the widget runs) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                            /** @enum {string} */
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        }[];
+                        note?: string;
+                        /** @default [] */
+                        photos?: string[];
+                        token: string;
+                        turnstileToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Requested */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            number: string;
+                            /** @enum {string} */
+                            status: "requested";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout/otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Text a code to the phone (3 an hour; Turnstile where it runs) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        turnstileToken?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Sent */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/checkout/otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check the code; the token goes with the order (5 tries a code) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Verified */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            otpToken: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/auth/email-otp/send-verification-otp": {
         parameters: {
             query?: never;
@@ -1178,6 +1536,74 @@ export interface paths {
         get?: never;
         put?: never;
         /** Sign in with the code; a new email creates the account */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Better Auth response (JSON) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/auth/phone-number/send-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a sign-in code by SMS, where the store has SMS (rate-limited; Turnstile in x-turnstile-token) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Better Auth response (JSON) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/auth/phone-number/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign in with the code; a new number creates the account */
         post: {
             parameters: {
                 query?: never;
@@ -2221,6 +2647,71 @@ export interface paths {
                              * @enum {string}
                              */
                             advance?: "never" | "always" | "flagged";
+                            /**
+                             * @default off
+                             * @enum {string}
+                             */
+                            otp?: "off" | "always" | "flagged" | "first_order";
+                        };
+                        fraud?: {
+                            /** @default 1 */
+                            flagAfterFailed?: number;
+                        };
+                        returns?: {
+                            /** @default true */
+                            shopperRequests?: boolean;
+                            /** @default 7 */
+                            windowDays?: number;
+                            /** @default [] */
+                            excludedCategoryIds?: string[];
+                            /**
+                             * @default [
+                             *       "wrong_size",
+                             *       "changed_mind",
+                             *       "other"
+                             *     ]
+                             */
+                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            /**
+                             * @default [
+                             *       "gateway",
+                             *       "bkash",
+                             *       "nagad",
+                             *       "rocket",
+                             *       "bank",
+                             *       "cash",
+                             *       "store_credit"
+                             *     ]
+                             */
+                            refundMethods?: ("gateway" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit")[];
+                            /** @default true */
+                            refundDeliveryFee?: boolean;
+                        };
+                        notifications?: {
+                            /**
+                             * @default [
+                             *       "order_placed",
+                             *       "order_shipped"
+                             *     ]
+                             */
+                            sms?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                            /**
+                             * @default [
+                             *       "order_placed",
+                             *       "order_confirmed",
+                             *       "order_shipped",
+                             *       "order_delivered",
+                             *       "order_cancelled",
+                             *       "payment_received",
+                             *       "payment_expired",
+                             *       "return_approved",
+                             *       "return_rejected",
+                             *       "return_received",
+                             *       "refund_issued",
+                             *       "store_credit_issued"
+                             *     ]
+                             */
+                            email?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
                         };
                     };
                 };
@@ -5795,10 +6286,11 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "pending" | "confirmed" | "processing" | "completed" | "cancelled";
-                    paymentStatus?: "unpaid" | "partially_paid" | "paid";
+                    paymentStatus?: "unpaid" | "partially_paid" | "paid" | "partially_refunded" | "refunded";
+                    returnStatus?: "none" | "requested" | "partially_returned" | "returned";
                     deliveryStatus?: "not_shipped" | "partially_shipped" | "shipped" | "delivered" | "failed";
                     zoneId?: string;
-                    source?: "website" | "facebook" | "phone" | "walk_in" | "other";
+                    source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange";
                     tag?: string;
                     cancelledByShopper?: boolean | null;
                     from?: string;
@@ -5842,7 +6334,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -5928,7 +6420,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "website" | "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -6340,6 +6832,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/orders/{id}/payment-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A link the shopper pays the unpaid amount from, online (payments.read, orders.write; reuses one waiting) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The link */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                            amount: number;
+                            expiresAt: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/orders/{id}/shipments": {
         parameters: {
             query?: never;
@@ -6538,7 +7072,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** A failed shipment came back: back in stock */
+        /** A failed shipment came back: back in stock, with what the trip cost */
         post: {
             parameters: {
                 query?: never;
@@ -6550,7 +7084,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        returnCost?: number;
+                    };
+                };
+            };
             responses: {
                 /** @description Returned */
                 200: {
@@ -6885,6 +7425,50 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/admin/customers/{id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Flag by hand, or clear (which resets failed deliveries) (customers.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        flagged: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Flag set */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CustomerDetail"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/customers/{id}/addresses": {
@@ -7373,6 +7957,1269 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns, newest first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                    orderId?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Returns */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnSummary"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A return staff decided on: approved at once (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        orderId: string;
+                        /** @enum {string} */
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                            /** @enum {string} */
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        }[];
+                        note?: string;
+                        shopperPaysReturn?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One return (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Return */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a shopper's request (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Approved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refuse a request, with a reason the shopper is told (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Rejected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The goods are on their way back (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description In transit */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The goods are back in the store (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Received */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/inspect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Each unit sellable or damaged: restocks, and writes damaged units off (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            sellable: number;
+                            damaged: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Inspected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close an inspected return with nothing given back, and why (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Closed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/exchange": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A replacement order, with the returned units as credit (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                        }[];
+                        note?: string;
+                        /** @default true */
+                        confirm?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Exchanged */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            order: components["schemas"]["ManualOrderPlaced"];
+                            credit: number;
+                            applied: number;
+                            refundDue: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/returns/{id}/photos/{photo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A shopper's photo, for staff only (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    photo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The image */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/returnable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What can still be returned, per line (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Lines */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReturnableLine"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/refunds/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a refund would give back (payments.refund) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        returnId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RefundPreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refund: by the gateway, by hand, or as store credit (payments.refund) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        returnId?: string;
+                        /** @enum {string} */
+                        method: "gateway" | "gateway_manual" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit";
+                        amount?: number;
+                        reason?: string;
+                        reference?: string;
+                        /** Format: uuid */
+                        paymentId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Refunded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Refund"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Returns, refunds, failed deliveries and payment mix for a date range (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reports */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Reports"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's provider credentials, without secrets (settings.credentials) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Credentials */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Credential"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Check with the provider, then save (settings.credentials) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: "sslcommerz" | "sms" | "email";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        provider: string;
+                        /** @enum {string} */
+                        mode?: "sandbox" | "live";
+                        secrets: {
+                            [key: string]: unknown;
+                        };
+                        /** @default {} */
+                        config?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Credential"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove (settings.credentials) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    kind: "sslcommerz" | "sms" | "email";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/credentials/sms/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The SMS gateway's balance, when it reports one (settings.credentials) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Balance */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            balance: number | null;
+                            error: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The delivery log, newest first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    orderId?: string;
+                    status?: "queued" | "sent" | "failed" | "skipped";
+                    channel?: "email" | "sms" | "push";
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Messages */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Message"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messages/{id}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a failed message again (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's templates, its own or the default (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Templates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageTemplate"][];
+                    };
+                };
+            };
+        };
+        /** Save the store's own wording (settings.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        /** @enum {string} */
+                        channel: "email" | "sms" | "push";
+                        /** @enum {string} */
+                        locale: "bn" | "en";
+                        subject?: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageTemplate"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A template filled with sample values, and its SMS parts */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        /** @enum {string} */
+                        channel: "email" | "sms" | "push";
+                        /** @enum {string} */
+                        locale: "bn" | "en";
+                        subject?: string;
+                        body: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplatePreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/templates/{event}/{channel}/{locale}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Back to the default wording (settings.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    event: string;
+                    channel: "email" | "sms" | "push";
+                    locale: "bn" | "en";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reset */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The platform's push key (null while push is off) and your devices in this store */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Push */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            publicKey: string | null;
+                            devices: components["schemas"]["PushDevice"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/push-devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save this browser's push subscription */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        endpoint: string;
+                        keys: {
+                            p256dh: string;
+                            auth: string;
+                        };
+                        userAgent?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PushDevice"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/push-devices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove one of your devices */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/push-devices/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a test alert to your devices in this store */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Sent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sent: number;
+                            gone: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/me/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your alert choices in this store */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Alert choices */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlertChoice"][];
+                    };
+                };
+            };
+        };
+        /** Change your alert choices in this store */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        event: "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        push: boolean;
+                        email: boolean;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Alert choices */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlertChoice"][];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/promotions": {
         parameters: {
             query?: never;
@@ -7463,7 +9310,7 @@ export interface paths {
                             firstOrder?: true;
                             customerPhones?: string[];
                             customerTags?: string[];
-                            paymentMethods?: ("cod" | "manual")[];
+                            paymentMethods?: ("cod" | "manual" | "online")[];
                         };
                         action: {
                             /** @enum {string} */
@@ -8385,6 +10232,11 @@ export interface components {
                 enabled: boolean;
                 maxOrderValue: number | null;
             };
+            online: {
+                enabled: boolean;
+                /** @enum {string} */
+                advance: "never" | "always" | "flagged";
+            };
             holiday: {
                 active: boolean;
                 message: {
@@ -8427,6 +10279,7 @@ export interface components {
             locale: string;
             placedAt: string;
             viewToken: string;
+            payUrl: string | null;
         };
         ShopperOrder: {
             [key: string]: unknown;
@@ -8484,7 +10337,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -8622,6 +10475,71 @@ export interface components {
                  * @enum {string}
                  */
                 advance: "never" | "always" | "flagged";
+                /**
+                 * @default off
+                 * @enum {string}
+                 */
+                otp: "off" | "always" | "flagged" | "first_order";
+            };
+            fraud: {
+                /** @default 1 */
+                flagAfterFailed: number;
+            };
+            returns: {
+                /** @default true */
+                shopperRequests: boolean;
+                /** @default 7 */
+                windowDays: number;
+                /** @default [] */
+                excludedCategoryIds: string[];
+                /**
+                 * @default [
+                 *       "wrong_size",
+                 *       "changed_mind",
+                 *       "other"
+                 *     ]
+                 */
+                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                /**
+                 * @default [
+                 *       "gateway",
+                 *       "bkash",
+                 *       "nagad",
+                 *       "rocket",
+                 *       "bank",
+                 *       "cash",
+                 *       "store_credit"
+                 *     ]
+                 */
+                refundMethods: ("gateway" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit")[];
+                /** @default true */
+                refundDeliveryFee: boolean;
+            };
+            notifications: {
+                /**
+                 * @default [
+                 *       "order_placed",
+                 *       "order_shipped"
+                 *     ]
+                 */
+                sms: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                /**
+                 * @default [
+                 *       "order_placed",
+                 *       "order_confirmed",
+                 *       "order_shipped",
+                 *       "order_delivered",
+                 *       "order_cancelled",
+                 *       "payment_received",
+                 *       "payment_expired",
+                 *       "return_approved",
+                 *       "return_rejected",
+                 *       "return_received",
+                 *       "refund_issued",
+                 *       "store_credit_issued"
+                 *     ]
+                 */
+                email: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
             };
             storeUrl: string;
         };
@@ -10441,7 +12359,30 @@ export interface components {
                 paidTotal: number;
                 codDue: number;
                 refundDue: number;
+                refundedTotal: number;
             };
+            /** @description payment_risk, late_payment */
+            flags: string[];
+            refunds: {
+                /** Format: uuid */
+                id: string;
+                method: string;
+                status: string;
+                amount: number;
+                reference: string | null;
+                reason: string | null;
+                /** Format: uuid */
+                returnId: string | null;
+                gatewayError: string | null;
+                createdAt: string;
+            }[];
+            returns: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                status: string;
+                resolution: string | null;
+            }[];
             payments: {
                 /** Format: uuid */
                 id: string;
@@ -10452,6 +12393,14 @@ export interface components {
                 reference: string | null;
                 settledAt: string | null;
                 createdAt: string;
+                /** @description SSLCommerz details, with payments.read */
+                gateway: {
+                    valId: string | null;
+                    bankTranId: string | null;
+                    risky: boolean;
+                    cardType: string | null;
+                    link: boolean;
+                } | null;
             }[];
             shipments: {
                 /** Format: uuid */
@@ -10532,8 +12481,13 @@ export interface components {
             firstOrderAt: string | null;
             lastOrderAt: string | null;
             createdAt: string;
+            failedDeliveries: number;
+            /** @description Flagged by staff by hand */
+            flagged: boolean;
         };
         CustomerDetail: components["schemas"]["Customer"] & {
+            /** @description By hand or by failed deliveries: asks for an advance or a code */
+            phoneFlagged: boolean;
             addresses: components["schemas"]["CustomerAddress"][];
             orders: {
                 /** Format: uuid */
@@ -10608,6 +12562,212 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+        };
+        ReturnSummary: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            displayNumber: string;
+            /** Format: uuid */
+            orderId: string;
+            orderNumber: string;
+            customerName: string;
+            /** @enum {string} */
+            status: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+            /** @enum {string} */
+            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+            requestedBy: string;
+            units: number;
+            createdAt: string;
+        };
+        ReturnDetail: components["schemas"]["ReturnSummary"] & {
+            note: string | null;
+            shopperPaysReturn: boolean | null;
+            /** @enum {string|null} */
+            resolution: "refunded" | "exchanged" | "store_credit" | "rejected" | null;
+            rejectReason: string | null;
+            /** Format: uuid */
+            exchangeOrderId: string | null;
+            lines: {
+                /** Format: uuid */
+                orderLineId: string;
+                title: {
+                    [key: string]: string;
+                };
+                optionLabels: {
+                    [key: string]: string;
+                }[];
+                quantity: number;
+                /** @enum {string|null} */
+                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | null;
+                restocked: number;
+                writtenOff: number;
+            }[];
+            photos: {
+                /** Format: uuid */
+                id: string;
+                mimeType: string;
+            }[];
+            /** @description What a refund would give back now */
+            credit: number;
+            approvedAt: string | null;
+            receivedAt: string | null;
+            inspectedAt: string | null;
+            resolvedAt: string | null;
+        };
+        ReturnableLine: {
+            /** Format: uuid */
+            orderLineId: string;
+            title: {
+                [key: string]: string;
+            };
+            optionLabels: {
+                [key: string]: string;
+            }[];
+            quantity: number;
+            delivered: number;
+            returnable: number;
+            excluded: boolean;
+        };
+        RefundPreview: {
+            /** Format: uuid */
+            returnId: string | null;
+            lines: {
+                /** Format: uuid */
+                orderLineId: string;
+                title: {
+                    [key: string]: string;
+                };
+                quantity: number;
+                amount: number;
+            }[];
+            delivery: number;
+            amount: number;
+            refundable: number;
+            gatewayPayments: {
+                /** Format: uuid */
+                id: string;
+                amount: number;
+                left: number;
+                bankTranId: string | null;
+            }[];
+        };
+        Refund: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            method: "gateway" | "gateway_manual" | "bkash" | "nagad" | "rocket" | "bank" | "cash" | "store_credit";
+            /** @enum {string} */
+            status: "pending" | "processing" | "succeeded" | "failed";
+            amount: number;
+            creditCode: string | null;
+        };
+        Reports: {
+            from: string;
+            to: string;
+            returnsByProduct: {
+                /** Format: uuid */
+                productId: string;
+                title: {
+                    [key: string]: string;
+                };
+                delivered: number;
+                returned: number;
+            }[];
+            returnsByReason: {
+                reason: string;
+                returns: number;
+                units: number;
+            }[];
+            refundsByMethod: {
+                method: string;
+                refunds: number;
+                amount: number;
+            }[];
+            failedByZone: {
+                /** Format: uuid */
+                zoneId: string | null;
+                zone: {
+                    [key: string]: string;
+                } | null;
+                shipped: number;
+                failed: number;
+                cost: number;
+            }[];
+            payments: {
+                /** @enum {string} */
+                kind: "online" | "cod" | "manual" | "mixed";
+                orders: number;
+                revenue: number;
+            }[];
+        };
+        Credential: {
+            /** @enum {string} */
+            kind: "sslcommerz" | "sms" | "email";
+            provider: string;
+            /** @enum {string|null} */
+            mode: "sandbox" | "live" | null;
+            /** @description The last 4 characters of the store ID or key */
+            hint: string;
+            config: {
+                [key: string]: unknown;
+            };
+            checkedAt: string | null;
+            checkError: string | null;
+            updatedAt: string;
+        };
+        Message: {
+            /** Format: uuid */
+            id: string;
+            event: string;
+            /** @enum {string} */
+            channel: "email" | "sms" | "push";
+            /** @enum {string} */
+            recipientType: "shopper" | "staff";
+            /** @description Masked without customers.read */
+            recipient: string;
+            /** Format: uuid */
+            orderId: string | null;
+            /** @enum {string} */
+            status: "queued" | "sent" | "failed" | "skipped";
+            reason: string | null;
+            attempts: number;
+            provider: string | null;
+            sentAt: string | null;
+            createdAt: string;
+        };
+        MessageTemplate: {
+            event: string;
+            /** @enum {string} */
+            channel: "email" | "sms" | "push";
+            /** @enum {string} */
+            locale: "bn" | "en";
+            subject: string | null;
+            body: string;
+            custom: boolean;
+            variables: string[];
+        };
+        TemplatePreview: {
+            subject: string;
+            body: string;
+            sms: {
+                /** @enum {string} */
+                encoding: "gsm" | "unicode";
+                length: number;
+                parts: number;
+            } | null;
+        };
+        PushDevice: {
+            /** Format: uuid */
+            id: string;
+            userAgent: string | null;
+            createdAt: string;
+            lastUsedAt: string | null;
+        };
+        AlertChoice: {
+            event: string;
+            push: boolean;
+            email: boolean;
         };
         Promotion: {
             /** Format: uuid */

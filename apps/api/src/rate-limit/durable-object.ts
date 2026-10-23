@@ -17,6 +17,10 @@ export class RateLimiter extends DurableObject {
     return this.state.hit(windows);
   }
 
+  peek(windows: Window[]): number {
+    return this.state.peek(windows);
+  }
+
   fail(policy: LockoutPolicy): Promise<{ locked: boolean }> {
     return this.state.fail(policy);
   }

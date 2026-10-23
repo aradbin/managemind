@@ -37,9 +37,9 @@ const selectClass =
   'min-h-11 rounded-md border border-border bg-background px-3 text-base md:text-sm';
 
 const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'] as const;
-const PAYMENTS = ['unpaid', 'partially_paid', 'paid'] as const;
+const PAYMENTS = ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'] as const;
 const DELIVERIES = ['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'] as const;
-const SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other'] as const;
+const SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other', 'exchange'] as const;
 
 export function OrdersPage() {
   const { t, locale } = useLocale();
@@ -143,6 +143,9 @@ export function OrdersPage() {
         title={t('nav.orders')}
         actions={
           <>
+            <Button variant="secondary" asChild>
+              <Link to="/returns">{t('orders.returns')}</Link>
+            </Button>
             <OrderExportButton filters={search} selected={ids} />
             {canWrite && (
               <Button asChild>

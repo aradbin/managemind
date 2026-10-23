@@ -6,12 +6,19 @@
 import { schema } from '@managemind/db';
 import { AppError, normalizePhone } from '@managemind/shared';
 import { placeNames } from '@managemind/shared/geo';
-import { addressInput, customerInput, customerPatch } from '@managemind/shared/orders';
+import {
+  addressInput,
+  customerFlagInput,
+  customerInput,
+  customerPatch,
+} from '@managemind/shared/orders';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput, pgError } from '../catalog/common';
+import { phoneFlagged } from '../fraud/index';
 import { emit } from '../outbox';
+import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 
 export interface CustomerAddress {
@@ -38,6 +45,10 @@ export interface Customer {
   firstOrderAt: string | null;
   lastOrderAt: string | null;
   createdAt: string;
+  /** Shipments that came back undelivered (phase-5a-plan §3.11). */
+  failedDeliveries: number;
+  /** Flagged by staff by hand. */
+  flagged: boolean;
 }
 
 export const MAX_ADDRESSES = 10;
@@ -55,6 +66,8 @@ const CUSTOMER_COLUMNS = {
   firstOrderAt: c.firstOrderAt,
   lastOrderAt: c.lastOrderAt,
   createdAt: c.createdAt,
+  failedDeliveries: c.failedDeliveries,
+  flagged: c.flagged,
 };
 const iso = (d: Date | string | null) => (d === null ? null : new Date(d).toISOString());
 const toCustomer = (
@@ -173,6 +186,8 @@ export async function customerAddresses(
 }
 
 export interface CustomerDetail extends Customer {
+  /** Flagged by hand or by failed deliveries under the store's setting: asks for an advance or a code. */
+  phoneFlagged: boolean;
   addresses: CustomerAddress[];
   orders: {
     id: string;
@@ -194,6 +209,7 @@ export async function getCustomer(tx: TenantTx, actor: Actor, id: string): Promi
       from store.orders where customer_id = ${id} order by placed_at desc limit 50`);
   return {
     ...customer,
+    phoneFlagged: await phoneFlagged(tx, customer.phone, (await orderSettings(tx)).settings),
     addresses: await customerAddresses(tx, id),
     orders: rows.map((r) => ({
       ...r,
@@ -418,4 +434,31 @@ export function addressSnapshot(place: {
       ],
     });
   return { ...place, names };
+}
+
+/**
+ * Staff flag a customer by hand, or clear the flag (§3.11). Clearing also
+ * resets the failed deliveries, so the phone isn't flagged again at once.
+ */
+export async function setCustomerFlag(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  input: unknown,
+): Promise<CustomerDetail> {
+  authorize(actor, 'customers.write');
+  const { flagged } = parseInput(customerFlagInput, input);
+  const [row] = await tx.db
+    .update(c)
+    .set(flagged ? { flagged: true } : { flagged: false, failedDeliveries: 0 })
+    .where(and(eq(c.id, id), isNull(c.deletedAt)))
+    .returning({ id: c.id });
+  if (!row) throw new AppError('not_found');
+  await recordAudit(tx, {
+    ...auditActor(actor, 'staff'),
+    action: flagged ? 'customer.flagged' : 'customer.unflagged',
+    entityType: 'customer',
+    entityId: id,
+  });
+  return getCustomer(tx, actor, id);
 }

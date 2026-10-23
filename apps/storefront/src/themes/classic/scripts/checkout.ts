@@ -2,7 +2,8 @@
 // geography file's three dropdowns (no API call), totals that follow the
 // area, an invisible Turnstile check, and "Place order" under an
 // idempotency key kept in sessionStorage, so a double tap, a lost response
-// or a reload sends the same key and never makes two orders.
+// or a reload sends the same key and never makes two orders. Online payment
+// (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
 import { type Cart, lineName, problemText, totals } from './cart-view';
 import {
   api,
@@ -28,6 +29,7 @@ interface GeoFile {
 interface CheckoutState {
   cart: Cart;
   cod: { enabled: boolean; maxOrderValue: number | null };
+  online: { enabled: boolean; advance: 'never' | 'always' | 'flagged' };
   holiday: { active: boolean; message: { bn?: string; en?: string } };
   email: 'optional' | 'required' | 'hidden';
   termsCheckbox: boolean;
@@ -56,6 +58,7 @@ interface Placed {
   displayNumber: string;
   total: number;
   viewToken: string;
+  payUrl: string | null;
 }
 
 const cfg = config();
@@ -101,7 +104,27 @@ function renderSummary(c: Cart) {
   if (!c.ready) parts.push(el('p', { class: 'line-problem', text: t('cart.fix') }));
   fill(summary, ...parts.filter((p): p is Node => p !== null));
   if (place) place.disabled = !c.ready;
+  // What "delivery charge online" takes now (§3.4).
+  const hint = document.querySelector<HTMLElement>('[data-advance-hint]');
+  if (hint) {
+    const fee = Math.max(0, c.totals.deliveryFee - c.totals.deliveryDiscount);
+    hint.textContent = t('checkout.advanceHint', { amount: money(fee) });
+  }
 }
+
+/** Shows a payment choice, or hides it (and moves the choice off it). */
+function offer(method: string, shown: boolean) {
+  const label = form?.querySelector<HTMLElement>(`[data-pay="${method}"]`);
+  if (!label) return;
+  label.hidden = !shown;
+  const input = label.querySelector('input');
+  if (input && !shown) input.checked = false;
+}
+function choose(method: string) {
+  const input = form?.querySelector<HTMLInputElement>(`[data-pay="${method}"] input`);
+  if (input) input.checked = true;
+}
+const chosenPayment = () => String(new FormData(form as HTMLFormElement).get('payment') ?? 'cod');
 
 /** Chooses a place in the three dropdowns, as a reload or a saved address does. */
 let choosePlace: (areaId: number) => void = () => {};
@@ -287,7 +310,7 @@ function collect(): Record<string, unknown> | null {
     contact: { name: value('name'), phone, ...(email ? { email } : {}) },
     address: { divisionId, districtId, areaId, line },
     ...(value('note') ? { note: value('note') } : {}),
-    paymentMethod: 'cod',
+    paymentMethod: chosenPayment(),
     expectedTotal: cart?.totals.total ?? 0,
     ...(data.get('acceptTerms') ? { acceptTerms: true } : {}),
     ...(data.get('saveDetails') ? { saveDetails: true } : {}),
@@ -314,6 +337,84 @@ const newAttempt = () => {
   } catch {}
 };
 
+/** The phone's code check (phase-5a-plan §3.14), once the store asked for it. */
+let otpToken: string | undefined;
+
+/**
+ * Texts a code to the order's phone and checks it; then the order is placed
+ * again with the token. Shown only when checkout answers `otp_required`.
+ */
+function askForCode(phone: string) {
+  if (!form || form.querySelector('[data-otp]')) return;
+  const status = el('p', { class: 'muted small', role: 'status' });
+  const input = el('input', {
+    id: 'c-otp',
+    inputmode: 'numeric',
+    autocomplete: 'one-time-code',
+    maxlength: '6',
+    pattern: '[0-9]{6}',
+  });
+  const verify = el('button', { type: 'button', class: 'button', text: t('checkout.otpVerify') });
+  const resend = el('button', { type: 'button', class: 'link', text: t('checkout.otpResend') });
+  const box = el(
+    'div',
+    { class: 'field', 'data-otp': true },
+    el('label', { for: 'c-otp', text: t('checkout.otpLabel') }),
+    input,
+    status,
+    el('p', {}, verify, ' ', resend),
+  );
+  const sendCode = async () => {
+    resend.disabled = true;
+    try {
+      check?.reset();
+      const turnstileToken = await check?.token();
+      await api('/checkout/otp', {
+        body: { phone, ...(turnstileToken ? { turnstileToken } : {}) },
+      });
+      status.textContent = t('checkout.otpSent');
+    } catch (err) {
+      status.textContent =
+        err instanceof ShopError && err.code === 'rate_limited'
+          ? t('checkout.otpTooMany')
+          : t('cart.error');
+    } finally {
+      resend.disabled = false;
+    }
+  };
+  verify.addEventListener('click', async () => {
+    const code = input.value.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim();
+    if (!/^\d{6}$/.test(code)) {
+      status.textContent = t('checkout.otpWrong');
+      return;
+    }
+    verify.disabled = true;
+    try {
+      const done = await api<{ otpToken: string }>('/checkout/otp/verify', {
+        body: { phone, code },
+      });
+      otpToken = done.otpToken;
+      box.remove();
+      form?.requestSubmit();
+    } catch (err) {
+      const reason =
+        err instanceof ShopError
+          ? (err.body.errors as { code: string }[] | undefined)?.[0]?.code
+          : '';
+      status.textContent =
+        reason === 'locked' || reason === 'expired'
+          ? t('checkout.otpExpired')
+          : t('checkout.otpWrong');
+    } finally {
+      verify.disabled = false;
+    }
+  });
+  resend.addEventListener('click', sendCode);
+  place?.insertAdjacentElement('beforebegin', box);
+  input.focus();
+  void sendCode();
+}
+
 async function submit(e: SubmitEvent) {
   e.preventDefault();
   if (!place || place.disabled) return;
@@ -326,7 +427,11 @@ async function submit(e: SubmitEvent) {
     const send = async (key: string) => {
       const turnstileToken = await check?.token();
       return api<Placed>('/checkout/orders', {
-        body: { ...body, ...(turnstileToken ? { turnstileToken } : {}) },
+        body: {
+          ...body,
+          ...(turnstileToken ? { turnstileToken } : {}),
+          ...(otpToken ? { otpToken } : {}),
+        },
         headers: { 'idempotency-key': key },
       });
     };
@@ -350,7 +455,14 @@ async function submit(e: SubmitEvent) {
       quantity: l.quantity,
     }));
     tracker()?.purchase(placed.id, items, placed.total);
-    location.assign(`${cfg.links.thanks}#${placed.viewToken}`);
+    if (placed.payUrl) {
+      show(t('checkout.redirecting'), 'info');
+      location.assign(placed.payUrl);
+      return;
+    }
+    // Online, but the payment page didn't open: the order page offers "pay now".
+    const pending = body.paymentMethod !== 'cod' ? '?payment=pending' : '';
+    location.assign(`${cfg.links.thanks}${pending}#${placed.viewToken}`);
   } catch (err) {
     place.disabled = false;
     place.textContent = t('checkout.place');
@@ -372,7 +484,18 @@ async function submit(e: SubmitEvent) {
       }
       case 'checkout_paused':
         return show(t('checkout.paused'));
+      case 'otp_required':
+        // The store asks this phone for a code by SMS first (§3.14).
+        askForCode((body.contact as { phone: string }).phone);
+        return show(t('checkout.otpNeeded'), 'info');
       case 'cod_unavailable':
+        // This phone (or every phone) pays the delivery charge first (§3.4).
+        if (b.reason === 'advance_required') {
+          offer('cod', false);
+          offer('cod_with_advance', true);
+          choose('cod_with_advance');
+          return show(t('checkout.advanceRequired'), 'info');
+        }
         return show(t('checkout.codUnavailable'));
       case 'rate_limited':
         return show(t('checkout.limited'));
@@ -415,7 +538,14 @@ async function start() {
   if (state.holiday.active) {
     return show(pick(state.holiday.message) || t('checkout.paused'), 'info');
   }
-  if (!state.cod.enabled) return show(t('checkout.codUnavailable'), 'info');
+  const online = state.online.enabled;
+  if (!state.cod.enabled && !online) return show(t('checkout.codUnavailable'), 'info');
+  // The choices the store offers: COD, online, and the delivery charge online.
+  offer('online', online);
+  offer('cod_with_advance', online && state.cod.enabled && state.online.advance !== 'never');
+  offer('cod', state.cod.enabled && !(online && state.online.advance === 'always'));
+  if (!state.cod.enabled) choose('online');
+  else if (online && state.online.advance === 'always') choose('cod_with_advance');
   renderSummary(state.cart);
   form.hidden = false;
   await setupAddress().catch(() => show(t('cart.error')));

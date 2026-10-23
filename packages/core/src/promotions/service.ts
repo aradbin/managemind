@@ -134,9 +134,10 @@ export async function listPromotions(
     ? sql`and (p.title::text ilike ${`%${q.q}%`} or exists (
         select 1 from store.promotion_codes c where c.promotion_id = p.id and upper(c.code) = upper(${q.q})))`
     : sql``;
+  // Store credit codes (phase-5a-plan §3.13) are refunds, not offers.
   const { rows } = await tx.db.execute<Row>(sql`
     select * from (select ${COLUMNS}, ${STATS} from store.promotions p
-     where true ${q.kind ? sql`and p.kind = ${q.kind}` : sql``} ${search}) x
+     where not p.store_credit ${q.kind ? sql`and p.kind = ${q.kind}` : sql``} ${search}) x
      ${q.state ? sql`where x.state = ${q.state}` : sql``}
      order by x."createdAt" desc, x.id desc limit 200`);
   return rows.map(toSummary);

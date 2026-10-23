@@ -1,0 +1,25 @@
+// SSLCommerz's IPN (phase-5a-plan §3.5), on the API's own host. The posted
+// fields are never trusted: only the val_id is used, to ask SSLCommerz for
+// the validation with the store's credentials. 200 once handled (settled,
+// already settled, or refused); 500 when SSLCommerz can't be reached, so it
+// retries. No session or Turnstile: the validation call is the check.
+import type { OpenAPIHono } from '@hono/zod-openapi';
+import { isUuid } from '@managemind/shared';
+import type { AppEnv } from './env';
+import { log } from './log';
+import { settleFromGateway } from './payments';
+
+export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
+  app.post('/v1/webhooks/sslcommerz/:tenantId', async (c) => {
+    const tenantId = c.req.param('tenantId');
+    if (!isUuid(tenantId)) return c.text('not found', 404);
+    const form = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
+    const valId = typeof form.val_id === 'string' ? form.val_id.slice(0, 100) : '';
+    const status = typeof form.status === 'string' ? form.status : '';
+    // A failed or cancelled attempt carries no val_id: the delayed check expires it.
+    if (!valId || status !== 'VALID') return c.text('ok', 200);
+    const outcome = await settleFromGateway(c.env, c.executionCtx, tenantId, valId, 'ipn');
+    log('info', 'ipn handled', { tenant_id: tenantId, outcome: outcome.kind });
+    return c.text('ok', 200);
+  });
+}

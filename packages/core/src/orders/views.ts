@@ -81,6 +81,7 @@ export async function listOrders(
   const where: SQL[] = [sql`true`];
   if (query.status) where.push(sql`o.status = ${query.status}`);
   if (query.paymentStatus) where.push(sql`o.payment_status = ${query.paymentStatus}`);
+  if (query.returnStatus) where.push(sql`o.return_status = ${query.returnStatus}`);
   if (query.deliveryStatus) where.push(sql`o.delivery_status = ${query.deliveryStatus}`);
   if (query.zoneId) where.push(sql`o.zone_id = ${query.zoneId}`);
   if (query.source) where.push(sql`o.source = ${query.source}`);
@@ -196,7 +197,24 @@ export interface OrderDetail {
     /** What the courier collects. */
     codDue: number;
     refundDue: number;
+    refundedTotal: number;
   };
+  /** payment_risk, late_payment (phase-5a-plan §3.5). */
+  flags: string[];
+  /** Refunds, newest last (phase-5a-plan §3.13). */
+  refunds: {
+    id: string;
+    method: string;
+    status: string;
+    amount: number;
+    reference: string | null;
+    reason: string | null;
+    returnId: string | null;
+    gatewayError: string | null;
+    createdAt: string;
+  }[];
+  /** This order's returns (phase-5a-plan §3.12). */
+  returns: { id: string; number: number; status: string; resolution: string | null }[];
   payments: {
     id: string;
     provider: string;
@@ -206,6 +224,14 @@ export interface OrderDetail {
     reference: string | null;
     settledAt: string | null;
     createdAt: string;
+    /** SSLCommerz's details (phase-5a-plan §7); null for other providers and without payments.read. */
+    gateway: {
+      valId: string | null;
+      bankTranId: string | null;
+      risky: boolean;
+      cardType: string | null;
+      link: boolean;
+    } | null;
   }[];
   shipments: {
     id: string;
@@ -263,28 +289,35 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
   const r = rows[0];
   if (!r) return null;
   const { checkout } = await orderSettings(tx);
-  const [lines, adjustments, payments, shipments, history, notes] = await Promise.all([
-    tx.db.execute<Record<string, unknown>>(sql`
+  const [lines, adjustments, payments, shipments, history, notes, refunds, returns] =
+    await Promise.all([
+      tx.db.execute<Record<string, unknown>>(sql`
       select id, variant_id, product_id, title, option_labels, sku, image, unit_price, compare_at_price, cost_price,
              quantity, shipped_quantity, line_subtotal, discount_total, vat_rate_bp, vat_amount, line_total, weight_grams
         from store.order_lines where order_id = ${id} order by position`),
-    tx.db.execute<Record<string, unknown>>(sql`
+      tx.db.execute<Record<string, unknown>>(sql`
       select id, kind, target, title, code, amount, reason from store.order_adjustments
        where order_id = ${id} order by created_at, id`),
-    tx.db.execute<Record<string, unknown>>(sql`
-      select id, provider, method, status, amount, reference, settled_at, created_at from store.payments
+      tx.db.execute<Record<string, unknown>>(sql`
+      select id, provider, method, status, amount, reference, settled_at, created_at,
+             gateway_val_id, gateway_bank_tran_id, risk_level, metadata from store.payments
        where order_id = ${id} order by created_at, id`),
-    tx.db.execute<Record<string, unknown>>(sql`
+      tx.db.execute<Record<string, unknown>>(sql`
       select s.id, s.status, s.carrier, s.tracking_number, s.tracking_url, s.shipped_at, s.delivered_at, s.failed_reason,
              coalesce((select json_agg(json_build_object('orderLineId', sl.order_line_id, 'quantity', sl.quantity))
                          from store.shipment_lines sl where sl.shipment_id = s.id), '[]'::json) as lines
         from store.shipments s where s.order_id = ${id} order by s.created_at`),
-    tx.db.execute<Record<string, unknown>>(sql`
+      tx.db.execute<Record<string, unknown>>(sql`
       select id, machine, from_status, to_status, event, actor_type, actor_id, reason, data, created_at
         from store.order_history where order_id = ${id} order by created_at, id`),
-    tx.db.execute<Record<string, unknown>>(sql`
+      tx.db.execute<Record<string, unknown>>(sql`
       select id, author_id, body, created_at from store.order_notes where order_id = ${id} order by created_at, id`),
-  ]);
+      tx.db.execute<Record<string, unknown>>(sql`
+      select id, method, status, amount, reference, reason, return_id, gateway_error, created_at
+        from store.refunds where order_id = ${id} order by created_at, id`),
+      tx.db.execute<Record<string, unknown>>(sql`
+      select id, number, status, resolution from store.returns where order_id = ${id} order by number`),
+    ]);
   const total = Number(r.total);
   const paidTotal = Number(r.paid_total);
   const codDue = payments.rows
@@ -388,8 +421,27 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       total,
       paidTotal,
       codDue,
-      refundDue: Math.max(0, paidTotal - total),
+      refundDue: Math.max(0, paidTotal - Number(r.refunded_total ?? 0) - total),
+      refundedTotal: Number(r.refunded_total ?? 0),
     },
+    flags: (r.flags as string[] | null) ?? [],
+    refunds: refunds.rows.map((f) => ({
+      id: f.id as string,
+      method: f.method as string,
+      status: f.status as string,
+      amount: Number(f.amount),
+      reference: (f.reference as string) ?? null,
+      reason: (f.reason as string) ?? null,
+      returnId: (f.return_id as string) ?? null,
+      gatewayError: (f.gateway_error as string) ?? null,
+      createdAt: iso(f.created_at) as string,
+    })),
+    returns: returns.rows.map((x) => ({
+      id: x.id as string,
+      number: Number(x.number),
+      status: x.status as string,
+      resolution: (x.resolution as string) ?? null,
+    })),
     payments: payments.rows.map((p) => ({
       id: p.id as string,
       provider: p.provider as string,
@@ -399,6 +451,16 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       reference: (p.reference as string) ?? null,
       settledAt: iso(p.settled_at),
       createdAt: iso(p.created_at) as string,
+      gateway:
+        p.provider === 'sslcommerz'
+          ? {
+              valId: (p.gateway_val_id as string) ?? null,
+              bankTranId: (p.gateway_bank_tran_id as string) ?? null,
+              risky: p.risk_level === 1,
+              cardType: ((p.metadata as { cardType?: string } | null)?.cardType as string) ?? null,
+              link: Boolean((p.metadata as { link?: boolean } | null)?.link),
+            }
+          : null,
     })),
     shipments: shipments.rows.map((s) => ({
       id: s.id as string,
@@ -435,7 +497,10 @@ export async function getOrder(tx: TenantTx, actor: Actor, id: string): Promise<
     out = { ...out, lines: out.lines.map(({ costPrice: _c, ...l }) => l) };
   }
   if (!actor.permissions.has('payments.read')) {
-    out = { ...out, payments: out.payments.map((p) => ({ ...p, reference: null })) };
+    out = {
+      ...out,
+      payments: out.payments.map((p) => ({ ...p, reference: null, gateway: null })),
+    };
   }
   if (!actor.permissions.has('orders.write')) out = { ...out, actions: [] };
   return out;
@@ -477,6 +542,8 @@ export interface ShopperOrderView {
   }[];
   /** Shoppers can cancel until the store confirms (§3.9). */
   cancellable: boolean;
+  /** An online payment still waiting: the page offers "pay now" (phase-5a-plan §3.3). */
+  onlineDue: number;
   placedAt: string;
 }
 
@@ -522,6 +589,12 @@ export async function shopperOrderView(tx: TenantTx, id: string): Promise<Shoppe
         trackingUrl: s.trackingUrl,
       })),
     cancellable: d.status === 'pending',
+    onlineDue:
+      d.status === 'cancelled'
+        ? 0
+        : d.payments
+            .filter((p) => p.provider === 'sslcommerz' && p.status === 'pending')
+            .reduce((a, p) => a + p.amount, 0),
     placedAt: d.placedAt,
   };
 }

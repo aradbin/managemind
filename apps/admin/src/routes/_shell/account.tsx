@@ -1,9 +1,11 @@
 // Your account (phase-1-plan §5.5, §7.3): name and language, two-factor login
-// with backup codes, and the devices you're signed in on.
+// with backup codes, the devices you're signed in on, and this store's
+// alerts (phase-5a-plan §3.9).
 import { formatDateTime, type Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, type ReactNode, useState } from 'react';
+import { Alerts } from '../../components/alerts';
 import { Field } from '../../components/field';
 import { Notice } from '../../components/notice';
 import { QrCode } from '../../components/qr-code';
@@ -25,6 +27,7 @@ function Page() {
       <Profile me={me} />
       <TwoFactor me={me} />
       <Sessions />
+      {me.activeStore && <Alerts />}
       <SignOut />
     </div>
   );

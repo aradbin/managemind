@@ -276,7 +276,7 @@ export interface QuoteInput {
   deliveryFeeOverride?: number | undefined;
   code: string | null;
   phone: string | null;
-  paymentMethod: 'cod' | 'manual' | null;
+  paymentMethod: 'cod' | 'manual' | 'online' | null;
   manualDiscount?: ManualDiscount | null | undefined;
   /** The store's per-line limit; staff entering orders aren't held to it. */
   maxQuantityPerLine: number | null;

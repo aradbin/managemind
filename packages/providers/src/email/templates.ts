@@ -35,13 +35,17 @@ interface Layout {
   code?: string;
   button?: { label: string; href: string };
   footer: string;
+  /** The paragraphs are text from outside (a store's filled-in template), so all of it is escaped. */
+  textParagraphs?: boolean;
 }
 
 function render(subjectTemplate: string, layout: Layout): RenderedEmail {
   const { values } = layout;
   const subject = fill(subjectTemplate, values, false);
   const p = (s: string) =>
-    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${fill(s, values, true)}</p>`;
+    `<p style="margin:0 0 16px;font-size:16px;line-height:1.5">${
+      layout.textParagraphs ? escapeHtml(fill(s, values, false)) : fill(s, values, true)
+    }</p>`;
   const code = layout.code
     ? `<p style="margin:0 0 16px;font:700 28px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:4px">${escapeHtml(layout.code)}</p>`
     : '';
@@ -278,6 +282,41 @@ export function domainProblemEmail(input: DomainProblemEmail): RenderedEmail {
       problem: input.problem,
     },
     footer: copy.footer,
+  });
+}
+
+const MESSAGE_FOOTER: Record<Locale, string> = {
+  en: 'You get this email because of your order at {store}. Reply to reach the store.',
+  bn: '{store}-এ আপনার অর্ডারের জন্য এই ইমেইল পাঠানো হয়েছে। দোকানের সঙ্গে যোগাযোগ করতে উত্তর দিন।',
+};
+
+export interface StoreMessageEmail {
+  locale: Locale;
+  storeName: string;
+  /** Already filled in (phase-5a-plan §3.7); escaped here. */
+  subject: string;
+  /** Filled in, plain text; paragraphs separated by blank lines. */
+  body: string;
+}
+
+/**
+ * A store's order, payment, return or refund email (phase-5a-plan §3.6), in
+ * the same layout as the platform's emails, with the store's name on top.
+ * The values were filled in plain (a shopper's name among them), so the
+ * layout escapes the whole text, not only the values.
+ */
+export function storeMessageEmail(input: StoreMessageEmail): RenderedEmail {
+  const paragraphs = input.body
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return render(input.subject, {
+    locale: input.locale,
+    platformName: input.storeName,
+    paragraphs,
+    values: { store: input.storeName },
+    footer: MESSAGE_FOOTER[input.locale],
+    textParagraphs: true,
   });
 }
 

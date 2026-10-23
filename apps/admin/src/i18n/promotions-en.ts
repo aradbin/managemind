@@ -77,6 +77,7 @@ export const promotionsEn = {
   'promo.paymentMethods': 'Payment',
   'promo.payment.cod': 'Cash on delivery',
   'promo.payment.manual': 'Paid in advance',
+  'promo.payment.online': 'Paid online',
 
   'promo.scheduleLimits': 'Dates and limits',
   'promo.startsAt': 'Starts',

@@ -44,6 +44,15 @@ export const promotions = store.table(
     perCustomerLimit: integer(),
     conditions: jsonb().notNull().default({}),
     action: jsonb().notNull(),
+    /**
+     * A refund as store credit (phase-5a-plan §3.13, Q11): one code for one
+     * phone. What an order leaves unused comes back as a new code.
+     */
+    storeCredit: boolean().notNull().default(false),
+    /** Store credit: the order it was issued for (a refund, or what that order left unused). */
+    creditOrderId: uuid(),
+    /** Store credit that is another credit's unused remainder: that credit. */
+    creditParentId: uuid(),
     createdAt: ts().notNull().defaultNow(),
     updatedAt: ts().notNull().defaultNow(),
   },
@@ -51,6 +60,7 @@ export const promotions = store.table(
     tenantPolicy(t),
     unique('promotions_tenant_id_unique').on(t.tenantId, t.id),
     index('promotions_tenant_status_idx').on(t.tenantId, t.status, t.startsAt),
+    index('promotions_credit_parent_idx').on(t.tenantId, t.creditParentId),
     check('promotions_kind_valid', sql`${t.kind} in ('automatic', 'code')`),
     check('promotions_status_valid', sql`${t.status} in ('draft', 'active', 'paused', 'ended')`),
     check('promotions_dates', sql`${t.endsAt} > ${t.startsAt}`),

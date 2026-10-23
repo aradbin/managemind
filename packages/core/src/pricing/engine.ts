@@ -69,7 +69,7 @@ export interface PricingInput {
   promotions: readonly PromotionRule[];
   customer: CustomerFacts;
   zoneId: string | null;
-  paymentMethod: 'cod' | 'manual' | null;
+  paymentMethod: 'cod' | 'manual' | 'online' | null;
   deliveryFee: number;
   vat?: VatOptions;
   manualDiscount?: ManualDiscount | null;

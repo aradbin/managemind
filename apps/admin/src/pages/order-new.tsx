@@ -3,7 +3,7 @@
 // The totals come from the API's quote as the order is typed, so they are
 // exactly what saving will charge; a blocked phone is warned about first.
 
-import { MANUAL_METHODS, ORDER_SOURCES } from '@managemind/shared/orders';
+import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -43,7 +43,7 @@ interface LineDraft {
   quantity: string;
 }
 
-type Source = (typeof ORDER_SOURCES)[number];
+type Source = (typeof MANUAL_ORDER_SOURCES)[number];
 type Method = (typeof MANUAL_METHODS)[number];
 
 const selectClass =
@@ -274,7 +274,7 @@ export function NewOrderPage() {
                     if (next === 'walk_in') setDelivery(false);
                   }}
                 >
-                  {ORDER_SOURCES.filter((s) => s !== 'website').map((s) => (
+                  {MANUAL_ORDER_SOURCES.map((s) => (
                     <option key={s} value={s}>
                       {t(`source.${s}`)}
                     </option>
