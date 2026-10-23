@@ -1,3 +1,4 @@
+export * from './checklist';
 export * from './domains';
 export * from './hosts';
 export * from './lifecycle';

@@ -81,7 +81,7 @@ describe('GET /v1/store/context', () => {
     }
   });
 
-  it('resolves a suspended store with its status, and not a closed one', async () => {
+  it('resolves a suspended store and a closed one with their status', async () => {
     const owner = await connect(ownerUrl);
     await owner.query(
       "update platform.tenants set status = 'suspended', status_reason = 'other' where id = $1",
@@ -96,7 +96,10 @@ describe('GET /v1/store/context', () => {
            purge_after = now() where id = $1`,
         [TENANT_B],
       );
-      expect((await lookup('demo-grocery.stores.example.test')).status).toBe(404);
+      // A closed store answers on its subdomain, for the 410 page (phase-5b-plan §3.1).
+      const closed = await lookup('demo-grocery.stores.example.test');
+      expect(closed.status).toBe(200);
+      expect(await closed.json()).toMatchObject({ status: 'closed' });
     } finally {
       await owner.query(
         `update platform.tenants set status = 'active', status_reason = null, closed_at = null,

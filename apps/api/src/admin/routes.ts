@@ -6,6 +6,8 @@
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   acceptInvitation,
+  authorize,
+  CHECKLIST_ITEMS,
   changeRole,
   getStore,
   invite,
@@ -19,6 +21,7 @@ import {
   revokeInvitation,
   runIdempotent,
   setActiveStore,
+  setupChecklist,
   updateMyProfile,
   updateStoreProfile,
   withPlatform,
@@ -108,6 +111,7 @@ const Store = z
     fraud: fraudSettings,
     returns: returnSettings,
     notifications: notificationSettings,
+    setup: tenantSettings.shape.setup,
     /** The store's home page, for the admin's "View store" link. */
     storeUrl: z.string(),
   })
@@ -200,9 +204,27 @@ export const ADMIN_ROUTES = {
         fraud: fraudSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
+        setup: tenantSettings.shape.setup.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
+  }),
+  setup: r({
+    method: 'get',
+    path: '/setup',
+    summary:
+      'What the store still needs before its first order (settings.read; phase-5b-plan §3.2)',
+    responses: json(
+      z.object({
+        items: z.array(
+          z.object({ item: z.enum(CHECKLIST_ITEMS), done: z.boolean(), optional: z.boolean() }),
+        ),
+        done: z.number().int(),
+        total: z.number().int(),
+        complete: z.boolean(),
+      }),
+      'Checklist',
+    ),
   }),
   members: r({
     method: 'get',
@@ -339,6 +361,15 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
         ...(await getStore(tx, c.var.staff.actor)),
         storeUrl: (await storeUrls(c, tx)).store,
       })),
+      200,
+    ),
+  );
+  admin.openapi(R.setup, async (c) =>
+    c.json(
+      await inStore(c, (tx) => {
+        authorize(c.var.staff.actor, 'settings.read');
+        return setupChecklist(tx);
+      }),
       200,
     ),
   );

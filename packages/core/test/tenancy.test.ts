@@ -107,7 +107,13 @@ describe('createTenant', () => {
         [id],
       ),
     ).toHaveLength(1);
+    // The four legal drafts (phase-5b-plan §3.2) are pages too.
     expect(events.map((e) => [e.eventType, e.tenantId, e.payload])).toEqual([
+      ...Array.from({ length: 4 }, () => [
+        'catalog.page.changed',
+        id,
+        { change: 'created', navigation: false },
+      ]),
       ['tenant.created', id, { slug, name: `Store ${slug}` }],
     ]);
   });
@@ -378,13 +384,24 @@ describe('hosts', () => {
     );
   });
 
-  it('keeps suspended stores resolvable (for the maintenance page) and drops closed ones', async () => {
+  it('keeps suspended stores resolvable (maintenance), closed ones on their subdomain only (410)', async () => {
     const { id, slug } = await newStore();
+    await addDomain(id, `shop-${slug}.example.com`, 'active');
     await transitionTenant(app, systemActor, id, 'suspend', { reason: 'abuse report' });
     expect(await resolveHost(db(), `${slug}.${STORE_DOMAIN}`, STORE_DOMAIN)).toMatchObject({
       status: 'suspended',
     });
     await closeStore(id);
+    expect(await resolveHost(db(), `${slug}.${STORE_DOMAIN}`, STORE_DOMAIN)).toMatchObject({
+      status: 'closed',
+      primaryHost: `${slug}.${STORE_DOMAIN}`,
+    });
+    // Its custom domain is released at once (phase-5b-plan §3.1).
+    expect(await resolveHost(db(), `shop-${slug}.example.com`, STORE_DOMAIN)).toBeNull();
+    await owner.query(
+      `update platform.tenants set status = 'purged', purged_at = now() where id = $1`,
+      [id],
+    );
     expect(await resolveHost(db(), `${slug}.${STORE_DOMAIN}`, STORE_DOMAIN)).toBeNull();
   });
 
@@ -401,13 +418,11 @@ describe('hosts', () => {
 
     await closeStore(id);
     const closed = await hostEntries(db(), id, STORE_DOMAIN);
-    expect(closed.put).toEqual([]);
+    expect(closed.put.map((p) => [p.key, p.value.status])).toEqual([
+      [`host:${slug}.${STORE_DOMAIN}`, 'closed'],
+    ]);
     expect(closed.delete.sort()).toEqual(
-      [
-        `host:${slug}.${STORE_DOMAIN}`,
-        `host:live-${slug}.example.com`,
-        `host:gone-${slug}.example.com`,
-      ].sort(),
+      [`host:live-${slug}.example.com`, `host:gone-${slug}.example.com`].sort(),
     );
   });
 });

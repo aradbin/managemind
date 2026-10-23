@@ -38,7 +38,8 @@ async function store() {
     app,
     systemActor,
     { slug, name: 'KV Store', owner: { email: `${slug}@example.test`, name: 'Owner' } },
-    { afterCommit: (e) => void events.push(...e) },
+    // Only the store's own event: its legal drafts' page events don't touch hosts.
+    { afterCommit: (e) => void events.push(...e.filter((x) => x.eventType === 'tenant.created')) },
   );
   return { id, slug, events };
 }

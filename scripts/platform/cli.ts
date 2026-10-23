@@ -1,6 +1,8 @@
 // The platform CLI (phase-1-plan §8):
 //
 //   pnpm platform tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn|en]
+//     [--setup plan=starter,billing-day=5,preset=grocery,kind=client,trial-ends=2026-12-31]
+//   pnpm platform plans:seed
 //   pnpm platform platform:grant-role --email a@b.c --role super_admin|support|none
 //   pnpm platform kv:sync [--tenant <id>]
 //
@@ -11,7 +13,14 @@
 import pg from 'pg';
 import { mask, parseArgs } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
-import { grantRole, kvSync, type PlatformTargets, tenantCreate } from './commands';
+import {
+  grantRole,
+  kvSync,
+  type PlatformTargets,
+  parseSetup,
+  plansSeed,
+  tenantCreate,
+} from './commands';
 
 const [command, ...rest] = process.argv.slice(2);
 const args = parseArgs(rest);
@@ -67,6 +76,7 @@ try {
       mask(ownerEmail);
       const locale = parseLocale(args.get('locale'));
       const ownerName = args.get('owner-name');
+      const setup = parseSetup(args.get('setup'));
       const result = await tenantCreate(
         client,
         cf?.targets ?? null,
@@ -77,6 +87,7 @@ try {
           ownerEmail,
           ...(ownerName ? { ownerName } : {}),
           ...(locale ? { locale } : {}),
+          setup,
         },
       );
       console.log(`Created store ${result.slug} (${result.id})`);
@@ -87,6 +98,11 @@ try {
           ? `Relayed ${result.relayed} event(s); KV fills in seconds`
           : 'No Cloudflare credentials: events left for the daily sweep',
       );
+      break;
+    }
+    case 'plans:seed': {
+      const added = await plansSeed(client);
+      console.log(added.length ? `Added plans ${added.join(', ')}` : 'Plans exist: nothing added');
       break;
     }
     case 'platform:grant-role': {

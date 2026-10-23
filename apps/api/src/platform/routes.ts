@@ -4,23 +4,45 @@
 // to enrolment (403 two_factor_required) and can do nothing else here.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  CHECKLIST_ITEMS,
+  type Checklist,
+  closeTenant,
+  createPlan,
   createTenant,
+  getSubscription,
   getTenantDetail,
   grantSupportAccess,
+  holdSubscription,
+  listPlans,
   listPlatformAudit,
   listPlatformStaff,
   listTenants,
+  readStoreHealth,
+  refreshStoreHealth,
+  reopenTenant,
   revokeSupportAccess,
   setPlatformRole,
+  setSubscription,
   transitionTenant,
+  updatePlan,
   withPlatform,
+  withTenant,
 } from '@managemind/core';
-import { supportAccessEmail } from '@managemind/providers/email';
-import { AppError, PLATFORM_ROLES } from '@managemind/shared';
+import { supportAccessEmail, welcomeOwnerEmail } from '@managemind/providers/email';
+import { AppError, checkSlug, PLATFORM_ROLES } from '@managemind/shared';
+import {
+  entitlementOverride,
+  entitlements,
+  SUSPENSION_REASONS,
+  TENANT_KINDS,
+} from '@managemind/shared/billing';
+import { THEME_PRESETS } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { relayTo, type StaffEnv, staffSession } from '../admin/context';
 import { createMailer } from '../auth/email';
+import { requireFreshTwoFactor } from '../auth/fresh-two-factor';
+import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 
 const Id = z.object({ id: z.uuid() });
@@ -40,6 +62,7 @@ const r = <
     tags: string[];
   });
 
+const Kind = z.enum(TENANT_KINDS);
 const TenantSummary = z
   .object({
     id: z.uuid(),
@@ -47,9 +70,72 @@ const TenantSummary = z
     name: z.string(),
     status: Status,
     plan: z.string(),
+    kind: Kind,
+    statusReason: z.enum(SUSPENSION_REASONS).nullable(),
+    closedAt: z.date().nullable(),
+    purgeAfter: z.date().nullable(),
+    setup: z.object({ done: z.number().int(), total: z.number().int() }).nullable(),
     createdAt: z.date(),
   })
   .openapi('TenantSummary');
+const Localized = z.object({ bn: z.string(), en: z.string() });
+const Plan = z
+  .object({
+    id: z.uuid(),
+    code: z.string(),
+    name: Localized,
+    monthlyPrice: z.number().int(),
+    setupFee: z.number().int(),
+    overagePrices: z.partialRecord(z.enum(['orders', 'emails']), z.number().int()),
+    entitlements: entitlements,
+    offered: z.boolean(),
+  })
+  .openapi('Plan');
+const SubscriptionBody = z.object({
+  planId: z.uuid(),
+  priceOverride: z.number().int().min(0).nullable().optional(),
+  setupFeeOverride: z.number().int().min(0).nullable().optional(),
+  entitlementOverride: entitlementOverride.nullable().optional(),
+  billingDay: z.number().int().min(1).max(28),
+  trialEndsOn: z.iso.date().nullable().optional(),
+});
+const Subscription = z
+  .object({
+    plan: Plan,
+    priceOverride: z.number().int().nullable(),
+    setupFeeOverride: z.number().int().nullable(),
+    entitlementOverride: entitlementOverride.nullable(),
+    billingDay: z.number().int(),
+    trialEndsOn: z.string().nullable(),
+    status: z.enum(['trialing', 'active', 'past_due', 'cancelled']),
+    holdUntil: z.string().nullable(),
+    holdReason: z.string().nullable(),
+  })
+  .openapi('Subscription');
+const ChecklistOut = z
+  .object({
+    items: z.array(
+      z.object({ item: z.enum(CHECKLIST_ITEMS), done: z.boolean(), optional: z.boolean() }),
+    ),
+    done: z.number().int(),
+    total: z.number().int(),
+    complete: z.boolean(),
+  })
+  .openapi('SetupChecklist');
+const Health = z
+  .object({
+    checkedAt: z.date(),
+    /** Empty before the first check. */
+    checklist: ChecklistOut.or(z.object({}).strict()),
+    payments: z.record(z.string(), z.unknown()),
+    email: z.record(z.string(), z.unknown()),
+    sms: z.record(z.string(), z.unknown()),
+    domains: z.record(z.string(), z.unknown()),
+    activity: z.record(z.string(), z.unknown()),
+  })
+  .openapi('StoreHealth');
+/** A fresh authenticator code, for closing and purging (phase-5b-plan §3.17). */
+const FreshCode = z.object({ code: z.string().regex(/^\d{6}$/) });
 const TenantDetail = TenantSummary.extend({
   defaultLocale: z.enum(['bn', 'en']),
   domains: z.array(z.object({ hostname: z.string(), status: z.string(), isPrimary: z.boolean() })),
@@ -86,12 +172,28 @@ export const PLATFORM_ROUTES = {
         name: z.string().trim().min(1).max(100),
         defaultLocale: z.enum(['bn', 'en']).optional(),
         owner: z.object({ email: z.email().max(254), name: z.string().trim().min(1).max(100) }),
+        kind: Kind.optional(),
+        preset: z.enum(THEME_PRESETS).optional(),
+        subscription: SubscriptionBody.optional(),
       }),
     ),
     responses: json(
       z.object({ id: z.uuid(), slug: z.string(), ownerUserId: z.uuid() }),
       'Created',
       201,
+    ),
+  }),
+  slugCheck: r({
+    method: 'get',
+    path: '/tenants/slug-check',
+    summary: "Whether a store address is free, as it's typed (super_admin)",
+    request: { query: z.object({ slug: z.string().max(40) }) },
+    responses: json(
+      z.object({
+        available: z.boolean(),
+        reason: z.enum(['slug_taken', 'slug_reserved', 'invalid']).nullable(),
+      }),
+      'Availability',
     ),
   }),
   tenant: r({
@@ -104,9 +206,99 @@ export const PLATFORM_ROUTES = {
   suspend: r({
     method: 'post',
     path: '/tenants/{id}/suspend',
-    summary: 'Suspend a store (super_admin)',
-    request: { params: Id, ...body(Reason) },
+    summary: 'Suspend a store, with why (super_admin)',
+    request: {
+      params: Id,
+      ...body(Reason.extend({ category: z.enum(SUSPENSION_REASONS).optional() })),
+    },
     responses: json(z.object({ from: Status, to: Status }), 'Suspended'),
+  }),
+  close: r({
+    method: 'post',
+    path: '/tenants/{id}/close',
+    summary: 'Close a store: the slug typed, a reason and a fresh authenticator code (super_admin)',
+    request: { params: Id, ...body(Reason.extend({ slug: z.string().max(40) }).merge(FreshCode)) },
+    responses: json(
+      z.object({ from: Status, to: Status, closedAt: z.string(), purgeAfter: z.string() }),
+      'Closed',
+    ),
+  }),
+  reopen: r({
+    method: 'post',
+    path: '/tenants/{id}/reopen',
+    summary: 'Reopen a closed store before its purge (super_admin)',
+    request: { params: Id, ...body(Reason) },
+    responses: json(z.object({ from: Status, to: Status }), 'Reopened'),
+  }),
+  checklist: r({
+    method: 'get',
+    path: '/tenants/{id}/checklist',
+    summary: "The store's setup checklist as of its last health check (support)",
+    request: { params: Id },
+    responses: json(ChecklistOut.nullable(), 'Checklist'),
+  }),
+  health: r({
+    method: 'get',
+    path: '/tenants/{id}/health',
+    summary: "The store's last health check (support)",
+    request: { params: Id },
+    responses: json(Health.nullable(), 'Health'),
+  }),
+  refreshHealth: r({
+    method: 'post',
+    path: '/tenants/{id}/health/refresh',
+    summary: "Run the daily job's checks for this store now (support)",
+    request: { params: Id },
+    responses: json(Health, 'Health'),
+  }),
+  plans: r({
+    method: 'get',
+    path: '/plans',
+    summary: 'Plans, offered first (support)',
+    responses: json(z.array(Plan), 'Plans'),
+  }),
+  createPlan: r({
+    method: 'post',
+    path: '/plans',
+    summary: 'A new plan (super_admin)',
+    request: body(z.record(z.string(), z.unknown())),
+    responses: json(Plan, 'Created', 201),
+  }),
+  updatePlan: r({
+    method: 'patch',
+    path: '/plans/{id}',
+    summary: "Change a plan; its stores' entitlements follow (super_admin)",
+    request: { params: Id, ...body(z.record(z.string(), z.unknown())) },
+    responses: json(Plan, 'Saved'),
+  }),
+  subscription: r({
+    method: 'get',
+    path: '/tenants/{id}/subscription',
+    summary: "The store's plan and terms (support)",
+    request: { params: Id },
+    responses: json(Subscription.nullable(), 'Subscription'),
+  }),
+  setSubscription: r({
+    method: 'put',
+    path: '/tenants/{id}/subscription',
+    summary: 'Set the plan and terms; takes effect on the next invoice (super_admin)',
+    request: { params: Id, ...body(SubscriptionBody) },
+    responses: json(Subscription, 'Saved'),
+  }),
+  holdSubscription: r({
+    method: 'post',
+    path: '/tenants/{id}/subscription/hold',
+    summary: 'Hold reminders and suspension until a date, or end the hold (super_admin)',
+    request: {
+      params: Id,
+      ...body(
+        z.object({
+          until: z.iso.date().nullable(),
+          reason: z.string().trim().max(500).optional(),
+        }),
+      ),
+    },
+    responses: json(Subscription, 'Saved'),
   }),
   reactivate: r({
     method: 'post',
@@ -183,6 +375,13 @@ export const PLATFORM_ROUTES = {
   }),
 } as const;
 
+const requireSuperAdmin = (c: Context<StaffEnv>) => {
+  if (c.var.staff.actor.platformRole !== 'super_admin') throw new AppError('forbidden');
+};
+const requireSupport = (c: Context<StaffEnv>) => {
+  if (!c.var.staff.actor.platformRole) throw new AppError('forbidden');
+};
+
 /** A platform role, and a user who has set up two-factor login (§5.3). */
 const platformOnly = createMiddleware<StaffEnv>(async (c, next) => {
   const { actor, user } = c.var.staff;
@@ -222,7 +421,42 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       } as Parameters<typeof createTenant>[2],
       { requestId: c.var.requestId, afterCommit: relayTo(c) },
     );
-    return c.json(created, 201);
+    // The owner hears where the admin and the store are (phase-5b-plan §3.2).
+    const locale = input.defaultLocale ?? 'bn';
+    const storeUrl = `https://${created.slug}.${c.var.config.STORE_DOMAIN}`;
+    createMailer(c.env, c.var.config, c.executionCtx).sendLater(
+      {
+        to: input.owner.email.trim().toLowerCase(),
+        ...welcomeOwnerEmail({
+          locale,
+          platformName: c.var.config.PLATFORM_NAME,
+          storeName: input.name.trim(),
+          adminUrl: `${adminOrigin(c as unknown as Parameters<typeof adminOrigin>[0])}/`,
+          storeUrl,
+        }),
+      },
+      'welcome_owner',
+    );
+    const { newOwner: _newOwner, ...out } = created;
+    return c.json(out, 201);
+  });
+  platform.openapi(R.slugCheck, async (c) => {
+    requireSuperAdmin(c);
+    const checked = checkSlug(c.req.valid('query').slug);
+    if (!checked.ok) {
+      return c.json(
+        {
+          available: false,
+          reason: checked.code === 'reserved' ? ('slug_reserved' as const) : ('invalid' as const),
+        },
+        200,
+      );
+    }
+    const found = await withPlatform(c.var.staff.client, (tx) =>
+      listTenants(tx, c.var.staff.actor, { q: checked.slug, limit: 100 }),
+    );
+    const taken = found.some((t) => t.slug === checked.slug);
+    return c.json({ available: !taken, reason: taken ? ('slug_taken' as const) : null }, 200);
   });
   platform.openapi(R.tenant, async (c) => {
     const { id } = c.req.valid('param');
@@ -236,14 +470,109 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     id: string,
     event: 'suspend' | 'reactivate',
     reason?: string,
+    category?: (typeof SUSPENSION_REASONS)[number],
   ) =>
-    transitionTenant(c.var.staff.client, c.var.staff.actor, id, event, reason ? { reason } : {}, {
-      requestId: c.var.requestId,
-      afterCommit: relayTo(c),
-    });
+    transitionTenant(
+      c.var.staff.client,
+      c.var.staff.actor,
+      id,
+      event,
+      { ...(reason ? { reason } : {}), ...(category ? { category } : {}) },
+      { requestId: c.var.requestId, afterCommit: relayTo(c) },
+    );
   platform.openapi(R.suspend, async (c) => {
     const { id } = c.req.valid('param');
-    return c.json(await transition(c, id, 'suspend', c.req.valid('json').reason), 200);
+    const { reason, category } = c.req.valid('json');
+    return c.json(await transition(c, id, 'suspend', reason, category), 200);
+  });
+  platform.openapi(R.close, async (c) => {
+    const { id } = c.req.valid('param');
+    const input = c.req.valid('json');
+    requireSuperAdmin(c);
+    await requireFreshTwoFactor(c, input.code);
+    const closed = await closeTenant(
+      c.var.staff.client,
+      c.var.staff.actor,
+      id,
+      { slug: input.slug, reason: input.reason },
+      { requestId: c.var.requestId, afterCommit: relayTo(c) },
+    );
+    return c.json(closed, 200);
+  });
+  platform.openapi(R.reopen, async (c) => {
+    const { id } = c.req.valid('param');
+    const reopened = await reopenTenant(
+      c.var.staff.client,
+      c.var.staff.actor,
+      id,
+      c.req.valid('json'),
+      { requestId: c.var.requestId, afterCommit: relayTo(c) },
+    );
+    return c.json(reopened, 200);
+  });
+  platform.openapi(R.checklist, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSupport(c);
+    const health = await withPlatform(c.var.staff.client, (tx) => readStoreHealth(tx, id));
+    const list = health?.checklist;
+    return c.json(list && 'items' in list ? (list as Checklist) : null, 200);
+  });
+  platform.openapi(R.health, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSupport(c);
+    return c.json(await withPlatform(c.var.staff.client, (tx) => readStoreHealth(tx, id)), 200);
+  });
+  platform.openapi(R.refreshHealth, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(await refreshStoreHealth(c.var.staff.client, c.var.staff.actor, id), 200);
+  });
+  platform.openapi(R.plans, async (c) =>
+    c.json(await withPlatform(c.var.staff.client, (tx) => listPlans(tx, c.var.staff.actor)), 200),
+  );
+  platform.openapi(R.createPlan, async (c) => {
+    const plan = await withPlatform(
+      c.var.staff.client,
+      (tx) => createPlan(tx, c.var.staff.actor, c.req.valid('json')),
+      { requestId: c.var.requestId },
+    );
+    return c.json(plan, 201);
+  });
+  platform.openapi(R.updatePlan, async (c) => {
+    const { id } = c.req.valid('param');
+    const plan = await withPlatform(
+      c.var.staff.client,
+      (tx) => updatePlan(tx, c.var.staff.actor, id, c.req.valid('json')),
+      { requestId: c.var.requestId },
+    );
+    return c.json(plan, 200);
+  });
+  platform.openapi(R.subscription, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSupport(c);
+    return c.json(await withTenant(c.var.staff.client, id, (tx) => getSubscription(tx, id)), 200);
+  });
+  platform.openapi(R.setSubscription, async (c) => {
+    const { id } = c.req.valid('param');
+    const saved = await setSubscription(
+      c.var.staff.client,
+      c.var.staff.actor,
+      id,
+      c.req.valid('json'),
+      { requestId: c.var.requestId, afterCommit: relayTo(c) },
+    );
+    return c.json(saved, 200);
+  });
+  platform.openapi(R.holdSubscription, async (c) => {
+    const { id } = c.req.valid('param');
+    const { until, reason } = c.req.valid('json');
+    const saved = await holdSubscription(
+      c.var.staff.client,
+      c.var.staff.actor,
+      id,
+      { until, ...(reason ? { reason } : {}) },
+      { requestId: c.var.requestId },
+    );
+    return c.json(saved, 200);
   });
   platform.openapi(R.reactivate, async (c) => {
     const { id } = c.req.valid('param');

@@ -13,7 +13,7 @@ import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
 import { queueSink, withClient } from './db';
-import { recheckDomains } from './domains';
+import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
@@ -58,6 +58,23 @@ export async function handleQueue(
     } catch (e) {
       log('warn', 'notifications will be retried', {
         event_id: message.body.id,
+        tenant_id: message.body.tenantId,
+        error: String(e),
+      });
+      unsent.add(message.body.id);
+    }
+  }
+  // A closed store lets its custom domains go (phase-5b-plan §3.1).
+  for (const message of batch.messages) {
+    if (message.body.eventType !== 'tenant.closed') continue;
+    try {
+      const released = await releaseDomains(env, ctx, message.body.tenantId);
+      log('info', 'closed store domains released', {
+        tenant_id: message.body.tenantId,
+        released,
+      });
+    } catch (e) {
+      log('warn', 'closed store domains will be retried', {
         tenant_id: message.body.tenantId,
         error: String(e),
       });

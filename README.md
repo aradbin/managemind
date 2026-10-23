@@ -39,7 +39,8 @@ pnpm --filter @managemind/db db:generate --name <change>
 
 | Command | Does |
 | --- | --- |
-| `tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn\|en]` | Creates the store and its first Owner, prints the admin and store URLs, and relays the events so the KV map fills at once |
+| `tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn\|en] [--setup plan=starter,billing-day=5,preset=grocery,kind=client,trial-ends=2026-12-31]` | Creates the store and its first Owner with the onboarding screen's options (phase-5b-plan §3.2), prints the admin and store URLs, and relays the events so the KV map fills at once |
+| `plans:seed` | Adds the placeholder plans when there are none (provisioning runs it on every deploy) |
 | `platform:grant-role --email a@b.c --role super_admin\|support\|none` | Creates the user if needed and sets or clears the platform role (audited; signs them out) |
 | `kv:sync [--tenant <id>]` | Rewrites the KV host keys of every store, or one |
 

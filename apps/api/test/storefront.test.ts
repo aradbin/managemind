@@ -231,9 +231,20 @@ describe('admin theme and pages', () => {
     expect(saved.status).toBe(200);
     expect(((await saved.json()) as Json).display).toEqual({ numerals: 'latin' });
 
+    // The policy pages exist from onboarding, as drafts (phase-5b-plan §3.2).
+    const drafts = (await (await user.get('/api/admin/pages')).json()) as Json[];
+    expect(drafts.map((p) => p.kind).sort()).toEqual(['delivery', 'privacy', 'returns', 'terms']);
+    expect(
+      (
+        await user.post('/api/admin/pages', {
+          kind: 'privacy',
+          translations: { bn: { title: 'গোপনীয়তা' } },
+        })
+      ).status,
+    ).toBe(409);
     const created = await user.post('/api/admin/pages', {
-      kind: 'privacy',
-      translations: { bn: { title: 'গোপনীয়তা' } },
+      kind: 'about',
+      translations: { bn: { title: 'আমাদের কথা' } },
     });
     expect(created.status).toBe(201);
     const page: Json = await created.json();
@@ -242,7 +253,7 @@ describe('admin theme and pages', () => {
     expect(((await updated.json()) as Json).published).toBe(true);
     expect(
       ((await (await user.get('/api/admin/pages')).json()) as Json[]).map((p) => p.id),
-    ).toEqual([page.id]);
+    ).toContain(page.id);
     expect((await user.call('DELETE', `/api/admin/pages/${page.id}`)).status).toBe(204);
   });
 });

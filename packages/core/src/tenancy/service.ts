@@ -2,8 +2,12 @@
 // editing its profile, and suspending or reactivating it. Each runs in one
 // tenant transaction, writes its audit entries and emits its event there.
 import { schema } from '@managemind/db';
-import { AppError, checkSlug, uuidv7 } from '@managemind/shared';
-import { PURGE_GRACE_DAYS, type SuspensionReason } from '@managemind/shared/billing';
+import { AppError, checkSlug, permissionsOf, uuidv7 } from '@managemind/shared';
+import {
+  PURGE_GRACE_DAYS,
+  type SuspensionReason,
+  type TenantKind,
+} from '@managemind/shared/billing';
 import { type NotificationSettings, notificationSettings } from '@managemind/shared/notifications';
 import {
   type CheckoutSettings,
@@ -23,11 +27,20 @@ import {
   taxSettings,
   tenantSettings,
 } from '@managemind/shared/settings';
-import { type StorefrontSettings, storefrontSettings } from '@managemind/shared/storefront';
+import {
+  PAGE_TITLES,
+  presetTheme,
+  type StorefrontSettings,
+  storefrontSettings,
+  THEME_PRESETS,
+  type ThemePreset,
+} from '@managemind/shared/storefront';
 import { eq, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { type Actor, auditActor, authorize, requirePlatformRole } from '../access';
 import { recordAudit } from '../audit';
+import { type SubscriptionInput, writeSubscription } from '../billing/plans';
+import { createPage } from '../catalog/pages';
 import { emit } from '../outbox';
 import { recordPlatformAudit } from '../platform';
 import { type DbClient, type TenantTx, type WithTenantOptions, withTenant } from '../tenant';
@@ -41,13 +54,24 @@ export interface CreateTenantInput {
   defaultLocale?: Locale;
   /** The first Owner: an existing user with this email, or a new one. */
   owner: { email: string; name: string };
+  /** `client` by default; demo and test stores are never billed (phase-5b-plan §3.1). */
+  kind?: TenantKind;
+  /** The plan and its terms (§3.2 step 3); a client store without one is unlimited until set. */
+  subscription?: SubscriptionInput;
+  /** The theme preset the store starts with, published (§3.2 step 4). */
+  preset?: ThemePreset;
 }
 
 export interface CreatedTenant {
   id: string;
   slug: string;
   ownerUserId: string;
+  /** True when the owner's user was made for this store, so a welcome email is due. */
+  newOwner: boolean;
 }
+
+/** The legal pages every store starts with, as drafts (§3.2 step 5, §3.15). */
+const LEGAL_KINDS = ['terms', 'privacy', 'returns', 'delivery'] as const;
 
 /** The Postgres error under a Drizzle query error, if any. */
 const pgError = (e: unknown) => {
@@ -56,9 +80,13 @@ const pgError = (e: unknown) => {
 };
 
 /**
- * Creates a store with its first Owner in one transaction: the tenant with
- * default settings, the owner's user (reused if the email exists), the Owner
- * membership, the store's defaults, both audit entries and `tenant.created`.
+ * Creates a store with its first Owner in one transaction (phase-5b-plan
+ * §3.2): the tenant with default settings and its theme preset, the owner's
+ * user (reused if the email exists), the Owner membership, the store's
+ * defaults (stock location, brand attribute, the three delivery zones with
+ * placeholder fees), the legal pages as drafts, the subscription and its
+ * entitlements, both audit entries and `tenant.created`. Any failure leaves
+ * nothing behind.
  */
 export async function createTenant(
   client: DbClient,
@@ -79,6 +107,18 @@ export async function createTenant(
   const email = input.owner.email.trim().toLowerCase();
   const id = uuidv7();
   const defaultLocale = input.defaultLocale ?? 'bn';
+  const kind = input.kind ?? 'client';
+  const settings = defaultTenantSettings();
+  if (input.preset) {
+    if (!THEME_PRESETS.includes(input.preset)) {
+      throw new AppError('validation_failed', {
+        fields: [{ path: 'preset', code: 'invalid', message: 'unknown theme preset' }],
+      });
+    }
+    const theme = presetTheme(input.preset);
+    settings.theme = theme;
+    settings.themeDraft = theme;
+  }
 
   try {
     return await withTenant(
@@ -87,7 +127,7 @@ export async function createTenant(
       async (tx) => {
         await tx.db
           .insert(schema.tenants)
-          .values({ id, slug, name, defaultLocale, settings: defaultTenantSettings() });
+          .values({ id, slug, name, defaultLocale, kind, settings });
 
         const u = schema.users;
         const [existing] = await tx.db.select({ id: u.id }).from(u).where(eq(u.email, email));
@@ -101,6 +141,7 @@ export async function createTenant(
           )[0]?.id;
         if (!ownerUserId)
           throw new AppError('internal', { detail: 'owner insert returned no row' });
+        const newOwner = !existing;
 
         await tx.db.insert(schema.memberships).values({
           tenantId: id,
@@ -108,10 +149,30 @@ export async function createTenant(
           role: 'owner',
           invitedBy: actor.userId,
         });
-        // What every store starts with: the brand attribute and a stock location (migration 0011).
+        // What every store starts with: the brand attribute, a stock location
+        // and the delivery zones (migrations 0011, 0023).
         await tx.db.execute(sql`select app.create_store_defaults()`);
+        const setup: Actor = { ...actor, permissions: permissionsOf('owner') };
+        for (const k of LEGAL_KINDS) {
+          await createPage(tx, setup, {
+            kind: k,
+            published: false,
+            translations: { bn: { title: PAGE_TITLES[k].bn }, en: { title: PAGE_TITLES[k].en } },
+          });
+        }
+        const subscription = input.subscription
+          ? await writeSubscription(tx, actor, input.subscription)
+          : null;
 
-        const after = { slug, name, defaultLocale, ownerUserId };
+        const after = {
+          slug,
+          name,
+          defaultLocale,
+          ownerUserId,
+          kind,
+          ...(input.preset ? { preset: input.preset } : {}),
+          ...(subscription ? { plan: subscription.plan.code } : {}),
+        };
         const who = auditActor(actor, 'platform');
         await recordPlatformAudit(tx, {
           ...who,
@@ -133,7 +194,7 @@ export async function createTenant(
           aggregateId: id,
           payload: { slug, name },
         });
-        return { id, slug, ownerUserId };
+        return { id, slug, ownerUserId, newOwner };
       },
       options,
     );
@@ -169,6 +230,8 @@ export interface Store {
   returns: ReturnSettings;
   /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
   notifications: NotificationSettings;
+  /** Onboarding choices (phase-5b-plan §3.2). */
+  setup: TenantSettings['setup'];
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -198,6 +261,7 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     fraud: settings.fraud,
     returns: settings.returns,
     notifications: settings.notifications,
+    setup: settings.setup,
   };
 }
 
@@ -242,6 +306,8 @@ export interface StoreProfilePatch {
   returns?: unknown;
   /** Replaces the shopper message channels (phase-5a-plan §3.6). */
   notifications?: unknown;
+  /** Replaces the onboarding choices (phase-5b-plan §3.2). */
+  setup?: unknown;
 }
 
 /** Edits name, default locale, profile, VAT, storefront and display settings (`settings.write`); refused while suspended. */
@@ -285,6 +351,10 @@ export async function updateStoreProfile(
       patch.notifications !== undefined
         ? parseSection('notifications', notificationSettings, patch.notifications)
         : current.notifications,
+    setup:
+      patch.setup !== undefined
+        ? parseSection('setup', tenantSettings.shape.setup, patch.setup)
+        : current.setup,
   };
   const fields = (
     [
@@ -299,6 +369,7 @@ export async function updateStoreProfile(
       'fraud',
       'returns',
       'notifications',
+      'setup',
     ] as const
   ).filter((f) => JSON.stringify(next[f]) !== JSON.stringify(current[f]));
   if (fields.length === 0) return getStore(tx, actor);
@@ -319,6 +390,7 @@ export async function updateStoreProfile(
         fraud: next.fraud,
         returns: next.returns,
         notifications: next.notifications,
+        setup: next.setup,
       },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
@@ -454,6 +526,11 @@ export async function closeTenant(
       }
       const closedAt = dates.closedAt.toISOString();
       const purgeAfter = dates.purgeAfter.toISOString();
+      // Staff working in it are moved out; nobody can open it again (§3.1).
+      await tx.db
+        .update(schema.sessions)
+        .set({ activeTenantId: null })
+        .where(eq(schema.sessions.activeTenantId, tenantId));
       const entry = {
         ...auditActor(actor, 'platform'),
         action: 'tenant.close',

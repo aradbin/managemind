@@ -119,6 +119,16 @@ const COPY = {
       button: 'Open Domains',
       footer: 'You get this email because you own {store} on {platform}.',
     },
+    welcomeOwner: {
+      subject: '{store} is ready on {platform}',
+      body: [
+        'Your store {store} is set up on {platform}, and you are its owner.',
+        'Sign in to the admin with this email address: {platform} sends a code each time, so there is no password to remember. The admin shows what is left to set up before your first order.',
+        'Your store is at {storeUrl}.',
+      ],
+      button: 'Open the admin',
+      footer: 'You get this email because {platform} created {store} for you.',
+    },
   },
   bn: {
     shopperSignInCode: {
@@ -158,6 +168,16 @@ const COPY = {
       ],
       button: 'ডোমেইন খুলুন',
       footer: 'আপনি {platform}-এ {store} দোকানের মালিক বলে এই ইমেইল পাচ্ছেন।',
+    },
+    welcomeOwner: {
+      subject: '{platform}-এ {store} দোকান তৈরি',
+      body: [
+        '{platform}-এ আপনার দোকান {store} তৈরি হয়েছে, আর আপনি এর মালিক।',
+        'এই ইমেইল ঠিকানা দিয়ে অ্যাডমিনে সাইন ইন করুন: {platform} প্রতিবার একটি কোড পাঠায়, তাই কোনো পাসওয়ার্ড মনে রাখতে হয় না। প্রথম অর্ডারের আগে কী কী বাকি, অ্যাডমিন তা দেখাবে।',
+        'আপনার দোকানের ঠিকানা {storeUrl}।',
+      ],
+      button: 'অ্যাডমিন খুলুন',
+      footer: '{platform} আপনার জন্য {store} দোকান তৈরি করেছে বলে এই ইমেইল পাচ্ছেন।',
     },
   },
 } as const satisfies Record<Locale, unknown>;
@@ -322,3 +342,24 @@ export function storeMessageEmail(input: StoreMessageEmail): RenderedEmail {
 
 /** For tests: every template's copy, per locale. */
 export const TEMPLATE_COPY = COPY;
+
+export interface WelcomeOwnerEmail {
+  locale: Locale;
+  platformName: string;
+  storeName: string;
+  adminUrl: string;
+  storeUrl: string;
+}
+
+/** To a new store's owner (phase-5b-plan §3.2): where the admin and the store are. */
+export function welcomeOwnerEmail(input: WelcomeOwnerEmail): RenderedEmail {
+  const copy = COPY[input.locale].welcomeOwner;
+  return render(copy.subject, {
+    locale: input.locale,
+    platformName: input.platformName,
+    paragraphs: [...copy.body],
+    button: { label: copy.button, href: input.adminUrl },
+    values: { platform: input.platformName, store: input.storeName, storeUrl: input.storeUrl },
+    footer: copy.footer,
+  });
+}

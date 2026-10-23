@@ -417,6 +417,7 @@ export async function withShopStore<T>(
   return withClient(c.env, c.executionCtx, async (client) => {
     const record = await resolveHost(createDb(client), host, c.var.config.STORE_DOMAIN);
     if (!record) throw new AppError('store_not_found');
+    if (record.status === 'closed') throw new AppError('tenant_closed');
     if (record.status !== 'active') throw new AppError('tenant_suspended');
     c.set('tenantId', record.tenantId);
     const run: Run = (inner) =>

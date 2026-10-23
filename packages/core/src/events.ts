@@ -24,6 +24,7 @@ export const EVENTS = {
         'fraud',
         'returns',
         'notifications',
+        'setup',
       ]),
     ),
   }),

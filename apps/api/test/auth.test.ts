@@ -1,7 +1,6 @@
 // Staff sign-in end to end against the test database (phase-1-plan §3.4,
 // §5.5): email codes, sessions and cookies, the 2FA challenge on code
 // sign-ins (Plan A), rate limits and the CSRF checks.
-import { createHmac } from 'node:crypto';
 import { connect } from '@managemind/db/testing';
 import { twoFactor } from 'better-auth/plugins';
 import type pg from 'pg';
@@ -22,6 +21,7 @@ import {
   latestCode as latestCodeFor,
   ORIGIN,
   signIn as signInAs,
+  totp,
 } from './staff';
 import { makeCtx, makeEnv, ownerUrl } from './support';
 
@@ -49,23 +49,6 @@ const sessionOf = async (b: Browser) =>
 
 const latestCode = (email: string) => latestCodeFor(owner, email);
 const signIn = (b: Browser, email: string) => signInAs(b, owner, email);
-
-/** RFC 6238 TOTP (SHA-1, 6 digits, 30 seconds), as authenticator apps compute it. */
-function totp(uri: string, at = Date.now()): string {
-  const secret = new URL(uri).searchParams.get('secret') ?? '';
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  let bits = '';
-  for (const ch of secret.replace(/=+$/, '').toUpperCase()) {
-    bits += alphabet.indexOf(ch).toString(2).padStart(5, '0');
-  }
-  const key = Buffer.from(bits.match(/.{8}/g)?.map((b) => Number.parseInt(b, 2)) ?? []);
-  const counter = Buffer.alloc(8);
-  counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
-  const mac = createHmac('sha1', key).update(counter).digest();
-  const offset = (mac[mac.length - 1] ?? 0) & 0xf;
-  const value = mac.readUInt32BE(offset) & 0x7fffffff;
-  return String(value % 1_000_000).padStart(6, '0');
-}
 
 describe('staff auth configuration', () => {
   const auth = createStaffAuth({

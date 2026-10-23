@@ -7,6 +7,7 @@ import {
   storeMessageEmail,
   supportAccessEmail,
   TEMPLATE_COPY,
+  welcomeOwnerEmail,
 } from './templates';
 
 const placeholders = (value: unknown): string[] =>
@@ -84,6 +85,20 @@ describe('email templates', () => {
     expect(email.text).toContain('The owner asked why an order is missing');
     // 08:30 UTC is 14:30 in Dhaka.
     expect(email.text).toMatch(locale === 'bn' ? /২:৩০/ : /2:30/);
+  });
+
+  it.each(LOCALES)("render the new owner's welcome in %s", (locale) => {
+    const email = welcomeOwnerEmail({
+      locale,
+      platformName: 'managemind',
+      storeName: 'Tea & Co',
+      adminUrl: 'https://admin.example.test/',
+      storeUrl: 'https://tea.stores.example.test',
+    });
+    noLeftovers(email);
+    expect(email.html).toContain('Tea &amp; Co');
+    expect(email.html).toContain('href="https://admin.example.test/"');
+    expect(email.text).toContain('https://tea.stores.example.test');
   });
 
   it('escape a store message whole, since a shopper wrote part of it', () => {

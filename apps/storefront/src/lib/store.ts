@@ -55,8 +55,8 @@ export interface StoreContext {
   slug: string;
   name: string;
   defaultLocale: 'bn' | 'en';
-  /** A suspended store shows its maintenance page. */
-  status: 'active' | 'suspended';
+  /** A suspended store shows its maintenance page; a closed one answers 410. */
+  status: 'active' | 'suspended' | 'closed';
   primaryHost: string;
 }
 
@@ -66,7 +66,7 @@ interface HostRecord {
   slug: string;
   name: string;
   defaultLocale: 'bn' | 'en';
-  status: 'active' | 'suspended';
+  status: 'active' | 'suspended' | 'closed';
   primaryHost: string;
 }
 

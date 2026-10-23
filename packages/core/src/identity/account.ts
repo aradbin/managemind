@@ -2,7 +2,7 @@
 // super admins) platform roles (phase-1-plan §5.3, §6.2).
 import { schema } from '@managemind/db';
 import { AppError, type PlatformRole, type StoreRole } from '@managemind/shared';
-import { and, asc, eq, gt, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { type Actor, actorFor, auditActor, requirePlatformRole } from '../access';
 import { type PlatformTx, recordPlatformAudit } from '../platform';
 
@@ -17,6 +17,8 @@ export interface MyStore {
 }
 
 /** Stores the user belongs to, then stores they hold a live support grant for. */
+const OPEN_STATUSES = ['active', 'suspended'] as const;
+
 export async function listMyStores(
   tx: PlatformTx,
   actor: Actor,
@@ -30,7 +32,8 @@ export async function listMyStores(
     .select({ tenantId: t.id, slug: t.slug, name: t.name, status: t.status, role: m.role })
     .from(m)
     .innerJoin(t, eq(t.id, m.tenantId))
-    .where(eq(m.userId, actor.userId))
+    // A closed store can't be opened in the admin (phase-5b-plan §3.1).
+    .where(and(eq(m.userId, actor.userId), inArray(t.status, OPEN_STATUSES)))
     .orderBy(asc(t.name));
   if (!actor.platformRole) return members;
   const grants = await tx.db
@@ -44,7 +47,14 @@ export async function listMyStores(
     })
     .from(g)
     .innerJoin(t, eq(t.id, g.tenantId))
-    .where(and(eq(g.userId, actor.userId), gt(g.expiresAt, now), isNull(g.revokedAt)))
+    .where(
+      and(
+        eq(g.userId, actor.userId),
+        gt(g.expiresAt, now),
+        isNull(g.revokedAt),
+        inArray(t.status, OPEN_STATUSES),
+      ),
+    )
     .orderBy(asc(t.name));
   const seen = new Set(members.map((s) => s.tenantId));
   return [...members, ...grants.filter((s) => !seen.has(s.tenantId) && seen.add(s.tenantId))];
@@ -61,6 +71,13 @@ export async function setActiveStore(
   tenantId: string,
 ): Promise<Actor> {
   if (!actor.userId) throw new AppError('forbidden');
+  const [store] = await tx.db
+    .select({ status: schema.tenants.status })
+    .from(schema.tenants)
+    .where(eq(schema.tenants.id, tenantId));
+  if (store?.status === 'closed' || store?.status === 'purged') {
+    throw new AppError('tenant_closed');
+  }
   const next = await actorFor(tx.db, actor.userId, tenantId);
   if (next.tenantId !== tenantId) throw new AppError('forbidden');
   const s = schema.sessions;

@@ -12,7 +12,8 @@ export interface HostRecord {
   slug: string;
   name: string;
   defaultLocale: 'bn' | 'en';
-  status: 'active' | 'suspended';
+  /** A closed store keeps its default address only, to answer 410 (phase-5b-plan §3.1). */
+  status: 'active' | 'suspended' | 'closed';
   /** The canonical host: the primary custom domain, or the default address. */
   primaryHost: string;
 }
@@ -57,12 +58,15 @@ type Row = {
 };
 
 async function toRecord(db: Db, row: Row | undefined, storeDomain: string) {
-  // Closed and purged stores have no address at all.
-  if (!row || (row.status !== 'active' && row.status !== 'suspended')) return null;
+  // A purged store has no address at all; a closed one only its default address.
+  if (!row || !['active', 'suspended', 'closed'].includes(row.status)) return null;
   return {
     ...row,
     status: row.status,
-    primaryHost: await primaryHost(db, row.tenantId, row.slug, storeDomain),
+    primaryHost:
+      row.status === 'closed'
+        ? `${row.slug}.${storeDomain}`
+        : await primaryHost(db, row.tenantId, row.slug, storeDomain),
   } as HostRecord;
 }
 
@@ -78,7 +82,8 @@ export async function resolveHost(
     .from(d)
     .innerJoin(t, eq(t.id, d.tenantId))
     .where(and(eq(d.hostname, name), eq(d.status, 'active')));
-  if (custom) return toRecord(db, custom, storeDomain);
+  // A closed store's custom domains are released at once (§3.1).
+  if (custom) return custom.status === 'closed' ? null : toRecord(db, custom, storeDomain);
   const slug = slugFromHost(name, storeDomain);
   if (!slug) return null;
   const [row] = await db.select(columns).from(t).where(eq(t.slug, slug));
@@ -92,7 +97,8 @@ export interface HostEntries {
 
 /**
  * The KV entries a store should have now: one per address while it is
- * active or suspended, none otherwise. Recomputed from the rows on every
+ * active or suspended, only the default address while closed, none once
+ * purged. Recomputed from the rows on every
  * event, so applying it twice changes nothing.
  */
 export async function hostEntries(
@@ -107,7 +113,9 @@ export async function hostEntries(
     .where(and(eq(d.tenantId, tenantId), inArray(d.status, ['active', 'failed', 'removed'])));
   const record = await toRecord(db, row, storeDomain);
   const live = record ? [`${record.slug}.${storeDomain}`] : [];
-  if (record) live.push(...domains.filter((x) => x.status === 'active').map((x) => x.hostname));
+  if (record && record.status !== 'closed') {
+    live.push(...domains.filter((x) => x.status === 'active').map((x) => x.hostname));
+  }
   const dead = domains.map((x) => x.hostname).filter((h) => !live.includes(h));
   if (!record && row) dead.push(`${row.slug}.${storeDomain}`);
   return {

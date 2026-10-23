@@ -35,6 +35,8 @@ export async function seedE2E(client: pg.Client, run: string, storeDomain: strin
         ownerEmail: n.owner,
         ownerName: 'E2E Owner',
         locale: 'bn',
+        // Never billed, and reset or purged instead of piling up (phase-5b-plan §3.12).
+        setup: { kind: 'test' },
       },
     );
     await grantRole(client, { email: n.admin, role: 'super_admin', name: 'E2E Admin' });

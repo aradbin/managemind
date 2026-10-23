@@ -2713,6 +2713,15 @@ export interface paths {
                              */
                             email?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
                         };
+                        /**
+                         * @default {
+                         *       "subdomainFinal": false
+                         *     }
+                         */
+                        setup?: {
+                            /** @default false */
+                            subdomainFinal?: boolean;
+                        };
                     };
                 };
             };
@@ -2728,6 +2737,52 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/admin/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the store still needs before its first order (settings.read; phase-5b-plan §3.2) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Checklist */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** @enum {string} */
+                                item: "profile" | "logo" | "products" | "delivery" | "payments" | "legal" | "email" | "sms" | "domain" | "terms";
+                                done: boolean;
+                                optional: boolean;
+                            }[];
+                            done: number;
+                            total: number;
+                            complete: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/members": {
@@ -9715,6 +9770,40 @@ export interface paths {
                             email: string;
                             name: string;
                         };
+                        /** @enum {string} */
+                        kind?: "client" | "demo" | "test";
+                        /** @enum {string} */
+                        preset?: "fashion" | "grocery" | "general";
+                        subscription?: {
+                            /** Format: uuid */
+                            planId: string;
+                            priceOverride?: number | null;
+                            setupFeeOverride?: number | null;
+                            entitlementOverride?: {
+                                limits?: {
+                                    products?: number | null;
+                                    staff?: number | null;
+                                    ordersPerMonth?: number | null;
+                                    emailsPerMonth?: number | null;
+                                    storageMb?: number | null;
+                                    customDomains?: number | null;
+                                };
+                                features?: {
+                                    sslcommerz?: boolean;
+                                    sms?: boolean;
+                                    shopperAccounts?: boolean;
+                                    promotionCoupons?: boolean;
+                                    promotionAutomatic?: boolean;
+                                    promotionBuyXGetY?: boolean;
+                                    promotionFreeDelivery?: boolean;
+                                    reports?: boolean;
+                                    customEmailKey?: boolean;
+                                };
+                            } | null;
+                            billingDay: number;
+                            /** Format: date */
+                            trialEndsOn?: string | null;
+                        };
                     };
                 };
             };
@@ -9736,6 +9825,48 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/slug-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a store address is free, as it's typed (super_admin) */
+        get: {
+            parameters: {
+                query: {
+                    slug: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Availability */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            available: boolean;
+                            /** @enum {string|null} */
+                            reason: "slug_taken" | "slug_reserved" | "invalid" | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9789,7 +9920,111 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Suspend a store (super_admin) */
+        /** Suspend a store, with why (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                        /** @enum {string} */
+                        category?: "overdue" | "abuse" | "client_request" | "other";
+                    };
+                };
+            };
+            responses: {
+                /** @description Suspended */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            from: "active" | "suspended" | "closed" | "purged";
+                            /** @enum {string} */
+                            to: "active" | "suspended" | "closed" | "purged";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a store: the slug typed, a reason and a fresh authenticator code (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                        slug: string;
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Closed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            from: "active" | "suspended" | "closed" | "purged";
+                            /** @enum {string} */
+                            to: "active" | "suspended" | "closed" | "purged";
+                            closedAt: string;
+                            purgeAfter: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reopen a closed store before its purge (super_admin) */
         post: {
             parameters: {
                 query?: never;
@@ -9807,7 +10042,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Suspended */
+                /** @description Reopened */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -9819,6 +10054,365 @@ export interface paths {
                             /** @enum {string} */
                             to: "active" | "suspended" | "closed" | "purged";
                         };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/checklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's setup checklist as of its last health check (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Checklist */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SetupChecklist"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's last health check (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Health */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StoreHealth"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/health/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run the daily job's checks for this store now (support) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Health */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StoreHealth"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Plans, offered first (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Plans */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Plan"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A new plan (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Plan"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change a plan; its stores' entitlements follow (super_admin) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Plan"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's plan and terms (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Subscription */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Subscription"];
+                    };
+                };
+            };
+        };
+        /** Set the plan and terms; takes effect on the next invoice (super_admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        planId: string;
+                        priceOverride?: number | null;
+                        setupFeeOverride?: number | null;
+                        entitlementOverride?: {
+                            limits?: {
+                                products?: number | null;
+                                staff?: number | null;
+                                ordersPerMonth?: number | null;
+                                emailsPerMonth?: number | null;
+                                storageMb?: number | null;
+                                customDomains?: number | null;
+                            };
+                            features?: {
+                                sslcommerz?: boolean;
+                                sms?: boolean;
+                                shopperAccounts?: boolean;
+                                promotionCoupons?: boolean;
+                                promotionAutomatic?: boolean;
+                                promotionBuyXGetY?: boolean;
+                                promotionFreeDelivery?: boolean;
+                                reports?: boolean;
+                                customEmailKey?: boolean;
+                            };
+                        } | null;
+                        billingDay: number;
+                        /** Format: date */
+                        trialEndsOn?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Subscription"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/subscription/hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hold reminders and suspension until a date, or end the hold (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        until: string | null;
+                        reason?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Subscription"];
                     };
                 };
             };
@@ -10124,7 +10718,7 @@ export interface components {
             /** @enum {string} */
             defaultLocale: "bn" | "en";
             /** @enum {string} */
-            status: "active" | "suspended";
+            status: "active" | "suspended" | "closed";
             primaryHost: string;
         };
         StorePage: {
@@ -10540,6 +11134,15 @@ export interface components {
                  *     ]
                  */
                 email: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+            };
+            /**
+             * @default {
+             *       "subdomainFinal": false
+             *     }
+             */
+            setup: {
+                /** @default false */
+                subdomainFinal: boolean;
             };
             storeUrl: string;
         };
@@ -12817,6 +13420,18 @@ export interface components {
             /** @enum {string} */
             status: "active" | "suspended" | "closed" | "purged";
             plan: string;
+            /** @enum {string} */
+            kind: "client" | "demo" | "test";
+            /** @enum {string|null} */
+            statusReason: "overdue" | "abuse" | "client_request" | "other" | null;
+            /** Format: date-time */
+            closedAt: string | null;
+            /** Format: date-time */
+            purgeAfter: string | null;
+            setup: {
+                done: number;
+                total: number;
+            } | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -12836,6 +13451,106 @@ export interface components {
             }[];
             memberCount: number;
         };
+        SetupChecklist: {
+            items: {
+                /** @enum {string} */
+                item: "profile" | "logo" | "products" | "delivery" | "payments" | "legal" | "email" | "sms" | "domain" | "terms";
+                done: boolean;
+                optional: boolean;
+            }[];
+            done: number;
+            total: number;
+            complete: boolean;
+        } | null;
+        StoreHealth: {
+            /** Format: date-time */
+            checkedAt: string;
+            checklist: components["schemas"]["SetupChecklist"] | Record<string, never>;
+            payments: {
+                [key: string]: unknown;
+            };
+            email: {
+                [key: string]: unknown;
+            };
+            sms: {
+                [key: string]: unknown;
+            };
+            domains: {
+                [key: string]: unknown;
+            };
+            activity: {
+                [key: string]: unknown;
+            };
+        } | null;
+        Plan: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: {
+                bn: string;
+                en: string;
+            };
+            monthlyPrice: number;
+            setupFee: number;
+            overagePrices: {
+                orders?: number;
+                emails?: number;
+            };
+            entitlements: {
+                limits: {
+                    products: number | null;
+                    staff: number | null;
+                    ordersPerMonth: number | null;
+                    emailsPerMonth: number | null;
+                    storageMb: number | null;
+                    customDomains: number | null;
+                };
+                features: {
+                    sslcommerz: boolean;
+                    sms: boolean;
+                    shopperAccounts: boolean;
+                    promotionCoupons: boolean;
+                    promotionAutomatic: boolean;
+                    promotionBuyXGetY: boolean;
+                    promotionFreeDelivery: boolean;
+                    reports: boolean;
+                    customEmailKey: boolean;
+                };
+            };
+            offered: boolean;
+        };
+        Subscription: {
+            plan: components["schemas"]["Plan"];
+            priceOverride: number | null;
+            setupFeeOverride: number | null;
+            entitlementOverride: {
+                limits?: {
+                    products?: number | null;
+                    staff?: number | null;
+                    ordersPerMonth?: number | null;
+                    emailsPerMonth?: number | null;
+                    storageMb?: number | null;
+                    customDomains?: number | null;
+                };
+                features?: {
+                    sslcommerz?: boolean;
+                    sms?: boolean;
+                    shopperAccounts?: boolean;
+                    promotionCoupons?: boolean;
+                    promotionAutomatic?: boolean;
+                    promotionBuyXGetY?: boolean;
+                    promotionFreeDelivery?: boolean;
+                    reports?: boolean;
+                    customEmailKey?: boolean;
+                };
+            } | null;
+            billingDay: number;
+            trialEndsOn: string | null;
+            /** @enum {string} */
+            status: "trialing" | "active" | "past_due" | "cancelled";
+            holdUntil: string | null;
+            holdReason: string | null;
+        } | null;
     };
     responses: never;
     parameters: never;

@@ -3,7 +3,7 @@
 // read it; nothing here reaches into the store schema.
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
-import { and, asc, count, desc, eq, gt, ilike, lt, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from 'drizzle-orm';
 import { type Actor, requirePlatformRole } from '../access';
 import type { PlatformTx } from '../platform';
 
@@ -14,7 +14,14 @@ export interface TenantSummary {
   slug: string;
   name: string;
   status: (typeof schema.TENANT_STATUSES)[number];
+  /** The subscription's plan code, or the Phase 1 label for stores without one. */
   plan: string;
+  kind: (typeof schema.TENANT_KINDS)[number];
+  statusReason: (typeof schema.SUSPENSION_REASONS)[number] | null;
+  closedAt: Date | null;
+  purgeAfter: Date | null;
+  /** Setup checklist progress as of the last health check (phase-5b-plan §3.2); null before one. */
+  setup: { done: number; total: number } | null;
   createdAt: Date;
 }
 
@@ -23,9 +30,26 @@ const summary = {
   slug: t.slug,
   name: t.name,
   status: t.status,
-  plan: t.plan,
+  plan: sql<string>`coalesce(${schema.plans.code}, ${t.plan})`,
+  kind: t.kind,
+  statusReason: t.statusReason,
+  closedAt: t.closedAt,
+  purgeAfter: t.purgeAfter,
+  setup: sql<{ done: number; total: number } | null>`case
+    when ${schema.storeHealth.checklist} ? 'total'
+    then jsonb_build_object('done', ${schema.storeHealth.checklist}->'done', 'total', ${schema.storeHealth.checklist}->'total')
+  end`,
   createdAt: t.createdAt,
 };
+
+/** The tenant row with its plan and last health check. */
+const fromTenants = (tx: PlatformTx) =>
+  tx.db
+    .select(summary)
+    .from(t)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.tenantId, t.id))
+    .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
+    .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id));
 
 /** Stores by slug, filtered by a search on slug or name and by status. */
 export async function listTenants(
@@ -36,9 +60,7 @@ export async function listTenants(
   requirePlatformRole(actor, 'support');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 100);
   const q = query.q?.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
-  return tx.db
-    .select(summary)
-    .from(t)
+  return fromTenants(tx)
     .where(
       and(
         q ? or(ilike(t.slug, `%${q}%`), ilike(t.name, `%${q}%`)) : undefined,
@@ -63,10 +85,12 @@ export async function getTenantDetail(
   tenantId: string,
 ): Promise<TenantDetail> {
   requirePlatformRole(actor, 'support');
-  const [tenant] = await tx.db
-    .select({ ...summary, defaultLocale: t.defaultLocale })
+  const [found] = await fromTenants(tx).where(eq(t.id, tenantId));
+  const [locale] = await tx.db
+    .select({ defaultLocale: t.defaultLocale })
     .from(t)
     .where(eq(t.id, tenantId));
+  const tenant = found && locale ? { ...found, defaultLocale: locale.defaultLocale } : undefined;
   if (!tenant) throw new AppError('not_found');
   const d = schema.tenantDomains;
   const m = schema.memberships;

@@ -18,6 +18,7 @@ import {
   deletePage,
   getTheme,
   homePage,
+  listPages,
   productPage,
   publishedPageBySlug,
   publishTheme,
@@ -96,16 +97,19 @@ const addMedia = (tenantId = store) =>
   }, tenantId);
 
 describe('static pages', () => {
-  it('creates policy pages with suggested headings, one per kind', async () => {
-    const page = await run((tx) =>
-      createPage(tx, owner, {
-        kind: 'returns',
-        published: true,
-        translations: { bn: { title: 'রিটার্ন নীতি' } },
-      }),
-    );
+  it('starts a store with policy drafts with suggested headings, one per kind', async () => {
+    // Onboarding adds terms, privacy, returns and delivery as drafts (phase-5b-plan §3.2).
+    const drafts = await run((tx) => listPages(tx, owner));
+    expect(drafts.map((p) => [p.kind, p.published]).sort()).toEqual([
+      ['delivery', false],
+      ['privacy', false],
+      ['returns', false],
+      ['terms', false],
+    ]);
+    const draft = drafts.find((p) => p.kind === 'returns');
+    expect(draft?.translations.bn?.body?.content?.[0]).toMatchObject({ type: 'heading' });
+    const page = await run((tx) => updatePage(tx, owner, draft?.id as string, { published: true }));
     expect(page.translations.bn?.slug).toBe('রিটার্ন-নীতি');
-    expect(page.translations.bn?.body?.content?.[0]).toMatchObject({ type: 'heading' });
     await expect(
       run((tx) =>
         createPage(tx, owner, { kind: 'returns', translations: { bn: { title: 'আবার' } } }),

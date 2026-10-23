@@ -24,9 +24,10 @@ import { THEMES } from '../themes/index';
 const { store, locale, prefixed, previewToken, host, requestId, shopperIp } = Astro.locals;
 const url = Astro.url;
 
-let message: 'not_found' | 'maintenance' | null = null;
+let message: 'not_found' | 'maintenance' | 'closed' | null = null;
 if (!store) message = 'not_found';
 else if (store.status === 'suspended') message = 'maintenance';
+else if (store.status === 'closed') message = 'closed';
 
 const parsed = parseStorePath(url.pathname);
 const route = parsed.type === 'route' ? parsed.route : null;
@@ -43,6 +44,7 @@ if (!message) {
   );
   if (result.kind === 'error') {
     if (result.code === 'tenant_suspended') message = 'maintenance';
+    else if (result.code === 'tenant_closed') message = 'closed';
     else if (result.code === 'store_not_found') message = 'not_found';
     else if (result.status === 401 && previewToken) {
       // An expired preview: back to the live store.
@@ -58,6 +60,8 @@ if (!message) {
 }
 
 if (message === 'not_found') Astro.response.status = 404;
+// Gone for good (phase-5b-plan §3.1): no store content, in both languages.
+if (message === 'closed') Astro.response.status = 410;
 if (message === 'maintenance') {
   Astro.response.status = 503;
   Astro.response.headers.set('Retry-After', '3600');
@@ -104,6 +108,7 @@ const page = body?.page;
 
 {message === 'maintenance' && store && <StoreMessage kind="maintenance" name={store.name} host={host} />}
 {message === 'not_found' && <StoreMessage kind="not_found" name={store?.name ?? ''} host={host} />}
+{message === 'closed' && store && <StoreMessage kind="closed" name={store.name} host={host} />}
 {!message && result?.kind === 'error' && result.status === 429 && <StoreMessage kind="busy" name={store?.name ?? ''} host={host} />}
 {ctx && theme && (() => {
   // Shopper pages are shells around the layout; their scripts fetch the rest.

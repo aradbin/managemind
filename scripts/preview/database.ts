@@ -28,6 +28,7 @@ import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
 import { type Branch, DATABASE, Neon, pooledHost } from '../lib/neon';
+import { plansSeed } from '../platform/commands';
 import { cleanOldE2E, seedE2E } from './e2e-seed';
 import { branchName, DATABASE_LOCK, directRole, hyperdriveName, parseDatabase } from './names';
 
@@ -69,6 +70,7 @@ try {
   } else {
     await runMigrations(ownerUrl);
     await seed(ownerUrl);
+    await plansSeed(owner);
     // The demo stores' catalog, for the storefront E2E and Lighthouse (phase-3-plan §8).
     const filled = await seedDemoCatalog(owner);
     if (filled.length) notice(`Demo catalog added to ${filled.join(', ')}`);
