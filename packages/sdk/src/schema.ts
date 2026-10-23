@@ -2739,6 +2739,99 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/terms/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The platform terms the store's owners haven't accepted, and whether their admin is read-only until one does (phase-5b-plan §3.4) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Terms */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            pending: {
+                                /** Format: uuid */
+                                id: string;
+                                version: string;
+                                /** Format: date-time */
+                                effectiveAt: string;
+                                url: string;
+                            } | null;
+                            blocking: boolean;
+                            canAccept: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/terms/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a version of the platform terms for the store (owners) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        versionId: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            accepted: true;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/setup": {
         parameters: {
             query?: never;
@@ -10209,6 +10302,94 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versions of the platform terms, newest first, with how many stores accepted each (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Versions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            version: string;
+                            /** Format: date-time */
+                            effectiveAt: string;
+                            url: string;
+                            sha256: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                            acceptedStores: number;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Publish a version: owners are asked now, and read-only from effectiveAt until one accepts (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        version: string;
+                        /** Format: date-time */
+                        effectiveAt: string;
+                        /** Format: uri */
+                        url: string;
+                        sha256?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Published */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            version: string;
+                            /** Format: date-time */
+                            effectiveAt: string;
+                            url: string;
+                            sha256: string;
+                            /** Format: date-time */
+                            createdAt: string;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;

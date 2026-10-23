@@ -17,7 +17,9 @@ import {
   listPlatformAudit,
   listPlatformStaff,
   listTenants,
+  listTermsVersions,
   platformDashboard,
+  publishTerms,
   readStoreHealth,
   refreshStoreHealth,
   reopenTenant,
@@ -315,6 +317,56 @@ export const PLATFORM_ROUTES = {
       'Dashboard',
     ),
   }),
+  terms: r({
+    method: 'get',
+    path: '/terms',
+    summary:
+      'Versions of the platform terms, newest first, with how many stores accepted each (support)',
+    responses: json(
+      z.array(
+        z.object({
+          id: z.uuid(),
+          version: z.string(),
+          effectiveAt: z.date(),
+          url: z.string(),
+          sha256: z.string(),
+          createdAt: z.date(),
+          acceptedStores: z.number().int(),
+        }),
+      ),
+      'Versions',
+    ),
+  }),
+  publishTerms: r({
+    method: 'post',
+    path: '/terms',
+    summary:
+      'Publish a version: owners are asked now, and read-only from effectiveAt until one accepts (super_admin)',
+    request: body(
+      z.object({
+        version: z.string().trim().min(1).max(40),
+        effectiveAt: z.iso.datetime(),
+        url: z.url().max(500),
+        /** The published text's SHA-256; fetched from the URL and hashed when left out. */
+        sha256: z
+          .string()
+          .regex(/^[0-9a-fA-F]{64}$/)
+          .optional(),
+      }),
+    ),
+    responses: json(
+      z.object({
+        id: z.uuid(),
+        version: z.string(),
+        effectiveAt: z.date(),
+        url: z.string(),
+        sha256: z.string(),
+        createdAt: z.date(),
+      }),
+      'Published',
+      201,
+    ),
+  }),
   plans: r({
     method: 'get',
     path: '/plans',
@@ -442,6 +494,31 @@ export const PLATFORM_ROUTES = {
 /** Written by the daily usage alarm (scripts/monitor/usage.ts). */
 const USAGE_FILE = 'platform/usage/latest.json';
 type FreeTierLimit = { name: string; used: number; limit: number; unit: string; share: number };
+
+/** The SHA-256 of the published terms text, so a changed text is a new version (§3.4). */
+async function hashOf(url: string, platformDomain: string): Promise<string> {
+  // Only our own site is fetched: the terms live on the platform domain.
+  const host = new URL(url).hostname;
+  if (host !== platformDomain && !host.endsWith(`.${platformDomain}`)) {
+    throw new AppError('validation_failed', {
+      fields: [
+        {
+          path: 'url',
+          code: 'not_ours',
+          message: `give the SHA-256, or a page on ${platformDomain}`,
+        },
+      ],
+    });
+  }
+  const res = await fetch(url, { redirect: 'manual' }).catch(() => null);
+  if (!res?.ok) {
+    throw new AppError('validation_failed', {
+      fields: [{ path: 'url', code: 'unreachable', message: 'the terms page could not be read' }],
+    });
+  }
+  const digest = await crypto.subtle.digest('SHA-256', await res.arrayBuffer());
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 const requireSuperAdmin = (c: Context<StaffEnv>) => {
   if (c.var.staff.actor.platformRole !== 'super_admin') throw new AppError('forbidden');
@@ -621,6 +698,29 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
         }
       : null;
     return c.json({ ...data, freeTier }, 200);
+  });
+  platform.openapi(R.terms, async (c) =>
+    c.json(
+      await withPlatform(c.var.staff.client, (tx) => listTermsVersions(tx, c.var.staff.actor)),
+      200,
+    ),
+  );
+  platform.openapi(R.publishTerms, async (c) => {
+    requireSuperAdmin(c);
+    const input = c.req.valid('json');
+    const sha256 = input.sha256 ?? (await hashOf(input.url, c.var.config.PLATFORM_DOMAIN));
+    const published = await withPlatform(
+      c.var.staff.client,
+      (tx) =>
+        publishTerms(tx, c.var.staff.actor, {
+          version: input.version,
+          effectiveAt: new Date(input.effectiveAt),
+          url: input.url,
+          sha256,
+        }),
+      { requestId: c.var.requestId },
+    );
+    return c.json(published, 201);
   });
   platform.openapi(R.plans, async (c) =>
     c.json(await withPlatform(c.var.staff.client, (tx) => listPlans(tx, c.var.staff.actor)), 200),

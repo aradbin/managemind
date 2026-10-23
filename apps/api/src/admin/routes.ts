@@ -6,6 +6,7 @@
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   acceptInvitation,
+  acceptTerms,
   authorize,
   CHECKLIST_ITEMS,
   changeRole,
@@ -22,6 +23,7 @@ import {
   runIdempotent,
   setActiveStore,
   setupChecklist,
+  termsStatus,
   updateMyProfile,
   updateStoreProfile,
   withPlatform,
@@ -209,6 +211,35 @@ export const ADMIN_ROUTES = {
     ),
     responses: json(Store, 'Store'),
   }),
+  termsPending: r({
+    method: 'get',
+    path: '/terms/pending',
+    summary:
+      "The platform terms the store's owners haven't accepted, and whether their admin is read-only until one does (phase-5b-plan §3.4)",
+    responses: json(
+      z.object({
+        pending: z
+          .object({
+            id: z.uuid(),
+            version: z.string(),
+            effectiveAt: z.date(),
+            url: z.string(),
+          })
+          .nullable(),
+        blocking: z.boolean(),
+        /** Whether the signed-in user can accept: an owner by membership. */
+        canAccept: z.boolean(),
+      }),
+      'Terms',
+    ),
+  }),
+  acceptTerms: r({
+    method: 'post',
+    path: '/terms/accept',
+    summary: 'Accept a version of the platform terms for the store (owners)',
+    request: body(z.object({ versionId: z.uuid() })),
+    responses: json(z.object({ accepted: z.literal(true) }), 'Accepted'),
+  }),
   setup: r({
     method: 'get',
     path: '/setup',
@@ -364,6 +395,35 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
       200,
     ),
   );
+  admin.openapi(R.termsPending, async (c) => {
+    const actor = c.var.staff.actor;
+    const status = await inStore(c, (tx) => termsStatus(tx, tx.tenantId));
+    const p = status.pending;
+    return c.json(
+      {
+        pending: p
+          ? { id: p.id, version: p.version, effectiveAt: p.effectiveAt, url: p.url }
+          : null,
+        blocking: status.blocking,
+        canAccept: actor.storeRole === 'owner' && !actor.supportGrantId,
+      },
+      200,
+    );
+  });
+  admin.openapi(R.acceptTerms, async (c) => {
+    const { versionId } = c.req.valid('json');
+    const ip = c.req.header('cf-connecting-ip') ?? null;
+    return c.json(
+      await inStore(c, (tx) =>
+        acceptTerms(tx, c.var.staff.actor, {
+          versionId,
+          ip: ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : null,
+          userAgent: c.req.header('user-agent') ?? null,
+        }),
+      ),
+      200,
+    );
+  });
   admin.openapi(R.setup, async (c) =>
     c.json(
       await inStore(c, (tx) => {

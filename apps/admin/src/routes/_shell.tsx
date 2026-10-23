@@ -18,7 +18,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
 import { LanguageSwitch } from '../components/language-switch';
 import { usePermission } from '../components/permission-gate';
@@ -29,6 +29,9 @@ import { ApiError, api, healthQuery, meQuery, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { chooseStore, refreshAccess } from '../lib/store';
+
+// Only owners are asked to accept the platform terms (phase-5b-plan §3.4).
+const TermsPrompt = lazy(() => import('../components/terms-prompt'));
 
 export const Route = createFileRoute('/_shell')({
   beforeLoad: async ({ context, location }) => {
@@ -162,6 +165,11 @@ function Shell() {
             })}
             <EndSupport grantId={me.supportGrantId} />
           </div>
+        )}
+        {store?.role === 'owner' && !me.supportGrantId && (
+          <Suspense fallback={null}>
+            <TermsPrompt />
+          </Suspense>
         )}
         <main className="flex-1 p-4">
           <Outlet />

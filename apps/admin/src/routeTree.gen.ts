@@ -36,6 +36,7 @@ import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
 import { Route as ShellPlatformDashboardRouteImport } from './routes/_shell/platform/dashboard'
 import { Route as ShellPlatformStaffRouteImport } from './routes/_shell/platform/staff'
+import { Route as ShellPlatformTermsRouteImport } from './routes/_shell/platform/terms'
 import { Route as ShellProductsIndexRouteImport } from './routes/_shell/products/index'
 import { Route as ShellProductsIdRouteImport } from './routes/_shell/products/$id'
 import { Route as ShellProductsNewRouteImport } from './routes/_shell/products/new'
@@ -197,6 +198,11 @@ const ShellPlatformDashboardRoute = ShellPlatformDashboardRouteImport.update({
 const ShellPlatformStaffRoute = ShellPlatformStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
+const ShellPlatformTermsRoute = ShellPlatformTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => ShellPlatformRoute,
 } as any)
 const ShellProductsIndexRoute = ShellProductsIndexRouteImport.update({
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
+  '/platform/terms': typeof ShellPlatformTermsRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
   '/promotions/$id': typeof ShellPromotionsIdRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
+  '/platform/terms': typeof ShellPlatformTermsRoute
   '/products/$id': typeof ShellProductsIdRoute
   '/products/new': typeof ShellProductsNewRoute
   '/promotions/$id': typeof ShellPromotionsIdRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
   '/_shell/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/_shell/platform/staff': typeof ShellPlatformStaffRoute
+  '/_shell/platform/terms': typeof ShellPlatformTermsRoute
   '/_shell/products/$id': typeof ShellProductsIdRoute
   '/_shell/products/new': typeof ShellProductsNewRoute
   '/_shell/promotions/$id': typeof ShellPromotionsIdRoute
@@ -530,6 +539,7 @@ export interface FileRouteTypes {
     | '/platform/audit'
     | '/platform/dashboard'
     | '/platform/staff'
+    | '/platform/terms'
     | '/products/$id'
     | '/products/new'
     | '/promotions/$id'
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/platform/audit'
     | '/platform/dashboard'
     | '/platform/staff'
+    | '/platform/terms'
     | '/products/$id'
     | '/products/new'
     | '/promotions/$id'
@@ -640,6 +651,7 @@ export interface FileRouteTypes {
     | '/_shell/platform/audit'
     | '/_shell/platform/dashboard'
     | '/_shell/platform/staff'
+    | '/_shell/platform/terms'
     | '/_shell/products/$id'
     | '/_shell/products/new'
     | '/_shell/promotions/$id'
@@ -872,6 +884,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPlatformStaffRouteImport
       parentRoute: typeof ShellPlatformRoute
     }
+    '/_shell/platform/terms': {
+      id: '/_shell/platform/terms'
+      path: '/terms'
+      fullPath: '/platform/terms'
+      preLoaderRoute: typeof ShellPlatformTermsRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
     '/_shell/products/': {
       id: '/_shell/products/'
       path: '/products'
@@ -1068,6 +1087,7 @@ interface ShellPlatformRouteChildren {
   ShellPlatformAuditRoute: typeof ShellPlatformAuditRoute
   ShellPlatformDashboardRoute: typeof ShellPlatformDashboardRoute
   ShellPlatformStaffRoute: typeof ShellPlatformStaffRoute
+  ShellPlatformTermsRoute: typeof ShellPlatformTermsRoute
   ShellPlatformIndexRoute: typeof ShellPlatformIndexRoute
   ShellPlatformTenantsIdRoute: typeof ShellPlatformTenantsIdRoute
   ShellPlatformTenantsNewRoute: typeof ShellPlatformTenantsNewRoute
@@ -1077,6 +1097,7 @@ const ShellPlatformRouteChildren: ShellPlatformRouteChildren = {
   ShellPlatformAuditRoute: ShellPlatformAuditRoute,
   ShellPlatformDashboardRoute: ShellPlatformDashboardRoute,
   ShellPlatformStaffRoute: ShellPlatformStaffRoute,
+  ShellPlatformTermsRoute: ShellPlatformTermsRoute,
   ShellPlatformIndexRoute: ShellPlatformIndexRoute,
   ShellPlatformTenantsIdRoute: ShellPlatformTenantsIdRoute,
   ShellPlatformTenantsNewRoute: ShellPlatformTenantsNewRoute,

@@ -174,6 +174,7 @@ export const bn: Record<keyof typeof en, string> = {
   'staff.expiresHeader': 'মেয়াদ শেষ',
   'platform.title': 'প্ল্যাটফর্ম',
   'platform.dashboard': 'ড্যাশবোর্ড',
+  'platform.terms': 'শর্তাবলি',
   'platform.tenants': 'দোকান',
   'platform.staff': 'প্ল্যাটফর্ম স্টাফ',
   'platform.audit': 'অডিট লগ',

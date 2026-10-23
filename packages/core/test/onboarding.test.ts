@@ -193,7 +193,6 @@ describe('setup checklist', () => {
       email: true,
       sms: false,
       domain: false,
-      terms: true, // no terms published yet
     });
     expect(first.complete).toBe(false);
 

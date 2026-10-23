@@ -135,4 +135,23 @@ export const launchEn = {
   'pdash.emailsMonth': 'Emails this month',
   'pdash.storage': 'Storage',
   'pdash.domains': 'Domains',
+  'terms.pending':
+    'The platform terms are changing on {date}. Please read them and accept them for your store.',
+  'terms.blocking':
+    'Your store’s admin is read-only for owners until you accept the current platform terms. Managers and staff can keep working.',
+  'terms.read': 'Read the terms ({version})',
+  'terms.accept': 'I accept',
+  'pterms.title': 'Platform terms',
+  'pterms.intro':
+    'Owners are asked to accept a version from the day it is published. From its effective date, their admin is read-only until one owner of the store accepts.',
+  'pterms.version': 'Version',
+  'pterms.effectiveAt': 'Takes effect',
+  'pterms.url': 'Address of the published text',
+  'pterms.sha256': 'SHA-256 of the text',
+  'pterms.sha256Hint':
+    'Optional: left empty, the page is read and hashed now. It must be on our own site.',
+  'pterms.accepted': 'Stores accepted',
+  'pterms.publish': 'Publish version',
+  'pterms.published': 'Version {version} is published. Owners see it now.',
+  'pterms.none': 'No version published yet.',
 } as const;

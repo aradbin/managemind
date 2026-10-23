@@ -178,6 +178,7 @@ export const en = {
   'staff.expiresHeader': 'Expires',
   'platform.title': 'Platform',
   'platform.dashboard': 'Dashboard',
+  'platform.terms': 'Terms',
   'platform.tenants': 'Stores',
   'platform.staff': 'Platform staff',
   'platform.audit': 'Audit log',
