@@ -1,6 +1,7 @@
-// Platform: one store (phase-1-plan §5.4, §7.3). Registry data, addresses,
-// owners; super admins suspend and reactivate; support staff open the
-// store for a limited time, and its owners are told why.
+// Platform: one store (phase-1-plan §5.4, §7.3, phase-5b-plan §7). Registry
+// data, addresses, owners, the setup checklist and the plan; super admins
+// suspend and reactivate (with why), close and reopen; support staff open
+// the store for a limited time, and its owners are told why.
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
@@ -17,10 +18,12 @@ import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useLocale } from '../../i18n';
+import '../../i18n/launch';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
 import { switchStore } from '../../lib/store';
 import { StatusBadge } from './status';
+import { CloseOrReopen, SetupSection, SubscriptionSection } from './tenant-launch';
 
 const route = getRouteApi('/_shell/platform/tenants/$id');
 
@@ -52,13 +55,40 @@ export function TenantPage() {
         <>
           <PageHeader
             title={tenant.data.name}
-            actions={me.user.platformRole === 'super_admin' && <Lifecycle tenant={tenant.data} />}
+            actions={
+              me.user.platformRole === 'super_admin' && (
+                <div className="flex flex-wrap gap-2">
+                  <Lifecycle tenant={tenant.data} />
+                  <CloseOrReopen tenant={tenant.data} />
+                </div>
+              )
+            }
           />
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
             <dt className="text-muted-foreground">{t('tenants.status')}</dt>
             <dd>
               <StatusBadge status={tenant.data.status} />
             </dd>
+            {tenant.data.statusReason && (
+              <>
+                <dt className="text-muted-foreground">{t('tenant.statusReason')}</dt>
+                <dd>{t(`reason.${tenant.data.statusReason}`)}</dd>
+              </>
+            )}
+            {tenant.data.closedAt && (
+              <>
+                <dt className="text-muted-foreground">{t('tenant.closedAt')}</dt>
+                <dd>{formatDateTime(locale, new Date(tenant.data.closedAt))}</dd>
+              </>
+            )}
+            {tenant.data.purgeAfter && (
+              <>
+                <dt className="text-muted-foreground">{t('tenant.purgeAfter')}</dt>
+                <dd>{formatDateTime(locale, new Date(tenant.data.purgeAfter))}</dd>
+              </>
+            )}
+            <dt className="text-muted-foreground">{t('tenant.kind')}</dt>
+            <dd>{t(`kind.${tenant.data.kind}`)}</dd>
             <dt className="text-muted-foreground">{t('tenants.slug')}</dt>
             <dd lang="en">{tenant.data.slug}</dd>
             <dt className="text-muted-foreground">{t('tenants.plan')}</dt>
@@ -70,6 +100,11 @@ export function TenantPage() {
             <dt className="text-muted-foreground">{t('tenant.members')}</dt>
             <dd>{tenant.data.memberCount}</dd>
           </dl>
+          <SetupSection tenantId={tenant.data.id} />
+          <SubscriptionSection
+            tenant={tenant.data}
+            superAdmin={me.user.platformRole === 'super_admin'}
+          />
           {tenant.data.domains.length > 0 && (
             <section aria-labelledby="domains-h" className="flex flex-col gap-2">
               <h2 id="domains-h" className="text-lg font-semibold">
@@ -119,6 +154,7 @@ function Lifecycle({ tenant }: { tenant: Tenant }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
+  const [category, setCategory] = useState<'abuse' | 'client_request' | 'other'>('other');
   const suspending = tenant.status === 'active';
   const change = useMutation({
     mutationFn: async () => {
@@ -128,7 +164,7 @@ function Lifecycle({ tenant }: { tenant: Tenant }) {
         ? unwrap(
             await api.POST('/v1/platform/tenants/{id}/suspend', {
               params,
-              body: { reason: reason.trim() },
+              body: { reason: reason.trim(), category },
             }),
           )
         : unwrap(await api.POST('/v1/platform/tenants/{id}/reactivate', { params, body }));
@@ -164,6 +200,26 @@ function Lifecycle({ tenant }: { tenant: Tenant }) {
         onConfirm={() => change.mutate()}
       >
         {suspending && <p>{t('tenant.suspendBody')}</p>}
+        {suspending && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="lifecycle-category" className="text-sm font-medium">
+              {t('tenant.category')}
+            </label>
+            <select
+              id="lifecycle-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as typeof category)}
+              className="min-h-11 rounded-md border border-border bg-background px-3 text-base"
+            >
+              {/* Overdue suspensions come from billing (phase-5b-plan §3.8). */}
+              {(['abuse', 'client_request', 'other'] as const).map((r) => (
+                <option key={r} value={r}>
+                  {t(`reason.${r}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="lifecycle-reason" className="text-sm font-medium">
             {t('tenant.reason')}

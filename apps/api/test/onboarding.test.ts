@@ -43,10 +43,14 @@ describe('onboarding through the platform screen', () => {
     const slug = unique();
     const check = async (s: string) =>
       (await (await admin.get(`/api/platform/tenants/slug-check?slug=${s}`)).json()) as Json;
-    expect(await check(slug)).toEqual({ available: true, reason: null });
-    expect(await check('admin')).toEqual({ available: false, reason: 'slug_reserved' });
-    expect(await check('demo-fashion')).toEqual({ available: false, reason: 'slug_taken' });
-    expect(await check('a')).toEqual({ available: false, reason: 'invalid' });
+    expect(await check(slug)).toEqual({
+      available: true,
+      reason: null,
+      host: `${slug}.stores.example.test`,
+    });
+    expect(await check('admin')).toEqual({ available: false, reason: 'slug_reserved', host: null });
+    expect(await check('demo-fashion')).toMatchObject({ available: false, reason: 'slug_taken' });
+    expect(await check('a')).toEqual({ available: false, reason: 'invalid', host: null });
   });
 
   it('creates a store with its plan and preset, and emails the owner', async () => {

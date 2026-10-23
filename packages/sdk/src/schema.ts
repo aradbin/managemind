@@ -9860,6 +9860,7 @@ export interface paths {
                             available: boolean;
                             /** @enum {string|null} */
                             reason: "slug_taken" | "slug_reserved" | "invalid" | null;
+                            host: string | null;
                         };
                     };
                 };

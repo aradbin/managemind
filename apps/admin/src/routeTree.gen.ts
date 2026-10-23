@@ -61,6 +61,7 @@ import { Route as ShellCatalogCollectionsIdRouteImport } from './routes/_shell/c
 import { Route as ShellOnlineStorePagesIndexRouteImport } from './routes/_shell/online-store/pages/index'
 import { Route as ShellOnlineStorePagesIdRouteImport } from './routes/_shell/online-store/pages/$id'
 import { Route as ShellPlatformTenantsIdRouteImport } from './routes/_shell/platform/tenants.$id'
+import { Route as ShellPlatformTenantsNewRouteImport } from './routes/_shell/platform/tenants.new'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -326,6 +327,11 @@ const ShellPlatformTenantsIdRoute = ShellPlatformTenantsIdRouteImport.update({
   path: '/tenants/$id',
   getParentRoute: () => ShellPlatformRoute,
 } as any)
+const ShellPlatformTenantsNewRoute = ShellPlatformTenantsNewRouteImport.update({
+  id: '/tenants/new',
+  path: '/tenants/new',
+  getParentRoute: () => ShellPlatformRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
+  '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
 }
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
+  '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections': typeof ShellCatalogCollectionsIndexRoute
   '/online-store/pages': typeof ShellOnlineStorePagesIndexRoute
 }
@@ -484,6 +492,7 @@ export interface FileRoutesById {
   '/_shell/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/_shell/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
+  '/_shell/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/_shell/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/_shell/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
 }
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
     | '/platform/tenants/$id'
+    | '/platform/tenants/new'
     | '/catalog/collections/'
     | '/online-store/pages/'
   fileRoutesByTo: FileRoutesByTo
@@ -591,6 +601,7 @@ export interface FileRouteTypes {
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
     | '/platform/tenants/$id'
+    | '/platform/tenants/new'
     | '/catalog/collections'
     | '/online-store/pages'
   id:
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/_shell/catalog/collections/$id'
     | '/_shell/online-store/pages/$id'
     | '/_shell/platform/tenants/$id'
+    | '/_shell/platform/tenants/new'
     | '/_shell/catalog/collections/'
     | '/_shell/online-store/pages/'
   fileRoutesById: FileRoutesById
@@ -1023,6 +1035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPlatformTenantsIdRouteImport
       parentRoute: typeof ShellPlatformRoute
     }
+    '/_shell/platform/tenants/new': {
+      id: '/_shell/platform/tenants/new'
+      path: '/tenants/new'
+      fullPath: '/platform/tenants/new'
+      preLoaderRoute: typeof ShellPlatformTenantsNewRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
   }
 }
 
@@ -1031,6 +1050,7 @@ interface ShellPlatformRouteChildren {
   ShellPlatformStaffRoute: typeof ShellPlatformStaffRoute
   ShellPlatformIndexRoute: typeof ShellPlatformIndexRoute
   ShellPlatformTenantsIdRoute: typeof ShellPlatformTenantsIdRoute
+  ShellPlatformTenantsNewRoute: typeof ShellPlatformTenantsNewRoute
 }
 
 const ShellPlatformRouteChildren: ShellPlatformRouteChildren = {
@@ -1038,6 +1058,7 @@ const ShellPlatformRouteChildren: ShellPlatformRouteChildren = {
   ShellPlatformStaffRoute: ShellPlatformStaffRoute,
   ShellPlatformIndexRoute: ShellPlatformIndexRoute,
   ShellPlatformTenantsIdRoute: ShellPlatformTenantsIdRoute,
+  ShellPlatformTenantsNewRoute: ShellPlatformTenantsNewRoute,
 }
 
 const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(

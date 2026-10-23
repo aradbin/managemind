@@ -192,6 +192,8 @@ export const PLATFORM_ROUTES = {
       z.object({
         available: z.boolean(),
         reason: z.enum(['slug_taken', 'slug_reserved', 'invalid']).nullable(),
+        /** The store's address once created. */
+        host: z.string().nullable(),
       }),
       'Availability',
     ),
@@ -448,6 +450,7 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
         {
           available: false,
           reason: checked.code === 'reserved' ? ('slug_reserved' as const) : ('invalid' as const),
+          host: null,
         },
         200,
       );
@@ -456,7 +459,14 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       listTenants(tx, c.var.staff.actor, { q: checked.slug, limit: 100 }),
     );
     const taken = found.some((t) => t.slug === checked.slug);
-    return c.json({ available: !taken, reason: taken ? ('slug_taken' as const) : null }, 200);
+    return c.json(
+      {
+        available: !taken,
+        reason: taken ? ('slug_taken' as const) : null,
+        host: `${checked.slug}.${c.var.config.STORE_DOMAIN}`,
+      },
+      200,
+    );
   });
   platform.openapi(R.tenant, async (c) => {
     const { id } = c.req.valid('param');
