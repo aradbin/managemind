@@ -173,6 +173,7 @@ export const bn: Record<keyof typeof en, string> = {
   'role.viewer.hint': 'দেখতে পারেন, কিন্তু কিছু বদলাতে বা ক্রেতাদের তথ্য দেখতে পারেন না।',
   'staff.expiresHeader': 'মেয়াদ শেষ',
   'platform.title': 'প্ল্যাটফর্ম',
+  'platform.dashboard': 'ড্যাশবোর্ড',
   'platform.tenants': 'দোকান',
   'platform.staff': 'প্ল্যাটফর্ম স্টাফ',
   'platform.audit': 'অডিট লগ',

@@ -19,13 +19,13 @@ afterAll(() => Promise.all([owner.end(), app.end()]));
 let seq = 0;
 const unique = () => `n${Date.now().toString(36)}${seq++}`;
 
-async function platformUser(role: 'support' | 'super_admin') {
+async function platformUser(role: 'support' | 'super_admin', env = makeEnv()) {
   const email = `${unique()}@example.test`;
   await owner.query(
     `insert into platform.users (name, email, email_verified, platform_role) values ('Platform', $1, true, $2)`,
     [email, role],
   );
-  const b = browser(makeEnv());
+  const b = browser(env);
   expect((await signIn(b, owner, email)).status).toBe(200);
   const uri = await enrollAuthenticator(b);
   return Object.assign(b, { email, code: () => totp(uri) });
@@ -194,5 +194,36 @@ describe("the owner's setup checklist", () => {
     ).toBe(200);
     const next = (await (await b.get('/v1/admin/setup')).json()) as Json;
     expect(item(next, 'domain').done).toBe(true);
+  });
+});
+
+describe('platform dashboard', () => {
+  it("shows stores, sales and this morning's free-tier numbers to support", async () => {
+    const env = makeEnv();
+    const support = await platformUser('support', env);
+    const before = (await (await support.get('/api/platform/dashboard')).json()) as Json;
+    expect(before.freeTier).toBeNull();
+    expect(before.stores.active).toBeGreaterThan(0);
+    await env.FILES.put(
+      'platform/usage/latest.json',
+      JSON.stringify({
+        generatedAt: '2026-10-23T02:07:00Z',
+        limits: [
+          {
+            name: 'Hyperdrive queries, last 24 hours',
+            used: 80_000,
+            limit: 100_000,
+            unit: '',
+            share: 0.8,
+          },
+        ],
+        deadLetters: { outbox: 0, imports: 2 },
+        alarms: 1,
+      }),
+    );
+    const after = (await (await support.get('/api/platform/dashboard')).json()) as Json;
+    expect(after.freeTier).toMatchObject({ alarms: 1, deadLetters: { imports: 2 } });
+    expect(after.freeTier.limits[0].share).toBe(0.8);
+    expect((await browser(makeEnv()).get('/api/platform/dashboard')).status).toBe(401);
   });
 });

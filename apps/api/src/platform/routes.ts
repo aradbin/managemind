@@ -17,6 +17,7 @@ import {
   listPlatformAudit,
   listPlatformStaff,
   listTenants,
+  platformDashboard,
   readStoreHealth,
   refreshStoreHealth,
   reopenTenant,
@@ -31,6 +32,7 @@ import {
 import { supportAccessEmail, welcomeOwnerEmail } from '@managemind/providers/email';
 import { AppError, checkSlug, PLATFORM_ROLES } from '@managemind/shared';
 import {
+  dhakaDate,
   entitlementOverride,
   entitlements,
   SUSPENSION_REASONS,
@@ -253,6 +255,66 @@ export const PLATFORM_ROUTES = {
     request: { params: Id },
     responses: json(Health, 'Health'),
   }),
+  dashboard: r({
+    method: 'get',
+    path: '/dashboard',
+    summary:
+      'Stores, sales, use per store, money, and the free-tier numbers of this morning (support)',
+    responses: json(
+      z
+        .object({
+          stores: z.object({
+            active: z.number().int(),
+            suspended: z.number().int(),
+            closed: z.number().int(),
+            inSetup: z.number().int(),
+          }),
+          sales: z.object({
+            yesterday: z.object({ orders: z.number().int(), total: z.number().int() }),
+            month: z.object({ orders: z.number().int(), total: z.number().int() }),
+            days: z.array(
+              z.object({ day: z.string(), orders: z.number().int(), total: z.number().int() }),
+            ),
+          }),
+          perStore: z.array(
+            z.object({
+              tenantId: z.uuid(),
+              slug: z.string(),
+              name: z.string(),
+              products: z.number().int(),
+              ordersThisMonth: z.number().int(),
+              emailsThisMonth: z.number().int(),
+              storageBytes: z.number().int(),
+              customDomains: z.number().int(),
+            }),
+          ),
+          money: z.object({
+            overdue: z.object({ count: z.number().int(), total: z.number().int() }),
+            dueThisWeek: z.object({ count: z.number().int(), total: z.number().int() }),
+            paidThisMonth: z.number().int(),
+          }),
+          /** The daily usage alarm's numbers (scripts/monitor/usage.ts), or null before its first run. */
+          freeTier: z
+            .object({
+              generatedAt: z.string(),
+              limits: z.array(
+                z.object({
+                  name: z.string(),
+                  used: z.number(),
+                  limit: z.number(),
+                  unit: z.string(),
+                  share: z.number(),
+                }),
+              ),
+              deadLetters: z.record(z.string(), z.number().nullable()),
+              alarms: z.number().int(),
+            })
+            .nullable(),
+        })
+        .openapi('PlatformDashboard'),
+      'Dashboard',
+    ),
+  }),
   plans: r({
     method: 'get',
     path: '/plans',
@@ -376,6 +438,10 @@ export const PLATFORM_ROUTES = {
     ),
   }),
 } as const;
+
+/** Written by the daily usage alarm (scripts/monitor/usage.ts). */
+const USAGE_FILE = 'platform/usage/latest.json';
+type FreeTierLimit = { name: string; used: number; limit: number; unit: string; share: number };
 
 const requireSuperAdmin = (c: Context<StaffEnv>) => {
   if (c.var.staff.actor.platformRole !== 'super_admin') throw new AppError('forbidden');
@@ -535,6 +601,26 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
   platform.openapi(R.refreshHealth, async (c) => {
     const { id } = c.req.valid('param');
     return c.json(await refreshStoreHealth(c.var.staff.client, c.var.staff.actor, id), 200);
+  });
+  platform.openapi(R.dashboard, async (c) => {
+    const today = dhakaDate(new Date());
+    const data = await withPlatform(c.var.staff.client, (tx) =>
+      platformDashboard(tx, c.var.staff.actor, today),
+    );
+    // As of this morning's alarm run: no query, and the alarm stays the source (Q12).
+    const file = await c.env.FILES.get(USAGE_FILE).catch(() => null);
+    const raw = file
+      ? ((await file.json().catch(() => null)) as Record<string, unknown> | null)
+      : null;
+    const freeTier = raw
+      ? {
+          generatedAt: String(raw.generatedAt ?? ''),
+          limits: Array.isArray(raw.limits) ? (raw.limits as FreeTierLimit[]) : [],
+          deadLetters: (raw.deadLetters as Record<string, number | null> | undefined) ?? {},
+          alarms: Number(raw.alarms ?? 0),
+        }
+      : null;
+    return c.json({ ...data, freeTier }, 200);
   });
   platform.openapi(R.plans, async (c) =>
     c.json(await withPlatform(c.var.staff.client, (tx) => listPlans(tx, c.var.staff.actor)), 200),

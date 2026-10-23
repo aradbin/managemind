@@ -183,6 +183,33 @@ export class Cloudflare {
   }
 
   /** Returns the namespace ID, creating the namespace if needed. */
+  /** Writes one JSON object to an R2 bucket (as `wrangler r2 object put` does). */
+  async r2PutJson(bucket: string, key: string, value: unknown): Promise<void> {
+    await this.api.request(
+      'PUT',
+      `${this.account}/r2/buckets/${bucket}/objects/${key.split('/').map(encodeURIComponent).join('/')}`,
+      value,
+    );
+  }
+
+  /** Messages waiting in a queue, as of its latest sample in the last day (GraphQL Analytics). */
+  async queueBacklog(queueId: string): Promise<number> {
+    const now = new Date();
+    const data = await this.analytics<{
+      viewer: { accounts: { backlog: { avg: { messages: number } }[] }[] };
+    }>(
+      `query($acct: String!, $since: Time!, $until: Time!, $queue: String!) { viewer { accounts(filter: {accountTag: $acct}) {
+    backlog: queueBacklogAdaptiveGroups(limit: 1, filter: {queueId: $queue, datetime_geq: $since, datetime_leq: $until}, orderBy: [datetimeMinute_DESC]) { avg { messages } dimensions { datetimeMinute } }
+  } } }`,
+      {
+        since: new Date(now.getTime() - 86_400_000).toISOString(),
+        until: now.toISOString(),
+        queue: queueId,
+      },
+    );
+    return Math.round(data.viewer.accounts[0]?.backlog[0]?.avg.messages ?? 0);
+  }
+
   async ensureKvNamespace(title: string): Promise<string> {
     const namespaces = await this.get<{ id: string; title: string }[]>(
       '/storage/kv/namespaces?per_page=100',

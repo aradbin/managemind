@@ -19,6 +19,7 @@ import { eq } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
+import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import { type Keyring, openCredentials, sealCredentials } from './crypto';
 
@@ -141,6 +142,11 @@ export async function saveCredentials(
     // Never the secrets: who changed which provider, in which mode.
     after: { kind, provider, mode, hint: row.hint },
   });
+  await emit(tx, 'credentials.changed', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { kind },
+  });
   return {
     kind,
     provider,
@@ -170,6 +176,11 @@ export async function removeCredentials(
     action: 'credentials.removed',
     entityType: 'provider_credentials',
     before: { kind, provider: row.provider, mode: row.mode },
+  });
+  await emit(tx, 'credentials.changed', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { kind },
   });
 }
 

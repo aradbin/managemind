@@ -42,6 +42,8 @@ export const EVENTS = {
   'invoice.issued': z.object({ invoiceId: z.uuid(), number: z.string(), total: z.number().int() }),
   'invoice.paid': z.object({ invoiceId: z.uuid(), number: z.string() }),
   'customer.anonymized': z.object({}),
+  /** A store's gateway, SMS or email key was saved or removed: its health is checked again. */
+  'credentials.changed': z.object({ kind: z.enum(['sslcommerz', 'sms', 'email']) }),
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),

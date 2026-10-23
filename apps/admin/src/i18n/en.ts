@@ -177,6 +177,7 @@ export const en = {
   'role.viewer.hint': 'Can look, but can’t change anything or see customers.',
   'staff.expiresHeader': 'Expires',
   'platform.title': 'Platform',
+  'platform.dashboard': 'Dashboard',
   'platform.tenants': 'Stores',
   'platform.staff': 'Platform staff',
   'platform.audit': 'Audit log',

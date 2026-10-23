@@ -10179,6 +10179,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stores, sales, use per store, money, and the free-tier numbers of this morning (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Dashboard */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformDashboard"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/plans": {
         parameters: {
             query?: never;
@@ -13483,6 +13519,65 @@ export interface components {
                 [key: string]: unknown;
             };
         } | null;
+        PlatformDashboard: {
+            stores: {
+                active: number;
+                suspended: number;
+                closed: number;
+                inSetup: number;
+            };
+            sales: {
+                yesterday: {
+                    orders: number;
+                    total: number;
+                };
+                month: {
+                    orders: number;
+                    total: number;
+                };
+                days: {
+                    day: string;
+                    orders: number;
+                    total: number;
+                }[];
+            };
+            perStore: {
+                /** Format: uuid */
+                tenantId: string;
+                slug: string;
+                name: string;
+                products: number;
+                ordersThisMonth: number;
+                emailsThisMonth: number;
+                storageBytes: number;
+                customDomains: number;
+            }[];
+            money: {
+                overdue: {
+                    count: number;
+                    total: number;
+                };
+                dueThisWeek: {
+                    count: number;
+                    total: number;
+                };
+                paidThisMonth: number;
+            };
+            freeTier: {
+                generatedAt: string;
+                limits: {
+                    name: string;
+                    used: number;
+                    limit: number;
+                    unit: string;
+                    share: number;
+                }[];
+                deadLetters: {
+                    [key: string]: number | null;
+                };
+                alarms: number;
+            } | null;
+        };
         Plan: {
             /** Format: uuid */
             id: string;

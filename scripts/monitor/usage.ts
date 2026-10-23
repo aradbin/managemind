@@ -17,7 +17,11 @@
 //   Only judged on at least 200 requests a day: below that, p99 is the
 //   slowest single request, usually a cold start;
 // - any free-plan limit above 70% (PLAN.md growth table).
-import { notice, parseArgs, requireEnv } from '../lib/actions';
+//
+// The numbers also go to R2 as platform/usage/latest.json, which the
+// platform dashboard reads (phase-5b-plan §3.3, Q12): as of this morning, at
+// no query cost, and the alarm stays their single source.
+import { notice, parseArgs, requireEnv, warning } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { apiClient } from '../lib/http';
 import { Neon } from '../lib/neon';
@@ -40,6 +44,8 @@ const neon = new Neon(requireEnv('NEON_API_KEY'), requireEnv('NEON_PROJECT_ID'))
 const to = Date.now();
 const from = to - DAY;
 const checks: Check[] = [];
+/** The free-plan numbers, for the platform dashboard. */
+const limits: { name: string; used: number; limit: number; unit: string; share: number }[] = [];
 
 /** Runs one group of checks; a group that cannot run is itself an alarm. */
 async function section(name: string, fn: () => Promise<void>): Promise<void> {
@@ -165,8 +171,34 @@ if (parseArgs(process.argv.slice(2)).has('test')) {
   checks.push({ check: 'Test alarm (manual run)', value: 'forced', limit: '—', alarm: true });
 }
 
+// Dead letters, for the dashboard: messages that failed every retry.
+// Not an alarm: a count that can't be read shows as unknown.
+const deadLetters: Record<string, number | null> = {};
+for (const [name, queue] of [
+  ['outbox', 'managemind-outbox-dlq'],
+  ['imports', 'managemind-imports-dlq'],
+] as const) {
+  deadLetters[name] = await cf
+    .queueId(queue)
+    .then((id) => cf.queueBacklog(id))
+    .catch(() => null);
+}
+
 // Report.
 const alarms = checks.filter((c) => c.alarm);
+try {
+  await cf.r2PutJson('managemind-files', 'platform/usage/latest.json', {
+    generatedAt: new Date(to).toISOString(),
+    window: { from: new Date(from).toISOString(), to: new Date(to).toISOString() },
+    limits,
+    deadLetters,
+    checks,
+    alarms: alarms.length,
+  });
+} catch (e) {
+  // The dashboard shows an older file; the alarm itself still runs.
+  warning(`could not write platform/usage/latest.json: ${(e as Error).message}`);
+}
 const table = [
   '| | Check | Value | Limit |',
   '| --- | --- | --- | --- |',
@@ -189,6 +221,7 @@ if (alarms.length === 0) {
 }
 
 function share(check: string, used: number, limit: number, unit: string): Check {
+  limits.push({ name: check, used, limit, unit: unit.trim(), share: used / limit });
   const round = (n: number) => (Number.isInteger(n) ? n.toLocaleString('en') : n.toFixed(1));
   return {
     check,
