@@ -1,5 +1,12 @@
 # Checks every pull request and every push to master (phase-0-plan §8).
 # Preview uploads and the Playwright smoke test join the build job in PR 17.
+#
+# Actions minutes (phase-5b-plan Q10): the repository is private on a free
+# account, with 2,000 minutes a month for every workflow. So a change to
+# docs only skips the checks (the jobs still pass, for branch protection),
+# and turbo's cache is kept between runs for a week, so a package whose
+# inputs didn't change isn't typechecked and tested again. Each week starts
+# from an empty cache.
 name: CI
 
 on:
@@ -44,15 +51,49 @@ jobs:
       TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/managemind_test
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # The commit and its first parent: on a PR, the merge commit and the base.
+          fetch-depth: 2
+      - name: Docs only?
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # A push of more than one commit (never through a PR) is checked in full.
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$BEFORE" != "$(git rev-parse HEAD^1)" ]; then
+            echo "docs=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          docs=true
+          for f in $(git diff --name-only HEAD^1 HEAD); do
+            case "$f" in docs/*|*.md) ;; *) docs=false ;; esac
+          done
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
+          [ "$docs" = true ] && echo "::notice::Only docs changed: the checks are skipped." || true
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.changes.outputs.docs != 'true'
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        if: steps.changes.outputs.docs != 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: steps.changes.outputs.docs != 'true'
+      - name: Week of the turbo cache
+        if: steps.changes.outputs.docs != 'true'
+        run: echo "TURBO_WEEK=$(date -u +%G-W%V)" >> "$GITHUB_ENV"
+      # A PR reads the newest cache of its own branch, else master's; master
+      # never reads a PR's. Renovate pins the digest (helpers:pinGitHubActionDigests).
+      - uses: actions/cache@v4
+        if: steps.changes.outputs.docs != 'true'
+        with:
+          path: .turbo/cache
+          key: turbo-check-${{ runner.os }}-${{ env.TURBO_WEEK }}-${{ github.sha }}
+          restore-keys: turbo-check-${{ runner.os }}-${{ env.TURBO_WEEK }}-
       - name: Lint and format (Biome)
+        if: steps.changes.outputs.docs != 'true'
         run: pnpm exec biome ci .
       - name: Migrations match the schema
+        if: steps.changes.outputs.docs != 'true'
         run: |
           pnpm --filter @managemind/db exec drizzle-kit check
           pnpm --filter @managemind/db exec drizzle-kit generate
@@ -62,6 +103,7 @@ jobs:
             exit 1
           fi
       - name: SDK matches the API
+        if: steps.changes.outputs.docs != 'true'
         run: |
           pnpm --filter @managemind/sdk generate
           if [ -n "$(git status --porcelain packages/sdk/src)" ]; then
@@ -70,8 +112,10 @@ jobs:
             exit 1
           fi
       - name: Typecheck and test (unit, integration, isolation)
+        if: steps.changes.outputs.docs != 'true'
         run: pnpm turbo run typecheck test
       - name: Dependency audit
+        if: steps.changes.outputs.docs != 'true'
         run: pnpm audit --audit-level high
 
   build:
@@ -80,12 +124,35 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          # The commit and its first parent: on a PR, the merge commit and the base.
+          fetch-depth: 2
+      - name: Docs only?
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          # A push of more than one commit (never through a PR) is checked in full.
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$BEFORE" != "$(git rev-parse HEAD^1)" ]; then
+            echo "docs=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          docs=true
+          for f in $(git diff --name-only HEAD^1 HEAD); do
+            case "$f" in docs/*|*.md) ;; *) docs=false ;; esac
+          done
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
+          [ "$docs" = true ] && echo "::notice::Only docs changed: the checks are skipped." || true
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: steps.changes.outputs.docs != 'true'
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        if: steps.changes.outputs.docs != 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+        if: steps.changes.outputs.docs != 'true'
       - run: pnpm turbo run build --filter=./apps/*
+        if: steps.changes.outputs.docs != 'true'
       - name: Bundle size (Workers 3 MiB gzip; admin initial JS 150 KiB gzip)
+        if: steps.changes.outputs.docs != 'true'
         run: node scripts/bundle-size.mjs apps/api apps/storefront apps/admin

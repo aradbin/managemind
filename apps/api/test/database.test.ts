@@ -2,6 +2,7 @@ import { slugFromHost } from '@managemind/core';
 import { connect, inTenant, TENANT_A, TENANT_B } from '@managemind/db/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
+import { connectionString } from '../src/db';
 import { checkInventoryDrift, handleQueue, runDailyJobs } from '../src/jobs';
 import { makeCtx, makeEnv, ownerUrl } from './support';
 
@@ -17,6 +18,23 @@ describe('GET /health/deep', () => {
     const res = await call('/health/deep');
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ status: 'ok' });
+  });
+
+  it('connects with DATABASE_URL when Hyperdrive is not bound, as previews do', async () => {
+    const { HYPERDRIVE, ...rest } = makeEnv();
+    const env = { ...rest, DATABASE_URL: HYPERDRIVE?.connectionString ?? '' };
+    const res = await call('/health/deep', {}, env);
+    expect(res.status).toBe(200);
+  });
+
+  it('prefers Hyperdrive when both are set', () => {
+    expect(
+      connectionString({
+        HYPERDRIVE: { connectionString: 'postgres://hd' } as unknown as Hyperdrive,
+        DATABASE_URL: 'postgres://direct',
+      }),
+    ).toBe('postgres://hd');
+    expect(() => connectionString({})).toThrow(/no database/);
   });
 
   it('reports 503 when the database is unreachable', async () => {

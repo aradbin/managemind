@@ -3,9 +3,14 @@
 // requests land on warm isolates: GET /v1/admin/me, PATCH /v1/admin/store,
 // and Phase 2's product list, product read, product save and bulk price
 // edit on a product with 6 variants. Then reads CPU time per route from
-// Workers Logs since --since, which covers the E2E's sign-ins and its
-// imports: queue invocations (the import chunks) get their own rows. Writes
-// a table to the step summary; it never fails a run.
+// Workers Logs since --since. Writes a table to the step summary; it never
+// fails a run.
+//
+// Since Oct 23 (ADR 0011, amended) the E2E runs on a Worker that connects to
+// Neon directly, and the API is deployed again bound to Hyperdrive just
+// before this step, with --since at that deploy: only this step's own
+// requests are measured, on production's connection path. The E2E's import
+// chunks are no longer in the table.
 //
 // Phase 3 (phase-3-plan §9) adds the storefront: a burst of each page type
 // on the demo store. Previews never cache pages, so every one is a miss:
@@ -22,7 +27,7 @@ import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
 import { sleep } from '../lib/http';
-import { apiWorker, importQueue, storefrontWorker } from './names';
+import { apiWorker, storefrontWorker } from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
@@ -299,7 +304,6 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
   { trigger: 'GET /v1/admin/products/REDACTED', label: 'GET /v1/admin/products/{id}' },
   { trigger: 'PATCH /v1/admin/products/REDACTED', label: 'PATCH /v1/admin/products/{id} (save)' },
   { trigger: 'PATCH /v1/admin/variants', label: 'PATCH /v1/admin/variants (bulk, 6)' },
-  { trigger: importQueue(pr), label: 'Import chunk (queue, up to 10 products)' },
   {
     trigger: 'POST /api/auth/email-otp/send-verification-otp',
     label: 'POST /api/auth/email-otp/send-verification-otp',
