@@ -13,6 +13,7 @@ import {
   createCollection,
   createCustomer,
   createImportJob,
+  createManualInvoice,
   createPage,
   createProduct,
   createPromotion,
@@ -23,14 +24,17 @@ import {
   listLocations,
   placeOrder,
   receive,
+  setIssuer,
   systemActor,
   transitionTenant,
+  withPlatform,
   withTenant,
 } from '@managemind/core';
 import { createDb } from '@managemind/db';
 import { connect } from '@managemind/db/testing';
 import { pendingHostnames } from '@managemind/providers/hostnames';
 import { permissionsOf } from '@managemind/shared';
+import { dhakaDate } from '@managemind/shared/billing';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -332,6 +336,29 @@ describe('isolation suite', () => {
       ),
     );
 
+    // Store B's invoice from us (Phase 5B), issued so its owner could see it.
+    await withPlatform(app, (tx) =>
+      setIssuer(tx, systemActor, {
+        legalName: 'managemind Ltd',
+        address: 'Gulshan, Dhaka',
+        vatRateBp: null,
+        bank: { name: 'City Bank', accountName: 'managemind Ltd', accountNumber: '0001' },
+        bkash: '01700000000',
+      }),
+    );
+    const bInvoice = await createManualInvoice(
+      app,
+      systemActor,
+      b.id,
+      {
+        lines: [
+          { kind: 'plan', description: { bn: 'প্ল্যান', en: 'Plan' }, quantity: 1, unitPrice: 100 },
+        ],
+        issueNow: true,
+      },
+      { today: dhakaDate(new Date()) },
+    );
+
     // Store B's orders, shipments, customers, zones and blocklist (Phase 4).
     const live = await inB((tx) =>
       createProduct(tx, bOwner, {
@@ -539,6 +566,8 @@ describe('isolation suite', () => {
       'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
       'POST /v1/admin/messages/{id}/resend': { id: bMessage },
       'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
+      'GET /v1/admin/billing/invoices/{id}': { id: bInvoice },
+      'POST /v1/admin/billing/invoices/{id}/pay': { id: bInvoice },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

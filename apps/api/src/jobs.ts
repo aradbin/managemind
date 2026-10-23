@@ -6,6 +6,7 @@ import {
   type OutboxEvent,
   processImportChunk,
   relayEvents,
+  runBilling,
   runDailyRollup,
   withTenant,
   writeStoreHealth,
@@ -15,6 +16,7 @@ import { dhakaDate } from '@managemind/shared/billing';
 import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
+import { billingEmails, sendsBillingEmail } from './billing';
 import { queueSink, withClient } from './db';
 import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
@@ -71,6 +73,16 @@ export async function handleQueue(
         tenant_id: message.body.tenantId,
         error: String(e),
       });
+      unsent.add(message.body.id);
+    }
+  }
+  // Our invoices and their reminders, to the owners (phase-5b-plan §3.7, §3.8).
+  for (const message of batch.messages) {
+    if (!sendsBillingEmail(message.body)) continue;
+    try {
+      await billingEmails(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'billing email will be retried', { event_id: message.body.id, error: String(e) });
       unsent.add(message.body.id);
     }
   }
@@ -327,6 +339,32 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'usage rollup failed', { error: String(e) });
       captureMessage('usage rollup failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Our billing (phase-5b-plan §3.7, §3.8): drafts on billing days, drafts
+    // issued after review, reminders and the suspension at +14.
+    try {
+      const billing = await runBilling(client, dhakaDate(new Date()), new Date(), {
+        afterCommit: async (events) => {
+          await relayEvents(client, events, queueSink(env.OUTBOX));
+        },
+      });
+      log(billing.failed.length ? 'error' : 'info', 'billing run', {
+        drafted: billing.drafted,
+        issued: billing.issued,
+        reminders: billing.reminders.length,
+        suspended: billing.suspended.length,
+        skipped: billing.skipped.length,
+        failed: billing.failed.length,
+      });
+      if (billing.failed.length || billing.skipped.length) {
+        captureMessage('billing run needs attention', {
+          level: billing.failed.length ? 'error' : 'warning',
+          extra: { failed: billing.failed.slice(0, 10), skipped: billing.skipped.length },
+        });
+      }
+    } catch (e) {
+      log('error', 'billing run failed', { error: String(e) });
+      captureMessage('billing run failed', { level: 'error', extra: { error: String(e) } });
     }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);

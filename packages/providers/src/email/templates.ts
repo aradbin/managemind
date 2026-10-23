@@ -129,6 +129,46 @@ const COPY = {
       button: 'Open the admin',
       footer: 'You get this email because {platform} created {store} for you.',
     },
+    invoice: {
+      issued: {
+        subject: 'Invoice {number} from {platform}: {amount}',
+        body: [
+          'Your invoice {number} for {store} is ready: {amount}, due on {due}.',
+          'You can see it, print it and find how to pay in the admin, under Settings → Plan and billing.',
+        ],
+      },
+      due_soon: {
+        subject: 'Invoice {number} is due on {due}',
+        body: ['A reminder: invoice {number} for {store}, {amount}, is due on {due}.'],
+      },
+      due_today: {
+        subject: 'Invoice {number} is due today',
+        body: ['Invoice {number} for {store}, {amount}, is due today.'],
+      },
+      past_due: {
+        subject: 'Invoice {number} is overdue',
+        body: [
+          'Invoice {number} for {store}, {amount}, was due on {due} and is not paid yet.',
+          'If you have paid already, reply with the transaction reference and we will record it.',
+        ],
+      },
+      final_notice: {
+        subject: 'Final notice: {store} will be suspended on {suspend}',
+        body: [
+          'Invoice {number}, {amount}, is still unpaid. If it is not paid by {suspend}, {store} will be suspended: the store will show a maintenance page and the admin will be read-only.',
+          'Paying lifts the suspension at once.',
+        ],
+      },
+      suspend: {
+        subject: '{store} is suspended for an unpaid invoice',
+        body: [
+          '{store} is suspended because invoice {number}, {amount}, is unpaid. Shoppers see a maintenance page.',
+          'Pay from Settings → Plan and billing, and the store opens again at once.',
+        ],
+      },
+      button: 'Open Plan and billing',
+      footer: 'You get this email because you own {store} on {platform}.',
+    },
   },
   bn: {
     shopperSignInCode: {
@@ -178,6 +218,46 @@ const COPY = {
       ],
       button: 'অ্যাডমিন খুলুন',
       footer: '{platform} আপনার জন্য {store} দোকান তৈরি করেছে বলে এই ইমেইল পাচ্ছেন।',
+    },
+    invoice: {
+      issued: {
+        subject: '{platform}-এর ইনভয়েস {number}: {amount}',
+        body: [
+          '{store} দোকানের ইনভয়েস {number} তৈরি: {amount}, শেষ তারিখ {due}।',
+          'অ্যাডমিনের সেটিংস → প্ল্যান ও বিল-এ এটি দেখতে, প্রিন্ট করতে ও কীভাবে টাকা দেবেন তা জানতে পারবেন।',
+        ],
+      },
+      due_soon: {
+        subject: 'ইনভয়েস {number}-এর শেষ তারিখ {due}',
+        body: ['মনে করিয়ে দিচ্ছি: {store} দোকানের ইনভয়েস {number}, {amount}, শেষ তারিখ {due}।'],
+      },
+      due_today: {
+        subject: 'ইনভয়েস {number}-এর শেষ তারিখ আজ',
+        body: ['{store} দোকানের ইনভয়েস {number}, {amount}, আজকের মধ্যে দিতে হবে।'],
+      },
+      past_due: {
+        subject: 'ইনভয়েস {number}-এর মেয়াদ পেরিয়েছে',
+        body: [
+          '{store} দোকানের ইনভয়েস {number}, {amount}, {due}-এর মধ্যে দেওয়ার কথা ছিল, এখনো দেওয়া হয়নি।',
+          'আগেই দিয়ে থাকলে লেনদেনের রেফারেন্সসহ উত্তর দিন, আমরা লিখে রাখব।',
+        ],
+      },
+      final_notice: {
+        subject: 'শেষ নোটিশ: {suspend} তারিখে {store} সাময়িক বন্ধ হবে',
+        body: [
+          'ইনভয়েস {number}, {amount}, এখনো বাকি। {suspend}-এর মধ্যে না দিলে {store} সাময়িক বন্ধ হবে: দোকানে রক্ষণাবেক্ষণের পেজ দেখাবে, আর অ্যাডমিন শুধু দেখার জন্য খোলা থাকবে।',
+          'টাকা দিলেই সঙ্গে সঙ্গে আবার চালু হবে।',
+        ],
+      },
+      suspend: {
+        subject: 'বাকি ইনভয়েসের জন্য {store} সাময়িক বন্ধ',
+        body: [
+          'ইনভয়েস {number}, {amount}, বাকি থাকায় {store} সাময়িক বন্ধ। ক্রেতারা রক্ষণাবেক্ষণের পেজ দেখছেন।',
+          'সেটিংস → প্ল্যান ও বিল থেকে টাকা দিন, দোকান সঙ্গে সঙ্গে আবার খুলবে।',
+        ],
+      },
+      button: 'প্ল্যান ও বিল খুলুন',
+      footer: 'আপনি {platform}-এ {store} দোকানের মালিক বলে এই ইমেইল পাচ্ছেন।',
     },
   },
 } as const satisfies Record<Locale, unknown>;
@@ -361,5 +441,48 @@ export function welcomeOwnerEmail(input: WelcomeOwnerEmail): RenderedEmail {
     button: { label: copy.button, href: input.adminUrl },
     values: { platform: input.platformName, store: input.storeName, storeUrl: input.storeUrl },
     footer: copy.footer,
+  });
+}
+
+export type InvoiceEmailKind =
+  | 'issued'
+  | 'due_soon'
+  | 'due_today'
+  | 'past_due'
+  | 'final_notice'
+  | 'suspend';
+
+export interface InvoiceEmail {
+  kind: InvoiceEmailKind;
+  locale: Locale;
+  platformName: string;
+  storeName: string;
+  number: string;
+  /** Already formatted, e.g. "৳১,৫০০.০০". */
+  amount: string;
+  due: Date;
+  link: string;
+}
+
+/** Our invoice and its reminders, to a store's owners (phase-5b-plan §3.7, §3.8). */
+export function invoiceEmail(input: InvoiceEmail): RenderedEmail {
+  const all = COPY[input.locale].invoice;
+  const copy = all[input.kind];
+  const suspend = new Date(input.due.getTime() + 14 * 86_400_000);
+  const date = (d: Date) => formatDateTime(input.locale, d, { dateStyle: 'long' });
+  return render(copy.subject, {
+    locale: input.locale,
+    platformName: input.platformName,
+    paragraphs: [...copy.body],
+    button: { label: all.button, href: input.link },
+    values: {
+      platform: input.platformName,
+      store: input.storeName,
+      number: input.number,
+      amount: input.amount,
+      due: date(input.due),
+      suspend: date(suspend),
+    },
+    footer: all.footer,
   });
 }

@@ -45,6 +45,7 @@ import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
+import { BILLING_ROUTES, registerBilling } from './billing';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
@@ -156,6 +157,7 @@ export const ADMIN_ROUTES = {
   ...DOMAIN_ROUTES,
   ...ORDER_ROUTES,
   ...RETURN_ROUTES,
+  ...BILLING_ROUTES,
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...MESSAGE_ROUTES,
@@ -550,6 +552,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerDomains(admin);
   registerOrders(admin);
   registerReturns(admin);
+  registerBilling(admin);
   registerReports(admin);
   registerCredentials(admin);
   registerMessages(admin);

@@ -8720,6 +8720,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's plan, this period's use against it, invoices and how to pay (billing.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Billing */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            plan: {
+                                code: string;
+                                name: {
+                                    bn: string;
+                                    en: string;
+                                };
+                                monthlyPrice: number;
+                                /** @enum {string} */
+                                status: "trialing" | "active" | "past_due" | "cancelled";
+                                trialEndsOn: string | null;
+                                billingDay: number;
+                            } | null;
+                            period: {
+                                start: string;
+                                end: string;
+                            };
+                            meters: {
+                                /** @enum {string} */
+                                name: "products" | "staff" | "ordersPerMonth" | "emailsPerMonth" | "storageMb" | "customDomains";
+                                used: number;
+                                limit: number | null;
+                                /** @enum {string} */
+                                level: "ok" | "warn" | "over";
+                            }[];
+                            invoices: components["schemas"]["StoreInvoiceSummary"][];
+                            payTo: {
+                                legalName: string;
+                                bank: {
+                                    [key: string]: string;
+                                } | null;
+                                bkash: string | null;
+                                nagad: string | null;
+                            } | null;
+                            payOnline: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/billing/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of our invoices to the store, to view and print (billing.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StoreInvoice"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/billing/invoices/{id}/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** An SSLCommerz page to pay what is due on the invoice (billing.read) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Payment page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            url: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/reports": {
         parameters: {
             query?: never;
@@ -10905,6 +11054,336 @@ export interface paths {
             };
         };
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Our invoices, newest first, with filters (support) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "draft" | "issued" | "paid" | "void";
+                    tenantId?: string;
+                    due?: "overdue" | "week";
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoices */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["PlatformInvoiceSummary"][];
+                            next: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One invoice with its lines and payments (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformInvoice"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A manual invoice: a one-off charge or a credit (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        lines: {
+                            /** @enum {string} */
+                            kind: "setup" | "plan" | "overage" | "adjustment";
+                            description: {
+                                bn: string;
+                                en: string;
+                            };
+                            quantity: number;
+                            unitPrice: number;
+                        }[];
+                        issueNow?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformInvoice"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/invoices/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue a draft now: it gets its number and the owners are emailed (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Issued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformInvoice"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/invoices/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Void a draft or an unpaid invoice; its number is kept (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        reason: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Voided */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformInvoice"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/invoices/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a bank, bKash, Nagad or cash payment (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        amount: number;
+                        /** @enum {string} */
+                        method: "bank" | "bkash" | "nagad" | "cash";
+                        reference?: string;
+                        /** Format: date */
+                        paidOn: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PlatformInvoice"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/billing/issuer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Our invoice details: name, address, VAT, how to pay (support) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice details */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvoiceIssuer"];
+                    };
+                };
+            };
+        };
+        /** Set our invoice details; new invoices carry them (super_admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InvoiceIssuer"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete?: never;
         options?: never;
@@ -13483,6 +13962,52 @@ export interface components {
             amount: number;
             creditCode: string | null;
         };
+        StoreInvoiceSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string | null;
+            /** @enum {string} */
+            status: "draft" | "issued" | "paid" | "void";
+            overdue: boolean;
+            periodStart: string | null;
+            periodEnd: string | null;
+            issuedOn: string | null;
+            dueOn: string | null;
+            total: number;
+            amountPaid: number;
+            amountDue: number;
+        };
+        StoreInvoice: components["schemas"]["StoreInvoiceSummary"] & {
+            subtotal: number;
+            vat: number;
+            /** Format: date-time */
+            paidAt: string | null;
+            voidReason: string | null;
+            issuer: {
+                [key: string]: unknown;
+            } | null;
+            billedTo: {
+                [key: string]: unknown;
+            } | null;
+            lines: {
+                /** @enum {string} */
+                kind: "setup" | "plan" | "overage" | "adjustment" | "vat";
+                description: {
+                    bn: string;
+                    en: string;
+                };
+                quantity: number;
+                unitPrice: number;
+                amount: number;
+            }[];
+            payments: {
+                amount: number;
+                /** @enum {string} */
+                method: "bank" | "bkash" | "nagad" | "cash" | "sslcommerz";
+                reference: string | null;
+                paidOn: string;
+            }[];
+        };
         Reports: {
             from: string;
             to: string;
@@ -13827,6 +14352,86 @@ export interface components {
             status: "trialing" | "active" | "past_due" | "cancelled";
             holdUntil: string | null;
             holdReason: string | null;
+        } | null;
+        PlatformInvoiceSummary: {
+            /** Format: uuid */
+            id: string;
+            number: string | null;
+            /** Format: uuid */
+            tenantId: string;
+            storeName: string;
+            /** @enum {string} */
+            status: "draft" | "issued" | "paid" | "void";
+            overdue: boolean;
+            periodStart: string | null;
+            periodEnd: string | null;
+            /** Format: date-time */
+            issueAfter: string | null;
+            issuedOn: string | null;
+            dueOn: string | null;
+            total: number;
+            amountPaid: number;
+            amountDue: number;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PlatformInvoice: components["schemas"]["PlatformInvoiceSummary"] & {
+            subtotal: number;
+            vat: number;
+            /** Format: date-time */
+            paidAt: string | null;
+            /** Format: date-time */
+            voidedAt: string | null;
+            voidReason: string | null;
+            issuer: {
+                [key: string]: unknown;
+            } | null;
+            billedTo: {
+                [key: string]: unknown;
+            } | null;
+            lines: {
+                /** @enum {string} */
+                kind: "setup" | "plan" | "overage" | "adjustment" | "vat";
+                description: {
+                    bn: string;
+                    en: string;
+                };
+                quantity: number;
+                unitPrice: number;
+                amount: number;
+                metric: string | null;
+            }[];
+            payments: {
+                /** Format: uuid */
+                id: string;
+                amount: number;
+                /** @enum {string} */
+                method: "bank" | "bkash" | "nagad" | "cash" | "sslcommerz";
+                reference: string | null;
+                paidOn: string;
+                /** Format: date-time */
+                createdAt: string;
+            }[];
+        };
+        InvoiceIssuer: {
+            legalName: string;
+            address: string;
+            tradeLicense?: string;
+            bin?: string;
+            /** @default null */
+            vatRateBp: number | null;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            bank?: {
+                name: string;
+                accountName: string;
+                accountNumber: string;
+                branch?: string;
+                routing?: string;
+            };
+            bkash?: string;
+            nagad?: string;
         } | null;
     };
     responses: never;

@@ -99,6 +99,14 @@ export interface Env {
   VAPID_PUBLIC_KEY?: string;
   /** Its private key (a Worker secret); without both, staff push is off. */
   VAPID_PRIVATE_KEY?: string;
+  /**
+   * Our own SSLCommerz merchant account, for paying invoices online
+   * (phase-5b-plan §3.7; Worker secrets). Without them the payment link is off.
+   */
+  PLATFORM_SSLCOMMERZ_STORE_ID?: string;
+  PLATFORM_SSLCOMMERZ_PASSWORD?: string;
+  /** `sandbox` for testing; live otherwise. */
+  PLATFORM_SSLCOMMERZ_MODE?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';

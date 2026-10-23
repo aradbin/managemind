@@ -48,6 +48,7 @@ import { createMailer } from '../auth/email';
 import { requireFreshTwoFactor } from '../auth/fresh-two-factor';
 import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
+import { registerPlatformBilling } from './billing';
 
 const Id = z.object({ id: z.uuid() });
 const Status = z.enum(['active', 'suspended', 'closed', 'purged']);
@@ -830,4 +831,5 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     );
     return c.json({ items, next: items.length === limit ? (items.at(-1)?.id ?? null) : null }, 200);
   });
+  registerPlatformBilling(platform);
 }

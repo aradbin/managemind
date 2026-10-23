@@ -99,6 +99,7 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 | `CF_STORE_TOKEN` | Secret | Page cache purges and custom domains ([ADR 0018](docs/adr/0018-page-tags-and-purges.md), [ADR 0019](docs/adr/0019-custom-domains.md)) | Store pages aren't cached, and custom domains are off |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Variable, secret | Turnstile on checkout, sign-in and return requests ([ADR 0023](docs/adr/0023-turnstile-hostnames.md)) | Rate limits alone |
 | `CREDENTIALS_KEY` | Secret, **with a copy kept offline** | Stores' SSLCommerz, SMS and email credentials ([ADR 0024](docs/adr/0024-credentials-vault.md)) | Online payment and SMS are off |
+| `PLATFORM_SSLCOMMERZ_STORE_ID`, `PLATFORM_SSLCOMMERZ_PASSWORD` | Variable, secret | Stores paying our invoices online, on our own SSLCommerz merchant account (phase-5b-plan §3.7) | Stores pay by bank, bKash or Nagad, and a super admin records it |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
 | `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
 | `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches and the usage alarm | No previews, no Neon numbers in the alarm |

@@ -2,6 +2,7 @@ import { LOCALES } from '@managemind/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import {
   invitationEmail,
+  invoiceEmail,
   type RenderedEmail,
   signInCodeEmail,
   storeMessageEmail,
@@ -99,6 +100,31 @@ describe('email templates', () => {
     expect(email.html).toContain('Tea &amp; Co');
     expect(email.html).toContain('href="https://admin.example.test/"');
     expect(email.text).toContain('https://tea.stores.example.test');
+  });
+
+  it.each(LOCALES)('render every invoice email in %s', (locale) => {
+    for (const kind of [
+      'issued',
+      'due_soon',
+      'due_today',
+      'past_due',
+      'final_notice',
+      'suspend',
+    ] as const) {
+      const email = invoiceEmail({
+        kind,
+        locale,
+        platformName: 'managemind',
+        storeName: 'Tea & Co',
+        number: 'INV-2026-0001',
+        amount: '৳1,500.00',
+        due: new Date('2026-11-12T00:00:00+06:00'),
+        link: 'https://admin.example.test/settings/billing',
+      });
+      noLeftovers(email);
+      expect(email.subject).not.toContain('{');
+      expect(email.html).toContain('Tea &amp; Co');
+    }
   });
 
   it('escape a store message whole, since a shopper wrote part of it', () => {

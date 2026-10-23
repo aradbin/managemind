@@ -41,6 +41,11 @@ export const EVENTS = {
   'subscription.changed': z.object({ planCode: z.string(), status: z.string() }),
   'invoice.issued': z.object({ invoiceId: z.uuid(), number: z.string(), total: z.number().int() }),
   'invoice.paid': z.object({ invoiceId: z.uuid(), number: z.string() }),
+  /** A dunning step reached (phase-5b-plan §3.8): the owners are emailed. */
+  'invoice.reminder': z.object({
+    invoiceId: z.uuid(),
+    step: z.enum(['due_soon', 'due_today', 'past_due', 'final_notice', 'suspend']),
+  }),
   'customer.anonymized': z.object({}),
   /** A store's gateway, SMS or email key was saved or removed: its health is checked again. */
   'credentials.changed': z.object({ kind: z.enum(['sslcommerz', 'sms', 'email']) }),
