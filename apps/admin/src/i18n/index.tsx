@@ -5,6 +5,7 @@
 // the other first. Feature screens bring their own catalogs with their pages.
 import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import type { billingEn } from './billing-en';
 import type { en } from './en';
 import type { launchEn } from './launch-en';
 import type { messagesEn } from './messages-en';
@@ -16,6 +17,7 @@ import type { returnsEn } from './returns-en';
 /** Every key, including those of catalogs loaded with their pages. */
 export type AdminKey =
   | keyof typeof en
+  | keyof typeof billingEn
   | keyof typeof launchEn
   | keyof typeof messagesEn
   | keyof typeof onlineStoreEn

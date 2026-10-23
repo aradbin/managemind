@@ -5,6 +5,7 @@ import {
   CreditCard,
   Globe,
   Percent,
+  Receipt,
   RotateCcw,
   ShoppingCart,
   Store,
@@ -68,6 +69,12 @@ function Page() {
       icon: CreditCard,
       title: t('payments.title'),
       description: t('payments.description'),
+    },
+    usePermission('billing.read') && {
+      to: '/settings/billing' as const,
+      icon: Receipt,
+      title: t('billing.title'),
+      description: t('billing.description'),
     },
     usePermission('settings.read') && {
       to: '/settings/notifications' as const,

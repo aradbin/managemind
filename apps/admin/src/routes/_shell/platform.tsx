@@ -21,6 +21,7 @@ const TABS: {
     | '/platform'
     | '/platform/dashboard'
     | '/platform/terms'
+    | '/platform/billing'
     | '/platform/staff'
     | '/platform/audit';
   label: AdminKey;
@@ -29,6 +30,7 @@ const TABS: {
   { to: '/platform', label: 'platform.tenants', superAdmin: false },
   { to: '/platform/dashboard', label: 'platform.dashboard', superAdmin: false },
   { to: '/platform/terms', label: 'platform.terms', superAdmin: false },
+  { to: '/platform/billing', label: 'platform.billing', superAdmin: false },
   { to: '/platform/staff', label: 'platform.staff', superAdmin: true },
   { to: '/platform/audit', label: 'platform.audit', superAdmin: true },
 ];

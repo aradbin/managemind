@@ -359,9 +359,9 @@ export async function draftInvoice(
   const [existing] = await tx.db
     .select({ id: i.id })
     .from(i)
-    .where(
-      and(eq(i.tenantId, tx.tenantId), eq(i.periodStart, periodStart), sql`${i.status} <> 'void'`),
-    );
+    .where(and(eq(i.tenantId, tx.tenantId), eq(i.periodStart, periodStart)));
+  // Voided counts too: a super admin who voided a period bills it by hand,
+  // if at all, rather than have the job draft it again every day.
   if (existing) return null;
   const [earlier] = await tx.db
     .select({ id: i.id })

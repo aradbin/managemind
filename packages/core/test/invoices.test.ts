@@ -297,11 +297,22 @@ describe('reminders and suspension (Q9)', () => {
       today,
     );
     expect(voided.status).toBe('void');
-    // A new draft for the period may follow the void.
+    // The voided period isn't drafted again: anything owed is billed by hand.
     await runBilling(app, today);
     const again = await invoicesOf(s.id);
-    expect(again.filter((x) => x.status === 'draft')).toHaveLength(1);
-    const issued = await issueInvoice(app, systemActor, again[0]?.id as string, today);
+    expect(again.map((x) => x.status)).toEqual(['void']);
+    const manual = await createManualInvoice(
+      app,
+      systemActor,
+      s.id,
+      {
+        lines: [
+          { kind: 'plan', description: { bn: 'প্ল্যান', en: 'Plan, half month' }, unitPrice: 2500_00 },
+        ],
+      },
+      { today },
+    );
+    const issued = await issueInvoice(app, systemActor, manual, today);
     expect(issued.status).toBe('issued');
   });
 });

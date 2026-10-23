@@ -4,6 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { Check, Circle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -16,6 +17,7 @@ import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { type AdminKey, useLocale } from '../../i18n';
+import '../../i18n/billing';
 import '../../i18n/launch';
 import { api, unwrap } from '../../lib/api';
 import { formatPrice, priceInput, readPrice } from '../../lib/catalog';
@@ -233,18 +235,23 @@ export function SubscriptionSection({
         <h2 id="subscription-h" className="text-lg font-semibold">
           {t('subscription.title')}
         </h2>
-        {superAdmin && sub.isSuccess && (
-          <div className="flex flex-wrap gap-2">
-            {s && !s.holdUntil && (
-              <Button variant="secondary" onClick={() => setHolding(true)}>
-                {t('subscription.hold')}
-              </Button>
-            )}
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" asChild>
+            <Link to="/platform/billing" search={{ tenant: tenant.id }}>
+              {t('tenant.invoices')}
+            </Link>
+          </Button>
+          {superAdmin && sub.isSuccess && s && !s.holdUntil && (
+            <Button variant="secondary" onClick={() => setHolding(true)}>
+              {t('subscription.hold')}
+            </Button>
+          )}
+          {superAdmin && sub.isSuccess && (
             <Button variant="secondary" onClick={() => setEditing(true)}>
               {t(s ? 'subscription.edit' : 'subscription.set')}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {sub.isError && <Notice tone="error">{errorMessage(sub.error, t)}</Notice>}
       {sub.isSuccess && !s && <p className="text-muted-foreground">{t('subscription.none')}</p>}
