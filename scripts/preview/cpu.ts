@@ -52,6 +52,7 @@ const BURST = {
   cart: 30,
   order: 15,
   orders: 30,
+  returns: 10,
 };
 
 /** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
@@ -74,17 +75,25 @@ const jar = new Map<string, string>();
  * here, in the run's own store.
  */
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
-  const res = await callOnce(method, path, body);
+  // Commands take an idempotency key; the retry sends the same one.
+  const key = method === 'GET' ? undefined : crypto.randomUUID();
+  const res = await callOnce(method, path, body, key);
   if (res.status < 500) return res;
   await res.body?.cancel();
-  return callOnce(method, path, body);
+  return callOnce(method, path, body, key);
 }
 
-async function callOnce(method: string, path: string, body?: unknown): Promise<Response> {
+async function callOnce(
+  method: string,
+  path: string,
+  body?: unknown,
+  key?: string,
+): Promise<Response> {
   const res = await fetch(`${api}${path}`, {
     method,
     headers: {
       origin: api,
+      ...(key ? { 'idempotency-key': key } : {}),
       // Previews run Turnstile with the always-pass test keys, which take the dummy token.
       ...(path.endsWith('/send-verification-otp')
         ? { 'x-turnstile-token': 'XXXX.DUMMY.TOKEN.XXXX' }
@@ -250,6 +259,7 @@ async function shop(method: string, path: string, cookie: Map<string, string>, b
   return res;
 }
 let placedId = '';
+const placedOrders: { id: string; number: string; phone: string }[] = [];
 for (let i = 0; setup && i < BURST.order; i++) {
   try {
     await shopOnce(i);
@@ -266,9 +276,10 @@ async function shopOnce(i: number) {
     'cart',
   );
   for (let j = 1; j < BURST.cart / BURST.order; j++) await shop('GET', '/cart', cookie);
-  const placed = await json<{ id: string }>(
+  const phone = `+8801700${String(900_000 + i)}`;
+  const placed = await json<{ id: string; displayNumber: string }>(
     await shop('POST', '/checkout/orders', cookie, {
-      contact: { name: 'CPU', phone: `+8801700${String(900_000 + i)}` },
+      contact: { name: 'CPU', phone },
       address: { ...DHANMONDI, line: 'House 1, Road 2' },
       paymentMethod: 'cod',
       expectedTotal: cart.totals.total,
@@ -277,11 +288,80 @@ async function shopOnce(i: number) {
     'place order',
   );
   placedId = placed.id;
+  placedOrders.push({ id: placed.id, number: placed.displayNumber, phone });
 }
 for (let i = 0; i < BURST.orders; i++) await call('GET', '/v1/admin/orders');
 for (let i = 0; placedId && i < BURST.orders; i++) {
   await call('GET', `/v1/admin/orders/${placedId}`);
 }
+// Phase 5A's routes (phase-5b-plan §9): each of the first orders is
+// delivered, tracked and returned by its shopper, then approved, received,
+// inspected back into stock and refunded by bKash. The IPN waits for the
+// SSLCommerz sandbox credentials (phase-5a-report §5).
+for (const order of placedOrders.slice(0, BURST.returns)) {
+  try {
+    await returnOnce(order);
+  } catch (e) {
+    failures.push(`return of ${order.number}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+async function returnOnce(order: { id: string; number: string; phone: string }) {
+  await json(await call('POST', `/v1/admin/orders/${order.id}/confirm`, {}), 'confirm');
+  const detail = await json<{ lines: { id: string }[] }>(
+    await call('GET', `/v1/admin/orders/${order.id}`),
+    'order',
+  );
+  const orderLineId = detail.lines[0]?.id as string;
+  const shipment = await json<{ id: string }>(
+    await call('POST', `/v1/admin/orders/${order.id}/shipments`, {
+      lines: [{ orderLineId, quantity: 1 }],
+      carrier: 'Pathao',
+    }),
+    'shipment',
+  );
+  await json(await call('POST', `/v1/admin/shipments/${shipment.id}/ship`, {}), 'ship');
+  await json(
+    await call('POST', `/v1/admin/shipments/${shipment.id}/deliver`, { cashCollected: true }),
+    'deliver',
+  );
+  const cookie = new Map<string, string>();
+  const { token } = await json<{ token: string }>(
+    await shop('POST', '/orders/track', cookie, { number: order.number, phone: order.phone }),
+    'track',
+  );
+  await json(await shop('POST', '/returns/options', cookie, { token }), 'return options');
+  await json(
+    await shop('POST', '/returns', cookie, {
+      token,
+      reason: 'damaged',
+      lines: [{ orderLineId, quantity: 1 }],
+      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
+    }),
+    'request return',
+  );
+  const [ret] = await json<{ id: string }[]>(
+    await call('GET', `/v1/admin/returns?orderId=${order.id}`),
+    'returns',
+  );
+  if (!ret) throw new Error('no return');
+  await json(await call('POST', `/v1/admin/returns/${ret.id}/approve`), 'approve');
+  await json(await call('POST', `/v1/admin/returns/${ret.id}/receive`), 'receive');
+  await json(
+    await call('POST', `/v1/admin/returns/${ret.id}/inspect`, {
+      lines: [{ orderLineId, sellable: 1, damaged: 0 }],
+    }),
+    'inspect',
+  );
+  await json(
+    await call('POST', `/v1/admin/orders/${order.id}/refunds`, {
+      returnId: ret.id,
+      method: 'bkash',
+      reference: `CPU${order.number}`.replace(/[^A-Za-z0-9]/g, ''),
+    }),
+    'refund',
+  );
+}
+
 if (failures.length) {
   notice(`${failures.length} requests in the bursts failed: ${failures.slice(0, 10).join('; ')}`);
 }
@@ -291,7 +371,8 @@ notice(
     `${BURST.me} GET /v1/admin/me, ${BURST.store} PATCH /v1/admin/store, ` +
     `${BURST.list} product lists, ${BURST.read} product reads, ${BURST.save} product saves ` +
     `${BURST.bulk} bulk edits of 6 variants, ${BURST.order} orders (cart, area, checkout), ` +
-    `${BURST.cart} cart reads and ${BURST.orders} each of the order list and an order`,
+    `${BURST.cart} cart reads, ${BURST.orders} each of the order list and an order, ` +
+    `and ${BURST.returns} returns (track, request, approve, receive, inspect, refund)`,
 );
 
 // Workers Logs names an invocation by its method and path, with IDs in the
@@ -318,6 +399,16 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
   },
   { trigger: 'GET /v1/admin/orders', label: 'GET /v1/admin/orders' },
   { trigger: 'GET /v1/admin/orders/REDACTED', label: 'GET /v1/admin/orders/{id}' },
+  { trigger: 'POST /v1/store/orders/track', label: 'POST /v1/store/orders/track' },
+  { trigger: 'POST /v1/store/returns', label: 'POST /v1/store/returns (request)' },
+  {
+    trigger: 'POST /v1/admin/returns/REDACTED/inspect',
+    label: 'POST /v1/admin/returns/{id}/inspect',
+  },
+  {
+    trigger: 'POST /v1/admin/orders/REDACTED/refunds',
+    label: 'POST /v1/admin/orders/{id}/refunds (bKash)',
+  },
   ...STORE_PAGES.flatMap((p) => [
     {
       trigger: `GET ${p.path}`,

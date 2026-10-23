@@ -183,7 +183,10 @@ jobs:
       # Performance budgets (phase-3-plan §8): the demo stores' pages on a
       # phone over throttled 4G, three runs each, the median judged: LCP
       # 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95, and SEO basics. Phase 4
-      # adds the cart and checkout pages (phase-4-plan §9).
+      # adds the cart and checkout pages (phase-4-plan §9), Phase 5B the
+      # tracking page and the page a shopper lands on back from SSLCommerz
+      # (phase-5b-plan §9). The return form opens on a click, which
+      # Lighthouse can't do: the E2E checks its JavaScript budget instead.
       # @lhci/cli runs from the registry at a pinned version, so installs
       # elsewhere never pull in Lighthouse and its Chrome tooling.
       - name: Lighthouse
@@ -199,7 +202,9 @@ jobs:
             --collect.url="$u/products/red-jamdani-saree?store=demo-fashion" \
             --collect.url="$u/?store=demo-grocery" \
             --collect.url="$u/cart?store=demo-grocery" \
-            --collect.url="$u/checkout?store=demo-grocery"
+            --collect.url="$u/checkout?store=demo-grocery" \
+            --collect.url="$u/track?store=demo-grocery" \
+            --collect.url="$u/orders/thanks?store=demo-grocery&payment=paid"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ !cancelled() && steps.lighthouse.outcome != 'skipped' }}
         with:
