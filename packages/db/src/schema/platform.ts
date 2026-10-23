@@ -3,13 +3,16 @@
 // tenant's rows here filters by tenant in code (phase-1-plan §3.3, §6.2).
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
+  date,
   index,
   inet,
   integer,
   jsonb,
   pgSchema,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -23,6 +26,9 @@ export const TENANT_STATUSES = ['active', 'suspended', 'closed', 'purged'] as co
 export const LOCALES = ['bn', 'en'] as const;
 export const STORE_ROLES = ['owner', 'manager', 'staff', 'viewer'] as const;
 export const PLATFORM_ROLES = ['support', 'super_admin'] as const;
+/** Phase 5B (phase-5b-plan §3.1); the same lists as @managemind/shared/billing. */
+export const TENANT_KINDS = ['client', 'demo', 'test'] as const;
+export const SUSPENSION_REASONS = ['overdue', 'abuse', 'client_request', 'other'] as const;
 
 const id = () => uuid().primaryKey().default(sql`uuidv7()`);
 const ts = () => timestamp({ withTimezone: true });
@@ -41,6 +47,19 @@ export const tenants = platform.table(
     settings: jsonb().notNull().default({}),
     /** Plan label; plans with entitlements arrive in Phase 5B. */
     plan: text().notNull().default('pilot'),
+    /** `demo` and `test` stores are never billed and can be reset (phase-5b-plan §3.1). */
+    kind: text({ enum: TENANT_KINDS }).notNull().default('client'),
+    /**
+     * The effective entitlements (plan + override), written whenever the
+     * subscription changes; empty is unlimited (phase-5b-plan §3.5).
+     */
+    entitlements: jsonb().notNull().default({}),
+    /** Why the store is suspended; null otherwise. */
+    statusReason: text({ enum: SUSPENSION_REASONS }),
+    closedAt: ts(),
+    /** The earliest purge: 30 days after closing (Q11). */
+    purgeAfter: ts(),
+    purgedAt: ts(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -48,6 +67,16 @@ export const tenants = platform.table(
     check('tenants_slug_format', sql`${t.slug} ~ '^[a-z0-9](?:[a-z0-9-]{1,30}[a-z0-9])$'`),
     check('tenants_status_valid', sql`${t.status} in ('active', 'suspended', 'closed', 'purged')`),
     check('tenants_locale_valid', sql`${t.defaultLocale} in ('bn', 'en')`),
+    check('tenants_kind_valid', sql`${t.kind} in (${inList(TENANT_KINDS)})`),
+    check(
+      'tenants_status_reason_valid',
+      sql`(${t.status} = 'suspended') = (${t.statusReason} is not null) and ${t.statusReason} in (${inList(SUSPENSION_REASONS)})`,
+    ),
+    check(
+      'tenants_closed_dates',
+      sql`(${t.status} in ('closed', 'purged')) = (${t.closedAt} is not null and ${t.purgeAfter} is not null)`,
+    ),
+    check('tenants_purged_at', sql`(${t.status} = 'purged') = (${t.purgedAt} is not null)`),
   ],
 );
 
@@ -354,4 +383,374 @@ export const devEmails = platform.table(
     createdAt: createdAt(),
   },
   (t) => [index('dev_emails_to_created_idx').on(t.to, sql`created_at desc`)],
+);
+
+// Phase 5B: plans and billing, usage, health, terms, and jobs that export,
+// purge or reset a store (phase-5b-plan §4). All money is integer poisha.
+
+export const SUBSCRIPTION_STATUSES = ['trialing', 'active', 'past_due', 'cancelled'] as const;
+export const USAGE_METRICS = [
+  'orders',
+  'order_total',
+  'emails',
+  'sms',
+  'storage_bytes',
+  'products',
+  'staff',
+  'custom_domains',
+] as const;
+export const INVOICE_STATUSES = ['draft', 'issued', 'paid', 'void'] as const;
+export const INVOICE_LINE_KINDS = ['setup', 'plan', 'overage', 'adjustment', 'vat'] as const;
+export const BILLING_PAYMENT_METHODS = ['bank', 'bkash', 'nagad', 'cash', 'sslcommerz'] as const;
+export const DUNNING_STEPS = [
+  'due_soon',
+  'due_today',
+  'past_due',
+  'final_notice',
+  'suspend',
+] as const;
+export const JOB_KINDS = ['export', 'purge', 'reset'] as const;
+export const JOB_STATUSES = ['pending', 'running', 'succeeded', 'failed'] as const;
+
+/** Plans a super admin edits (§3.5); entitlements are validated by @managemind/shared/billing. */
+export const plans = platform.table(
+  'plans',
+  {
+    id: id(),
+    code: text().notNull().unique(),
+    /** { bn, en } */
+    name: jsonb().notNull(),
+    monthlyPrice: integer().notNull(),
+    setupFee: integer().notNull().default(0),
+    /** Poisha per unit beyond a soft limit, by metric. */
+    overagePrices: jsonb().notNull().default({}),
+    entitlements: jsonb().notNull(),
+    /** Shown when onboarding; a plan no longer offered keeps its subscribers. */
+    offered: boolean().notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('plans_code_format', sql`${t.code} ~ '^[a-z][a-z0-9-]{1,30}$'`),
+    check('plans_prices_nonnegative', sql`${t.monthlyPrice} >= 0 and ${t.setupFee} >= 0`),
+  ],
+);
+
+/** One per store (§3.5): its plan, negotiated terms, billing day and dunning hold. */
+export const subscriptions = platform.table(
+  'subscriptions',
+  {
+    id: id(),
+    tenantId: tenantRef().unique(),
+    planId: uuid()
+      .notNull()
+      .references(() => plans.id, { onDelete: 'restrict' }),
+    priceOverride: integer(),
+    setupFeeOverride: integer(),
+    entitlementOverride: jsonb(),
+    /** 1–28, so every month has it. */
+    billingDay: integer().notNull(),
+    trialEndsOn: date({ mode: 'string' }),
+    status: text({ enum: SUBSCRIPTION_STATUSES }).notNull().default('active'),
+    /** Reminders and suspension wait until this Dhaka date (§3.8). */
+    holdUntil: date({ mode: 'string' }),
+    holdReason: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('subscriptions_billing_day', sql`${t.billingDay} between 1 and 28`),
+    check('subscriptions_status_valid', sql`${t.status} in (${inList(SUBSCRIPTION_STATUSES)})`),
+    check(
+      'subscriptions_overrides_nonnegative',
+      sql`coalesce(${t.priceOverride}, 0) >= 0 and coalesce(${t.setupFeeOverride}, 0) >= 0`,
+    ),
+    check('subscriptions_hold_reason', sql`(${t.holdUntil} is null) = (${t.holdReason} is null)`),
+    index('subscriptions_billing_day_idx').on(t.billingDay),
+  ],
+);
+
+/** Yesterday's use per store, rolled up nightly (§3.6); a rerun overwrites the same key. */
+export const usageDaily = platform.table(
+  'usage_daily',
+  {
+    tenantId: tenantRef(),
+    day: date({ mode: 'string' }).notNull(),
+    metric: text({ enum: USAGE_METRICS }).notNull(),
+    value: bigint({ mode: 'number' }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tenantId, t.day, t.metric] }),
+    check('usage_daily_metric_valid', sql`${t.metric} in (${inList(USAGE_METRICS)})`),
+    check('usage_daily_value_nonnegative', sql`${t.value} >= 0`),
+  ],
+);
+
+/** What the platform screens show per store (§3.3), so they never read the store schema. */
+export const storeHealth = platform.table('store_health', {
+  tenantId: uuid()
+    .primaryKey()
+    .references(() => tenants.id, { onDelete: 'restrict' }),
+  checkedAt: ts().notNull().defaultNow(),
+  payments: jsonb().notNull().default({}),
+  email: jsonb().notNull().default({}),
+  sms: jsonb().notNull().default({}),
+  domains: jsonb().notNull().default({}),
+  activity: jsonb().notNull().default({}),
+  /** The setup checklist's items (§3.2), counted when the health is written. */
+  checklist: jsonb().notNull().default({}),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** Our company's invoice details and VAT (Q8), one row per key; snapshotted on each invoice. */
+export const platformSettings = platform.table('settings', {
+  key: text().primaryKey(),
+  value: jsonb().notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+});
+
+/** Invoice numbers: one platform sequence, never reset or reused (§3.7). */
+export const invoiceNumberSeq = platform.sequence('invoice_number_seq', { startWith: 1 });
+
+/** Our invoices to clients (§3.7). The number is set when issued and never reused. */
+export const invoices = platform.table(
+  'invoices',
+  {
+    id: id(),
+    number: text().unique(),
+    tenantId: tenantRef(),
+    status: text({ enum: INVOICE_STATUSES }).notNull().default('draft'),
+    periodStart: date({ mode: 'string' }),
+    periodEnd: date({ mode: 'string' }),
+    /** A draft is issued automatically at this time unless a super admin acts first. */
+    issueAfter: ts(),
+    issuedOn: date({ mode: 'string' }),
+    dueOn: date({ mode: 'string' }),
+    paidAt: ts(),
+    voidedAt: ts(),
+    voidReason: text(),
+    subtotal: integer().notNull().default(0),
+    vat: integer().notNull().default(0),
+    total: integer().notNull().default(0),
+    /** The sum of payments recorded against it. */
+    amountPaid: integer().notNull().default(0),
+    /** Our company's details when issued. */
+    issuer: jsonb(),
+    /** The client's billing details when issued. */
+    billedTo: jsonb(),
+    /** The VAT rate used, in basis points, when the invoice has VAT. */
+    vatRateBp: integer(),
+    createdBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('invoices_tenant_created_idx').on(t.tenantId, sql`created_at desc`),
+    index('invoices_status_due_idx').on(t.status, t.dueOn),
+    // The daily job drafts one invoice per store and period.
+    uniqueIndex('invoices_tenant_period_unique')
+      .on(t.tenantId, t.periodStart)
+      .where(sql`status <> 'void' and period_start is not null`),
+    check('invoices_status_valid', sql`${t.status} in (${inList(INVOICE_STATUSES)})`),
+    check(
+      'invoices_issued_has_number',
+      sql`(${t.status} in ('issued', 'paid')) <= (${t.number} is not null and ${t.issuedOn} is not null and ${t.dueOn} is not null)`,
+    ),
+    check('invoices_totals', sql`${t.total} = ${t.subtotal} + ${t.vat} and ${t.total} >= 0`),
+    check('invoices_amount_paid', sql`${t.amountPaid} >= 0`),
+  ],
+);
+
+export const invoiceLines = platform.table(
+  'invoice_lines',
+  {
+    id: id(),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id, { onDelete: 'restrict' }),
+    position: integer().notNull(),
+    kind: text({ enum: INVOICE_LINE_KINDS }).notNull(),
+    /** { bn, en } */
+    description: jsonb().notNull(),
+    quantity: integer().notNull().default(1),
+    unitPrice: integer().notNull(),
+    amount: integer().notNull(),
+    metric: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('invoice_lines_position_unique').on(t.invoiceId, t.position),
+    check('invoice_lines_kind_valid', sql`${t.kind} in (${inList(INVOICE_LINE_KINDS)})`),
+    check('invoice_lines_quantity_positive', sql`${t.quantity} > 0`),
+    // Only an adjustment can take money off.
+    check(
+      'invoice_lines_amount_sign',
+      sql`${t.kind} = 'adjustment' or (${t.amount} >= 0 and ${t.unitPrice} >= 0)`,
+    ),
+  ],
+);
+
+/** Payments of our invoices, recorded by a super admin or settled by SSLCommerz (§3.7). */
+export const billingPayments = platform.table(
+  'billing_payments',
+  {
+    id: id(),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id, { onDelete: 'restrict' }),
+    tenantId: tenantRef(),
+    amount: integer().notNull(),
+    method: text({ enum: BILLING_PAYMENT_METHODS }).notNull(),
+    reference: text(),
+    paidOn: date({ mode: 'string' }).notNull(),
+    recordedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    gatewayTranId: text(),
+    gatewayValId: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('billing_payments_invoice_idx').on(t.invoiceId),
+    index('billing_payments_tenant_idx').on(t.tenantId, sql`created_at desc`),
+    uniqueIndex('billing_payments_val_id_unique')
+      .on(t.gatewayValId)
+      .where(sql`method = 'sslcommerz'`),
+    check('billing_payments_amount_positive', sql`${t.amount} > 0`),
+    check(
+      'billing_payments_method_valid',
+      sql`${t.method} in (${inList(BILLING_PAYMENT_METHODS)})`,
+    ),
+    check(
+      'billing_payments_gateway_val_id',
+      sql`(${t.method} = 'sslcommerz') = (${t.gatewayValId} is not null)`,
+    ),
+  ],
+);
+
+/** Each dunning step sent, once per invoice (§3.8). */
+export const reminders = platform.table(
+  'reminders',
+  {
+    id: id(),
+    invoiceId: uuid()
+      .notNull()
+      .references(() => invoices.id, { onDelete: 'restrict' }),
+    step: text({ enum: DUNNING_STEPS }).notNull(),
+    sentAt: ts().notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('reminders_invoice_step_unique').on(t.invoiceId, t.step),
+    check('reminders_step_valid', sql`${t.step} in (${inList(DUNNING_STEPS)})`),
+  ],
+);
+
+/** Versions of the platform terms (§3.4); a new text is a new version. */
+export const termsVersions = platform.table(
+  'terms_versions',
+  {
+    id: id(),
+    version: text().notNull().unique(),
+    /** Owners are asked from publication; their admin is read-only from this time on. */
+    effectiveAt: ts().notNull(),
+    url: text().notNull(),
+    sha256: text().notNull(),
+    publishedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('terms_versions_effective_idx').on(sql`effective_at desc`),
+    check('terms_versions_sha256', sql`${t.sha256} ~ '^[0-9a-f]{64}$'`),
+    check('terms_versions_url', sql`${t.url} ~ '^https://'`),
+  ],
+);
+
+/**
+ * Append only. The email is kept as written, since a purge deletes staff
+ * accounts that belonged only to the purged store and the acceptance stays.
+ */
+export const termsAcceptances = platform.table(
+  'terms_acceptances',
+  {
+    id: id(),
+    tenantId: tenantRef(),
+    userId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    userEmail: text().notNull(),
+    versionId: uuid()
+      .notNull()
+      .references(() => termsVersions.id, { onDelete: 'restrict' }),
+    acceptedAt: ts().notNull().defaultNow(),
+    ip: inet(),
+    userAgent: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('terms_acceptances_once').on(t.tenantId, t.userId, t.versionId),
+    index('terms_acceptances_version_idx').on(t.versionId, t.tenantId),
+  ],
+);
+
+/** Export, purge and reset jobs, run by tenant-jobs.yml in GitHub Actions (§3.9). */
+export const tenantJobs = platform.table(
+  'tenant_jobs',
+  {
+    id: id(),
+    tenantId: tenantRef(),
+    kind: text({ enum: JOB_KINDS }).notNull(),
+    status: text({ enum: JOB_STATUSES }).notNull().default('pending'),
+    requestedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** The last finished step, so a stopped job resumes from it. */
+    progress: jsonb().notNull().default({}),
+    result: jsonb(),
+    /** The export's R2 key. */
+    fileKey: text(),
+    error: text(),
+    attempts: integer().notNull().default(0),
+    startedAt: ts(),
+    finishedAt: ts(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('tenant_jobs_status_idx').on(t.status, t.createdAt),
+    index('tenant_jobs_tenant_idx').on(t.tenantId, sql`created_at desc`),
+    // One open job of each kind per store.
+    uniqueIndex('tenant_jobs_one_open')
+      .on(t.tenantId, t.kind)
+      .where(sql`status in ('pending', 'running')`),
+    check('tenant_jobs_kind_valid', sql`${t.kind} in (${inList(JOB_KINDS)})`),
+    check('tenant_jobs_status_valid', sql`${t.status} in (${inList(JOB_STATUSES)})`),
+  ],
+);
+
+/** A purge's dry run, approval, counts and verification (§3.11); kept after the purge. */
+export const tenantPurges = platform.table(
+  'tenant_purges',
+  {
+    id: id(),
+    tenantId: tenantRef(),
+    jobId: uuid()
+      .notNull()
+      .references(() => tenantJobs.id, { onDelete: 'restrict' }),
+    dryRun: jsonb(),
+    approvedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    approvedAt: ts(),
+    deleted: jsonb(),
+    verification: jsonb(),
+    finishedAt: ts(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('tenant_purges_tenant_idx').on(t.tenantId),
+    check('tenant_purges_approval', sql`(${t.approvedBy} is null) = (${t.approvedAt} is null)`),
+  ],
 );

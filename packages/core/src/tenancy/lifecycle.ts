@@ -1,5 +1,6 @@
-// The store lifecycle (phase-1-plan §4.4). Phase 1 exposes suspend and
-// reactivate; close and purge are declared for Phase 5B.
+// The store lifecycle (phase-1-plan §4.4, phase-5b-plan §3.1): suspend and
+// reactivate since Phase 1; close, reopen before the purge, and purge, which
+// only the purge job takes (§3.11).
 import { schema } from '@managemind/db';
 import { defineMachine } from '@managemind/shared';
 
@@ -12,7 +13,7 @@ const needsReason = (c: TransitionContext) =>
 
 export const tenantLifecycle = defineMachine<
   (typeof schema.TENANT_STATUSES)[number],
-  'suspend' | 'reactivate' | 'close' | 'purge',
+  'suspend' | 'reactivate' | 'close' | 'reopen' | 'purge',
   TransitionContext
 >({
   name: 'tenant',
@@ -27,6 +28,9 @@ export const tenantLifecycle = defineMachine<
       reactivate: { to: 'active' },
       close: { to: 'closed', guard: needsReason },
     },
-    closed: { purge: { to: 'purged' } },
+    closed: {
+      reopen: { to: 'active', guard: needsReason },
+      purge: { to: 'purged' },
+    },
   },
 });

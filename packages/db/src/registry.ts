@@ -109,4 +109,14 @@ export const PLATFORM_TENANT_ROWS: Record<string, PurgeAction> = {
   sessions: 'clear',
   support_grants: 'keep',
   audit_log: 'keep',
+  // Phase 5B (phase-5b-plan §3.11): billing history, usage, terms and the
+  // purge's own record stay with the purged tenant; its health goes.
+  subscriptions: 'keep',
+  usage_daily: 'keep',
+  store_health: 'delete',
+  invoices: 'keep',
+  billing_payments: 'keep',
+  terms_acceptances: 'keep',
+  tenant_jobs: 'keep',
+  tenant_purges: 'keep',
 };

@@ -24,7 +24,8 @@
     "./orders/customer-import": "./src/orders/customer-import.ts",
     "./geo/version": "./src/geo/version.ts",
     "./notifications": "./src/notifications/index.ts",
-    "./credentials": "./src/credentials.ts"
+    "./credentials": "./src/credentials.ts",
+    "./billing": "./src/billing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

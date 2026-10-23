@@ -5,10 +5,12 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  closeTenant,
   createTenant,
   getStore,
   hostEntries,
   type OutboxEvent,
+  reopenTenant,
   resolveHost,
   systemActor,
   tenantLifecycle,
@@ -58,6 +60,13 @@ async function newStore(overrides: Partial<Parameters<typeof createTenant>[2]> =
 
 const one = async <T extends Record<string, unknown>>(sql: string, params: unknown[]) =>
   (await owner.query<T>(sql, params)).rows;
+
+async function closeStore(id: string) {
+  const [row] = await one<{ slug: string }>('select slug from platform.tenants where id = $1', [
+    id,
+  ]);
+  return closeTenant(app, systemActor, id, { slug: row?.slug as string, reason: 'client left' });
+}
 
 describe('createTenant', () => {
   it('creates the store, its owner and membership, audits and an event, in one go', async () => {
@@ -203,6 +212,7 @@ describe('lifecycle', () => {
   it('declares the Phase 1 and 5B transitions', () => {
     expect(tenantLifecycle.events('active').sort()).toEqual(['close', 'suspend']);
     expect(tenantLifecycle.events('suspended').sort()).toEqual(['close', 'reactivate']);
+    expect(tenantLifecycle.events('closed').sort()).toEqual(['purge', 'reopen']);
     expect(tenantLifecycle.isFinal('purged')).toBe(true);
   });
 
@@ -244,6 +254,87 @@ describe('lifecycle', () => {
     await expect(
       transitionTenant(app, user('support'), id, 'suspend', { reason: 'nope' }),
     ).rejects.toMatchObject({ code: 'forbidden' });
+  });
+});
+
+describe('closing and reopening (phase-5b-plan §3.1)', () => {
+  it('closes with the slug typed and a reason, 30 days before the purge may run', async () => {
+    const { id, slug } = await newStore();
+    await transitionTenant(app, systemActor, id, 'suspend', {
+      reason: 'invoice unpaid',
+      category: 'overdue',
+    });
+    await expect(
+      closeTenant(app, systemActor, id, { slug: 'other-store', reason: 'client left' }),
+    ).rejects.toMatchObject({ code: 'validation_failed' });
+    await expect(
+      closeTenant(app, user('support'), id, { slug, reason: 'client left' }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    const events: OutboxEvent[] = [];
+    const closed = await closeTenant(
+      app,
+      systemActor,
+      id,
+      { slug: slug.toUpperCase(), reason: 'client left' },
+      { afterCommit: (e) => void events.push(...e) },
+    );
+    expect(closed).toMatchObject({ from: 'suspended', to: 'closed' });
+    const days = (Date.parse(closed.purgeAfter) - Date.parse(closed.closedAt)) / 86_400_000;
+    expect(days).toBe(30);
+    expect(events.map((e) => e.eventType)).toEqual(['tenant.status_changed', 'tenant.closed']);
+    const [row] = await one('select status, status_reason from platform.tenants where id = $1', [
+      id,
+    ]);
+    expect(row).toEqual({ status: 'closed', status_reason: null });
+  });
+
+  it('lets a demo or test store be purged at once', async () => {
+    const { id } = await newStore();
+    await owner.query(`update platform.tenants set kind = 'test' where id = $1`, [id]);
+    const closed = await closeStore(id);
+    expect(closed.purgeAfter).toBe(closed.closedAt);
+  });
+
+  it('reopens a closed store with its data, until the purge starts', async () => {
+    const { id } = await newStore();
+    await closeStore(id);
+    await expect(reopenTenant(app, systemActor, id, { reason: '' })).rejects.toMatchObject({
+      code: 'illegal_transition',
+    });
+    expect(await reopenTenant(app, systemActor, id, { reason: 'client came back' })).toEqual({
+      from: 'closed',
+      to: 'active',
+    });
+    const [row] = await one(
+      'select status, closed_at, purge_after from platform.tenants where id = $1',
+      [id],
+    );
+    expect(row).toEqual({ status: 'active', closed_at: null, purge_after: null });
+
+    await closeStore(id);
+    await owner.query(
+      `insert into platform.tenant_jobs (tenant_id, kind, status) values ($1, 'purge', 'running')`,
+      [id],
+    );
+    await expect(
+      reopenTenant(app, systemActor, id, { reason: 'client came back' }),
+    ).rejects.toMatchObject({ code: 'conflict' });
+  });
+
+  it('reactivates only an overdue suspension when asked to', async () => {
+    const { id } = await newStore();
+    await transitionTenant(app, systemActor, id, 'suspend', {
+      reason: 'abuse report',
+      category: 'abuse',
+    });
+    expect(
+      await transitionTenant(app, systemActor, id, 'reactivate', { onlyIf: 'overdue' }),
+    ).toEqual({ from: 'suspended', to: 'suspended' });
+    await transitionTenant(app, systemActor, id, 'reactivate');
+    const [row] = await one('select status, status_reason from platform.tenants where id = $1', [
+      id,
+    ]);
+    expect(row).toEqual({ status: 'active', status_reason: null });
   });
 });
 
@@ -293,7 +384,7 @@ describe('hosts', () => {
     expect(await resolveHost(db(), `${slug}.${STORE_DOMAIN}`, STORE_DOMAIN)).toMatchObject({
       status: 'suspended',
     });
-    await owner.query(`update platform.tenants set status = 'closed' where id = $1`, [id]);
+    await closeStore(id);
     expect(await resolveHost(db(), `${slug}.${STORE_DOMAIN}`, STORE_DOMAIN)).toBeNull();
   });
 
@@ -308,7 +399,7 @@ describe('hosts', () => {
     expect(entries.put[0]?.value).toMatchObject({ tenantId: id, slug, status: 'active' });
     expect(entries.delete).toEqual([`host:gone-${slug}.example.com`]);
 
-    await owner.query(`update platform.tenants set status = 'closed' where id = $1`, [id]);
+    await closeStore(id);
     const closed = await hostEntries(db(), id, STORE_DOMAIN);
     expect(closed.put).toEqual([]);
     expect(closed.delete.sort()).toEqual(

@@ -3,6 +3,7 @@
 // tenant transaction, writes its audit entries and emits its event there.
 import { schema } from '@managemind/db';
 import { AppError, checkSlug, uuidv7 } from '@managemind/shared';
+import { PURGE_GRACE_DAYS, type SuspensionReason } from '@managemind/shared/billing';
 import { type NotificationSettings, notificationSettings } from '@managemind/shared/notifications';
 import {
   type CheckoutSettings,
@@ -344,7 +345,13 @@ export async function transitionTenant(
   actor: Actor,
   tenantId: string,
   event: 'suspend' | 'reactivate',
-  context: { reason?: string } = {},
+  context: {
+    reason?: string;
+    /** Why, for a suspension (phase-5b-plan §3.1); `other` when not given. */
+    category?: SuspensionReason;
+    /** Reactivate only a store suspended for this reason (an overdue invoice paid, §3.8). */
+    onlyIf?: SuspensionReason;
+  } = {},
   options: WithTenantOptions = {},
 ): Promise<{ from: Store['status']; to: Store['status'] }> {
   requirePlatformRole(actor, 'super_admin');
@@ -352,9 +359,19 @@ export async function transitionTenant(
     client,
     tenantId,
     async (tx) => {
-      const { status } = await loadStore(tx, true);
-      const { from, to } = tenantLifecycle.transition(status, event, context);
-      await tx.db.update(schema.tenants).set({ status: to }).where(eq(schema.tenants.id, tenantId));
+      const t = schema.tenants;
+      const [row] = await tx.db
+        .select({ status: t.status, statusReason: t.statusReason })
+        .from(t)
+        .where(eq(t.id, tenantId))
+        .for('update');
+      if (!row) throw new AppError('store_not_found');
+      if (context.onlyIf && row.statusReason !== context.onlyIf) {
+        return { from: row.status, to: row.status };
+      }
+      const { from, to } = tenantLifecycle.transition(row.status, event, context);
+      const category = event === 'suspend' ? (context.category ?? 'other') : null;
+      await tx.db.update(t).set({ status: to, statusReason: category }).where(eq(t.id, tenantId));
       const reason = context.reason?.trim() || undefined;
       const entry = {
         ...auditActor(actor, 'platform'),
@@ -362,7 +379,11 @@ export async function transitionTenant(
         entityType: 'tenant',
         entityId: tenantId,
         before: { status: from },
-        after: reason ? { status: to, reason } : { status: to },
+        after: {
+          status: to,
+          ...(reason ? { reason } : {}),
+          ...(category && context.category ? { category } : {}),
+        },
       };
       await recordPlatformAudit(tx, { ...entry, tenantId });
       await recordAudit(tx, entry);
@@ -372,6 +393,149 @@ export async function transitionTenant(
         payload: reason ? { from, to, reason } : { from, to },
       });
       return { from, to };
+    },
+    options,
+  );
+}
+
+export interface ClosedTenant {
+  from: Store['status'];
+  to: 'closed';
+  closedAt: string;
+  purgeAfter: string;
+}
+
+/**
+ * Closes a store (phase-5b-plan §3.1): super admins only, with the store's
+ * slug typed and a reason. The storefront answers 410, staff can't open it,
+ * and its purge may run from `purge_after`: 30 days later (Q11), or at once
+ * for demo and test stores. Its export and the removal of its custom domains
+ * follow from `tenant.closed`.
+ */
+export async function closeTenant(
+  client: DbClient,
+  actor: Actor,
+  tenantId: string,
+  input: { slug: string; reason: string },
+  options: WithTenantOptions = {},
+): Promise<ClosedTenant> {
+  requirePlatformRole(actor, 'super_admin');
+  return withTenant(
+    client,
+    tenantId,
+    async (tx) => {
+      const t = schema.tenants;
+      const [row] = await tx.db
+        .select({ status: t.status, slug: t.slug, kind: t.kind })
+        .from(t)
+        .where(eq(t.id, tenantId))
+        .for('update');
+      if (!row) throw new AppError('store_not_found');
+      if (input.slug.trim().toLowerCase() !== row.slug) {
+        throw new AppError('validation_failed', {
+          fields: [{ path: 'slug', code: 'mismatch', message: "type the store's address" }],
+        });
+      }
+      const { from } = tenantLifecycle.transition(row.status, 'close', input);
+      const reason = input.reason.trim();
+      const grace = row.kind === 'client' ? PURGE_GRACE_DAYS : 0;
+      const [dates] = await tx.db
+        .update(t)
+        .set({
+          status: 'closed',
+          statusReason: null,
+          closedAt: sql`now()`,
+          purgeAfter: sql`now() + make_interval(days => ${grace})`,
+        })
+        .where(eq(t.id, tenantId))
+        .returning({ closedAt: t.closedAt, purgeAfter: t.purgeAfter });
+      if (!dates?.closedAt || !dates.purgeAfter) {
+        throw new AppError('internal', { detail: 'close returned no dates' });
+      }
+      const closedAt = dates.closedAt.toISOString();
+      const purgeAfter = dates.purgeAfter.toISOString();
+      const entry = {
+        ...auditActor(actor, 'platform'),
+        action: 'tenant.close',
+        entityType: 'tenant',
+        entityId: tenantId,
+        before: { status: from },
+        after: { status: 'closed', reason, purgeAfter },
+      };
+      await recordPlatformAudit(tx, { ...entry, tenantId });
+      await recordAudit(tx, entry);
+      await emit(tx, 'tenant.status_changed', {
+        aggregateType: 'tenant',
+        aggregateId: tenantId,
+        payload: { from, to: 'closed', reason },
+      });
+      await emit(tx, 'tenant.closed', {
+        aggregateType: 'tenant',
+        aggregateId: tenantId,
+        payload: { purgeAfter },
+      });
+      return { from, to: 'closed', closedAt, purgeAfter };
+    },
+    options,
+  );
+}
+
+/** Reopens a closed store before its purge (Q11): it's active again, with its data as it was. */
+export async function reopenTenant(
+  client: DbClient,
+  actor: Actor,
+  tenantId: string,
+  input: { reason: string },
+  options: WithTenantOptions = {},
+): Promise<{ from: Store['status']; to: 'active' }> {
+  requirePlatformRole(actor, 'super_admin');
+  return withTenant(
+    client,
+    tenantId,
+    async (tx) => {
+      const t = schema.tenants;
+      const [row] = await tx.db
+        .select({ status: t.status })
+        .from(t)
+        .where(eq(t.id, tenantId))
+        .for('update');
+      if (!row) throw new AppError('store_not_found');
+      const { from } = tenantLifecycle.transition(row.status, 'reopen', input);
+      // A purge that has started can't be undone (§3.11).
+      const [running] = await tx.db
+        .select({ id: schema.tenantJobs.id })
+        .from(schema.tenantJobs)
+        .where(
+          sql`${schema.tenantJobs.tenantId} = ${tenantId} and ${schema.tenantJobs.kind} = 'purge'
+              and ${schema.tenantJobs.status} = 'running'`,
+        );
+      if (running) throw new AppError('conflict', { detail: 'the purge has started' });
+      await tx.db
+        .update(t)
+        .set({ status: 'active', closedAt: null, purgeAfter: null })
+        .where(eq(t.id, tenantId));
+      const reason = input.reason.trim();
+      const entry = {
+        ...auditActor(actor, 'platform'),
+        action: 'tenant.reopen',
+        entityType: 'tenant',
+        entityId: tenantId,
+        before: { status: from },
+        after: { status: 'active', reason },
+      };
+      await recordPlatformAudit(tx, { ...entry, tenantId });
+      await recordAudit(tx, entry);
+      await emit(tx, 'tenant.status_changed', {
+        aggregateType: 'tenant',
+        aggregateId: tenantId,
+        payload: { from, to: 'active', reason },
+      });
+      await emit(tx, 'tenant.reopened', {
+        aggregateType: 'tenant',
+        aggregateId: tenantId,
+        payload: {},
+      });
+      return { from, to: 'active' };
     },
     options,
   );

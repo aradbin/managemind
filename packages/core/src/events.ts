@@ -32,6 +32,15 @@ export const EVENTS = {
     to: tenantStatus,
     reason: z.string().optional(),
   }),
+  // Phase 5B (phase-5b-plan §4): closing starts the export and removes the
+  // store's custom domains; reopening restores neither by itself.
+  'tenant.closed': z.object({ purgeAfter: z.iso.datetime() }),
+  'tenant.reopened': z.object({}),
+  'tenant.purged': z.object({ purgeId: z.uuid() }),
+  'subscription.changed': z.object({ planCode: z.string(), status: z.string() }),
+  'invoice.issued': z.object({ invoiceId: z.uuid(), number: z.string(), total: z.number().int() }),
+  'invoice.paid': z.object({ invoiceId: z.uuid(), number: z.string() }),
+  'customer.anonymized': z.object({}),
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),
