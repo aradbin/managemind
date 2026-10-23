@@ -38,6 +38,8 @@ interface Sample {
   ms: number;
 }
 const samples: Sample[] = [];
+/** The first 5xx's answer, or the first request that got none, which says why. */
+let firstError = '';
 
 /** One request, timed; its body is read, so the time covers the whole answer. */
 async function timed(
@@ -49,9 +51,11 @@ async function timed(
     const res = await run();
     const text = await res.text().catch(() => '');
     samples.push({ kind, status: res.status, ms: performance.now() - start });
+    if (res.status >= 500 && !firstError) firstError = `${res.status} ${text.slice(0, 300)}`;
     return { ok: res.ok, text };
-  } catch {
+  } catch (e) {
     samples.push({ kind, status: 0, ms: performance.now() - start });
+    if (!firstError) firstError = `no answer: ${String(e)}`;
     return null;
   }
 }
@@ -157,6 +161,13 @@ const rows = (['page', 'cart', 'checkout'] as const).map((kind) => {
   };
 });
 
+const statuses = new Map<number, number>();
+for (const { status } of samples) statuses.set(status, (statuses.get(status) ?? 0) + 1);
+const byStatus = [...statuses]
+  .sort(([a], [b]) => a - b)
+  .map(([status, n]) => `${status || 'none'} × ${n}`)
+  .join(', ');
+
 let cpu = '';
 const workers = [args.get('api-worker'), args.get('storefront-worker')].filter(Boolean) as string[];
 if (workers.length && process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE_ACCOUNT_ID) {
@@ -164,29 +175,34 @@ if (workers.length && process.env.CLOUDFLARE_API_TOKEN && process.env.CLOUDFLARE
   await new Promise((r) => setTimeout(r, 60_000));
   const cf = new Cloudflare(process.env.CLOUDFLARE_API_TOKEN, process.env.CLOUDFLARE_ACCOUNT_ID);
   const lines: string[] = [];
-  for (const name of workers) {
-    const stopped = await cf.workerLogStats(
-      name,
-      since,
-      Date.now(),
-      [{ operator: 'count', alias: 'n' }],
-      undefined,
-      {
-        '$workers.outcome': 'exceededCpu',
-      },
-    );
-    const value = (alias: string, list: { alias: string; aggregates: { value: number }[] }[]) =>
-      list.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0;
-    const all = await cf.workerLogStats(name, since, Date.now(), [
-      { operator: 'count', alias: 'n' },
-      { operator: 'median', key: '$workers.cpuTimeMs', alias: 'p50' },
-      { operator: 'p99', key: '$workers.cpuTimeMs', alias: 'p99' },
-    ]);
-    lines.push(
-      `| ${name} | ${value('n', all)} | ${value('p50', all).toFixed(1)} ms | ${value('p99', all).toFixed(1)} ms | ${stopped[0]?.aggregates[0]?.value ?? 0} |`,
-    );
+  // A token without Workers Logs access still leaves the requests' table.
+  try {
+    for (const name of workers) {
+      const stopped = await cf.workerLogStats(
+        name,
+        since,
+        Date.now(),
+        [{ operator: 'count', alias: 'n' }],
+        undefined,
+        {
+          '$workers.outcome': 'exceededCpu',
+        },
+      );
+      const value = (alias: string, list: { alias: string; aggregates: { value: number }[] }[]) =>
+        list.find((c) => c.alias === alias)?.aggregates[0]?.value ?? 0;
+      const all = await cf.workerLogStats(name, since, Date.now(), [
+        { operator: 'count', alias: 'n' },
+        { operator: 'median', key: '$workers.cpuTimeMs', alias: 'p50' },
+        { operator: 'p99', key: '$workers.cpuTimeMs', alias: 'p99' },
+      ]);
+      lines.push(
+        `| ${name} | ${value('n', all)} | ${value('p50', all).toFixed(1)} ms | ${value('p99', all).toFixed(1)} ms | ${stopped[0]?.aggregates[0]?.value ?? 0} |`,
+      );
+    }
+    cpu = `\n\n| Worker | Invocations | CPU p50 | CPU p99 | Stopped at the CPU limit |\n| --- | --- | --- | --- | --- |\n${lines.join('\n')}`;
+  } catch (e) {
+    cpu = `\n\nCPU time not read from Workers Logs: ${String(e)}`;
   }
-  cpu = `\n\n| Worker | Invocations | CPU p50 | CPU p99 | Stopped at the CPU limit |\n| --- | --- | --- | --- | --- |\n${lines.join('\n')}`;
 }
 
 summary(
@@ -198,6 +214,8 @@ summary(
           `| ${r.kind} | ${r.n} | ${r.errors} | ${r.limited} | ${r.refused} | ${r.p50} ms | ${r.p99} ms |`,
       )
       .join('\n') +
+    `\n\nBy status: ${byStatus}.` +
+    (firstError ? ` The first error: \`${firstError}\`` : '') +
     `\n\n${checkouts} checkouts tried.${refusal ? ` The first refused: \`${refusal}\`` : ''}${cpu}`,
 );
 const errors = rows.reduce((n, r) => n + r.errors, 0);

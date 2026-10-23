@@ -12,6 +12,10 @@ export default defineConfig({
   testDir: './tests',
   globalSetup: './tests/wait-for-deploy.ts',
   timeout: 30_000,
+  // Previews reach Neon directly, without Hyperdrive (ADR 0011, amended), so
+  // a write that runs several queries, such as placing an order, can take a
+  // few seconds there.
+  expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: {
@@ -37,20 +41,16 @@ export default defineConfig({
     },
     // Launch readiness (phase-5b-plan §10): onboarding, billing and closing,
     // with the launch super admin the seed made. Serial, so no retries.
-    // Closing a store and issuing an invoice each take a few seconds on a
-    // preview, which has no Hyperdrive.
     {
       name: 'launch-phone',
       testMatch: /launch\.spec\.ts/,
       retries: 0,
-      expect: { timeout: 15_000 },
       use: { viewport: { width: 390, height: 844 }, hasTouch: true },
     },
     {
       name: 'launch-desktop',
       testMatch: /launch\.spec\.ts/,
       retries: 0,
-      expect: { timeout: 15_000 },
       use: { viewport: { width: 1280, height: 800 } },
     },
     // A shopper's flows on the demo stores (phase-3-plan §9); no seed needed.
