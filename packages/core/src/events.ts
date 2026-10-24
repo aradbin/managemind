@@ -1,5 +1,6 @@
 // Every domain event and the zod schema of its payload. emit() refuses an
 // event type that is not listed here or a payload that does not match it.
+import { CANCEL_CODES } from '@managemind/shared/orders';
 import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
@@ -22,6 +23,8 @@ export const EVENTS = {
         'checkout',
         'cod',
         'fraud',
+        'confirmation',
+        'recovery',
         'returns',
         'notifications',
         'setup',
@@ -106,6 +109,8 @@ export const EVENTS = {
     by: z.enum(['staff', 'platform', 'system', 'shopper']),
     /** An online payment that never came (phase-5a-plan §3.3): its own message. */
     reason: z.enum(['payment_expired']).optional(),
+    /** Why (phase-6-plan §3.5); a duplicate's cancellation sends the shopper nothing. */
+    code: z.enum(CANCEL_CODES).optional(),
   }),
   'order.edited': z.object({ number: z.number().int(), total: z.number().int() }),
   'payment.recorded': z.object({

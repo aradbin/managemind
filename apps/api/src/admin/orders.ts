@@ -27,6 +27,7 @@ import {
   failShipment,
   getCustomer,
   getOrder,
+  getPhoneRisk,
   listBlockedPhones,
   listCustomers,
   listOrders,
@@ -51,6 +52,8 @@ import { AppError } from '@managemind/shared';
 import { GEO_VERSION, geoFilePath } from '@managemind/shared/geo';
 import {
   addressInput,
+  CANCEL_CODES,
+  cancelInput,
   customerFlagInput,
   customerInput,
   customerPatch,
@@ -65,7 +68,7 @@ import {
   orderEditInput,
   orderListQuery,
   orderTagsInput,
-  reasonInput,
+  RISK_REASONS,
   shipmentInput,
   shipmentReturnInput,
   signOrderToken,
@@ -106,6 +109,25 @@ const Address = z.object({
   line: z.string(),
   names: z.object({ division: Localized, district: Localized, area: Localized }),
 });
+/** A phone's delivery success score in this store, with the counts behind it (phase-6-plan §3.3). */
+export const PhoneRisk = z
+  .object({
+    history: z.object({
+      delivered: z.number().int(),
+      returned: z.number().int().openapi({ description: 'Came back undelivered' }),
+      fake: z.number().int(),
+      wrongNumber: z.number().int(),
+      noAnswer: z.number().int(),
+      cancelled: z.number().int().openapi({ description: 'For other reasons: not counted' }),
+      open: z.number().int(),
+    }),
+    score: z.number().int().nullable().openapi({ description: '0–100; null for a new phone' }),
+    decided: z.number().int(),
+    risky: z.boolean(),
+    trusted: z.boolean(),
+    reasons: z.array(z.enum(RISK_REASONS)),
+  })
+  .openapi('PhoneRisk');
 const OrderSummary = z
   .object({
     id: z.uuid(),
@@ -122,7 +144,9 @@ const OrderSummary = z
     total: z.number().int(),
     itemCount: z.number().int(),
     tags: z.array(z.string()),
+    flags: z.array(z.string()),
     cancelledBy: z.string().nullable(),
+    risk: PhoneRisk,
     placedAt: z.string(),
   })
   .openapi('OrderSummary');
@@ -196,7 +220,25 @@ export const OrderDetail = z
       }),
     ),
     totals: OrderTotals,
-    flags: z.array(z.string()).openapi({ description: 'payment_risk, late_payment' }),
+    flags: z.array(z.string()).openapi({
+      description:
+        'payment_risk, late_payment, flagged_phone (risky), possible_duplicate, unreachable',
+    }),
+    risk: PhoneRisk,
+    phoneScoreAtPlacement: z.number().int().nullable(),
+    otherOpenOrders: z.array(
+      z.object({
+        id: z.uuid(),
+        displayNumber: z.string(),
+        status: z.string(),
+        total: Money,
+        placedAt: z.string(),
+      }),
+    ),
+    duplicateOf: z
+      .object({ id: z.uuid(), displayNumber: z.string(), status: z.string() })
+      .nullable(),
+    cancelCode: z.enum(CANCEL_CODES).nullable(),
     refunds: z.array(
       z.object({
         id: z.uuid(),
@@ -378,9 +420,10 @@ const CustomerAddress = z
   })
   .openapi('CustomerAddress');
 const CustomerDetail = Customer.extend({
-  phoneFlagged: z
-    .boolean()
-    .openapi({ description: 'By hand or by failed deliveries: asks for an advance or a code' }),
+  phoneFlagged: z.boolean().openapi({
+    description: 'Risky: by hand, by failed deliveries or by score; asks for an advance or a code',
+  }),
+  risk: PhoneRisk,
   addresses: z.array(CustomerAddress),
   orders: z.array(
     z.object({
@@ -494,7 +537,12 @@ export const ORDER_ROUTES = {
     summary: 'Prices a manual order before it is saved, and warns about a blocked phone',
     request: body(manualQuoteInput),
     responses: json(
-      z.object({ quote: QuoteView, blocked: z.boolean(), firstOrder: z.boolean() }),
+      z.object({
+        quote: QuoteView,
+        blocked: z.boolean(),
+        firstOrder: z.boolean(),
+        risk: PhoneRisk.nullable(),
+      }),
       'Quote',
     ),
   }),
@@ -522,8 +570,8 @@ export const ORDER_ROUTES = {
   cancel: r({
     method: 'post',
     path: '/orders/{id}/cancel',
-    summary: 'Cancel with a reason while nothing is shipped (orders.write)',
-    request: { params: Id, headers: IdemHeader, ...body(reasonInput) },
+    summary: 'Cancel with a reason and a code while nothing is shipped (orders.write)',
+    request: { params: Id, headers: IdemHeader, ...body(cancelInput) },
     responses: json(OrderState, 'Cancelled'),
   }),
   editPreview: r({
@@ -767,6 +815,13 @@ export const ORDER_ROUTES = {
     request: { params: z.object({ phone: z.string().max(32) }) },
     responses: ok('Unblocked'),
   }),
+  phoneRisk: r({
+    method: 'get',
+    path: '/phones/{phone}/risk',
+    summary: "A phone's delivery success score in this store, with its counts (orders.read)",
+    request: { params: z.object({ phone: z.string().max(32) }) },
+    responses: json(PhoneRisk, 'Risk'),
+  }),
   dashboard: r({
     method: 'get',
     path: '/dashboard',
@@ -910,7 +965,7 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   command<{ reason: string }>(
     R.cancel,
     'cancel',
-    (tx, c, input) => cancelOrder(tx, actor(c), id(c), reasonInput.parse(input)),
+    (tx, c, input) => cancelOrder(tx, actor(c), id(c), cancelInput.parse(input)),
     state,
   );
   command(R.edit, 'edit', async (tx, c, input) => {
@@ -1067,6 +1122,14 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     const { phone } = c.req.valid('param');
     await inStore(c, (tx) => unblockPhone(tx, actor(c), decodeURIComponent(phone)), write);
     return c.body(null, 204);
+  });
+
+  admin.openapi(R.phoneRisk, async (c) => {
+    const { phone } = c.req.valid('param');
+    return c.json(
+      await inStore(c, (tx) => getPhoneRisk(tx, actor(c), decodeURIComponent(phone))),
+      200,
+    );
   });
 
   admin.openapi(R.dashboard, async (c) => {

@@ -582,6 +582,8 @@ describe('isolation suite', () => {
         'the kind is one of three fixed names, resolved inside the caller’s own store',
       'DELETE /v1/admin/templates/{event}/{channel}/{locale}':
         'the key names a template of the caller’s own store, never a row of another',
+      'GET /v1/admin/phones/{phone}/risk':
+        'the phone is counted in the caller’s own store’s orders only; recovery.test.ts checks another store’s record never shows',
     };
 
     const withIds = Object.values(ADMIN_ROUTES).filter((r) => r.path.includes('{'));

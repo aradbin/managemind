@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { confirmationSettings } from './settings';
 import {
   assessPhone,
   DEFAULT_CALL_SCRIPT,
@@ -9,6 +8,7 @@ import {
   renderCallScript,
   unknownScriptVariables,
 } from './recovery';
+import { confirmationSettings } from './settings';
 
 const history = (h: Partial<PhoneHistory>): PhoneHistory => ({ ...emptyPhoneHistory(), ...h });
 const rules = { flagAfterFailed: 1, minScore: null, minDecided: 2 };

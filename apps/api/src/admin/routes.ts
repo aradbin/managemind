@@ -35,7 +35,9 @@ import { notificationSettings } from '@managemind/shared/notifications';
 import {
   checkoutSettings,
   codSettings,
+  confirmationSettings,
   fraudSettings,
+  recoverySettings,
   returnSettings,
 } from '@managemind/shared/orders';
 import { storeProfile, taxSettings, tenantSettings } from '@managemind/shared/settings';
@@ -114,6 +116,8 @@ const Store = z
     checkout: checkoutSettings,
     cod: codSettings,
     fraud: fraudSettings,
+    confirmation: confirmationSettings,
+    recovery: recoverySettings,
     returns: returnSettings,
     notifications: notificationSettings,
     setup: tenantSettings.shape.setup,
@@ -226,6 +230,8 @@ export const ADMIN_ROUTES = {
         checkout: checkoutSettings.optional(),
         cod: codSettings.optional(),
         fraud: fraudSettings.optional(),
+        confirmation: confirmationSettings.optional(),
+        recovery: recoverySettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
         setup: tenantSettings.shape.setup.optional(),

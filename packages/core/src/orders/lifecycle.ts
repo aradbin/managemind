@@ -12,6 +12,7 @@
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import {
+  type CancelCode,
   deliverInput,
   deliveryStatusOf,
   failInput,
@@ -226,14 +227,15 @@ async function outstanding(tx: TenantTx, orderId: string) {
 /**
  * Cancels while nothing is shipped (§3.9): releases the reservations, voids
  * pending payments and gives promotion uses back, so a cancelled order
- * doesn't use up a coupon. Staff give a reason; a shopper may cancel only
- * while the order is pending.
+ * doesn't use up a coupon. Staff give a reason and a code (phase-6-plan
+ * §3.5; `other` when none); a shopper may cancel only while the order is
+ * pending, and their cancellation is `shopper_request`.
  */
 export async function cancelOrder(
   tx: TenantTx,
   actor: Actor,
   id: string,
-  input: { reason: string; cause?: 'payment_expired' },
+  input: { reason: string; cause?: 'payment_expired'; code?: CancelCode | undefined },
 ): Promise<OrderRow> {
   const byShopper = actor.kind === 'shopper';
   if (!byShopper) authorize(actor, 'orders.write');
@@ -269,6 +271,12 @@ export async function cancelOrder(
     .returning({ id: schema.payments.id });
   await giveBackPromotionUses(tx, id);
   const who = auditActor(actor, 'staff');
+  const code: CancelCode =
+    input.cause === 'payment_expired'
+      ? 'payment_expired'
+      : byShopper
+        ? 'shopper_request'
+        : (input.code ?? 'other');
   await tx.db
     .update(o)
     .set({
@@ -276,6 +284,7 @@ export async function cancelOrder(
       cancelledAt: sql`now()`,
       cancelReason: input.reason,
       cancelledBy: who.actorType,
+      cancelCode: code,
     })
     .where(eq(o.id, id));
   await tx.db.execute(sql`
@@ -287,6 +296,7 @@ export async function cancelOrder(
     to: t.to,
     event: 'cancel',
     reason: input.reason,
+    data: { code },
   });
   for (const p of voided) {
     await emit(tx, 'payment.voided', {
@@ -301,6 +311,7 @@ export async function cancelOrder(
     payload: {
       number: order.number,
       by: who.actorType,
+      code,
       ...(input.cause ? { reason: input.cause } : {}),
     },
   });
@@ -310,7 +321,7 @@ export async function cancelOrder(
       action: 'order.cancelled',
       entityType: 'order',
       entityId: id,
-      after: { reason: input.reason },
+      after: { reason: input.reason, code },
     });
   }
   return { ...order, status: 'cancelled' };

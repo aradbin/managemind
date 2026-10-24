@@ -22,7 +22,7 @@ import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
 import { addressSnapshot, findOrCreateCustomer } from '../customers/service';
-import { otpRequired, phoneFlagged } from '../fraud/index';
+import { otpRequired, phoneRisk } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
@@ -236,6 +236,10 @@ export async function placeOrder(
     });
   }
 
+  // The phone's risk, read once (phase-6-plan §3.3): the advance, the code
+  // and the order's flag read it, and the order keeps the score it saw.
+  const risk = await phoneRisk(tx, phone, settings.settings);
+
   // 2. Price it, exactly as the cart did (§3.1).
   const q = await quote(tx, {
     lines,
@@ -283,8 +287,7 @@ export async function placeOrder(
     kind === 'cod' &&
     input.onlineReady &&
     deliveryCharge >= MIN_ONLINE_AMOUNT &&
-    (settings.cod.advance === 'always' ||
-      (settings.cod.advance === 'flagged' && (await phoneFlagged(tx, phone, settings.settings))))
+    (settings.cod.advance === 'always' || (settings.cod.advance === 'flagged' && risk.risky))
   ) {
     throw new AppError('cod_unavailable', {
       extensions: { reason: 'advance_required', advance: deliveryCharge },
@@ -296,7 +299,7 @@ export async function placeOrder(
     kind === 'cod' &&
     input.smsReady &&
     !input.otpVerified &&
-    (await otpRequired(tx, phone, settings.settings))
+    (await otpRequired(tx, phone, settings.settings, risk))
   ) {
     throw new AppError('otp_required');
   }
@@ -407,6 +410,9 @@ export async function placeOrder(
       ip: input.ip ?? null,
       userAgent: input.userAgent?.slice(0, 500) ?? null,
       createdBy: storefront ? null : actor.userId,
+      phoneScore: risk.score,
+      // A risky phone shows on the order, for staff (phase-5a-plan §3.11).
+      flags: risk.risky ? ['flagged_phone'] : [],
       ...(status === 'confirmed' ? { confirmedAt: sql`now()` } : {}),
     })
     .returning({ placedAt: schema.orders.placedAt });
@@ -513,11 +519,6 @@ export async function placeOrder(
       aggregateId: orderId,
       payload: { number },
     });
-  }
-  // A flagged phone shows on the order, for staff (phase-5a-plan §3.11).
-  if (await phoneFlagged(tx, phone, settings.settings)) {
-    await tx.db.execute(sql`
-      update store.orders set flags = array_append(flags, 'flagged_phone') where id = ${orderId}`);
   }
   // A store credit code the order didn't use up comes back as a new one (phase-5a-plan §3.13).
   for (const p of q.promotions) {

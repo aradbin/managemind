@@ -1,7 +1,8 @@
 // Manual orders (phase-4-plan §3.12): Facebook, phone and walk-in orders,
 // entered by staff and placed with the same placeOrder as the storefront.
 // The preview prices them exactly as placing will, and says whether the
-// phone is blocked so the screen can warn first.
+// phone is blocked, and its delivery success score (phase-6-plan §3.8), so
+// the screen can warn first.
 import {
   type ManualOrderInput,
   manualOrderInput,
@@ -10,6 +11,7 @@ import {
 import { type Actor, authorize } from '../access';
 import { parseInput } from '../catalog/common';
 import { isBlocked } from '../customers/blocklist';
+import { type PhoneRisk, phoneRisk } from '../fraud/index';
 import { customerFacts, orderSettings, type Quote, quote } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 import { completeWalkIn } from './lifecycle';
@@ -28,7 +30,7 @@ export async function previewManualOrder(
   tx: TenantTx,
   actor: Actor,
   input: unknown,
-): Promise<{ quote: Quote; blocked: boolean; firstOrder: boolean }> {
+): Promise<{ quote: Quote; blocked: boolean; firstOrder: boolean; risk: PhoneRisk | null }> {
   authorize(actor, 'orders.write');
   const v = parseInput(manualQuoteInput, input);
   const phone = v.contact?.phone ?? null;
@@ -50,6 +52,7 @@ export async function previewManualOrder(
     quote: q,
     blocked: phone !== null && (await isBlocked(tx, phone)),
     firstOrder: facts.isFirstOrder,
+    risk: phone === null ? null : await phoneRisk(tx, phone, settings.settings),
   };
 }
 

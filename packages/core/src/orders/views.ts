@@ -5,6 +5,7 @@
 // but not shoppers' personal data); cost prices need catalog.cost.
 import { AppError, formatPhone } from '@managemind/shared';
 import {
+  type CancelCode,
   formatOrderNumber,
   type OrderListQuery,
   orderMachine,
@@ -14,6 +15,7 @@ import { dhakaToUtc } from '@managemind/shared/storefront';
 import { type SQL, sql } from 'drizzle-orm';
 import { type Actor, authorize } from '../access';
 import type { StoreImage } from '../catalog/published';
+import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 import type { Localized } from './variants';
@@ -48,7 +50,11 @@ export interface OrderSummary {
   total: number;
   itemCount: number;
   tags: string[];
+  /** For staff: risky phone, possible duplicate, unreachable and the payment flags. */
+  flags: string[];
   cancelledBy: string | null;
+  /** The phone's delivery success score now (phase-6-plan §3.3): counts only. */
+  risk: PhoneRisk;
   placedAt: string;
 }
 
@@ -76,7 +82,7 @@ export async function listOrders(
 ): Promise<{ items: OrderSummary[]; nextCursor: string | null }> {
   authorize(actor, 'orders.read');
   const personal = actor.permissions.has('customers.read');
-  const { checkout } = await orderSettings(tx);
+  const { checkout, settings } = await orderSettings(tx);
   const limit = query.limit ?? 50;
   const where: SQL[] = [sql`true`];
   if (query.status) where.push(sql`o.status = ${query.status}`);
@@ -88,6 +94,7 @@ export async function listOrders(
   if (query.tag) where.push(sql`${query.tag} = any(o.tags)`);
   if (query.cancelledByShopper)
     where.push(sql`o.status = 'cancelled' and o.cancelled_by = 'shopper'`);
+  if (query.flag) where.push(sql`${query.flag} = any(o.flags)`);
   if (query.from) where.push(sql`o.placed_at >= ${dateBound(query.from, false)}`);
   if (query.to) where.push(sql`o.placed_at < ${dateBound(query.to, true)}`);
   const q = query.q?.trim();
@@ -111,11 +118,18 @@ export async function listOrders(
     where.push(sql`(o.placed_at, o.id) < (${cursor.placedAt}::timestamptz, ${cursor.id}::uuid)`);
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
     select o.id, o.number, o.status, o.payment_status, o.delivery_status, o.source, o.contact->>'name' as name,
-           o.phone, o.address->'names'->'area' as area, o.zone_name, o.total, o.tags, o.cancelled_by, o.placed_at,
+           o.phone, o.address->'names'->'area' as area, o.zone_name, o.total, o.tags, o.flags, o.cancelled_by, o.placed_at,
            (select coalesce(sum(quantity), 0)::int from store.order_lines l where l.order_id = o.id) as item_count
       from store.orders o where ${sql.join(where, sql` and `)}
      order by o.placed_at desc, o.id desc limit ${limit + 1}`);
-  const items = rows.slice(0, limit).map(
+  const page = rows.slice(0, limit);
+  // Every phone on the page in one query.
+  const risks = await phoneRisks(
+    tx,
+    page.map((r) => r.phone as string),
+    settings,
+  );
+  const items = page.map(
     (r): OrderSummary => ({
       id: r.id as string,
       number: Number(r.number),
@@ -131,7 +145,9 @@ export async function listOrders(
       total: Number(r.total),
       itemCount: Number(r.item_count),
       tags: r.tags as string[],
+      flags: r.flags as string[],
       cancelledBy: (r.cancelled_by as string) ?? null,
+      risk: risks.get(r.phone as string) as PhoneRisk,
       placedAt: iso(r.placed_at) as string,
     }),
   );
@@ -199,8 +215,22 @@ export interface OrderDetail {
     refundDue: number;
     refundedTotal: number;
   };
-  /** payment_risk, late_payment (phase-5a-plan §3.5). */
+  /** payment_risk, late_payment (phase-5a-plan §3.5), and phase-6-plan's. */
   flags: string[];
+  /** The phone's score now, with its counts, and when the order was placed (phase-6-plan §3.3). */
+  risk: PhoneRisk;
+  phoneScoreAtPlacement: number | null;
+  /** The phone's other orders still open, newest first. */
+  otherOpenOrders: {
+    id: string;
+    displayNumber: string;
+    status: string;
+    total: number;
+    placedAt: string;
+  }[];
+  /** The earlier order this one may duplicate (phase-6-plan §3.4). */
+  duplicateOf: { id: string; displayNumber: string; status: string } | null;
+  cancelCode: CancelCode | null;
   /** Refunds, newest last (phase-5a-plan §3.13). */
   refunds: {
     id: string;
@@ -288,8 +318,8 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       from store.orders o join store.customers c on c.id = o.customer_id where o.id = ${id}`);
   const r = rows[0];
   if (!r) return null;
-  const { checkout } = await orderSettings(tx);
-  const [lines, adjustments, payments, shipments, history, notes, refunds, returns] =
+  const { checkout, settings } = await orderSettings(tx);
+  const [lines, adjustments, payments, shipments, history, notes, refunds, returns, others] =
     await Promise.all([
       tx.db.execute<Record<string, unknown>>(sql`
       select id, variant_id, product_id, title, option_labels, sku, image, unit_price, compare_at_price, cost_price,
@@ -317,7 +347,17 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
         from store.refunds where order_id = ${id} order by created_at, id`),
       tx.db.execute<Record<string, unknown>>(sql`
       select id, number, status, resolution from store.returns where order_id = ${id} order by number`),
+      tx.db.execute<Record<string, unknown>>(sql`
+      select id, number, status, total, placed_at from store.orders
+       where phone = ${r.phone as string} and id <> ${id}
+         and (status in ('pending', 'confirmed', 'processing') or id = ${(r.duplicate_of as string) ?? null}::uuid)
+       order by placed_at desc limit 11`),
     ]);
+  const risk = (await phoneRisks(tx, [r.phone as string], settings)).get(
+    r.phone as string,
+  ) as PhoneRisk;
+  const display = (n: unknown) => formatOrderNumber(checkout.orderNumberPrefix, Number(n));
+  const duplicate = others.rows.find((o) => o.id === r.duplicate_of);
   const total = Number(r.total);
   const paidTotal = Number(r.paid_total);
   const codDue = payments.rows
@@ -425,6 +465,26 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       refundedTotal: Number(r.refunded_total ?? 0),
     },
     flags: (r.flags as string[] | null) ?? [],
+    risk,
+    phoneScoreAtPlacement: num(r.phone_score),
+    otherOpenOrders: others.rows
+      .filter((o) => ['pending', 'confirmed', 'processing'].includes(o.status as string))
+      .slice(0, 10)
+      .map((o) => ({
+        id: o.id as string,
+        displayNumber: display(o.number),
+        status: o.status as string,
+        total: Number(o.total),
+        placedAt: iso(o.placed_at) as string,
+      })),
+    duplicateOf: duplicate
+      ? {
+          id: duplicate.id as string,
+          displayNumber: display(duplicate.number),
+          status: duplicate.status as string,
+        }
+      : null,
+    cancelCode: (r.cancel_code as CancelCode) ?? null,
     refunds: refunds.rows.map((f) => ({
       id: f.id as string,
       method: f.method as string,

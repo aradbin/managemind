@@ -2699,6 +2699,46 @@ export interface paths {
                         fraud?: {
                             /** @default 1 */
                             flagAfterFailed?: number;
+                            /** @default null */
+                            minScore?: number | null;
+                            /** @default 2 */
+                            minDecided?: number;
+                            /** @default 30 */
+                            duplicateMinutes?: number;
+                        };
+                        confirmation?: {
+                            /** @default true */
+                            queue?: boolean;
+                            /** @default false */
+                            includePaid?: boolean;
+                            /** @default 3 */
+                            maxAttempts?: number;
+                            /** @default 60 */
+                            retryAfterMinutes?: number;
+                            /** @default false */
+                            cancelUnreachable?: boolean;
+                            /** @default false */
+                            smsLink?: boolean;
+                            /** @default true */
+                            callRisky?: boolean;
+                            /**
+                             * @default never
+                             * @enum {string}
+                             */
+                            autoConfirm?: "never" | "trusted";
+                            /** @default {} */
+                            script?: {
+                                bn?: string;
+                                en?: string;
+                            };
+                        };
+                        recovery?: {
+                            /** @default true */
+                            incomplete?: boolean;
+                            /** @default 30 */
+                            showAfterMinutes?: number;
+                            /** @default 30 */
+                            keepDays?: number;
                         };
                         returns?: {
                             /** @default true */
@@ -6484,6 +6524,7 @@ export interface paths {
                     source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange";
                     tag?: string;
                     cancelledByShopper?: boolean | null;
+                    flag?: "flagged_phone" | "possible_duplicate" | "unreachable";
                     from?: string;
                     to?: string;
                     q?: string;
@@ -6669,6 +6710,7 @@ export interface paths {
                             quote: components["schemas"]["OrderQuote"];
                             blocked: boolean;
                             firstOrder: boolean;
+                            risk: components["schemas"]["PhoneRisk"] & (Record<string, never> | null);
                         };
                     };
                 };
@@ -6875,7 +6917,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel with a reason while nothing is shipped (orders.write) */
+        /** Cancel with a reason and a code while nothing is shipped (orders.write) */
         post: {
             parameters: {
                 query?: never;
@@ -6891,6 +6933,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         reason: string;
+                        /** @enum {string} */
+                        code?: "shopper_request" | "no_answer" | "wrong_number" | "fake" | "duplicate" | "out_of_stock" | "payment_expired" | "other";
                     };
                 };
             };
@@ -8148,6 +8192,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/phones/{phone}/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A phone's delivery success score in this store, with its counts (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    phone: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Risk */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PhoneRisk"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/dashboard": {
         parameters: {
             query?: never;
@@ -9309,7 +9391,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "confirm_request" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
                         /** @enum {string} */
                         channel: "email" | "sms" | "push";
                         /** @enum {string} */
@@ -9359,7 +9441,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "confirm_request" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
                         /** @enum {string} */
                         channel: "email" | "sms" | "push";
                         /** @enum {string} */
@@ -12201,6 +12283,46 @@ export interface components {
             fraud: {
                 /** @default 1 */
                 flagAfterFailed: number;
+                /** @default null */
+                minScore: number | null;
+                /** @default 2 */
+                minDecided: number;
+                /** @default 30 */
+                duplicateMinutes: number;
+            };
+            confirmation: {
+                /** @default true */
+                queue: boolean;
+                /** @default false */
+                includePaid: boolean;
+                /** @default 3 */
+                maxAttempts: number;
+                /** @default 60 */
+                retryAfterMinutes: number;
+                /** @default false */
+                cancelUnreachable: boolean;
+                /** @default false */
+                smsLink: boolean;
+                /** @default true */
+                callRisky: boolean;
+                /**
+                 * @default never
+                 * @enum {string}
+                 */
+                autoConfirm: "never" | "trusted";
+                /** @default {} */
+                script: {
+                    bn?: string;
+                    en?: string;
+                };
+            };
+            recovery: {
+                /** @default true */
+                incomplete: boolean;
+                /** @default 30 */
+                showAfterMinutes: number;
+                /** @default 30 */
+                keepDays: number;
             };
             returns: {
                 /** @default true */
@@ -13882,8 +14004,29 @@ export interface components {
             total: number;
             itemCount: number;
             tags: string[];
+            flags: string[];
             cancelledBy: string | null;
+            risk: components["schemas"]["PhoneRisk"];
             placedAt: string;
+        };
+        PhoneRisk: {
+            history: {
+                delivered: number;
+                /** @description Came back undelivered */
+                returned: number;
+                fake: number;
+                wrongNumber: number;
+                noAnswer: number;
+                /** @description For other reasons: not counted */
+                cancelled: number;
+                open: number;
+            };
+            /** @description 0–100; null for a new phone */
+            score: number | null;
+            decided: number;
+            risky: boolean;
+            trusted: boolean;
+            reasons: ("flagged" | "failed_deliveries" | "low_score")[];
         };
         OrderQuote: {
             lines: {
@@ -14088,8 +14231,26 @@ export interface components {
                 refundDue: number;
                 refundedTotal: number;
             };
-            /** @description payment_risk, late_payment */
+            /** @description payment_risk, late_payment, flagged_phone (risky), possible_duplicate, unreachable */
             flags: string[];
+            risk: components["schemas"]["PhoneRisk"];
+            phoneScoreAtPlacement: number | null;
+            otherOpenOrders: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                status: string;
+                total: number;
+                placedAt: string;
+            }[];
+            duplicateOf: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                status: string;
+            } | null;
+            /** @enum {string|null} */
+            cancelCode: "shopper_request" | "no_answer" | "wrong_number" | "fake" | "duplicate" | "out_of_stock" | "payment_expired" | "other" | null;
             refunds: {
                 /** Format: uuid */
                 id: string;
@@ -14213,8 +14374,9 @@ export interface components {
             flagged: boolean;
         };
         CustomerDetail: components["schemas"]["Customer"] & {
-            /** @description By hand or by failed deliveries: asks for an advance or a code */
+            /** @description Risky: by hand, by failed deliveries or by score; asks for an advance or a code */
             phoneFlagged: boolean;
+            risk: components["schemas"]["PhoneRisk"];
             addresses: components["schemas"]["CustomerAddress"][];
             orders: {
                 /** Format: uuid */

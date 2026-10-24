@@ -16,6 +16,7 @@ import {
   RETURN_RECORD_STATUSES,
   RETURN_STATUSES,
 } from './machines';
+import { CANCEL_CODES } from './recovery';
 
 const price = z.int().min(0).max(CATALOG_LIMITS.maxPrice);
 
@@ -127,6 +128,11 @@ export const trackInput = z
   .strict();
 
 export const reasonInput = z.object({ reason: cleanString(300) }).strict();
+
+/** Staff's cancellation: a reason, and why as a code (phase-6-plan §3.5); `other` when none. */
+export const cancelInput = z
+  .object({ reason: cleanString(300), code: z.enum(CANCEL_CODES).optional() })
+  .strict();
 
 const customerTags = z
   .array(z.string())
@@ -306,6 +312,8 @@ export const orderListQuery = z.object({
   tag: z.string().max(50).optional(),
   /** Cancelled by the shopper (§3.9). */
   cancelledByShopper: z.coerce.boolean().optional(),
+  /** A flag staff filter by: risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
+  flag: z.enum(['flagged_phone', 'possible_duplicate', 'unreachable']).optional(),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   q: z.string().trim().max(100).optional(),
