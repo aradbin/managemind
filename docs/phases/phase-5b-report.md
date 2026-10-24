@@ -35,6 +35,7 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
    - jobs start at the daily run rather than at once (`GITHUB_DISPATCH_TOKEN`).
 
    The demo stores are `demo` stores, so billing skips them; they start again every Friday.
+7. **The repository's Actions minutes ran out on Oct 24,** after four full preview runs that day. CI, previews, deploys and the scheduled workflows wait for the monthly reset; production keeps running. The owner chose to wait rather than pay or make the repository public. `docs/runbooks/free-tier-limit.md` says what stops and what each run costs.
 2. **The security review found one serious bug, three medium ones and two small ones, all fixed** (§2.1):
    - a store reopened and closed again could be purged at once, on its first closure's approval;
    - exports included shoppers' password hashes and sign-in tokens;
@@ -70,7 +71,8 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 | 19 | `3503107` | Fixes from the security review (migration 0038) |
 | 20 | `b325e99`, `7fcbcfd` | This report; PLAN.md's status |
 | — | `362f091`, `0ca7018`, `b25e062`, `bb7ccd9` | Fixes from #66's preview runs: the backup tools' commands reach the tests through turbo; longer E2E waits for slower previews; the load test reports statuses; a 45-minute preview job |
-| — | _this commit_ | The preview and load test results |
+| — | `cf45127`, `ba2874d` | The preview and load test results; undici overridden past a new advisory (GHSA-xjj6-f33q-929c) for CI's audit |
+| — | #67 | After the merge: usage older than 13 months folds into one row per month (migration 0039); this status; a 30-second test limit in the packages that hit Postgres |
 
 ## 2. Acceptance criteria
 
@@ -196,6 +198,12 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 9. **A person who has never used the admin**, to onboard the first pilot client for criterion 1.
 10. **Whether to load-test through Hyperdrive.** The preview's run (§3) shows the rate limits work and the code holds, but its errors come from the direct connection. A run through Hyperdrive would use about 10,000 of production's 100,000 daily queries; one after Workers Paid, against production at a quiet hour, would be the real test.
 
+### Until the Actions minutes reset
+
+- **#67 can merge, but it won't deploy** until the first push to `master` after the reset. Migration 0039 applies then.
+- **The nightly backup, the usage alarm and the store jobs are paused.** Store jobs wait in the table and run at the first daily run after the reset.
+- **After the reset, re-run #67's checks** before relying on them.
+
 ### Not built yet, or smaller than planned
 
 - **The purge E2E stops at the dry run.** Previews have no jobs runner; the integration test covers the purge.
@@ -216,3 +224,5 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 - **Every export needs a deny list that a test checks against the schema.** A new table with a secret column fails the test instead of leaving in a zip.
 - **Static assets skip the Worker.** Headers set in middleware never reach them.
 - **Turbo passes a task only the variables `turbo.json` names.** CI set `PG_DUMP` for the backup test, and turbo dropped it.
+- **A test that times out keeps running.** On a shared database client, its open transaction failed the next tests. CI runs every package at once, so the packages that hit Postgres now allow 30 seconds a test.
+- **Actions minutes are a free-tier limit like the others.** Four full preview runs and a day of pushes used what was left of the month.

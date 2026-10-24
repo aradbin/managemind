@@ -12,7 +12,22 @@ The platform runs on free plans. The daily usage alarm (**Actions → Usage alar
 | **Email** (Resend, 100 a day) | 00:00 UTC | Staff sign-in codes stop; shopper email is skipped from 70% | Wait for the reset; staff already signed in keep working | Resend's paid plan, or Brevo for shoppers |
 | **Neon compute** (100 CU-hours a month) | Monthly | The database suspends until the next period | Delete idle preview branches; check nothing polls the database | Neon Launch |
 | **Neon storage** (0.5 GB, all branches) | — | Writes fail | Delete old preview branches; the E2E cleanup purges old test stores | Neon Launch |
-| **Actions minutes** (2,000 a month, private repository) | Monthly | Every workflow stops: no deploys, backups, jobs | Cancel preview runs; set a small spending limit as a safety net (Q10) | Pay as you go |
+| **Actions minutes** (2,000 a month, private repository) | Monthly, on the account's billing date | Every workflow stops (see below). This happened on Oct 24 | Cancel preview runs and push nothing until the reset | A budget above $0 for Actions (pay as you go) |
+
+## When the Actions minutes run out
+
+**The sign:** every job fails within two seconds with no steps, and the run's *Annotations* say "The job was not started because recent account payments have failed or your spending limit needs to be increased". To tell the two apart, open **Settings → Billing and licensing → Usage** (github.com/settings/billing/usage) and filter by Actions: 2,000 minutes used means the minutes ran out. The same page shows when the next period starts.
+
+**What keeps working:** production. The Workers serve shoppers and staff, and the Worker's own nightly cron (usage rollup, billing and reminders, domain checks) runs on Cloudflare, not GitHub.
+
+**What stops until the reset:**
+
+- CI and previews on pull requests. A merge to `master` **doesn't deploy**: the deploy is a workflow too. It deploys at the first push to `master` after the reset, or from **Actions → Deploy → Run workflow**.
+- The daily usage alarm (`monitor.yml`).
+- Store jobs (`tenant-jobs.yml`): exports, purges and the Friday demo reset. They wait in `platform.tenant_jobs` and run at the first daily run after the reset.
+- The nightly backup and the monthly restore test. Neon's own history is then the only backup.
+
+**What each run costs:** a push to a pull request about 10 minutes (CI and the preview's smoke test), a `full-preview` run about 37, a deploy about 2, and the scheduled workflows about 150 a month. Add `full-preview` once, when a PR is ready, and push fewer, larger commits.
 
 ## Upgrading to Workers Paid
 
