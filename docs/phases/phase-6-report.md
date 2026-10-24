@@ -2,9 +2,9 @@
 
 - Date: 2026-10-24
 - Plan: `docs/phases/phase-6-plan.md` (approved with the owner's answers in §14)
-- Branch: `ccr-36d50e25-3oyrge`, one commit per plan step (§1). **No pull request yet:** the owner chose to open it once Actions minutes allow (Q12). The repository is public for now, so they are free (PLAN.md, 5B's row)
+- Pull request: #72, one commit per plan step (§1), with its own preview database (`db-branch`). Opened on Oct 24 while the repository is public, so its Actions minutes were free (Q12)
 
-> This report covers the build. Everything here was checked locally: the unit and integration tests, the new E2E flow at a phone and a desktop viewport, and the Phase 4 and 5A flows before it. The preview's results go here after the pull request's `full-preview` run: the E2E on the preview, Lighthouse and the CPU step.
+> This report covers the build. The preview results are from #72's `full-preview` run on `29c42e7` (Oct 24).
 
 ## Summary
 
@@ -31,11 +31,12 @@ Phase 6 is built. Staff now have tools for the two things that cost COD stores t
 
 **What the owner should know:**
 
-1. **Nothing turns on by itself except what is harmless** (plan §11). The score shows, duplicates are flagged, pending COD orders wait in the queue, and incomplete checkouts are saved with the notice. There is no threshold, no auto-confirm, no auto-cancel and no SMS link until a store chooses them.
-2. **Running the new E2E flow locally found a real bug before any preview:** the storefront's checkout saves and the link page called the store's `/api` with a `/v1/store` prefix, so they reached a 404. The API's integration tests had passed, because they call the API directly. It is fixed, and a test now fails if a store script's route has the prefix (§2.1).
-3. **The security review found one medium problem and one small one, both fixed** (§2.1). Any role that reads orders, a viewer included, could look up whether some other phone number had ordered from the store. The lookup now needs `customers.read`.
-4. **The E2E can't open a real SMS link on a preview.** The plan expected the dev SMS outbox, and previews don't have one. The flow opens the link page with an unknown code; the API's tests answer links; and a link was confirmed through the storefront by hand locally (§2).
-5. **Waiting on the owner** (§5): the legal review's wording for the checkout notice and the privacy paragraph (Q5); the pilot stores' call scripts (Q3); and, for the SMS link in production, `CREDENTIALS_KEY` and a store's SMS gateway (Q9).
+1. **#72 is green and mergeable.** Its full preview run passed all 29 E2E flows, every Lighthouse budget on nine pages (the link page now one of them), and the CPU step with no request stopped at the CPU limit (§3). Merging deploys migrations 0040–0041.
+2. **Nothing turns on by itself except what is harmless** (plan §11). The score shows, duplicates are flagged, pending COD orders wait in the queue, and incomplete checkouts are saved with the notice. There is no threshold, no auto-confirm, no auto-cancel and no SMS link until a store chooses them.
+3. **Running the new E2E flow locally found a real bug before any preview:** the storefront's checkout saves and the link page called the store's `/api` with a `/v1/store` prefix, so they reached a 404. The API's integration tests had passed, because they call the API directly. It is fixed, and a test now fails if a store script's route has the prefix (§2.1).
+4. **The security review found one medium problem and one small one, both fixed** (§2.1). Any role that reads orders, a viewer included, could look up whether some other phone number had ordered from the store. The lookup now needs `customers.read`.
+5. **The E2E can't open a real SMS link on a preview.** The plan expected the dev SMS outbox, and previews don't have one. The flow opens the link page with an unknown code; the API's tests answer links; and a link was confirmed through the storefront by hand locally (§2).
+6. **Waiting on the owner** (§5): the legal review's wording for the checkout notice and the privacy paragraph (Q5); the pilot stores' call scripts (Q3); and, for the SMS link in production, `CREDENTIALS_KEY` and a store's SMS gateway (Q9).
 
 ## 1. What was built
 
@@ -54,7 +55,9 @@ Phase 6 is built. Staff now have tools for the two things that cost COD stores t
 | 10 | `2fabf42` | Reports → Sales recovery; the demo stores' sample data; the privacy template's paragraph |
 | 11 | `55e21a1` | CI: the E2E flow, the CPU step's routes, Lighthouse on the link page; the storefront scripts' route fix |
 | 12 | `46ca4d9` | Fixes from the security review |
-| 13 | This commit | This report; PLAN.md's and the README's status |
+| 13 | `c92c651` | This report; PLAN.md's and the README's status |
+| — | `29c42e7` | Fixes from #72's first preview run: the storefront flow clicks a size option clear of the chat buttons; the new flow sends a read again after the preview's empty 503 |
+| — | This commit | #72's preview results in this report |
 
 ## 2. Acceptance criteria
 
@@ -111,11 +114,15 @@ Found on the way, not a security bug:
 | `storefront` | 40 (27), with the scripts' routes check |
 | `scripts` | 23 (23), the export and purge with both new tables |
 
-**E2E, locally** against `wrangler dev` with a seeded run: the new sales recovery flow passes at a phone and a desktop viewport, with axe and the CSP check on its 11 new screens. The orders and returns flows pass before it, and smoke passes. Locally, the storefront flow's English demo store has no catalog, so its first step fails there for that reason. **On the preview:** after the pull request's `full-preview` run.
+**E2E, locally** against `wrangler dev` with a seeded run: the new sales recovery flow passes at a phone and a desktop viewport, with axe and the CSP check on its 11 new screens. The orders and returns flows pass before it, and smoke passes. Locally, the storefront flow's English demo store has no catalog, so its first step fails there for that reason. **On the preview** (#72, `29c42e7`): all 29 pass in 15.2 minutes, at a phone and a desktop viewport, the new flow included.
+
+The first run, on `c92c651`, failed two flows, and `29c42e7` fixed both in the tests:
+- **The storefront flow at a phone size.** This preview's own database copies production, where demo-fashion has its floating chat buttons, and on a phone they covered the size option the flow clicks. The flow now scrolls the option to the middle of the screen first.
+- **The new flow at a desktop size.** One read got the preview's empty 503 (Phase 5B, §3). The flow now sends a read again after an empty 503, never a write.
 
 ## 3. Measurements
 
-From a local build of this branch. Lighthouse and the CPU step run on the preview.
+The sizes are from a local build of this branch. The rest is from #72's `full-preview` run on `29c42e7`.
 
 | Measure | Result | Budget |
 | --- | --- | --- |
@@ -123,11 +130,22 @@ From a local build of this branch. Lighthouse and the CPU step run on the previe
 | Storefront Worker | 332 KiB gzip (331) | 3 MiB (11%) |
 | Admin, JavaScript before sign-in | 134 KiB (Phase 5C: 134) | 150 KiB (90%; CI warns above 85%, as since 5B) |
 | Store JavaScript on checkout and the link page | Under 50 KB gzip (the E2E's check) | 50 KB |
+| Lighthouse, nine storefront pages (Phase 5B's eight and the link page, `/c`) | All budgets met, 27 runs; checkout's with the notice | LCP 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95 |
 
-**On the preview,** filled in after the run:
+**CPU.** The preview's CPU step, through Hyperdrive, in ms of CPU time. **No request on any route was stopped at the CPU limit.** The new routes, and the ones they change:
 
-- **Lighthouse** adds the link page (`/c`). Checkout's budgets are expected unchanged with the notice.
-- **The CPU step** adds the checkout save, the queue, a claim and an outcome, and the incomplete orders list. The link page isn't in it, for the same reason as the E2E (§2).
+| Route | Requests | Stopped | p50 | p90 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| `POST /v1/store/checkout/orders` (`placeOrder`, now with the duplicate check and closing records) | 15 | 0 | 46 | 80 | 91 |
+| `PUT /v1/store/checkout/draft` (save) | 15 | 0 | 26 | 35 | 37 |
+| `GET /v1/admin/confirmations` (the queue) | 30 | 0 | 19 | 27 | 60 |
+| `POST /v1/admin/orders/{id}/confirmation/claim` | 4 | 0 | 21 | 30 | 30 |
+| `POST /v1/admin/orders/{id}/confirmation/outcomes` | 3 | 0 | 35 | 42 | 42 |
+| `GET /v1/admin/incomplete-orders` | 20 | 0 | 15 | 22 | 23 |
+| `GET /v1/admin/orders` (now with each phone's score) | 30 | 0 | 18 | 28 | 120 |
+| `GET /v1/admin/orders/{id}` (now with the risk panel and the queue's state) | 40 | 0 | 24 | 36 | 138 |
+
+`placeOrder` is a little lower than Phase 5B's run (p50 47, p99 137). The step sent 5 claims and 5 outcomes, all answered; Workers Logs counted 4 and 3. The link page isn't measured, for the same reason as the E2E (§2).
 
 ## 4. Free-tier impact
 
@@ -141,7 +159,7 @@ As planned (plan §9). The new requests are 1–3 saves for each checkout starte
 2. **The pilot stores' call scripts** (Q3). Until then each store has the default script in both languages, and can edit it.
 3. **The score threshold,** from the pilot's delivery-by-score table (Q4).
 4. **For the SMS link in production:** `CREDENTIALS_KEY` (Phase 5A), and a pilot store's SMS gateway.
-5. **Opening the pull request.** The owner chose to wait for the Actions reset, but with the repository public the minutes are free now. Its first `full-preview` run fills in §2's and §3's preview results. It needs the `db-branch` label for migrations 0040–0041.
+5. **Merging #72.** It is green and mergeable. The deploy applies migrations 0040–0041.
 
 ### Not built yet, or smaller than planned
 
