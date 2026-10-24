@@ -69,7 +69,10 @@ export function ReturnSettingsPage() {
         description={t('returnSettings.intro')}
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-6">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-6 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <div className="flex flex-col gap-3">
           <label className="flex min-h-11 items-center gap-3">
             <input

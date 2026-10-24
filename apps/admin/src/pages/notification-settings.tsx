@@ -95,13 +95,13 @@ function ShopperChannels() {
   return (
     <form
       aria-labelledby="channels-h"
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate(value);
       }}
     >
-      <h2 id="channels-h" className="text-lg font-semibold">
+      <h2 id="channels-h" className="font-semibold">
         {t('notify.shopper')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('notify.shopperHint')}</p>
@@ -214,8 +214,11 @@ function StoreEmail() {
   const showForm = editing || !saved;
   const savedFrom = saved ? String(saved.config.from ?? '') : '';
   return (
-    <section aria-labelledby="email-h" className="flex flex-col gap-3">
-      <h2 id="email-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="email-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="email-h" className="font-semibold">
         {t('notify.storeEmail')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('notify.storeEmailHint')}</p>
@@ -442,8 +445,11 @@ function SmsGateway() {
       : !apiKey.trim() || (provider === 'bulksmsbd' && !senderId.trim());
   const name = (p: string) => t(`sms.provider.${p}` as AdminKey);
   return (
-    <section aria-labelledby="sms-h" className="flex flex-col gap-3">
-      <h2 id="sms-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="sms-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="sms-h" className="font-semibold">
         {t('sms.title')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('sms.hint')}</p>

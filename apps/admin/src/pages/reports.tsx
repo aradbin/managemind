@@ -29,17 +29,26 @@ function Table({
   empty: string;
 }) {
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5">
       <h2 className="font-semibold">{caption}</h2>
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">{empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-border">
+        <div
+          // Wide tables scroll sideways on phones; keyboard users can scroll them too.
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable (WCAG 2.1.1).
+          tabIndex={0}
+          className="-mx-4 overflow-x-auto border-y border-border md:-mx-5"
+        >
           <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50">
+            <thead className="bg-canvas text-xs text-muted-foreground">
               <tr>
                 {head.map((h, i) => (
-                  <th key={i} scope="col" className={`p-2 font-medium ${i ? 'text-right' : ''}`}>
+                  <th
+                    key={i}
+                    scope="col"
+                    className={`px-4 py-2.5 font-medium md:px-5 ${i ? 'text-right' : ''}`}
+                  >
                     {h}
                   </th>
                 ))}
@@ -49,7 +58,10 @@ function Table({
               {rows.map((r, j) => (
                 <tr key={j} className="border-t border-border">
                   {r.map((cell, i) => (
-                    <td key={i} className={`p-2 ${i ? 'text-right tabular-nums' : ''}`}>
+                    <td
+                      key={i}
+                      className={`px-4 py-2.5 md:px-5 ${i ? 'text-right tabular-nums' : ''}`}
+                    >
                       {cell}
                     </td>
                   ))}
@@ -83,9 +95,9 @@ export function ReportsPage() {
   const paid = r?.payments.reduce((a, p) => a + p.revenue, 0) ?? 0;
   const orders = r?.payments.reduce((a, p) => a + p.orders, 0) ?? 0;
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
-      <PageHeader title={t('reports.title')} description={t('reports.intro')} />
-      <div className="grid max-w-md grid-cols-2 gap-3">
+    <div className="flex max-w-5xl flex-col gap-5">
+      <PageHeader className="mb-0" title={t('reports.title')} description={t('reports.intro')} />
+      <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-4 md:p-5 md:max-w-md">
         <Field
           label={t('reports.from')}
           type="date"

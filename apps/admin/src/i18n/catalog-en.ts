@@ -16,6 +16,7 @@ export const catalogEn = {
   'status.draft.hint': 'hidden from shoppers while you work on it',
   'status.active.hint': 'shown in the store',
 
+  'products.inStock': '{count} in stock',
   'products.new': 'New product',
   'products.newIntro': 'Start with a title and a price. You can add everything else next.',
   'products.create': 'Create product',

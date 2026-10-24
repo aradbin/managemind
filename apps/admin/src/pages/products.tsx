@@ -238,6 +238,37 @@ export function ProductsPage() {
         }
         hasMore={products.hasNextPage}
         loadingMore={products.isFetchingNextPage}
+        card={(p) => (
+          <div className="flex items-center gap-3">
+            {canWrite && (
+              <input
+                type="checkbox"
+                className="size-5 shrink-0"
+                aria-label={t('products.select', { title: pick(p.titles, locale) ?? '' })}
+                checked={selected.has(p.id)}
+                onChange={() => toggle(p.id)}
+              />
+            )}
+            <Thumbnail file={p.imageFile} />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <Link to="/products/$id" params={{ id: p.id }} className="truncate font-semibold">
+                {pick(p.titles, locale) ?? t('product.untitled')}
+              </Link>
+              <span className="text-sm text-muted-foreground">
+                {formatRange(p.minPrice, p.maxPrice, locale)}
+                {canStock && p.available !== null && p.available !== undefined && (
+                  <>
+                    {' · '}
+                    <span className={p.lowStock ? 'font-semibold text-danger' : undefined}>
+                      {t('products.inStock', { count: p.available })}
+                    </span>
+                  </>
+                )}
+              </span>
+            </div>
+            <StatusBadge status={p.status} />
+          </div>
+        )}
         onLoadMore={() => products.fetchNextPage()}
       />
       {bulk && (

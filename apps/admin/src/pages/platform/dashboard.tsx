@@ -52,7 +52,10 @@ export function PlatformDashboardPage() {
         </div>
       </section>
 
-      <section aria-labelledby="pd-free" className="flex flex-col gap-2">
+      <section
+        aria-labelledby="pd-free"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <h2 id="pd-free" className="font-semibold">
           {t('pdash.freeTier')}
         </h2>
@@ -184,7 +187,10 @@ export function PlatformDashboardPage() {
         </div>
       </section>
 
-      <section aria-labelledby="pd-stores-use" className="flex flex-col gap-2">
+      <section
+        aria-labelledby="pd-stores-use"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <h2 id="pd-stores-use" className="font-semibold">
           {t('pdash.perStore')}
         </h2>

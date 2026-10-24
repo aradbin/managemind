@@ -89,8 +89,11 @@ export function StaffPage() {
           )
         }
       />
-      <section aria-labelledby="members-h" className="flex flex-col gap-3">
-        <h2 id="members-h" className="text-lg font-semibold">
+      <section
+        aria-labelledby="members-h"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="members-h" className="font-semibold">
           {t('staff.members')}
         </h2>
         <DataList<Member>
@@ -421,8 +424,11 @@ function Invitations({
     },
   });
   return (
-    <section aria-labelledby="invitations-h" className="flex flex-col gap-3">
-      <h2 id="invitations-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="invitations-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="invitations-h" className="font-semibold">
         {t('staff.invitations')}
       </h2>
       <DataList<Invitation>

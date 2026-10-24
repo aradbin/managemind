@@ -160,7 +160,10 @@ function ProfileForm({ store }: { store: Store }) {
   return (
     <Form form={form} onSubmit={(v) => save.mutate(v)}>
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <TextField name="name" label={t('store.name')} maxLength={100} />
         <SelectField
           name="defaultLocale"

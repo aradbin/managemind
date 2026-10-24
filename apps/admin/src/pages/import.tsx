@@ -134,7 +134,10 @@ function ChooseFile({ onParsed }: { onParsed: (p: Parsed) => void }) {
         {error && <Notice tone="error">{error}</Notice>}
       </div>
       {(jobs.data?.length ?? 0) > 0 && (
-        <section aria-labelledby="recent-imports" className="flex flex-col gap-2">
+        <section
+          aria-labelledby="recent-imports"
+          className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           <h2 id="recent-imports" className="font-semibold">
             {t('import.recent')}
           </h2>
@@ -297,8 +300,11 @@ function Mapping({
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="mapping-heading" className="flex flex-col gap-3">
-        <h2 id="mapping-heading" className="text-lg font-semibold">
+      <section
+        aria-labelledby="mapping-heading"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="mapping-heading" className="font-semibold">
           {t('import.mapping', { file: parsed.fileName, rows: parsed.rows.length })}
         </h2>
         <p className="text-sm text-muted-foreground">{t('import.mappingIntro')}</p>
@@ -378,8 +384,12 @@ function Mapping({
       </section>
 
       {dry && (
-        <section aria-labelledby="dry-heading" aria-live="polite" className="flex flex-col gap-3">
-          <h2 id="dry-heading" className="text-lg font-semibold">
+        <section
+          aria-labelledby="dry-heading"
+          aria-live="polite"
+          className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
+          <h2 id="dry-heading" className="font-semibold">
             {t('import.dryRun')}
           </h2>
           <p>

@@ -154,6 +154,36 @@ export function CustomersPage() {
         label={t('nav.customers')}
         items={items}
         rowKey={(c) => c.id}
+        card={(c) => (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-start justify-between gap-3">
+              <Link to="/customers/$id" params={{ id: c.id }} className="font-semibold">
+                {c.name}
+              </Link>
+              <span className="font-semibold tabular-nums">
+                {formatPrice(c.totalSpent, locale)}
+              </span>
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {c.phone} · {t('dashboard.orders', { count: c.orderCount })}
+              {c.lastOrderAt ? ` · ${dateOnly(locale, c.lastOrderAt)}` : ''}
+            </span>
+            {c.tags.length > 0 && (
+              <span className="flex flex-wrap gap-1">
+                {c.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="min-h-8 rounded-full bg-muted px-2.5 text-xs"
+                    onClick={() => setFilter({ tag })}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
+        )}
         columns={columns}
         isPending={customers.isPending}
         error={customers.isError ? errorMessage(customers.error, t) : undefined}

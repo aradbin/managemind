@@ -1,5 +1,5 @@
 // The catalog area's sections, as a row of links under the page title: a
-// scrollable strip on phones, a tab row from md.
+// scrollable strip of pills on phones, a tab row from md (ADR 0029).
 import { Link } from '@tanstack/react-router';
 import { type AdminKey, useLocale } from '../i18n';
 import { usePermission } from './permission-gate';
@@ -25,15 +25,16 @@ export function CatalogNav() {
     !p || (p === 'inventory.read' ? inventory : p === 'catalog.write' ? write : false);
   return (
     <nav aria-label={t('catalog.sections')} className="-mx-4 mb-4 overflow-x-auto px-4">
-      <ul className="flex min-w-max gap-1 border-b border-border">
+      <ul className="flex min-w-max gap-2 md:gap-1 md:border-b md:border-border">
         {SECTIONS.filter((s) => allowed('permission' in s ? s.permission : undefined)).map((s) => (
           <li key={s.to}>
             <Link
               to={s.to}
-              className="flex min-h-11 items-center border-b-2 border-transparent px-3 text-sm text-muted-foreground hover:text-foreground"
+              className="flex min-h-10 items-center rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground hover:text-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-3"
               activeProps={{
                 'aria-current': 'page',
-                className: 'border-primary! font-semibold text-foreground!',
+                className:
+                  'border-foreground! bg-foreground! font-semibold text-background! md:border-foreground! md:bg-transparent! md:text-foreground!',
               }}
             >
               {t(s.label)}

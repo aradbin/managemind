@@ -57,8 +57,11 @@ function Section({
 }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
-      <h2 id={id} className="text-lg font-semibold">
+    <section
+      aria-labelledby={id}
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id={id} className="font-semibold">
         {title}
       </h2>
       {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
@@ -147,7 +150,10 @@ function SettingsForm({ store }: { store: Store }) {
       }}
     >
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-8">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-8 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <Section title={t('storefront.indexing')} hint={t('storefront.indexingHint')}>
           <label className="flex min-h-11 items-center gap-3">
             <input

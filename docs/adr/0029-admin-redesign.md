@@ -52,6 +52,6 @@ The admin works, but it reads as a developer tool: one blue on white, content st
 
 ## Consequences
 
-- Every screen changes colour at once. Screens not yet rebuilt still read well on the new tokens, but sit on the grey canvas without cards until their turn.
+- Every screen follows the same patterns: a breadcrumb above the title (`Breadcrumb`, or `PageHeader`'s `parent`) where the page sits under another, its sections and forms in cards on the grey canvas, lists in a card with phone cards, and wide tables that scroll inside their card on phones (focusable, so keyboards can scroll them too).
 - The status colours change meaning: "confirmed" is now blue (in progress), no longer green.
 - E2E selectors keep working: the store switcher's and the language switch's accessible names are unchanged, and navigation is still links named by `nav.*`.

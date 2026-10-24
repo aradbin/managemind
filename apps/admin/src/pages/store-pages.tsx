@@ -6,8 +6,9 @@ import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { MAX_PAGES, PAGE_KINDS, PAGE_TITLES, type PageKind } from '@managemind/shared/storefront';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useId, useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, LanguageTabs } from '../components/catalog/language-tabs';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -187,13 +188,7 @@ export function StorePageEditorPage({ id }: { id: string }) {
   const store = useQuery(storeSettingsQuery);
   return (
     <div className="max-w-3xl">
-      <Link
-        to="/online-store/pages"
-        className="mb-4 inline-flex min-h-11 items-center gap-2 text-sm"
-      >
-        <ArrowLeft aria-hidden className="size-4" />
-        {t('pages.back')}
-      </Link>
+      <Breadcrumb to="/online-store/pages" label={t('pages.back')} />
       {page.isPending || store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : page.isError ? (
@@ -290,7 +285,10 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
           save.mutate();
         }}
       >
-        <fieldset disabled={!canWrite || save.isPending} className="flex flex-col gap-5">
+        <fieldset
+          disabled={!canWrite || save.isPending}
+          className="flex flex-col gap-5 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           <label className="flex min-h-11 items-start gap-3">
             <input
               type="checkbox"

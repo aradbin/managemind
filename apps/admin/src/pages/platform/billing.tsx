@@ -402,9 +402,9 @@ function IssuerSection({ issuer }: { issuer: Issuer | null }) {
   return (
     <section
       aria-labelledby="issuer-h"
-      className="flex max-w-2xl flex-col gap-3 border-t border-border pt-6"
+      className="flex max-w-2xl flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
     >
-      <h2 id="issuer-h" className="text-lg font-semibold">
+      <h2 id="issuer-h" className="font-semibold">
         {t('pbilling.issuer')}
       </h2>
       <p className="text-muted-foreground">{t('pbilling.issuerIntro')}</p>

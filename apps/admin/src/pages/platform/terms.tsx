@@ -93,9 +93,9 @@ export function PlatformTermsPage() {
       {me.user.platformRole === 'super_admin' && (
         <section
           aria-labelledby="publish-h"
-          className="flex flex-col gap-3 border-t border-border pt-6"
+          className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
         >
-          <h2 id="publish-h" className="text-lg font-semibold">
+          <h2 id="publish-h" className="font-semibold">
             {t('pterms.publish')}
           </h2>
           <Form form={form} onSubmit={(v) => publish.mutate(v)}>
@@ -175,9 +175,9 @@ function SupportSection() {
   return (
     <section
       aria-labelledby="support-h"
-      className="flex flex-col gap-3 border-t border-border pt-6"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
     >
-      <h2 id="support-h" className="text-lg font-semibold">
+      <h2 id="support-h" className="font-semibold">
         {t('psupport.title')}
       </h2>
       <p className="text-muted-foreground">{t('psupport.intro')}</p>

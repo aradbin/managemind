@@ -74,7 +74,13 @@ export function CategoriesPage() {
     const list = children(parentId);
     if (!list.length) return null;
     return (
-      <ul className={parentId ? 'ml-4 border-l border-border pl-3' : 'flex flex-col gap-1'}>
+      <ul
+        className={
+          parentId
+            ? 'ml-4 border-l border-border pl-3'
+            : 'flex flex-col gap-1 rounded-xl border border-border bg-background p-2'
+        }
+      >
         {list.map((c, i) => (
           <li key={c.id} className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-md p-2 hover:bg-muted">

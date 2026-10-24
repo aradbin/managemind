@@ -1,10 +1,11 @@
 // Returns (phase-5a-plan §7): newest first, filtered by status. Shoppers'
 // requests wait at "requested" until staff approve or reject them.
+
 import { RETURN_RECORD_STATUSES } from '@managemind/shared/orders';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { Button } from '../components/ui/button';
@@ -44,15 +45,7 @@ export function ReturnsPage() {
   const rows = list.data?.pages.flat() ?? [];
   return (
     <div className="flex max-w-4xl flex-col gap-4">
-      <div>
-        <Link
-          to="/orders"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('nav.orders')}
-        </Link>
-      </div>
+      <Breadcrumb to="/orders" label={t('nav.orders')} current={t('returns.title')} />
       <PageHeader title={t('returns.title')} description={t('returns.intro')} />
       <label className="flex max-w-xs flex-col gap-1 text-sm font-medium">
         {t('returns.status')}

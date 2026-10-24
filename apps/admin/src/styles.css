@@ -73,6 +73,16 @@
     @apply bg-canvas text-foreground font-sans antialiased;
     font-feature-settings: "cv11" 1;
   }
+  /* A fieldset drawn as a card keeps its legend inside, as the card's heading. */
+  fieldset.rounded-xl > legend {
+    float: left;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+  fieldset.rounded-xl > legend + * {
+    clear: both;
+  }
   /* Checkboxes, radios and ranges in the accent colour. */
   input {
     accent-color: var(--color-primary);

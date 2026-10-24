@@ -124,7 +124,7 @@ export function TenantPage() {
                 <h2 id="details-h" className="font-semibold">
                   {t('tenant.details')}
                 </h2>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                <dl className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
                   {tenant.data.statusReason && (
                     <>
                       <dt className="text-muted-foreground">{t('tenant.statusReason')}</dt>
@@ -335,9 +335,9 @@ function SupportAccess({ tenant, superAdmin }: { tenant: Tenant; superAdmin: boo
   return (
     <section
       aria-labelledby="support-h"
-      className="flex flex-col gap-3 border-t border-border pt-6"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
     >
-      <h2 id="support-h" className="text-lg font-semibold">
+      <h2 id="support-h" className="font-semibold">
         {t('support.title')}
       </h2>
       <p className="text-muted-foreground">{t('support.intro')}</p>

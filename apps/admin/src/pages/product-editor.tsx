@@ -649,7 +649,7 @@ export function NewProductPage() {
     <div className="flex max-w-2xl flex-col gap-4">
       <PageHeader title={t('products.new')} description={t('products.newIntro')} />
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
         onSubmit={(e) => {
           e.preventDefault();
           if (titles[defaultLang].trim()) create.mutate();

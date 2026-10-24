@@ -5,8 +5,9 @@ import { CATALOG_LIMITS } from '@managemind/shared/catalog';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
 import { CatalogNav } from '../components/catalog-nav';
@@ -454,15 +455,10 @@ function CollectionEditor({
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <div>
-        <Link
-          to="/catalog/collections"
-          className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('catalog.collections')}
-        </Link>
+      <div className="flex flex-col gap-2">
+        <Breadcrumb to="/catalog/collections" label={t('catalog.collections')} />
         <PageHeader
+          className="mb-0"
           title={
             collection ? (pick(collection.translations, locale)?.name ?? '—') : t('collections.new')
           }
@@ -477,7 +473,10 @@ function CollectionEditor({
           }
         />
       </div>
-      <fieldset disabled={!canWrite} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canWrite}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         {[defaultLang, other].map((l) => (
           <div key={l} className="flex flex-col gap-3">
             <Field

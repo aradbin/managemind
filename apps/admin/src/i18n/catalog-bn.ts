@@ -17,6 +17,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'status.draft.hint': 'কাজ চলার সময় ক্রেতারা দেখতে পাবেন না',
   'status.active.hint': 'দোকানে দেখা যাবে',
 
+  'products.inStock': 'স্টকে {count}টি',
   'products.new': 'নতুন পণ্য',
   'products.newIntro': 'একটি নাম আর দাম দিয়ে শুরু করুন। বাকি সব পরে যোগ করতে পারবেন।',
   'products.create': 'পণ্য তৈরি করুন',

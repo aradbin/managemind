@@ -191,7 +191,10 @@ function Editor({ template }: { template: Template }) {
         <p className="text-sm text-muted-foreground">
           {template.custom ? t('templates.custom') : t('templates.default')}
         </p>
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           {hasSubject && (
             <Field
               label={t('templates.subject')}

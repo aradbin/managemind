@@ -4,11 +4,13 @@
 // damaged; resolving refunds, gives store credit, exchanges, or closes the
 // return with nothing given back. Every command keeps its Idempotency-Key
 // for the dialog's life.
+
 import { RETURN_REASONS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { usePermission } from '../components/permission-gate';
@@ -59,18 +61,10 @@ export function ReturnDetailPage() {
   const r = ret.data;
   return (
     <div className="flex max-w-4xl flex-col gap-4">
-      <div>
-        <Link
-          to="/returns"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('returns.title')}
-        </Link>
-      </div>
+      <Breadcrumb to="/returns" label={t('returns.title')} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold">
+          <h1 className="text-2xl font-semibold tracking-tight">
             {t('return.title', { number: r.displayNumber })}
           </h1>
           <p className="text-sm text-muted-foreground">

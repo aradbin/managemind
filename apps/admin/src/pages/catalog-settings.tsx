@@ -105,7 +105,10 @@ export function VatSettingsPage() {
         description={t('vat.intro')}
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"
@@ -297,7 +300,10 @@ export function LocationSettingsPage() {
         description={t('location.intro')}
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <Field
           label={t('location.name')}
           value={name}
