@@ -1,7 +1,7 @@
 // More (ADR 0029): on phones, everything the five-tab bar leaves out. Who is
 // signed in, the store switch, the pages beyond the tabs, help, and the
-// account with sign-out. Desktops reach the same through the sidebar and the
-// header's menus, but the page works there too.
+// account with light or dark and sign-out. Desktops reach the same through
+// the sidebar and the header's menus, but the page works there too.
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ChevronRight, ExternalLink, LogOut, UserRound } from 'lucide-react';
@@ -11,6 +11,7 @@ import { useHelpLinks } from '../../components/help-menu';
 import { type NavItem, useNav } from '../../components/nav';
 import { usePermission } from '../../components/permission-gate';
 import { StoreSwitcher } from '../../components/store-switcher';
+import { ThemeSwitch } from '../../components/theme-choice';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { useLocale } from '../../i18n';
@@ -100,6 +101,7 @@ function MorePage() {
           <span className="flex-1">{t('account.title')}</span>
           {chevron}
         </Link>
+        <ThemeSwitch />
         <button
           type="button"
           className={`${row} font-medium text-danger`}

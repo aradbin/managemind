@@ -35,8 +35,14 @@
   --color-ring: #0e7a5a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/*
+ * Dark (lib/theme.ts sets data-theme from the device or the user's choice).
+ * Screens only: printed invoices and packing slips stay light. Until the
+ * script runs, a dark device gets the dark canvas, so the first paint matches.
+ */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
     --color-canvas: #0f1113;
     --color-background: #17191c;
     --color-foreground: #edeef0;
@@ -64,9 +70,15 @@
   }
 }
 
+@media screen and (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-canvas: #0f1113;
+  }
+}
+
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: light;
     -webkit-text-size-adjust: 100%;
   }
   body {

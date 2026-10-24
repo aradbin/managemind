@@ -602,6 +602,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
   - forms and sections in cards;
   - lists in a card, with phone cards;
   - the main action pinned within thumb reach on phones.
+- [x] Light, dark or the device's setting, chosen in the account menu or on More and remembered on the device (added after #69; ADR 0029 item 7).
 - [x] The E2E, with axe and the CSP check, passes at both viewports. The admin's JavaScript before sign-in stays within its 150 KiB budget.
 
 **Acceptance criteria**
