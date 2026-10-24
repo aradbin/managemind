@@ -4,6 +4,7 @@
 - Date: 2026-10-24
 - Design: the approved canvas "ManageMind Admin Redesign" (18 screens, desktop and phone). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/routes/_shell.tsx`
 - Amends: phase-1-plan §7.3 (the shell and the colour tokens)
+- Phase: 5C, [phase-5c-report.md](../phases/phase-5c-report.md)
 
 ## Context
 
