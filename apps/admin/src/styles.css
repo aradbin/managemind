@@ -1,41 +1,62 @@
 @import "tailwindcss";
 
 /*
- * Colour tokens (phase-1-plan §7.3): every text/background pair meets WCAG AA
- * (4.5:1) in both themes. Components use these names, never raw colours.
+ * Colour tokens (phase-1-plan §7.3, redesigned in ADR 0029): every text and
+ * background pair meets WCAG AA (4.5:1) in both themes. Components use these
+ * names, never raw colours. `canvas` is the page behind the cards;
+ * `background` is the surface of cards, menus, dialogs and inputs.
  */
 @theme {
-  --font-sans: "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans:
+    "Inter Variable", "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-canvas: #f6f7f5;
   --color-background: #ffffff;
-  --color-foreground: #111827;
-  --color-muted: #f3f4f6;
-  --color-muted-foreground: #4b5563;
-  --color-border: #d1d5db;
-  --color-primary: #1d4ed8;
+  --color-foreground: #16181d;
+  --color-muted: #f0f1ee;
+  --color-muted-foreground: #5b6170;
+  --color-border: #e4e6e1;
+  --color-input: #d5d8d1;
+  --color-primary: #0e7a5a;
   --color-primary-foreground: #ffffff;
-  --color-danger: #b91c1c;
+  --color-primary-soft: #e7f2ed;
+  --color-danger: #a8261b;
   --color-danger-foreground: #ffffff;
-  --color-warning: #fef3c7;
-  --color-warning-foreground: #78350f;
-  --color-success: #166534;
-  --color-ring: #1d4ed8;
+  --color-danger-soft: #fce8e6;
+  --color-warning: #fdf1dc;
+  --color-warning-foreground: #8a4b00;
+  --color-success: #146c43;
+  --color-success-soft: #e3f3ea;
+  --color-info: #e5eefb;
+  --color-info-foreground: #1e4fa3;
+  --color-shipped: #efeafb;
+  --color-shipped-foreground: #5b3ca8;
+  --color-ring: #0e7a5a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #0b1120;
-    --color-foreground: #f3f4f6;
-    --color-muted: #1f2937;
-    --color-muted-foreground: #d1d5db;
-    --color-border: #374151;
-    --color-primary: #93c5fd;
-    --color-primary-foreground: #0b1120;
-    --color-danger: #fca5a5;
-    --color-danger-foreground: #0b1120;
-    --color-warning: #422006;
-    --color-warning-foreground: #fde68a;
-    --color-success: #86efac;
-    --color-ring: #93c5fd;
+    --color-canvas: #0f1113;
+    --color-background: #17191c;
+    --color-foreground: #edeef0;
+    --color-muted: #22252a;
+    --color-muted-foreground: #a9aeb8;
+    --color-border: #2e3238;
+    --color-input: #3a3f46;
+    --color-primary: #5fcb9e;
+    --color-primary-foreground: #062018;
+    --color-primary-soft: #163328;
+    --color-danger: #f2938a;
+    --color-danger-foreground: #1a0503;
+    --color-danger-soft: #3a1714;
+    --color-warning: #3a2a0e;
+    --color-warning-foreground: #f5c26b;
+    --color-success: #6fd3a0;
+    --color-success-soft: #14301f;
+    --color-info: #162845;
+    --color-info-foreground: #9dbdf5;
+    --color-shipped: #2a2145;
+    --color-shipped-foreground: #c4b2f5;
+    --color-ring: #5fcb9e;
   }
 }
 
@@ -45,7 +66,8 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-canvas text-foreground font-sans antialiased;
+    font-feature-settings: "cv11" 1;
   }
   /* Visible focus for keyboard users everywhere. */
   :focus-visible {
