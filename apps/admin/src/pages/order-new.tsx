@@ -14,6 +14,7 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
+import { type PhoneRisk, RiskReasons, ScoreBadge, useRiskCounts } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -35,6 +36,7 @@ import {
   withKey,
   zonesQuery,
 } from '../lib/orders';
+import { cn } from '../lib/utils';
 
 interface LineDraft {
   variantId: string;
@@ -164,6 +166,19 @@ export function NewOrderPage() {
       linesValid && debounced.lines.length > 0 && (!delivery || address !== null || zone !== ''),
     retry: false,
     placeholderData: (prev) => prev,
+  });
+
+  // The phone's delivery score as soon as it's typed (phase-6-plan §3.8), before any item.
+  const risk = useQuery({
+    queryKey: ['phone-risk', normalized] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/phones/{phone}/risk', {
+          params: { path: { phone: normalized as string } },
+        }),
+      ),
+    enabled: normalized !== null,
+    staleTime: 30_000,
   });
 
   const contactValid = normalized !== null && name.trim() !== '';
@@ -310,6 +325,9 @@ export function NewOrderPage() {
             )}
             {normalized && quote.data && !quote.data.blocked && quote.data.firstOrder && (
               <p className="text-sm text-muted-foreground">{t('newOrder.firstOrder')}</p>
+            )}
+            {normalized && risk.data && risk.data.decided + risk.data.history.open > 0 && (
+              <PhoneRecord risk={risk.data} />
             )}
           </section>
 
@@ -756,6 +774,27 @@ function SavedAddresses({
           </Button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** The phone's record in one line, and why it's risky, beside the customer's details. */
+function PhoneRecord({ risk }: { risk: PhoneRisk }) {
+  const { t } = useLocale();
+  const counts = useRiskCounts();
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-1.5 rounded-md p-3 text-sm',
+        risk.risky ? 'bg-danger-soft' : 'bg-muted',
+      )}
+    >
+      <p className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{t('risk.title')}</span>
+        <ScoreBadge risk={risk} />
+        <span>{counts(risk)}</span>
+      </p>
+      <RiskReasons risk={risk} />
     </div>
   );
 }

@@ -42,6 +42,11 @@ export const Route = createFileRoute('/_shell/orders/')({
       zoneId: searchUuid(search.zoneId),
       tag: searchText(search.tag, 50),
       cancelledByShopper: searchFlag(search.cancelledByShopper),
+      flag: searchOneOf(search.flag, [
+        'flagged_phone',
+        'possible_duplicate',
+        'unreachable',
+      ] as const),
       from: date(search.from),
       to: date(search.to),
     }),

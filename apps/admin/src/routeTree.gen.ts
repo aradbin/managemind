@@ -50,6 +50,7 @@ import { Route as ShellReturnsIdRouteImport } from './routes/_shell/returns/$id'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
 import { Route as ShellSettingsBillingRouteImport } from './routes/_shell/settings/billing'
 import { Route as ShellSettingsCheckoutRouteImport } from './routes/_shell/settings/checkout'
+import { Route as ShellSettingsConfirmationRouteImport } from './routes/_shell/settings/confirmation'
 import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/settings/delivery'
 import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
@@ -275,6 +276,12 @@ const ShellSettingsCheckoutRoute = ShellSettingsCheckoutRouteImport.update({
   path: '/settings/checkout',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSettingsConfirmationRoute =
+  ShellSettingsConfirmationRouteImport.update({
+    id: '/settings/confirmation',
+    path: '/settings/confirmation',
+    getParentRoute: () => ShellRoute,
+  } as any)
 const ShellSettingsDeliveryRoute = ShellSettingsDeliveryRouteImport.update({
   id: '/settings/delivery',
   path: '/settings/delivery',
@@ -409,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/settings/confirmation': typeof ShellSettingsConfirmationRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
@@ -469,6 +477,7 @@ export interface FileRoutesByTo {
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/settings/confirmation': typeof ShellSettingsConfirmationRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
@@ -532,6 +541,7 @@ export interface FileRoutesById {
   '/_shell/returns/$id': typeof ShellReturnsIdRoute
   '/_shell/settings/billing': typeof ShellSettingsBillingRoute
   '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
+  '/_shell/settings/confirmation': typeof ShellSettingsConfirmationRoute
   '/_shell/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
@@ -595,6 +605,7 @@ export interface FileRouteTypes {
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
+    | '/settings/confirmation'
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
@@ -655,6 +666,7 @@ export interface FileRouteTypes {
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
+    | '/settings/confirmation'
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
@@ -717,6 +729,7 @@ export interface FileRouteTypes {
     | '/_shell/returns/$id'
     | '/_shell/settings/billing'
     | '/_shell/settings/checkout'
+    | '/_shell/settings/confirmation'
     | '/_shell/settings/delivery'
     | '/_shell/settings/domains'
     | '/_shell/settings/location'
@@ -1044,6 +1057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSettingsCheckoutRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/settings/confirmation': {
+      id: '/_shell/settings/confirmation'
+      path: '/settings/confirmation'
+      fullPath: '/settings/confirmation'
+      preLoaderRoute: typeof ShellSettingsConfirmationRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings/delivery': {
       id: '/_shell/settings/delivery'
       path: '/settings/delivery'
@@ -1232,6 +1252,7 @@ interface ShellRouteChildren {
   ShellReturnsIdRoute: typeof ShellReturnsIdRoute
   ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
   ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
+  ShellSettingsConfirmationRoute: typeof ShellSettingsConfirmationRoute
   ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
@@ -1280,6 +1301,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellReturnsIdRoute: ShellReturnsIdRoute,
   ShellSettingsBillingRoute: ShellSettingsBillingRoute,
   ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
+  ShellSettingsConfirmationRoute: ShellSettingsConfirmationRoute,
   ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,

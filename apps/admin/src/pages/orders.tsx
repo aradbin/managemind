@@ -11,6 +11,7 @@ import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -68,12 +69,21 @@ const TABS = [
 }[];
 
 /** The filters behind the Filters button: everything but search and the tabs. */
-const PANEL = ['paymentStatus', 'source', 'zoneId', 'from', 'to', 'cancelledByShopper'] as const;
+const PANEL = [
+  'paymentStatus',
+  'source',
+  'zoneId',
+  'flag',
+  'from',
+  'to',
+  'cancelledByShopper',
+] as const;
 
 const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'] as const;
 const PAYMENTS = ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'] as const;
 const DELIVERIES = ['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'] as const;
 const SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other', 'exchange'] as const;
+const FLAGS = ['flagged_phone', 'possible_duplicate', 'unreachable'] as const;
 
 export function OrdersPage() {
   const { t, locale } = useLocale();
@@ -156,9 +166,12 @@ export function OrdersPage() {
     {
       header: t('order.customer'),
       cell: (o) => (
-        <span className="flex flex-col">
+        <span className="flex flex-col items-start gap-0.5">
           <span>{o.name}</span>
-          <span className="text-xs text-muted-foreground">{o.phone}</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {o.phone}
+            <ScoreBadge risk={o.risk} className="h-5 px-2" />
+          </span>
         </span>
       ),
     },
@@ -329,6 +342,21 @@ export function OrdersPage() {
               </option>
             ))}
           </select>
+          <select
+            aria-label={t('orders.flag')}
+            className={selectClass}
+            value={search.flag ?? ''}
+            onChange={(e) =>
+              setFilter({ flag: (e.target.value || undefined) as OrderSearch['flag'] })
+            }
+          >
+            <option value="">{t('orders.allFlags')}</option>
+            {FLAGS.map((f) => (
+              <option key={f} value={f}>
+                {t(`orders.flag.${f}`)}
+              </option>
+            ))}
+          </select>
           {zones.data && zones.data.length > 0 && (
             <select
               aria-label={t('order.zone')}
@@ -456,6 +484,7 @@ export function OrdersPage() {
               <StatusChip kind="order" status={o.status} />
               <StatusChip kind="payment" status={o.paymentStatus} />
               <StatusChip kind="delivery" status={o.deliveryStatus} />
+              <ScoreBadge risk={o.risk} />
             </div>
           </div>
         )}

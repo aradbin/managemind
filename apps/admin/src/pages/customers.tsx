@@ -15,6 +15,7 @@ import { StatusChip } from '../components/order-status';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
+import { RiskPanel } from '../components/risk';
 import { initials } from '../components/store-switcher';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
@@ -358,14 +359,8 @@ export function CustomerDetailPage() {
   if (customer.isError) return <Notice tone="error">{errorMessage(customer.error, t)}</Notice>;
   const c = customer.data;
   const average = c.orderCount ? Math.round(c.totalSpent / c.orderCount) : 0;
-  // The delivery record, from the orders listed here (the latest 50).
-  const record = {
-    delivered: c.orders.filter((o) => o.deliveryStatus === 'delivered').length,
-    failed: c.orders.filter((o) => o.deliveryStatus === 'failed').length,
-    cancelled: c.orders.filter((o) => o.status === 'cancelled').length,
-  };
-  const settled = record.delivered + record.failed + record.cancelled;
-  const deliveredShare = settled ? Math.round((record.delivered / settled) * 100) : 0;
+  // Staff's flag and failed deliveries can be cleared; a low score can't (phase-6-plan §3.3).
+  const clearable = c.risk.reasons.some((r) => r === 'flagged' || r === 'failed_deliveries');
   const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
   return (
     <div className="flex flex-col gap-5">
@@ -432,11 +427,13 @@ export function CustomerDetailPage() {
         <Notice tone="error">
           <span className="flex flex-wrap items-center justify-between gap-2">
             <span>
-              {t(c.flagged ? 'customer.flaggedByHand' : 'customer.flaggedByFailures', {
-                count: c.failedDeliveries,
-              })}
+              {c.flagged
+                ? t('customer.flaggedByHand')
+                : c.risk.reasons.includes('failed_deliveries')
+                  ? t('customer.flaggedByFailures', { count: c.failedDeliveries })
+                  : t('customer.flaggedByScore')}
             </span>
-            {canWrite && (
+            {canWrite && clearable && (
               <Button
                 variant="secondary"
                 disabled={flag.isPending}
@@ -504,35 +501,8 @@ export function CustomerDetailPage() {
           )}
         </section>
         <div className="flex flex-col gap-5">
-          <section aria-labelledby="record-h" className={card}>
-            <h2 id="record-h" className="font-semibold">
-              {t('customer.record')}
-            </h2>
-            {settled > 0 && (
-              <div aria-hidden className="flex h-2 overflow-hidden rounded-full bg-danger-soft">
-                <div className="bg-success" style={{ width: `${deliveredShare}%` }} />
-              </div>
-            )}
-            <dl className="grid grid-cols-2 gap-2 text-sm">
-              {(
-                [
-                  ['deliveryStatus.delivered', record.delivered],
-                  ['deliveryStatus.failed', record.failed],
-                  ['orderStatus.cancelled', record.cancelled],
-                ] as const
-              ).map(([key, value]) => (
-                <div key={key} className="flex gap-1.5">
-                  <dt className="text-muted-foreground">{t(key)}</dt>
-                  <dd className="font-semibold tabular-nums">{formatNumber(locale, value)}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="text-xs text-muted-foreground">
-              {c.orderCount > c.orders.length
-                ? t('customer.recordLatest', { count: c.orders.length })
-                : t('customer.recordAll')}
-            </p>
-            {canWrite && !c.phoneFlagged && (
+          <RiskPanel risk={c.risk} failedDeliveries={c.failedDeliveries}>
+            {canWrite && !c.flagged && (
               <Button
                 variant="secondary"
                 disabled={flag.isPending}
@@ -541,7 +511,7 @@ export function CustomerDetailPage() {
                 {t('customer.flag')}
               </Button>
             )}
-          </section>
+          </RiskPanel>
           <section aria-labelledby="addresses-h" className={card}>
             <div className="flex items-center justify-between gap-2">
               <h2 id="addresses-h" className="font-semibold">

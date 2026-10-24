@@ -3,7 +3,7 @@
 // actions the state machines allow (the API lists them). Every command sends
 // an Idempotency-Key, kept for the dialog's life, so a retry after a dropped
 // connection doesn't do it twice.
-import { MANUAL_METHODS } from '@managemind/shared/orders';
+import { type CancelCode, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
@@ -13,6 +13,7 @@ import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { usePermission } from '../components/permission-gate';
+import { RiskPanel } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -114,12 +115,37 @@ export function OrderDetailPage() {
           {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
             reason: o.cancelReason ?? '—',
           })}
+          {o.cancelCode && o.cancelledBy !== 'shopper' && ` (${t(`cancelCode.${o.cancelCode}`)})`}
         </Notice>
       )}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* The customer first on phones, where calling them is the next step; beside the items on desktops. */}
-        <div className="lg:col-start-2 lg:row-start-1">
+        <div className="flex flex-col gap-5 lg:col-start-2 lg:row-start-1">
           <CustomerCard order={o} />
+          <RiskPanel risk={o.risk} atPlacement={o.phoneScoreAtPlacement}>
+            {o.otherOpenOrders.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <h3 className="text-sm font-semibold">{t('risk.otherOpen')}</h3>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {o.otherOpenOrders.map((other) => (
+                    <li key={other.id} className="flex flex-wrap items-center gap-2">
+                      <Link
+                        to="/orders/$id"
+                        params={{ id: other.id }}
+                        className="font-medium text-primary underline-offset-2 hover:underline"
+                      >
+                        {other.displayNumber}
+                      </Link>
+                      <StatusChip kind="order" status={other.status} />
+                      <span className="ms-auto tabular-nums">
+                        {formatPrice(other.total, locale)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </RiskPanel>
         </div>
         <div className="flex min-w-0 flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <Lines order={o} />
@@ -964,15 +990,26 @@ function Tags({ order: o }: { order: OrderDetail }) {
   );
 }
 
+/** The codes staff pick from the order page; duplicates have their own actions, expiry is the system's. */
+const STAFF_CANCEL_CODES = [
+  'shopper_request',
+  'no_answer',
+  'wrong_number',
+  'fake',
+  'out_of_stock',
+  'other',
+] as const satisfies readonly CancelCode[];
+
 function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const [reason, setReason] = useState('');
+  const [code, setCode] = useState<CancelCode | ''>('');
   const cancel = useCommand(o.id, async (key, why: string) =>
     unwrap(
       await api.POST('/v1/admin/orders/{id}/cancel', {
         params: { path: { id: o.id }, ...withKey(key).params },
-        body: { reason: why },
+        body: { reason: why, ...(code ? { code } : {}) },
       }),
     ),
   );
@@ -982,7 +1019,7 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
       onOpenChange={(open) => !open && onClose()}
       title={t('order.cancelTitle', { number: o.displayNumber })}
       confirmLabel={t('order.cancel')}
-      canConfirm={reason.trim().length > 0}
+      canConfirm={reason.trim().length > 0 && code !== ''}
       busy={cancel.isPending}
       error={cancel.error ? orderErrorMessage(cancel.error, t) : undefined}
       onConfirm={() =>
@@ -999,6 +1036,21 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
         {o.totals.paidTotal > 0 &&
           ` ${t('order.cancelRefund', { amount: formatPrice(o.totals.paidTotal, locale) })}`}
       </p>
+      <fieldset className="flex flex-col gap-1">
+        <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
+        {STAFF_CANCEL_CODES.map((c) => (
+          <label key={c} className="flex min-h-11 items-center gap-3">
+            <input
+              type="radio"
+              name="cancel-code"
+              className="size-5"
+              checked={code === c}
+              onChange={() => setCode(c)}
+            />
+            {t(`cancelCode.${c}`)}
+          </label>
+        ))}
+      </fieldset>
       <Field
         label={t('order.cancelReason')}
         value={reason}

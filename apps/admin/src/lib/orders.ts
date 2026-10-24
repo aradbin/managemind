@@ -73,6 +73,8 @@ export interface OrderFilters {
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;
+  /** Risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
+  flag?: 'flagged_phone' | 'possible_duplicate' | 'unreachable' | undefined;
   from?: string | undefined;
   to?: string | undefined;
   q?: string | undefined;
