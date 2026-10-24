@@ -3,7 +3,7 @@
 - Date: 2026-10-24
 - Plan: the owner's brief (a modern, clean admin that is responsive and easier to use on phones), then the design canvas "ManageMind Admin Redesign". The owner approved its 18 screens before any code was written.
 - Decision: [ADR 0029](../adr/0029-admin-redesign.md)
-- Pull request: this branch (`ccr-9b2e8789-yg9szy`), one commit per step (§1)
+- Pull request: #69, one commit per step (§1). Merged and deployed on Oct 24: the deploy's smoke, shop API and cache checks passed
 
 > Phase 5C sits between launch readiness (5B) and the pilot. The pilot's clients use the admin every day, mostly on phones. No data model, API or storefront change: the admin's look, layout and navigation only.
 
@@ -32,7 +32,7 @@ Every screen of the admin is redesigned, in both languages and both themes, at p
 1. **Nothing changes for shoppers, the API or the data.** The admin's JavaScript before sign-in is 134 KiB, within its 150 KiB budget (133 KiB before).
 2. **Five existing bugs were found and fixed on the way** (§3). The most visible: every product counted as changed as soon as it opened, so Save was always on.
 3. **A few details differ from the approved screens** (§4). The main reasons: the API doesn't have the data, or the E2E depends on a control.
-4. **The E2E passes locally at both viewports**, every suite. GitHub's Actions minutes were out while this was built, so this PR's CI and preview are their first run on GitHub.
+4. **The redesign is in production since Oct 24.** CI and the preview's smoke test passed on GitHub, and the E2E passes locally at both viewports, every suite. The `full-preview` run failed twice, on 2 of 27 flows each time, all on requests Cloudflare stopped at the Free plan's CPU limit; none touched by this change (§5). The owner chose to merge.
 
 ## 1. What was built
 
@@ -48,7 +48,7 @@ Every screen of the admin is redesigned, in both languages and both themes, at p
 | 8 | `0f04bfa`, `fafd9ef` | Platform area and a store's page; theme editor |
 | 9 | `c5882c4` | ADR 0029: where the build differs from the approved screens |
 | 10 | `00eb8db` | Every remaining screen |
-| 11 | this commit | This report; PLAN.md, the README and ADR 0029 |
+| 11 | `e8c6e7d` | This report; PLAN.md, the README and ADR 0029 |
 
 ### Screens
 
@@ -113,8 +113,11 @@ Accessibility holds the existing bar. The E2E runs axe on every screen it visits
 | Admin JavaScript before sign-in | 134 KiB (Phase 5B: 133); budget 150 KiB |
 | Fonts | Inter's Latin file is about 48 KB, loaded only where Latin text shows; its Greek, Cyrillic and Vietnamese files stay out of the precache |
 | API and storefront Workers | Unchanged |
+| CI on GitHub (#69, `ff3999d`) | Pass: lint, typecheck and test; build and bundle size; the preview's smoke test |
+| `full-preview` on GitHub, twice | 22 and 23 of 27 flows passed; the rest failed or didn't run (see below) |
+| Production deploy (`6e09c46`) | Pass: both Workers deployed (no new migrations), smoke test, shop API, storefront cache hit |
 
-The E2E ran locally because the Actions minutes were out. This PR's CI, preview and `full-preview` run are the first on GitHub.
+**The `full-preview` failures.** Each run failed 2 flows, different ones each time: creating a store page, a stock adjustment, a sign-in code, the storefront's checkout. Each failure was an empty 503. The preview API Worker's logs show the cause: 9 requests stopped at the Free plan's 10 ms CPU limit (`exceededCpu`) under the E2E's load. The redesign changes no API, storefront or E2E code, and the same flows passed at the other viewport and locally. Earlier previews were stopped too (#56: 240 requests, #66: more than 1,000 in its earlier runs), and production had none. ADR 0013's trigger for Workers Paid is the first stop in production, so the plan stays as it is; until then a full preview can fail this way.
 
 ## 6. Known gaps and follow-ups
 
@@ -125,5 +128,6 @@ The E2E ran locally because the Actions minutes were out. This PR's CI, preview 
 
   Small queries, in a later phase if the pilot wants them.
 - **Delivery zones' editor beside the list**, if staff find the dialog slow with many zones.
-- **A preview run** with `full-preview` before merging, and the Lighthouse budgets on it. The storefront is unchanged, so they should hold.
+- **Lighthouse on the next green `full-preview` run.** Neither run reached it (§5). The storefront is unchanged, so its budgets should hold.
+- **Workers Paid**, if full previews keep failing on CPU stops (§5). Its trigger in ADR 0013 is the first stop in production.
 - **The pilot's feedback** on the phone layout, especially the five tabs and the pinned actions.
