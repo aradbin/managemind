@@ -37,6 +37,8 @@ export interface LegalContext {
   }[];
   cod: boolean;
   online: boolean;
+  /** Days a checkout left unfinished is kept, or null when the store doesn't save them (phase-6-plan §3.2). */
+  savedCheckoutDays?: number | null | undefined;
   /** The platform's abuse address, when the platform has set one. */
   abuseEmail?: string | undefined;
   platformName: string;
@@ -140,6 +142,14 @@ const TEMPLATES: Record<LegalKind, Record<Locale, (c: LegalContext, v: Values) =
       {
         p: 'To deliver your orders, to send you messages about them, and to answer you. We share your name, phone and address with the courier that delivers, and payments go through the payment company you choose. We don’t sell your data.',
       },
+      ...(c.savedCheckoutDays
+        ? [
+            { h: 'Checkouts you don’t finish' },
+            {
+              p: `Once you type your mobile number at checkout, we save it with the details you typed and your cart, so we can call to help if you don’t finish. We keep it ${c.savedCheckoutDays} days at most and never send you messages because of it. Choose “Don’t save” under the phone field to stop it.`,
+            },
+          ]
+        : []),
       { h: 'How long we keep it' },
       {
         p: 'Order records are kept as long as the law requires for sales and tax records. Messages we sent you are deleted after 90 days.',
@@ -162,6 +172,14 @@ const TEMPLATES: Record<LegalKind, Record<Locale, (c: LegalContext, v: Values) =
       {
         p: 'আপনার অর্ডার পৌঁছাতে, সে বিষয়ে মেসেজ পাঠাতে এবং আপনাকে উত্তর দিতে। যে কুরিয়ার ডেলিভারি দেয় তাকে আপনার নাম, ফোন ও ঠিকানা দিই, আর পরিশোধ আপনার বেছে নেওয়া পেমেন্ট প্রতিষ্ঠানের মাধ্যমে হয়। আমরা আপনার তথ্য বিক্রি করি না।',
       },
+      ...(c.savedCheckoutDays
+        ? [
+            { h: 'যে চেকআউট শেষ করেন না' },
+            {
+              p: `চেকআউটে মোবাইল নম্বর লিখলে আমরা তা, আপনার লেখা অন্য তথ্য ও কার্টসহ সংরক্ষণ করি, যাতে শেষ না করলে ফোন করে সাহায্য করতে পারি। এটি সর্বোচ্চ ${c.savedCheckoutDays} দিন রাখি এবং এর জন্য আপনাকে কখনো মেসেজ পাঠাই না। বন্ধ করতে ফোন নম্বরের নিচে "সংরক্ষণ করবেন না" বেছে নিন।`,
+            },
+          ]
+        : []),
       { h: 'কত দিন রাখি' },
       {
         p: 'বিক্রি ও করের হিসাবের জন্য আইন যত দিন বলে, অর্ডারের রেকর্ড তত দিন থাকে। আপনাকে পাঠানো মেসেজ ৯০ দিন পরে মুছে যায়।',

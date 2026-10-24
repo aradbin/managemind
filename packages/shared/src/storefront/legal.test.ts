@@ -52,6 +52,12 @@ describe('legal page templates', () => {
     expect(text('delivery')).toContain('in cash on delivery');
     expect(text('terms')).toContain('Trade license: TRAD/DNCC/1234');
     expect(text('privacy')).toContain('abuse@platform.example');
+    // Saved checkouts (phase-6-plan §3.2): said, with how long, only when the store saves them.
+    expect(text('privacy')).not.toContain('Don’t save');
+    expect(text('privacy', { ...store, savedCheckoutDays: 14 })).toContain('14 days at most');
+    expect(
+      richTextToPlainText(legalPageBody('privacy', 'bn', { ...store, savedCheckoutDays: 14 })),
+    ).toContain('সংরক্ষণ করবেন না');
     // Without contact details, it points to the contact page instead.
     expect(text('terms', { ...store, contactPhone: undefined, contactEmail: undefined })).toContain(
       'contact page',

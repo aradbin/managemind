@@ -30,7 +30,7 @@ export const pageTag = (tenantId: string, pageId: string): string => `s:${tenant
 /** The legal pages that follow their template (phase-5b-plan §3.15): filled from the settings. */
 export const legalTag = (tenantId: string): string => `s:${tenantId}:legal`;
 /** Settings the legal templates read, beyond those that purge the whole store. */
-const LEGAL_FIELDS = new Set(['returns', 'cod']);
+const LEGAL_FIELDS = new Set(['returns', 'cod', 'recovery']);
 
 /** Cloudflare's limits: a Cache-Tag header of at most 16 KB, and 100 tags per purge call. */
 export const CACHE_TAG_HEADER_MAX = 16_000;

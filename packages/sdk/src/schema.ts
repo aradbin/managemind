@@ -9750,6 +9750,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales recovery for a date range: incomplete orders, confirmation, delivery by score and duplicates (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecoveryReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/credentials": {
         parameters: {
             query?: never;
@@ -15490,6 +15529,49 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+        };
+        RecoveryReport: {
+            from: string;
+            to: string;
+            incomplete: {
+                saved: number;
+                contacted: number;
+                converted: number;
+                recovered: number;
+                recoveredAfterCall: number;
+                dismissed: number;
+                savedValue: number;
+                convertedValue: number;
+                recoveredValue: number;
+            };
+            confirmation: {
+                placed: number;
+                confirmedBy: {
+                    call: number;
+                    link: number;
+                    staff: number;
+                    auto: number;
+                };
+                cancelledBy: {
+                    code: string;
+                    orders: number;
+                }[];
+                unreachable: number;
+                medianMinutes: number | null;
+                rate: number | null;
+            };
+            deliveryByScore: {
+                /** @enum {string} */
+                band: "0-49" | "50-79" | "80-100" | "new";
+                delivered: number;
+                notReceived: number;
+            }[];
+            duplicates: {
+                flagged: number;
+                merged: number;
+                cancelled: number;
+                dismissed: number;
+            };
         };
         Credential: {
             /** @enum {string} */

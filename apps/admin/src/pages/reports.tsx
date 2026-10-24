@@ -1,12 +1,15 @@
 // Reports (phase-5a-plan §3.15): for a date range, the return rate by
 // product and by reason, refunds by method, failed deliveries and their
-// cost by zone, and how orders were paid. Computed when asked.
+// cost by zone, and how orders were paid; and sales recovery (phase-6-plan
+// §3.9): incomplete orders, confirmation, delivery by score and duplicates.
+// Computed when asked.
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { type AdminKey, useLocale } from '../i18n';
+import '../i18n/orders';
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
@@ -91,7 +94,14 @@ export function ReportsPage() {
     whole
       ? `${(Math.round((part / whole) * 1000) / 10).toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-BD')}%`
       : '—';
+  const recovery = useQuery({
+    queryKey: ['reports', 'recovery', from, to],
+    queryFn: async () =>
+      unwrap(await api.GET('/v1/admin/reports/recovery', { params: { query: { from, to } } })),
+    enabled: valid,
+  });
   const r = reports.data;
+  const s = recovery.data;
   const paid = r?.payments.reduce((a, p) => a + p.revenue, 0) ?? 0;
   const orders = r?.payments.reduce((a, p) => a + p.orders, 0) ?? 0;
   return (
@@ -186,6 +196,95 @@ export function ReportsPage() {
               pct(z.failed, z.shipped),
               formatPrice(z.cost, locale),
             ])}
+            empty={t('reports.none')}
+          />
+        </>
+      )}
+      {s && (
+        <>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">{t('recoveryReport.title')}</h2>
+          <Table
+            caption={t('incomplete.title')}
+            head={[t('recoveryReport.what'), t('reports.count'), t('reports.amount')]}
+            rows={[
+              [
+                t('recoveryReport.saved'),
+                n(s.incomplete.saved),
+                formatPrice(s.incomplete.savedValue, locale),
+              ],
+              [t('recoveryReport.contacted'), n(s.incomplete.contacted), ''],
+              [
+                t('recoveryReport.converted'),
+                n(s.incomplete.converted),
+                formatPrice(s.incomplete.convertedValue, locale),
+              ],
+              [
+                t('recoveryReport.recovered'),
+                n(s.incomplete.recovered),
+                formatPrice(s.incomplete.recoveredValue, locale),
+              ],
+              [t('recoveryReport.afterCall'), n(s.incomplete.recoveredAfterCall), ''],
+              [t('incomplete.tab.dismissed'), n(s.incomplete.dismissed), ''],
+            ]}
+            empty={t('reports.none')}
+          />
+          <Table
+            caption={t('recoveryReport.confirmation')}
+            head={[t('recoveryReport.what'), t('reports.orders'), t('reports.share')]}
+            rows={[
+              [t('recoveryReport.codPlaced'), n(s.confirmation.placed), ''],
+              ...(['call', 'link', 'staff', 'auto'] as const).map((via) => [
+                t(`confirmedVia.${via}` as AdminKey),
+                n(s.confirmation.confirmedBy[via]),
+                pct(s.confirmation.confirmedBy[via], s.confirmation.placed),
+              ]),
+              ...s.confirmation.cancelledBy.map((x) => [
+                t('recoveryReport.cancelled', { why: t(`cancelCode.${x.code}` as AdminKey) }),
+                n(x.orders),
+                pct(x.orders, s.confirmation.placed),
+              ]),
+              [t('queue.tab.unreachable'), n(s.confirmation.unreachable), ''],
+              [
+                t('recoveryReport.rate'),
+                s.confirmation.rate === null ? '—' : `${n(s.confirmation.rate)}%`,
+                '',
+              ],
+              [
+                t('recoveryReport.median'),
+                s.confirmation.medianMinutes === null
+                  ? '—'
+                  : t('recoveryReport.minutes', { count: n(s.confirmation.medianMinutes) }),
+                '',
+              ],
+            ]}
+            empty={t('reports.none')}
+          />
+          <Table
+            caption={t('recoveryReport.byScore')}
+            head={[
+              t('recoveryReport.scoreAtOrder'),
+              t('reports.delivered'),
+              t('recoveryReport.notReceived'),
+              t('reports.rate'),
+            ]}
+            rows={s.deliveryByScore.map((b) => [
+              b.band === 'new' ? t('risk.new') : `${b.band}%`,
+              n(b.delivered),
+              n(b.notReceived),
+              pct(b.notReceived, b.delivered + b.notReceived),
+            ])}
+            empty={t('reports.none')}
+          />
+          <p className="-mt-2 text-sm text-muted-foreground">{t('recoveryReport.byScoreHint')}</p>
+          <Table
+            caption={t('confirmSettings.duplicates')}
+            head={[t('recoveryReport.what'), t('reports.orders')]}
+            rows={[
+              [t('recoveryReport.flagged'), n(s.duplicates.flagged)],
+              [t('recoveryReport.merged'), n(s.duplicates.merged)],
+              [t('duplicate.cancel'), n(s.duplicates.cancelled)],
+              [t('duplicate.dismiss'), n(s.duplicates.dismissed)],
+            ]}
             empty={t('reports.none')}
           />
         </>

@@ -25,6 +25,7 @@ import {
   getIncompleteOrder,
   getOrder,
   getPhoneRisk,
+  getRecoveryReport,
   hashLinkCode,
   incompletePrefill,
   inventoryDrift,
@@ -1042,5 +1043,37 @@ describe('incomplete orders', () => {
     const order = await run((tx) => getOrder(tx, owner, placed.id));
     await run((tx) => anonymizeCustomer(tx, owner, order.customer.id));
     expect(await records(phone)).toEqual([]);
+  });
+});
+
+describe('the Sales recovery report', () => {
+  it("counts the queue's work, delivery by score and duplicates for the range", async () => {
+    const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+    const before = await run((tx) => getRecoveryReport(tx, owner, { from: day, to: day }));
+    const v = await product();
+    const phone = newPhone();
+    const a = await manualOrder(v, phone);
+    await run((tx) => recordOutcome(tx, owner, a.id, { outcome: 'confirmed' }));
+    await delivered(a.id);
+    const b = await manualOrder(v, newPhone());
+    await run((tx) => recordOutcome(tx, owner, b.id, { outcome: 'cancelled', code: 'fake' }));
+    const c = await manualOrder(v, phone);
+    // Same items, same phone, minutes apart: flagged.
+    await manualOrder(v, phone);
+    const after = await run((tx) => getRecoveryReport(tx, owner, { from: day, to: day }));
+    expect(after.confirmation.confirmedBy.call - before.confirmation.confirmedBy.call).toBe(1);
+    const fake = (r: typeof after) =>
+      r.confirmation.cancelledBy.find((x) => x.code === 'fake')?.orders ?? 0;
+    expect(fake(after) - fake(before)).toBe(1);
+    expect(after.confirmation.medianMinutes).not.toBeNull();
+    // Order a was placed for a new phone and delivered; b, new too, was fake.
+    const band = (r: typeof after) => r.deliveryByScore.find((x) => x.band === 'new');
+    expect((band(after)?.delivered ?? 0) - (band(before)?.delivered ?? 0)).toBe(1);
+    expect((band(after)?.notReceived ?? 0) - (band(before)?.notReceived ?? 0)).toBe(1);
+    expect(after.duplicates.flagged).toBeGreaterThan(before.duplicates.flagged);
+    expect(c.id).toBeTruthy();
+    await expect(
+      run((tx) => getRecoveryReport(tx, actorAs('staff'), { from: day, to: day })),
+    ).rejects.toMatchObject({ code: 'forbidden' });
   });
 });
