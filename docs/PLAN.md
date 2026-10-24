@@ -43,7 +43,8 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
 | 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows wait for the monthly reset; production runs. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
 | 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. In review | [`phase-5c-report.md`](phases/phase-5c-report.md) |
-| 6 onwards | Not started | — |
+| 6 — Sales recovery | Plan written (Oct 24), waiting for the owner's approval. Its prerequisites come from the pilot, which hasn't started; the plan proposes building after the Actions minutes reset, with everything off or harmless until the pilot's feedback (Q1) | [`phase-6-plan.md`](phases/phase-6-plan.md) |
+| 7 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
 
