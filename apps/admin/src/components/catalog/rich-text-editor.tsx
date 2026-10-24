@@ -76,7 +76,8 @@ export default function RichTextEditor({
   });
 
   useEffect(() => {
-    editor.setEditable(!disabled);
+    // Without `false` Tiptap emits an update, which marked every product as changed on load.
+    editor.setEditable(!disabled, false);
   }, [editor, disabled]);
 
   const active = useEditorState({

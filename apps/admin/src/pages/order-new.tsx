@@ -6,8 +6,8 @@
 import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, X } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
@@ -207,21 +207,33 @@ export function NewOrderPage() {
 
   const q = quote.data?.quote;
   const money = (n: number) => formatPrice(n, locale);
+  // Shown in the summary on desktops and pinned at the bottom on phones.
+  const primary = !delivery ? (
+    <Button
+      disabled={place_.isPending}
+      onClick={() => submit({ confirm: true, completeNow: true })}
+    >
+      {t('newOrder.completeSale')}
+    </Button>
+  ) : (
+    <Button
+      disabled={place_.isPending}
+      onClick={() => submit({ confirm: true, completeNow: false })}
+    >
+      {t('newOrder.saveConfirm')}
+    </Button>
+  );
 
   return (
-    <div className="flex max-w-5xl flex-col gap-4">
-      <div>
-        <Link
-          to="/orders"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('nav.orders')}
-        </Link>
-      </div>
-      <PageHeader title={t('newOrder.title')} description={t('newOrder.intro')} />
-      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
-        <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5 pb-24 lg:pb-0">
+      <PageHeader
+        className="mb-0"
+        parent={{ to: '/orders', label: t('nav.orders') }}
+        title={t('newOrder.title')}
+        description={t('newOrder.intro')}
+      />
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="flex min-w-0 flex-col gap-5">
           <section aria-labelledby="customer-h" className={section}>
             <h2 id="customer-h" className="font-semibold">
               {t('order.customer')}
@@ -565,7 +577,7 @@ export function NewOrderPage() {
 
         <aside
           aria-labelledby="summary-h"
-          className="flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start"
+          className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start"
         >
           <section className={section}>
             <h2 id="summary-h" className="font-semibold">
@@ -620,21 +632,7 @@ export function NewOrderPage() {
           {place_.error && <Notice tone="error">{orderErrorMessage(place_.error, t)}</Notice>}
           {showErrors && !ready && <Notice tone="error">{t('newOrder.incomplete')}</Notice>}
           <div className="flex flex-col gap-2">
-            {!delivery ? (
-              <Button
-                disabled={place_.isPending}
-                onClick={() => submit({ confirm: true, completeNow: true })}
-              >
-                {t('newOrder.completeSale')}
-              </Button>
-            ) : (
-              <Button
-                disabled={place_.isPending}
-                onClick={() => submit({ confirm: true, completeNow: false })}
-              >
-                {t('newOrder.saveConfirm')}
-              </Button>
-            )}
+            <div className="hidden lg:contents">{primary}</div>
             <Button
               variant="secondary"
               disabled={place_.isPending}
@@ -644,6 +642,18 @@ export function NewOrderPage() {
             </Button>
           </div>
         </aside>
+      </div>
+      {/* Phones: the total and the main action stay within thumb reach above the tab bar. */}
+      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex items-center gap-3 border-t border-border bg-background px-4 py-3 lg:hidden">
+        <div className="flex flex-col">
+          <span className="text-xs text-muted-foreground">{t('order.total')}</span>
+          <span className="text-lg font-semibold tabular-nums">
+            {q ? money(q.totals.total) : '—'}
+          </span>
+        </div>
+        <div className="flex flex-1 [&>button]:min-h-12 [&>button]:w-full [&>button]:text-base">
+          {primary}
+        </div>
       </div>
     </div>
   );

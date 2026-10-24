@@ -5,8 +5,7 @@
 // since they change other rows (options regenerate variants).
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { useId, useMemo, useState } from 'react';
 import {
   type AttributeDraft,
@@ -45,6 +44,7 @@ import {
   storeSettingsQuery,
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 import { StatusBadge } from './products';
 
 interface Translation {
@@ -258,16 +258,11 @@ function Editor({
         : undefined;
 
   return (
-    <div className="flex max-w-4xl flex-col gap-8 pb-24 md:pb-8">
+    <div className="flex flex-col gap-5 pb-28 md:pb-8">
       <div>
-        <Link
-          to="/products"
-          className="mb-2 inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('catalog.products')}
-        </Link>
         <PageHeader
+          className="mb-3"
+          parent={{ to: '/products', label: t('catalog.products') }}
           title={title}
           actions={
             canWrite && (
@@ -282,7 +277,7 @@ function Editor({
                   </Button>
                 )}
                 {product.status === 'draft' && (
-                  <Button variant="ghost" onClick={() => setConfirm('delete')}>
+                  <Button variant="quiet" onClick={() => setConfirm('delete')}>
                     {t('product.delete')}
                   </Button>
                 )}
@@ -303,130 +298,174 @@ function Editor({
         )}
       </div>
 
-      <section aria-labelledby="content-heading" className="flex flex-col gap-4">
-        <h2 id="content-heading" className="text-lg font-semibold">
-          {t('product.content')}
-        </h2>
-        <LanguageTabs defaultLang={defaultLang} active={lang} onChange={setLang} present={present}>
-          {(l) =>
-            tr || l === defaultLang ? (
-              <TranslationFields
-                key={l}
-                lang={l}
-                value={tr ?? emptyTranslation}
-                onChange={(patch) => setTranslation(l, patch)}
-                disabled={disabled}
-                onRemove={l === defaultLang ? undefined : () => setTranslation(l, null)}
-              />
-            ) : (
-              <div className="flex flex-col items-start gap-2">
-                <p className="text-muted-foreground">
-                  {t('product.noTranslation', { language: LANGUAGE_NAMES[l] })}
-                </p>
-                {!disabled && (
-                  <Button variant="secondary" onClick={() => setTranslation(l, {})}>
-                    {t('product.addTranslation', { language: LANGUAGE_NAMES[l] })}
-                  </Button>
-                )}
-              </div>
-            )
-          }
-        </LanguageTabs>
-      </section>
-
-      <section aria-labelledby="organize-heading" className="flex flex-col gap-4">
-        <h2 id="organize-heading" className="text-lg font-semibold">
-          {t('product.organize')}
-        </h2>
-        {!archived && (
-          <fieldset className="flex flex-col gap-2" disabled={disabled}>
-            <legend className="mb-1 text-sm font-medium">{t('product.status')}</legend>
-            {(['draft', 'active'] as const).map((s) => (
-              <label key={s} className="flex min-h-11 items-center gap-3">
-                <input
-                  type="radio"
-                  name="status"
-                  className="size-5"
-                  checked={content.status === s}
-                  onChange={() => update({ status: s })}
-                />
-                <span>
-                  {t(`status.${s}`)}{' '}
-                  <span className="text-sm text-muted-foreground">— {t(`status.${s}.hint`)}</span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-        <CheckboxList
-          legend={t('catalog.categories')}
-          empty={t('product.noCategories')}
-          items={options.map((o) => ({ id: o.id, label: o.label }))}
-          checked={content.categoryIds}
-          onChange={(categoryIds) => update({ categoryIds })}
-          disabled={disabled}
-        />
-        <CheckboxList
-          legend={t('catalog.collections')}
-          empty={t('product.noCollections')}
-          items={manualCollections.map((c) => ({
-            id: c.id,
-            label: pick(c.translations, locale)?.name ?? '—',
-          }))}
-          checked={content.collectionIds}
-          onChange={(collectionIds) => update({ collectionIds })}
-          disabled={disabled}
-        />
-        <TagInput value={content.tags} onChange={(tags) => update({ tags })} disabled={disabled} />
-        {vat.vatEnabled && vat.categories.length > 0 && (
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            {t('product.vatCategory')}
-            <select
-              disabled={disabled}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
-              value={content.vatCategory}
-              onChange={(e) => update({ vatCategory: e.target.value })}
-            >
-              <option value="">{t('product.vatStandard')}</option>
-              {vat.categories.map((c) => (
-                <option key={c.key} value={c.key}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </section>
-
-      <AttributeFields
-        categoryIds={content.categoryIds}
-        value={content.attributes}
-        onChange={(attributes) => update({ attributes })}
-        defaultLang={defaultLang}
-        disabled={disabled}
-      />
-
-      {saveError && <Notice tone="error">{saveError}</Notice>}
-      {canWrite && !archived && (
-        <div className="fixed inset-x-0 bottom-16 z-30 flex justify-end border-t border-border bg-background p-3 md:static md:border-0 md:p-0">
-          <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+      {canWrite && !archived && dirty && (
+        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 bg-foreground px-4 py-3 text-background md:sticky md:top-16 md:bottom-auto md:rounded-xl">
+          <span className="flex-1 text-sm font-medium">{t('product.unsaved')}</span>
+          <Button
+            variant="secondary"
+            className="text-foreground"
+            disabled={save.isPending}
+            onClick={() => save.mutate()}
+          >
             {t('product.save')}
           </Button>
         </div>
       )}
+      {saveError && <Notice tone="error">{saveError}</Notice>}
 
-      <ImageManager product={product} defaultLang={defaultLang} disabled={disabled} />
-      <OptionEditor
-        key={`options-${product.updatedAt}`}
-        product={product}
-        defaultLang={defaultLang}
-        disabled={disabled}
-      />
-      <VariantTable
-        key={product.variants.map((v) => v.id).join()}
-        product={product}
-        disabled={disabled}
-      />
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <section
+            aria-labelledby="content-heading"
+            className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="content-heading" className="font-semibold">
+              {t('product.content')}
+            </h2>
+            <LanguageTabs
+              defaultLang={defaultLang}
+              active={lang}
+              onChange={setLang}
+              present={present}
+            >
+              {(l) =>
+                tr || l === defaultLang ? (
+                  <TranslationFields
+                    key={l}
+                    lang={l}
+                    value={tr ?? emptyTranslation}
+                    onChange={(patch) => setTranslation(l, patch)}
+                    disabled={disabled}
+                    onRemove={l === defaultLang ? undefined : () => setTranslation(l, null)}
+                  />
+                ) : (
+                  <div className="flex flex-col items-start gap-2">
+                    <p className="text-muted-foreground">
+                      {t('product.noTranslation', { language: LANGUAGE_NAMES[l] })}
+                    </p>
+                    {!disabled && (
+                      <Button variant="secondary" onClick={() => setTranslation(l, {})}>
+                        {t('product.addTranslation', { language: LANGUAGE_NAMES[l] })}
+                      </Button>
+                    )}
+                  </div>
+                )
+              }
+            </LanguageTabs>
+          </section>
+
+          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
+            <ImageManager product={product} defaultLang={defaultLang} disabled={disabled} />
+          </div>
+          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
+            <OptionEditor
+              key={`options-${product.updatedAt}`}
+              product={product}
+              defaultLang={defaultLang}
+              disabled={disabled}
+            />
+          </div>
+          <div className="min-w-0 overflow-x-auto rounded-xl border border-border bg-background p-4 md:p-5">
+            <VariantTable
+              key={product.variants.map((v) => v.id).join()}
+              product={product}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-5">
+          {!archived && (
+            <div className="rounded-xl border border-border bg-background p-4 md:p-5">
+              <fieldset className="flex flex-col gap-2" disabled={disabled}>
+                <legend className="mb-2 font-semibold">{t('product.status')}</legend>
+                {(['draft', 'active'] as const).map((s) => (
+                  <label
+                    key={s}
+                    className={cn(
+                      'flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border p-3',
+                      content.status === s && 'border-primary bg-primary-soft',
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="status"
+                      className="mt-0.5 size-5 accent-primary"
+                      checked={content.status === s}
+                      onChange={() => update({ status: s })}
+                    />
+                    <span className="flex flex-col">
+                      <span className="font-medium">{t(`status.${s}`)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        — {t(`status.${s}.hint`)}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+            </div>
+          )}
+          <section
+            aria-labelledby="organize-heading"
+            className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="organize-heading" className="font-semibold">
+              {t('product.organize')}
+            </h2>
+            <CheckboxList
+              legend={t('catalog.categories')}
+              empty={t('product.noCategories')}
+              items={options.map((o) => ({ id: o.id, label: o.label }))}
+              checked={content.categoryIds}
+              onChange={(categoryIds) => update({ categoryIds })}
+              disabled={disabled}
+            />
+            <CheckboxList
+              legend={t('catalog.collections')}
+              empty={t('product.noCollections')}
+              items={manualCollections.map((c) => ({
+                id: c.id,
+                label: pick(c.translations, locale)?.name ?? '—',
+              }))}
+              checked={content.collectionIds}
+              onChange={(collectionIds) => update({ collectionIds })}
+              disabled={disabled}
+            />
+            <TagInput
+              value={content.tags}
+              onChange={(tags) => update({ tags })}
+              disabled={disabled}
+            />
+            {vat.vatEnabled && vat.categories.length > 0 && (
+              <label className="flex flex-col gap-1.5 text-sm font-medium">
+                {t('product.vatCategory')}
+                <select
+                  disabled={disabled}
+                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
+                  value={content.vatCategory}
+                  onChange={(e) => update({ vatCategory: e.target.value })}
+                >
+                  <option value="">{t('product.vatStandard')}</option>
+                  {vat.categories.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </section>
+
+          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
+            <AttributeFields
+              categoryIds={content.categoryIds}
+              value={content.attributes}
+              onChange={(attributes) => update({ attributes })}
+              defaultLang={defaultLang}
+              disabled={disabled}
+            />
+          </div>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={confirm !== null}

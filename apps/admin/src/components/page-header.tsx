@@ -18,7 +18,10 @@ export function PageHeader({
   /** For pages that space their sections themselves, `mb-0`. */
   className?: string;
   /** The page this one sits under, as a breadcrumb above the title. */
-  parent?: { to: '/settings' | '/online-store' | '/products' | '/customers'; label: string };
+  parent?: {
+    to: '/settings' | '/online-store' | '/products' | '/customers' | '/orders';
+    label: string;
+  };
 }) {
   const { t } = useLocale();
   return (

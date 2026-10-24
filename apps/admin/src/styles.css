@@ -73,6 +73,10 @@
     @apply bg-canvas text-foreground font-sans antialiased;
     font-feature-settings: "cv11" 1;
   }
+  /* Checkboxes, radios and ranges in the accent colour. */
+  input {
+    accent-color: var(--color-primary);
+  }
   /* Visible focus for keyboard users everywhere. */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring;
