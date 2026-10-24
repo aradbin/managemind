@@ -61,6 +61,7 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     orderId?: string;
     by?: string;
     reason?: string;
+    code?: string;
     problem?: string;
     creditCode?: string;
     method?: string;
@@ -73,10 +74,14 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     case 'order.confirmed':
       return { orderId: id, shopper: ['order_confirmed'], staff: [] };
     case 'order.cancelled':
-      // An unpaid online order says why it was cancelled, in one message.
+      // An unpaid online order says why it was cancelled, in one message. A
+      // duplicate's shopper keeps the other order and its messages (phase-6-plan §3.4).
       return {
         orderId: id,
-        shopper: [p.reason === 'payment_expired' ? 'payment_expired' : 'order_cancelled'],
+        shopper:
+          p.code === 'duplicate'
+            ? []
+            : [p.reason === 'payment_expired' ? 'payment_expired' : 'order_cancelled'],
         staff: p.by === 'shopper' ? ['shopper_cancelled'] : [],
       };
     case 'shipment.shipped':

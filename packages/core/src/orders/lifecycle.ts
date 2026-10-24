@@ -285,6 +285,10 @@ export async function cancelOrder(
       cancelReason: input.reason,
       cancelledBy: who.actorType,
       cancelCode: code,
+      // A duplicate cancelled as one is settled (phase-6-plan §3.4).
+      ...(code === 'duplicate'
+        ? { flags: sql`array_remove(${o.flags}, 'possible_duplicate')` }
+        : {}),
     })
     .where(eq(o.id, id));
   await tx.db.execute(sql`

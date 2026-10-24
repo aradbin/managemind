@@ -5,7 +5,7 @@
 // connection doesn't do it twice.
 import { type CancelCode, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -110,6 +110,7 @@ export function OrderDetailPage() {
         </Notice>
       )}
       {o.flags.includes('late_payment') && <Notice tone="error">{t('order.flag.late')}</Notice>}
+      {o.flags.includes('possible_duplicate') && o.duplicateOf && <DuplicateBanner order={o} />}
       {o.status === 'cancelled' && (
         <Notice tone="error">
           {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
@@ -158,6 +159,86 @@ export function OrderDetailPage() {
           <Tags order={o} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A possible duplicate (phase-6-plan §3.4): merge it into the older order,
+ * cancel it as a duplicate, or say it isn't one. Shoppers hear about none.
+ */
+function DuplicateBanner({ order: o }: { order: OrderDetail }) {
+  const { t } = useLocale();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const canWrite = usePermission('orders.write');
+  const other = o.duplicateOf as NonNullable<OrderDetail['duplicateOf']>;
+  const merge = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/duplicate/merge', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const cancel = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/cancel', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+        body: {
+          reason: t('duplicate.cancelReason', { number: other.displayNumber }),
+          code: 'duplicate',
+        },
+      }),
+    ),
+  );
+  const dismiss = useCommand(o.id, async () =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/duplicate/dismiss', { params: { path: { id: o.id } } }),
+    ),
+  );
+  const busy = merge.isPending || cancel.isPending || dismiss.isPending;
+  const error = merge.error ?? cancel.error ?? dismiss.error;
+  return (
+    <div role="status" className="rounded-lg bg-warning p-3 text-sm text-warning-foreground md:p-4">
+      <span className="flex flex-col gap-3">
+        <span>
+          {t('duplicate.banner')}{' '}
+          <Link to="/orders/$id" params={{ id: other.id }} className="font-medium underline">
+            {other.displayNumber}
+          </Link>{' '}
+          ({t(`orderStatus.${other.status}` as AdminKey)})
+        </span>
+        {canWrite && o.status !== 'cancelled' && (
+          <span className="flex flex-wrap gap-2">
+            <Button
+              disabled={busy}
+              onClick={() =>
+                merge.mutate(undefined, {
+                  onSuccess: () => {
+                    toast(t('duplicate.merged', { number: other.displayNumber }));
+                    void navigate({ to: '/orders/$id', params: { id: other.id } });
+                  },
+                })
+              }
+            >
+              {t('duplicate.merge', { number: other.displayNumber })}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() =>
+                cancel.mutate(undefined, { onSuccess: () => toast(t('order.cancelled')) })
+              }
+            >
+              {t('duplicate.cancel')}
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={() => dismiss.mutate(undefined)}>
+              {t('duplicate.dismiss')}
+            </Button>
+          </span>
+        )}
+        {error && <span className="text-danger">{orderErrorMessage(error, t)}</span>}
+      </span>
     </div>
   );
 }
@@ -935,8 +1016,13 @@ function historyText(
       if (!e.to) return t('history.shipmentDeleted');
       if (!e.from) return t('history.shipmentCreated');
       return t('history.shipment', { status: t(`shipmentStatus.${to}` as AdminKey) });
-    case 'edit':
+    case 'edit': {
+      const number = (e.data as { number?: number } | null)?.number;
+      if (e.event === 'merged_into') return t('history.mergedInto', { number: number ?? '' });
+      if (e.event === 'merged_from') return t('history.mergedFrom', { number: number ?? '' });
+      if (e.event === 'duplicate_dismissed') return t('history.duplicateDismissed');
       return t('history.edited');
+    }
     default:
       return e.event ?? '';
   }

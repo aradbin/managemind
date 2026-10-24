@@ -182,6 +182,7 @@ export function OrdersPage() {
           <StatusChip kind="order" status={o.status} />
           <StatusChip kind="payment" status={o.paymentStatus} />
           <StatusChip kind="delivery" status={o.deliveryStatus} />
+          <FlagChips flags={o.flags} />
         </span>
       ),
     },
@@ -485,6 +486,7 @@ export function OrdersPage() {
               <StatusChip kind="payment" status={o.paymentStatus} />
               <StatusChip kind="delivery" status={o.deliveryStatus} />
               <ScoreBadge risk={o.risk} />
+              <FlagChips flags={o.flags} />
             </div>
           </div>
         )}
@@ -510,6 +512,25 @@ export function OrdersPage() {
         />
       )}
     </div>
+  );
+}
+
+/** What staff should look at: a possible duplicate, an order nobody answered for. */
+function FlagChips({ flags }: { flags: readonly string[] }) {
+  const { t } = useLocale();
+  return (
+    <>
+      {(['possible_duplicate', 'unreachable'] as const)
+        .filter((f) => flags.includes(f))
+        .map((f) => (
+          <span
+            key={f}
+            className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground"
+          >
+            {t(`orders.flag.${f}`)}
+          </span>
+        ))}
+    </>
   );
 }
 

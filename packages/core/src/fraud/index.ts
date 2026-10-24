@@ -136,6 +136,46 @@ export async function getPhoneRisk(
   return phoneRisk(tx, phone, (await orderSettings(tx)).settings);
 }
 
+// ---- Duplicates (phase-6-plan §3.4) ---------------------------------------------------
+
+export interface PossibleDuplicate {
+  id: string;
+  number: number;
+  placedAt: string;
+}
+
+/**
+ * The latest order from the same phone within the store's window, not
+ * cancelled, with the same set of variants (quantities may differ): the
+ * order a new one may duplicate. One query on the phone index; null when
+ * the store turned the check off.
+ */
+export async function findDuplicate(
+  tx: TenantTx,
+  phone: string,
+  variantIds: readonly string[],
+  settings: FraudSettings,
+  excludeOrderId?: string | null,
+): Promise<PossibleDuplicate | null> {
+  const minutes = settings.fraud.duplicateMinutes;
+  const variants = [...new Set(variantIds)];
+  if (minutes === 0 || variants.length === 0) return null;
+  const { rows } = await tx.db.execute<{ id: string; number: string; placed_at: string }>(sql`
+    select o.id, o.number, o.placed_at from store.orders o
+     where o.phone = ${phone} and o.status <> 'cancelled'
+       and o.placed_at > now() - make_interval(mins => ${minutes})
+       and (${excludeOrderId ?? null}::uuid is null or o.id <> ${excludeOrderId ?? null}::uuid)
+       and (select array_agg(l.variant_id) from store.order_lines l where l.order_id = o.id)
+           <@ ${sql.param(variants)}::uuid[]
+       and (select array_agg(l.variant_id) from store.order_lines l where l.order_id = o.id)
+           @> ${sql.param(variants)}::uuid[]
+     order by o.placed_at desc limit 1`);
+  const r = rows[0];
+  return r
+    ? { id: r.id, number: Number(r.number), placedAt: new Date(r.placed_at).toISOString() }
+    : null;
+}
+
 /** Whether the phone is risky: what `cod.advance` and `cod.otp` call "flagged". */
 export async function phoneFlagged(
   tx: TenantTx,

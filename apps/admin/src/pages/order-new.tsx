@@ -6,7 +6,7 @@
 import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Field } from '../components/field';
@@ -26,6 +26,7 @@ import { formatPrice, readPrice } from '../lib/catalog';
 import {
   type CustomerAddress,
   customerQuery,
+  dateTime,
   fetchCustomers,
   geoQuery,
   idempotencyKey,
@@ -325,6 +326,20 @@ export function NewOrderPage() {
             )}
             {normalized && quote.data && !quote.data.blocked && quote.data.firstOrder && (
               <p className="text-sm text-muted-foreground">{t('newOrder.firstOrder')}</p>
+            )}
+            {normalized && quote.data?.duplicate && (
+              <p role="alert" className="rounded-md bg-warning p-3 text-sm text-warning-foreground">
+                {t('duplicate.newOrder')}{' '}
+                <Link
+                  to="/orders/$id"
+                  params={{ id: quote.data.duplicate.id }}
+                  target="_blank"
+                  className="font-medium underline"
+                >
+                  {quote.data.duplicate.displayNumber}
+                </Link>{' '}
+                ({dateTime(locale, quote.data.duplicate.placedAt)})
+              </p>
             )}
             {normalized && risk.data && risk.data.decided + risk.data.history.open > 0 && (
               <PhoneRecord risk={risk.data} />

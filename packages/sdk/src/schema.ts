@@ -6711,6 +6711,12 @@ export interface paths {
                             blocked: boolean;
                             firstOrder: boolean;
                             risk: components["schemas"]["PhoneRisk"] & (Record<string, never> | null);
+                            duplicate: {
+                                /** Format: uuid */
+                                id: string;
+                                displayNumber: string;
+                                placedAt: string;
+                            } | null;
                         };
                     };
                 };
@@ -6946,6 +6952,84 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/duplicate/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge a possible duplicate into the order it duplicates; returns that order (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The order merged into */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/duplicate/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Not a duplicate: clears the flag (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
                     };
                 };
             };

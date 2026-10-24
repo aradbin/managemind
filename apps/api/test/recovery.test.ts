@@ -134,3 +134,31 @@ describe('the delivery success score', () => {
     expect(detail.cancelCode).toBe('wrong_number');
   });
 });
+
+describe('duplicates over HTTP', () => {
+  it('flags, then merges once per key', async () => {
+    const phone = '+8801712000301';
+    const older = await order(a, phone);
+    const newer = await order(a, phone);
+    const br = await staff(a);
+    const detail = (await (await br.get(`/api/admin/orders/${newer.id}`)).json()) as Json;
+    expect(detail).toMatchObject({ flags: ['possible_duplicate'], duplicateOf: { id: older.id } });
+    const key = { 'idempotency-key': `merge-${Date.now()}` };
+    const merged = await br.post(`/api/admin/orders/${newer.id}/duplicate/merge`, {}, key);
+    expect(merged.status).toBe(200);
+    expect(((await merged.json()) as Json).lines[0].quantity).toBe(2);
+    const again = await br.post(`/api/admin/orders/${newer.id}/duplicate/merge`, {}, key);
+    expect(((await again.json()) as Json).id).toBe(older.id);
+  });
+
+  it('dismisses, and answers 409 for an order that is not flagged', async () => {
+    const phone = '+8801712000302';
+    await order(a, phone);
+    const newer = await order(a, phone);
+    const br = await staff(a);
+    const res = await br.post(`/api/admin/orders/${newer.id}/duplicate/dismiss`);
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as Json).flags).toEqual([]);
+    expect((await br.post(`/api/admin/orders/${newer.id}/duplicate/dismiss`)).status).toBe(409);
+  });
+});

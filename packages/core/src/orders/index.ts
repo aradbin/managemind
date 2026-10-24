@@ -1,3 +1,4 @@
+export * from './duplicates';
 export * from './edit';
 export * from './history';
 export * from './lifecycle';

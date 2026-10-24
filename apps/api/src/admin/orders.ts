@@ -23,6 +23,7 @@ import {
   deleteShipment,
   deleteZone,
   deliverShipment,
+  dismissDuplicate,
   editOrder,
   failShipment,
   getCustomer,
@@ -32,6 +33,7 @@ import {
   listCustomers,
   listOrders,
   listZones,
+  mergeDuplicate,
   ordersForPrint,
   previewManualOrder,
   quoteDelivery,
@@ -542,6 +544,9 @@ export const ORDER_ROUTES = {
         blocked: z.boolean(),
         firstOrder: z.boolean(),
         risk: PhoneRisk.nullable(),
+        duplicate: z
+          .object({ id: z.uuid(), displayNumber: z.string(), placedAt: z.string() })
+          .nullable(),
       }),
       'Quote',
     ),
@@ -573,6 +578,21 @@ export const ORDER_ROUTES = {
     summary: 'Cancel with a reason and a code while nothing is shipped (orders.write)',
     request: { params: Id, headers: IdemHeader, ...body(cancelInput) },
     responses: json(OrderState, 'Cancelled'),
+  }),
+  mergeDuplicate: r({
+    method: 'post',
+    path: '/orders/{id}/duplicate/merge',
+    summary:
+      'Merge a possible duplicate into the order it duplicates; returns that order (orders.write; accepts Idempotency-Key)',
+    request: { params: Id, headers: IdemHeader },
+    responses: json(OrderDetail, 'The order merged into'),
+  }),
+  dismissDuplicate: r({
+    method: 'post',
+    path: '/orders/{id}/duplicate/dismiss',
+    summary: 'Not a duplicate: clears the flag (orders.write)',
+    request: { params: Id },
+    responses: json(OrderDetail, 'Order'),
   }),
   editPreview: r({
     method: 'post',
@@ -967,6 +987,23 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     'cancel',
     (tx, c, input) => cancelOrder(tx, actor(c), id(c), cancelInput.parse(input)),
     state,
+  );
+  command(R.mergeDuplicate, 'merge', async (tx, c) => {
+    const { orderId } = await mergeDuplicate(tx, actor(c), id(c));
+    return getOrder(tx, actor(c), orderId);
+  });
+  admin.openapi(R.dismissDuplicate, async (c) =>
+    c.json(
+      await inStore(
+        c,
+        async (tx) => {
+          await dismissDuplicate(tx, actor(c), id(c));
+          return getOrder(tx, actor(c), id(c));
+        },
+        write,
+      ),
+      200,
+    ),
   );
   command(R.edit, 'edit', async (tx, c, input) => {
     await editOrder(tx, actor(c), id(c), input);

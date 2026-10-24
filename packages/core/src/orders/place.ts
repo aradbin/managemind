@@ -22,7 +22,7 @@ import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
 import { addressSnapshot, findOrCreateCustomer } from '../customers/service';
-import { otpRequired, phoneRisk } from '../fraud/index';
+import { findDuplicate, otpRequired, phoneRisk } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
@@ -364,6 +364,14 @@ export async function placeOrder(
   const number = await nextOrderNumber(tx);
   const status = input.confirm && !storefront ? 'confirmed' : 'pending';
 
+  // A possible duplicate of a recent order from this phone (phase-6-plan §3.4): flagged, never refused.
+  const duplicate = await findDuplicate(
+    tx,
+    phone,
+    q.priced.map((p) => p.variant.id),
+    settings.settings,
+  );
+
   // 5. The order, its lines, adjustments, payments and history.
   const address = input.address ? addressSnapshot(input.address) : null;
   const zone = q.zone
@@ -412,7 +420,11 @@ export async function placeOrder(
       createdBy: storefront ? null : actor.userId,
       phoneScore: risk.score,
       // A risky phone shows on the order, for staff (phase-5a-plan §3.11).
-      flags: risk.risky ? ['flagged_phone'] : [],
+      flags: [
+        ...(risk.risky ? ['flagged_phone'] : []),
+        ...(duplicate ? ['possible_duplicate'] : []),
+      ],
+      duplicateOf: duplicate?.id ?? null,
       ...(status === 'confirmed' ? { confirmedAt: sql`now()` } : {}),
     })
     .returning({ placedAt: schema.orders.placedAt });

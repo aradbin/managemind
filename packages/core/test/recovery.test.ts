@@ -15,11 +15,14 @@ import {
   createShipment,
   createTenant,
   deliverShipment,
+  dismissDuplicate,
   failShipment,
   getCustomer,
   getOrder,
   getPhoneRisk,
+  inventoryDrift,
   listOrders,
+  mergeDuplicate,
   placeOrder,
   previewManualOrder,
   receive,
@@ -29,6 +32,7 @@ import {
   shopperActor,
   systemActor,
   type TenantTx,
+  triggeredBy,
   updateStoreProfile,
   withTenant,
 } from '../src';
@@ -81,15 +85,28 @@ let phoneSeq = 0;
 const newPhone = () => `+88017${String(10_000_000 + ++phoneSeq * 7919).slice(-8)}`;
 
 /** A COD order entered by staff. */
-const manualOrder = (variantId: string, phone: string, quantity = 1) =>
+const manualOrder = (
+  variantId: string | { variantId: string; quantity: number }[],
+  phone: string,
+  quantity = 1,
+  extra: Record<string, unknown> = {},
+) =>
   run((tx) =>
     createManualOrder(tx, owner, {
       source: 'phone',
-      lines: [{ variantId, quantity }],
+      lines: typeof variantId === 'string' ? [{ variantId, quantity }] : variantId,
       contact: { name: 'Karim', phone },
       address,
+      ...extra,
     }),
   );
+const reserved = (variantId: string) =>
+  run(async (tx) => {
+    const { rows } = await tx.db.execute<{ reserved: number }>(
+      sql`select coalesce(sum(reserved), 0)::int as reserved from store.inventory_levels where variant_id = ${variantId}`,
+    );
+    return rows[0]?.reserved;
+  });
 
 async function ship(orderId: string) {
   const order = await run((tx) => getOrder(tx, owner, orderId));
@@ -275,5 +292,179 @@ describe('cancel codes', () => {
     });
     expect(codes).toEqual({ [a.id]: 'out_of_stock', [b.id]: 'other', [c.id]: 'shopper_request' });
     expect((await run((tx) => getOrder(tx, owner, a.id))).cancelCode).toBe('out_of_stock');
+  });
+});
+
+describe('duplicate orders', () => {
+  it('flags the same set of variants from the same phone within the window', async () => {
+    const [a, b] = [await product(), await product()];
+    const phone = newPhone();
+    const first = await manualOrder(
+      [
+        { variantId: a, quantity: 1 },
+        { variantId: b, quantity: 1 },
+      ],
+      phone,
+    );
+    // Other quantities, same variants: a possible duplicate of the first.
+    const second = await manualOrder(
+      [
+        { variantId: b, quantity: 3 },
+        { variantId: a, quantity: 1 },
+      ],
+      phone,
+    );
+    const detail = await run((tx) => getOrder(tx, owner, second.id));
+    expect(detail.flags).toContain('possible_duplicate');
+    expect(detail.duplicateOf).toMatchObject({ id: first.id, status: 'pending' });
+    // Another set of variants, or another phone, isn't.
+    const third = await manualOrder(a, phone);
+    const fourth = await manualOrder(
+      [
+        { variantId: a, quantity: 1 },
+        { variantId: b, quantity: 1 },
+      ],
+      newPhone(),
+    );
+    for (const o of [third, fourth]) {
+      expect((await run((tx) => getOrder(tx, owner, o.id))).flags).not.toContain(
+        'possible_duplicate',
+      );
+    }
+    const flagged = await run((tx) => listOrders(tx, owner, { flag: 'possible_duplicate' }));
+    expect(flagged.items.map((o) => o.id)).toContain(second.id);
+    // The manual order screen warns before saving.
+    const preview = await run((tx) =>
+      previewManualOrder(tx, owner, {
+        source: 'phone',
+        lines: [
+          { variantId: b, quantity: 1 },
+          { variantId: a, quantity: 2 },
+        ],
+        contact: { phone },
+        address,
+      }),
+    );
+    expect(preview.duplicate?.id).toBe(second.id);
+  });
+
+  it('ignores cancelled orders, orders outside the window, and a store that turned it off', async () => {
+    const v = await product();
+    const phone = newPhone();
+    const cancelled = await manualOrder(v, phone);
+    await run((tx) => cancelOrder(tx, owner, cancelled.id, { reason: 'x', code: 'other' }));
+    const old = await manualOrder(v, phone);
+    await run((tx) =>
+      tx.db.execute(
+        sql`update store.orders set placed_at = now() - interval '31 minutes' where id = ${old.id}`,
+      ),
+    );
+    const next = await manualOrder(v, phone);
+    expect((await run((tx) => getOrder(tx, owner, next.id))).flags).not.toContain(
+      'possible_duplicate',
+    );
+    await setFraud({ duplicateMinutes: 0 });
+    try {
+      const off = await manualOrder(v, phone);
+      expect((await run((tx) => getOrder(tx, owner, off.id))).duplicateOf).toBeNull();
+    } finally {
+      await setFraud({});
+    }
+  });
+
+  it('merges the newer order into the older: one order, one delivery charge, stock right', async () => {
+    const [a, b] = [await product(30_000), await product(20_000)];
+    const phone = newPhone();
+    const older = await manualOrder(
+      [
+        { variantId: a, quantity: 1 },
+        { variantId: b, quantity: 1 },
+      ],
+      phone,
+    );
+    const newer = await manualOrder(
+      [
+        { variantId: a, quantity: 2 },
+        { variantId: b, quantity: 1 },
+      ],
+      phone,
+    );
+    const before = await run((tx) => getOrder(tx, owner, older.id));
+    expect([await reserved(a), await reserved(b)]).toEqual([3, 2]);
+
+    const { orderId } = await run((tx) => mergeDuplicate(tx, owner, newer.id));
+    expect(orderId).toBe(older.id);
+    const merged = await run((tx) => getOrder(tx, owner, older.id));
+    expect(merged.lines.map((l) => [l.variantId, l.quantity])).toEqual([
+      [a, 3],
+      [b, 2],
+    ]);
+    expect(merged.totals.deliveryFee).toBe(before.totals.deliveryFee);
+    expect(merged.totals.total).toBe(3 * 30_000 + 2 * 20_000 + before.totals.deliveryFee);
+    expect(merged.totals.codDue).toBe(merged.totals.total);
+    const cancelled = await run((tx) => getOrder(tx, owner, newer.id));
+    expect(cancelled).toMatchObject({ status: 'cancelled', cancelCode: 'duplicate' });
+    expect(cancelled.flags).not.toContain('possible_duplicate');
+    // Both histories point at each other.
+    expect(cancelled.timeline.some((e) => e.event === 'merged_into')).toBe(true);
+    expect(merged.timeline.some((e) => e.event === 'merged_from')).toBe(true);
+    // Reservations follow: the merged order holds what both did.
+    expect([await reserved(a), await reserved(b)]).toEqual([3, 2]);
+    expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
+    // A second merge finds nothing to merge.
+    await expect(run((tx) => mergeDuplicate(tx, owner, newer.id))).rejects.toMatchObject({
+      code: 'conflict',
+    });
+  });
+
+  it("won't merge a newer order with a payment, or one that's shipped", async () => {
+    const v = await product();
+    const phone = newPhone();
+    await manualOrder(v, phone);
+    const paid = await manualOrder(v, phone, 1, {
+      payment: { method: 'bkash', amount: 10_000, reference: 'TX1' },
+    });
+    await expect(run((tx) => mergeDuplicate(tx, owner, paid.id))).rejects.toMatchObject({
+      code: 'illegal_transition',
+      extensions: { reason: 'paid' },
+    });
+    const phone2 = newPhone();
+    const first = await manualOrder(v, phone2);
+    const second = await manualOrder(v, phone2);
+    await ship(first.id);
+    await expect(run((tx) => mergeDuplicate(tx, owner, second.id))).rejects.toMatchObject({
+      extensions: { reason: 'shipped' },
+    });
+  });
+
+  it('clears the flag when staff say it is not a duplicate, keeping the link', async () => {
+    const v = await product();
+    const phone = newPhone();
+    const first = await manualOrder(v, phone);
+    const second = await manualOrder(v, phone);
+    await run((tx) => dismissDuplicate(tx, owner, second.id));
+    const detail = await run((tx) => getOrder(tx, owner, second.id));
+    expect(detail.flags).not.toContain('possible_duplicate');
+    expect(detail.duplicateOf?.id).toBe(first.id);
+    expect(detail.timeline.some((e) => e.event === 'duplicate_dismissed')).toBe(true);
+    await expect(run((tx) => dismissDuplicate(tx, owner, second.id))).rejects.toMatchObject({
+      code: 'conflict',
+    });
+    await expect(
+      run((tx) => mergeDuplicate(tx, actorAs('viewer'), second.id)),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+  });
+
+  it('sends the shopper nothing for an order cancelled as a duplicate', () => {
+    const event = (code?: string) =>
+      triggeredBy({
+        id: 'e',
+        eventType: 'order.cancelled',
+        aggregateType: 'order',
+        aggregateId: 'o',
+        payload: { number: 1, by: 'staff', ...(code ? { code } : {}) },
+      } as never);
+    expect(event('duplicate')?.shopper).toEqual([]);
+    expect(event('fake')?.shopper).toEqual(['order_cancelled']);
   });
 });

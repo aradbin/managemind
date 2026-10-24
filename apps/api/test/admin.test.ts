@@ -501,6 +501,8 @@ describe('isolation suite', () => {
       'POST /v1/admin/orders/{id}/confirm': { id: order.id },
       'POST /v1/admin/orders/{id}/process': { id: order.id },
       'POST /v1/admin/orders/{id}/cancel': { id: order.id, body: { reason: 'x' } },
+      'POST /v1/admin/orders/{id}/duplicate/merge': { id: order.id },
+      'POST /v1/admin/orders/{id}/duplicate/dismiss': { id: order.id },
       'POST /v1/admin/orders/{id}/edit/preview': {
         id: order.id,
         body: { lines: [{ variantId: liveVariant, quantity: 2 }] },
