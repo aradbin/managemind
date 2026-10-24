@@ -95,7 +95,8 @@ export function OrdersPage() {
   const [confirming, setConfirming] = useState(false);
   const panelCount = PANEL.filter((k) => search[k] !== undefined).length;
   const [panel, setPanel] = useState(panelCount > 0);
-  const counts = useQuery(dashboardQuery).data?.counts;
+  const dashboard = useQuery(dashboardQuery).data;
+  const counts = dashboard?.counts;
   const tabCount = (key: string) =>
     key === 'pending'
       ? counts?.awaitingConfirmation
@@ -260,6 +261,19 @@ export function OrdersPage() {
             </span>
           ) : null}
         </Link>
+        {dashboard?.incomplete && (
+          <Link
+            to="/orders/incomplete"
+            className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
+          >
+            {t('incomplete.title')}
+            {dashboard.incomplete.open ? (
+              <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+                {dashboard.incomplete.open}
+              </span>
+            ) : null}
+          </Link>
+        )}
       </nav>
       <div className="flex flex-wrap items-center gap-2">
         <Input

@@ -41,6 +41,29 @@ export type ConfirmationQueue = Json<'/v1/admin/confirmations', 'get'>;
 export type QueueItem = ConfirmationQueue['items'][number];
 export type CallPanel = Json<'/v1/admin/orders/{id}/confirmation/claim', 'post'>;
 export type QueueTab = 'to_call' | 'later' | 'unreachable' | 'risky';
+export type IncompletePage = Json<'/v1/admin/incomplete-orders', 'get'>;
+export type IncompleteSummary = IncompletePage['items'][number];
+export type IncompleteDetail = Json<'/v1/admin/incomplete-orders/{id}', 'get'>;
+export type IncompleteTab = 'open' | 'converted' | 'recovered' | 'dismissed';
+
+/** Incomplete checkouts (phase-6-plan §3.2), newest change first. */
+export const incompleteQuery = (tab: IncompleteTab) => ({
+  queryKey: ['incomplete-orders', tab] as const,
+  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+    api
+      .GET('/v1/admin/incomplete-orders', {
+        params: { query: { tab, limit: 50, ...(pageParam ? { after: pageParam } : {}) } },
+      })
+      .then(unwrap),
+  initialPageParam: undefined as string | undefined,
+  getNextPageParam: (last: IncompletePage) => last.nextCursor ?? undefined,
+});
+
+export const incompleteOrderQuery = (id: string) => ({
+  queryKey: ['incomplete-order', id] as const,
+  queryFn: async () =>
+    unwrap(await api.GET('/v1/admin/incomplete-orders/{id}', { params: { path: { id } } })),
+});
 export type Localized = { bn?: string | undefined; en?: string | undefined };
 
 /** The value in `locale`, else the other language, else ''. */

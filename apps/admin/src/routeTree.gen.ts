@@ -67,6 +67,8 @@ import { Route as ShellCatalogCollectionsIndexRouteImport } from './routes/_shel
 import { Route as ShellCatalogCollectionsIdRouteImport } from './routes/_shell/catalog/collections/$id'
 import { Route as ShellOnlineStorePagesIndexRouteImport } from './routes/_shell/online-store/pages/index'
 import { Route as ShellOnlineStorePagesIdRouteImport } from './routes/_shell/online-store/pages/$id'
+import { Route as ShellOrdersIncompleteIndexRouteImport } from './routes/_shell/orders/incomplete/index'
+import { Route as ShellOrdersIncompleteIdRouteImport } from './routes/_shell/orders/incomplete/$id'
 import { Route as ShellPlatformBillingIndexRouteImport } from './routes/_shell/platform/billing.index'
 import { Route as ShellPlatformBillingIdRouteImport } from './routes/_shell/platform/billing.$id'
 import { Route as ShellPlatformTenantsIdRouteImport } from './routes/_shell/platform/tenants.$id'
@@ -367,6 +369,17 @@ const ShellOnlineStorePagesIdRoute = ShellOnlineStorePagesIdRouteImport.update({
   path: '/online-store/pages/$id',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellOrdersIncompleteIndexRoute =
+  ShellOrdersIncompleteIndexRouteImport.update({
+    id: '/orders/incomplete/',
+    path: '/orders/incomplete/',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellOrdersIncompleteIdRoute = ShellOrdersIncompleteIdRouteImport.update({
+  id: '/orders/incomplete/$id',
+  path: '/orders/incomplete/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellPlatformBillingIndexRoute =
   ShellPlatformBillingIndexRouteImport.update({
     id: '/billing/',
@@ -445,11 +458,13 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
+  '/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
+  '/orders/incomplete/': typeof ShellOrdersIncompleteIndexRoute
   '/platform/billing/': typeof ShellPlatformBillingIndexRoute
 }
 export interface FileRoutesByTo {
@@ -507,11 +522,13 @@ export interface FileRoutesByTo {
   '/settings': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
+  '/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections': typeof ShellCatalogCollectionsIndexRoute
   '/online-store/pages': typeof ShellOnlineStorePagesIndexRoute
+  '/orders/incomplete': typeof ShellOrdersIncompleteIndexRoute
   '/platform/billing': typeof ShellPlatformBillingIndexRoute
 }
 export interface FileRoutesById {
@@ -572,11 +589,13 @@ export interface FileRoutesById {
   '/_shell/settings/': typeof ShellSettingsIndexRoute
   '/_shell/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
   '/_shell/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
+  '/_shell/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/_shell/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/_shell/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/_shell/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/_shell/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
+  '/_shell/orders/incomplete/': typeof ShellOrdersIncompleteIndexRoute
   '/_shell/platform/billing/': typeof ShellPlatformBillingIndexRoute
 }
 export interface FileRouteTypes {
@@ -637,11 +656,13 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
+    | '/orders/incomplete/$id'
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
     | '/catalog/collections/'
     | '/online-store/pages/'
+    | '/orders/incomplete/'
     | '/platform/billing/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -699,11 +720,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/catalog/collections/$id'
     | '/online-store/pages/$id'
+    | '/orders/incomplete/$id'
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
     | '/catalog/collections'
     | '/online-store/pages'
+    | '/orders/incomplete'
     | '/platform/billing'
   id:
     | '__root__'
@@ -763,11 +786,13 @@ export interface FileRouteTypes {
     | '/_shell/settings/'
     | '/_shell/catalog/collections/$id'
     | '/_shell/online-store/pages/$id'
+    | '/_shell/orders/incomplete/$id'
     | '/_shell/platform/billing/$id'
     | '/_shell/platform/tenants/$id'
     | '/_shell/platform/tenants/new'
     | '/_shell/catalog/collections/'
     | '/_shell/online-store/pages/'
+    | '/_shell/orders/incomplete/'
     | '/_shell/platform/billing/'
   fileRoutesById: FileRoutesById
 }
@@ -1188,6 +1213,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellOnlineStorePagesIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/orders/incomplete/': {
+      id: '/_shell/orders/incomplete/'
+      path: '/orders/incomplete'
+      fullPath: '/orders/incomplete/'
+      preLoaderRoute: typeof ShellOrdersIncompleteIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/orders/incomplete/$id': {
+      id: '/_shell/orders/incomplete/$id'
+      path: '/orders/incomplete/$id'
+      fullPath: '/orders/incomplete/$id'
+      preLoaderRoute: typeof ShellOrdersIncompleteIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/platform/billing/': {
       id: '/_shell/platform/billing/'
       path: '/billing'
@@ -1293,8 +1332,10 @@ interface ShellRouteChildren {
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
   ShellOnlineStorePagesIdRoute: typeof ShellOnlineStorePagesIdRoute
+  ShellOrdersIncompleteIdRoute: typeof ShellOrdersIncompleteIdRoute
   ShellCatalogCollectionsIndexRoute: typeof ShellCatalogCollectionsIndexRoute
   ShellOnlineStorePagesIndexRoute: typeof ShellOnlineStorePagesIndexRoute
+  ShellOrdersIncompleteIndexRoute: typeof ShellOrdersIncompleteIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
@@ -1343,8 +1384,10 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
   ShellOnlineStorePagesIdRoute: ShellOnlineStorePagesIdRoute,
+  ShellOrdersIncompleteIdRoute: ShellOrdersIncompleteIdRoute,
   ShellCatalogCollectionsIndexRoute: ShellCatalogCollectionsIndexRoute,
   ShellOnlineStorePagesIndexRoute: ShellOnlineStorePagesIndexRoute,
+  ShellOrdersIncompleteIndexRoute: ShellOrdersIncompleteIndexRoute,
 }
 
 const ShellRouteWithChildren = ShellRoute._addFileChildren(ShellRouteChildren)

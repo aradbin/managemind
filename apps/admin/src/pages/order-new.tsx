@@ -4,9 +4,9 @@
 // exactly what saving will charge; a blocked phone is warned about first.
 
 import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
-import { normalizePhone } from '@managemind/shared/phone';
+import { formatPhone, normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Field } from '../components/field';
@@ -81,6 +81,46 @@ export function NewOrderPage() {
   const [note, setNote] = useState('');
   const [allowBlocked, setAllowBlocked] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+
+  // Started from an incomplete checkout (phase-6-plan §3.2): its customer,
+  // the lines still orderable, the address typed so far and the cart's code.
+  const { incomplete: incompleteId } = useSearch({ strict: false }) as { incomplete?: string };
+  const incomplete = useQuery({
+    queryKey: ['incomplete-order', incompleteId] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/incomplete-orders/{id}', {
+          params: { path: { id: incompleteId as string } },
+        }),
+      ),
+    enabled: Boolean(incompleteId),
+  });
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    const d = incomplete.data;
+    if (!d || prefilled) return;
+    setPrefilled(true);
+    setPhone(formatPhone(d.phone));
+    setName(d.name ?? '');
+    setEmail(d.email ?? '');
+    setPlace({
+      divisionId: d.address.divisionId ?? null,
+      districtId: d.address.districtId ?? null,
+      areaId: d.address.areaId ?? null,
+      line: d.address.line ?? '',
+    });
+    setLines(
+      d.lines
+        .filter((l) => l.orderable)
+        .map((l) => ({
+          variantId: l.variantId,
+          label: lineLabel(l, locale),
+          available: l.available,
+          quantity: String(l.quantity),
+        })),
+    );
+    if (d.cartCode) setCode(d.cartCode);
+  }, [incomplete.data, prefilled, locale]);
 
   const normalized = normalizePhone(phone);
   const zones = useQuery(zonesQuery);
@@ -204,6 +244,7 @@ export function NewOrderPage() {
         confirm: opts.confirm,
         completeNow: opts.completeNow,
         allowBlocked,
+        ...(incompleteId && incomplete.data ? { incompleteOrderId: incompleteId } : {}),
       } as ManualOrderBody;
       return unwrap(await api.POST('/v1/admin/orders', { ...withKey(key), body }));
     },
@@ -248,6 +289,11 @@ export function NewOrderPage() {
         title={t('newOrder.title')}
         description={t('newOrder.intro')}
       />
+      {incomplete.data && (
+        <Notice>
+          {t('incomplete.startedFrom', { date: dateTime(locale, incomplete.data.updatedAt) })}
+        </Notice>
+      )}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex min-w-0 flex-col gap-5">
           <section aria-labelledby="customer-h" className={section}>
@@ -291,24 +337,27 @@ export function NewOrderPage() {
                 maxLength={254}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                {t('order.source')}
-                <select
-                  className={selectClass}
-                  value={source}
-                  onChange={(e) => {
-                    const next = e.target.value as Source;
-                    setSource(next);
-                    if (next === 'walk_in') setDelivery(false);
-                  }}
-                >
-                  {MANUAL_ORDER_SOURCES.map((s) => (
-                    <option key={s} value={s}>
-                      {t(`source.${s}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* A website order when it comes from an incomplete checkout. */}
+              {!incompleteId && (
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  {t('order.source')}
+                  <select
+                    className={selectClass}
+                    value={source}
+                    onChange={(e) => {
+                      const next = e.target.value as Source;
+                      setSource(next);
+                      if (next === 'walk_in') setDelivery(false);
+                    }}
+                  >
+                    {MANUAL_ORDER_SOURCES.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`source.${s}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
             {quote.data?.blocked && (
               <div className="flex flex-col gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">

@@ -15,6 +15,7 @@ import {
   PackageX,
   PhoneCall,
   Plus,
+  ShoppingCart,
   Truck,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -92,7 +93,11 @@ export function DashboardView() {
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             {/* First on phones, where acting on it matters most; beside the chart on desktops. */}
             <div className="lg:col-start-2 lg:row-start-1">
-              <Waiting counts={data.data.counts} confirmation={data.data.confirmation} />
+              <Waiting
+                counts={data.data.counts}
+                confirmation={data.data.confirmation}
+                incomplete={data.data.incomplete}
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
               {data.data.sales && <WeekChart days={data.data.sales.days} locale={locale} />}
@@ -347,9 +352,11 @@ function RecentOrders() {
 function Waiting({
   counts,
   confirmation,
+  incomplete,
 }: {
   counts: Dashboard['counts'];
   confirmation: Dashboard['confirmation'];
+  incomplete: Dashboard['incomplete'];
 }) {
   const { t, locale } = useLocale();
   const row = (
@@ -357,7 +364,10 @@ function Waiting({
     value: number,
     Icon: LucideIcon,
     tone: string,
-    to: { to: '/orders' | '/inventory' | '/orders/confirm'; search: Record<string, unknown> },
+    to: {
+      to: '/orders' | '/inventory' | '/orders/confirm' | '/orders/incomplete';
+      search: Record<string, unknown>;
+    },
   ) => (
     <Link
       to={to.to}
@@ -417,6 +427,14 @@ function Waiting({
             search: { status: 'confirmed', deliveryStatus: 'not_shipped' },
           })}
         </li>
+        {incomplete && (
+          <li>
+            {row(t('incomplete.title'), incomplete.open, ShoppingCart, 'bg-muted text-foreground', {
+              to: '/orders/incomplete',
+              search: {},
+            })}
+          </li>
+        )}
         {counts.possibleDuplicates > 0 && (
           <li>
             {row(
@@ -444,6 +462,14 @@ function Waiting({
           )}
         </li>
       </ul>
+      {incomplete && incomplete.today > 0 && (
+        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
+          {t('dashboard.incompleteToday', {
+            saved: formatNumber(locale, incomplete.today),
+            recovered: formatNumber(locale, incomplete.recoveredToday),
+          })}
+        </p>
+      )}
       {confirmation && confirmation.rate !== null && (
         <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
           {t('dashboard.confirmationRate', {

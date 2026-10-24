@@ -8,7 +8,9 @@ import {
   DEFAULT_CALL_SCRIPT,
   defaultConfirmationSettings,
   defaultFraudSettings,
+  defaultRecoverySettings,
   type FraudSettings,
+  type RecoverySettings,
   renderCallScript,
   SCRIPT_VARIABLES,
   unknownScriptVariables,
@@ -73,6 +75,7 @@ export function ConfirmationSettingsPage() {
     defaultConfirmationSettings,
   );
   const [script, setScript] = useState({ bn: '', en: '' });
+  const [recovery, setRecovery] = useState<RecoverySettings>(defaultRecoverySettings);
   const [text, setText] = useState({
     flagAfterFailed: '1',
     minScore: '',
@@ -80,6 +83,8 @@ export function ConfirmationSettingsPage() {
     duplicateMinutes: '30',
     maxAttempts: '3',
     retryAfterMinutes: '60',
+    showAfterMinutes: '30',
+    keepDays: '30',
   });
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
@@ -89,7 +94,12 @@ export function ConfirmationSettingsPage() {
       ...defaultConfirmationSettings(),
       ...(store.data.confirmation as Partial<ConfirmationSettings>),
     };
+    const r = {
+      ...defaultRecoverySettings(),
+      ...(store.data.recovery as Partial<RecoverySettings>),
+    };
     setConfirmation(c);
+    setRecovery(r);
     setScript({ bn: c.script.bn ?? '', en: c.script.en ?? '' });
     setText({
       flagAfterFailed: String(f.flagAfterFailed),
@@ -98,6 +108,8 @@ export function ConfirmationSettingsPage() {
       duplicateMinutes: String(f.duplicateMinutes),
       maxAttempts: String(c.maxAttempts),
       retryAfterMinutes: String(c.retryAfterMinutes),
+      showAfterMinutes: String(r.showAfterMinutes),
+      keepDays: String(r.keepDays),
     });
     setLoaded(true);
   }, [store.data, loaded]);
@@ -109,6 +121,8 @@ export function ConfirmationSettingsPage() {
     duplicateMinutes: int(text.duplicateMinutes),
     maxAttempts: int(text.maxAttempts),
     retryAfterMinutes: int(text.retryAfterMinutes),
+    showAfterMinutes: int(text.showAfterMinutes),
+    keepDays: int(text.keepDays),
   };
   const unknown = {
     bn: unknownScriptVariables(script.bn),
@@ -121,6 +135,8 @@ export function ConfirmationSettingsPage() {
     duplicateMinutes: !between(values.duplicateMinutes, 0, 1440),
     maxAttempts: !between(values.maxAttempts, 1, 10),
     retryAfterMinutes: !between(values.retryAfterMinutes, 5, 1440),
+    showAfterMinutes: !between(values.showAfterMinutes, 0, 1440),
+    keepDays: !between(values.keepDays, 1, 30),
     scriptBn: unknown.bn.length > 0,
     scriptEn: unknown.en.length > 0,
   };
@@ -135,6 +151,11 @@ export function ConfirmationSettingsPage() {
               minScore: values.minScore,
               minDecided: values.minDecided as number,
               duplicateMinutes: values.duplicateMinutes as number,
+            },
+            recovery: {
+              incomplete: recovery.incomplete,
+              showAfterMinutes: values.showAfterMinutes as number,
+              keepDays: values.keepDays as number,
             },
             confirmation: {
               ...confirmation,
@@ -302,6 +323,43 @@ export function ConfirmationSettingsPage() {
             </div>
           </fieldset>
         )}
+
+        <fieldset disabled={!canEdit || save.isPending} className={card}>
+          <legend className="mb-2 text-lg font-semibold">{t('incomplete.title')}</legend>
+          <label className="flex min-h-11 items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-3 size-5"
+              checked={recovery.incomplete}
+              onChange={(e) => setRecovery({ ...recovery, incomplete: e.target.checked })}
+            />
+            <span className="flex min-h-11 flex-col justify-center">
+              {t('confirmSettings.incomplete')}
+              <span className="text-sm text-muted-foreground">
+                {t('confirmSettings.incompleteHint')}
+              </span>
+            </span>
+          </label>
+          {recovery.incomplete && (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field
+                label={t('confirmSettings.showAfter')}
+                inputMode="numeric"
+                value={text.showAfterMinutes}
+                onChange={(e) => setText({ ...text, showAfterMinutes: e.target.value })}
+                error={err(errors.showAfterMinutes)}
+              />
+              <Field
+                label={t('confirmSettings.keepDays')}
+                hint={t('confirmSettings.keepDaysHint')}
+                inputMode="numeric"
+                value={text.keepDays}
+                onChange={(e) => setText({ ...text, keepDays: e.target.value })}
+                error={err(errors.keepDays)}
+              />
+            </div>
+          )}
+        </fieldset>
 
         <fieldset disabled={!canEdit || save.isPending} className={card}>
           <legend className="mb-2 text-lg font-semibold">{t('confirmSettings.risky')}</legend>
