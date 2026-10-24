@@ -44,6 +44,29 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     await expectAccessible(owner, 'home');
   });
 
+  await test.step('the owner picks the dark theme, which stays after a reload', async () => {
+    // The browser reports a light device, so "device" means light here.
+    const phone = (viewport?.width ?? 1280) < 768;
+    const html = owner.locator('html');
+    const pick = async (label: string) => {
+      if (phone) {
+        await owner.goto(`${API}/more`);
+        await owner.getByRole('radio', { name: label }).check();
+      } else {
+        await owner.getByRole('button', { name: t('account.menu') }).click();
+        await owner.getByRole('menuitemradio', { name: label }).click();
+        await owner.keyboard.press('Escape');
+      }
+    };
+    await pick(t('appearance.dark'));
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await owner.reload();
+    await expect(html).toHaveAttribute('data-theme', 'dark');
+    await expectAccessible(owner, phone ? 'more, dark' : 'home, dark');
+    await pick(t('appearance.system'));
+    await expect(html).toHaveAttribute('data-theme', 'light');
+  });
+
   await test.step('the owner invites someone', async () => {
     await owner.goto(`${API}/settings/staff`);
     await expect(owner.getByRole('heading', { name: t('settings.staff'), level: 1 })).toBeVisible();

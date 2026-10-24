@@ -1,5 +1,5 @@
 // The account menu in the header: who is signed in, the account page,
-// the dev mailbox outside production, and sign out.
+// the dev mailbox outside production, light or dark, and sign out.
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -7,6 +7,7 @@ import { CircleUser } from 'lucide-react';
 import { useLocale } from '../i18n';
 import { healthQuery, type Me } from '../lib/api';
 import { auth } from '../lib/auth';
+import { ThemeMenuItems } from './theme-choice';
 import { Button } from './ui/button';
 
 /** Signs out, forgets this account's data, and goes back to sign-in. */
@@ -53,6 +54,9 @@ export function AccountMenu({ me }: { me: Me }) {
               {t('dev.mailbox')}
             </Menu.Item>
           )}
+          <Menu.Separator className="my-1 h-px bg-border" />
+          <ThemeMenuItems item={item} />
+          <Menu.Separator className="my-1 h-px bg-border" />
           <Menu.Item className={item} onSelect={signOut}>
             {t('action.signOut')}
           </Menu.Item>

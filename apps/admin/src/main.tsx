@@ -2,6 +2,7 @@
 // in src/routes, TanStack Query for server state, and the admin's own
 // translations. Latin text uses a self-hosted Inter and Bangla a self-hosted
 // Noto Sans Bengali (ADR 0029); each downloads only for the glyphs on screen.
+// Light or dark is set before anything renders (lib/theme.ts).
 import './zod-config';
 import '@fontsource-variable/inter';
 import '@fontsource/noto-sans-bengali/400.css';
@@ -15,9 +16,11 @@ import { ToastProvider } from './components/toast';
 import { initialLocale, LocaleProvider, loadLocale } from './i18n';
 import { ApiError, queryClient } from './lib/api';
 import { AuthError } from './lib/auth';
+import { initTheme } from './lib/theme';
 import { routeTree } from './routeTree.gen';
 import { initSentry, rootErrorHandlers } from './sentry';
 
+initTheme();
 initSentry();
 
 const router = createRouter({ routeTree, context: { queryClient }, defaultPreload: 'intent' });

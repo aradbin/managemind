@@ -45,6 +45,12 @@ The admin works, but it reads as a developer tool: one blue on white, content st
    - A delivery zone is still edited in its dialog (a sheet on phones), not in a panel beside the list.
    - Settings cards show a status where the setup checklist knows it: store profile, delivery, payments, domains, email.
 
+7. **Light, dark or the device's setting** (amended 2026-10-24, after the owner couldn't find a switch). The dark theme first followed only the device. Now each person can choose:
+   - **Where:** the desktop account menu, and a three-way switch on More.
+   - **How:** `lib/theme.ts` keeps the choice in `localStorage` (`mm.theme`) and sets `data-theme` on `<html>` before the app renders. The dark tokens apply to that attribute. The admin's CSP allows no inline script, so a dark device gets only the dark canvas before the script runs.
+   - **Printing:** the dark tokens apply to screens only, so invoices and packing slips print light whatever the choice.
+   - **Default:** "Device", as before. The E2E runs axe once in the dark theme at each viewport.
+
 ## Options considered
 
 - **Keep the look and fix only the phone bar.** Cheaper, but the owner asked for a redesign and approved it screen by screen.

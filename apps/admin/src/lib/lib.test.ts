@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { safeRedirect, totpSecret } from './auth';
 import { describeDevice } from './device';
+import { parseThemeChoice, resolveTheme } from './theme';
 
 describe('safeRedirect', () => {
   it('keeps paths on this site', () => {
@@ -54,5 +55,21 @@ describe('describeDevice', () => {
     ).toBe('Edge · Windows');
     expect(describeDevice(null)).toBeNull();
     expect(describeDevice('curl/8.5.0')).toBeNull();
+  });
+});
+
+describe('theme', () => {
+  it('reads only light or dark as a choice; anything else follows the device', () => {
+    expect(parseThemeChoice('light')).toBe('light');
+    expect(parseThemeChoice('dark')).toBe('dark');
+    for (const other of [null, '', 'system', 'Dark', 1])
+      expect(parseThemeChoice(other)).toBe('system');
+  });
+
+  it('follows the device only while the choice is "system"', () => {
+    expect(resolveTheme('system', true)).toBe('dark');
+    expect(resolveTheme('system', false)).toBe('light');
+    expect(resolveTheme('light', true)).toBe('light');
+    expect(resolveTheme('dark', false)).toBe('dark');
   });
 });
