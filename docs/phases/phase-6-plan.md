@@ -196,6 +196,11 @@ Staff can still change the order before confirming it (the address, a size): the
 
 Mobile first, as before. Each new screen loads on demand, so the sign-in bundle stays under 150 KiB.
 
+The screens follow Phase 5C's patterns ([ADR 0029](../adr/0029-admin-redesign.md)):
+- "Confirm" and "Incomplete" join the order list's status tabs, with their counts.
+- Each screen gets a breadcrumb, cards, phone cards, and its main action pinned above the tab bar on phones.
+- The customer page's delivery record, which 5C added, becomes the score's panel.
+
 - **Orders → Confirm:** the queue in §3.5. Each order is a card: the name, the phone with a large **Call** button (`tel:`), the score badge, the items, the total and COD amount, the area, the attempts and the last note. Tapping **Call** claims the order and opens the call panel with the script and the outcome buttons. After an outcome, the next order opens.
 - **Orders → Incomplete:** the list in §3.2: when, the name, the phone with **Call**, the area, the items and their total, the score, the status. The detail has the lines with today's price and stock, the notes, and **Create order**, **Mark contacted** and **Dismiss**.
 - **Order list:** the score badge, and filters for "needs confirmation", "possible duplicate", "unreachable" and "risky".

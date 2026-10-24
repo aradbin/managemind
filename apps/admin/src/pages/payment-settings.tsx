@@ -71,7 +71,11 @@ export function PaymentSettingsPage() {
   if (!canEdit) {
     return (
       <div className="flex max-w-2xl flex-col gap-6">
-        <PageHeader title={t('payments.title')} description={t('payments.intro')} />
+        <PageHeader
+          parent={{ to: '/settings', label: t('settings.title') }}
+          title={t('payments.title')}
+          description={t('payments.intro')}
+        />
         <Notice>{t('payments.ownersOnly')}</Notice>
       </div>
     );
@@ -83,13 +87,20 @@ export function PaymentSettingsPage() {
   const showForm = editing || !saved;
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PageHeader title={t('payments.title')} description={t('payments.intro')} />
-      <section aria-labelledby="ssl-h" className="flex flex-col gap-4">
-        <h2 id="ssl-h" className="text-lg font-semibold">
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('payments.title')}
+        description={t('payments.intro')}
+      />
+      <section
+        aria-labelledby="ssl-h"
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="ssl-h" className="font-semibold">
           SSLCommerz
         </h2>
         {saved ? (
-          <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
             <p className="font-medium">
               {saved.mode === 'live' ? t('payments.connectedLive') : t('payments.connectedSandbox')}
             </p>

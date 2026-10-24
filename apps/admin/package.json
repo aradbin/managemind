@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "catalog:",
     "@fontsource/noto-sans-bengali": "catalog:",
     "@hookform/resolvers": "catalog:",
     "@managemind/sdk": "workspace:*",

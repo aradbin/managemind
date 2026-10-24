@@ -48,7 +48,11 @@ export function TemplatesPage() {
   if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <PageHeader title={t('templates.title')} description={t('templates.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('templates.title')}
+        description={t('templates.intro')}
+      />
       <div className="grid gap-3 md:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t('templates.message')}
@@ -187,7 +191,10 @@ function Editor({ template }: { template: Template }) {
         <p className="text-sm text-muted-foreground">
           {template.custom ? t('templates.custom') : t('templates.default')}
         </p>
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           {hasSubject && (
             <Field
               label={t('templates.subject')}

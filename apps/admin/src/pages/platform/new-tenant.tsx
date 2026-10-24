@@ -2,14 +2,15 @@
 // plan and its starting design on one page on a desktop, and as steps on a
 // phone. The address is checked as it is typed. Defaults (delivery zones,
 // legal drafts, the return policy) come with it on the server.
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { SLUG_PATTERN } from '@managemind/shared/slug';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronLeft } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { type FieldPath, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import { Breadcrumb } from '../../components/breadcrumb';
 import { Form, SelectField, TextField } from '../../components/form';
 import { Notice } from '../../components/notice';
 import { PageHeader } from '../../components/page-header';
@@ -168,7 +169,7 @@ export function NewTenantPage() {
   const last = step === STEPS.length - 1;
   const section = (i: number) =>
     cn(
-      'flex flex-col gap-4 rounded-md border border-border p-4',
+      'flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5',
       step === i ? '' : 'hidden md:flex',
     );
   const heading = (i: number) => (
@@ -181,10 +182,7 @@ export function NewTenantPage() {
   );
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <Link to="/platform" className="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
-        <ChevronLeft aria-hidden className="size-4" />
-        {t('tenant.back')}
-      </Link>
+      <Breadcrumb to="/platform" label={t('tenant.back')} current={t('newStore.title')} />
       <PageHeader title={t('newStore.title')} />
       <p className="text-muted-foreground">{t('newStore.intro')}</p>
       <Form form={form} onSubmit={(v) => create.mutate(v)}>

@@ -113,7 +113,7 @@ function MarkdownArea({
           setText(e.target.value);
           onChange(richTextFromMarkdown(e.target.value));
         }}
-        className="w-full rounded-md border border-border bg-background p-3 text-base disabled:opacity-50"
+        className="w-full rounded-lg border border-border bg-background p-3 text-base disabled:opacity-50"
       />
       <p id={`${id}-hint`} className="text-sm text-muted-foreground">
         {t('description.hint')}

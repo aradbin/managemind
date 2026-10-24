@@ -9,13 +9,11 @@ import { type AdminKey, useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import { Button } from './ui/button';
 
-export function HelpMenu() {
-  const { t } = useLocale();
-  const [open, setOpen] = useState(false);
-  // Loaded the first time the menu opens.
+/** The help links the platform has set, loaded once `enabled` turns true. */
+export function useHelpLinks(enabled: boolean) {
   const help = useQuery({
     queryKey: ['help'],
-    enabled: open,
+    enabled,
     staleTime: 60 * 60_000,
     queryFn: async () => unwrap(await api.GET('/v1/admin/help')),
   });
@@ -31,6 +29,14 @@ export function HelpMenu() {
       ]
     : [];
   const links = entries.flatMap(([label, href]) => (href ? [{ label, href }] : []));
+  return { help, links };
+}
+
+export function HelpMenu() {
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  // Loaded the first time the menu opens.
+  const { help, links } = useHelpLinks(open);
   const item =
     'flex min-h-11 cursor-pointer items-center rounded px-3 outline-none data-[highlighted]:bg-muted';
   return (
@@ -44,7 +50,7 @@ export function HelpMenu() {
         <Menu.Content
           align="end"
           sideOffset={4}
-          className="z-50 min-w-56 rounded-md border border-border bg-background p-1 shadow-lg"
+          className="z-50 min-w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
         >
           {help.isPending && <p className="px-3 py-2 text-muted-foreground">{t('loading')}</p>}
           {help.isSuccess && links.length === 0 && (

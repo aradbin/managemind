@@ -53,8 +53,10 @@ export function DeliverySettingsPage() {
       : shown;
   };
   return (
-    <div className="flex max-w-4xl flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        className="mb-0"
         title={t('delivery.title')}
         description={t('delivery.intro')}
         actions={
@@ -71,39 +73,59 @@ export function DeliverySettingsPage() {
       {!zones.data.some((z) => z.isFallback && z.active) && (
         <Notice tone="error">{t('delivery.noFallback')}</Notice>
       )}
-      <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-        {zones.data.map((z) => (
-          <li key={z.id} className="flex flex-wrap items-start gap-3 p-4">
-            <div className="flex flex-1 flex-col gap-1">
-              <span className="font-medium">
-                {pickText(z.name, locale)}
-                {!z.active && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    ({t('delivery.inactive')})
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <ul
+          aria-label={t('delivery.title')}
+          className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background"
+        >
+          {zones.data.map((z) => (
+            <li key={z.id} className="flex items-center gap-4 px-4 py-4 md:px-5">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">{pickText(z.name, locale)}</span>
+                  {z.isFallback && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                      {t('delivery.fallbackShort')}
+                    </span>
+                  )}
+                  {!z.active && (
+                    <span className="rounded-full bg-warning px-2 py-0.5 text-xs font-semibold text-warning-foreground">
+                      {t('delivery.inactive')}
+                    </span>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">{coverage(z)}</span>
+                {z.freeWeightGrams !== null && z.feePerExtraKg !== null && (
+                  <span className="text-xs text-muted-foreground">
+                    {t('delivery.weightRule', {
+                      kg: z.freeWeightGrams / 1000,
+                      fee: formatPrice(z.feePerExtraKg, locale),
+                    })}
                   </span>
                 )}
-              </span>
-              <span className="text-sm">
-                {formatPrice(z.fee, locale)}
-                {z.freeWeightGrams !== null &&
-                  z.feePerExtraKg !== null &&
-                  ` · ${t('delivery.weightRule', {
-                    kg: z.freeWeightGrams / 1000,
-                    fee: formatPrice(z.feePerExtraKg, locale),
-                  })}`}
-                {pickText(z.estimate, locale) && ` · ${pickText(z.estimate, locale)}`}
-              </span>
-              <span className="text-sm text-muted-foreground">{coverage(z)}</span>
-            </div>
-            {canEdit && (
-              <Button variant="secondary" onClick={() => setEditing(z)}>
-                {t('action.edit')}
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-      <FeeCalculator />
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-0.5">
+                <span className="font-semibold tabular-nums">{formatPrice(z.fee, locale)}</span>
+                {pickText(z.estimate, locale) && (
+                  <span className="text-xs text-muted-foreground">
+                    {pickText(z.estimate, locale)}
+                  </span>
+                )}
+              </div>
+              {canEdit && (
+                <Button
+                  variant="secondary"
+                  aria-label={`${t('action.edit')}: ${pickText(z.name, locale)}`}
+                  onClick={() => setEditing(z)}
+                >
+                  {t('action.edit')}
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+        <FeeCalculator />
+      </div>
       {editing && g && (
         <ZoneDialog
           zone={editing === 'new' ? undefined : editing}
@@ -136,7 +158,7 @@ function FeeCalculator() {
   return (
     <section
       aria-labelledby="calc-h"
-      className="flex flex-col gap-3 rounded-md border border-border p-4"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
     >
       <h2 id="calc-h" className="font-semibold">
         {t('delivery.calculator')}
@@ -148,7 +170,12 @@ function FeeCalculator() {
         value={kg}
         onChange={(e) => setKg(e.target.value)}
       />
-      <p role="status" className="font-medium">
+      <p
+        role="status"
+        className={
+          quote.data ? 'rounded-lg bg-primary-soft px-4 py-3 font-semibold text-primary' : ''
+        }
+      >
         {quote.data
           ? quote.data.zone && quote.data.fee !== null
             ? t('delivery.feeIs', {
@@ -399,7 +426,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >

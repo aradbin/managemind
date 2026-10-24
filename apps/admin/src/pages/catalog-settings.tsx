@@ -99,9 +99,16 @@ export function VatSettingsPage() {
   const example = standard === null ? null : splitVat(money(100_000), standard, inclusive);
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <PageHeader title={t('vat.title')} description={t('vat.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('vat.title')}
+        description={t('vat.intro')}
+      />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"
@@ -287,9 +294,16 @@ export function LocationSettingsPage() {
     return <Notice tone="error">{errorMessage(locations.error, t)}</Notice>;
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <PageHeader title={t('location.title')} description={t('location.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('location.title')}
+        description={t('location.intro')}
+      />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <Field
           label={t('location.name')}
           value={name}

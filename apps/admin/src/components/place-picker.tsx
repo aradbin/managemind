@@ -24,7 +24,7 @@ export const placeReady = (p: PlaceDraft) =>
   p.divisionId !== null && p.districtId !== null && p.areaId !== null && p.line.trim() !== '';
 
 const selectClass =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base disabled:opacity-50';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
 
 export function PlacePicker({
   value,

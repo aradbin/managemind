@@ -99,9 +99,12 @@ export function SetupSection({ tenantId }: { tenantId: string }) {
   const list =
     health.data?.checklist && 'items' in health.data.checklist ? health.data.checklist : null;
   return (
-    <section aria-labelledby="setup-h" className="flex flex-col gap-3">
+    <section
+      aria-labelledby="setup-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="setup-h" className="text-lg font-semibold">
+        <h2 id="setup-h" className="font-semibold">
           {t('checklist.title')}
         </h2>
         <Button variant="secondary" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
@@ -230,9 +233,12 @@ export function SubscriptionSection({
   });
   const s = sub.data;
   return (
-    <section aria-labelledby="subscription-h" className="flex flex-col gap-3">
+    <section
+      aria-labelledby="subscription-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="subscription-h" className="text-lg font-semibold">
+        <h2 id="subscription-h" className="font-semibold">
           {t('subscription.title')}
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -492,9 +498,12 @@ export function JobsSection({
     (j) => j.kind === 'export' && (j.status === 'pending' || j.status === 'running'),
   );
   return (
-    <section aria-labelledby="jobs-h" className="flex flex-col gap-3">
+    <section
+      aria-labelledby="jobs-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="jobs-h" className="text-lg font-semibold">
+        <h2 id="jobs-h" className="font-semibold">
           {t('jobs.title')}
         </h2>
         {superAdmin && (
@@ -649,8 +658,11 @@ export function PurgeSection({
   const date = (d: string | Date) => formatDateTime(locale, new Date(d), { dateStyle: 'medium' });
   const step = (p?.job?.progress as { step?: string; table?: string } | undefined) ?? {};
   return (
-    <section aria-labelledby="purge-h" className="flex flex-col gap-3">
-      <h2 id="purge-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="purge-h"
+      className="flex flex-col gap-3 rounded-xl border border-danger/40 bg-background p-4 md:p-5"
+    >
+      <h2 id="purge-h" className="font-semibold">
         {t('purge.title')}
       </h2>
       {purge.isError && <Notice tone="error">{errorMessage(purge.error, t)}</Notice>}

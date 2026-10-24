@@ -26,7 +26,11 @@ export function NotificationSettingsPage() {
   const canRead = usePermission('orders.read');
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <PageHeader title={t('notify.title')} description={t('notify.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('notify.title')}
+        description={t('notify.intro')}
+      />
       <ShopperChannels />
       <SmsGateway />
       <StoreEmail />
@@ -91,13 +95,13 @@ function ShopperChannels() {
   return (
     <form
       aria-labelledby="channels-h"
-      className="flex flex-col gap-3"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate(value);
       }}
     >
-      <h2 id="channels-h" className="text-lg font-semibold">
+      <h2 id="channels-h" className="font-semibold">
         {t('notify.shopper')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('notify.shopperHint')}</p>
@@ -210,13 +214,16 @@ function StoreEmail() {
   const showForm = editing || !saved;
   const savedFrom = saved ? String(saved.config.from ?? '') : '';
   return (
-    <section aria-labelledby="email-h" className="flex flex-col gap-3">
-      <h2 id="email-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="email-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="email-h" className="font-semibold">
         {t('notify.storeEmail')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('notify.storeEmailHint')}</p>
       {saved && (
-        <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
           <p className="font-medium">
             {t('notify.sendingFrom', {
               from: savedFrom,
@@ -438,13 +445,16 @@ function SmsGateway() {
       : !apiKey.trim() || (provider === 'bulksmsbd' && !senderId.trim());
   const name = (p: string) => t(`sms.provider.${p}` as AdminKey);
   return (
-    <section aria-labelledby="sms-h" className="flex flex-col gap-3">
-      <h2 id="sms-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="sms-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="sms-h" className="font-semibold">
         {t('sms.title')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('sms.hint')}</p>
       {saved && (
-        <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
           <p className="font-medium">{t('sms.connected', { provider: name(saved.provider) })}</p>
           {balance.data?.balance != null && (
             <p className="text-sm text-muted-foreground">

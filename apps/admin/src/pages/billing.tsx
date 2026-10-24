@@ -39,13 +39,19 @@ export function BillingPage() {
   const b = billing.data;
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <PageHeader title={t('billing.title')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('billing.title')}
+      />
       {billing.isPending && <p role="status">{t('loading')}</p>}
       {billing.isError && <Notice tone="error">{errorMessage(billing.error, t)}</Notice>}
       {b && (
         <>
-          <section aria-labelledby="plan-h" className="flex flex-col gap-2">
-            <h2 id="plan-h" className="text-lg font-semibold">
+          <section
+            aria-labelledby="plan-h"
+            className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="plan-h" className="font-semibold">
               {t('billing.plan')}
             </h2>
             {b.plan ? (
@@ -75,8 +81,11 @@ export function BillingPage() {
             )}
           </section>
 
-          <section aria-labelledby="usage-h" className="flex flex-col gap-3">
-            <h2 id="usage-h" className="text-lg font-semibold">
+          <section
+            aria-labelledby="usage-h"
+            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="usage-h" className="font-semibold">
               {t('billing.usage')}
             </h2>
             <p className="text-sm text-muted-foreground">
@@ -114,8 +123,11 @@ export function BillingPage() {
             </ul>
           </section>
 
-          <section aria-labelledby="invoices-h" className="flex flex-col gap-3">
-            <h2 id="invoices-h" className="text-lg font-semibold">
+          <section
+            aria-labelledby="invoices-h"
+            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="invoices-h" className="font-semibold">
               {t('billing.invoices')}
             </h2>
             {b.invoices.length === 0 ? (
@@ -158,8 +170,11 @@ export function BillingPage() {
             )}
           </section>
 
-          <section aria-labelledby="pay-h" className="flex flex-col gap-3">
-            <h2 id="pay-h" className="text-lg font-semibold">
+          <section
+            aria-labelledby="pay-h"
+            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+          >
+            <h2 id="pay-h" className="font-semibold">
               {t('billing.howToPay')}
             </h2>
             {b.payTo ? (
@@ -226,7 +241,7 @@ function InvoicePanel({
   return (
     <section
       aria-label={inv?.number ? t('invoice.title', { number: inv.number }) : t('invoice.view')}
-      className="flex flex-col gap-4 rounded-md border border-border p-4"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
     >
       {invoice.isPending && <p role="status">{t('loading')}</p>}
       {invoice.isError && <Notice tone="error">{errorMessage(invoice.error, t)}</Notice>}

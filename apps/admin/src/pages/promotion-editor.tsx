@@ -2,10 +2,12 @@
 // as a guided form, the plain-language summary as it is built, the test
 // cart (which promotions a cart gets, and why the others don't, with this
 // one tried as if live), and, for code promotions, batches of unique codes.
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ArrowLeft, X } from 'lucide-react';
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { Field } from '../components/field';
 import { ItemSelection, useSelectionNames } from '../components/item-selection';
 import { Notice } from '../components/notice';
@@ -37,9 +39,9 @@ import {
 import { download, toCsv } from './export';
 import { StateChip } from './promotions';
 
-const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 const selectClass =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base font-normal';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal';
 
 export function NewPromotionPage() {
   return <Editor promotion={undefined} />;
@@ -103,17 +105,9 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
 
   return (
     <div className="flex max-w-6xl flex-col gap-4">
-      <div>
-        <Link
-          to="/promotions"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('nav.promotions')}
-        </Link>
-      </div>
+      <Breadcrumb to="/promotions" label={t('nav.promotions')} />
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-2xl font-semibold tracking-tight">
           {promotion ? pickText(promotion.title, locale) || t('promo.untitled') : t('promo.new')}
         </h1>
         {promotion && <StateChip state={promotion.state} />}
@@ -128,7 +122,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               [t('promo.sales'), formatPrice(promotion.sales, locale)],
             ] as const
           ).map(([label, value]) => (
-            <div key={label} className="rounded-md border border-border p-3">
+            <div key={label} className="rounded-lg border border-border bg-background p-3">
               <dt className="text-sm text-muted-foreground">{label}</dt>
               <dd className="text-lg font-semibold">{value}</dd>
             </div>
@@ -378,7 +372,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   value={d.customerPhones}
                   onChange={(e) => set({ customerPhones: e.target.value })}
                   aria-describedby="promo-phones-hint"
-                  className="rounded-md border border-border bg-background p-3 text-base"
+                  className="rounded-lg border border-border bg-background p-3 text-base"
                 />
                 <p id="promo-phones-hint" className="text-sm text-muted-foreground">
                   {t('promo.customerPhonesHint')}

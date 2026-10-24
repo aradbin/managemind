@@ -103,7 +103,7 @@ export function DevMailboxPage() {
       {load.data?.length === 0 && <p className="text-muted-foreground">{t('dev.none')}</p>}
       <ul className="flex flex-col gap-3">
         {load.data?.map((m) => (
-          <li key={m.id} className="rounded-md border border-border p-3">
+          <li key={m.id} className="rounded-lg border border-border bg-background p-3">
             <details>
               <summary className="flex min-h-11 cursor-pointer flex-col justify-center">
                 <span className="font-medium">{m.subject}</span>

@@ -6,7 +6,7 @@
 import { MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
@@ -60,7 +60,7 @@ function useCommand<T>(orderId: string, run: (key: string, input: T) => Promise<
   return mutation;
 }
 
-const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 export function OrderDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
@@ -70,30 +70,32 @@ export function OrderDetailPage() {
   if (order.isError) return <Notice tone="error">{errorMessage(order.error, t)}</Notice>;
   const o = order.data;
   return (
-    <div className="flex max-w-6xl flex-col gap-4">
-      <div>
-        <Link
-          to="/orders"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
+    <div className="flex flex-col gap-5 pb-20 md:pb-0">
+      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
+        <Link to="/orders" className="font-medium text-primary hover:underline">
           {t('nav.orders')}
         </Link>
-      </div>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+        <span className="text-muted-foreground">{o.displayNumber}</span>
+      </nav>
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold">{t('order.title', { number: o.displayNumber })}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t('order.title', { number: o.displayNumber })}
+            </h1>
+            <div className="flex flex-wrap gap-1.5">
+              <StatusChip kind="order" status={o.status} />
+              <StatusChip kind="payment" status={o.paymentStatus} />
+              <StatusChip kind="delivery" status={o.deliveryStatus} />
+            </div>
+          </div>
           <p className="text-sm text-muted-foreground">
             {t('order.placedOn', {
               date: dateTime(locale, o.placedAt),
               source: t(`source.${o.source}` as AdminKey),
             })}
           </p>
-          <div className="flex flex-wrap gap-1">
-            <StatusChip kind="order" status={o.status} />
-            <StatusChip kind="payment" status={o.paymentStatus} />
-            <StatusChip kind="delivery" status={o.deliveryStatus} />
-          </div>
         </div>
         <OrderActions order={o} />
       </div>
@@ -114,16 +116,19 @@ export function OrderDetailPage() {
           })}
         </Notice>
       )}
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="flex flex-col gap-4">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {/* The customer first on phones, where calling them is the next step; beside the items on desktops. */}
+        <div className="lg:col-start-2 lg:row-start-1">
+          <CustomerCard order={o} />
+        </div>
+        <div className="flex min-w-0 flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <Lines order={o} />
-          <Shipments order={o} />
           <Payments order={o} />
+          <Shipments order={o} />
           <ReturnsAndRefunds order={o} />
           <Timeline order={o} />
         </div>
-        <div className="flex flex-col gap-4">
-          <CustomerCard order={o} />
+        <div className="lg:col-start-2 lg:row-start-2">
           <Tags order={o} />
         </div>
       </div>
@@ -151,6 +156,18 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
   );
   const has = (a: string) => o.actions.includes(a);
   const error = confirm.error ?? process.error;
+  const canShip = has('create_shipment') && o.lines.some((l) => l.shippedQuantity < l.quantity);
+  // The next step in the order's life: on phones it is pinned above the tab bar.
+  const primary = has('confirm') ? (
+    <Button
+      disabled={confirm.isPending}
+      onClick={() => confirm.mutate(undefined, { onSuccess: () => toast(t('order.confirmed')) })}
+    >
+      {t('order.confirm')}
+    </Button>
+  ) : canShip ? (
+    <Button onClick={() => setDialog('ship')}>{t('order.createShipment')}</Button>
+  ) : null;
   return (
     <div className="flex flex-col items-end gap-2">
       <div className="flex flex-wrap gap-2">
@@ -161,7 +178,7 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
           </Button>
         )}
         {has('cancel') && (
-          <Button variant="secondary" onClick={() => setDialog('cancel')}>
+          <Button variant="quiet" onClick={() => setDialog('cancel')}>
             {t('order.cancel')}
           </Button>
         )}
@@ -181,20 +198,18 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
             {t('order.process')}
           </Button>
         )}
-        {has('create_shipment') && o.lines.some((l) => l.shippedQuantity < l.quantity) && (
-          <Button onClick={() => setDialog('ship')}>{t('order.createShipment')}</Button>
-        )}
-        {has('confirm') && (
-          <Button
-            disabled={confirm.isPending}
-            onClick={() =>
-              confirm.mutate(undefined, { onSuccess: () => toast(t('order.confirmed')) })
-            }
-          >
-            {t('order.confirm')}
+        {has('confirm') && canShip && (
+          <Button variant="secondary" onClick={() => setDialog('ship')}>
+            {t('order.createShipment')}
           </Button>
         )}
+        {primary && <div className="hidden md:contents">{primary}</div>}
       </div>
+      {primary && (
+        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex border-t border-border bg-background p-3 md:hidden [&>button]:min-h-12 [&>button]:flex-1 [&>button]:text-base">
+          {primary}
+        </div>
+      )}
       {error && <Notice tone="error">{orderErrorMessage(error, t)}</Notice>}
       {dialog === 'cancel' && <CancelDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'ship' && <ShipmentDialog order={o} onClose={() => setDialog(null)} />}
@@ -343,6 +358,26 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
             : t('order.orderCount', { count: o.customer.orderCount })}
         </span>
       </div>
+      {canCustomers && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="secondary" asChild>
+            <a href={`tel:${o.contact.phone}`}>
+              <Phone aria-hidden className="size-4" />
+              {t('order.call')}
+            </a>
+          </Button>
+          <Button variant="secondary" asChild>
+            <a
+              href={`https://wa.me/${o.contact.phone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle aria-hidden className="size-4" />
+              {t('order.whatsapp')}
+            </a>
+          </Button>
+        </div>
+      )}
       <h3 className="text-sm font-semibold">{t('order.address')}</h3>
       {o.address ? (
         <address className="text-sm not-italic">
@@ -829,7 +864,7 @@ function Timeline({ order: o }: { order: OrderDetail }) {
             maxLength={2000}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="rounded-md border border-border bg-background p-3 text-base"
+            className="rounded-lg border border-border bg-background p-3 text-base"
           />
           <div>
             <Button type="submit" variant="secondary" disabled={note.isPending || !body.trim()}>
@@ -1152,7 +1187,7 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
           <select
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
             value={method}
             onChange={(e) => setMethod(e.target.value as typeof method)}
           >

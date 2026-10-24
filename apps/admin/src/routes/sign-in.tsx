@@ -2,8 +2,8 @@
 // the 6-digit code. A user with two-factor login goes on to /two-factor.
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { type FormEvent, useEffect, useState } from 'react';
+import { AuthLayout } from '../components/auth-layout';
 import { Field } from '../components/field';
-import { LanguageSwitch } from '../components/language-switch';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
@@ -94,11 +94,8 @@ function SignIn() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 p-4">
-      <div className="flex justify-end">
-        <LanguageSwitch />
-      </div>
-      <h1 className="text-2xl font-semibold">{t('signIn.title')}</h1>
+    <AuthLayout step={step === 'email' ? 1 : 2} steps={2}>
+      <h1 className="text-2xl font-semibold tracking-tight">{t('signIn.title')}</h1>
       {step === 'email' ? (
         <form onSubmit={send} className="flex flex-col gap-4">
           <p className="text-muted-foreground">{t('signIn.intro')}</p>
@@ -162,6 +159,6 @@ function SignIn() {
       )}
       {/* Outside the forms: a resend from the code step needs a token too. */}
       <div ref={check.box} />
-    </main>
+    </AuthLayout>
   );
 }

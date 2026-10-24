@@ -211,7 +211,7 @@ function OptionCard({
     });
   return (
     <fieldset
-      className="flex flex-col gap-3 rounded-md border border-border p-3"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
       disabled={disabled}
     >
       <legend className="px-1 text-sm font-medium">{t('options.option', { n: index + 1 })}</legend>

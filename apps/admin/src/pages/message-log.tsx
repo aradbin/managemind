@@ -46,7 +46,11 @@ export function MessageLogPage({ orderId }: { orderId?: string | undefined } = {
   const rows = log.data?.pages.flat() ?? [];
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <PageHeader title={t('log.title')} description={t('log.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('log.title')}
+        description={t('log.intro')}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t('log.status')}

@@ -76,7 +76,11 @@ export function StoreProfilePage() {
     !me?.supportGrantId && me?.stores.find((s) => s.tenantId === me.activeStore)?.role === 'owner';
   return (
     <div className="max-w-2xl">
-      <PageHeader title={t('settings.store')} description={t('settings.store.description')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('settings.store')}
+        description={t('settings.store.description')}
+      />
       {store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : store.isError ? (
@@ -156,7 +160,10 @@ function ProfileForm({ store }: { store: Store }) {
   return (
     <Form form={form} onSubmit={(v) => save.mutate(v)}>
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
         <TextField name="name" label={t('store.name')} maxLength={100} />
         <SelectField
           name="defaultLocale"

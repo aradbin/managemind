@@ -76,6 +76,8 @@ export const launchBn: Record<keyof typeof launchEn, string> = {
   'checklist.item.terms': 'প্ল্যাটফর্মের শর্তাবলি মেনে নেওয়া',
   'setup.title': 'দোকানের সেটআপ শেষ করুন',
   'setup.intro': '{total}টির {done}টি হয়েছে। এগুলো হলেই দোকান অর্ডার নিতে পারবে।',
+  'setup.next': 'এরপর: {item}',
+  'setup.allSteps': 'সব ধাপ',
   'setup.keepSubdomain': '{host} ঠিকানাটিই রাখব',
   'subscription.title': 'প্ল্যান',
   'subscription.none': 'প্ল্যান নেই: সব চালু, কোনো বিল হয় না।',

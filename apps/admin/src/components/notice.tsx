@@ -13,8 +13,8 @@ export function Notice({
     <p
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
-        'rounded-md px-3 py-2 text-sm',
-        tone === 'error' ? 'bg-danger/10 text-danger' : 'bg-muted',
+        'rounded-lg px-3 py-2 text-sm',
+        tone === 'error' ? 'bg-danger-soft text-danger' : 'bg-muted',
       )}
     >
       {children}

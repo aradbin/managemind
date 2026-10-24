@@ -12,15 +12,12 @@ function Page() {
   if (me.stores.length === 0 && !me.user.platformRole) {
     return (
       <>
-        <h1 className="mb-2 text-xl font-semibold">{t('home.noStore.title')}</h1>
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight">{t('home.noStore.title')}</h1>
         <p className="text-muted-foreground">{t('home.noStore.body')}</p>
       </>
     );
   }
-  return (
-    <>
-      <h1 className="mb-4 text-xl font-semibold">{t('home.title')}</h1>
-      {me.activeStore && <DashboardView />}
-    </>
-  );
+  // The dashboard has its own heading: a greeting.
+  if (me.activeStore) return <DashboardView />;
+  return <h1 className="text-2xl font-semibold tracking-tight">{t('home.title')}</h1>;
 }

@@ -78,6 +78,8 @@ export const launchEn = {
   'checklist.item.terms': 'Platform terms accepted',
   'setup.title': 'Finish setting up your store',
   'setup.intro': '{done} of {total} done. Your store can take orders once these are done.',
+  'setup.next': 'Next: {item}',
+  'setup.allSteps': 'All steps',
   'setup.keepSubdomain': 'Keep {host} as my address',
   'subscription.title': 'Plan',
   'subscription.none': 'No plan: everything is allowed and nothing is billed.',

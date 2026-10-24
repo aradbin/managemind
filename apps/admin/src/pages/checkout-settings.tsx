@@ -117,7 +117,11 @@ export function CheckoutSettingsPage() {
   const err = (bad: boolean) => (bad ? t('form.invalid') : undefined);
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PageHeader title={t('checkoutSettings.title')} description={t('checkoutSettings.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('checkoutSettings.title')}
+        description={t('checkoutSettings.intro')}
+      />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <form
         className="flex flex-col gap-6"
@@ -126,7 +130,10 @@ export function CheckoutSettingsPage() {
           save.mutate();
         }}
       >
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.checkout')}</legend>
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.email')}</legend>
@@ -191,7 +198,10 @@ export function CheckoutSettingsPage() {
           </label>
         </fieldset>
 
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.cod')}</legend>
           <label className="flex min-h-11 items-center gap-3">
             <input
@@ -254,7 +264,10 @@ export function CheckoutSettingsPage() {
           </fieldset>
         </fieldset>
 
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        >
           <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.limits')}</legend>
           <p className="text-sm text-muted-foreground">{t('checkoutSettings.limitsHint')}</p>
           <div className="grid gap-3 md:grid-cols-3">
@@ -331,8 +344,11 @@ function Blocklist() {
     onSuccess: refresh,
   });
   return (
-    <section aria-labelledby="blocklist-h" className="flex flex-col gap-3">
-      <h2 id="blocklist-h" className="text-lg font-semibold">
+    <section
+      aria-labelledby="blocklist-h"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id="blocklist-h" className="font-semibold">
         {t('blocklist.title')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('blocklist.intro')}</p>

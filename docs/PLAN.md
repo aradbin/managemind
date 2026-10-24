@@ -29,7 +29,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Explicitly out of scope until needed:** multi-currency, complex tax engines, B2B pricing, marketplaces, subscriptions, native apps, self-service sign-up.
 
-**Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
+**Timeline:** the MVP (Phases 0–5C) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
 **Status (Oct 24, 2026)**
 
@@ -42,6 +42,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
 | 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows wait for the monthly reset; production runs. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
+| 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. In review | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Plan written (Oct 24), waiting for the owner's approval. Its prerequisites come from the pilot, which hasn't started; the plan proposes building after the Actions minutes reset, with everything off or harmless until the pilot's feedback (Q1) | [`phase-6-plan.md`](phases/phase-6-plan.md) |
 | 7 onwards | Not started | — |
 
@@ -581,6 +582,32 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure.
 
 * Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history.
+
+## Phase 5C — Admin redesign
+
+**Goal:** an admin that looks current and is easy to use on a phone, before pilot clients use it every day. It changes no data, API or storefront. The owner approved the designs (18 screens on a design canvas) before the build; [ADR 0029](adr/0029-admin-redesign.md) records the decisions. Rough size: 2–3 days.
+
+- [x] Colour tokens for both themes, with AA contrast for every pair: one green accent on a grey canvas, white cards, five status tones each with its word. The Inter font beside Noto Sans Bengali.
+- [x] The shell:
+  - **Desktop:** a grouped sidebar with the store switcher and the orders-to-confirm badge, and a top bar led by search (Ctrl+K or ⌘K).
+  - **Phones:** five tabs (Home, Orders, Products, Customers, More) and a More page with the account, the store switch, help and sign-out.
+  - **Platform area:** a dark band.
+- [x] Screens rebuilt to the approved designs:
+  - Home, the orders list and an order;
+  - a customer, the product editor, a manual order;
+  - settings, delivery zones, the theme editor;
+  - sign-in, and the platform's store page.
+- [x] Every other screen on the same patterns:
+  - breadcrumbs;
+  - forms and sections in cards;
+  - lists in a card, with phone cards;
+  - the main action pinned within thumb reach on phones.
+- [x] The E2E, with axe and the CSP check, passes at both viewports. The admin's JavaScript before sign-in stays within its 150 KiB budget.
+
+**Acceptance criteria**
+
+- Every admin screen follows the approved designs or their patterns, at phone and desktop sizes, in Bangla and English. Where the build differs, ADR 0029 says why.
+- No accessibility or contrast regression: the E2E's axe check passes on every screen it visits.
 
 ## Phases 6–10 — After the pilot
 

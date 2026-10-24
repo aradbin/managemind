@@ -18,7 +18,7 @@ import {
   type ThemeSection,
 } from '@managemind/shared/storefront';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ExternalLink, Monitor, Smartphone, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { Lang } from '../components/catalog/language-tabs';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -42,7 +42,7 @@ import { cn } from '../lib/utils';
 
 const SAVE_DELAY_MS = 1200;
 const select =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base disabled:opacity-50';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
 
 /** The CSS variables the storefront takes from the tokens (its Layout.astro). */
 function cssVars(theme: Theme): Record<string, string> {
@@ -69,7 +69,11 @@ export function ThemePage() {
   const store = useQuery(storeSettingsQuery);
   return (
     <>
-      <PageHeader title={t('theme.title')} description={t('theme.description')} />
+      <PageHeader
+        parent={{ to: '/online-store', label: t('nav.onlineStore') }}
+        title={t('theme.title')}
+        description={t('theme.description')}
+      />
       {theme.isPending || store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : theme.isError || store.isError ? (
@@ -104,6 +108,7 @@ function Editor({
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string>();
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
+  const [device, setDevice] = useState<'desktop' | 'phone'>('desktop');
   const [preset, setPreset] = useState<ThemePreset | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -215,11 +220,14 @@ function Editor({
   };
 
   const editor = (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       {disabled && <Notice>{t('theme.readOnly')}</Notice>}
 
-      <section aria-labelledby="presets" className="flex flex-col gap-3">
-        <h2 id="presets" className="text-lg font-semibold">
+      <section
+        aria-labelledby="presets"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="presets" className="font-semibold">
           {t('theme.presets')}
         </h2>
         <p className="text-sm text-muted-foreground">{t('theme.presetsHint')}</p>
@@ -237,8 +245,11 @@ function Editor({
         </div>
       </section>
 
-      <section aria-labelledby="colors" className="flex flex-col gap-3">
-        <h2 id="colors" className="text-lg font-semibold">
+      <section
+        aria-labelledby="colors"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="colors" className="font-semibold">
           {t('theme.colors')}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -267,7 +278,10 @@ function Editor({
         ))}
       </section>
 
-      <section aria-labelledby="look" className="grid gap-4 sm:grid-cols-2">
+      <section
+        aria-labelledby="look"
+        className="grid gap-4 rounded-xl border border-border bg-background p-4 sm:grid-cols-2 md:p-5"
+      >
         <h2 id="look" className="sr-only">
           {t('theme.font')}
         </h2>
@@ -299,8 +313,11 @@ function Editor({
         />
       </section>
 
-      <section aria-labelledby="cards" className="flex flex-col gap-3">
-        <h2 id="cards" className="text-lg font-semibold">
+      <section
+        aria-labelledby="cards"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="cards" className="font-semibold">
           {t('theme.cards')}
         </h2>
         <Select
@@ -326,8 +343,11 @@ function Editor({
         />
       </section>
 
-      <section aria-labelledby="announcement" className="flex flex-col gap-3">
-        <h2 id="announcement" className="text-lg font-semibold">
+      <section
+        aria-labelledby="announcement"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="announcement" className="font-semibold">
           {t('theme.announcement')}
         </h2>
         <p className="text-sm text-muted-foreground">{t('theme.announcementHint')}</p>
@@ -368,8 +388,11 @@ function Editor({
         )}
       </section>
 
-      <section aria-labelledby="sections" className="flex flex-col gap-3">
-        <h2 id="sections" className="text-lg font-semibold">
+      <section
+        aria-labelledby="sections"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="sections" className="font-semibold">
           {t('theme.sections')}
         </h2>
         <p className="text-sm text-muted-foreground">{t('theme.sectionsHint')}</p>
@@ -436,8 +459,11 @@ function Editor({
         )}
       </section>
 
-      <section aria-labelledby="product-page" className="flex flex-col gap-3">
-        <h2 id="product-page" className="text-lg font-semibold">
+      <section
+        aria-labelledby="product-page"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+      >
+        <h2 id="product-page" className="font-semibold">
           {t('theme.productPage')}
         </h2>
         <Check
@@ -465,7 +491,12 @@ function Editor({
   );
 
   const previewPane = (
-    <div className="flex h-[75dvh] flex-col overflow-hidden rounded-md border border-border lg:sticky lg:top-4">
+    <div
+      className={cn(
+        'mx-auto flex h-[75dvh] w-full flex-col overflow-hidden border border-border bg-background shadow-sm lg:sticky lg:top-36 lg:h-[calc(100dvh-10rem)]',
+        device === 'phone' ? 'max-w-[390px] rounded-[1.75rem]' : 'rounded-xl',
+      )}
+    >
       {previewUrl ? (
         <iframe
           key={reloadKey}
@@ -487,7 +518,7 @@ function Editor({
 
   return (
     <>
-      <div className="sticky top-0 z-10 -mx-4 mb-4 flex flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-2">
+      <div className="sticky top-16 z-20 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-background px-4 py-2 shadow-sm">
         <p role="status" className="flex-1 text-sm text-muted-foreground">
           {status === 'saving'
             ? t('theme.saving')
@@ -498,6 +529,28 @@ function Editor({
                 : t('theme.upToDate')}
           {status === 'saved' && unpublished ? ` · ${t('theme.saved')}` : ''}
         </p>
+        <fieldset className="hidden min-w-0 rounded-lg border-0 bg-muted p-0.5 lg:flex">
+          <legend className="sr-only">{t('theme.previewSize')}</legend>
+          {(['desktop', 'phone'] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              aria-pressed={device === d}
+              onClick={() => setDevice(d)}
+              className={cn(
+                'flex min-h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground',
+                device === d && 'bg-background text-foreground shadow-sm',
+              )}
+            >
+              {d === 'desktop' ? (
+                <Monitor aria-hidden className="size-4" />
+              ) : (
+                <Smartphone aria-hidden className="size-4" />
+              )}
+              {t(d === 'desktop' ? 'theme.desktop' : 'theme.phone')}
+            </button>
+          ))}
+        </fieldset>
         <Button asChild variant="ghost">
           <a href={storeUrl} target="_blank" rel="noopener">
             <ExternalLink aria-hidden className="size-4" />
@@ -597,7 +650,7 @@ function ColorInput({
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 w-14 shrink-0 cursor-pointer rounded-md border border-border bg-background p-1"
+          className="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-border bg-background p-1"
         />
         <Input
           id={id}

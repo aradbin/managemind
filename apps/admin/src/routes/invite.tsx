@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
-import { LanguageSwitch } from '../components/language-switch';
+import { AuthLayout } from '../components/auth-layout';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
@@ -56,11 +56,8 @@ function Invite() {
 
   const invalid = accept.error instanceof ApiError && [404, 410, 422].includes(accept.error.status);
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 p-4">
-      <div className="flex justify-end">
-        <LanguageSwitch />
-      </div>
-      <h1 className="text-2xl font-semibold">{t('invite.title')}</h1>
+    <AuthLayout>
+      <h1 className="text-2xl font-semibold tracking-tight">{t('invite.title')}</h1>
       {!token ? (
         <Notice tone="error">{t('invite.missing')}</Notice>
       ) : accept.isError ? (
@@ -79,6 +76,6 @@ function Invite() {
       ) : (
         <p role="status">{t('invite.joining')}</p>
       )}
-    </main>
+    </AuthLayout>
   );
 }

@@ -6,14 +6,17 @@ import type { ComponentProps } from 'react';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:opacity-90',
-        secondary: 'border border-border bg-background hover:bg-muted',
+        // Hover darkens rather than fades, so the text keeps its contrast.
+        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
+        secondary: 'border border-input bg-background hover:bg-muted',
         ghost: 'hover:bg-muted',
-        danger: 'bg-danger text-danger-foreground hover:opacity-90',
+        danger: 'bg-danger text-danger-foreground hover:bg-danger-hover',
+        /** A red word for destructive actions that sit beside others. */
+        quiet: 'border border-input bg-background text-danger hover:bg-danger-soft',
       },
       size: { default: '', icon: 'min-w-11 px-0' },
     },

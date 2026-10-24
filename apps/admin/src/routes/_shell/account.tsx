@@ -22,8 +22,8 @@ function Page() {
   const { t } = useLocale();
   const { data: me } = useSuspenseQuery(meQuery);
   return (
-    <div className="flex max-w-2xl flex-col gap-8">
-      <h1 className="text-xl font-semibold">{t('account.title')}</h1>
+    <div className="flex max-w-2xl flex-col gap-5">
+      <h1 className="text-2xl font-semibold tracking-tight">{t('account.title')}</h1>
       <Profile me={me} />
       <TwoFactor me={me} />
       <Sessions />
@@ -35,8 +35,12 @@ function Page() {
 
 function Section({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id ?? title}-h`} className="flex flex-col gap-4">
-      <h2 id={`${id ?? title}-h`} className="text-lg font-semibold">
+    <section
+      id={id}
+      aria-labelledby={`${id ?? title}-h`}
+      className="flex scroll-mt-20 flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+    >
+      <h2 id={`${id ?? title}-h`} className="font-semibold">
         {title}
       </h2>
       {children}
@@ -217,7 +221,7 @@ function TwoFactor({ me }: { me: Me }) {
               </Button>
             </div>
           ) : state.step === 'confirm-disable' || state.step === 'confirm-new-codes' ? (
-            <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3">
               <p>
                 {t(
                   state.step === 'confirm-disable'
@@ -395,9 +399,9 @@ function SignOut() {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   return (
-    <div className="border-t border-border pt-6">
+    <div>
       <Button
-        variant="secondary"
+        variant="quiet"
         disabled={busy}
         onClick={async () => {
           setBusy(true);

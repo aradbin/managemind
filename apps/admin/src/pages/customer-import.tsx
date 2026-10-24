@@ -2,6 +2,7 @@
 // English or Bangla (WooCommerce's customer export works as it is), checked
 // row by row in the browser before anything is sent, then the same import
 // job as products, 500 customers a chunk. Customers match by phone.
+
 import {
   CUSTOMER_IMPORT_LIMITS,
   type ImportCustomer,
@@ -9,9 +10,10 @@ import {
   parseCustomerRow,
 } from '@managemind/shared/orders/customer-import';
 import { useMutation } from '@tanstack/react-query';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, FileUp } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { FileUp } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { Breadcrumb } from '../components/breadcrumb';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -38,15 +40,7 @@ export function CustomerImportPage() {
   if (!canWrite) return <Notice>{t('customerImport.notAllowed')}</Notice>;
   return (
     <div className="flex max-w-5xl flex-col gap-4">
-      <div>
-        <Link
-          to="/customers"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('nav.customers')}
-        </Link>
-      </div>
+      <Breadcrumb to="/customers" label={t('nav.customers')} current={t('customers.import')} />
       <PageHeader title={t('customers.import')} description={t('customerImport.intro')} />
       {search.job ? (
         <JobProgress
