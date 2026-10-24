@@ -353,7 +353,7 @@ function setupRecovery() {
     if (json === last) return;
     last = json;
     try {
-      await api('/v1/store/checkout/draft', { method: 'PUT', body });
+      await api('/checkout/draft', { method: 'PUT', body });
     } catch (e) {
       // Saving never gets in the shopper's way; a refusal just stops it.
       if (e instanceof ShopError && (e.status === 409 || e.status === 429)) stopped = true;
@@ -375,7 +375,7 @@ function setupRecovery() {
     const text = box.querySelector('[data-recovery-text]');
     if (text) text.textContent = t('checkout.saveStopped');
     box.querySelector('[data-dont-save]')?.remove();
-    await api('/v1/store/checkout/draft', { method: 'DELETE' }).catch(() => {});
+    await api('/checkout/draft', { method: 'DELETE' }).catch(() => {});
   });
 }
 

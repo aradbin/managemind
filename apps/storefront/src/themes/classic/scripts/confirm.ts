@@ -47,7 +47,7 @@ function render(o: LinkOrder) {
     yes.disabled = true;
     no.disabled = true;
     try {
-      const r = await api<{ result: 'confirmed' | 'noted' | 'cancelled' }>('/v1/store/confirm', {
+      const r = await api<{ result: 'confirmed' | 'noted' | 'cancelled' }>('/confirm', {
         body: { code, action },
       });
       done(r.result, o.displayNumber);
@@ -89,7 +89,7 @@ function render(o: LinkOrder) {
 async function load() {
   if (!code) return say(t('confirm.gone'));
   try {
-    render(await api<LinkOrder>('/v1/store/confirm/view', { body: { code } }));
+    render(await api<LinkOrder>('/confirm/view', { body: { code } }));
   } catch (e) {
     if (root) fill(root);
     say(problem(e));

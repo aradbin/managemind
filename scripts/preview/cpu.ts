@@ -22,6 +22,11 @@
 // store's checkout limits are raised for the burst), then the admin's order
 // list and order detail.
 //
+// Phase 6 (phase-6-plan §10) saves each shopper's checkout as it is typed
+// before the order is placed (which then closes it), and reads the call
+// queue and the incomplete orders; the orders the returns don't use are
+// claimed and confirmed from the queue.
+//
 //   tsx preview/cpu.ts --pr 12 --api-url <url> --storefront-url <url> --since <epoch ms>
 import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
@@ -53,6 +58,8 @@ const BURST = {
   order: 15,
   orders: 30,
   returns: 10,
+  queue: 30,
+  incomplete: 20,
 };
 
 /** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
@@ -277,6 +284,14 @@ async function shopOnce(i: number) {
   );
   for (let j = 1; j < BURST.cart / BURST.order; j++) await shop('GET', '/cart', cookie);
   const phone = `+8801700${String(900_000 + i)}`;
+  // Saving never stops a checkout, here too: the runner's IP also saved the E2E's.
+  const saved = await shop('PUT', '/checkout/draft', cookie, {
+    phone,
+    name: 'CPU',
+    address: { ...DHANMONDI, line: 'House 1, Road 2' },
+  });
+  if (!saved.ok) failures.push(`save checkout ${i + 1}: ${saved.status}`);
+  await saved.body?.cancel();
   const placed = await json<{ id: string; displayNumber: string }>(
     await shop('POST', '/checkout/orders', cookie, {
       contact: { name: 'CPU', phone },
@@ -362,6 +377,24 @@ async function returnOnce(order: { id: string; number: string; phone: string }) 
   );
 }
 
+// Phase 6's routes: the call queue and incomplete orders, then a call that
+// confirms each order the returns left pending.
+for (let i = 0; i < BURST.queue; i++) await call('GET', '/v1/admin/confirmations');
+for (let i = 0; i < BURST.incomplete; i++) await call('GET', '/v1/admin/incomplete-orders');
+for (const order of placedOrders.slice(BURST.returns)) {
+  try {
+    await json(await call('POST', `/v1/admin/orders/${order.id}/confirmation/claim`), 'claim');
+    await json(
+      await call('POST', `/v1/admin/orders/${order.id}/confirmation/outcomes`, {
+        outcome: 'confirmed',
+      }),
+      'outcome',
+    );
+  } catch (e) {
+    failures.push(`call to ${order.number}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 if (failures.length) {
   notice(`${failures.length} requests in the bursts failed: ${failures.slice(0, 10).join('; ')}`);
 }
@@ -372,7 +405,9 @@ notice(
     `${BURST.list} product lists, ${BURST.read} product reads, ${BURST.save} product saves ` +
     `${BURST.bulk} bulk edits of 6 variants, ${BURST.order} orders (cart, area, checkout), ` +
     `${BURST.cart} cart reads, ${BURST.orders} each of the order list and an order, ` +
-    `and ${BURST.returns} returns (track, request, approve, receive, inspect, refund)`,
+    `${BURST.returns} returns (track, request, approve, receive, inspect, refund), ` +
+    `${BURST.queue} call queue reads, ${BURST.incomplete} incomplete order lists, ` +
+    `and ${BURST.order - BURST.returns} calls confirmed from the queue`,
 );
 
 // Workers Logs names an invocation by its method and path, with IDs in the
@@ -400,6 +435,17 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
   { trigger: 'GET /v1/admin/orders', label: 'GET /v1/admin/orders' },
   { trigger: 'GET /v1/admin/orders/REDACTED', label: 'GET /v1/admin/orders/{id}' },
   { trigger: 'POST /v1/store/orders/track', label: 'POST /v1/store/orders/track' },
+  { trigger: 'PUT /v1/store/checkout/draft', label: 'PUT /v1/store/checkout/draft (save)' },
+  { trigger: 'GET /v1/admin/confirmations', label: 'GET /v1/admin/confirmations (queue)' },
+  {
+    trigger: 'POST /v1/admin/orders/REDACTED/confirmation/claim',
+    label: 'POST /v1/admin/orders/{id}/confirmation/claim',
+  },
+  {
+    trigger: 'POST /v1/admin/orders/REDACTED/confirmation/outcomes',
+    label: 'POST /v1/admin/orders/{id}/confirmation/outcomes',
+  },
+  { trigger: 'GET /v1/admin/incomplete-orders', label: 'GET /v1/admin/incomplete-orders' },
   { trigger: 'POST /v1/store/returns', label: 'POST /v1/store/returns (request)' },
   {
     trigger: 'POST /v1/admin/returns/REDACTED/inspect',
