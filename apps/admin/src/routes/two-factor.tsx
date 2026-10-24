@@ -2,8 +2,8 @@
 // an authenticator code or a backup code, and "trust this device".
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
+import { AuthLayout } from '../components/auth-layout';
 import { Field } from '../components/field';
-import { LanguageSwitch } from '../components/language-switch';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
@@ -48,11 +48,8 @@ function TwoFactor() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center gap-6 p-4">
-      <div className="flex justify-end">
-        <LanguageSwitch />
-      </div>
-      <h1 className="text-2xl font-semibold">{t('twoFactor.title')}</h1>
+    <AuthLayout>
+      <h1 className="text-2xl font-semibold tracking-tight">{t('twoFactor.title')}</h1>
       {expired ? (
         <>
           <Notice tone="error">{t('twoFactor.expired')}</Notice>
@@ -121,6 +118,6 @@ function TwoFactor() {
           </Button>
         </form>
       )}
-    </main>
+    </AuthLayout>
   );
 }

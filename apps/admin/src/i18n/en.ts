@@ -285,6 +285,13 @@ export const en = {
     'Your store’s addresses. Connect your own domain, such as www.yourshop.com.bd.',
   // The redesigned shell (ADR 0029): the sidebar's groups, the phone's More
   // page and the search in the top bar.
+  'settings.find': 'Find a setting',
+  'settings.noMatch': 'No settings match.',
+  'settings.selling': 'Selling',
+  'settings.messages': 'Messages',
+  'settings.planAndData': 'Plan and billing',
+  'settings.ready': 'Ready',
+  'settings.toFinish': 'Still to set up',
   'nav.breadcrumb': 'Where you are',
   'nav.products': 'Products',
   'nav.reports': 'Reports',
