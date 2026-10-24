@@ -42,7 +42,7 @@ import { cn } from '../lib/utils';
 
 const SAVE_DELAY_MS = 1200;
 const select =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base disabled:opacity-50';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
 
 /** The CSS variables the storefront takes from the tokens (its Layout.astro). */
 function cssVars(theme: Theme): Record<string, string> {
@@ -597,7 +597,7 @@ function ColorInput({
           disabled={disabled}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-11 w-14 shrink-0 cursor-pointer rounded-md border border-border bg-background p-1"
+          className="h-11 w-14 shrink-0 cursor-pointer rounded-lg border border-border bg-background p-1"
         />
         <Input
           id={id}

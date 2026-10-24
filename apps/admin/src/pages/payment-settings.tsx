@@ -89,7 +89,7 @@ export function PaymentSettingsPage() {
           SSLCommerz
         </h2>
         {saved ? (
-          <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
             <p className="font-medium">
               {saved.mode === 'live' ? t('payments.connectedLive') : t('payments.connectedSandbox')}
             </p>

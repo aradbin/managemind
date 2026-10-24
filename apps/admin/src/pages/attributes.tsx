@@ -258,7 +258,7 @@ function AttributeDialog({
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               {t('attributes.type')}
               <select
-                className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal md:text-sm"
+                className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
                 value={type}
                 onChange={(e) => {
                   const next = e.target.value as AttrType;

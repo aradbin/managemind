@@ -234,7 +234,10 @@ export function VariantTable({ product, disabled }: { product: Product; disabled
         </div>
         <ul className="flex flex-col gap-3 md:hidden" aria-label={t('variants.title')}>
           {product.variants.map((v) => (
-            <li key={v.id} className="flex flex-col gap-3 rounded-md border border-border p-3">
+            <li
+              key={v.id}
+              className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
+            >
               <p className="font-medium">{label(v)}</p>
               {errors[v.id] && (
                 <p role="alert" className="text-sm text-danger">

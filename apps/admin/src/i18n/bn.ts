@@ -271,6 +271,7 @@ export const bn: Record<keyof typeof en, string> = {
   'store.view': 'দোকান দেখুন',
   'domains.title': 'ডোমেইন',
   'domains.description': 'আপনার দোকানের ঠিকানা। নিজের ডোমেইন যুক্ত করুন, যেমন www.yourshop.com.bd।',
+  'nav.breadcrumb': 'আপনি যেখানে আছেন',
   'nav.products': 'পণ্য',
   'nav.reports': 'রিপোর্ট',
   'nav.returns': 'রিটার্ন',

@@ -85,7 +85,7 @@ export function ItemSelection({
   return (
     <fieldset
       disabled={disabled}
-      className="flex flex-col gap-3 rounded-md border border-border p-3"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
     >
       <legend className="px-1 text-sm font-medium">{legend}</legend>
       {all.length > 0 && (
@@ -109,7 +109,7 @@ export function ItemSelection({
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('promo.addCategory')}
           <select
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
             value=""
             onChange={(e) => e.target.value && toggle('categoryIds', e.target.value)}
           >
@@ -126,7 +126,7 @@ export function ItemSelection({
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('promo.addCollection')}
           <select
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
             value=""
             onChange={(e) => e.target.value && toggle('collectionIds', e.target.value)}
           >

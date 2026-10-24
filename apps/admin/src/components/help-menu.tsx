@@ -50,7 +50,7 @@ export function HelpMenu() {
         <Menu.Content
           align="end"
           sideOffset={4}
-          className="z-50 min-w-56 rounded-md border border-border bg-background p-1 shadow-lg"
+          className="z-50 min-w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
         >
           {help.isPending && <p className="px-3 py-2 text-muted-foreground">{t('loading')}</p>}
           {help.isSuccess && links.length === 0 && (

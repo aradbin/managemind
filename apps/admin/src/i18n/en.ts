@@ -285,6 +285,7 @@ export const en = {
     'Your store’s addresses. Connect your own domain, such as www.yourshop.com.bd.',
   // The redesigned shell (ADR 0029): the sidebar's groups, the phone's More
   // page and the search in the top bar.
+  'nav.breadcrumb': 'Where you are',
   'nav.products': 'Products',
   'nav.reports': 'Reports',
   'nav.returns': 'Returns',

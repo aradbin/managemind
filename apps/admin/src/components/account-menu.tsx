@@ -38,7 +38,7 @@ export function AccountMenu({ me }: { me: Me }) {
         <Menu.Content
           align="end"
           sideOffset={4}
-          className="z-50 min-w-56 rounded-md border border-border bg-background p-1 shadow-lg"
+          className="z-50 min-w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
         >
           <div className="px-3 py-2">
             <p className="font-medium">{me.user.name}</p>

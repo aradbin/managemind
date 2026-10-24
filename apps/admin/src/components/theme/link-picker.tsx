@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 type Kind = ThemeLink['type'];
 const KINDS: Kind[] = ['category', 'collection', 'product', 'page', 'search', 'url'];
 const select =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base disabled:opacity-50';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
 
 export function LinkPicker({
   value,

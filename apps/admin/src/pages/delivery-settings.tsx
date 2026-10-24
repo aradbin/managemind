@@ -136,7 +136,7 @@ function FeeCalculator() {
   return (
     <section
       aria-labelledby="calc-h"
-      className="flex flex-col gap-3 rounded-md border border-border p-4"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
     >
       <h2 id="calc-h" className="font-semibold">
         {t('delivery.calculator')}
@@ -399,7 +399,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal"
+                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >

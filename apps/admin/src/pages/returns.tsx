@@ -20,10 +20,10 @@ export function ReturnStatusChip({ status }: { status: string }) {
     status === 'requested'
       ? 'bg-warning text-warning-foreground'
       : status === 'rejected'
-        ? 'bg-danger/10 text-danger'
+        ? 'bg-danger-soft text-danger'
         : status === 'resolved'
-          ? 'bg-success/15 text-success'
-          : 'bg-primary/10 text-primary';
+          ? 'bg-success-soft text-success'
+          : 'bg-primary-soft text-primary';
   return (
     <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
       {t(`return.status.${status}` as AdminKey)}

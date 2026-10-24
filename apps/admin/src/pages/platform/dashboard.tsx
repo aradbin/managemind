@@ -19,7 +19,7 @@ const dashboardQuery = {
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border p-3">
+    <div className="flex flex-col gap-1 rounded-lg border border-border bg-background p-3">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="text-2xl font-semibold">{value}</span>
       {hint && <span className="text-sm text-muted-foreground">{hint}</span>}
@@ -119,7 +119,7 @@ export function PlatformDashboardPage() {
             hint={t('pdash.orders', { count: d.sales.month.orders })}
           />
         </div>
-        <details className="rounded-md border border-border p-3">
+        <details className="rounded-lg border border-border bg-background p-3">
           <summary className="min-h-11 cursor-pointer content-center font-medium">
             {t('pdash.trend')}
           </summary>

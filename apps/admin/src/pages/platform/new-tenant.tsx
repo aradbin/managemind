@@ -168,7 +168,7 @@ export function NewTenantPage() {
   const last = step === STEPS.length - 1;
   const section = (i: number) =>
     cn(
-      'flex flex-col gap-4 rounded-md border border-border p-4',
+      'flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5',
       step === i ? '' : 'hidden md:flex',
     );
   const heading = (i: number) => (

@@ -326,7 +326,7 @@ function CategoryDialog({
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             {t('categories.parent')}
             <select
-              className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal md:text-sm"
+              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
             >

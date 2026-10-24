@@ -383,7 +383,7 @@ function Editor({
             {t('product.vatCategory')}
             <select
               disabled={disabled}
-              className="min-h-11 rounded-md border border-border bg-background px-3 text-base font-normal md:text-sm"
+              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
               value={content.vatCategory}
               onChange={(e) => update({ vatCategory: e.target.value })}
             >
@@ -480,7 +480,7 @@ function TranslationFields({
         onChange={(description) => onChange({ description })}
         disabled={disabled}
       />
-      <details className="rounded-md border border-border p-3">
+      <details className="rounded-lg border border-border bg-background p-3">
         <summary className="min-h-11 cursor-pointer content-center font-medium">
           {t('product.seo')}
         </summary>
@@ -545,7 +545,7 @@ function CheckboxList({
           {empty}
         </p>
       ) : (
-        <div className="max-h-60 overflow-y-auto rounded-md border border-border p-2">
+        <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-background p-2">
           {items.map((item) => (
             <label key={item.id} className="flex min-h-11 items-center gap-3 text-sm">
               <input

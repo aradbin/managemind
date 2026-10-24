@@ -14,7 +14,7 @@ import { LinkPicker } from './link-picker';
 import { LocalizedField } from './localized-field';
 
 const select =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base disabled:opacity-50';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
 
 /** A new section of a kind, with empty texts (the storefront hides empty ones). */
 export function newSection(type: ThemeSection['type']): ThemeSection {
@@ -105,7 +105,7 @@ function CheckList({
 }) {
   return (
     <fieldset
-      className="flex flex-col gap-1 rounded-md border border-border p-3"
+      className="flex flex-col gap-1 rounded-lg border border-border bg-background p-3"
       disabled={disabled}
     >
       <legend className="px-1 text-sm font-medium">{legend}</legend>
@@ -172,7 +172,10 @@ export function SectionEditor({
             const setSlide = (next: typeof slide) =>
               onChange({ ...section, slides: section.slides.map((s, j) => (j === i ? next : s)) });
             return (
-              <fieldset key={i} className="flex flex-col gap-3 rounded-md border border-border p-3">
+              <fieldset
+                key={i}
+                className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
+              >
                 <legend className="px-1 font-medium">{t('section.slide', { n: i + 1 })}</legend>
                 <ImagePicker
                   banner
@@ -427,7 +430,10 @@ export function SectionEditor({
             const setItem = (next: typeof item) =>
               onChange({ ...section, items: section.items.map((x, j) => (j === i ? next : x)) });
             return (
-              <fieldset key={i} className="flex flex-col gap-3 rounded-md border border-border p-3">
+              <fieldset
+                key={i}
+                className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
+              >
                 <legend className="px-1 font-medium">{t('section.badge', { n: i + 1 })}</legend>
                 <Choice
                   label={t('section.icon')}

@@ -36,7 +36,7 @@ import {
 } from '../lib/returns';
 import { ReturnStatusChip } from './returns';
 
-const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 /** Refreshes the return, its order and the lists after a change. */
 function useRefresh(ret: { id: string; orderId: string }) {
@@ -169,7 +169,7 @@ function Steps({ ret }: { ret: ReturnDetail }) {
           key={step}
           aria-current={i === reached ? 'step' : undefined}
           className={`flex items-center gap-1 rounded-full px-3 py-1 ${
-            i <= reached ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+            i <= reached ? 'bg-primary-soft text-primary' : 'bg-muted text-muted-foreground'
           }`}
         >
           {i < reached && <Check aria-hidden className="size-4" />}

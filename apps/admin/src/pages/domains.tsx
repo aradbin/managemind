@@ -34,7 +34,7 @@ export function DomainsPage() {
       ) : (
         <div className="flex flex-col gap-6">
           <ul className="flex flex-col gap-4">
-            <li className="rounded-md border border-border p-4">
+            <li className="rounded-xl border border-border bg-background p-4 md:p-5">
               <p className="text-sm text-muted-foreground">{t('domains.default')}</p>
               <p className="flex flex-wrap items-center gap-2 font-medium">
                 <span dir="ltr">{domains.data.defaultHost}</span>
@@ -70,7 +70,7 @@ function Badge({
         tone === 'primary' && 'bg-primary text-primary-foreground',
         tone === 'ok' && 'bg-muted',
         tone === 'wait' && 'bg-warning text-warning-foreground',
-        tone === 'bad' && 'bg-danger/10 text-danger',
+        tone === 'bad' && 'bg-danger-soft text-danger',
       )}
     >
       {children}
@@ -113,7 +113,7 @@ function AddDomain() {
                 : saveErrorMessage(add.error, t);
   return (
     <form
-      className="flex flex-col gap-3 rounded-md border border-border p-4"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
       onSubmit={(e) => {
         e.preventDefault();
         if (hostname.trim()) add.mutate();
@@ -186,7 +186,7 @@ function DomainCard({ domain, canWrite }: { domain: Domain; canWrite: boolean })
     },
   });
   return (
-    <li className="flex flex-col gap-3 rounded-md border border-border p-4">
+    <li className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5">
       <p className="flex flex-wrap items-center gap-2 font-medium">
         <span dir="ltr">{domain.hostname}</span>
         <Badge

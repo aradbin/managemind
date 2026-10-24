@@ -135,7 +135,7 @@ export function ImageManager({
           {items.map((item, i) => (
             <li
               key={item.mediaId}
-              className="flex flex-col gap-3 rounded-md border border-border p-3 md:flex-row"
+              className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 md:flex-row"
             >
               {item.file && (
                 <img
@@ -238,7 +238,7 @@ export function ImageManager({
             <label key={v.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
               <span>{variantLabel(product, v.id, locale)}</span>
               <select
-                className="min-h-11 rounded-md border border-border bg-background px-3"
+                className="min-h-11 rounded-lg border border-input bg-background px-3"
                 value={variantImages[v.id] ?? ''}
                 onChange={(e) => {
                   setVariantImages({ ...variantImages, [v.id]: e.target.value || null });

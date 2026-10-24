@@ -216,7 +216,7 @@ function StoreEmail() {
       </h2>
       <p className="text-sm text-muted-foreground">{t('notify.storeEmailHint')}</p>
       {saved && (
-        <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
           <p className="font-medium">
             {t('notify.sendingFrom', {
               from: savedFrom,
@@ -444,7 +444,7 @@ function SmsGateway() {
       </h2>
       <p className="text-sm text-muted-foreground">{t('sms.hint')}</p>
       {saved && (
-        <div className="flex flex-col gap-2 rounded-md border border-border p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
           <p className="font-medium">{t('sms.connected', { provider: name(saved.provider) })}</p>
           {balance.data?.balance != null && (
             <p className="text-sm text-muted-foreground">

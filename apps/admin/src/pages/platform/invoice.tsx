@@ -121,7 +121,7 @@ export function PlatformInvoicePage() {
             </div>
           )}
           {issue.isError && <Notice tone="error">{errorMessage(issue.error, t)}</Notice>}
-          <div className="rounded-md border border-border p-4">
+          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
             <InvoiceDocument invoice={inv} lang={locale} />
           </div>
           <ConfirmDialog

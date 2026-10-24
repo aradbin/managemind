@@ -37,9 +37,9 @@ import {
 import { download, toCsv } from './export';
 import { StateChip } from './promotions';
 
-const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 const selectClass =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base font-normal';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal';
 
 export function NewPromotionPage() {
   return <Editor promotion={undefined} />;
@@ -128,7 +128,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               [t('promo.sales'), formatPrice(promotion.sales, locale)],
             ] as const
           ).map(([label, value]) => (
-            <div key={label} className="rounded-md border border-border p-3">
+            <div key={label} className="rounded-lg border border-border bg-background p-3">
               <dt className="text-sm text-muted-foreground">{label}</dt>
               <dd className="text-lg font-semibold">{value}</dd>
             </div>
@@ -378,7 +378,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   value={d.customerPhones}
                   onChange={(e) => set({ customerPhones: e.target.value })}
                   aria-describedby="promo-phones-hint"
-                  className="rounded-md border border-border bg-background p-3 text-base"
+                  className="rounded-lg border border-border bg-background p-3 text-base"
                 />
                 <p id="promo-phones-hint" className="text-sm text-muted-foreground">
                   {t('promo.customerPhonesHint')}

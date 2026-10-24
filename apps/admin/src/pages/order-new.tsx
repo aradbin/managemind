@@ -47,8 +47,8 @@ type Source = (typeof MANUAL_ORDER_SOURCES)[number];
 type Method = (typeof MANUAL_METHODS)[number];
 
 const selectClass =
-  'min-h-11 w-full rounded-md border border-border bg-background px-3 text-base font-normal';
-const section = 'flex flex-col gap-3 rounded-md border border-border p-4';
+  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal';
+const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 const toLatin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
@@ -283,7 +283,7 @@ export function NewOrderPage() {
               </label>
             </div>
             {quote.data?.blocked && (
-              <div className="flex flex-col gap-2 rounded-md bg-danger/10 p-3 text-sm text-danger">
+              <div className="flex flex-col gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">
                 <p role="alert">{t('newOrder.blocked')}</p>
                 <label className="flex min-h-11 items-center gap-2">
                   <input
@@ -558,7 +558,7 @@ export function NewOrderPage() {
               maxLength={500}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="rounded-md border border-border bg-background p-3 text-base"
+              className="rounded-lg border border-border bg-background p-3 text-base"
             />
           </section>
         </div>

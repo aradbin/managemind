@@ -38,7 +38,7 @@ import { ExportButton } from './export';
 export type ProductSearch = ProductFilters;
 
 const selectClass =
-  'min-h-11 rounded-md border border-border bg-background px-3 text-base md:text-sm';
+  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
 
 export function ProductsPage() {
   const { t, locale } = useLocale();
@@ -257,7 +257,7 @@ export function StatusBadge({ status }: { status: 'draft' | 'active' | 'archived
   const { t } = useLocale();
   const tone =
     status === 'active'
-      ? 'bg-success/15 text-success'
+      ? 'bg-success-soft text-success'
       : status === 'draft'
         ? 'bg-muted text-muted-foreground'
         : 'bg-warning/20 text-warning-foreground';
@@ -504,7 +504,7 @@ function BulkPriceDialog({
               {t('products.bulkApply')}
             </Button>
           </div>
-          <fieldset className="flex flex-col gap-3 rounded-md border border-border p-3">
+          <fieldset className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3">
             <legend className="px-1 text-sm font-medium">{t('products.sale')}</legend>
             <p className="text-sm text-muted-foreground">{t('products.saleHint')}</p>
             <div className="grid gap-2 md:grid-cols-2">
@@ -541,7 +541,10 @@ function BulkPriceDialog({
           </fieldset>
           <ul className="flex flex-col gap-3">
             {rows.map((r) => (
-              <li key={r.id} className="flex flex-col gap-2 rounded-md border border-border p-3">
+              <li
+                key={r.id}
+                className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3"
+              >
                 <span className="text-sm font-medium">{r.label}</span>
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                   <Input

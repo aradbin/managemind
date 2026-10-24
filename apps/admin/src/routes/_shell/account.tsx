@@ -217,7 +217,7 @@ function TwoFactor({ me }: { me: Me }) {
               </Button>
             </div>
           ) : state.step === 'confirm-disable' || state.step === 'confirm-new-codes' ? (
-            <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3">
               <p>
                 {t(
                   state.step === 'confirm-disable'

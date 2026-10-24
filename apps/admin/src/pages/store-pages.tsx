@@ -131,7 +131,7 @@ function NewPage({ existing, onClose }: { existing: StorePage[]; onClose: () => 
             id={id}
             value={kind}
             onChange={(e) => setKind(e.target.value as PageKind)}
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-base"
+            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
           >
             {PAGE_KINDS.map((k) => (
               <option key={k} value={k} disabled={taken.has(k)}>

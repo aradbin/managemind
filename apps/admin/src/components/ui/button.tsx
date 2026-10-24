@@ -10,10 +10,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:opacity-90',
+        // Hover darkens rather than fades, so the text keeps its contrast.
+        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
         secondary: 'border border-input bg-background hover:bg-muted',
         ghost: 'hover:bg-muted',
-        danger: 'bg-danger text-danger-foreground hover:opacity-90',
+        danger: 'bg-danger text-danger-foreground hover:bg-danger-hover',
         /** A red word for destructive actions that sit beside others. */
         quiet: 'border border-input bg-background text-danger hover:bg-danger-soft',
       },

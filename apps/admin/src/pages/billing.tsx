@@ -226,7 +226,7 @@ function InvoicePanel({
   return (
     <section
       aria-label={inv?.number ? t('invoice.title', { number: inv.number }) : t('invoice.view')}
-      className="flex flex-col gap-4 rounded-md border border-border p-4"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
     >
       {invoice.isPending && <p role="status">{t('loading')}</p>}
       {invoice.isError && <Notice tone="error">{errorMessage(invoice.error, t)}</Notice>}

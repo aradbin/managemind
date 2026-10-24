@@ -84,7 +84,7 @@ export function TenantsPage() {
             id="tenant-status"
             value={status}
             onChange={(e) => setStatus(e.target.value as TenantStatus | '')}
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-base"
+            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
           >
             <option value="">{t('tenants.allStatuses')}</option>
             {TENANT_STATUSES.map((s) => (

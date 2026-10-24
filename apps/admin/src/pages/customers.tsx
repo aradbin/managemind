@@ -259,7 +259,7 @@ function CustomerDialog({ customer, onClose }: { customer?: Customer; onClose: (
             maxLength={2000}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="rounded-md border border-border bg-background p-3 text-base"
+            className="rounded-lg border border-border bg-background p-3 text-base"
           />
         </div>
         {save.error && <Notice tone="error">{customerError(save.error, t)}</Notice>}
@@ -394,14 +394,14 @@ export function CustomerDetailPage() {
           [t('customer.firstOrder'), c.firstOrderAt ? dateOnly(locale, c.firstOrderAt) : '—'],
           [t('customer.lastOrder'), c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—'],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-md border border-border p-3">
+          <div key={label} className="rounded-lg border border-border bg-background p-3">
             <dt className="text-sm text-muted-foreground">{label}</dt>
             <dd className="text-lg font-semibold">{value}</dd>
           </div>
         ))}
       </dl>
       {(c.tags.length > 0 || c.note) && (
-        <section className="flex flex-col gap-2 rounded-md border border-border p-4">
+        <section className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
           {c.tags.length > 0 && (
             <p className="flex flex-wrap gap-1">
               {c.tags.map((tag) => (
@@ -525,7 +525,10 @@ function AddressList({
   return (
     <ul className="grid gap-2 md:grid-cols-2">
       {c.addresses.map((a) => (
-        <li key={a.id} className="flex flex-col gap-1 rounded-md border border-border p-3 text-sm">
+        <li
+          key={a.id}
+          className="flex flex-col gap-1 rounded-lg border border-border bg-background p-3 text-sm"
+        >
           <span className="font-medium">
             {a.label ?? a.name}
             {a.isDefault && (

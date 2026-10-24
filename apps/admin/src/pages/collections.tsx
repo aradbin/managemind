@@ -36,7 +36,7 @@ import {
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 
 const selectClass =
-  'min-h-11 rounded-md border border-border bg-background px-3 text-base md:text-sm';
+  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
@@ -208,7 +208,7 @@ function ConditionRow({
     />
   );
   return (
-    <li className="flex flex-col gap-2 rounded-md border border-border p-3">
+    <li className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
       <div className="flex items-center gap-2">
         <select
           aria-label={t('rules.type')}

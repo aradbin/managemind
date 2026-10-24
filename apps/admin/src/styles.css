@@ -19,9 +19,11 @@
   --color-primary: #0e7a5a;
   --color-primary-foreground: #ffffff;
   --color-primary-soft: #e7f2ed;
+  --color-primary-hover: #0a5c44;
   --color-danger: #a8261b;
   --color-danger-foreground: #ffffff;
   --color-danger-soft: #fce8e6;
+  --color-danger-hover: #8f1f16;
   --color-warning: #fdf1dc;
   --color-warning-foreground: #8a4b00;
   --color-success: #146c43;
@@ -45,9 +47,11 @@
     --color-primary: #5fcb9e;
     --color-primary-foreground: #062018;
     --color-primary-soft: #163328;
+    --color-primary-hover: #82dab5;
     --color-danger: #f2938a;
     --color-danger-foreground: #1a0503;
     --color-danger-soft: #3a1714;
+    --color-danger-hover: #f6b0a9;
     --color-warning: #3a2a0e;
     --color-warning-foreground: #f5c26b;
     --color-success: #6fd3a0;
