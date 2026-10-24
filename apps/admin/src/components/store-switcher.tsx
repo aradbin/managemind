@@ -1,15 +1,18 @@
 // Switch store (phase-1-plan §7.3): a sheet on phones, a dialog on larger
 // screens, with search once there are more than 5 stores. Stores reached
-// through a support grant show until when.
+// through a support grant show until when. The trigger takes the look of
+// where it sits (ADR 0029): the sidebar's card, the phone header, or a row
+// on the More page.
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
 import type { Me } from '../lib/api';
 import { errorMessage } from '../lib/errors';
 import { switchStore } from '../lib/store';
+import { cn } from '../lib/utils';
 import { Field } from './field';
 import { Notice } from './notice';
 import { Button } from './ui/button';
@@ -17,7 +20,37 @@ import { Dialog } from './ui/dialog';
 
 const SEARCH_FROM = 6;
 
-export function StoreSwitcher({ me }: { me: Me }) {
+/** Up to two letters for a store's tile: the first of its first two words. */
+export function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  return words
+    .slice(0, 2)
+    .map((w) => Array.from(w)[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
+
+export function StoreTile({ name, className }: { name: string; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning text-xs font-semibold text-warning-foreground',
+        className,
+      )}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+export function StoreSwitcher({
+  me,
+  look = 'header',
+}: {
+  me: Me;
+  look?: 'header' | 'sidebar' | 'row';
+}) {
   const { t, locale } = useLocale();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -49,17 +82,52 @@ export function StoreSwitcher({ me }: { me: Me }) {
   }
 
   if (me.stores.length === 0) return <p className="truncate font-medium">{me.user.name}</p>;
+  const label = `${t('store.switch')}: ${current?.name ?? ''}`;
   return (
     <>
-      <Button
-        variant="ghost"
-        className="min-w-0 justify-start px-2"
-        aria-label={`${t('store.switch')}: ${current?.name ?? ''}`}
-        onClick={() => setOpen(true)}
-      >
-        <span className="truncate font-medium">{current?.name ?? t('store.switch')}</span>
-        <ChevronsUpDown aria-hidden className="size-4 shrink-0" />
-      </Button>
+      {look === 'header' ? (
+        <Button
+          variant="ghost"
+          className="min-w-0 justify-start gap-2 px-2"
+          aria-label={label}
+          onClick={() => setOpen(true)}
+        >
+          {current && <StoreTile name={current.name} className="size-7" />}
+          <span className="truncate font-semibold">{current?.name ?? t('store.switch')}</span>
+          <ChevronDown aria-hidden className="size-4 shrink-0" />
+        </Button>
+      ) : (
+        <button
+          type="button"
+          aria-label={label}
+          onClick={() => setOpen(true)}
+          className={cn(
+            'flex min-h-14 w-full min-w-0 items-center gap-3 text-left',
+            look === 'sidebar'
+              ? 'rounded-xl border border-border bg-canvas/60 px-2.5 py-2 hover:bg-muted'
+              : 'px-3.5 py-2 hover:bg-muted',
+          )}
+        >
+          {current && <StoreTile name={current.name} />}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-sm font-semibold">
+              {current?.name ?? t('store.switch')}
+            </span>
+            {current && (
+              <span className="truncate text-xs text-muted-foreground">
+                {t(`role.${current.role}`)}
+              </span>
+            )}
+          </span>
+          {look === 'sidebar' ? (
+            <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <span aria-hidden className="text-sm font-medium text-primary">
+              {t('store.switch')}
+            </span>
+          )}
+        </button>
+      )}
       <Dialog
         open={open}
         onOpenChange={(next) => {
@@ -90,9 +158,10 @@ export function StoreSwitcher({ me }: { me: Me }) {
                     disabled={busy}
                     aria-current={active ? 'true' : undefined}
                     onClick={() => choose(s.tenantId)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left hover:bg-muted disabled:opacity-50"
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-muted disabled:opacity-50"
                   >
-                    <span className="flex min-w-0 flex-col">
+                    <StoreTile name={s.name} />
+                    <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate font-medium">{s.name}</span>
                       <span className="text-sm text-muted-foreground">
                         {s.supportUntil

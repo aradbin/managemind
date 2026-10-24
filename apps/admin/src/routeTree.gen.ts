@@ -16,6 +16,7 @@ import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
 import { Route as ShellInventoryRouteImport } from './routes/_shell/inventory'
+import { Route as ShellMoreRouteImport } from './routes/_shell/more'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
 import { Route as ShellReportsRouteImport } from './routes/_shell/reports'
 import { Route as PrintInvoiceRouteImport } from './routes/print.invoice'
@@ -101,6 +102,11 @@ const ShellAccountRoute = ShellAccountRouteImport.update({
 const ShellInventoryRoute = ShellInventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellMoreRoute = ShellMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellPlatformRoute = ShellPlatformRouteImport.update({
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
+  '/more': typeof ShellMoreRoute
   '/platform': typeof ShellPlatformRouteWithChildren
   '/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
@@ -436,6 +443,7 @@ export interface FileRoutesByTo {
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
   '/inventory': typeof ShellInventoryRoute
+  '/more': typeof ShellMoreRoute
   '/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
   '/print/orders': typeof PrintOrdersRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
   '/_shell/inventory': typeof ShellInventoryRoute
+  '/_shell/more': typeof ShellMoreRoute
   '/_shell/platform': typeof ShellPlatformRouteWithChildren
   '/_shell/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
@@ -560,6 +569,7 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/account'
     | '/inventory'
+    | '/more'
     | '/platform'
     | '/reports'
     | '/print/invoice'
@@ -619,6 +629,7 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/account'
     | '/inventory'
+    | '/more'
     | '/reports'
     | '/print/invoice'
     | '/print/orders'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/two-factor'
     | '/_shell/account'
     | '/_shell/inventory'
+    | '/_shell/more'
     | '/_shell/platform'
     | '/_shell/reports'
     | '/print/invoice'
@@ -792,6 +804,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof ShellInventoryRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/more': {
+      id: '/_shell/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof ShellMoreRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/platform': {
@@ -1192,6 +1211,7 @@ const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(
 interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
   ShellInventoryRoute: typeof ShellInventoryRoute
+  ShellMoreRoute: typeof ShellMoreRoute
   ShellPlatformRoute: typeof ShellPlatformRouteWithChildren
   ShellReportsRoute: typeof ShellReportsRoute
   ShellIndexRoute: typeof ShellIndexRoute
@@ -1239,6 +1259,7 @@ interface ShellRouteChildren {
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
   ShellInventoryRoute: ShellInventoryRoute,
+  ShellMoreRoute: ShellMoreRoute,
   ShellPlatformRoute: ShellPlatformRouteWithChildren,
   ShellReportsRoute: ShellReportsRoute,
   ShellIndexRoute: ShellIndexRoute,

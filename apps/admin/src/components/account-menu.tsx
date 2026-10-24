@@ -9,10 +9,21 @@ import { healthQuery, type Me } from '../lib/api';
 import { auth } from '../lib/auth';
 import { Button } from './ui/button';
 
-export function AccountMenu({ me }: { me: Me }) {
-  const { t } = useLocale();
+/** Signs out, forgets this account's data, and goes back to sign-in. */
+export function useSignOut() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  return async () => {
+    await auth.signOut().catch(() => undefined);
+    queryClient.clear();
+    await navigate({ to: '/sign-in', replace: true });
+  };
+}
+
+export function AccountMenu({ me }: { me: Me }) {
+  const { t } = useLocale();
+  const navigate = useNavigate();
+  const signOut = useSignOut();
   const { data: health } = useQuery(healthQuery);
   const item =
     'flex min-h-11 cursor-pointer items-center rounded px-3 outline-none data-[highlighted]:bg-muted';
@@ -42,14 +53,7 @@ export function AccountMenu({ me }: { me: Me }) {
               {t('dev.mailbox')}
             </Menu.Item>
           )}
-          <Menu.Item
-            className={item}
-            onSelect={async () => {
-              await auth.signOut().catch(() => undefined);
-              queryClient.clear();
-              await navigate({ to: '/sign-in', replace: true });
-            }}
-          >
+          <Menu.Item className={item} onSelect={signOut}>
             {t('action.signOut')}
           </Menu.Item>
         </Menu.Content>

@@ -283,5 +283,26 @@ export const en = {
   'domains.title': 'Domains',
   'domains.description':
     'Your store’s addresses. Connect your own domain, such as www.yourshop.com.bd.',
+  // The redesigned shell (ADR 0029): the sidebar's groups, the phone's More
+  // page and the search in the top bar.
+  'nav.products': 'Products',
+  'nav.reports': 'Reports',
+  'nav.returns': 'Returns',
+  'nav.inventory': 'Inventory',
+  'nav.store': 'Store',
+  'nav.sell': 'Sell',
+  'nav.more': 'More',
+  'nav.toConfirm': '{count} to confirm',
+  'search.open': 'Search',
+  'search.placeholder': 'Search orders, products, customers…',
+  'search.hint': 'Type an order number, a name or a phone number.',
+  'search.orders': 'Orders matching “{q}”',
+  'search.products': 'Products matching “{q}”',
+  'search.customers': 'Customers matching “{q}”',
+  'search.pages': 'Go to',
+  'more.newTab': 'Opens in a new tab',
+  'more.help': 'Help',
+  'more.signOutTitle': 'Sign out of {platform}?',
+  'more.signOutBody': 'You’ll need a code from your email to sign in on this device again.',
   ...catalogEn,
 } as const;
