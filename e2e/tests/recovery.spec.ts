@@ -54,10 +54,15 @@ async function adminCall<T>(
   path: string,
   data?: unknown,
 ): Promise<T> {
-  const res = await request[method](`${API}${path}`, {
-    ...(data === undefined ? {} : { data }),
-    headers: { origin: API, 'idempotency-key': crypto.randomUUID() },
-  });
+  const send = () =>
+    request[method](`${API}${path}`, {
+      ...(data === undefined ? {} : { data }),
+      headers: { origin: API, 'idempotency-key': crypto.randomUUID() },
+    });
+  let res = await send();
+  // A preview's direct connection sometimes answers an empty 503 (phase-5b-report §3).
+  // A read is safe to send again; a write is not.
+  for (let i = 0; method === 'get' && res.status() === 503 && i < 2; i++) res = await send();
   expect(res.ok(), `${method} ${path}: ${res.status()} ${await res.text()}`).toBe(true);
   return (await res.json()) as T;
 }
