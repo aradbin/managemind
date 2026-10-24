@@ -1,6 +1,7 @@
 export * from './attributes';
 export * from './categories';
 export * from './collections';
+export * from './legal';
 export * from './media';
 export * from './pages';
 export * from './prices';

@@ -239,6 +239,41 @@
       "when": 1792369587879,
       "tag": "0033_exchange_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792755080589,
+      "tag": "0034_phase_5b",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1792755118475,
+      "tag": "0035_phase_5b_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792771646288,
+      "tag": "0036_phase_5b_anonymize",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792772741916,
+      "tag": "0037_phase_5b_legal_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792790653901,
+      "tag": "0038_phase_5b_reopen",
+      "breakpoints": true
     }
   ]
 }

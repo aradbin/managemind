@@ -24,11 +24,14 @@ export const PERMISSIONS = [
   'customers.read',
   'customers.write',
   'customers.export',
+  /** Anonymizing a shopper on their request (phase-5b-plan §3.13): Owner and Manager. */
+  'customers.delete',
   'promotions.read',
   'promotions.write',
   'payments.read',
   'payments.refund',
   'reports.read',
+  /** Our plan, usage and invoices (phase-5b-plan §3.17): Owner and Manager. */
   'billing.read',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -45,7 +48,7 @@ const all = (except: readonly Permission[] = []): Permission[] =>
 
 const ROLE_PERMISSIONS: Record<StoreRole, ReadonlySet<Permission>> = {
   owner: new Set(all()),
-  manager: new Set(all(['staff.manage_owners', 'billing.read'])),
+  manager: new Set(all(['staff.manage_owners'])),
   staff: new Set<Permission>([
     'catalog.read',
     'catalog.write',

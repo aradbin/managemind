@@ -18,9 +18,10 @@ import {
   type VariantFields,
   variantPatch,
 } from '@managemind/shared/catalog';
-import { and, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, ne, type SQL, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import { replaceProductAttributes, replaceProductTags } from './attributes';
@@ -586,6 +587,15 @@ async function scheduleSaleEdges(tx: TenantTx, productId: string, rows: VariantR
 }
 
 /** Creates a product with its single variant; options are set afterwards. */
+/** Products that count toward the plan's limit: every one not archived (phase-5b-plan §3.5). */
+export async function countProducts(tx: TenantTx): Promise<number> {
+  const [row] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(p)
+    .where(and(eq(p.tenantId, tx.tenantId), ne(p.status, 'archived')));
+  return row?.n ?? 0;
+}
+
 export async function createProduct(
   tx: TenantTx,
   actor: Actor,
@@ -593,6 +603,7 @@ export async function createProduct(
 ): Promise<ProductDetail> {
   authorize(actor, 'catalog.write');
   const data: ProductCreate = parseInput(productCreate, input);
+  await requireWithinLimit(tx, 'products', () => countProducts(tx));
   const store = await storeCatalogContext(tx);
   requireDefault(data.translations, store.defaultLocale);
   if (data.variant) requireCostPermission(actor, data.variant);
@@ -680,6 +691,10 @@ export async function updateProduct(
   if (patch.vatCategory !== undefined) columns.vatCategory = patch.vatCategory;
   if (patch.metadata !== undefined) columns.metadata = patch.metadata;
   if (patch.status !== undefined && patch.status !== current.status) {
+    // Bringing an archived product back counts toward the plan again.
+    if (current.status === 'archived') {
+      await requireWithinLimit(tx, 'products', () => countProducts(tx));
+    }
     if (patch.status === 'active') await checkPublishable(tx, id, store.defaultLocale);
     columns.status = patch.status;
     fields.push('status');

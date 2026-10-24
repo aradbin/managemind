@@ -4,6 +4,7 @@ import { withSentry } from '@sentry/cloudflare';
 import { createApp } from './app';
 import { type DelayedMessage, handleDelayedQueue } from './domains';
 import type { Env } from './env';
+import { liveMessages } from './gone-stores';
 import { handleImportDeadLetters, handleImportQueue, handleQueue, runDailyJobs } from './jobs';
 import { handlePurgeQueue, type PurgeMessage } from './purge/consumer';
 
@@ -23,20 +24,23 @@ type Message = OutboxEvent | ImportMessage | PurgeMessage | DelayedMessage;
  * preview's managemind-imports-pr-<n>), their dead letters, cache purges,
  * the delayed queue (domain re-checks and sale edges) and the outbox.
  */
-function routeQueue(batch: MessageBatch<Message>, env: Env, ctx: ExecutionContext) {
+async function routeQueue(batch: MessageBatch<Message>, env: Env, ctx: ExecutionContext) {
   if (batch.queue === 'managemind-purge') {
-    return handlePurgeQueue(batch as MessageBatch<PurgeMessage>, env);
+    const live = await liveMessages(batch as MessageBatch<PurgeMessage>, env, ctx, 'cache');
+    return handlePurgeQueue(live, env);
   }
   if (batch.queue === 'managemind-domains') {
-    return handleDelayedQueue(batch as MessageBatch<DelayedMessage>, env, ctx);
+    const live = await liveMessages(batch as MessageBatch<DelayedMessage>, env, ctx, 'delayed');
+    return handleDelayedQueue(live, env, ctx);
   }
   if (batch.queue.startsWith('managemind-imports')) {
     const imports = batch as MessageBatch<ImportMessage>;
-    return batch.queue.endsWith('-dlq')
-      ? handleImportDeadLetters(imports, env, ctx)
-      : handleImportQueue(imports, env, ctx);
+    // Dead letters still fail their import job, whatever the store's state.
+    if (batch.queue.endsWith('-dlq')) return handleImportDeadLetters(imports, env, ctx);
+    return handleImportQueue(await liveMessages(imports, env, ctx, 'imports'), env, ctx);
   }
-  return handleQueue(batch as MessageBatch<OutboxEvent>, env, ctx);
+  const outbox = batch as MessageBatch<OutboxEvent>;
+  return handleQueue(await liveMessages(outbox, env, ctx, 'outbox'), env, ctx);
 }
 
 export default withSentry<Env, Message>((env) => sentryOptions(env), {

@@ -5,6 +5,7 @@ import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { ExportCard } from '../components/export-card';
 import {
   applyServerErrors,
   Form,
@@ -69,6 +70,10 @@ const storeQuery = {
 export function StoreProfilePage() {
   const { t } = useLocale();
   const store = useQuery(storeQuery);
+  const { data: me } = useQuery(meQuery);
+  // Only an owner exports, and not through a support grant.
+  const isOwner =
+    !me?.supportGrantId && me?.stores.find((s) => s.tenantId === me.activeStore)?.role === 'owner';
   return (
     <div className="max-w-2xl">
       <PageHeader title={t('settings.store')} description={t('settings.store.description')} />
@@ -79,6 +84,7 @@ export function StoreProfilePage() {
       ) : (
         <ProfileForm store={store.data} />
       )}
+      {isOwner && <ExportCard />}
     </div>
   );
 }

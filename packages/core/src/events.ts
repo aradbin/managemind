@@ -24,6 +24,7 @@ export const EVENTS = {
         'fraud',
         'returns',
         'notifications',
+        'setup',
       ]),
     ),
   }),
@@ -32,6 +33,28 @@ export const EVENTS = {
     to: tenantStatus,
     reason: z.string().optional(),
   }),
+  // Phase 5B (phase-5b-plan §4): closing starts the export and removes the
+  // store's custom domains; reopening restores neither by itself.
+  'tenant.closed': z.object({ purgeAfter: z.iso.datetime() }),
+  'tenant.reopened': z.object({}),
+  /** A demo or test store started again (phase-5b-plan §3.12): its whole cache goes. */
+  'tenant.reset': z.object({ jobId: z.uuid() }),
+  /** A delivery zone was added, changed or removed: the delivery page's template follows. */
+  'delivery.zones.changed': z.object({}),
+  'tenant.purged': z.object({ purgeId: z.uuid() }),
+  /** A store export is ready (phase-5b-plan §3.10): its owners are emailed the link. */
+  'tenant.exported': z.object({ jobId: z.uuid(), expiresAt: z.iso.datetime() }),
+  'subscription.changed': z.object({ planCode: z.string(), status: z.string() }),
+  'invoice.issued': z.object({ invoiceId: z.uuid(), number: z.string(), total: z.number().int() }),
+  'invoice.paid': z.object({ invoiceId: z.uuid(), number: z.string() }),
+  /** A dunning step reached (phase-5b-plan §3.8): the owners are emailed. */
+  'invoice.reminder': z.object({
+    invoiceId: z.uuid(),
+    step: z.enum(['due_soon', 'due_today', 'past_due', 'final_notice', 'suspend']),
+  }),
+  'customer.anonymized': z.object({}),
+  /** A store's gateway, SMS or email key was saved or removed: its health is checked again. */
+  'credentials.changed': z.object({ kind: z.enum(['sslcommerz', 'sms', 'email']) }),
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),

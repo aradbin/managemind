@@ -24,7 +24,7 @@ import { seedDemoCatalog } from '../demo/catalog';
 import { mask, notice, parseArgs, requireEnv, setOutput } from '../lib/actions';
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare, type LifecycleRule } from '../lib/cloudflare';
-import { kvSync } from '../platform/commands';
+import { kvSync, plansSeed } from '../platform/commands';
 
 const HYPERDRIVE = 'managemind-production';
 const QUEUES = [
@@ -78,6 +78,9 @@ try {
   await runMigrations(ownerUrl);
   notice('Migrations applied');
 
+  // The placeholder plans (phase-5b-plan Q5), only while there are none.
+  const plans = await plansSeed(owner);
+  if (plans.length) notice(`Plans added: ${plans.join(', ')}`);
   const seeded = await seed(ownerUrl);
   const filled = await seedDemoCatalog(owner, DEMO_STOREFRONT);
   const storeDomain = process.env.STORE_DOMAIN;

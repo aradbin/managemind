@@ -39,6 +39,8 @@ Migrations run before the Workers deploy and are **forward only**: there are no 
 - **Lost or damaged data:**
   1. In the Neon console, restore the `production` branch to a point in time before the deploy. Check the console for the current restore window.
   2. Re-run **Provision** (`provision.yml`) afterwards, so that the `mm_app` role and the Hyperdrive config match the restored branch.
+  3. Further back than Neon's window: the nightly backup (`restore-backup.md`).
+- **Migrations that only add** (new tables, nullable or defaulted columns, new grants, widened checks) are safe under a Worker rollback: all of Phase 5B's (0034–0037) are of that kind. A migration that tightens a check or drops something needs its release note to say whether the previous Workers still work.
 
 ## 4. Credentials
 

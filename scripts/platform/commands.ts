@@ -2,16 +2,21 @@
 // tested against a real database. They call the same core services as the
 // platform API, as the system actor, so the CLI and the API can't drift.
 import {
+  type CreateTenantInput,
   createTenant,
   hostEntries,
+  listPlans,
   type OutboxEvent,
   relayEvents,
+  seedPlans,
   setPlatformRole,
   systemActor,
   withPlatform,
 } from '@managemind/core';
 import { createDb, schema } from '@managemind/db';
 import { AppError, isPlatformRole, type PlatformRole } from '@managemind/shared';
+import { TENANT_KINDS, type TenantKind } from '@managemind/shared/billing';
+import { THEME_PRESETS, type ThemePreset } from '@managemind/shared/storefront';
 import { eq } from 'drizzle-orm';
 import type pg from 'pg';
 
@@ -27,6 +32,57 @@ export interface Domains {
   adminHost: string;
 }
 
+export interface TenantSetup {
+  kind?: TenantKind;
+  plan?: string;
+  billingDay?: number;
+  trialEndsOn?: string;
+  preset?: ThemePreset;
+}
+
+/**
+ * The onboarding options as one argument, so the Platform workflow keeps
+ * within GitHub's input limit: `plan=starter,billing-day=5,preset=grocery,
+ * kind=client,trial-ends=2026-12-31`. Unknown keys and bad values are refused.
+ */
+export function parseSetup(value: string | undefined): TenantSetup {
+  const out: TenantSetup = {};
+  if (!value?.trim()) return out;
+  for (const part of value.split(',')) {
+    const [rawKey = '', rawValue = ''] = part.split('=');
+    const key = rawKey.trim();
+    const v = rawValue.trim();
+    const bad = (why: string) =>
+      new AppError('validation_failed', { detail: `--setup ${key}: ${why}` });
+    if (key === 'kind') {
+      if (!(TENANT_KINDS as readonly string[]).includes(v)) throw bad('client, demo or test');
+      out.kind = v as TenantKind;
+    } else if (key === 'plan') {
+      if (!/^[a-z][a-z0-9-]{1,30}$/.test(v)) throw bad('a plan code');
+      out.plan = v;
+    } else if (key === 'billing-day') {
+      const day = Number(v);
+      if (!Number.isInteger(day) || day < 1 || day > 28) throw bad('1 to 28');
+      out.billingDay = day;
+    } else if (key === 'trial-ends') {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw bad('YYYY-MM-DD');
+      out.trialEndsOn = v;
+    } else if (key === 'preset') {
+      if (!(THEME_PRESETS as readonly string[]).includes(v)) throw bad(THEME_PRESETS.join(', '));
+      out.preset = v as ThemePreset;
+    } else {
+      throw bad('unknown option (kind, plan, billing-day, trial-ends, preset)');
+    }
+  }
+  return out;
+}
+
+/** The placeholder plans (phase-5b-plan Q5), when there are none. */
+export async function plansSeed(client: pg.Client): Promise<string[]> {
+  const added = await withPlatform(client, (tx) => seedPlans(tx));
+  return added.map((p) => p.code);
+}
+
 export async function tenantCreate(
   client: pg.Client,
   targets: PlatformTargets | null,
@@ -37,9 +93,27 @@ export async function tenantCreate(
     ownerEmail: string;
     ownerName?: string;
     locale?: 'bn' | 'en';
+    /** The onboarding screen's options (phase-5b-plan §3.2), from parseSetup. */
+    setup?: TenantSetup;
   },
 ) {
   let events: readonly OutboxEvent[] = [];
+  const setup = input.setup ?? {};
+  let subscription: CreateTenantInput['subscription'];
+  if (setup.plan) {
+    const plans = await withPlatform(client, (tx) => listPlans(tx, systemActor));
+    const plan = plans.find((p) => p.code === setup.plan);
+    if (!plan) {
+      throw new AppError('validation_failed', {
+        detail: `no plan ${setup.plan}; plans: ${plans.map((p) => p.code).join(', ')}`,
+      });
+    }
+    subscription = {
+      planId: plan.id,
+      billingDay: setup.billingDay ?? 1,
+      ...(setup.trialEndsOn ? { trialEndsOn: setup.trialEndsOn } : {}),
+    };
+  }
   const created = await createTenant(
     client,
     systemActor,
@@ -51,6 +125,9 @@ export async function tenantCreate(
         email: input.ownerEmail,
         name: input.ownerName ?? input.ownerEmail.split('@')[0] ?? 'Owner',
       },
+      ...(setup.kind ? { kind: setup.kind } : {}),
+      ...(setup.preset ? { preset: setup.preset } : {}),
+      ...(subscription ? { subscription } : {}),
     },
     {
       afterCommit: (e) => {

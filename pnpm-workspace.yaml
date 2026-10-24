@@ -41,6 +41,7 @@ catalog:
   clsx: 2.1.1
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4
+  fflate: 0.8.3
   hono: 4.13.13
   lean-qr: 2.7.4
   lucide-react: 1.56.0
@@ -64,3 +65,13 @@ catalog:
   write-excel-file: 4.1.1
   wrangler: 4.149.0
   zod: 4.6.7
+
+# Astro 7.3.8 pins zod 4.6.5, which GHSA-mrhx-c7xc-m3w5 covers; the
+# workspace's own zod has the fix. Remove once Astro's update is in.
+# undici, under Astro, wrangler and the Sentry CLI, is moved to each line's
+# fix for GHSA-xjj6-f33q-929c; remove once they depend on it themselves.
+overrides:
+  astro>zod: 4.6.7
+  undici@6: 6.29.1
+  undici@7: 7.30.1
+  undici@8: 8.12.2

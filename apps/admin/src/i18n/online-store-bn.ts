@@ -154,6 +154,8 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'pages.titleIn': '{language}-এ শিরোনাম',
   'pages.body': 'বিষয়বস্তু',
   'pages.published': 'প্রকাশিত',
+  'pages.followsTemplate':
+    'এই পাতাটি আপনার দোকানের তথ্য ও সেটিংস (রিটার্ন, ডেলিভারি এলাকা, পরিশোধ) থেকে তৈরি, আর সেগুলো বদলালে বদলায়। এর ভাষা আপনার নিজের আইনি পর্যালোচনার জন্য খসড়া। লেখা বদলালে পাতাটি আপনার হয়ে যায়: তারপর আপনি যেমন লিখেছেন তেমনই থাকে।',
   'pages.publishedHint': 'দোকানে ও ফুটারে দেখানো হয়',
   'pages.hidden': 'লুকানো',
   'pages.position': 'ফুটারে ক্রম',

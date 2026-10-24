@@ -8,6 +8,8 @@ import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Notice } from '../components/notice';
 import { usePermission } from '../components/permission-gate';
+import { SetupCard } from '../components/setup-card';
+import { UsageCard } from '../components/usage-card';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { formatPrice } from '../lib/catalog';
@@ -43,6 +45,8 @@ export function DashboardView() {
   ];
   return (
     <div className="flex max-w-5xl flex-col gap-6">
+      <SetupCard />
+      <UsageCard />
       {sales && (
         <section aria-labelledby="sales-h" className="grid gap-3 md:grid-cols-2">
           <h2 id="sales-h" className="sr-only">

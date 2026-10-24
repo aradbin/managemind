@@ -113,6 +113,14 @@ export const tenantSettings = z
     returns: returnSettings.default(() => returnSettings.parse({})),
     /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */
     notifications: notificationSettings.default(() => notificationSettings.parse({})),
+    /** Onboarding choices (phase-5b-plan §3.2). */
+    setup: z
+      .object({
+        /** The owner keeps <slug>.<store domain> as the store's address: the domain item is done. */
+        subdomainFinal: z.boolean().default(false),
+      })
+      .strict()
+      .default({ subdomainFinal: false }),
     /** The published theme; absent until the first publish, so the default theme shows. */
     theme: themeSchema.optional(),
     /** The theme editor's working copy (phase-3-plan §3.4). */

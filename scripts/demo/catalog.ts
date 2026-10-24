@@ -14,6 +14,7 @@ import {
   createCollection,
   createPage,
   createProduct,
+  listPages,
   publishTheme,
   receive,
   setAttributeValues,
@@ -21,6 +22,7 @@ import {
   setProductOptions,
   type TenantTx,
   updateAttribute,
+  updatePage,
   updateStoreProfile,
   updateVariant,
   withTenant,
@@ -215,7 +217,7 @@ export const DEMO_CATALOGS: DemoStore[] = [
   },
 ];
 
-const ownerActor = (tenantId: string): Actor => ({
+export const ownerActor = (tenantId: string): Actor => ({
   kind: 'system',
   userId: null,
   platformRole: null,
@@ -233,6 +235,8 @@ const ownerActor = (tenantId: string): Actor => ({
 export async function seedDemoCatalog(
   client: pg.Client,
   storefront: Partial<Record<string, unknown>> = {},
+  /** Only this store (a demo store's reset, phase-5b-plan §3.12). */
+  onlyTenantId?: string,
 ): Promise<string[]> {
   const filled: string[] = [];
   // The core relies on row-level security, which the migration role bypasses:
@@ -240,7 +244,7 @@ export async function seedDemoCatalog(
   await client.query('grant app_rw to current_user with set true, inherit false');
   for (const demo of DEMO_CATALOGS) {
     const tenant = DEMO_TENANTS.find((t) => t.slug === demo.slug);
-    if (!tenant) continue;
+    if (!tenant || (onlyTenantId && tenant.id !== onlyTenantId)) continue;
     const { rows } = await client.query<{ id: string }>(
       'select id from platform.tenants where id = $1 and status = $2',
       [tenant.id, 'active'],
@@ -358,15 +362,16 @@ export async function seedDemoCatalog(
         ['returns', { bn: 'রিটার্ন নীতি', en: 'Returns' }],
         ['delivery', { bn: 'ডেলিভারি তথ্য', en: 'Delivery' }],
       ] as const) {
+        const translations = {
+          bn: { title: title.bn },
+          en: { title: title.en, slug: slugOf(title.en) },
+        };
+        // A store made since Phase 5B has its legal pages as drafts: publish those.
+        const existing = (await run((tx) => listPages(tx, actor))).find((pg) => pg.kind === kind);
         await run((tx) =>
-          createPage(tx, actor, {
-            kind,
-            published: true,
-            translations: {
-              bn: { title: title.bn },
-              en: { title: title.en, slug: slugOf(title.en) },
-            },
-          }),
+          existing
+            ? updatePage(tx, actor, existing.id, { published: true, translations })
+            : createPage(tx, actor, { kind, published: true, translations }),
         );
       }
 

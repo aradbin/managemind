@@ -36,6 +36,14 @@ export const ERROR_CODES = {
   invitation_invalid: { status: 410, title: 'Invitation no longer valid' },
   slug_reserved: { status: 422, title: 'Store address reserved' },
   tenant_suspended: { status: 423, title: 'Store suspended' },
+  /** The store has closed (phase-5b-plan §3.1): its storefront answers 410. */
+  tenant_closed: { status: 410, title: 'Store closed' },
+  /** An owner's admin is read-only until an owner accepts the current platform terms (§3.4). */
+  terms_required: { status: 423, title: 'Accept the platform terms' },
+  /** A hard limit of the store's plan (§3.5); the admin shows how to upgrade. */
+  plan_limit: { status: 402, title: 'Plan limit reached' },
+  /** A setting that needs a feature the store's plan doesn't have. */
+  feature_not_in_plan: { status: 402, title: 'Not in your plan' },
   rate_limited: { status: 429, title: 'Too many requests' },
   feature_unavailable: { status: 503, title: 'Not available yet' },
   tenant_context_missing: { status: 500, title: 'Internal error' },

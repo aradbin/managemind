@@ -17,11 +17,20 @@ export const Route = createFileRoute('/_shell/platform')({
 });
 
 const TABS: {
-  to: '/platform' | '/platform/staff' | '/platform/audit';
+  to:
+    | '/platform'
+    | '/platform/dashboard'
+    | '/platform/terms'
+    | '/platform/billing'
+    | '/platform/staff'
+    | '/platform/audit';
   label: AdminKey;
   superAdmin: boolean;
 }[] = [
   { to: '/platform', label: 'platform.tenants', superAdmin: false },
+  { to: '/platform/dashboard', label: 'platform.dashboard', superAdmin: false },
+  { to: '/platform/terms', label: 'platform.terms', superAdmin: false },
+  { to: '/platform/billing', label: 'platform.billing', superAdmin: false },
   { to: '/platform/staff', label: 'platform.staff', superAdmin: true },
   { to: '/platform/audit', label: 'platform.audit', superAdmin: true },
 ];

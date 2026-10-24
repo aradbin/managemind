@@ -1,12 +1,15 @@
 import { LOCALES } from '@managemind/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import {
+  exportReadyEmail,
   invitationEmail,
+  invoiceEmail,
   type RenderedEmail,
   signInCodeEmail,
   storeMessageEmail,
   supportAccessEmail,
   TEMPLATE_COPY,
+  welcomeOwnerEmail,
 } from './templates';
 
 const placeholders = (value: unknown): string[] =>
@@ -86,6 +89,45 @@ describe('email templates', () => {
     expect(email.text).toMatch(locale === 'bn' ? /২:৩০/ : /2:30/);
   });
 
+  it.each(LOCALES)("render the new owner's welcome in %s", (locale) => {
+    const email = welcomeOwnerEmail({
+      locale,
+      platformName: 'managemind',
+      storeName: 'Tea & Co',
+      adminUrl: 'https://admin.example.test/',
+      storeUrl: 'https://tea.stores.example.test',
+    });
+    noLeftovers(email);
+    expect(email.html).toContain('Tea &amp; Co');
+    expect(email.html).toContain('href="https://admin.example.test/"');
+    expect(email.text).toContain('https://tea.stores.example.test');
+  });
+
+  it.each(LOCALES)('render every invoice email in %s', (locale) => {
+    for (const kind of [
+      'issued',
+      'due_soon',
+      'due_today',
+      'past_due',
+      'final_notice',
+      'suspend',
+    ] as const) {
+      const email = invoiceEmail({
+        kind,
+        locale,
+        platformName: 'managemind',
+        storeName: 'Tea & Co',
+        number: 'INV-2026-0001',
+        amount: '৳1,500.00',
+        due: new Date('2026-11-12T00:00:00+06:00'),
+        link: 'https://admin.example.test/settings/billing',
+      });
+      noLeftovers(email);
+      expect(email.subject).not.toContain('{');
+      expect(email.html).toContain('Tea &amp; Co');
+    }
+  });
+
   it('escape a store message whole, since a shopper wrote part of it', () => {
     const email = storeMessageEmail({
       locale: 'en',
@@ -97,5 +139,24 @@ describe('email templates', () => {
     expect(email.html).toContain('Hi &lt;a href=');
     expect(email.html).toContain('Tea &amp; Co');
     expect(email.text).toContain('Hi <a href="https://evil.example">pay here</a>,');
+  });
+});
+
+describe('export ready email', () => {
+  it('links the export and says until when, in each language', () => {
+    for (const locale of ['en', 'bn'] as const) {
+      const email = exportReadyEmail({
+        locale,
+        platformName: 'managemind',
+        storeName: 'Tea & Co',
+        link: 'https://admin.example.test/v1/exports/x?expires=1&token=t',
+        expires: new Date('2026-10-30T10:00:00Z'),
+      });
+      expect(email.html).toContain(
+        'href="https://admin.example.test/v1/exports/x?expires=1&amp;token=t"',
+      );
+      expect(email.text).toContain('https://admin.example.test/v1/exports/x?expires=1&token=t');
+      expect(email.subject).toContain('Tea & Co');
+    }
   });
 });

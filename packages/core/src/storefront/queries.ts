@@ -8,7 +8,13 @@ import type { Locale } from '@managemind/shared/i18n';
 import { type StoreProfile, tenantSettings } from '@managemind/shared/settings';
 import type { StorefrontSettings, Theme, ThemeLink } from '@managemind/shared/storefront';
 import { themeLinkTargets, themeMediaIds } from '@managemind/shared/storefront';
-import { listsTag, pageTag, productTag, storeTag } from '@managemind/shared/storefront/cache';
+import {
+  legalTag,
+  listsTag,
+  pageTag,
+  productTag,
+  storeTag,
+} from '@managemind/shared/storefront/cache';
 import { type ListingQuery, parseListingQuery } from '@managemind/shared/storefront/listing';
 import type { SitemapPart } from '@managemind/shared/storefront/urls';
 import { eq, sql } from 'drizzle-orm';
@@ -331,11 +337,14 @@ export async function staticPage(
   tx: TenantTx,
   lang: Lang,
   slug: string,
+  platformName = 'managemind',
 ): Promise<PageResult<Found<StorePage>>> {
-  const hit = await publishedPageBySlug(tx, lang, slug);
+  const hit = await publishedPageBySlug(tx, lang, slug, { platformName });
   const tags = [storeTag(tx.tenantId)];
-  if (hit && 'found' in hit) tags.push(pageTag(tx.tenantId, hit.found.id));
-  else tags.push(listsTag(tx.tenantId));
+  if (hit && 'found' in hit) {
+    tags.push(pageTag(tx.tenantId, hit.found.id));
+    if (hit.found.followsTemplate) tags.push(legalTag(tx.tenantId));
+  } else tags.push(listsTag(tx.tenantId));
   return { data: hit, tags };
 }
 

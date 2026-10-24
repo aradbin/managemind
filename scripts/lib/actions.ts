@@ -49,3 +49,10 @@ export function prNumber(args: Map<string, string>): number {
   if (!Number.isInteger(pr) || pr <= 0) throw new Error('--pr <number> is required');
   return pr;
 }
+
+/** Appends Markdown to the run's summary page (the console outside Actions). */
+export function summary(markdown: string): void {
+  const file = process.env.GITHUB_STEP_SUMMARY;
+  if (file) appendFileSync(file, `${markdown}\n`);
+  else console.log(markdown);
+}

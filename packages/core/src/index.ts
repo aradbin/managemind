@@ -1,5 +1,6 @@
 export * from './access';
 export * from './audit';
+export * from './billing/index';
 export * from './cart/index';
 export * from './catalog/index';
 export * from './credentials/index';
@@ -22,4 +23,6 @@ export * from './returns/index';
 export * from './storefront/index';
 export * from './tenancy/index';
 export * from './tenant';
+export * from './terms/index';
 export * from './theme/index';
+export * from './usage/index';

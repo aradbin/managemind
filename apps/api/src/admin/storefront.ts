@@ -8,9 +8,9 @@ import {
   authorize,
   createPage,
   deletePage,
-  getPage,
   getTheme,
   listPages,
+  pageForEditing,
   publishTheme,
   saveThemeDraft,
   updatePage,
@@ -57,6 +57,8 @@ const Page = z
     kind: z.enum(['about', 'contact', 'privacy', 'returns', 'delivery', 'terms', 'custom']),
     published: z.boolean(),
     position: z.number().int(),
+    /** A legal page filled from the store's settings until it is edited (phase-5b-plan §3.15). */
+    followsTemplate: z.boolean(),
     translations: z.object({ bn: PageTranslation.optional(), en: PageTranslation.optional() }),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -186,7 +188,11 @@ export function registerStorefrontAdmin(admin: OpenAPIHono<StaffEnv>): void {
   });
   admin.openapi(R.page, async (c) => {
     const { id } = c.req.valid('param');
-    return c.json((await inStore(c, (tx) => getPage(tx, actor(c), id))) as never, 200);
+    // A templated page shows the text its template fills now, to edit from.
+    const page = await inStore(c, (tx) =>
+      pageForEditing(tx, actor(c), id, c.var.config.PLATFORM_NAME),
+    );
+    return c.json(page as never, 200);
   });
   admin.openapi(R.updatePage, async (c) => {
     const { id } = c.req.valid('param');

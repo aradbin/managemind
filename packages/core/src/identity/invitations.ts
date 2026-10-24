@@ -4,9 +4,10 @@
 // needs that token and a session for the invited email.
 import { schema } from '@managemind/db';
 import { AppError, canManageRole, type StoreRole } from '@managemind/shared';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
 import { type DbClient, type TenantTx, type WithTenantOptions, withTenant } from '../tenant';
 
@@ -75,6 +76,18 @@ export async function invite(
   if (!canManageRole(actor.permissions, input.role)) throw new AppError('role_not_allowed');
   if (!actor.userId) throw new AppError('forbidden');
   const email = input.email.trim().toLowerCase();
+  // Members and pending invitations both count toward the plan's staff (§3.5);
+  // replacing a pending invitation to the same address adds nobody.
+  await requireWithinLimit(tx, 'staff', async () => {
+    const [n] = await tx.db
+      .select({
+        members: sql<number>`(select count(*)::int from platform.memberships where tenant_id = ${tx.tenantId})`,
+        pending: sql<number>`(select count(*)::int from platform.invitations
+          where tenant_id = ${tx.tenantId} and status = 'pending' and email <> ${email})`,
+      })
+      .from(sql`(select 1) one`);
+    return (n?.members ?? 0) + (n?.pending ?? 0);
+  });
 
   const [existing] = await tx.db.select({ id: u.id }).from(u).where(eq(u.email, email));
   if (existing) {

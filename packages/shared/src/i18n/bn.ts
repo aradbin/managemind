@@ -6,6 +6,9 @@ export const bn: Messages = {
   'common.language.en': 'English',
   'store.notFound.title': 'দোকানটি পাওয়া যায়নি',
   'store.notFound.body': '{host} ঠিকানায় কোনো দোকান নেই।',
+  'store.closed.title': 'দোকানটি বন্ধ হয়ে গেছে',
+  'store.closed.body':
+    '{store} আর অর্ডার নিচ্ছে না। আপনার আগের অর্ডার নিয়ে প্রশ্ন থাকলে দোকানের সাথে সরাসরি যোগাযোগ করুন।',
   'store.maintenance.title': 'শিগগিরই ফিরছি',
   'store.maintenance.body': 'রক্ষণাবেক্ষণের জন্য {store} এখন বন্ধ আছে। পরে আবার চেষ্টা করুন।',
   'store.placeholder.welcome': '{store}-এ স্বাগতম',

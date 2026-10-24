@@ -9,6 +9,7 @@ import { eq, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput, pgError } from '../catalog/common';
+import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import type { Localized } from './variants';
 
@@ -178,6 +179,11 @@ export async function createZone(
     entityId: row.id,
     after: zone,
   });
+  await emit(tx, 'delivery.zones.changed', {
+    aggregateType: 'delivery_zone',
+    aggregateId: row.id,
+    payload: {},
+  });
   return zone;
 }
 
@@ -216,6 +222,11 @@ export async function updateZone(
     before,
     after,
   });
+  await emit(tx, 'delivery.zones.changed', {
+    aggregateType: 'delivery_zone',
+    aggregateId: id,
+    payload: {},
+  });
   return after;
 }
 
@@ -231,6 +242,11 @@ export async function deleteZone(tx: TenantTx, actor: Actor, id: string): Promis
     entityType: 'delivery_zone',
     entityId: id,
     before,
+  });
+  await emit(tx, 'delivery.zones.changed', {
+    aggregateType: 'delivery_zone',
+    aggregateId: id,
+    payload: {},
   });
 }
 

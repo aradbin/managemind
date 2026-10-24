@@ -5,6 +5,7 @@
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, authorize } from '../access';
+import { requireFeature } from '../billing/entitlements';
 import { parseInput } from '../catalog/common';
 import type { TenantTx } from '../tenant';
 
@@ -47,6 +48,8 @@ export interface Reports {
 
 export async function getReports(tx: TenantTx, actor: Actor, query: unknown): Promise<Reports> {
   authorize(actor, 'reports.read');
+  // The reports screen is a plan feature (phase-5b-plan §3.5).
+  await requireFeature(tx, 'reports');
   const q = parseInput(reportQuery, query);
   // The range in Dhaka time, as staff read dates.
   const from = sql`(${q.from}::date)::timestamp at time zone 'Asia/Dhaka'`;

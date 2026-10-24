@@ -9,8 +9,18 @@ import type { PurgeBudget } from './purge/durable-object';
 import type { RateLimiter } from './rate-limit/durable-object';
 
 export interface Env {
-  /** Neon through Hyperdrive, as the mm_app role (ADR 0002, ADR 0009). */
-  HYPERDRIVE: Hyperdrive;
+  /**
+   * Neon through Hyperdrive, as the mm_app role (ADR 0002, ADR 0009). Absent
+   * on previews outside their CPU step, which connect with DATABASE_URL
+   * instead (ADR 0011, amended Oct 23).
+   */
+  HYPERDRIVE?: Hyperdrive;
+  /**
+   * Previews: a direct connection to the PR's Neon branch, as its own login
+   * role in app_rw, so they use none of the account's Hyperdrive queries.
+   * Hyperdrive wins when both are set.
+   */
+  DATABASE_URL?: string;
   /** Outbox events, relayed after commit (ADR 0010). */
   OUTBOX: Queue<OutboxEvent>;
   /** Import chunks, one message per chunk (phase-2-plan §3.7). */
@@ -89,6 +99,23 @@ export interface Env {
   VAPID_PUBLIC_KEY?: string;
   /** Its private key (a Worker secret); without both, staff push is off. */
   VAPID_PRIVATE_KEY?: string;
+  /**
+   * Our own SSLCommerz merchant account, for paying invoices online
+   * (phase-5b-plan §3.7; Worker secrets). Without them the payment link is off.
+   */
+  PLATFORM_SSLCOMMERZ_STORE_ID?: string;
+  PLATFORM_SSLCOMMERZ_PASSWORD?: string;
+  /** `sandbox` for testing; live otherwise. */
+  PLATFORM_SSLCOMMERZ_MODE?: string;
+  /**
+   * Starts the tenant-jobs workflow when an export, purge or reset is asked
+   * for (phase-5b-plan §3.9; a Worker secret: a fine-grained token with
+   * Actions write on this repository). Without it the workflow's daily run
+   * picks the job up.
+   */
+  GITHUB_DISPATCH_TOKEN?: string;
+  /** owner/repo, for the dispatch (set by the deploy). */
+  GITHUB_REPOSITORY?: string;
 }
 
 const DEV_AUTH_SECRET = 'development-only-auth-secret-never-deployed';

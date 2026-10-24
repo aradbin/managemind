@@ -13,16 +13,24 @@ export function newPassword(): string {
   return password;
 }
 
-/** Creates mm_app in app_rw, or sets its password if it exists. Run as the owner role. */
-export async function setAppRole(owner: pg.Client, password: string): Promise<void> {
+/**
+ * Creates a login role in app_rw (mm_app by default), or sets its password if
+ * it exists. Run as the owner role.
+ */
+export async function setAppRole(
+  owner: pg.Client,
+  password: string,
+  role: string = APP_ROLE,
+): Promise<void> {
+  if (!/^[a-z][a-z0-9_]{0,62}$/.test(role)) throw new Error(`bad role name ${role}`);
   const literal = owner.escapeLiteral(password);
   await owner.query(`
     do $$ begin
-      if exists (select from pg_roles where rolname = '${APP_ROLE}') then
-        alter role ${APP_ROLE} login password ${literal};
+      if exists (select from pg_roles where rolname = '${role}') then
+        alter role ${role} login password ${literal};
       else
-        create role ${APP_ROLE} login password ${literal};
+        create role ${role} login password ${literal};
       end if;
     end $$`);
-  await owner.query(`grant app_rw to ${APP_ROLE}`);
+  await owner.query(`grant app_rw to ${role}`);
 }

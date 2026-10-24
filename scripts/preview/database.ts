@@ -1,6 +1,7 @@
 // Ensures the preview database for a PR and prints its Hyperdrive config ID.
 //
 //   tsx preview/database.ts --pr 12 --database shared|own [--skip-migrations] [--e2e <run>]
+//     --direct-url-file <path>
 //
 // 1. Finds or creates the Neon branch (from production). A new branch gets a
 //    fresh owner password, so production's never reaches a preview.
@@ -9,9 +10,16 @@
 //    branch ahead of master).
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
 //    the config does not exist yet. The password is generated here and stored
-//    only in the role and the Hyperdrive config.
-// 4. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts),
+//    only in the role and the Hyperdrive config. Only the CPU step uses it.
+// 4. Gives the PR's own login role in app_rw a new password and writes its
+//    URL, through the branch's pooler, to --direct-url-file (mode 600): the
+//    rest of the preview connects with it and uses no Hyperdrive queries
+//    (ADR 0011, amended Oct 23). The deploy step reads it into a Worker
+//    secret; it never reaches the job log or an output.
+// 5. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts),
 //    after deleting the store data of runs older than a day.
+
+import { writeFileSync } from 'node:fs';
 import { runMigrations } from '@managemind/db/migrate';
 import { seed } from '@managemind/db/seed';
 import pg from 'pg';
@@ -19,13 +27,16 @@ import { seedDemoCatalog } from '../demo/catalog';
 import { mask, notice, parseArgs, prNumber, requireEnv, setOutput } from '../lib/actions';
 import { APP_ROLE, newPassword, setAppRole } from '../lib/app-role';
 import { Cloudflare } from '../lib/cloudflare';
-import { type Branch, DATABASE, Neon } from '../lib/neon';
+import { type Branch, DATABASE, Neon, pooledHost } from '../lib/neon';
+import { plansSeed } from '../platform/commands';
 import { cleanOldE2E, seedE2E } from './e2e-seed';
-import { branchName, DATABASE_LOCK, hyperdriveName, parseDatabase } from './names';
+import { branchName, DATABASE_LOCK, directRole, hyperdriveName, parseDatabase } from './names';
 
 const args = parseArgs(process.argv.slice(2));
 const pr = prNumber(args);
 const database = parseDatabase(args.get('database'));
+const directUrlFile = args.get('direct-url-file');
+if (!directUrlFile) throw new Error('--direct-url-file <path> is required');
 const neon = new Neon(requireEnv('NEON_API_KEY'), requireEnv('NEON_PROJECT_ID'));
 const cf = new Cloudflare(requireEnv('CLOUDFLARE_API_TOKEN'), requireEnv('CLOUDFLARE_ACCOUNT_ID'));
 
@@ -59,6 +70,7 @@ try {
   } else {
     await runMigrations(ownerUrl);
     await seed(ownerUrl);
+    await plansSeed(owner);
     // The demo stores' catalog, for the storefront E2E and Lighthouse (phase-3-plan §8).
     const filled = await seedDemoCatalog(owner);
     if (filled.length) notice(`Demo catalog added to ${filled.join(', ')}`);
@@ -76,6 +88,14 @@ try {
     });
     notice(`Created Hyperdrive config ${configName}`);
   }
+  const role = directRole(pr);
+  const password = newPassword();
+  await setAppRole(owner, password, role);
+  const direct = new URL(`postgres://${pooledHost(await neon.host(branch.id))}/${DATABASE}`);
+  direct.username = role;
+  direct.password = password;
+  direct.searchParams.set('sslmode', 'require');
+  writeFileSync(directUrlFile, direct.href, { mode: 0o600 });
   const run = args.get('e2e');
   if (run) {
     const cleaned = await cleanOldE2E(owner);

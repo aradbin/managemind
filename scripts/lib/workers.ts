@@ -13,7 +13,16 @@ export interface WorkerTarget {
   environment: 'preview' | 'production';
   api: string;
   storefront: string;
-  hyperdriveId: string;
+  /**
+   * Production always; previews only for the CPU step's config. Without it
+   * the API connects with its DATABASE_URL secret (ADR 0011, amended Oct 23).
+   */
+  hyperdriveId?: string;
+  /**
+   * Previews: also write apps/api/wrangler.<environment>-hyperdrive.json,
+   * the same Worker bound to this Hyperdrive config, for the CPU step.
+   */
+  cpuHyperdriveId?: string;
   /** The managemind-edge KV namespace; previews have none (no consumer writes it). */
   kvNamespaceId?: string;
   platformDomain: string;
@@ -63,7 +72,8 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
   api.name = t.api;
   api.workers_dev = true;
   api.preview_urls = false;
-  api.hyperdrive = [{ binding: 'HYPERDRIVE', id: t.hyperdriveId }];
+  if (t.hyperdriveId) api.hyperdrive = [{ binding: 'HYPERDRIVE', id: t.hyperdriveId }];
+  else delete api.hyperdrive;
   // Production's files bucket, or the shared preview bucket (phase-0-plan §8).
   api.r2_buckets = [
     {
@@ -116,6 +126,12 @@ export function writeWorkerConfigs(t: WorkerTarget): void {
     api.triggers = { crons: [] };
   }
   writeJson(join(apiDir, `wrangler.${t.environment}.json`), api);
+  if (t.cpuHyperdriveId) {
+    writeJson(join(apiDir, `wrangler.${t.environment}-hyperdrive.json`), {
+      ...api,
+      hyperdrive: [{ binding: 'HYPERDRIVE', id: t.cpuHyperdriveId }],
+    });
+  }
 
   // `wrangler deploy` in apps/storefront follows the adapter's redirect to this file.
   const storefrontConfig = join(root, 'apps/storefront/dist/server/wrangler.json');

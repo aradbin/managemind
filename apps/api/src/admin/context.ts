@@ -2,7 +2,14 @@
 // connection for the whole request, the Better Auth session, and the Actor
 // rebuilt from the membership or support grant every time, so a removed
 // member or a revoked grant loses access on their next request.
-import { type Actor, actorFor, relayEvents, type TenantTx, withTenant } from '@managemind/core';
+import {
+  type Actor,
+  actorFor,
+  ownerBlockedByTerms,
+  relayEvents,
+  type TenantTx,
+  withTenant,
+} from '@managemind/core';
 import { createDb, schema } from '@managemind/db';
 import { AppError, isPlatformRole } from '@managemind/shared';
 import { eq } from 'drizzle-orm';
@@ -64,7 +71,14 @@ export const staffSession = createMiddleware<StaffEnv>(async (c, next) => {
 export async function inStore<T>(
   c: Context<StaffEnv>,
   fn: (tx: TenantTx) => Promise<T>,
-  options: { write?: boolean } = {},
+  options: {
+    write?: boolean;
+    /**
+     * A write an owner can make before accepting the platform terms (paying
+     * our invoice). Every other owner write waits for the terms (phase-5b-plan §3.4).
+     */
+    beforeTerms?: boolean;
+  } = {},
 ): Promise<T> {
   const { client, actor } = c.var.staff;
   if (!actor.tenantId) throw new AppError('forbidden', { detail: 'no active store' });
@@ -78,6 +92,9 @@ export async function inStore<T>(
           .from(schema.tenants)
           .where(eq(schema.tenants.id, tx.tenantId));
         if (store?.status !== 'active') throw new AppError('tenant_suspended');
+        if (!options.beforeTerms && (await ownerBlockedByTerms(tx, actor))) {
+          throw new AppError('terms_required');
+        }
       }
       return fn(tx);
     },

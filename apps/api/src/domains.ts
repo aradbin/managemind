@@ -7,6 +7,7 @@ import {
   checkDomain,
   domainsToCheck,
   relayEvents,
+  removeDomain,
   systemActor,
   withTenant,
 } from '@managemind/core';
@@ -17,7 +18,7 @@ import {
   cloudflareHostnames,
   pendingHostnames,
 } from '@managemind/providers/hostnames';
-import { AppError } from '@managemind/shared';
+import { AppError, permissionsOf } from '@managemind/shared';
 import { and, eq } from 'drizzle-orm';
 import { createMailer } from './auth/email';
 import { queueSink, withClient } from './db';
@@ -226,4 +227,50 @@ export async function recheckDomains(
   }
   log('info', 'domains rechecked', { checked: rows.length, flagged });
   return { checked: rows.length, flagged };
+}
+
+/**
+ * A closed store's custom domains are released at once (phase-5b-plan §3.1):
+ * each custom hostname is deleted at Cloudflare and its row marked removed,
+ * so the client can point the domain elsewhere. Reopening doesn't bring
+ * them back; staff add them again. Safe to repeat: removed rows are skipped.
+ */
+export async function releaseDomains(
+  env: Env,
+  ctx: Pick<ExecutionContext, 'waitUntil'>,
+  tenantId: string,
+): Promise<number> {
+  const provider = hostnameProvider(env, getConfig(env));
+  const owner = { ...systemActor, permissions: permissionsOf('owner') };
+  return withClient(env, ctx, async (client) => {
+    let released = 0;
+    await withTenant(
+      client,
+      tenantId,
+      async (tx) => {
+        const [store] = await tx.db
+          .select({ status: schema.tenants.status })
+          .from(schema.tenants)
+          .where(eq(schema.tenants.id, tenantId));
+        // Reopened before this ran: nothing to release.
+        if (store?.status !== 'closed') return;
+        const d = schema.tenantDomains;
+        const rows = await tx.db
+          .select({ id: d.id, status: d.status })
+          .from(d)
+          .where(eq(d.tenantId, tenantId));
+        for (const row of rows) {
+          if (row.status === 'removed') continue;
+          await removeDomain(tx, owner, row.id, { provider });
+          released++;
+        }
+      },
+      {
+        afterCommit: async (events) => {
+          await relayEvents(client, events, queueSink(env.OUTBOX));
+        },
+      },
+    );
+    return released;
+  });
 }

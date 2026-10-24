@@ -2,7 +2,8 @@
 # credentials never enter a session (Phase 0 Q3). From anywhere:
 #
 #   gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f role=super_admin
-#   gh workflow run platform.yml -f command=tenant:create -f slug=acme -f name="Acme" -f owner_email=a@b.c
+#   gh workflow run platform.yml -f command=tenant:create -f slug=acme -f name="Acme" -f owner_email=a@b.c \
+#     -f setup=plan=starter,billing-day=5,preset=grocery
 #   gh workflow run platform.yml -f command=kv:sync
 #
 # Inputs reach the script as environment variables, never inside the shell
@@ -17,7 +18,7 @@ on:
       command:
         description: What to run
         type: choice
-        options: [tenant:create, platform:grant-role, kv:sync]
+        options: [tenant:create, platform:grant-role, kv:sync, plans:seed]
       slug:
         description: tenant:create — the store address
         required: false
@@ -32,6 +33,9 @@ on:
         required: false
       locale:
         description: tenant:create — bn or en (optional; default bn)
+        required: false
+      setup:
+        description: "tenant:create — plan=…,billing-day=1-28,preset=fashion|grocery|general,kind=client|demo|test,trial-ends=YYYY-MM-DD (optional)"
         required: false
       email:
         description: platform:grant-role — the user's email
@@ -69,6 +73,7 @@ jobs:
       IN_OWNER_EMAIL: ${{ inputs.owner_email }}
       IN_OWNER_NAME: ${{ inputs.owner_name }}
       IN_LOCALE: ${{ inputs.locale }}
+      IN_SETUP: ${{ inputs.setup }}
       IN_EMAIL: ${{ inputs.email }}
       IN_ROLE: ${{ inputs.role }}
       IN_TENANT: ${{ inputs.tenant }}
@@ -92,7 +97,7 @@ jobs:
           case "$COMMAND" in
             tenant:create)
               add slug "$IN_SLUG"; add name "$IN_NAME"; add owner-email "$IN_OWNER_EMAIL"
-              add owner-name "$IN_OWNER_NAME"; add locale "$IN_LOCALE" ;;
+              add owner-name "$IN_OWNER_NAME"; add locale "$IN_LOCALE"; add setup "$IN_SETUP" ;;
             platform:grant-role) add email "$IN_EMAIL"; add role "$IN_ROLE" ;;
             kv:sync) add tenant "$IN_TENANT" ;;
           esac

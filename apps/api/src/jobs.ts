@@ -6,21 +6,34 @@ import {
   type OutboxEvent,
   processImportChunk,
   relayEvents,
+  runBilling,
+  runDailyRollup,
   withTenant,
+  writeStoreHealth,
 } from '@managemind/core';
 import { objectKey } from '@managemind/shared';
+import { dhakaDate } from '@managemind/shared/billing';
 import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
+import { billingEmails, sendsBillingEmail } from './billing';
 import { queueSink, withClient } from './db';
-import { recheckDomains } from './domains';
+import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
+import { exportEmails } from './tenant-jobs';
 import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
+
+const HEALTH_EVENTS = new Set<EventType>([
+  'credentials.changed',
+  'tenant_domain.added',
+  'tenant_domain.updated',
+  'tenant_domain.removed',
+]);
 
 /**
  * Outbox consumer (ADR 0010). Events that change a store's hosts update the
@@ -62,6 +75,57 @@ export async function handleQueue(
         error: String(e),
       });
       unsent.add(message.body.id);
+    }
+  }
+  // Our invoices and their reminders, to the owners (phase-5b-plan §3.7, §3.8).
+  for (const message of batch.messages) {
+    if (!sendsBillingEmail(message.body)) continue;
+    try {
+      await billingEmails(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'billing email will be retried', { event_id: message.body.id, error: String(e) });
+      unsent.add(message.body.id);
+    }
+  }
+  // A finished export's link, to the owners (phase-5b-plan §3.10).
+  for (const message of batch.messages) {
+    if (message.body.eventType !== 'tenant.exported') continue;
+    try {
+      await exportEmails(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'export email will be retried', { event_id: message.body.id, error: String(e) });
+      unsent.add(message.body.id);
+    }
+  }
+  // A closed store lets its custom domains go (phase-5b-plan §3.1).
+  for (const message of batch.messages) {
+    if (message.body.eventType !== 'tenant.closed') continue;
+    try {
+      const released = await releaseDomains(env, ctx, message.body.tenantId);
+      log('info', 'closed store domains released', {
+        tenant_id: message.body.tenantId,
+        released,
+      });
+    } catch (e) {
+      log('warn', 'closed store domains will be retried', {
+        tenant_id: message.body.tenantId,
+        error: String(e),
+      });
+      unsent.add(message.body.id);
+    }
+  }
+  // Saved credentials and domain changes update the store's health at once
+  // (phase-5b-plan §3.3); best effort, since the nightly pass rewrites it.
+  const healthOf = new Set(
+    batch.messages
+      .filter((m) => HEALTH_EVENTS.has(m.body.eventType) && !unsent.has(m.body.id))
+      .map((m) => m.body.tenantId),
+  );
+  for (const tenantId of healthOf) {
+    try {
+      await withClient(env, ctx, (client) => withTenant(client, tenantId, writeStoreHealth));
+    } catch (e) {
+      log('warn', 'store health refresh failed', { tenant_id: tenantId, error: String(e) });
     }
   }
   // One sync per store per batch, however many of its events arrived.
@@ -266,6 +330,52 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'sale catch-up failed', { error: String(e) });
       captureMessage('sale catch-up failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Yesterday's usage and health per store (phase-5b-plan §3.6); a store
+    // that fails is filled in the next night.
+    try {
+      const yesterday = dhakaDate(new Date(Date.now() - 86_400_000));
+      const rollup = await runDailyRollup(client, yesterday);
+      log(rollup.failed.length ? 'error' : 'info', 'usage rollup', {
+        day: yesterday,
+        stores: rollup.stores,
+        failed: rollup.failed.length,
+      });
+      if (rollup.failed.length) {
+        captureMessage('usage rollup failed for some stores', {
+          level: 'error',
+          extra: { failed: rollup.failed.slice(0, 10) },
+        });
+      }
+    } catch (e) {
+      log('error', 'usage rollup failed', { error: String(e) });
+      captureMessage('usage rollup failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Our billing (phase-5b-plan §3.7, §3.8): drafts on billing days, drafts
+    // issued after review, reminders and the suspension at +14.
+    try {
+      const billing = await runBilling(client, dhakaDate(new Date()), new Date(), {
+        afterCommit: async (events) => {
+          await relayEvents(client, events, queueSink(env.OUTBOX));
+        },
+      });
+      log(billing.failed.length ? 'error' : 'info', 'billing run', {
+        drafted: billing.drafted,
+        issued: billing.issued,
+        reminders: billing.reminders.length,
+        suspended: billing.suspended.length,
+        skipped: billing.skipped.length,
+        failed: billing.failed.length,
+      });
+      if (billing.failed.length || billing.skipped.length) {
+        captureMessage('billing run needs attention', {
+          level: billing.failed.length ? 'error' : 'warning',
+          extra: { failed: billing.failed.slice(0, 10), skipped: billing.skipped.length },
+        });
+      }
+    } catch (e) {
+      log('error', 'billing run failed', { error: String(e) });
+      captureMessage('billing run failed', { level: 'error', extra: { error: String(e) } });
     }
     // Weekly, on Friday mornings in Dhaka (the cron runs at 23:47 UTC on Thursday).
     if (new Date().getUTCDay() === 4) await cleanUpMedia(env, client);

@@ -225,7 +225,8 @@ test('returns and refunds', async ({
     await expect(toast(page, m('refund.done'))).toBeVisible();
     await expect(page.getByText(m('return.status.resolved')).first()).toBeVisible();
 
-    const mail = await nextMail(email, before);
+    // The return's earlier emails can still be arriving: this is the one about the refund.
+    const mail = await nextMail(email, before, (m) => m.text.includes(orderNumber));
     expect(mail.text).toContain(orderNumber);
   });
 

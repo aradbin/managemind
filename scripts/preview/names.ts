@@ -10,6 +10,12 @@ export const branchName = (pr: number, db: Database) =>
   db === 'shared' ? SHARED_BRANCH : `pr-${pr}`;
 export const hyperdriveName = (pr: number, db: Database) =>
   db === 'shared' ? 'managemind-preview' : `managemind-pr-${pr}`;
+/**
+ * The PR's own login role in app_rw, for its direct connection (ADR 0011,
+ * amended Oct 23): its own on the shared branch, so a new password on one
+ * PR's deploy never signs another PR's preview out.
+ */
+export const directRole = (pr: number) => `mm_app_pr_${pr}`;
 export const apiWorker = (pr: number) => `managemind-api-pr-${pr}`;
 export const storefrontWorker = (pr: number) => `managemind-storefront-pr-${pr}`;
 /**

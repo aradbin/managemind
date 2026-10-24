@@ -26,8 +26,8 @@ export async function seed(connectionString: string): Promise<string[]> {
     for (const t of DEMO_TENANTS) {
       await client.query('begin');
       const inserted = await client.query(
-        `insert into platform.tenants (id, slug, name, default_locale)
-         values ($1, $2, $3, $4) on conflict (slug) do nothing returning id`,
+        `insert into platform.tenants (id, slug, name, default_locale, kind)
+         values ($1, $2, $3, $4, 'demo') on conflict (slug) do nothing returning id`,
         [t.id, t.slug, t.name, t.defaultLocale],
       );
       if (inserted.rowCount === 1) {

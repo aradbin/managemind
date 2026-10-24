@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Status: Phases 0–4 are done; Phase 5A is built and deployed, with online payment, SMS and push off until their keys are added; the Phase 5B plan waits for approval ([plans and reports](docs/phases/))
+- Status: Phases 0–4 are done; Phase 5A is built and deployed, with online payment, SMS and push off until their keys are added; Phase 5B is approved and being built ([plans and reports](docs/phases/))
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development
@@ -39,7 +39,8 @@ pnpm --filter @managemind/db db:generate --name <change>
 
 | Command | Does |
 | --- | --- |
-| `tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn\|en]` | Creates the store and its first Owner, prints the admin and store URLs, and relays the events so the KV map fills at once |
+| `tenant:create --slug acme --name "Acme" --owner-email a@b.c [--owner-name] [--locale bn\|en] [--setup plan=starter,billing-day=5,preset=grocery,kind=client,trial-ends=2026-12-31]` | Creates the store and its first Owner with the onboarding screen's options (phase-5b-plan §3.2), prints the admin and store URLs, and relays the events so the KV map fills at once |
+| `plans:seed` | Adds the placeholder plans when there are none (provisioning runs it on every deploy) |
 | `platform:grant-role --email a@b.c --role super_admin\|support\|none` | Creates the user if needed and sets or clears the platform role (audited; signs them out) |
 | `kv:sync [--tenant <id>]` | Rewrites the KV host keys of every store, or one |
 
@@ -54,6 +55,8 @@ gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f ro
 - **Lint, typecheck and test:** Biome, a check that every schema change has a migration, typecheck, all test suites (including the tenant isolation and catalog tests) against a `postgres:18` service container, and `pnpm audit --audit-level high`.
 - **Build and bundle size:** builds the apps, then `node scripts/bundle-size.mjs apps/api apps/storefront` reads wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md)).
 
+A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again: the repository has 2,000 free Actions minutes a month for every workflow.
+
 Dependency updates come from Renovate (`renovate.json`): one weekly group for minor and patch updates, held for 3 days after release.
 
 ## Previews
@@ -62,7 +65,8 @@ Dependency updates come from Renovate (`renovate.json`): one weekly group for mi
 
 - **Database:** the shared Neon branch `preview`. Add the `db-branch` label for the PR's own branch `pr-<n>`, which you need when the PR changes migrations.
 - **Queues:** each preview consumes its own outbox queue, `managemind-outbox-pr-<n>`, and import queue, `managemind-imports-pr-<n>` (with its dead-letter queue), so notifications and spreadsheet imports run on previews too.
-- **What runs:** every environment shares the account's 100,000 Hyperdrive queries a day, so a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows, the CPU step and Lighthouse while today's count leaves room ([ADR 0011](docs/adr/0011-previews.md), amended Oct 18).
+- **Connection:** previews connect to their Neon branch directly, as the PR's own role, so they use none of the account's 100,000 Hyperdrive queries a day. Only the CPU step runs on Hyperdrive, so its numbers match production's ([ADR 0011](docs/adr/0011-previews.md), amended Oct 23).
+- **What runs:** a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows and Lighthouse, and the CPU step while today's Hyperdrive count leaves room.
 - **Cleanup:** closing the PR deletes its Workers, its import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
 
 Run the smoke test against local Workers (both `wrangler dev` servers running):
@@ -95,6 +99,9 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 | `CF_STORE_TOKEN` | Secret | Page cache purges and custom domains ([ADR 0018](docs/adr/0018-page-tags-and-purges.md), [ADR 0019](docs/adr/0019-custom-domains.md)) | Store pages aren't cached, and custom domains are off |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Variable, secret | Turnstile on checkout, sign-in and return requests ([ADR 0023](docs/adr/0023-turnstile-hostnames.md)) | Rate limits alone |
 | `CREDENTIALS_KEY` | Secret, **with a copy kept offline** | Stores' SSLCommerz, SMS and email credentials ([ADR 0024](docs/adr/0024-credentials-vault.md)) | Online payment and SMS are off |
+| `PLATFORM_SSLCOMMERZ_STORE_ID`, `PLATFORM_SSLCOMMERZ_PASSWORD` | Variable, secret | Stores paying our invoices online, on our own SSLCommerz merchant account (phase-5b-plan §3.7) | Stores pay by bank, bKash or Nagad, and a super admin records it |
+| `GITHUB_DISPATCH_TOKEN` | Secret: a fine-grained token with Actions read and write on this repository only | Starting the Store jobs workflow when an export is asked for ([ADR 0027](docs/adr/0027-store-jobs-in-actions.md)) | Exports start with the workflow's daily run, at 02:37 in Dhaka |
+| `BACKUP_AGE_RECIPIENT`, `BACKUP_AGE_KEY` | Variable, secret, **with a copy of the key kept offline** | The nightly encrypted backup and its monthly restore test ([ADR 0028](docs/adr/0028-backups.md)); make the pair with `age-keygen -o backup.key` | No backups beyond Neon's own history |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
 | `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
 | `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches and the usage alarm | No previews, no Neon numbers in the alarm |

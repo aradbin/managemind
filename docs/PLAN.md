@@ -41,7 +41,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
-| 5B — Launch readiness and pilot | Plan drafted (Oct 23); waiting for the owner's answers | [`phase-5b-plan.md`](phases/phase-5b-plan.md) |
+| 5B — Launch readiness and pilot | Built (Oct 23); not yet merged or deployed. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
 | 6 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -537,42 +537,42 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 **Super-admin onboarding**
 
-- [ ] Onboarding screen in the super-admin area: create store, invite owner, choose plan, subdomain and theme preset, with a checklist of missing setup (payments, delivery zones, legal pages, domain, email and SMS). Replaces the CLI for day-to-day onboarding; the CLI stays for automation.
-- [ ] Store health view: payment, email, SMS and domain status per store.
+- [x] Onboarding screen in the super-admin area: create store, invite owner, choose plan, subdomain and theme preset, with a checklist of missing setup (payments, delivery zones, legal pages, domain, email and SMS). Replaces the CLI for day-to-day onboarding; the CLI stays for automation.
+- [x] Store health view: payment, email, SMS and domain status per store.
 
-* [ ] Platform dashboard for super admins: active stores, orders and sales across stores, resource usage per store (storage, emails, requests), and free-tier usage against each limit with alerts at 70%.
-* [ ] Demo store with realistic sample products, orders and a polished theme for sales meetings, reset to clean sample data by the weekly job.
+* [x] Platform dashboard for super admins: active stores, orders and sales across stores, resource usage per store (storage, emails, requests), and free-tier usage against each limit with alerts at 70%.
+* [x] Demo store with realistic sample products, orders and a polished theme for sales meetings, reset to clean sample data by the weekly job.
 
-- [ ] Terms acceptance: record which version of the platform terms each client owner accepted and when, and ask again when the terms change.
+- [x] Terms acceptance: record which version of the platform terms each client owner accepted and when, and ask again when the terms change.
 
 **Platform plans and billing (our charges to clients)**
 
-- [ ] Plans stored in the `platform` schema, each with entitlements: limits (products, staff accounts, monthly orders, emails, storage, custom domains) and feature flags (SSLCommerz, promotions types, reports).
-- [ ] Entitlements checked in the core services with clear upgrade messages in the admin; nothing breaks for shoppers when a limit is reached.
-- [ ] Usage metering per tenant (orders, emails sent, storage, custom domains) rolled up daily by cron.
-- [ ] Invoices to clients for setup fees, monthly plans and usage beyond plan limits; payments recorded from bank transfer, bKash, or an SSLCommerz payment link on our own merchant account.
-- [ ] Automatic reminders before and after the due date, a grace period, then automatic suspension through the existing tenant lifecycle; reactivation when paid.
-- [ ] Super-admin billing screens: plan changes, invoices, payments, overdue list.
+- [x] Plans stored in the `platform` schema, each with entitlements: limits (products, staff accounts, monthly orders, emails, storage, custom domains) and feature flags (SSLCommerz, promotions types, reports).
+- [x] Entitlements checked in the core services with clear upgrade messages in the admin; nothing breaks for shoppers when a limit is reached.
+- [x] Usage metering per tenant (orders, emails sent, storage, custom domains) rolled up daily by cron.
+- [x] Invoices to clients for setup fees, monthly plans and usage beyond plan limits; payments recorded from bank transfer, bKash, or an SSLCommerz payment link on our own merchant account.
+- [x] Automatic reminders before and after the due date, a grace period, then automatic suspension through the existing tenant lifecycle; reactivation when paid.
+- [x] Super-admin billing screens: plan changes, invoices, payments, overdue list.
 
 **Store data export and cleanup**
 
-- [ ] Lifecycle: active → suspended (maintenance page, admin read-only, reversible) → closed (storefront and admin off, export generated) → purged after a contractual grace period (default 30 days).
-- [ ] Export job: every `store` table as JSON and CSV plus the tenant's R2 files, zipped to R2 with a time-limited download link for the client. The same format is reused later to move a client to a dedicated database.
-- [ ] Purge job, super admin only: typed slug confirmation and a dry-run report of row and file counts first; then deletes the tenant's `store` rows in dependency order, in small batches per transaction, resumable after interruption; deletes the R2 prefix, KV keys, custom hostname, stored credentials and pending queue messages; removes store memberships, deleting staff accounts that belonged only to this store.
-- [ ] Platform data stays: the tenant registry entry (marked purged), plan and billing history, contract dates, platform audit entries, and a purge record (who approved, when, and row and file counts deleted).
-- [ ] Verification after purge: zero rows for the tenant in every `store` table and zero objects under its R2 prefix; the result is stored on the purge record.
-- [ ] Shopper deletion requests: anonymize one customer within a store (name, phone, email and addresses replaced with placeholders; order totals kept for the client's sales reports).
-- [ ] Store reset: the same purge for demo or test stores, keeping the tenant record and its staff.
+- [x] Lifecycle: active → suspended (maintenance page, admin read-only, reversible) → closed (storefront and admin off, export generated) → purged after a contractual grace period (default 30 days).
+- [x] Export job: every `store` table as JSON and CSV plus the tenant's R2 files, zipped to R2 with a time-limited download link for the client. The same format is reused later to move a client to a dedicated database.
+- [x] Purge job, super admin only: typed slug confirmation and a dry-run report of row and file counts first; then deletes the tenant's `store` rows in dependency order, in small batches per transaction, resumable after interruption; deletes the R2 prefix, KV keys, custom hostname, stored credentials and pending queue messages; removes store memberships, deleting staff accounts that belonged only to this store.
+- [x] Platform data stays: the tenant registry entry (marked purged), plan and billing history, contract dates, platform audit entries, and a purge record (who approved, when, and row and file counts deleted).
+- [x] Verification after purge: zero rows for the tenant in every `store` table and zero objects under its R2 prefix; the result is stored on the purge record.
+- [x] Shopper deletion requests: anonymize one customer within a store (name, phone, email and addresses replaced with placeholders; order totals kept for the client's sales reports).
+- [x] Store reset: the same purge for demo or test stores, keeping the tenant record and its staff.
 - [ ] Terms state the backup retention period (Neon restore history and R2 backups expire on their own schedule and are not edited) and that the export is the client's own record for any legal retention; confirm retention rules with an accountant.
 
 **Pilot launch checklist**
 
-- [ ] Onboarding playbook and the super-admin onboarding screen tested end to end by a non-developer.
-- [ ] Independent backups: a scheduled GitHub Actions workflow runs an encrypted pg\_dump of Neon every night and uploads it to R2, keeping 7 daily and 4 weekly copies; a monthly test restores one into a Neon branch. Neon's own restore window on the free plan covers only recent mistakes, and the dumps stay far below R2's free 10 GB. The backup encryption key and the credential encryption key are also kept in a password manager outside Cloudflare, since losing them makes backups and stored client credentials unreadable.
-- [ ] Legal pages templates (terms, privacy, returns) per tenant; platform terms and data processing agreement with clients.
-- [ ] Security review against the cross-cutting checklist; load test of catalog and checkout against free-tier limits.
+- [ ] Onboarding playbook and the super-admin onboarding screen tested end to end by a non-developer. The playbook (`docs/runbooks/onboarding.md`) and an E2E of the screen are built; the timed run by a non-developer waits for the first pilot client.
+- [x] Independent backups: a scheduled GitHub Actions workflow runs an encrypted pg\_dump of Neon every night and uploads it to R2, keeping 7 daily and 4 weekly copies; a monthly test restores one into a Neon branch. Neon's own restore window on the free plan covers only recent mistakes, and the dumps stay far below R2's free 10 GB. The backup encryption key and the credential encryption key are also kept in a password manager outside Cloudflare, since losing them makes backups and stored client credentials unreadable.
+- [ ] Legal pages templates (terms, privacy, returns) per tenant; platform terms and data processing agreement with clients. The per-store templates (terms, privacy, returns, delivery) are built, filled from each store's settings; they, the platform terms and the agreement wait for a local legal review.
+- [ ] Security review against the cross-cutting checklist; load test of catalog and checkout against free-tier limits. The review is done (phase-5b-report §2.1); the load test script is built, and its one run on a preview waits.
 
-* [ ] Runbooks in `docs/runbooks/`: deploy, rollback, restore a backup, rotate a leaked secret, payment or courier outage, a free-tier limit reached, onboarding and offboarding a client.
+* [x] Runbooks in `docs/runbooks/`: deploy, rollback, restore a backup, rotate a leaked secret, payment or courier outage, a free-tier limit reached, onboarding and offboarding a client.
 
 **Acceptance criteria**
 

@@ -1,11 +1,11 @@
 ---
 // Pages without a theme to wear: no store at this host, a store under
-// maintenance, or too many searches. In both languages, since the store's
+// maintenance, a closed store, or too many searches. In both languages, since the store's
 // language may not be known (Phase 1's pages).
 import { t } from '@managemind/shared/i18n';
 
 interface Props {
-  kind: 'not_found' | 'maintenance' | 'busy';
+  kind: 'not_found' | 'maintenance' | 'closed' | 'busy';
   name: string;
   host: string;
 }
@@ -13,6 +13,7 @@ const { kind, name, host } = Astro.props;
 const copy = {
   not_found: { title: 'store.notFound.title', body: 'store.notFound.body' },
   maintenance: { title: 'store.maintenance.title', body: 'store.maintenance.body' },
+  closed: { title: 'store.closed.title', body: 'store.closed.body' },
   busy: { title: 'error.rate_limited', body: 'error.rate_limited' },
 } as const;
 const c = copy[kind];

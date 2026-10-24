@@ -18,6 +18,7 @@ import { AppError, defineMachine } from '@managemind/shared';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import { normalizeHost } from './hosts';
@@ -201,6 +202,7 @@ export async function addDomain(
     .from(d)
     .where(and(eq(d.tenantId, tx.tenantId), ne(d.status, 'removed')));
   if ((count?.n ?? 0) >= MAX_DOMAINS) throw new AppError('limit_exceeded');
+  await requireWithinLimit(tx, 'customDomains', async () => count?.n ?? 0);
   const [taken] = await tx.db
     .select({ id: d.id })
     .from(d)

@@ -1,0 +1,13 @@
+# The admin's security headers (PLAN.md, security baseline; phase-5b-plan
+# §12 PR 19). Static assets don't run the Worker, so they're set here; the
+# API's own responses get Hono's secureHeaders. Scripts are ours and
+# Turnstile's only; frames may show any https page (the theme preview is on
+# the store's own host, which can be a custom domain), and nothing may frame
+# the admin. Sentry is reached at its ingest host.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.sentry.io https://challenges.cloudflare.com; frame-src 'self' https: http://localhost:*; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=15552000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()

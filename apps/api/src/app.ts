@@ -20,6 +20,7 @@ import { registerCommerce } from './store/commerce';
 import { registerCheckoutOtp } from './store/otp';
 import { registerStorePages } from './store/pages';
 import { registerShopperReturns } from './store/returns';
+import { registerExports } from './tenant-jobs';
 import { registerWebhooks } from './webhooks';
 
 /**
@@ -59,6 +60,7 @@ export function createApp(): OpenAPIHono<AppEnv> {
   registerShopperReturns(app);
   registerCheckoutOtp(app);
   registerWebhooks(app);
+  registerExports(app);
   registerAccount(app);
   registerAuth(app);
   registerAdmin(app);

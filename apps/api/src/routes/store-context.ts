@@ -18,7 +18,7 @@ const StoreContext = z
     name: z.string(),
     defaultLocale: z.enum(['bn', 'en']),
     /** A suspended store shows its maintenance page. */
-    status: z.enum(['active', 'suspended']),
+    status: z.enum(['active', 'suspended', 'closed']),
     primaryHost: z.string(),
   })
   .openapi('StoreContext');

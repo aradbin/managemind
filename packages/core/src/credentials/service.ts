@@ -18,7 +18,9 @@ import {
 import { eq } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireFeature } from '../billing/entitlements';
 import { parseInput } from '../catalog/common';
+import { emit } from '../outbox';
 import type { TenantTx } from '../tenant';
 import { type Keyring, openCredentials, sealCredentials } from './crypto';
 
@@ -98,6 +100,11 @@ export async function saveCredentials(
   check: CredentialCheck,
 ): Promise<CredentialSummary> {
   authorize(actor, 'settings.credentials');
+  // The store's own gateway, SMS and email key are plan features (phase-5b-plan §3.5).
+  await requireFeature(
+    tx,
+    kind === 'sslcommerz' ? 'sslcommerz' : kind === 'sms' ? 'sms' : 'customEmailKey',
+  );
   const v = parseInput(credentialInput, input);
   const provider = providerOf(kind, v.provider);
   if (!provider) throw invalid('provider', `not a ${kind} provider`);
@@ -141,6 +148,11 @@ export async function saveCredentials(
     // Never the secrets: who changed which provider, in which mode.
     after: { kind, provider, mode, hint: row.hint },
   });
+  await emit(tx, 'credentials.changed', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { kind },
+  });
   return {
     kind,
     provider,
@@ -170,6 +182,11 @@ export async function removeCredentials(
     action: 'credentials.removed',
     entityType: 'provider_credentials',
     before: { kind, provider: row.provider, mode: row.mode },
+  });
+  await emit(tx, 'credentials.changed', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { kind },
   });
 }
 

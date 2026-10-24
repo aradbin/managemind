@@ -6,6 +6,7 @@
 // them. The engine itself is pricing/engine.ts.
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
+import type { Feature } from '@managemind/shared/billing';
 import {
   codeBatchInput,
   PAYMENT_METHODS,
@@ -20,6 +21,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
+import { requireFeature } from '../billing/entitlements';
 import { parseInput, pgError } from '../catalog/common';
 import type { Localized } from '../orders/variants';
 import { emit } from '../outbox';
@@ -221,6 +223,18 @@ async function changed(tx: TenantTx, id: string, change: 'created' | 'updated' |
   });
 }
 
+/** The plan features a promotion uses (phase-5b-plan §3.5). */
+function promotionFeatures(p: PromotionInput): Feature[] {
+  const features: Feature[] = [p.kind === 'code' ? 'promotionCoupons' : 'promotionAutomatic'];
+  if (p.action.type === 'buy_x_get_y') features.push('promotionBuyXGetY');
+  if (p.action.type.startsWith('delivery_')) features.push('promotionFreeDelivery');
+  return features;
+}
+
+async function requirePromotionFeatures(tx: TenantTx, p: PromotionInput): Promise<void> {
+  for (const feature of promotionFeatures(p)) await requireFeature(tx, feature);
+}
+
 export async function createPromotion(
   tx: TenantTx,
   actor: Actor,
@@ -228,6 +242,7 @@ export async function createPromotion(
 ): Promise<PromotionSummary> {
   authorize(actor, 'promotions.write');
   const p = parseInput(promotionInput, input);
+  await requirePromotionFeatures(tx, p);
   await checkActiveLimit(tx, p);
   const [row] = await tx.db
     .insert(schema.promotions)
@@ -277,6 +292,9 @@ export async function updatePromotion(
     action: before.action,
   };
   const p = parseInput(promotionInput, { ...current, ...patch });
+  // A promotion already running keeps running after a downgrade; starting
+  // one again needs the plan's feature.
+  if (p.status === 'active' && before.status !== 'active') await requirePromotionFeatures(tx, p);
   await checkActiveLimit(tx, p, id);
   await tx.db
     .update(schema.promotions)

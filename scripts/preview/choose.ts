@@ -1,5 +1,5 @@
 // Chooses what the preview runs (scope.ts) and sets the step outputs
-// deploy, full and describe.
+// deploy, full, cpu and describe.
 //
 //   tsx preview/choose.ts --base origin/master [--full-label]
 import { execFileSync } from 'node:child_process';
@@ -42,4 +42,5 @@ const scope = previewScope({ files, fullLabel, queriesToday });
 notice(scope.describe);
 setOutput('deploy', String(scope.deploy));
 setOutput('full', String(scope.full));
+setOutput('cpu', String(scope.cpu));
 setOutput('describe', scope.describe);

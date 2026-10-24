@@ -1,5 +1,6 @@
 // Test helpers for staff requests: a cookie-keeping browser stand-in and
 // sign-in with the code from the captured email.
+import { createHmac } from 'node:crypto';
 import type pg from 'pg';
 import { expect } from 'vitest';
 import { createApp } from '../src/app';
@@ -70,4 +71,32 @@ export async function signIn(b: Browser, owner: pg.Client, email: string) {
     (await b.post('/api/auth/email-otp/send-verification-otp', { email, type: 'sign-in' })).status,
   ).toBe(200);
   return b.post('/api/auth/sign-in/email-otp', { email, otp: await latestCode(owner, email) });
+}
+
+/** RFC 6238 TOTP (SHA-1, 6 digits, 30 seconds), as authenticator apps compute it. */
+export function totp(uri: string, at = Date.now()): string {
+  const secret = new URL(uri).searchParams.get('secret') ?? '';
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const ch of secret.replace(/=+$/, '').toUpperCase()) {
+    bits += alphabet.indexOf(ch).toString(2).padStart(5, '0');
+  }
+  const key = Buffer.from(bits.match(/.{8}/g)?.map((b) => Number.parseInt(b, 2)) ?? []);
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
+  const mac = createHmac('sha1', key).update(counter).digest();
+  const offset = (mac[mac.length - 1] ?? 0) & 0xf;
+  const value = mac.readUInt32BE(offset) & 0x7fffffff;
+  return String(value % 1_000_000).padStart(6, '0');
+}
+
+/** Sets up an authenticator for the signed-in user; returns its otpauth URI. */
+export async function enrollAuthenticator(b: Browser): Promise<string> {
+  const enable = await b.post('/api/auth/two-factor/enable', {});
+  expect(enable.status).toBe(200);
+  const { totpURI } = (await enable.json()) as { totpURI: string };
+  expect((await b.post('/api/auth/two-factor/verify-totp', { code: totp(totpURI) })).status).toBe(
+    200,
+  );
+  return totpURI;
 }

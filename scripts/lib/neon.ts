@@ -121,7 +121,7 @@ export class Neon {
     return uri;
   }
 
-  /** Host of the branch's read-write compute (direct, for Hyperdrive). */
+  /** Host of the branch's read-write compute (direct, for Hyperdrive; see pooledHost). */
   async host(branchId: string): Promise<string> {
     const { endpoints } = await this.api.request<{ endpoints: Endpoint[] }>(
       'GET',
@@ -149,4 +149,9 @@ export class Neon {
       }
     }
   }
+}
+
+/** The same compute through Neon's connection pooler (PgBouncer, transaction mode). */
+export function pooledHost(host: string): string {
+  return host.replace(/^([^.]+)/, '$1-pooler');
 }

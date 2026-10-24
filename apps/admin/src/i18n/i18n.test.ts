@@ -5,6 +5,8 @@ import './messages';
 import './online-store';
 import './orders';
 import './promotions';
+import './launch';
+import './billing';
 
 await loadLocale('en');
 await loadLocale('bn');

@@ -4,10 +4,16 @@ import { createHmac } from 'node:crypto';
 import { deflateSync, gzipSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
-import { bn } from '../../apps/admin/src/i18n/bn';
+import { billingBn } from '../../apps/admin/src/i18n/billing-bn';
+import { bn as baseBn } from '../../apps/admin/src/i18n/bn';
+import { launchBn } from '../../apps/admin/src/i18n/launch-bn';
+import { onlineStoreBn } from '../../apps/admin/src/i18n/online-store-bn';
+import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { DEV_TOKEN } from './people';
 import { API } from './urls';
 
+// The base messages and the screens' own catalogs (apps/admin/src/i18n).
+const bn = { ...baseBn, ...launchBn, ...billingBn, ...onlineStoreBn, ...ordersBn };
 type Key = keyof typeof bn;
 
 /** An admin message in Bangla, with {placeholders} filled. */
@@ -29,11 +35,19 @@ async function mailbox(to: string): Promise<Mail[]> {
   return (await res.json()) as Mail[];
 }
 
-/** The newest email to `to` after `since` emails were already there. */
-export async function nextMail(to: string, since: number): Promise<Mail> {
+/**
+ * The newest email to `to` after `since` emails were already there, or the
+ * newest of the new ones that `match` accepts.
+ */
+export async function nextMail(
+  to: string,
+  since: number,
+  match: (mail: Mail) => boolean = () => true,
+): Promise<Mail> {
   for (let i = 0; i < 60; i++) {
     const mails = await mailbox(to);
-    if (mails.length > since && mails[0]) return mails[0];
+    const found = mails.slice(0, Math.max(0, mails.length - since)).find(match);
+    if (found) return found;
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(`no new email for ${to}`);
@@ -41,8 +55,26 @@ export async function nextMail(to: string, since: number): Promise<Mail> {
 
 export const mailCount = async (to: string) => (await mailbox(to)).length;
 
+const watched = new WeakSet<Page>();
+/**
+ * Records the page's Content Security Policy violations from its next
+ * navigation on; expectAccessible fails on any (the admin's _headers).
+ */
+async function watchCsp(page: Page): Promise<void> {
+  if (watched.has(page)) return;
+  watched.add(page);
+  await page.addInitScript(() => {
+    const w = window as unknown as { __csp?: string[] };
+    w.__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      w.__csp?.push(`${e.effectiveDirective} ${e.blockedURI}`),
+    );
+  });
+}
+
 /** Signs in on a page already at /sign-in (or sent there). */
 export async function signInHere(page: Page, email: string): Promise<void> {
+  await watchCsp(page);
   await page.getByLabel(t('signIn.email')).fill(email);
   const before = await mailCount(email);
   await page.getByRole('button', { name: t('signIn.send') }).click();
@@ -56,6 +88,7 @@ export async function signInHere(page: Page, email: string): Promise<void> {
 }
 
 export async function signIn(page: Page, email: string): Promise<void> {
+  await watchCsp(page);
   await page.goto(`${API}/sign-in`);
   await signInHere(page, email);
 }
@@ -87,6 +120,8 @@ export async function expectAccessible(page: Page, screen: string): Promise<void
         `${v.id} (${v.impact}): ${v.nodes.map((n) => `${n.target.join(' ')} ${n.html.slice(0, 160)}`).join(' | ')}`,
     );
   expect(found, `accessibility on ${screen}`).toEqual([]);
+  const csp = await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []);
+  expect(csp, `Content Security Policy on ${screen}`).toEqual([]);
 }
 
 /** Our JavaScript on a store page, compressed, stays under 50 KB (phase-3-plan §8). */
@@ -145,4 +180,57 @@ export function pngImage(width: number, height: number, rgb: [number, number, nu
     chunk('IDAT', pixels),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+export interface NewStore {
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  ownerName: string;
+  kind?: 'client' | 'demo' | 'test';
+  /** Part of the plan's name as the list shows it; no plan when left out. */
+  plan?: string;
+  preset?: 'general' | 'fashion' | 'grocery';
+}
+
+/** Platform → New store, step by step on a phone, all at once on a desktop (phase-5b-plan §3.2). */
+export async function createStore(page: Page, store: NewStore): Promise<void> {
+  await page.goto(`${API}/platform`);
+  await page.getByRole('link', { name: t('newStore.title') }).click();
+  await expect(page.getByRole('heading', { name: t('newStore.title'), level: 1 })).toBeVisible();
+  const next = async () => {
+    const button = page.getByRole('button', { name: t('newStore.next') });
+    if (await button.isVisible()) await button.click();
+  };
+  await page.getByLabel(t('store.name')).fill(store.name);
+  await page.getByLabel(t('tenants.slug')).fill(store.slug);
+  // "<slug>.<store domain> is free", whatever the store domain is here.
+  const [before = '', after = ''] = t('newStore.slugFree', { host: '\u0000' }).split('\u0000');
+  const literal = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  await expect(
+    page.getByText(
+      new RegExp(`^${literal(before)}${literal(store.slug)}\\.\\S+${literal(after)}$`),
+    ),
+  ).toBeVisible();
+  if (store.kind) await page.getByLabel(t('newStore.kind')).selectOption(store.kind);
+  await expectAccessible(page, 'new store');
+  await next();
+  await page.getByLabel(t('tenants.ownerEmail')).fill(store.ownerEmail);
+  await page.getByLabel(t('tenants.ownerName')).fill(store.ownerName);
+  await next();
+  if (store.plan) {
+    const select = page.getByRole('combobox', { name: t('subscription.plan'), exact: true });
+    const value = await select
+      .locator('option', { hasText: store.plan })
+      .first()
+      .getAttribute('value');
+    await select.selectOption(value ?? '');
+    await expect(page.getByLabel(t('newStore.billingDay'))).toBeVisible();
+  }
+  await next();
+  if (store.preset) await page.getByLabel(t('newStore.preset')).selectOption(store.preset);
+  await page.getByRole('button', { name: t('newStore.create') }).click();
+  // Creating a store seeds its defaults and preset catalog: on a preview,
+  // which has no Hyperdrive, that alone takes a few seconds.
+  await expect(page.getByRole('heading', { name: store.name })).toBeVisible({ timeout: 30_000 });
 }

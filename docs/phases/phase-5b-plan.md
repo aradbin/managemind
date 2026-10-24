@@ -1,6 +1,6 @@
 # Phase 5B plan — Launch readiness and pilot
 
-- Status: Draft (Oct 23), waiting for the owner's answers in §14
+- Status: Approved (Oct 23). The owner answered the blocking questions (Q2, Q3, Q7, Q9, Q10) and the other recommendations in §14 stand as defaults until the owner says otherwise. What's still needed from the owner is listed at the end of §14
 - Date: 2026-10-23
 - Scope: PLAN.md "Phase 5B — Launch readiness and pilot", plus what Phase 5A left open: the preview's SSLCommerz sandbox payment script, the CPU step's new routes (IPN, return request, refund), a Lighthouse run of the tracking page, the decision on previews without Hyperdrive, and the Workers Paid switch before the first client (phase-5a-report §5, ADR 0013)
 
@@ -19,7 +19,7 @@ Three acceptance criteria, from PLAN.md:
 2. Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure.
 3. Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history.
 
-Criterion 2's "$0 infrastructure" meets ADR 0013's trigger, "the first serious client". Q2 asks the owner to choose between the two before the pilot starts.
+Criterion 2's "$0 infrastructure" meets ADR 0013's trigger, "the first serious client". The owner chose (Q2): the account moves to Workers Paid ($5 a month) when the first pilot client signs, so criterion 2 becomes "$5 a month".
 
 **Estimate: about 4 weeks of build, then the 4–6 week pilot** (Q1). PLAN.md says 2–3 weeks. The extra week is export and purge, which must run outside the Worker (§3.9), and Phase 5A's follow-ups. The order inside the phase (§12):
 
@@ -432,7 +432,7 @@ Mobile first and loaded on demand, as before. The sign-in bundle stays under its
 | # | Scope |
 | --- | --- |
 | 0 | This plan and the PLAN.md status |
-| 1 | Previews without Hyperdrive, if Q3 is accepted: each preview connects to its Neon branch with the Neon serverless driver. ADR 0011 amended |
+| 1 | Previews without Hyperdrive (Q3): the smoke and E2E steps connect to the preview's Neon branch directly, with the same `pg` driver; only the CPU step keeps Hyperdrive, so its numbers stay comparable to production's. CI's minutes are trimmed (Q10). ADR 0011 amended |
 | 2 | Phase 5A's follow-ups: the preview's SSLCommerz sandbox payment script (**needs the sandbox credentials**), the CPU step's new routes, Lighthouse on the tracking page |
 | 3 | `shared` + `db`: store kinds, the lifecycle's new moves, plans, subscriptions, entitlements schema, usage, health, invoices, payments, reminders, terms, jobs and purges (migrations) |
 | 4 | `core` + `api`: onboarding with plan and preset, the checklist; the CLI's new options |
@@ -460,32 +460,33 @@ As in Phase 5A, separate PRs that each get one `full-preview` run use fewer quer
 | Criterion | Verification |
 | --- | --- |
 | A non-developer onboards a new store through the super-admin screen in under an hour, excluding the client's own gateway approvals | The E2E runs the onboarding on every `full-preview` run. **Then the owner, or someone they choose who has never seen the code, onboards a real pilot client** with `docs/runbooks/onboarding.md` and the screen, timed from "New store" to the client's first test order. The time and anything that confused them go in the report |
-| Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure | **Measured during the pilot:** the isolation suite on every PR; the daily usage alarm; a weekly check that every order's stock, payments and outbox events are complete (`inventoryDrift`, outbox lag, dead letters); Sentry for any `tenant` mismatch. "$0" depends on Q2. The pilot's results are added to the report at its end |
+| Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure | **Measured during the pilot:** the isolation suite on every PR; the daily usage alarm; a weekly check that every order's stock, payments and outbox events are complete (`inventoryDrift`, outbox lag, dead letters); Sentry for any `tenant` mismatch. "$0" became "$5 a month" (Q2). The pilot's results are added to the report at its end |
 | Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history | The purge integration test (§10) on every PR. On the preview, the E2E purges a test store and reads the purge record's verification. Once in production: a `test` store created with the CLI is closed and purged, and the report records its purge record |
 
 ## 14. Questions for the owner
 
-| # | Question | Recommendation |
+| # | Question | Answer (Oct 23) |
 | --- | --- | --- |
-| Q1 | Estimate and order | **About 4 weeks in §12's order, then the pilot.** Onboarding comes first so a non-developer can rehearse while billing is built |
-| Q2 | Workers Paid for the pilot | **Switch to Workers Paid ($5 a month) when the first pilot client signs**, as ADR 0013 says for "the first serious client". Phase 5A's preview already had requests stopped at the 10 ms CPU limit, and a stopped checkout is a lost order. That changes criterion 2 to "$5 a month". The alternative is to stay free and watch the alarm, accepting that some requests fail |
-| Q3 | Previews without Hyperdrive | **Yes:** previews connect to their Neon branch directly, so they can never use up production's 100,000 Hyperdrive queries again (phase-5a-report §5). Previews get a little slower. Not needed if Q2 moves the account to Workers Paid, where Hyperdrive has no daily limit, but cheap insurance until then |
-| Q4 | Who onboards in the acceptance test | **The owner names one person who has not used the admin**, for criterion 1 |
-| Q5 | Plans and prices | **Placeholders until the owner decides:** a Starter plan (300 products, 3 staff, 500 orders a month, 1 custom domain, no SSLCommerz), a Growth plan (2,000 products, 10 staff, 3,000 orders, 3 domains, SSLCommerz and SMS), and a Pilot plan with everything at no charge for the pilot. Overage only on orders. Please send the real names, prices, setup fees and limits |
-| Q6 | Pilot pricing | **Pilot clients on the Pilot plan with a trial end date at the pilot's end**, then moved to a paid plan with a normal invoice |
-| Q7 | Terms acceptance | **Owners only, with the admin read-only for owners until one of them accepts; staff and shoppers never blocked.** A new version is asked 14 days before it takes effect |
-| Q8 | Our invoice details and VAT | **Please send:** the company's legal name, address, trade license number, BIN and VAT rate if registered, bank account and bKash merchant number. Ask the accountant whether our invoices must be Mushak 6.3 |
-| Q9 | Dunning | **Reminders at −3, 0, +3 and +10 days; suspension at +14; drafts issued automatically after 2 days.** A softer alternative is admin read-only at +14 with the storefront still open, and full suspension at +30 |
-| Q10 | Export and purge in GitHub Actions, and the dispatch token | **Yes to Actions** (§3.9). **Create the fine-grained token** (this repository only, Actions: write, 1 year) as `GITHUB_DISPATCH_TOKEN`. Without it, jobs start at the next daily run |
-| Q11 | Grace before purge, and reopening | **30 days, as PLAN.md says, and a closed store can be reopened until it is purged.** The contract should say the same |
-| Q12 | Free-tier numbers on the dashboard | **From the daily alarm's file in R2**, so they are as of that morning, at no query cost. A live view would need the Cloudflare and Neon APIs called from the Worker with their tokens |
-| Q13 | Exports for active stores | **Yes, an owner can request one at most once a day.** It's the client's own record (PLAN.md), and it costs us a few Actions minutes |
-| Q14 | Anonymization and the blocklist | **Keep a blocked phone on the blocklist after anonymizing its customer**, unless the legal review says otherwise |
-| Q15 | Backup keys | **Generate an `age` key pair with PR 16's script:** the public key as the `BACKUP_AGE_RECIPIENT` variable, the private key as the `BACKUP_AGE_KEY` secret and in a password manager, next to `CREDENTIALS_KEY` |
+| Q1 | Estimate and order | Default: **about 4 weeks in §12's order, then the pilot** |
+| Q2 | Workers Paid for the pilot | **Answered: switch to Workers Paid ($5 a month) when the first pilot client signs.** Criterion 2 becomes "$5 a month". Until then, previews stop using Hyperdrive (Q3) |
+| Q3 | Previews without Hyperdrive | **Answered: yes, except the CPU step.** Nothing on a preview needs Hyperdrive to work: the API's `pg` client takes a direct connection string just as well. The CPU step is the one place that depends on it, since its numbers check ADR 0003's budget and ADR 0013's trigger, and without Hyperdrive each request sets up its own TLS connection and authenticates, which costs CPU production never spends. So the smoke and E2E steps (and Lighthouse) run on a Worker connected straight to the Neon branch, and only the CPU step runs on a Worker bound to Hyperdrive. Lighthouse budgets stay; if slower queries make them fail on previews, that is reported rather than loosened |
+| Q4 | Who onboards in the acceptance test | Default: **the owner names one person who has not used the admin** |
+| Q5 | Plans and prices | Default: **placeholders until the owner sends the real ones:** a Starter plan (300 products, 3 staff, 500 orders a month, 1 custom domain, no SSLCommerz), a Growth plan (2,000 products, 10 staff, 3,000 orders, 3 domains, SSLCommerz and SMS), and a Pilot plan with everything at no charge. Overage only on orders |
+| Q6 | Pilot pricing | Default: **the Pilot plan with a trial end date at the pilot's end** |
+| Q7 | Terms acceptance | **Answered: owners only, with the admin read-only for owners until one of them accepts; staff and shoppers never blocked.** A new version is asked 14 days before it takes effect |
+| Q8 | Our invoice details and VAT | **Open, needed before the first invoice:** the company's legal name, address, trade license number, BIN and VAT rate if registered, bank account and bKash merchant number. Ask the accountant whether our invoices must be Mushak 6.3. The build keeps them as platform settings |
+| Q9 | Dunning | **Answered: reminders at −3, 0, +3 and +10 days; full suspension at +14; drafts issued automatically after 2 days** |
+| Q10 | Export and purge in GitHub Actions, and the dispatch token | **Answered: yes to Actions, and CI's minutes are trimmed.** The repository is private on a free personal account: 2,000 Actions minutes a month, and every workflow stops when they run out. Development already uses about 2,500–3,000 a month (a CI run bills about 7), so PR 1 trims CI. The owner may also set a small Actions spending budget as a safety net. The token (`GITHUB_DISPATCH_TOKEN`, this repository only, Actions: write, 1 year) is optional: without it, jobs start at the next daily run |
+| Q11 | Grace before purge, and reopening | Default: **30 days, and a closed store can be reopened until it is purged** |
+| Q12 | Free-tier numbers on the dashboard | Default: **from the daily alarm's file in R2** |
+| Q13 | Exports for active stores | Default: **an owner can request one at most once a day** |
+| Q14 | Anonymization and the blocklist | Default: **a blocked phone stays on the blocklist**, unless the legal review says otherwise |
+| Q15 | Backup keys | Default: **an `age` key pair from PR 16's script**, the public key as `BACKUP_AGE_RECIPIENT`, the private key as `BACKUP_AGE_KEY` and in a password manager |
 
 **Still needed from the owner:**
 
-- the answers above, especially Q2, Q3, Q5, Q8 and Q9;
+- the real plans and prices (Q5) and our invoice details (Q8), before the first invoice;
+- Workers Paid when the first pilot client signs (Q2), and optionally an Actions spending budget and `GITHUB_DISPATCH_TOKEN` (Q10);
 - Phase 5A's keys in production: `CREDENTIALS_KEY` (with an offline copy), `VAPID_PRIVATE_KEY` and `VAPID_PUBLIC_KEY`;
 - the support email, WhatsApp number and abuse address (before PR 15);
 - the `age` keys (before PR 16);

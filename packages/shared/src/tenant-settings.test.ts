@@ -50,6 +50,7 @@ describe('tenantSettings', () => {
           'store_credit_issued',
         ],
       },
+      setup: { subdomainFinal: false },
     });
     expect(tenantSettings.parse({})).toEqual(defaultTenantSettings());
   });

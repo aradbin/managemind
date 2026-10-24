@@ -4,6 +4,7 @@
 // friends directly.
 export * from './cache';
 export * from './contrast';
+export * from './legal';
 export * from './listing';
 export * from './pages';
 export * from './presets';

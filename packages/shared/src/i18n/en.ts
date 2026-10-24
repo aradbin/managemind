@@ -5,6 +5,9 @@ export const en = {
   'common.language.en': 'English',
   'store.notFound.title': 'Store not found',
   'store.notFound.body': 'There is no store at {host}.',
+  'store.closed.title': 'This store has closed',
+  'store.closed.body':
+    '{store} is no longer taking orders. For questions about an earlier order, contact the store directly.',
   'store.maintenance.title': 'We will be back soon',
   'store.maintenance.body': '{store} is closed for maintenance. Please try again later.',
   'store.placeholder.welcome': 'Welcome to {store}',

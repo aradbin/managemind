@@ -2,6 +2,12 @@
 //
 //   tsx preview/workers.ts --pr 12 --hyperdrive <id> --commit <sha>
 //
+// The API's main config has no Hyperdrive binding: it connects to the Neon
+// branch directly (its DATABASE_URL secret). wrangler.preview-hyperdrive.json
+// is the same Worker bound to the PR's Hyperdrive config, deployed only for
+// the CPU step, so its numbers stay comparable to production's (ADR 0011,
+// amended Oct 23).
+//
 // Each PR gets its own pair of Workers (ADR 0011): the storefront's service
 // binding points at its own PR's API, which a version preview alias cannot do.
 import { parseArgs, prNumber, requireEnv, setOutput } from '../lib/actions';
@@ -26,7 +32,7 @@ writeWorkerConfigs({
   environment: 'preview',
   api: apiWorker(pr),
   storefront: storefrontWorker(pr),
-  hyperdriveId: hyperdrive,
+  cpuHyperdriveId: hyperdrive,
   platformDomain: domain,
   storeDomain: domain,
   adminHost: `${apiWorker(pr)}.${domain}`,

@@ -1,6 +1,7 @@
 // The admin app (phase-1-plan §7.3): TanStack Router with file-based routes
 // in src/routes, TanStack Query for server state, and the admin's own
 // translations. Bangla uses a self-hosted Noto Sans Bengali.
+import './zod-config';
 import '@fontsource/noto-sans-bengali/400.css';
 import '@fontsource/noto-sans-bengali/600.css';
 import './styles.css';

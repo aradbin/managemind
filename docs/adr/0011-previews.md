@@ -1,6 +1,6 @@
 # ADR 0011: Pull request previews and their databases
 
-- Status: Accepted. Amended Oct 18: what a preview runs is budgeted (below).
+- Status: Accepted. Amended Oct 18: what a preview runs is budgeted. Amended Oct 23: previews connect to Neon directly, and only the CPU step uses Hyperdrive (below).
 - Date: 2026-10-10
 - Builds on: Q1 (Oct 9: shared preview database), ADR 0009 (roles), ADR 0002 (Hyperdrive)
 
@@ -89,3 +89,17 @@ Every environment shares the account's 100,000 Hyperdrive queries a day. On Oct 
 4. **Before merging a PR that changes code, it gets one full run.** The label stays on for later pushes, but those check the budget again.
 
 `scripts/preview/scope.ts` decides, and `preview/choose.ts` reads the count from GraphQL Analytics. On Workers Paid, Hyperdrive has no daily limit, and the ceiling can go.
+
+## Amendment (Oct 23): previews without Hyperdrive
+
+The Oct 18 budget didn't stop it happening again: preview runs used up the day's Hyperdrive queries once more, and production's database answered again only after the reset (phase-5a-report §5). The owner chose (phase-5b-plan Q3) to take previews off Hyperdrive, except for the one step that needs it.
+
+**Nothing on a preview needs Hyperdrive to work.** The API's `pg` client takes any connection string. **The CPU step depends on it:** its numbers check ADR 0003's budgets and ADR 0013's trigger for Workers Paid. Without Hyperdrive, each request sets up its own TLS connection and authenticates, CPU that production never spends, so the numbers would come out worse than production's.
+
+1. **The PR's own login role.** `preview/database.ts` gives `mm_app_pr_<n>`, a member of `app_rw` like `mm_app`, a new password on every deploy. It writes the role's URL, through the branch's pooler (`-pooler`, PgBouncer in transaction mode), to a file only the deploy step reads into the API's `DATABASE_URL` secret. Each PR has its own role on the shared branch, so one PR's new password never signs another's preview out. Tenant context is set per transaction (`set_config(…, true)`), which the transaction pooler keeps correct. Closing the PR drops the role.
+2. **The API prefers Hyperdrive when it's bound** (`apps/api/src/db.ts`), and its preview config has no binding. Production always has it, and `production/workers.ts` still requires it.
+3. **The smoke tests, the E2E flows and Lighthouse** run on that direct connection, and use no Hyperdrive queries. Lighthouse's budgets stay the same. If slower queries make them fail on previews, that is reported and not loosened.
+4. **The CPU step** (full runs only) deploys the same API again with `wrangler.preview-hyperdrive.json`, bound to the PR's Hyperdrive config, and measures only its own requests after that deploy. Then the API is deployed again on the direct connection. The E2E's import chunks are no longer in its table.
+5. **The ceiling now gates only the CPU step.** A labelled run always runs the E2E flows and Lighthouse. Past 50,000 queries, or when the count can't be read, it skips the CPU step and says so. On Workers Paid (from the first pilot client, phase-5b-plan Q2), the ceiling can go.
+
+**Cost:** previews' queries are a little slower, with no pooling at the edge. Neon's compute use is unchanged, since Hyperdrive's caching was already off on previews.

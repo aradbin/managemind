@@ -6,8 +6,12 @@
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   acceptInvitation,
+  acceptTerms,
+  authorize,
+  CHECKLIST_ITEMS,
   changeRole,
   getStore,
+  getSupport,
   invite,
   leaveStore,
   listInvitations,
@@ -19,6 +23,8 @@ import {
   revokeInvitation,
   runIdempotent,
   setActiveStore,
+  setupChecklist,
+  termsStatus,
   updateMyProfile,
   updateStoreProfile,
   withPlatform,
@@ -40,10 +46,12 @@ import { adminOrigin } from '../auth/routes';
 import type { AppEnv } from '../env';
 import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
+import { BILLING_ROUTES, registerBilling } from './billing';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
 import { DOMAIN_ROUTES, registerDomains } from './domains';
+import { EXPORT_ROUTES, registerExport } from './export';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 import { MESSAGE_ROUTES, registerMessages } from './messages';
@@ -108,6 +116,7 @@ const Store = z
     fraud: fraudSettings,
     returns: returnSettings,
     notifications: notificationSettings,
+    setup: tenantSettings.shape.setup,
     /** The store's home page, for the admin's "View store" link. */
     storeUrl: z.string(),
   })
@@ -150,10 +159,29 @@ export const ADMIN_ROUTES = {
   ...DOMAIN_ROUTES,
   ...ORDER_ROUTES,
   ...RETURN_ROUTES,
+  ...BILLING_ROUTES,
+  ...EXPORT_ROUTES,
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
+  help: r({
+    method: 'get',
+    path: '/help',
+    summary:
+      "The help menu: the guide, support email and WhatsApp, and the platform's documents (any staff)",
+    responses: json(
+      z.object({
+        helpUrl: z.string().nullable(),
+        email: z.string().nullable(),
+        whatsapp: z.string().nullable(),
+        termsUrl: z.string().nullable(),
+        privacyUrl: z.string().nullable(),
+        dpaUrl: z.string().nullable(),
+      }),
+      'Help',
+    ),
+  }),
   me: r({
     method: 'get',
     path: '/me',
@@ -200,9 +228,56 @@ export const ADMIN_ROUTES = {
         fraud: fraudSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
+        setup: tenantSettings.shape.setup.optional(),
       }),
     ),
     responses: json(Store, 'Store'),
+  }),
+  termsPending: r({
+    method: 'get',
+    path: '/terms/pending',
+    summary:
+      "The platform terms the store's owners haven't accepted, and whether their admin is read-only until one does (phase-5b-plan §3.4)",
+    responses: json(
+      z.object({
+        pending: z
+          .object({
+            id: z.uuid(),
+            version: z.string(),
+            effectiveAt: z.date(),
+            url: z.string(),
+          })
+          .nullable(),
+        blocking: z.boolean(),
+        /** Whether the signed-in user can accept: an owner by membership. */
+        canAccept: z.boolean(),
+      }),
+      'Terms',
+    ),
+  }),
+  acceptTerms: r({
+    method: 'post',
+    path: '/terms/accept',
+    summary: 'Accept a version of the platform terms for the store (owners)',
+    request: body(z.object({ versionId: z.uuid() })),
+    responses: json(z.object({ accepted: z.literal(true) }), 'Accepted'),
+  }),
+  setup: r({
+    method: 'get',
+    path: '/setup',
+    summary:
+      'What the store still needs before its first order (settings.read; phase-5b-plan §3.2)',
+    responses: json(
+      z.object({
+        items: z.array(
+          z.object({ item: z.enum(CHECKLIST_ITEMS), done: z.boolean(), optional: z.boolean() }),
+        ),
+        done: z.number().int(),
+        total: z.number().int(),
+        complete: z.boolean(),
+      }),
+      'Checklist',
+    ),
   }),
   members: r({
     method: 'get',
@@ -319,6 +394,25 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   const R = ADMIN_ROUTES;
 
   admin.openapi(R.me, async (c) => c.json(await me(c), 200));
+  admin.openapi(R.help, async (c) => {
+    const { client } = c.var.staff;
+    const support = await withPlatform(client, (tx) => getSupport(tx));
+    // The terms in force now: the newest version whose date has come.
+    const { rows } = await client.query<{ url: string }>(
+      'select url from platform.terms_versions where effective_at <= now() order by effective_at desc limit 1',
+    );
+    return c.json(
+      {
+        helpUrl: support.helpUrl ?? null,
+        email: support.email ?? null,
+        whatsapp: support.whatsapp ?? null,
+        termsUrl: rows[0]?.url ?? null,
+        privacyUrl: support.privacyUrl ?? null,
+        dpaUrl: support.dpaUrl ?? null,
+      },
+      200,
+    );
+  });
   admin.openapi(R.updateMe, async (c) => {
     const { client, actor } = c.var.staff;
     await withPlatform(client, (tx) => updateMyProfile(tx, actor, compact(c.req.valid('json'))));
@@ -339,6 +433,44 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
         ...(await getStore(tx, c.var.staff.actor)),
         storeUrl: (await storeUrls(c, tx)).store,
       })),
+      200,
+    ),
+  );
+  admin.openapi(R.termsPending, async (c) => {
+    const actor = c.var.staff.actor;
+    const status = await inStore(c, (tx) => termsStatus(tx, tx.tenantId));
+    const p = status.pending;
+    return c.json(
+      {
+        pending: p
+          ? { id: p.id, version: p.version, effectiveAt: p.effectiveAt, url: p.url }
+          : null,
+        blocking: status.blocking,
+        canAccept: actor.storeRole === 'owner' && !actor.supportGrantId,
+      },
+      200,
+    );
+  });
+  admin.openapi(R.acceptTerms, async (c) => {
+    const { versionId } = c.req.valid('json');
+    const ip = c.req.header('cf-connecting-ip') ?? null;
+    return c.json(
+      await inStore(c, (tx) =>
+        acceptTerms(tx, c.var.staff.actor, {
+          versionId,
+          ip: ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : null,
+          userAgent: c.req.header('user-agent') ?? null,
+        }),
+      ),
+      200,
+    );
+  });
+  admin.openapi(R.setup, async (c) =>
+    c.json(
+      await inStore(c, (tx) => {
+        authorize(c.var.staff.actor, 'settings.read');
+        return setupChecklist(tx);
+      }),
       200,
     ),
   );
@@ -459,6 +591,8 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerDomains(admin);
   registerOrders(admin);
   registerReturns(admin);
+  registerBilling(admin);
+  registerExport(admin);
   registerReports(admin);
   registerCredentials(admin);
   registerMessages(admin);
