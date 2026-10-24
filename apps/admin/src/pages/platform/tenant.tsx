@@ -6,14 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ConfirmDialog } from '../../components/confirm-dialog';
 import { Form, SelectField, TextField } from '../../components/form';
 import { Notice } from '../../components/notice';
-import { PageHeader } from '../../components/page-header';
+import { StoreTile } from '../../components/store-switcher';
 import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -48,128 +48,165 @@ export function TenantPage() {
   const { data: me } = useSuspenseQuery(meQuery);
   const tenant = useQuery(tenantQuery(id));
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <Link to="/platform" className="inline-flex min-h-11 items-center gap-1 text-sm text-primary">
-        <ChevronLeft aria-hidden className="size-4" />
-        {t('tenant.back')}
-      </Link>
+    <div className="flex flex-col gap-5">
+      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
+        <Link to="/platform" className="font-medium text-primary hover:underline">
+          {t('tenant.back')}
+        </Link>
+        {tenant.data && (
+          <>
+            <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+            <span className="truncate text-muted-foreground">{tenant.data.name}</span>
+          </>
+        )}
+      </nav>
       {tenant.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : tenant.isError ? (
         <Notice tone="error">{errorMessage(tenant.error, t)}</Notice>
       ) : (
         <>
-          <PageHeader
-            title={tenant.data.name}
-            actions={
-              me.user.platformRole === 'super_admin' && (
-                <div className="flex flex-wrap gap-2">
-                  <Lifecycle tenant={tenant.data} />
-                  <CloseOrReopen tenant={tenant.data} />
-                </div>
-              )
-            }
-          />
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-            <dt className="text-muted-foreground">{t('tenants.status')}</dt>
-            <dd>
-              <StatusBadge status={tenant.data.status} />
-            </dd>
-            {tenant.data.statusReason && (
-              <>
-                <dt className="text-muted-foreground">{t('tenant.statusReason')}</dt>
-                <dd>{t(`reason.${tenant.data.statusReason}`)}</dd>
-              </>
+          <div className="flex flex-wrap items-start gap-4">
+            <StoreTile name={tenant.data.name} className="size-12 rounded-xl text-base" />
+            <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight">{tenant.data.name}</h1>
+                <StatusBadge status={tenant.data.status} />
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                  {t(`kind.${tenant.data.kind}`)}
+                </span>
+                <span
+                  lang="en"
+                  className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                  {tenant.data.plan}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                <span lang="en">{tenant.data.slug}</span> ·{' '}
+                {formatDateTime(locale, new Date(tenant.data.createdAt))}
+              </p>
+            </div>
+            {me.user.platformRole === 'super_admin' && (
+              <div className="flex flex-wrap gap-2">
+                <Lifecycle tenant={tenant.data} />
+                <CloseOrReopen tenant={tenant.data} />
+              </div>
             )}
-            {tenant.data.closedAt && (
-              <>
-                <dt className="text-muted-foreground">{t('tenant.closedAt')}</dt>
-                <dd>{formatDateTime(locale, new Date(tenant.data.closedAt))}</dd>
-              </>
-            )}
-            {tenant.data.purgeAfter && (
-              <>
-                <dt className="text-muted-foreground">{t('tenant.purgeAfter')}</dt>
-                <dd>{formatDateTime(locale, new Date(tenant.data.purgeAfter))}</dd>
-              </>
-            )}
-            <dt className="text-muted-foreground">{t('tenant.kind')}</dt>
-            <dd>{t(`kind.${tenant.data.kind}`)}</dd>
-            <dt className="text-muted-foreground">{t('tenants.slug')}</dt>
-            <dd lang="en">{tenant.data.slug}</dd>
-            <dt className="text-muted-foreground">{t('tenants.plan')}</dt>
-            <dd lang="en">{tenant.data.plan}</dd>
-            <dt className="text-muted-foreground">{t('store.defaultLocale')}</dt>
-            <dd>{tenant.data.defaultLocale === 'bn' ? 'বাংলা' : 'English'}</dd>
-            <dt className="text-muted-foreground">{t('tenants.createdAt')}</dt>
-            <dd>{formatDateTime(locale, new Date(tenant.data.createdAt))}</dd>
-            <dt className="text-muted-foreground">{t('tenant.members')}</dt>
-            <dd>{tenant.data.memberCount}</dd>
-          </dl>
-          <SetupSection tenantId={tenant.data.id} />
-          <SubscriptionSection
-            tenant={tenant.data}
-            superAdmin={me.user.platformRole === 'super_admin'}
-          />
-          <JobsSection
-            tenantId={tenant.data.id}
-            superAdmin={me.user.platformRole === 'super_admin'}
-            resettable={
-              tenant.data.kind !== 'client' &&
-              (tenant.data.status === 'active' || tenant.data.status === 'suspended')
-                ? { name: tenant.data.name, slug: tenant.data.slug }
-                : undefined
-            }
-          />
-          <PurgeSection
-            tenant={tenant.data}
-            purgeAfter={
-              tenant.data.purgeAfter ? new Date(tenant.data.purgeAfter).toISOString() : null
-            }
-            superAdmin={me.user.platformRole === 'super_admin'}
-          />
-          {tenant.data.domains.length > 0 && (
-            <section aria-labelledby="domains-h" className="flex flex-col gap-2">
-              <h2 id="domains-h" className="text-lg font-semibold">
-                {t('tenant.domains')}
-              </h2>
-              <ul className="flex flex-col gap-1">
-                {tenant.data.domains.map((d) => (
-                  <li key={d.hostname} lang="en" className="break-all">
-                    {d.hostname}
-                    {d.isPrimary && (
-                      <span lang={locale} className="ms-2 rounded bg-muted px-2 py-0.5 text-xs">
-                        {t('tenant.primary')}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <section aria-labelledby="owners-h" className="flex flex-col gap-2">
-            <h2 id="owners-h" className="text-lg font-semibold">
-              {t('tenant.owners')}
-            </h2>
-            <ul className="flex flex-col gap-1">
-              {tenant.data.owners.map((o) => (
-                <li key={o.userId}>
-                  {o.name} · <span className="break-all text-muted-foreground">{o.email}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          {tenant.data.status === 'active' && (
-            <SupportAccess
-              tenant={tenant.data}
-              superAdmin={me.user.platformRole === 'super_admin'}
-            />
-          )}
+          </div>
+          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="flex min-w-0 flex-col gap-5">
+              <SetupSection tenantId={tenant.data.id} />
+              <SubscriptionSection
+                tenant={tenant.data}
+                superAdmin={me.user.platformRole === 'super_admin'}
+              />
+              <JobsSection
+                tenantId={tenant.data.id}
+                superAdmin={me.user.platformRole === 'super_admin'}
+                resettable={
+                  tenant.data.kind !== 'client' &&
+                  (tenant.data.status === 'active' || tenant.data.status === 'suspended')
+                    ? { name: tenant.data.name, slug: tenant.data.slug }
+                    : undefined
+                }
+              />
+              <PurgeSection
+                tenant={tenant.data}
+                purgeAfter={
+                  tenant.data.purgeAfter ? new Date(tenant.data.purgeAfter).toISOString() : null
+                }
+                superAdmin={me.user.platformRole === 'super_admin'}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-5">
+              <section aria-labelledby="details-h" className={card}>
+                <h2 id="details-h" className="font-semibold">
+                  {t('tenant.details')}
+                </h2>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+                  {tenant.data.statusReason && (
+                    <>
+                      <dt className="text-muted-foreground">{t('tenant.statusReason')}</dt>
+                      <dd>{t(`reason.${tenant.data.statusReason}`)}</dd>
+                    </>
+                  )}
+                  {tenant.data.closedAt && (
+                    <>
+                      <dt className="text-muted-foreground">{t('tenant.closedAt')}</dt>
+                      <dd>{formatDateTime(locale, new Date(tenant.data.closedAt))}</dd>
+                    </>
+                  )}
+                  {tenant.data.purgeAfter && (
+                    <>
+                      <dt className="text-muted-foreground">{t('tenant.purgeAfter')}</dt>
+                      <dd>{formatDateTime(locale, new Date(tenant.data.purgeAfter))}</dd>
+                    </>
+                  )}
+                  <dt className="text-muted-foreground">{t('tenants.status')}</dt>
+                  <dd>
+                    <StatusBadge status={tenant.data.status} />
+                  </dd>
+                  <dt className="text-muted-foreground">{t('tenant.kind')}</dt>
+                  <dd>{t(`kind.${tenant.data.kind}`)}</dd>
+                  <dt className="text-muted-foreground">{t('tenants.slug')}</dt>
+                  <dd lang="en">{tenant.data.slug}</dd>
+                  <dt className="text-muted-foreground">{t('tenants.plan')}</dt>
+                  <dd lang="en">{tenant.data.plan}</dd>
+                  <dt className="text-muted-foreground">{t('store.defaultLocale')}</dt>
+                  <dd>{tenant.data.defaultLocale === 'bn' ? 'বাংলা' : 'English'}</dd>
+                  <dt className="text-muted-foreground">{t('tenants.createdAt')}</dt>
+                  <dd>{formatDateTime(locale, new Date(tenant.data.createdAt))}</dd>
+                  <dt className="text-muted-foreground">{t('tenant.members')}</dt>
+                  <dd>{tenant.data.memberCount}</dd>
+                </dl>
+              </section>
+              <section aria-labelledby="owners-h" className={card}>
+                <h2 id="owners-h" className="font-semibold">
+                  {t('tenant.owners')}
+                </h2>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {tenant.data.owners.map((o) => (
+                    <li key={o.userId}>
+                      {o.name} · <span className="break-all text-muted-foreground">{o.email}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+              {tenant.data.domains.length > 0 && (
+                <section aria-labelledby="domains-h" className={card}>
+                  <h2 id="domains-h" className="font-semibold">
+                    {t('tenant.domains')}
+                  </h2>
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {tenant.data.domains.map((d) => (
+                      <li key={d.hostname} lang="en" className="break-all">
+                        {d.hostname}
+                        {d.isPrimary && (
+                          <span lang={locale} className="ms-2 rounded bg-muted px-2 py-0.5 text-xs">
+                            {t('tenant.primary')}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {tenant.data.status === 'active' && (
+                <SupportAccess
+                  tenant={tenant.data}
+                  superAdmin={me.user.platformRole === 'super_admin'}
+                />
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>
   );
 }
+
+const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 function Lifecycle({ tenant }: { tenant: Tenant }) {
   const { t } = useLocale();

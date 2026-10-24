@@ -278,6 +278,7 @@ export const bn: Record<keyof typeof en, string> = {
   'settings.planAndData': 'প্ল্যান ও বিল',
   'settings.ready': 'প্রস্তুত',
   'settings.toFinish': 'এখনও সেট করা বাকি',
+  'tenant.details': 'বিস্তারিত',
   'nav.breadcrumb': 'আপনি যেখানে আছেন',
   'nav.products': 'পণ্য',
   'nav.reports': 'রিপোর্ট',

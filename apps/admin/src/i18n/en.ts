@@ -292,6 +292,7 @@ export const en = {
   'settings.planAndData': 'Plan and billing',
   'settings.ready': 'Ready',
   'settings.toFinish': 'Still to set up',
+  'tenant.details': 'Details',
   'nav.breadcrumb': 'Where you are',
   'nav.products': 'Products',
   'nav.reports': 'Reports',
