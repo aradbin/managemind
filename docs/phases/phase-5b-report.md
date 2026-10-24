@@ -2,7 +2,7 @@
 
 - Date: 2026-10-24
 - Plan: `docs/phases/phase-5b-plan.md` (approved with the owner's answers in §14)
-- Pull request: #66, all of Phase 5B with one commit per plan step and its own preview database (`db-branch`). **Not merged or deployed yet.**
+- Pull request: #66, all of Phase 5B with one commit per plan step and its own preview database (`db-branch`). Merged and deployed on Oct 24: migrations 0034–0038 applied, and the deploy's smoke, shop API and cache checks passed
 
 > This report covers the build (plan PR 20). The preview results are from #66's `full-preview` run on `bb7ccd9` (Oct 24), and the load test from its preview. The pilot's results are added at its end.
 
@@ -29,7 +29,12 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 
 **What the owner should know:**
 
-1. **#66 is green and ready to merge; nothing is deployed yet.** CI passes, and the full preview run passed all 27 E2E flows, every Lighthouse budget, and the CPU step with no request stopped at the CPU limit. It has migrations 0034–0038.
+1. **Phase 5B is in production since Oct 24.** The full preview run passed all 27 E2E flows, every Lighthouse budget, and the CPU step with no request stopped at the CPU limit. The deploy applied migrations 0034–0038 and passed its checks. Until the owner adds them, these stay off:
+   - the nightly backups and the restore test skip with a warning (`BACKUP_AGE_*`);
+   - invoices can't be paid online (`PLATFORM_SSLCOMMERZ_*`);
+   - jobs start at the daily run rather than at once (`GITHUB_DISPATCH_TOKEN`).
+
+   The demo stores are `demo` stores, so billing skips them; they start again every Friday.
 2. **The security review found one serious bug, three medium ones and two small ones, all fixed** (§2.1):
    - a store reopened and closed again could be purged at once, on its first closure's approval;
    - exports included shoppers' password hashes and sign-in tokens;
