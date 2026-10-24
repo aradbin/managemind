@@ -195,7 +195,6 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 
 - **The purge E2E stops at the dry run.** Previews have no jobs runner; the integration test covers the purge.
 - **The preview's SSLCommerz sandbox payment script** and the IPN's CPU step still wait for the sandbox credentials (Phase 5A, §5).
-- **`usage_daily` keeps every day.** The plan's 13-month retention is a follow-up; the table grows by one row per store a day.
 - **`CREDENTIALS_KEY` can't be rotated** without re-entering every store's credentials. The runbook says so.
 - **Previews' direct connection fails about 45% of store page data requests** with an empty 503 (§3). Previews still pass, but a slow or flaky preview E2E may be this. A follow-up could try Neon's serverless driver for previews.
 
@@ -203,6 +202,7 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 
 - **Support staff see no export links** (the security review).
 - **Reopening a store cancels a pending purge**, and the runner checks the approval against the store's last closure.
+- **Usage older than 13 months folds into one row per month on the month's last day**, in the same table, rather than into a separate monthly table. Sums over a whole month answer the same (migration 0039, after the merge).
 - **The admin's security headers live in its `_headers` file**, since its pages are static assets.
 
 ### Lessons for later phases

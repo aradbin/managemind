@@ -97,7 +97,7 @@ const EXPECTED: Record<string, { table: string[]; update?: string[] }> = {
       'trial_ends_on',
     ],
   },
-  usage_daily: { table: ['INSERT', 'SELECT'], update: ['value'] },
+  usage_daily: { table: ['DELETE', 'INSERT', 'SELECT'], update: ['value'] },
   store_health: {
     table: ['INSERT', 'SELECT'],
     update: ['activity', 'checked_at', 'checklist', 'domains', 'email', 'payments', 'sms'],

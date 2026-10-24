@@ -1,5 +1,6 @@
 // Background entry points: the queue consumer and the daily Cron batch.
 import {
+  compactUsage,
   type EventType,
   failImport,
   type ImportMessage,
@@ -347,6 +348,9 @@ export async function runDailyJobs(
           extra: { failed: rollup.failed.slice(0, 10) },
         });
       }
+      // Months older than 13 fold into one row each.
+      const folded = await compactUsage(client, yesterday);
+      if (folded) log('info', 'usage compacted', { rows_removed: folded });
     } catch (e) {
       log('error', 'usage rollup failed', { error: String(e) });
       captureMessage('usage rollup failed', { level: 'error', extra: { error: String(e) } });
