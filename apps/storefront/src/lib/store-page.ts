@@ -10,7 +10,7 @@ import {
 } from '@managemind/shared/storefront/urls';
 
 const ENDPOINT: Record<
-  Exclude<StoreRoute['kind'], 'cart' | 'checkout' | 'thanks' | 'track' | 'account'>,
+  Exclude<StoreRoute['kind'], 'cart' | 'checkout' | 'thanks' | 'track' | 'account' | 'confirm'>,
   string
 > = {
   home: 'home',

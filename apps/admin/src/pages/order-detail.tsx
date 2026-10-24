@@ -505,6 +505,13 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
 function ConfirmationCard({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
   const c = o.confirmation as NonNullable<OrderDetail['confirmation']>;
+  const toast = useToast();
+  const canWrite = usePermission('orders.write');
+  const resend = useCommand(o.id, async () =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/confirmation/link', { params: { path: { id: o.id } } }),
+    ),
+  );
   return (
     <section aria-labelledby="confirmation-title" className={section}>
       <h2 id="confirmation-title" className="font-semibold">
@@ -526,11 +533,32 @@ function ConfirmationCard({ order: o }: { order: OrderDetail }) {
           {t('queue.attempts', { count: c.attempts })}
         </p>
       )}
-      {c.inQueue && !c.confirmedVia && (
-        <Button variant="secondary" asChild>
-          <Link to="/orders/confirm">{t('confirmation.openQueue')}</Link>
-        </Button>
+      {c.linkSentAt && (
+        <p className="text-sm text-muted-foreground">
+          {c.linkAnswer
+            ? t(c.linkAnswer === 'confirm' ? 'queue.linkConfirmed' : 'confirmation.linkCancelled')
+            : t('confirmation.linkSent', { time: dateTime(locale, c.linkSentAt) })}
+        </p>
       )}
+      {c.inQueue && !c.confirmedVia && (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" asChild>
+            <Link to="/orders/confirm">{t('confirmation.openQueue')}</Link>
+          </Button>
+          {canWrite && c.linkSentAt && !c.linkAnswer && (
+            <Button
+              variant="ghost"
+              disabled={resend.isPending}
+              onClick={() =>
+                resend.mutate(undefined, { onSuccess: () => toast(t('confirmation.linkResent')) })
+              }
+            >
+              {t('confirmation.resend')}
+            </Button>
+          )}
+        </div>
+      )}
+      {resend.error && <Notice tone="error">{orderErrorMessage(resend.error, t)}</Notice>}
     </section>
   );
 }

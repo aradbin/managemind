@@ -1161,3 +1161,19 @@ button.link {
   padding: 12px 0;
   border-bottom: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
 }
+
+/* The SMS confirmation link's page (phase-6-plan §3.7). */
+[data-confirm] .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+[data-confirm] .actions .button {
+  flex: 1 1 12rem;
+  min-height: 3rem;
+}
+[data-confirm] .done {
+  font-size: 1.125rem;
+  font-weight: 600;
+}

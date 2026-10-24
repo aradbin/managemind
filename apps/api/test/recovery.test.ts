@@ -6,6 +6,7 @@ import {
   createManualOrder,
   createProduct,
   createTenant,
+  issueLink,
   receive,
   systemActor,
   withTenant,
@@ -14,8 +15,9 @@ import { connect } from '@managemind/db/testing';
 import { permissionsOf } from '@managemind/shared';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createApp } from '../src/app';
 import { browser, signIn } from './staff';
-import { appUrl, makeEnv, ownerUrl } from './support';
+import { appUrl, makeCtx, makeEnv, ownerUrl } from './support';
 
 // biome-ignore lint/suspicious/noExplicitAny: response bodies; the assertions check their shape
 type Json = any;
@@ -24,6 +26,7 @@ let owner: pg.Client;
 let app: pg.Client;
 interface Store {
   id: string;
+  host: string;
   email: string;
   variant: string;
   actor: Parameters<typeof createManualOrder>[1];
@@ -58,7 +61,7 @@ async function makeStore(name: string): Promise<Store> {
     await receive(tx, actor, { variantId: id, quantity: 50, reason: 'received' });
     return id;
   });
-  return { id: created.id, email, variant, actor };
+  return { id: created.id, host: `${slug}.${makeEnv().STORE_DOMAIN}`, email, variant, actor };
 }
 
 beforeAll(async () => {
@@ -160,5 +163,64 @@ describe('duplicates over HTTP', () => {
     expect(res.status).toBe(200);
     expect(((await res.json()) as Json).flags).toEqual([]);
     expect((await br.post(`/api/admin/orders/${newer.id}/duplicate/dismiss`)).status).toBe(409);
+  });
+});
+
+describe('the SMS link page over HTTP', () => {
+  const env = makeEnv();
+  const call = async (host: string, path: string, body: unknown, ip = '203.0.113.21') => {
+    const ctx = makeCtx();
+    const res = await createApp().request(
+      path,
+      {
+        method: 'POST',
+        headers: {
+          'x-forwarded-host': host,
+          'x-shopper-ip': ip,
+          origin: `https://${host}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      },
+      env,
+      ctx,
+    );
+    await ctx.settle();
+    return res;
+  };
+  const linked = async (phone: string) => {
+    const placed = await order(a, phone);
+    const code = (await withTenant(app, a.id, (tx) =>
+      issueLink(tx, 'test-key', placed.id, 1),
+    )) as string;
+    return { placed, code };
+  };
+
+  it("shows the order on its store's host only, then confirms it once", async () => {
+    const { placed, code } = await linked('+8801712000401');
+    const view = await call(a.host, '/v1/store/confirm/view', { code });
+    expect(view.status).toBe(200);
+    expect(view.headers.get('cache-control')).toBe('no-store');
+    const body = (await view.json()) as Json;
+    expect(body).toMatchObject({ displayNumber: placed.displayNumber, storeName: 'Recovery A' });
+    expect(JSON.stringify(body)).not.toMatch(/Flat 3B|01712000401|8801712000401/);
+    // Store A's code on store B's host finds nothing.
+    expect((await call(b.host, '/v1/store/confirm/view', { code })).status).toBe(404);
+
+    const answer = await call(a.host, '/v1/store/confirm', { code, action: 'confirm' });
+    expect(((await answer.json()) as Json).result).toBe('confirmed');
+    expect((await call(a.host, '/v1/store/confirm', { code, action: 'confirm' })).status).toBe(404);
+  });
+
+  it('locks an IP out after 5 wrong codes', async () => {
+    const { code } = await linked('+8801712000402');
+    const ip = '203.0.113.77';
+    for (let i = 0; i < 5; i++) {
+      const res = await call(a.host, '/v1/store/confirm/view', { code: `Wrong${i}abcd` }, ip);
+      expect(res.status).toBe(404);
+    }
+    expect((await call(a.host, '/v1/store/confirm/view', { code }, ip)).status).toBe(429);
+    // Another IP still gets in.
+    expect((await call(a.host, '/v1/store/confirm/view', { code })).status).toBe(200);
   });
 });

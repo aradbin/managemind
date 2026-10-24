@@ -495,7 +495,9 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
           // The advance is paid online and the OTP goes by SMS (phase-5a-plan §3.4, §3.14):
           // neither can be turned on before the store's gateway works. A rule
           // saved earlier stays, and checkout skips it until the gateway works.
-          const before = patch.cod ? (await getStore(tx, c.var.staff.actor)).cod : null;
+          const current =
+            patch.cod || patch.confirmation ? await getStore(tx, c.var.staff.actor) : null;
+          const before = current?.cod ?? null;
           if (
             patch.cod &&
             patch.cod.advance !== 'never' &&
@@ -518,6 +520,23 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
             throw new AppError('validation_failed', {
               detail: 'Set up an SMS gateway first: the code goes by SMS',
               fields: [{ path: 'cod.otp', code: 'needs_sms', message: 'No SMS gateway is set up' }],
+            });
+          }
+          // The confirmation link goes by SMS too (phase-6-plan §3.7, Q9).
+          if (
+            patch.confirmation?.smsLink &&
+            !current?.confirmation.smsLink &&
+            !(await loadCredentials(tx, await credentialsKeyring(c.env), 'sms'))
+          ) {
+            throw new AppError('validation_failed', {
+              detail: 'Set up an SMS gateway first: the link goes by SMS',
+              fields: [
+                {
+                  path: 'confirmation.smsLink',
+                  code: 'needs_sms',
+                  message: 'No SMS gateway is set up',
+                },
+              ],
             });
           }
           return {

@@ -587,6 +587,16 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'confirmSettings.scriptEn': 'ইংরেজি',
   'confirmSettings.unknownPlaceholder': 'এগুলো চলবে না: {names}',
   'confirmSettings.preview': 'যেমন দেখাবে',
+  'confirmSettings.smsLink': 'নতুন অর্ডারে নিশ্চিত বা বাতিলের লিংক এসএমএসে পাঠান',
+  'confirmSettings.smsLinkHint':
+    'আপনার গেটওয়ে থেকে প্রতি অর্ডারে একটি এসএমএস। অর্ডার অপেক্ষায় থাকা পর্যন্ত, ৪৮ ঘণ্টা লিংক কাজ করে।',
+  'confirmSettings.callRisky': 'ঝুঁকিপূর্ণ ফোন লিংকে নিশ্চিত করলেও ফোন করুন',
+  'confirmSettings.callRiskyHint':
+    'তাদের অর্ডার তালিকায় থাকে, "এসএমএসে নিশ্চিত করেছেন: আগে ফোন করুন" লেখা থাকে।',
+  'confirmation.linkSent': 'নিশ্চিতকরণের লিংক পাঠানো হয়েছে {time}।',
+  'confirmation.linkCancelled': 'ক্রেতা এসএমএস লিংক থেকে বাতিল করেছেন।',
+  'confirmation.resend': 'লিংক আবার পাঠান',
+  'confirmation.linkResent': 'লিংক পাঠানো হচ্ছে।',
   'risk.title': 'ডেলিভারির রেকর্ড',
   'risk.badge': 'ডেলিভারি স্কোর',
   'risk.score': '{score}%',

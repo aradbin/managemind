@@ -504,6 +504,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/orders/{id}/duplicate/merge': { id: order.id },
       'POST /v1/admin/orders/{id}/duplicate/dismiss': { id: order.id },
       'POST /v1/admin/orders/{id}/confirmation/claim': { id: order.id },
+      'POST /v1/admin/orders/{id}/confirmation/link': { id: order.id },
       'POST /v1/admin/orders/{id}/confirmation/outcomes': {
         id: order.id,
         body: { outcome: 'no_answer' },

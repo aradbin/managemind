@@ -35,6 +35,18 @@ describe('parseStorePath', () => {
     });
   });
 
+  it('reads the SMS confirmation page, whose code is the fragment (phase-6-plan §3.7)', () => {
+    expect(parseStorePath('/c')).toEqual({
+      type: 'route',
+      locale: null,
+      route: { kind: 'confirm' },
+    });
+    expect(parseStorePath('/en/c')).toMatchObject({ locale: 'en', route: { kind: 'confirm' } });
+    expect(storePath({ kind: 'confirm' }, 'en', 'bn')).toBe('/en/c');
+    // Categories and collections are untouched by the short path.
+    expect(parseStorePath('/categories/c')).toMatchObject({ route: { kind: 'category' } });
+  });
+
   it('reads sitemaps and robots', () => {
     expect(parseStorePath('/robots.txt')).toEqual({ type: 'robots' });
     expect(parseStorePath('/sitemap.xml')).toEqual({ type: 'sitemap', part: null });

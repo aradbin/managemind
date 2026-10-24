@@ -601,6 +601,16 @@ export const ordersEn = {
   'confirmSettings.scriptEn': 'English',
   'confirmSettings.unknownPlaceholder': 'Not a placeholder: {names}',
   'confirmSettings.preview': 'Preview',
+  'confirmSettings.smsLink': 'Text new orders a link to confirm or cancel',
+  'confirmSettings.smsLinkHint':
+    'One SMS per order from your gateway. The link works for 48 hours, while the order waits.',
+  'confirmSettings.callRisky': 'Still call risky phones that confirm by link',
+  'confirmSettings.callRiskyHint':
+    'Their orders stay in the queue, marked “Confirmed by SMS: call first”.',
+  'confirmation.linkSent': 'Confirmation link sent {time}.',
+  'confirmation.linkCancelled': 'Cancelled by the customer from the SMS link.',
+  'confirmation.resend': 'Send the link again',
+  'confirmation.linkResent': 'The link is on its way.',
   'risk.title': 'Delivery record',
   'risk.badge': 'Delivery score',
   'risk.score': '{score}%',

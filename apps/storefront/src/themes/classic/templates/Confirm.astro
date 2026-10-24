@@ -1,0 +1,42 @@
+---
+// The page behind the SMS link to confirm or cancel a COD order
+// (phase-6-plan §3.7): the code is the URL's fragment, which never reaches
+// a server, and the script sends it in a request body. Confirm and Cancel
+// are buttons, so a link preview fetching the page changes nothing.
+import type { StoreMessageKey } from '../../../i18n';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = [
+  'confirm.title',
+  'confirm.intro',
+  'confirm.order',
+  'confirm.items',
+  'confirm.total',
+  'confirm.cod',
+  'confirm.area',
+  'confirm.yes',
+  'confirm.no',
+  'confirm.noConfirm',
+  'confirm.confirmed',
+  'confirm.noted',
+  'confirm.cancelled',
+  'confirm.gone',
+  'confirm.locked',
+  'cart.error',
+];
+---
+
+<ShopPage ctx={ctx} kind="confirm" title={t('confirm.title')} keys={keys}>
+  <div class="shop narrow">
+    <h1>{t('confirm.title')}</h1>
+    <p class="notice" data-notice role="alert" hidden></p>
+    <div data-confirm aria-live="polite"><p>{t('confirm.intro')}</p></div>
+  </div>
+  <script src="../scripts/confirm.ts"></script>
+</ShopPage>

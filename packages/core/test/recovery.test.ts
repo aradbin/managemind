@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
   addToCart,
+  answerLink,
   cancelOrder,
   claimConfirmation,
   confirmOrder,
@@ -21,14 +22,20 @@ import {
   getCustomer,
   getOrder,
   getPhoneRisk,
+  hashLinkCode,
   inventoryDrift,
+  linkCode,
+  linkView,
   listConfirmations,
   listOrders,
   mergeDuplicate,
+  type OutboxEvent,
   placeOrder,
+  planMessages,
   previewManualOrder,
   receive,
   recordOutcome,
+  resendLink,
   returnShipment,
   setCartArea,
   shipShipment,
@@ -674,6 +681,169 @@ describe('the confirmation queue', () => {
       expect(queue).toMatchObject({ enabled: false, items: [] });
     } finally {
       await run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+    }
+  });
+});
+
+describe('the SMS link', () => {
+  const KEY = 'test-link-key';
+  const options = {
+    trackUrl: 'https://shop.example.test/track',
+    pageUrl: (path: string) => `https://shop.example.test/${path}`,
+    linkKey: KEY,
+    smsGateway: true,
+  };
+  const latestEvent = (type: string, orderId: string) =>
+    run(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string; payload: unknown }>(
+        sql`select id, payload from store.outbox where event_type = ${type} and aggregate_id = ${orderId}
+             order by created_at desc limit 1`,
+      );
+      const r = rows[0] as { id: string; payload: unknown };
+      return {
+        id: r.id,
+        tenantId: store,
+        eventType: type,
+        aggregateType: 'order',
+        aggregateId: orderId,
+        payload: r.payload,
+        requestId: null,
+        createdAt: new Date().toISOString(),
+      } as OutboxEvent;
+    });
+  const planFor = async (type: string, orderId: string, opts = options) => {
+    const event = await latestEvent(type, orderId);
+    return run((tx) => planMessages(tx, event, opts));
+  };
+  const linkOn = (extra: Record<string, unknown> = {}) =>
+    run((tx) => updateStoreProfile(tx, owner, { confirmation: { smsLink: true, ...extra } }));
+  const linkOff = () => run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+  /** A COD order whose placed event was planned: the link's code, from the SMS. */
+  async function linked(phone = newPhone()) {
+    const placed = await manualOrder(await product(), phone);
+    const planned = await planFor('order.placed', placed.id);
+    const sms = planned.find((m) => m.event === 'confirm_request');
+    const url = sms?.values.confirm_url ?? '';
+    return { placed, sms, code: url.split('#')[1] ?? '' };
+  }
+
+  it('sends one SMS with a short code, stored only as its hash, the same on redelivery', async () => {
+    await linkOn();
+    try {
+      const { placed, sms, code } = await linked();
+      expect(sms).toMatchObject({ channel: 'sms', skip: null });
+      expect(sms?.values.confirm_url).toMatch(/^https:\/\/shop\.example\.test\/c#[0-9A-Za-z]{10}$/);
+      expect(code).toBe(await linkCode(KEY, store, placed.id, 1));
+      const row = await run(async (tx) => {
+        const { rows } = await tx.db.execute<{ link_hash: string; link_sends: number }>(
+          sql`select link_hash, link_sends from store.order_confirmations where order_id = ${placed.id}`,
+        );
+        return rows[0];
+      });
+      expect(row).toEqual({ link_hash: await hashLinkCode(code), link_sends: 1 });
+      // Planning the event again gives the same code: the SMS already sent still works.
+      const again = await planFor('order.placed', placed.id);
+      expect(again.find((m) => m.event === 'confirm_request')?.values.confirm_url).toBe(
+        sms?.values.confirm_url,
+      );
+      const view = await run((tx) => linkView(tx, code));
+      expect(view).toMatchObject({ displayNumber: placed.displayNumber, total: placed.total });
+      expect(JSON.stringify(view)).not.toContain('House 1');
+    } finally {
+      await linkOff();
+    }
+  });
+
+  it('sends nothing when the store has the link off, and is skipped without a gateway', async () => {
+    const off = await linked();
+    expect(off.sms).toBeUndefined();
+    await linkOn();
+    try {
+      const placed = await manualOrder(await product(), newPhone());
+      const planned = await planFor('order.placed', placed.id, {
+        ...options,
+        smsGateway: false,
+      });
+      expect(planned.find((m) => m.event === 'confirm_request')?.skip).toBe('no_gateway');
+    } finally {
+      await linkOff();
+    }
+  });
+
+  it('confirms once; a second use, a wrong code and an expired one all fail the same way', async () => {
+    await linkOn();
+    try {
+      const { placed, code } = await linked();
+      expect(await run((tx) => answerLink(tx, code, 'confirm'))).toBe('confirmed');
+      const order = await run((tx) => getOrder(tx, owner, placed.id));
+      expect(order).toMatchObject({ status: 'confirmed', confirmation: { confirmedVia: 'link' } });
+      // No "order confirmed" message for a shopper who just confirmed.
+      expect(triggeredBy(await latestEvent('order.confirmed', placed.id))?.shopper).toEqual([]);
+      for (const c of [code, 'AAAAAAAAAA', 'short']) {
+        await expect(run((tx) => answerLink(tx, c, 'confirm'))).rejects.toMatchObject({
+          code: 'not_found',
+        });
+        expect(await run((tx) => linkView(tx, c))).toBeNull();
+      }
+      const late = await linked();
+      await run((tx) =>
+        tx.db.execute(sql`update store.order_confirmations set link_expires_at = now() - interval '1 minute'
+                          where order_id = ${late.placed.id}`),
+      );
+      await expect(run((tx) => answerLink(tx, late.code, 'confirm'))).rejects.toMatchObject({
+        code: 'not_found',
+      });
+    } finally {
+      await linkOff();
+    }
+  });
+
+  it("notes a risky phone's confirmation and keeps it in the queue; cancels as the shopper", async () => {
+    const v = await product();
+    const phone = newPhone();
+    // A delivery that came back: risky under Phase 5A's default.
+    await cameBack((await manualOrder(v, phone)).id);
+    await setFraud({ flagAfterFailed: 1 });
+    await linkOn();
+    try {
+      const { placed, code } = await linked(phone);
+      expect(await run((tx) => answerLink(tx, code, 'confirm'))).toBe('noted');
+      const queue = await run((tx) => listConfirmations(tx, owner, { limit: 100 }));
+      expect(queue.items.find((i) => i.orderId === placed.id)?.linkAnswer).toBe('confirm');
+      expect((await run((tx) => getOrder(tx, owner, placed.id))).status).toBe('pending');
+
+      const other = await linked();
+      expect(await run((tx) => answerLink(tx, other.code, 'cancel'))).toBe('cancelled');
+      const cancelled = await run((tx) => getOrder(tx, owner, other.placed.id));
+      expect(cancelled).toMatchObject({ status: 'cancelled', cancelCode: 'shopper_request' });
+      expect(cancelled.cancelledBy).toBe('shopper');
+    } finally {
+      await linkOff();
+      await setFraud({});
+    }
+  });
+
+  it('sends the link again twice at most, each with a new code that replaces the old', async () => {
+    await linkOn();
+    try {
+      const { placed, code } = await linked();
+      const ready = { smsReady: true };
+      for (const send of [2, 3]) {
+        expect(await run((tx) => resendLink(tx, owner, placed.id, ready))).toEqual({ sends: send });
+        const event = await latestEvent('confirmation.link_requested', placed.id);
+        const planned = await run((tx) => planMessages(tx, event, options));
+        const url = planned.find((m) => m.event === 'confirm_request')?.values.confirm_url;
+        expect(url?.split('#')[1]).toBe(await linkCode(KEY, store, placed.id, send));
+      }
+      expect(await run((tx) => linkView(tx, code))).toBeNull();
+      await expect(run((tx) => resendLink(tx, owner, placed.id, ready))).rejects.toMatchObject({
+        extensions: { reason: 'limit' },
+      });
+      await expect(
+        run((tx) => resendLink(tx, owner, placed.id, { smsReady: false })),
+      ).rejects.toMatchObject({ extensions: { reason: 'link_off' } });
+    } finally {
+      await linkOff();
     }
   });
 });

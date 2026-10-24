@@ -62,6 +62,11 @@ export const RULES = {
     windows: [{ limit: 20, seconds: HOUR }],
     lockout: { failures: 5, windowSeconds: HOUR, lockSeconds: HOUR },
   },
+  /** The SMS link to confirm an order (phase-6-plan §3.7): 5 wrong codes lock the IP for an hour. */
+  'confirm-link:ip': {
+    windows: [{ limit: 20, seconds: HOUR }],
+    lockout: { failures: 5, windowSeconds: HOUR, lockSeconds: HOUR },
+  },
   /** Codes texted before cash on delivery, per store and phone (phase-5a-plan §3.14). */
   'otp-send:phone': { windows: [{ limit: 3, seconds: HOUR }] },
   /** Return requests per store and phone (phase-5a-plan §3.12). */

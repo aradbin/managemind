@@ -35,12 +35,14 @@ import {
   listCustomers,
   listOrders,
   listZones,
+  loadCredentials,
   mergeDuplicate,
   ordersForPrint,
   previewManualOrder,
   quoteDelivery,
   recordOutcome,
   recordPayment,
+  resendLink,
   returnShipment,
   runIdempotent,
   setCustomerFlag,
@@ -84,6 +86,7 @@ import {
   signOrderToken,
 } from '@managemind/shared/orders';
 import type { Context } from 'hono';
+import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
 import { inStore, type StaffEnv } from './context';
 import { storeUrlsFor } from './store-urls';
@@ -689,6 +692,14 @@ export const ORDER_ROUTES = {
       'Recorded',
     ),
   }),
+  resendLink: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/link',
+    summary:
+      'Send the SMS link to confirm or cancel again, with a new code (at most twice an order; orders.write)',
+    request: { params: Id },
+    responses: json(z.object({ sends: z.number().int() }), 'Sent'),
+  }),
   mergeDuplicate: r({
     method: 'post',
     path: '/orders/{id}/duplicate/merge',
@@ -1106,6 +1117,19 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   );
   command(R.confirmationOutcome, 'confirmation_outcome', (tx, c, input) =>
     recordOutcome(tx, actor(c), id(c), input),
+  );
+  admin.openapi(R.resendLink, async (c) =>
+    c.json(
+      await inStore(
+        c,
+        async (tx) =>
+          resendLink(tx, actor(c), id(c), {
+            smsReady: (await loadCredentials(tx, await credentialsKeyring(c.env), 'sms')) !== null,
+          }),
+        write,
+      ),
+      200,
+    ),
   );
   command(R.mergeDuplicate, 'merge', async (tx, c) => {
     const { orderId } = await mergeDuplicate(tx, actor(c), id(c));

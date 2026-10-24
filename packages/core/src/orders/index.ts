@@ -1,3 +1,4 @@
+export * from './confirm-link';
 export * from './confirmation';
 export * from './duplicates';
 export * from './edit';

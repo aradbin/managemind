@@ -117,6 +117,8 @@ export const EVENTS = {
     code: z.enum(CANCEL_CODES).optional(),
   }),
   'order.edited': z.object({ number: z.number().int(), total: z.number().int() }),
+  /** Staff sent the SMS link again (phase-6-plan §3.7): its send number, from 2. */
+  'confirmation.link_requested': z.object({ send: z.number().int().min(2).max(10) }),
   'payment.recorded': z.object({
     orderId: z.uuid(),
     provider: z.string(),

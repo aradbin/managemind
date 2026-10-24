@@ -27,6 +27,7 @@ import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { fieldErrors } from '../lib/messaging';
 
 /** A whole number typed in either numeral system, or null. */
 const int = (s: string) => {
@@ -158,8 +159,9 @@ export function ConfirmationSettingsPage() {
   if (store.isPending) return <p role="status">{t('loading')}</p>;
   if (store.isError) return <Notice tone="error">{errorMessage(store.error, t)}</Notice>;
   const err = (bad: boolean) => (bad ? t('form.invalid') : undefined);
+  const refused = fieldErrors(save.error);
   const check = (
-    key: 'queue' | 'includePaid' | 'cancelUnreachable',
+    key: 'queue' | 'includePaid' | 'cancelUnreachable' | 'smsLink' | 'callRisky',
     label: string,
     hint?: string,
   ) => (
@@ -219,6 +221,16 @@ export function ConfirmationSettingsPage() {
                 t('confirmSettings.cancelUnreachable'),
                 t('confirmSettings.cancelUnreachableHint'),
               )}
+              {check('smsLink', t('confirmSettings.smsLink'), t('confirmSettings.smsLinkHint'))}
+              {refused['confirmation.smsLink'] && (
+                <Notice tone="error">{t('checkoutSettings.needsSms')}</Notice>
+              )}
+              {confirmation.smsLink &&
+                check(
+                  'callRisky',
+                  t('confirmSettings.callRisky'),
+                  t('confirmSettings.callRiskyHint'),
+                )}
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">
                   {t('confirmSettings.autoConfirm')}
@@ -338,7 +350,9 @@ export function ConfirmationSettingsPage() {
             error={err(errors.duplicateMinutes)}
           />
         </fieldset>
-        {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        {save.error && !refused['confirmation.smsLink'] && (
+          <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
+        )}
         {canEdit && (
           <div>
             <Button type="submit" disabled={save.isPending}>
