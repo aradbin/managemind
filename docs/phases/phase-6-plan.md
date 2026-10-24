@@ -1,6 +1,6 @@
 # Phase 6 plan — Sales recovery
 
-- Status: **Draft, waiting for the owner's approval** (§14)
+- Status: Approved (Oct 24). The owner accepted every recommendation in §14, and chose to build now with the pull request opened once Actions minutes allow (Q1, Q12). What's still needed from the owner: the legal review's wording for the checkout notice (Q5), and the pilot stores' call scripts and threshold data (Q3, Q4)
 - Date: 2026-10-24
 - Scope: PLAN.md "Phase 6 — Sales recovery": incomplete orders, the fake-order check, the order confirmation workflow and duplicate order detection. It builds on Phase 4's checkout, blocklist and rate limits, and on Phase 5A's flagged phones, the advance delivery charge and the code by SMS before cash on delivery (phase-5a-plan §3.4, §3.11, §3.14)
 
