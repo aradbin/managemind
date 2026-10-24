@@ -6962,6 +6962,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The confirmation queue: To call, Later, Unreachable, or Risky first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    tab?: "to_call" | "later" | "unreachable" | "risky";
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queue */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConfirmationQueue"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirmation/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim an order to call for 5 minutes; 409 while someone else holds it. Returns the call panel with the script (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Claimed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CallPanel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirmation/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One call's outcome: confirmed, no answer, call back, wrong number or cancelled (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        outcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled";
+                        note?: string;
+                        /** @enum {string} */
+                        code?: "shopper_request" | "fake" | "other";
+                        /** Format: date-time */
+                        dueAt?: string;
+                        block?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            orderId: string;
+                            status: string;
+                            attempts: number;
+                            dueAt: string | null;
+                            unreachable: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/orders/{id}/duplicate/merge": {
         parameters: {
             query?: never;
@@ -14335,6 +14472,7 @@ export interface components {
             } | null;
             /** @enum {string|null} */
             cancelCode: "shopper_request" | "no_answer" | "wrong_number" | "fake" | "duplicate" | "out_of_stock" | "payment_expired" | "other" | null;
+            confirmation: components["schemas"]["ConfirmationState"];
             refunds: {
                 /** Format: uuid */
                 id: string;
@@ -14420,6 +14558,18 @@ export interface components {
             cancelledAt: string | null;
             actions: string[];
         };
+        ConfirmationState: {
+            inQueue: boolean;
+            attempts: number;
+            /** @enum {string|null} */
+            lastOutcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled" | null;
+            dueAt: string | null;
+            /** @enum {string|null} */
+            confirmedVia: "call" | "link" | "staff" | "auto" | null;
+            linkSentAt: string | null;
+            /** @enum {string|null} */
+            linkAnswer: "confirm" | "cancel" | null;
+        } | null;
         ManualOrderPlaced: {
             /** Format: uuid */
             id: string;
@@ -14439,6 +14589,67 @@ export interface components {
             status: string;
             paymentStatus: string;
             deliveryStatus: string;
+        };
+        ConfirmationQueue: {
+            enabled: boolean;
+            counts: {
+                toCall: number;
+                later: number;
+                unreachable: number;
+            };
+            items: components["schemas"]["ConfirmationQueueItem"][];
+        };
+        ConfirmationQueueItem: {
+            /** Format: uuid */
+            orderId: string;
+            displayNumber: string;
+            name: string;
+            /** @description Masked without customers.read */
+            phone: string;
+            /** @enum {string} */
+            locale: "bn" | "en";
+            items: {
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                quantity: number;
+            }[];
+            itemCount: number;
+            total: number;
+            codDue: number;
+            area: {
+                bn?: string;
+                en?: string;
+            } | null;
+            risk: components["schemas"]["PhoneRisk"];
+            flags: string[];
+            attempts: number;
+            /** @enum {string|null} */
+            lastOutcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled" | null;
+            lastNote: string | null;
+            dueAt: string | null;
+            claim: {
+                /** Format: uuid */
+                userId: string;
+                name: string;
+                until: string;
+                mine: boolean;
+            } | null;
+            /** @enum {string|null} */
+            linkAnswer: "confirm" | "cancel" | null;
+            placedAt: string;
+        };
+        CallPanel: {
+            /** Format: uuid */
+            orderId: string;
+            displayNumber: string;
+            name: string;
+            phone: string;
+            script: string;
+            claimedUntil: string;
+            attempts: number;
+            maxAttempts: number;
         };
         Customer: {
             /** Format: uuid */

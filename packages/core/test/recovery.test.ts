@@ -9,6 +9,7 @@ import {
   type Actor,
   addToCart,
   cancelOrder,
+  claimConfirmation,
   confirmOrder,
   createManualOrder,
   createProduct,
@@ -21,11 +22,13 @@ import {
   getOrder,
   getPhoneRisk,
   inventoryDrift,
+  listConfirmations,
   listOrders,
   mergeDuplicate,
   placeOrder,
   previewManualOrder,
   receive,
+  recordOutcome,
   returnShipment,
   setCartArea,
   shipShipment,
@@ -466,5 +469,211 @@ describe('duplicate orders', () => {
       } as never);
     expect(event('duplicate')?.shopper).toEqual([]);
     expect(event('fake')?.shopper).toEqual(['order_cancelled']);
+  });
+});
+
+describe('the confirmation queue', () => {
+  const caller = (n: number): Actor => ({
+    ...actorAs('staff'),
+    userId: `0199d000-0000-7000-8000-00000000c0${n}0`,
+  });
+  const inQueue = async (orderId: string, tab = 'to_call') =>
+    (await run((tx) => listConfirmations(tx, owner, { tab, limit: 100 }))).items.find(
+      (i) => i.orderId === orderId,
+    );
+  const outcome = (orderId: string, input: Record<string, unknown>, who = owner) =>
+    run((tx) => recordOutcome(tx, who, orderId, input));
+
+  it('lists pending COD orders, not confirmed or prepaid ones', async () => {
+    const v = await product();
+    const cod = await manualOrder(v, newPhone());
+    const prepaid = await manualOrder(v, newPhone(), 1, {
+      payment: { method: 'bkash', amount: 50_000 + 6_000, reference: 'TX' },
+      deliveryFee: { amount: 6_000, reason: 'flat' },
+    });
+    const confirmed = await manualOrder(v, newPhone(), 1, { confirm: true });
+    const item = await inQueue(cod.id);
+    expect(item).toMatchObject({ attempts: 0, claim: null, codDue: cod.codAmount });
+    expect(item?.items[0]?.quantity).toBe(1);
+    expect(await inQueue(prepaid.id)).toBeUndefined();
+    expect(await inQueue(confirmed.id)).toBeUndefined();
+    await run((tx) => updateStoreProfile(tx, owner, { confirmation: { includePaid: true } }));
+    try {
+      expect(await inQueue(prepaid.id)).toBeDefined();
+    } finally {
+      await run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+    }
+  });
+
+  it('gives the claim to one caller; the other sees who holds it', async () => {
+    const placed = await manualOrder(await product(), newPhone());
+    const panel = await run((tx) => claimConfirmation(tx, caller(1), placed.id));
+    expect(panel).toMatchObject({ orderId: placed.id, attempts: 0, maxAttempts: 3 });
+    expect(panel.script).toContain(placed.displayNumber);
+    expect(panel.script).toContain('Recovery test');
+    await expect(run((tx) => claimConfirmation(tx, caller(2), placed.id))).rejects.toMatchObject({
+      code: 'conflict',
+      extensions: { reason: 'claimed' },
+    });
+    // Claiming again extends the caller's own claim.
+    await run((tx) => claimConfirmation(tx, caller(1), placed.id));
+    expect((await inQueue(placed.id))?.claim).toMatchObject({ userId: caller(1).userId });
+    // Someone else can't record an outcome while it's held.
+    await expect(outcome(placed.id, { outcome: 'no_answer' }, caller(2))).rejects.toMatchObject({
+      code: 'conflict',
+    });
+    await outcome(placed.id, { outcome: 'no_answer' }, caller(1));
+    expect((await inQueue(placed.id, 'later'))?.claim).toBeNull();
+  });
+
+  it('lets exactly one of two simultaneous claims win', async () => {
+    const placed = await manualOrder(await product(), newPhone());
+    const [one, two] = [await connectApp(), await connectApp()];
+    try {
+      const results = await Promise.allSettled([
+        withTenant(one, store, (tx) => claimConfirmation(tx, caller(3), placed.id)),
+        withTenant(two, store, (tx) => claimConfirmation(tx, caller(4), placed.id)),
+      ]);
+      expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
+    } finally {
+      await Promise.all([one.end(), two.end()]);
+    }
+  });
+
+  it('retries an unanswered order later, and marks it unreachable at the limit', async () => {
+    const placed = await manualOrder(await product(), newPhone());
+    const first = await outcome(placed.id, { outcome: 'no_answer' });
+    expect(first).toMatchObject({ attempts: 1, unreachable: false, status: 'pending' });
+    expect(await inQueue(placed.id)).toBeUndefined();
+    expect((await inQueue(placed.id, 'later'))?.attempts).toBe(1);
+    await outcome(placed.id, { outcome: 'no_answer' });
+    const third = await outcome(placed.id, { outcome: 'no_answer', note: 'Switched off' });
+    expect(third).toMatchObject({ attempts: 3, unreachable: true, status: 'pending' });
+    expect((await inQueue(placed.id, 'unreachable'))?.lastNote).toBe('Switched off');
+    const order = await run((tx) => getOrder(tx, owner, placed.id));
+    expect(order.flags).toContain('unreachable');
+    expect(order.confirmation).toMatchObject({
+      inQueue: true,
+      attempts: 3,
+      lastOutcome: 'no_answer',
+    });
+    expect(order.timeline.filter((e) => e.machine === 'confirmation')).toHaveLength(3);
+  });
+
+  it('cancels at the limit as no answer when the store says so', async () => {
+    await run((tx) =>
+      updateStoreProfile(tx, owner, { confirmation: { maxAttempts: 1, cancelUnreachable: true } }),
+    );
+    try {
+      const v = await product();
+      const phone = newPhone();
+      const placed = await manualOrder(v, phone);
+      expect(await outcome(placed.id, { outcome: 'no_answer' })).toMatchObject({
+        status: 'cancelled',
+        unreachable: true,
+      });
+      const order = await run((tx) => getOrder(tx, owner, placed.id));
+      expect(order.cancelCode).toBe('no_answer');
+      expect((await run((tx) => getPhoneRisk(tx, owner, phone))).history.noAnswer).toBe(1);
+    } finally {
+      await run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+    }
+  });
+
+  it('calls back at the time chosen, with a note', async () => {
+    const placed = await manualOrder(await product(), newPhone());
+    await expect(outcome(placed.id, { outcome: 'call_back' })).rejects.toMatchObject({
+      code: 'validation_failed',
+    });
+    const at = new Date(Date.now() + 3 * 3_600_000).toISOString();
+    const r = await outcome(placed.id, { outcome: 'call_back', dueAt: at, note: 'At work' });
+    expect(r).toMatchObject({ attempts: 0, dueAt: at });
+    expect((await inQueue(placed.id, 'later'))?.lastOutcome).toBe('call_back');
+    const past = new Date(Date.now() - 60_000).toISOString();
+    await expect(
+      outcome(placed.id, { outcome: 'call_back', dueAt: past, note: 'x' }),
+    ).rejects.toMatchObject({ code: 'validation_failed' });
+  });
+
+  it('confirms by call, and records how', async () => {
+    const placed = await manualOrder(await product(), newPhone());
+    expect(await outcome(placed.id, { outcome: 'confirmed' })).toMatchObject({
+      status: 'confirmed',
+    });
+    const order = await run((tx) => getOrder(tx, owner, placed.id));
+    expect(order.confirmation).toMatchObject({ inQueue: false, confirmedVia: 'call' });
+    const event = await run(async (tx) => {
+      const { rows } = await tx.db.execute<{ payload: { via: string } }>(
+        sql`select payload from store.outbox where aggregate_id = ${placed.id} and event_type = 'order.confirmed'`,
+      );
+      return rows[0]?.payload;
+    });
+    expect(event?.via).toBe('call');
+    // Staff's button says staff.
+    const other = await manualOrder(await product(), newPhone());
+    await run((tx) => confirmOrder(tx, owner, other.id));
+    expect((await run((tx) => getOrder(tx, owner, other.id))).confirmation?.confirmedVia).toBe(
+      'staff',
+    );
+    // An order that left the queue takes no more outcomes.
+    await expect(outcome(placed.id, { outcome: 'no_answer' })).rejects.toMatchObject({
+      code: 'illegal_transition',
+    });
+  });
+
+  it('cancels a wrong number, blocking it when asked, and a fake order with its code', async () => {
+    const v = await product();
+    const phone = newPhone();
+    const wrong = await manualOrder(v, phone);
+    await outcome(wrong.id, { outcome: 'wrong_number', block: true });
+    expect((await run((tx) => getOrder(tx, owner, wrong.id))).cancelCode).toBe('wrong_number');
+    const blocked = await run(
+      async (tx) =>
+        (await tx.db.execute(sql`select 1 from store.blocked_phones where phone = ${phone}`)).rows,
+    );
+    expect(blocked).toHaveLength(1);
+    // Staff without settings.write can't block, and nothing is recorded.
+    const other = await manualOrder(v, newPhone());
+    await expect(
+      outcome(other.id, { outcome: 'wrong_number', block: true }, caller(5)),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    expect((await run((tx) => getOrder(tx, owner, other.id))).status).toBe('pending');
+
+    const fake = await manualOrder(v, newPhone());
+    await expect(outcome(fake.id, { outcome: 'cancelled' })).rejects.toMatchObject({
+      code: 'validation_failed',
+    });
+    await outcome(fake.id, { outcome: 'cancelled', code: 'fake', note: 'Never ordered' });
+    const order = await run((tx) => getOrder(tx, owner, fake.id));
+    expect(order).toMatchObject({ status: 'cancelled', cancelCode: 'fake' });
+    expect(order.risk.history.fake).toBe(1);
+  });
+
+  it('auto-confirms a trusted phone when the store says so', async () => {
+    const v = await product();
+    const phone = newPhone();
+    for (let i = 0; i < 3; i++) await delivered((await manualOrder(v, phone)).id);
+    await run((tx) => updateStoreProfile(tx, owner, { confirmation: { autoConfirm: 'trusted' } }));
+    try {
+      const placed = await manualOrder(v, phone);
+      expect(placed.status).toBe('confirmed');
+      const order = await run((tx) => getOrder(tx, owner, placed.id));
+      expect(order.confirmation?.confirmedVia).toBe('auto');
+      expect(order.timeline.find((e) => e.event === 'confirm')?.actorType).toBe('system');
+      // A new phone still waits for a call.
+      expect((await manualOrder(v, newPhone())).status).toBe('pending');
+    } finally {
+      await run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+    }
+  });
+
+  it('is empty when the store turns the queue off', async () => {
+    await run((tx) => updateStoreProfile(tx, owner, { confirmation: { queue: false } }));
+    try {
+      const queue = await run((tx) => listConfirmations(tx, owner, {}));
+      expect(queue).toMatchObject({ enabled: false, items: [] });
+    } finally {
+      await run((tx) => updateStoreProfile(tx, owner, { confirmation: {} }));
+    }
   });
 });

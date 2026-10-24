@@ -179,7 +179,7 @@ export const unknownScriptVariables = (text: string) =>
 
 /** The store's script in the order's language, or the default, filled in as plain text. */
 export function renderCallScript(
-  script: { bn?: string; en?: string },
+  script: { bn?: string | undefined; en?: string | undefined },
   locale: 'bn' | 'en',
   values: Readonly<Partial<Record<(typeof SCRIPT_VARIABLES)[number], string>>>,
 ): string {

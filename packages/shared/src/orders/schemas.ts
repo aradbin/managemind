@@ -16,7 +16,7 @@ import {
   RETURN_RECORD_STATUSES,
   RETURN_STATUSES,
 } from './machines';
-import { CANCEL_CODES } from './recovery';
+import { CALL_CANCEL_CODES, CANCEL_CODES, CONFIRMATION_OUTCOMES } from './recovery';
 
 const price = z.int().min(0).max(CATALOG_LIMITS.maxPrice);
 
@@ -128,6 +128,41 @@ export const trackInput = z
   .strict();
 
 export const reasonInput = z.object({ reason: cleanString(300) }).strict();
+
+// ---- The confirmation queue (phase-6-plan §3.5) ---------------------------------------
+
+export const CONFIRMATION_TABS = ['to_call', 'later', 'unreachable', 'risky'] as const;
+
+export const confirmationQuery = z.object({
+  tab: z.enum(CONFIRMATION_TABS).default('to_call'),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type ConfirmationQuery = z.infer<typeof confirmationQuery>;
+
+/** One call's outcome: a call back needs a time and a note; a cancellation needs why. */
+export const confirmationOutcomeInput = z
+  .object({
+    outcome: z.enum(CONFIRMATION_OUTCOMES),
+    note: optionalText(500),
+    code: z.enum(CALL_CANCEL_CODES).optional(),
+    dueAt: z.iso.datetime({ offset: true }).optional(),
+    /** Wrong number: also add the phone to the blocklist (settings.write). */
+    block: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    const need = (path: string, message: string) =>
+      ctx.addIssue({ code: 'custom', path: [path], message });
+    if (v.outcome === 'call_back') {
+      if (!v.dueAt) need('dueAt', 'when to call back');
+      if (!v.note) need('note', 'a note for the next call');
+    }
+    if (v.outcome === 'cancelled') {
+      if (!v.code) need('code', 'why the order is cancelled');
+      if (v.code === 'other' && !v.note) need('note', 'why the order is cancelled');
+    }
+  });
+export type ConfirmationOutcomeInput = z.infer<typeof confirmationOutcomeInput>;
 
 /** Staff's cancellation: a reason, and why as a code (phase-6-plan §3.5); `other` when none. */
 export const cancelInput = z

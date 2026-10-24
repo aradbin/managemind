@@ -1,6 +1,6 @@
 // Every domain event and the zod schema of its payload. emit() refuses an
 // event type that is not listed here or a payload that does not match it.
-import { CANCEL_CODES } from '@managemind/shared/orders';
+import { CANCEL_CODES, CONFIRMED_VIA } from '@managemind/shared/orders';
 import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
@@ -101,7 +101,11 @@ export const EVENTS = {
     source: z.string(),
     total: z.number().int(),
   }),
-  'order.confirmed': z.object({ number: z.number().int() }),
+  'order.confirmed': z.object({
+    number: z.number().int(),
+    /** How (phase-6-plan §3.5); an order confirmed by the shopper's link sends no "confirmed" SMS. */
+    via: z.enum(CONFIRMED_VIA).optional(),
+  }),
   'order.processing': z.object({ number: z.number().int() }),
   'order.completed': z.object({ number: z.number().int() }),
   'order.cancelled': z.object({

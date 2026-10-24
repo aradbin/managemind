@@ -18,6 +18,7 @@ import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
+import { type ConfirmationState, confirmationState } from './confirmation';
 import type { Localized } from './variants';
 
 const iso = (d: unknown) =>
@@ -231,6 +232,8 @@ export interface OrderDetail {
   /** The earlier order this one may duplicate (phase-6-plan §3.4). */
   duplicateOf: { id: string; displayNumber: string; status: string } | null;
   cancelCode: CancelCode | null;
+  /** Its place in the confirmation queue, every call, and how it was confirmed (phase-6-plan §3.5). */
+  confirmation: ConfirmationState | null;
   /** Refunds, newest last (phase-5a-plan §3.13). */
   refunds: {
     id: string;
@@ -357,6 +360,7 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
     r.phone as string,
   ) as PhoneRisk;
   const display = (n: unknown) => formatOrderNumber(checkout.orderNumberPrefix, Number(n));
+  const confirmation = await confirmationState(tx, id, settings);
   const duplicate = others.rows.find((o) => o.id === r.duplicate_of);
   const total = Number(r.total);
   const paidTotal = Number(r.paid_total);
@@ -485,6 +489,7 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
         }
       : null,
     cancelCode: (r.cancel_code as CancelCode) ?? null,
+    confirmation,
     refunds: refunds.rows.map((f) => ({
       id: f.id as string,
       method: f.method as string,

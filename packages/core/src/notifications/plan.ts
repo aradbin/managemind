@@ -62,6 +62,7 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     by?: string;
     reason?: string;
     code?: string;
+    via?: string;
     problem?: string;
     creditCode?: string;
     method?: string;
@@ -72,7 +73,8 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     case 'order.placed':
       return { orderId: id, shopper: ['order_placed'], staff: ['new_order'] };
     case 'order.confirmed':
-      return { orderId: id, shopper: ['order_confirmed'], staff: [] };
+      // A shopper who just confirmed by link needs no message saying so (phase-6-plan §4).
+      return { orderId: id, shopper: p.via === 'link' ? [] : ['order_confirmed'], staff: [] };
     case 'order.cancelled':
       // An unpaid online order says why it was cancelled, in one message. A
       // duplicate's shopper keeps the other order and its messages (phase-6-plan §3.4).

@@ -1,3 +1,4 @@
+export * from './confirmation';
 export * from './duplicates';
 export * from './edit';
 export * from './history';

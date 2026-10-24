@@ -17,7 +17,7 @@ import {
 } from '@managemind/shared/orders';
 import { holidayActive } from '@managemind/shared/storefront';
 import { eq, sql } from 'drizzle-orm';
-import { type Actor, auditActor, authorize } from '../access';
+import { type Actor, auditActor, authorize, systemActor } from '../access';
 import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
@@ -31,6 +31,7 @@ import type { ManualDiscount } from '../pricing/engine';
 import { type OrderSettings, orderSettings, type Quote, quote } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
+import { confirmOrder } from './lifecycle';
 
 export const MANUAL_PAYMENT_METHODS = [
   'bkash',
@@ -536,6 +537,18 @@ export async function placeOrder(
   for (const p of q.promotions) {
     if (p.codeId) await reissueCreditRemainder(tx, orderId, p.promotionId, p.amount);
   }
+  // A trusted phone's COD order skips the confirmation queue when the store
+  // says so (phase-6-plan §3.5, Q10): the system confirms it at once.
+  let finalStatus: PlacedOrder['status'] = status;
+  if (
+    status === 'pending' &&
+    settings.settings.confirmation.autoConfirm === 'trusted' &&
+    risk.trusted &&
+    codAmount > 0 &&
+    onlineAmount === 0
+  ) {
+    finalStatus = (await confirmOrder(tx, systemActor, orderId, 'auto')).status as 'confirmed';
+  }
   if (!storefront) {
     await recordAudit(tx, {
       ...auditActor(actor, 'staff'),
@@ -549,7 +562,7 @@ export async function placeOrder(
     id: orderId,
     number,
     displayNumber: formatOrderNumber(settings.checkout.orderNumberPrefix, number),
-    status,
+    status: finalStatus,
     total,
     codAmount,
     onlinePayment,

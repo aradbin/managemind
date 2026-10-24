@@ -11,6 +11,7 @@ import {
   anonymizeCustomer,
   blockPhone,
   cancelOrder,
+  claimConfirmation,
   confirmOrder,
   createCustomer,
   createManualOrder,
@@ -30,6 +31,7 @@ import {
   getOrder,
   getPhoneRisk,
   listBlockedPhones,
+  listConfirmations,
   listCustomers,
   listOrders,
   listZones,
@@ -37,6 +39,7 @@ import {
   ordersForPrint,
   previewManualOrder,
   quoteDelivery,
+  recordOutcome,
   recordPayment,
   returnShipment,
   runIdempotent,
@@ -55,13 +58,18 @@ import { GEO_VERSION, geoFilePath } from '@managemind/shared/geo';
 import {
   addressInput,
   CANCEL_CODES,
+  CONFIRMATION_OUTCOMES,
+  CONFIRMED_VIA,
   cancelInput,
+  confirmationOutcomeInput,
+  confirmationQuery,
   customerFlagInput,
   customerInput,
   customerPatch,
   deliverInput,
   deliveryZoneInput,
   failInput,
+  LINK_ANSWERS,
   manualOrderInput,
   manualPaymentInput,
   manualQuoteInput,
@@ -130,6 +138,65 @@ export const PhoneRisk = z
     reasons: z.array(z.enum(RISK_REASONS)),
   })
   .openapi('PhoneRisk');
+const ConfirmationStateView = z
+  .object({
+    inQueue: z.boolean(),
+    attempts: z.number().int(),
+    lastOutcome: z.enum(CONFIRMATION_OUTCOMES).nullable(),
+    dueAt: z.string().nullable(),
+    confirmedVia: z.enum(CONFIRMED_VIA).nullable(),
+    linkSentAt: z.string().nullable(),
+    linkAnswer: z.enum(LINK_ANSWERS).nullable(),
+  })
+  .openapi('ConfirmationState');
+const QueueItem = z
+  .object({
+    orderId: z.uuid(),
+    displayNumber: z.string(),
+    name: z.string(),
+    phone: z.string().openapi({ description: 'Masked without customers.read' }),
+    locale: z.enum(['bn', 'en']),
+    items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
+    itemCount: z.number().int(),
+    total: z.number().int(),
+    codDue: z.number().int(),
+    area: Localized.nullable(),
+    risk: PhoneRisk,
+    flags: z.array(z.string()),
+    attempts: z.number().int(),
+    lastOutcome: z.enum(CONFIRMATION_OUTCOMES).nullable(),
+    lastNote: z.string().nullable(),
+    dueAt: z.string().nullable(),
+    claim: z
+      .object({ userId: z.uuid(), name: z.string(), until: z.string(), mine: z.boolean() })
+      .nullable(),
+    linkAnswer: z.enum(LINK_ANSWERS).nullable(),
+    placedAt: z.string(),
+  })
+  .openapi('ConfirmationQueueItem');
+const QueueView = z
+  .object({
+    enabled: z.boolean(),
+    counts: z.object({
+      toCall: z.number().int(),
+      later: z.number().int(),
+      unreachable: z.number().int(),
+    }),
+    items: z.array(QueueItem),
+  })
+  .openapi('ConfirmationQueue');
+const CallPanel = z
+  .object({
+    orderId: z.uuid(),
+    displayNumber: z.string(),
+    name: z.string(),
+    phone: z.string(),
+    script: z.string(),
+    claimedUntil: z.string(),
+    attempts: z.number().int(),
+    maxAttempts: z.number().int(),
+  })
+  .openapi('CallPanel');
 const OrderSummary = z
   .object({
     id: z.uuid(),
@@ -241,6 +308,7 @@ export const OrderDetail = z
       .object({ id: z.uuid(), displayNumber: z.string(), status: z.string() })
       .nullable(),
     cancelCode: z.enum(CANCEL_CODES).nullable(),
+    confirmation: ConfirmationStateView.nullable(),
     refunds: z.array(
       z.object({
         id: z.uuid(),
@@ -578,6 +646,38 @@ export const ORDER_ROUTES = {
     summary: 'Cancel with a reason and a code while nothing is shipped (orders.write)',
     request: { params: Id, headers: IdemHeader, ...body(cancelInput) },
     responses: json(OrderState, 'Cancelled'),
+  }),
+  confirmations: r({
+    method: 'get',
+    path: '/confirmations',
+    summary: 'The confirmation queue: To call, Later, Unreachable, or Risky first (orders.read)',
+    request: { query: confirmationQuery },
+    responses: json(QueueView, 'Queue'),
+  }),
+  claimConfirmation: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/claim',
+    summary:
+      'Claim an order to call for 5 minutes; 409 while someone else holds it. Returns the call panel with the script (orders.write)',
+    request: { params: Id },
+    responses: json(CallPanel, 'Claimed'),
+  }),
+  confirmationOutcome: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/outcomes',
+    summary:
+      "One call's outcome: confirmed, no answer, call back, wrong number or cancelled (orders.write; accepts Idempotency-Key)",
+    request: { params: Id, headers: IdemHeader, ...body(confirmationOutcomeInput) },
+    responses: json(
+      z.object({
+        orderId: z.uuid(),
+        status: z.string(),
+        attempts: z.number().int(),
+        dueAt: z.string().nullable(),
+        unreachable: z.boolean(),
+      }),
+      'Recorded',
+    ),
   }),
   mergeDuplicate: r({
     method: 'post',
@@ -987,6 +1087,15 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     'cancel',
     (tx, c, input) => cancelOrder(tx, actor(c), id(c), cancelInput.parse(input)),
     state,
+  );
+  admin.openapi(R.confirmations, async (c) =>
+    c.json(await inStore(c, (tx) => listConfirmations(tx, actor(c), c.req.valid('query'))), 200),
+  );
+  admin.openapi(R.claimConfirmation, async (c) =>
+    c.json(await inStore(c, (tx) => claimConfirmation(tx, actor(c), id(c)), write), 200),
+  );
+  command(R.confirmationOutcome, 'confirmation_outcome', (tx, c, input) =>
+    recordOutcome(tx, actor(c), id(c), input),
   );
   command(R.mergeDuplicate, 'merge', async (tx, c) => {
     const { orderId } = await mergeDuplicate(tx, actor(c), id(c));

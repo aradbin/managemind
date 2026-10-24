@@ -13,6 +13,7 @@ import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import {
   type CancelCode,
+  type ConfirmedVia,
   deliverInput,
   deliveryStatusOf,
   failInput,
@@ -98,12 +99,18 @@ const EVENT_OF: Partial<
   completed: 'order.completed',
 };
 
-/** Moves the order machine and writes the row, the history and the event. */
+/**
+ * Moves the order machine and writes the row, the history and the event. A
+ * confirmation says how it happened (phase-6-plan §3.5): a call, the
+ * shopper's SMS link, staff's button, or the system for a trusted phone;
+ * it takes the order out of the confirmation queue.
+ */
 async function moveOrder(
   tx: TenantTx,
   actor: Actor,
   order: OrderRow,
   event: 'confirm' | 'process' | 'complete',
+  via: ConfirmedVia = 'staff',
 ): Promise<OrderRow> {
   const t = orderMachine.transition(order.status, event, {
     shippedQuantity: await shippedUnits(tx, order.id),
@@ -118,19 +125,28 @@ async function moveOrder(
       ...(t.to === 'completed' ? { completedAt: sql`now()` } : {}),
     })
     .where(eq(o.id, order.id));
+  const confirming = t.to === 'confirmed';
   await recordHistory(tx, actor, {
     orderId: order.id,
     machine: 'order',
     from: t.from,
     to: t.to,
     event,
+    ...(confirming ? { data: { via } } : {}),
   });
+  if (confirming) {
+    await tx.db.execute(sql`
+      insert into store.order_confirmations (order_id, confirmed_via) values (${order.id}, ${via})
+      on conflict (tenant_id, order_id) do update
+        set confirmed_via = excluded.confirmed_via, claimed_by = null, claimed_until = null,
+            due_at = null`);
+  }
   const type = EVENT_OF[t.to];
   if (type)
     await emit(tx, type, {
       aggregateType: 'order',
       aggregateId: order.id,
-      payload: { number: order.number },
+      payload: confirming ? { number: order.number, via } : { number: order.number },
     });
   return { ...order, status: t.to };
 }
@@ -205,9 +221,14 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
 
 // ---- The order machine ----------------------------------------------------------------
 
-export async function confirmOrder(tx: TenantTx, actor: Actor, id: string): Promise<OrderRow> {
-  authorize(actor, 'orders.write');
-  return moveOrder(tx, actor, await lockOrder(tx, id), 'confirm');
+export async function confirmOrder(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  via: ConfirmedVia = 'staff',
+): Promise<OrderRow> {
+  if (via !== 'auto' && via !== 'link') authorize(actor, 'orders.write');
+  return moveOrder(tx, actor, await lockOrder(tx, id), 'confirm', via);
 }
 
 /** "Start processing": also happens on its own with the first shipment. */
