@@ -55,7 +55,7 @@ gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f ro
 - **Lint, typecheck and test:** Biome, a check that every schema change has a migration, typecheck, all test suites (including the tenant isolation and catalog tests) against a `postgres:18` service container, and `pnpm audit --audit-level high`.
 - **Build and bundle size:** builds the apps, then `node scripts/bundle-size.mjs apps/api apps/storefront` reads wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md)).
 
-A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again: the repository has 2,000 free Actions minutes a month for every workflow.
+A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again: the repository has 2,000 free Actions minutes a month for every workflow. A push to a pull request costs about 10 of them and a `full-preview` run about 37; `docs/runbooks/free-tier-limit.md` says what stops when they run out.
 
 Dependency updates come from Renovate (`renovate.json`): one weekly group for minor and patch updates, held for 3 days after release.
 

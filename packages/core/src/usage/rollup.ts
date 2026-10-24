@@ -3,14 +3,19 @@
 // missed day filled in later writes the same rows. Flows (orders, emails,
 // SMS) are the day's counts; levels (products, staff, storage, domains) are
 // the counts at the end of the day. Monthly totals and the owner's meters are
-// sums of these rows.
+// sums of these rows. After 13 months a month's rows fold into one per metric
+// on its last day, which sums the same.
 import { createDb, schema } from '@managemind/db';
 import { USAGE_METRICS, type UsageMetric } from '@managemind/shared/billing';
 import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { withPlatform } from '../platform';
 import { type DbClient, type TenantTx, withTenant } from '../tenant';
 import { writeStoreHealth } from './health';
 
 export type DayUsage = Record<UsageMetric, number>;
+
+/** Metrics counted per day, so a period sums them; the rest are levels, read at its last day. */
+export const FLOW_METRICS: readonly UsageMetric[] = ['orders', 'order_total', 'emails', 'sms'];
 
 /** One store's use on a Dhaka day, in one query, in the caller's tenant transaction. */
 export async function measureDay(tx: TenantTx, day: string): Promise<DayUsage> {
@@ -75,7 +80,7 @@ export async function usageBetween(
     .select({ metric: u.metric, day: u.day, value: u.value })
     .from(u)
     .where(and(eq(u.tenantId, tenantId), gte(u.day, from), lte(u.day, to)));
-  const flows = new Set<string>(['orders', 'order_total', 'emails', 'sms']);
+  const flows = new Set<string>(FLOW_METRICS);
   const out = Object.fromEntries(USAGE_METRICS.map((m) => [m, 0])) as DayUsage;
   const lastDay: Partial<Record<UsageMetric, string>> = {};
   for (const r of rows) {
@@ -149,4 +154,42 @@ async function missingDays(
     : [];
   const done = new Set(have.map((h) => h.day));
   return [...candidates.filter((d) => !done.has(d)), ...(yesterday >= first ? [yesterday] : [])];
+}
+
+/** Daily rows are kept this many whole months before the current one (phase-5b-plan §3.6). */
+export const USAGE_DAILY_MONTHS = 13;
+
+/**
+ * Folds each month older than USAGE_DAILY_MONTHS into one row per store and
+ * metric on the month's last day: flows summed, levels at their last value.
+ * usageBetween over the whole month answers the same before and after, and
+ * a month already folded is left alone. Returns the rows removed.
+ */
+export async function compactUsage(client: DbClient, today: string): Promise<number> {
+  const before = sql`(date_trunc('month', ${today}::date) - make_interval(months => ${USAGE_DAILY_MONTHS}))::date`;
+  const flows = sql.join(
+    FLOW_METRICS.map((m) => sql`${m}`),
+    sql`, `,
+  );
+  return withPlatform(client, async (tx) => {
+    // The month's totals onto its last day first, from the rows as they are.
+    await tx.db.execute(sql`
+      insert into platform.usage_daily (tenant_id, day, metric, value)
+      select tenant_id,
+             (date_trunc('month', day) + interval '1 month - 1 day')::date,
+             metric,
+             case when metric in (${flows}) then sum(value)
+                  else (array_agg(value order by day desc))[1] end
+        from platform.usage_daily
+       where day < ${before}
+       group by tenant_id, date_trunc('month', day), metric
+      having count(*) > 1
+          or max(day) <> (date_trunc('month', max(day)) + interval '1 month - 1 day')::date
+      on conflict (tenant_id, day, metric) do update set value = excluded.value`);
+    const removed = await tx.db.execute(sql`
+      delete from platform.usage_daily
+       where day < ${before}
+         and day <> (date_trunc('month', day) + interval '1 month - 1 day')::date`);
+    return removed.rowCount ?? 0;
+  });
 }

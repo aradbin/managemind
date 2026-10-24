@@ -117,154 +117,162 @@ async function superAdmin(): Promise<Actor> {
   };
 }
 
-describe('purging a closed store (criterion 3)', () => {
-  it('deletes only its rows, files and keys, keeps its records, and resumes when stopped', async () => {
-    const files = memoryFiles();
-    const kv = memoryKv();
-    const [a, b, c] = [
-      await seededStore(files, kv),
-      await seededStore(files, kv),
-      await seededStore(files, kv),
-    ];
-    const admin = await superAdmin();
+// Seeding a row in every store table takes a while when every package tests
+// at once; a timeout mid-test would leave its transaction on the shared client.
+const SEEDED = 60_000;
 
-    // A staff member in A and B, one only in A.
-    const { rows: staff } = await client.query<{ id: string; email: string }>(
-      `insert into platform.users (name, email, email_verified)
+describe('purging a closed store (criterion 3)', () => {
+  it(
+    'deletes only its rows, files and keys, keeps its records, and resumes when stopped',
+    async () => {
+      const files = memoryFiles();
+      const kv = memoryKv();
+      const [a, b, c] = [
+        await seededStore(files, kv),
+        await seededStore(files, kv),
+        await seededStore(files, kv),
+      ];
+      const admin = await superAdmin();
+
+      // A staff member in A and B, one only in A.
+      const { rows: staff } = await client.query<{ id: string; email: string }>(
+        `insert into platform.users (name, email, email_verified)
        values ('Both', $1, true), ('Only A', $2, true) returning id, email`,
-      [`both-${a.slug}@example.test`, `only-${a.slug}@example.test`],
-    );
-    const [both, onlyA] = staff as [{ id: string }, { id: string }];
-    await client.query(
-      `insert into platform.memberships (tenant_id, user_id, role)
+        [`both-${a.slug}@example.test`, `only-${a.slug}@example.test`],
+      );
+      const [both, onlyA] = staff as [{ id: string }, { id: string }];
+      await client.query(
+        `insert into platform.memberships (tenant_id, user_id, role)
        values ($1, $2, 'staff'), ($3, $2, 'staff'), ($1, $4, 'staff')`,
-      [a.id, both.id, b.id, onlyA.id],
-    );
-    // Billing history and usage that stay with the tenant record.
-    await client.query(
-      `insert into platform.usage_daily (tenant_id, day, metric, value) values ($1, current_date - 1, 'orders', 3)`,
-      [a.id],
-    );
-    // An export whose link is still live stays; an expired one goes.
-    const { rows: jobs } = await client.query<{ id: string }>(
-      `insert into platform.tenant_jobs (tenant_id, kind, status, file_key, finished_at)
+        [a.id, both.id, b.id, onlyA.id],
+      );
+      // Billing history and usage that stay with the tenant record.
+      await client.query(
+        `insert into platform.usage_daily (tenant_id, day, metric, value) values ($1, current_date - 1, 'orders', 3)`,
+        [a.id],
+      );
+      // An export whose link is still live stays; an expired one goes.
+      const { rows: jobs } = await client.query<{ id: string }>(
+        `insert into platform.tenant_jobs (tenant_id, kind, status, file_key, finished_at)
        values ($1::uuid, 'export', 'succeeded', 'exports/tenants/' || $1::text || '/live.zip', now()),
               ($1, 'export', 'succeeded', 'exports/tenants/' || $1::text || '/old.zip', now() - interval '8 days')
        returning id`,
-      [a.id],
-    );
-    expect(jobs).toHaveLength(2);
-    files.objects.set(`exports/tenants/${a.id}/live.zip`, new Uint8Array([4]));
-    files.objects.set(`exports/tenants/${a.id}/old.zip`, new Uint8Array([5]));
+        [a.id],
+      );
+      expect(jobs).toHaveLength(2);
+      files.objects.set(`exports/tenants/${a.id}/live.zip`, new Uint8Array([4]));
+      files.objects.set(`exports/tenants/${a.id}/old.zip`, new Uint8Array([5]));
 
-    const before = { b: await counts(b.id), c: await counts(c.id) };
-    const beforeFiles = { b: filesOf(files, b.id), c: filesOf(files, c.id) };
-    expect(Object.values(await counts(a.id)).every((n) => n > 0)).toBe(true);
+      const before = { b: await counts(b.id), c: await counts(c.id) };
+      const beforeFiles = { b: filesOf(files, b.id), c: filesOf(files, c.id) };
+      expect(Object.values(await counts(a.id)).every((n) => n > 0)).toBe(true);
 
-    const closed = await closeTenant(client, systemActor, a.id, {
-      slug: a.slug,
-      reason: 'test over',
-    });
-    // Its export on the way out isn't this test's concern.
-    await client.query(`update platform.tenant_jobs set status = 'failed' where id = $1`, [
-      closed.exportJobId,
-    ]);
-    const { purge, job } = await withPlatform(client, (tx) => requestPurge(tx, admin, a.id));
+      const closed = await closeTenant(client, systemActor, a.id, {
+        slug: a.slug,
+        reason: 'test over',
+      });
+      // Its export on the way out isn't this test's concern.
+      await client.query(`update platform.tenant_jobs set status = 'failed' where id = $1`, [
+        closed.exportJobId,
+      ]);
+      const { purge, job } = await withPlatform(client, (tx) => requestPurge(tx, admin, a.id));
 
-    let stopAt: string | null = null;
-    const deps = {
-      client,
-      files,
-      kv,
-      storeDomain: STORE_DOMAIN,
-      sink: null,
-      log: () => {},
-      onStep: (step: string) => {
-        if (step === stopAt) throw new Error(`stopped at ${step}`);
-      },
-    };
-    const run = () => runJobs(deps, { jobId: job.id });
+      let stopAt: string | null = null;
+      const deps = {
+        client,
+        files,
+        kv,
+        storeDomain: STORE_DOMAIN,
+        sink: null,
+        log: () => {},
+        onStep: (step: string) => {
+          if (step === stopAt) throw new Error(`stopped at ${step}`);
+        },
+      };
+      const run = () => runJobs(deps, { jobId: job.id });
 
-    // The dry run, then nothing until it's approved.
-    expect((await run()).waiting).toEqual([job.id]);
-    expect(await claimJob(client, ['purge'], job.id)).toBeNull();
-    const { rows: dry } = await client.query<{ dry_run: Record<string, Record<string, number>> }>(
-      'select dry_run from platform.tenant_purges where id = $1',
-      [purge.id],
-    );
-    expect(dry[0]?.dry_run.storeRows?.products).toBeGreaterThan(0);
-    expect(dry[0]?.dry_run).toMatchObject({ staffAccounts: 2, exportsKept: 1 });
-    await expect(
-      withPlatform(client, (tx) =>
-        approvePurge(tx, admin, a.id, { purgeId: purge.id, slug: 'nope' }),
-      ),
-    ).rejects.toMatchObject({ code: 'validation_failed' });
-    await withPlatform(client, (tx) =>
-      approvePurge(tx, admin, a.id, { purgeId: purge.id, slug: a.slug.toUpperCase() }),
-    );
+      // The dry run, then nothing until it's approved.
+      expect((await run()).waiting).toEqual([job.id]);
+      expect(await claimJob(client, ['purge'], job.id)).toBeNull();
+      const { rows: dry } = await client.query<{ dry_run: Record<string, Record<string, number>> }>(
+        'select dry_run from platform.tenant_purges where id = $1',
+        [purge.id],
+      );
+      expect(dry[0]?.dry_run.storeRows?.products).toBeGreaterThan(0);
+      expect(dry[0]?.dry_run).toMatchObject({ staffAccounts: 2, exportsKept: 1 });
+      await expect(
+        withPlatform(client, (tx) =>
+          approvePurge(tx, admin, a.id, { purgeId: purge.id, slug: 'nope' }),
+        ),
+      ).rejects.toMatchObject({ code: 'validation_failed' });
+      await withPlatform(client, (tx) =>
+        approvePurge(tx, admin, a.id, { purgeId: purge.id, slug: a.slug.toUpperCase() }),
+      );
 
-    // Stopped halfway through the tables, then run again.
-    stopAt = 'table:orders';
-    expect((await run()).retried).toEqual([job.id]);
-    expect((await counts(a.id)).orders).toBe(0);
-    expect((await counts(a.id)).products).toBeGreaterThan(0);
-    stopAt = null;
-    expect((await run()).succeeded).toEqual([job.id]);
+      // Stopped halfway through the tables, then run again.
+      stopAt = 'table:orders';
+      expect((await run()).retried).toEqual([job.id]);
+      expect((await counts(a.id)).orders).toBe(0);
+      expect((await counts(a.id)).products).toBeGreaterThan(0);
+      stopAt = null;
+      expect((await run()).succeeded).toEqual([job.id]);
 
-    // Nothing of A's left in the store schema, R2 (but the live export) or KV.
-    expect(Object.entries(await counts(a.id)).filter(([, n]) => n > 0)).toEqual([]);
-    expect(filesOf(files, a.id)).toEqual([`exports/tenants/${a.id}/live.zip`]);
-    expect([...kv.keys].filter((k) => k.includes(a.slug) || k.includes(a.id))).toEqual([]);
-    // B and C as they were.
-    expect(await counts(b.id)).toEqual(before.b);
-    expect(await counts(c.id)).toEqual(before.c);
-    expect(filesOf(files, b.id)).toEqual(beforeFiles.b);
-    expect(filesOf(files, c.id)).toEqual(beforeFiles.c);
-    expect(kv.keys.has(`host:${b.slug}.${STORE_DOMAIN}`)).toBe(true);
+      // Nothing of A's left in the store schema, R2 (but the live export) or KV.
+      expect(Object.entries(await counts(a.id)).filter(([, n]) => n > 0)).toEqual([]);
+      expect(filesOf(files, a.id)).toEqual([`exports/tenants/${a.id}/live.zip`]);
+      expect([...kv.keys].filter((k) => k.includes(a.slug) || k.includes(a.id))).toEqual([]);
+      // B and C as they were.
+      expect(await counts(b.id)).toEqual(before.b);
+      expect(await counts(c.id)).toEqual(before.c);
+      expect(filesOf(files, b.id)).toEqual(beforeFiles.b);
+      expect(filesOf(files, c.id)).toEqual(beforeFiles.c);
+      expect(kv.keys.has(`host:${b.slug}.${STORE_DOMAIN}`)).toBe(true);
 
-    // Kept: the tenant record, purged; usage; jobs; the audit; the purge record.
-    const one = async (q: string) => (await client.query(q, [a.id])).rows[0];
-    expect(
-      await one(
-        'select status, purged_at is not null as purged from platform.tenants where id = $1',
-      ),
-    ).toEqual({
-      status: 'purged',
-      purged: true,
-    });
-    expect(
-      await one('select count(*)::int as n from platform.usage_daily where tenant_id = $1'),
-    ).toEqual({ n: 1 });
-    expect(
-      await one(
-        `select count(*)::int as n from platform.audit_log where tenant_id = $1 and action in ('tenant.close', 'tenant.purge_approved', 'tenant.purged')`,
-      ),
-    ).toEqual({ n: 3 });
-    const record = await one(
-      'select verification, deleted, finished_at from platform.tenant_purges where tenant_id = $1',
-    );
-    expect(record?.verification).toMatchObject({
-      storeRows: 0,
-      files: 0,
-      kvKeys: 0,
-      platformRows: 0,
-    });
-    expect(record?.deleted.tables.orders).toBeGreaterThan(0);
-    // Memberships and staff: the one in two stores keeps B; the rest are gone.
-    expect(
-      await one('select count(*)::int as n from platform.memberships where tenant_id = $1'),
-    ).toEqual({ n: 0 });
-    const users = await client.query<{ id: string }>(
-      'select id from platform.users where id = any($1::uuid[])',
-      [[both.id, onlyA.id]],
-    );
-    expect(users.rows.map((r) => r.id)).toEqual([both.id]);
-    const kept = await client.query(
-      'select 1 from platform.memberships where user_id = $1 and tenant_id = $2',
-      [both.id, b.id],
-    );
-    expect(kept.rowCount).toBe(1);
-  });
+      // Kept: the tenant record, purged; usage; jobs; the audit; the purge record.
+      const one = async (q: string) => (await client.query(q, [a.id])).rows[0];
+      expect(
+        await one(
+          'select status, purged_at is not null as purged from platform.tenants where id = $1',
+        ),
+      ).toEqual({
+        status: 'purged',
+        purged: true,
+      });
+      expect(
+        await one('select count(*)::int as n from platform.usage_daily where tenant_id = $1'),
+      ).toEqual({ n: 1 });
+      expect(
+        await one(
+          `select count(*)::int as n from platform.audit_log where tenant_id = $1 and action in ('tenant.close', 'tenant.purge_approved', 'tenant.purged')`,
+        ),
+      ).toEqual({ n: 3 });
+      const record = await one(
+        'select verification, deleted, finished_at from platform.tenant_purges where tenant_id = $1',
+      );
+      expect(record?.verification).toMatchObject({
+        storeRows: 0,
+        files: 0,
+        kvKeys: 0,
+        platformRows: 0,
+      });
+      expect(record?.deleted.tables.orders).toBeGreaterThan(0);
+      // Memberships and staff: the one in two stores keeps B; the rest are gone.
+      expect(
+        await one('select count(*)::int as n from platform.memberships where tenant_id = $1'),
+      ).toEqual({ n: 0 });
+      const users = await client.query<{ id: string }>(
+        'select id from platform.users where id = any($1::uuid[])',
+        [[both.id, onlyA.id]],
+      );
+      expect(users.rows.map((r) => r.id)).toEqual([both.id]);
+      const kept = await client.query(
+        'select 1 from platform.memberships where user_id = $1 and tenant_id = $2',
+        [both.id, b.id],
+      );
+      expect(kept.rowCount).toBe(1);
+    },
+    SEEDED,
+  );
 
   it('refuses an open store, and a client store before its grace period ends', async () => {
     const slug = `pg${Date.now().toString(36)}${seq++}`;
@@ -283,39 +291,46 @@ describe('purging a closed store (criterion 3)', () => {
     });
   });
 
-  it('cancels a purge when the store reopens, and never runs an approval from before', async () => {
-    const files = memoryFiles();
-    const kv = memoryKv();
-    const { id, slug } = await seededStore(files, kv);
-    const admin = await superAdmin();
-    const close = async () => {
-      const closed = await closeTenant(client, systemActor, id, { slug, reason: 'test over' });
-      await client.query(`update platform.tenant_jobs set status = 'failed' where id = $1`, [
-        closed.exportJobId,
+  it(
+    'cancels a purge when the store reopens, and never runs an approval from before',
+    async () => {
+      const files = memoryFiles();
+      const kv = memoryKv();
+      const { id, slug } = await seededStore(files, kv);
+      const admin = await superAdmin();
+      const close = async () => {
+        const closed = await closeTenant(client, systemActor, id, { slug, reason: 'test over' });
+        await client.query(`update platform.tenant_jobs set status = 'failed' where id = $1`, [
+          closed.exportJobId,
+        ]);
+      };
+      await close();
+      const { purge, job } = await withPlatform(client, (tx) => requestPurge(tx, admin, id));
+      const deps = { client, files, kv, storeDomain: STORE_DOMAIN, sink: null, log: () => {} };
+      expect((await runJobs(deps, { jobId: job.id })).waiting).toEqual([job.id]);
+      await withPlatform(client, (tx) => approvePurge(tx, admin, id, { purgeId: purge.id, slug }));
+
+      await reopenTenant(client, admin, id, { reason: 'they came back' });
+      const status = async () =>
+        (
+          await client.query('select status, error from platform.tenant_jobs where id = $1', [
+            job.id,
+          ])
+        ).rows[0];
+      expect(await status()).toEqual({
+        status: 'failed',
+        error: 'cancelled: the store was reopened',
+      });
+
+      // Closed again, the old approval purges nothing, even if its job runs.
+      await close();
+      await client.query(`update platform.tenant_jobs set status = 'pending' where id = $1`, [
+        job.id,
       ]);
-    };
-    await close();
-    const { purge, job } = await withPlatform(client, (tx) => requestPurge(tx, admin, id));
-    const deps = { client, files, kv, storeDomain: STORE_DOMAIN, sink: null, log: () => {} };
-    expect((await runJobs(deps, { jobId: job.id })).waiting).toEqual([job.id]);
-    await withPlatform(client, (tx) => approvePurge(tx, admin, id, { purgeId: purge.id, slug }));
-
-    await reopenTenant(client, admin, id, { reason: 'they came back' });
-    const status = async () =>
-      (await client.query('select status, error from platform.tenant_jobs where id = $1', [job.id]))
-        .rows[0];
-    expect(await status()).toEqual({
-      status: 'failed',
-      error: 'cancelled: the store was reopened',
-    });
-
-    // Closed again, the old approval purges nothing, even if its job runs.
-    await close();
-    await client.query(`update platform.tenant_jobs set status = 'pending' where id = $1`, [
-      job.id,
-    ]);
-    expect((await runJobs(deps, { jobId: job.id })).failed).toEqual([job.id]);
-    expect((await status())?.error).toMatch(/approved before the store was last closed/);
-    expect((await counts(id)).products).toBeGreaterThan(0);
-  });
+      expect((await runJobs(deps, { jobId: job.id })).failed).toEqual([job.id]);
+      expect((await status())?.error).toMatch(/approved before the store was last closed/);
+      expect((await counts(id)).products).toBeGreaterThan(0);
+    },
+    SEEDED,
+  );
 });

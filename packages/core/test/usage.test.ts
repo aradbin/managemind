@@ -5,6 +5,7 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  compactUsage,
   createProduct,
   createTenant,
   placeOrder,
@@ -148,5 +149,51 @@ describe('platform dashboard', () => {
     expect(d.sales.yesterday.total).toBeGreaterThanOrEqual(total);
     expect(d.perStore.find((p) => p.tenantId === s.id)).toMatchObject({ products: 1 });
     expect(d.money.overdue.count).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('usage retention', () => {
+  it('folds months older than 13 into one row per metric that sums the same', async () => {
+    const s = await store();
+    const put = (day: string, metric: string, value: number) =>
+      owner.query(
+        'insert into platform.usage_daily (tenant_id, day, metric, value) values ($1, $2, $3, $4)',
+        [s.id, day, metric, value],
+      );
+    // August 2025 has three days; July 2025 one day mid-month; September 2025 is kept.
+    for (const [day, orders, products] of [
+      ['2025-08-01', 2, 10],
+      ['2025-08-02', 3, 12],
+      ['2025-08-15', 5, 11],
+      ['2025-07-10', 4, 9],
+      ['2025-09-01', 1, 13],
+      ['2025-09-02', 1, 13],
+    ] as const) {
+      await put(day, 'orders', orders);
+      await put(day, 'products', products);
+    }
+    const month = (from: string, to: string) =>
+      withPlatform(app, (tx) => usageBetween(tx, s.id, from, to));
+    const august = await month('2025-08-01', '2025-08-31');
+
+    expect(await compactUsage(app, '2026-10-24')).toBeGreaterThanOrEqual(6);
+    const { rows } = await owner.query<{ day: string; metric: string; value: string }>(
+      `select day::text, metric, value from platform.usage_daily
+        where tenant_id = $1 order by day, metric`,
+      [s.id],
+    );
+    expect(rows.map((r) => [r.day, r.metric, Number(r.value)])).toEqual([
+      ['2025-07-31', 'orders', 4],
+      ['2025-07-31', 'products', 9],
+      ['2025-08-31', 'orders', 10],
+      ['2025-08-31', 'products', 11],
+      ['2025-09-01', 'orders', 1],
+      ['2025-09-01', 'products', 13],
+      ['2025-09-02', 'orders', 1],
+      ['2025-09-02', 'products', 13],
+    ]);
+    expect(await month('2025-08-01', '2025-08-31')).toEqual(august);
+    // Folded months are left alone.
+    expect(await compactUsage(app, '2026-10-24')).toBe(0);
   });
 });

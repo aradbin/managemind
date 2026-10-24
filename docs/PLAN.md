@@ -31,7 +31,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5B) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 23, 2026)**
+**Status (Oct 24, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
-| 5B — Launch readiness and pilot | Built (Oct 23); not yet merged or deployed. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
+| 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows wait for the monthly reset; production runs. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
 | 6 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
