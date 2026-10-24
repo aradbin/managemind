@@ -1402,6 +1402,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/checkout/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save the checkout as typed so far, for the cookie's cart, once the phone is valid (rate-limited) */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CheckoutDraft"];
+                };
+            };
+            responses: {
+                /** @description Saved, or nothing to save */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** "Don't save": delete the saved checkout, and save nothing more from this cart */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/confirm/view": {
         parameters: {
             query?: never;
@@ -6703,6 +6763,8 @@ export interface paths {
                         completeNow?: boolean;
                         /** @default false */
                         allowBlocked?: boolean;
+                        /** Format: uuid */
+                        incompleteOrderId?: string;
                     };
                 };
             };
@@ -6789,6 +6851,8 @@ export interface paths {
                         completeNow?: boolean;
                         /** @default false */
                         allowBlocked?: boolean;
+                        /** Format: uuid */
+                        incompleteOrderId?: string;
                     };
                 };
             };
@@ -7186,6 +7250,213 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkouts shoppers left after typing a phone, newest first (orders.read and customers.read) */
+        get: {
+            parameters: {
+                query?: {
+                    tab?: "open" | "converted" | "recovered" | "dismissed";
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Incomplete orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["IncompleteOrderSummary"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One, with today's price and stock of each line */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Incomplete order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/contacted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a call or a note (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Contacted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close it: a test, a wrong number, not interested (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Dismissed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/prefill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the manual order screen starts from; POST /orders with incompleteOrderId (orders.write) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prefill */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompletePrefill"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -12419,6 +12690,9 @@ export interface components {
                 }[];
             } | null;
             turnstileSiteKey: string | null;
+            recovery: {
+                save: boolean;
+            };
         };
         PlacedOrder: {
             /** Format: uuid */
@@ -12440,6 +12714,17 @@ export interface components {
         TrackedOrder: {
             order: components["schemas"]["ShopperOrder"];
             token: string;
+        };
+        CheckoutDraft: {
+            phone: string;
+            name?: string;
+            email?: string;
+            address?: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+                line?: string;
+            };
         };
         ConfirmLinkOrder: {
             displayNumber: string;
@@ -14809,6 +15094,87 @@ export interface components {
             attempts: number;
             maxAttempts: number;
         };
+        IncompleteOrderSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "open" | "contacted" | "converted" | "recovered" | "dismissed";
+            name: string | null;
+            phone: string;
+            area: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+            } | null;
+            itemCount: number;
+            subtotal: number;
+            items: {
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                quantity: number;
+            }[];
+            risk: components["schemas"]["PhoneRisk"];
+            note: string | null;
+            contactedAt: string | null;
+            /** Format: uuid */
+            orderId: string | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        IncompleteOrder: components["schemas"]["IncompleteOrderSummary"] & {
+            email: string | null;
+            address: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+                line?: string;
+            };
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                quantity: number;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                price: number;
+                priceNow: number | null;
+                available: number | null;
+                orderable: boolean;
+            }[];
+            cartCode: string | null;
+            /** @enum {string} */
+            locale: "bn" | "en";
+        };
+        IncompletePrefill: {
+            /** Format: uuid */
+            incompleteOrderId: string;
+            contact: {
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+            address: {
+                divisionId: number;
+                districtId: number;
+                areaId: number;
+                line: string;
+            } | null;
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                quantity: number;
+            }[];
+            code: string | null;
+            /** @enum {string} */
+            locale: "bn" | "en";
+        };
         Customer: {
             /** Format: uuid */
             id: string;
@@ -14895,6 +15261,12 @@ export interface components {
                 confirmed: number;
                 decided: number;
                 rate: number | null;
+            } | null;
+            /** @description Null when off or without customers.read */
+            incomplete: {
+                open: number;
+                today: number;
+                recoveredToday: number;
             } | null;
             /** @description Only with reports.read */
             sales: {

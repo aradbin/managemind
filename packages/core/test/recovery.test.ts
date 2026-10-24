@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
   addToCart,
+  anonymizeCustomer,
   answerLink,
   cancelOrder,
   claimConfirmation,
@@ -18,18 +19,24 @@ import {
   createTenant,
   deliverShipment,
   dismissDuplicate,
+  dismissIncompleteOrder,
   failShipment,
   getCustomer,
+  getIncompleteOrder,
   getOrder,
   getPhoneRisk,
   hashLinkCode,
+  incompletePrefill,
   inventoryDrift,
   linkCode,
   linkView,
   listConfirmations,
+  listIncompleteOrders,
   listOrders,
+  markIncompleteContacted,
   mergeDuplicate,
   type OutboxEvent,
+  optOutCheckoutDraft,
   placeOrder,
   planMessages,
   previewManualOrder,
@@ -37,6 +44,7 @@ import {
   recordOutcome,
   resendLink,
   returnShipment,
+  saveCheckoutDraft,
   setCartArea,
   shipShipment,
   shopperActor,
@@ -845,5 +853,194 @@ describe('the SMS link', () => {
     } finally {
       await linkOff();
     }
+  });
+});
+
+describe('incomplete orders', () => {
+  const setRecovery = (recovery: Record<string, unknown>) =>
+    run((tx) => updateStoreProfile(tx, owner, { recovery }));
+  /** A cart with an item and an area, as a shopper at checkout has. */
+  async function cart(variantId: string, quantity = 1) {
+    const added = await run((tx) => addToCart(tx, null, { variantId, quantity }, 'en'));
+    await run((tx) => setCartArea(tx, added.token, { areaId: 513 }));
+    return added.token as string;
+  }
+  const records = (phone: string) =>
+    run(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string; status: string; name: string | null }>(
+        sql`select id, status, name from store.incomplete_orders where phone = ${phone} order by created_at`,
+      );
+      return rows;
+    });
+  const checkout = async (token: string, phone: string) => {
+    const view = await run((tx) => setCartArea(tx, token, { areaId: 513 }));
+    return run((tx) =>
+      placeOrder(tx, shopperActor(), {
+        channel: 'storefront',
+        source: 'website',
+        cartToken: token,
+        contact: { name: 'Rahim', phone },
+        address,
+        payment: { kind: 'cod' },
+        expectedTotal: view.quote.totals.total,
+        locale: 'en',
+      }),
+    );
+  };
+
+  it('keeps one record per cart, replaced by each save, with the lines as shown', async () => {
+    const v = await product(40_000);
+    const token = await cart(v, 2);
+    const phone = newPhone();
+    expect(await run((tx) => saveCheckoutDraft(tx, token, { phone }))).toBe(true);
+    await run((tx) =>
+      saveCheckoutDraft(tx, token, {
+        phone,
+        name: 'Sumi',
+        address: { divisionId: 6, districtId: 47, areaId: 513 },
+      }),
+    );
+    expect(await records(phone)).toEqual([
+      expect.objectContaining({ status: 'open', name: 'Sumi' }),
+    ]);
+    // Typed as 01…, stored as +880….
+    const local = `0${phone.slice(4)}`;
+    await run((tx) => saveCheckoutDraft(tx, token, { phone: local, name: 'Sumi' }));
+    expect(await records(phone)).toHaveLength(1);
+    const [rec] = await records(phone);
+    const detail = await run((tx) => getIncompleteOrder(tx, owner, rec?.id as string));
+    expect(detail.lines).toEqual([
+      expect.objectContaining({ variantId: v, quantity: 2, price: 40_000, orderable: true }),
+    ]);
+    expect(detail.subtotal).toBe(80_000);
+    // Without customers.read it isn't shown at all.
+    await expect(
+      run((tx) => getIncompleteOrder(tx, actorAs('viewer'), rec?.id as string)),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+  });
+
+  it('refuses an invalid phone, and saves nothing when the store turned it off', async () => {
+    const token = await cart(await product());
+    await expect(
+      run((tx) => saveCheckoutDraft(tx, token, { phone: '12345' })),
+    ).rejects.toMatchObject({
+      code: 'validation_failed',
+    });
+    await setRecovery({ incomplete: false });
+    try {
+      const phone = newPhone();
+      expect(await run((tx) => saveCheckoutDraft(tx, token, { phone }))).toBe(false);
+      expect(await records(phone)).toEqual([]);
+    } finally {
+      await setRecovery({});
+    }
+  });
+
+  it('deletes the record on "Don\'t save" and refuses later saves from the cart', async () => {
+    const token = await cart(await product());
+    const phone = newPhone();
+    await run((tx) => saveCheckoutDraft(tx, token, { phone }));
+    await run((tx) => optOutCheckoutDraft(tx, token));
+    expect(await records(phone)).toEqual([]);
+    await expect(run((tx) => saveCheckoutDraft(tx, token, { phone }))).rejects.toMatchObject({
+      code: 'conflict',
+      extensions: { reason: 'opted_out' },
+    });
+  });
+
+  it("lists a record only after the shopper stopped typing for the store's delay", async () => {
+    const token = await cart(await product());
+    const phone = newPhone();
+    await run((tx) => saveCheckoutDraft(tx, token, { phone }));
+    const listed = async () =>
+      (await run((tx) => listIncompleteOrders(tx, owner, { limit: 100 }))).items.some(
+        (i) => i.phone === phone,
+      );
+    expect(await listed()).toBe(false);
+    await setRecovery({ showAfterMinutes: 0 });
+    try {
+      expect(await listed()).toBe(true);
+    } finally {
+      await setRecovery({});
+    }
+  });
+
+  it('is recovered when the shopper finishes the cart, or orders from the same phone', async () => {
+    const v = await product();
+    const phone = newPhone();
+    const token = await cart(v);
+    await run((tx) => saveCheckoutDraft(tx, token, { phone }));
+    const placed = await checkout(token, phone);
+    expect(await records(phone)).toEqual([expect.objectContaining({ status: 'recovered' })]);
+    const [rec] = await records(phone);
+    expect((await run((tx) => getIncompleteOrder(tx, owner, rec?.id as string))).orderId).toBe(
+      placed.id,
+    );
+
+    const other = newPhone();
+    const t2 = await cart(v);
+    await run((tx) => saveCheckoutDraft(tx, t2, { phone: other }));
+    await manualOrder(v, other);
+    expect(await records(other)).toEqual([expect.objectContaining({ status: 'recovered' })]);
+  });
+
+  it('becomes an order in one click: the manual order from its prefill is converted', async () => {
+    const v = await product(30_000);
+    const phone = newPhone();
+    const token = await cart(v, 3);
+    await run((tx) =>
+      saveCheckoutDraft(tx, token, {
+        phone,
+        name: 'Mitu',
+        address: { divisionId: 6, districtId: 47, areaId: 513, line: 'Road 7' },
+      }),
+    );
+    const [rec] = await records(phone);
+    const id = rec?.id as string;
+    await run((tx) => markIncompleteContacted(tx, owner, id, { note: 'Will order tonight' }));
+    const prefill = await run((tx) => incompletePrefill(tx, owner, id));
+    expect(prefill).toMatchObject({
+      contact: { name: 'Mitu' },
+      lines: [{ variantId: v, quantity: 3 }],
+      address: { areaId: 513, line: 'Road 7' },
+    });
+    const placed = await run((tx) =>
+      createManualOrder(tx, owner, {
+        source: 'phone',
+        lines: prefill.lines,
+        contact: { name: prefill.contact.name, phone: prefill.contact.phone },
+        address: prefill.address,
+        incompleteOrderId: id,
+      }),
+    );
+    const order = await run((tx) => getOrder(tx, owner, placed.id));
+    expect(order).toMatchObject({ source: 'website', metadata: { incompleteOrderId: id } });
+    expect(await records(phone)).toEqual([expect.objectContaining({ status: 'converted' })]);
+    // It can't be converted twice.
+    await expect(
+      run((tx) =>
+        createManualOrder(tx, owner, {
+          source: 'phone',
+          lines: prefill.lines,
+          contact: { name: 'Mitu', phone: prefill.contact.phone },
+          address: prefill.address,
+          incompleteOrderId: id,
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'conflict' });
+    await expect(run((tx) => dismissIncompleteOrder(tx, owner, id, {}))).rejects.toMatchObject({
+      code: 'illegal_transition',
+    });
+  });
+
+  it("goes with the customer's anonymization", async () => {
+    const v = await product();
+    const phone = newPhone();
+    const placed = await manualOrder(v, phone);
+    const t2 = await cart(v);
+    await run((tx) => saveCheckoutDraft(tx, t2, { phone }));
+    const order = await run((tx) => getOrder(tx, owner, placed.id));
+    await run((tx) => anonymizeCustomer(tx, owner, order.customer.id));
+    expect(await records(phone)).toEqual([]);
   });
 });

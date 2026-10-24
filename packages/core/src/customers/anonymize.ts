@@ -114,6 +114,9 @@ export async function anonymizeCustomer(
      where tenant_id = ${t} and conditions->'customerPhones' ? ${customer.phone}`);
   await run(sql`
     delete from store.promotion_customer_usage where tenant_id = ${t} and phone = ${customer.phone}`);
+  // Checkouts they left (phase-6-plan §3.2).
+  await run(sql`
+    delete from store.incomplete_orders where tenant_id = ${t} and phone = ${customer.phone}`);
 
   await tx.db
     .update(c)

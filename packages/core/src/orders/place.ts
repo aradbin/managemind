@@ -29,6 +29,7 @@ import { emit } from '../outbox';
 import { reissueCreditRemainder } from '../payments/store-credit';
 import type { ManualDiscount } from '../pricing/engine';
 import { type OrderSettings, orderSettings, type Quote, quote } from '../pricing/quote';
+import { closeIncompleteOrders } from '../recovery/index';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
 import { confirmOrder } from './lifecycle';
@@ -91,6 +92,8 @@ export interface PlaceOrderInput {
   /** The shopper verified this phone with a code for this order. */
   otpVerified?: boolean | undefined;
   acceptTerms?: boolean | undefined;
+  /** Admin: the incomplete order this order was made from (phase-6-plan §3.2). */
+  incompleteOrderId?: string | null | undefined;
 }
 
 export interface PlacedOrder {
@@ -413,9 +416,12 @@ export async function placeOrder(
       locale: input.locale,
       customerNote: input.note ?? null,
       tags: [...(input.tags ?? [])],
-      metadata: input.deliveryFeeOverride
-        ? { deliveryFeeReason: input.deliveryFeeOverride.reason }
-        : {},
+      metadata: {
+        ...(input.deliveryFeeOverride
+          ? { deliveryFeeReason: input.deliveryFeeOverride.reason }
+          : {}),
+        ...(input.incompleteOrderId ? { incompleteOrderId: input.incompleteOrderId } : {}),
+      },
       ip: input.ip ?? null,
       userAgent: input.userAgent?.slice(0, 500) ?? null,
       createdBy: storefront ? null : actor.userId,
@@ -533,6 +539,13 @@ export async function placeOrder(
       payload: { number },
     });
   }
+  // The incomplete checkouts this order answers (phase-6-plan §3.2).
+  await closeIncompleteOrders(tx, {
+    id: orderId,
+    phone,
+    cartId,
+    fromIncomplete: input.incompleteOrderId ?? null,
+  });
   // A store credit code the order didn't use up comes back as a new one (phase-5a-plan §3.13).
   for (const p of q.promotions) {
     if (p.codeId) await reissueCreditRemainder(tx, orderId, p.promotionId, p.amount);

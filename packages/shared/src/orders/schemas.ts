@@ -129,6 +129,38 @@ export const trackInput = z
 
 export const reasonInput = z.object({ reason: cleanString(300) }).strict();
 
+// ---- Incomplete orders (phase-6-plan §3.2) ---------------------------------------------
+
+/** What the checkout saves as it is typed: a valid phone, and whatever else is there so far. */
+export const checkoutDraftInput = z
+  .object({
+    phone: phoneNumber(),
+    name: z.string().trim().max(100).optional(),
+    email: z.string().trim().max(254).optional(),
+    address: z
+      .object({
+        divisionId: z.int().min(1).max(99).optional(),
+        districtId: z.int().min(1).max(999).optional(),
+        areaId: z.int().min(1).max(99_999).optional(),
+        line: z.string().trim().max(250).optional(),
+      })
+      .strict()
+      .default({}),
+  })
+  .strict();
+export type CheckoutDraftInput = z.infer<typeof checkoutDraftInput>;
+
+export const INCOMPLETE_TABS = ['open', 'converted', 'recovered', 'dismissed'] as const;
+
+export const incompleteListQuery = z.object({
+  tab: z.enum(INCOMPLETE_TABS).default('open'),
+  after: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type IncompleteListQuery = z.infer<typeof incompleteListQuery>;
+
+export const incompleteNoteInput = z.object({ note: optionalText(500) }).strict();
+
 // ---- The confirmation queue (phase-6-plan §3.5) ---------------------------------------
 
 export const CONFIRMATION_TABS = ['to_call', 'later', 'unreachable', 'risky'] as const;
@@ -322,6 +354,8 @@ export const manualOrderInput = z
     /** A walk-in sale that leaves the shop at once: shipped and delivered in one step. */
     completeNow: z.boolean().default(false),
     allowBlocked: z.boolean().default(false),
+    /** The incomplete order this one is made from (phase-6-plan §3.2). */
+    incompleteOrderId: z.uuid().optional(),
   })
   .strict();
 export type ManualOrderInput = z.infer<typeof manualOrderInput>;

@@ -433,6 +433,16 @@ describe('isolation suite', () => {
       return rows[0]?.id as string;
     });
 
+    // Store B's incomplete checkout (phase-6-plan §3.2).
+    const bIncomplete = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.incomplete_orders (phone, lines, subtotal, locale)
+             values ('+8801700009999', '[{"variantId": "00000000-0000-0000-0000-000000000000", "quantity": 1}]', 100, 'en')
+             returning id`,
+      );
+      return rows[0]?.id as string;
+    });
+
     // Store B's return and its photo (phase-5a-plan §3.12).
     const bReturn = await inB(async (tx) => {
       const { rows } = await tx.db.execute<{ id: string }>(
@@ -505,6 +515,10 @@ describe('isolation suite', () => {
       'POST /v1/admin/orders/{id}/duplicate/dismiss': { id: order.id },
       'POST /v1/admin/orders/{id}/confirmation/claim': { id: order.id },
       'POST /v1/admin/orders/{id}/confirmation/link': { id: order.id },
+      'GET /v1/admin/incomplete-orders/{id}': { id: bIncomplete },
+      'GET /v1/admin/incomplete-orders/{id}/prefill': { id: bIncomplete },
+      'POST /v1/admin/incomplete-orders/{id}/contacted': { id: bIncomplete, body: {} },
+      'POST /v1/admin/incomplete-orders/{id}/dismiss': { id: bIncomplete, body: {} },
       'POST /v1/admin/orders/{id}/confirmation/outcomes': {
         id: order.id,
         body: { outcome: 'no_answer' },

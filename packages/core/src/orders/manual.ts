@@ -91,7 +91,9 @@ export async function createManualOrder(
     actor,
     {
       channel: 'admin',
-      source: v.source,
+      // An order made from an incomplete checkout is the website's (phase-6-plan §3.2).
+      source: v.incompleteOrderId ? 'website' : v.source,
+      incompleteOrderId: v.incompleteOrderId ?? null,
       lines: v.lines,
       contact: v.contact,
       address: v.address,

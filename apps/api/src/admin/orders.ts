@@ -25,17 +25,22 @@ import {
   deleteZone,
   deliverShipment,
   dismissDuplicate,
+  dismissIncompleteOrder,
   editOrder,
   failShipment,
   getCustomer,
+  getIncompleteOrder,
   getOrder,
   getPhoneRisk,
+  incompletePrefill,
   listBlockedPhones,
   listConfirmations,
   listCustomers,
+  listIncompleteOrders,
   listOrders,
   listZones,
   loadCredentials,
+  markIncompleteContacted,
   mergeDuplicate,
   ordersForPrint,
   previewManualOrder,
@@ -71,6 +76,9 @@ import {
   deliverInput,
   deliveryZoneInput,
   failInput,
+  INCOMPLETE_ORDER_STATUSES,
+  incompleteListQuery,
+  incompleteNoteInput,
   LINK_ANSWERS,
   manualOrderInput,
   manualPaymentInput,
@@ -200,6 +208,64 @@ const CallPanel = z
     maxAttempts: z.number().int(),
   })
   .openapi('CallPanel');
+const IncompleteArea = z.object({
+  divisionId: z.number().int().optional(),
+  districtId: z.number().int().optional(),
+  areaId: z.number().int().optional(),
+});
+const IncompleteSummary = z
+  .object({
+    id: z.uuid(),
+    status: z.enum(INCOMPLETE_ORDER_STATUSES),
+    name: z.string().nullable(),
+    phone: z.string(),
+    area: IncompleteArea.nullable(),
+    itemCount: z.number().int(),
+    subtotal: z.number().int(),
+    items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
+    risk: PhoneRisk,
+    note: z.string().nullable(),
+    contactedAt: z.string().nullable(),
+    orderId: z.uuid().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .openapi('IncompleteOrderSummary');
+const IncompleteDetail = IncompleteSummary.extend({
+  email: z.string().nullable(),
+  address: IncompleteArea.extend({ line: z.string().optional() }),
+  lines: z.array(
+    z.object({
+      variantId: z.uuid(),
+      quantity: z.number().int(),
+      title: Localized,
+      optionLabels: z.array(Localized),
+      price: z.number().int(),
+      priceNow: z.number().int().nullable(),
+      available: z.number().int().nullable(),
+      orderable: z.boolean(),
+    }),
+  ),
+  cartCode: z.string().nullable(),
+  locale: z.enum(['bn', 'en']),
+}).openapi('IncompleteOrder');
+const IncompletePrefill = z
+  .object({
+    incompleteOrderId: z.uuid(),
+    contact: z.object({ name: z.string(), phone: z.string(), email: z.string().nullable() }),
+    address: z
+      .object({
+        divisionId: z.number().int(),
+        districtId: z.number().int(),
+        areaId: z.number().int(),
+        line: z.string(),
+      })
+      .nullable(),
+    lines: z.array(z.object({ variantId: z.uuid(), quantity: z.number().int() })),
+    code: z.string().nullable(),
+    locale: z.enum(['bn', 'en']),
+  })
+  .openapi('IncompletePrefill');
 const OrderSummary = z
   .object({
     id: z.uuid(),
@@ -551,6 +617,14 @@ const DashboardView = z
       })
       .nullable()
       .openapi({ description: "Last 7 days' COD orders; null when the queue is off" }),
+    incomplete: z
+      .object({
+        open: z.number().int(),
+        today: z.number().int(),
+        recoveredToday: z.number().int(),
+      })
+      .nullable()
+      .openapi({ description: 'Null when off or without customers.read' }),
     sales: z
       .object({
         today: z.object({ orders: z.number().int(), total: Money }),
@@ -691,6 +765,46 @@ export const ORDER_ROUTES = {
       }),
       'Recorded',
     ),
+  }),
+  incompleteOrders: r({
+    method: 'get',
+    path: '/incomplete-orders',
+    summary:
+      'Checkouts shoppers left after typing a phone, newest first (orders.read and customers.read)',
+    request: { query: incompleteListQuery },
+    responses: json(
+      z.object({ items: z.array(IncompleteSummary), nextCursor: z.string().nullable() }),
+      'Incomplete orders',
+    ),
+  }),
+  incompleteOrder: r({
+    method: 'get',
+    path: '/incomplete-orders/{id}',
+    summary: "One, with today's price and stock of each line",
+    request: { params: Id },
+    responses: json(IncompleteDetail, 'Incomplete order'),
+  }),
+  incompleteContacted: r({
+    method: 'post',
+    path: '/incomplete-orders/{id}/contacted',
+    summary: 'Record a call or a note (orders.write)',
+    request: { params: Id, ...body(incompleteNoteInput) },
+    responses: json(IncompleteDetail, 'Contacted'),
+  }),
+  incompleteDismiss: r({
+    method: 'post',
+    path: '/incomplete-orders/{id}/dismiss',
+    summary: 'Close it: a test, a wrong number, not interested (orders.write)',
+    request: { params: Id, ...body(incompleteNoteInput) },
+    responses: json(IncompleteDetail, 'Dismissed'),
+  }),
+  incompletePrefill: r({
+    method: 'get',
+    path: '/incomplete-orders/{id}/prefill',
+    summary:
+      'What the manual order screen starts from; POST /orders with incompleteOrderId (orders.write)',
+    request: { params: Id },
+    responses: json(IncompletePrefill, 'Prefill'),
   }),
   resendLink: r({
     method: 'post',
@@ -1117,6 +1231,29 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   );
   command(R.confirmationOutcome, 'confirmation_outcome', (tx, c, input) =>
     recordOutcome(tx, actor(c), id(c), input),
+  );
+  admin.openapi(R.incompleteOrders, async (c) =>
+    c.json(await inStore(c, (tx) => listIncompleteOrders(tx, actor(c), c.req.valid('query'))), 200),
+  );
+  admin.openapi(R.incompleteOrder, async (c) =>
+    c.json(await inStore(c, (tx) => getIncompleteOrder(tx, actor(c), id(c))), 200),
+  );
+  admin.openapi(R.incompleteContacted, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => markIncompleteContacted(tx, actor(c), id(c), input), write),
+      200,
+    );
+  });
+  admin.openapi(R.incompleteDismiss, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => dismissIncompleteOrder(tx, actor(c), id(c), input), write),
+      200,
+    );
+  });
+  admin.openapi(R.incompletePrefill, async (c) =>
+    c.json(await inStore(c, (tx) => incompletePrefill(tx, actor(c), id(c))), 200),
   );
   admin.openapi(R.resendLink, async (c) =>
     c.json(

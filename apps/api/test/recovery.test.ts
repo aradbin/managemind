@@ -224,3 +224,109 @@ describe('the SMS link page over HTTP', () => {
     expect((await call(a.host, '/v1/store/confirm/view', { code })).status).toBe(200);
   });
 });
+
+describe('saving the checkout over HTTP', () => {
+  const env = makeEnv();
+  /** A shopper with a cart on store A: the cart cookie the API set. */
+  async function shopperWithCart() {
+    const jar = new Map<string, string>();
+    const call = async (method: string, path: string, body?: unknown) => {
+      const ctx = makeCtx();
+      const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+      const res = await createApp().request(
+        path,
+        {
+          method,
+          headers: {
+            'x-forwarded-host': a.host,
+            'x-shopper-ip': '203.0.113.31',
+            origin: `https://${a.host}`,
+            ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+            ...(cookie ? { cookie } : {}),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        },
+        env,
+        ctx,
+      );
+      await ctx.settle();
+      for (const line of res.headers.getSetCookie()) {
+        const [pair = ''] = line.split(';');
+        const [name = '', value = ''] = pair.split('=');
+        jar.set(name, value);
+      }
+      return res;
+    };
+    expect(
+      (await call('POST', '/v1/store/cart/lines', { variantId: a.variant, quantity: 1 })).status,
+    ).toBe(200);
+    return call;
+  }
+  const saved = (phone: string) =>
+    owner
+      .query<{ status: string }>('select status from store.incomplete_orders where phone = $1', [
+        phone,
+      ])
+      .then((r) => r.rows);
+
+  it("saves the cookie's cart, says so at checkout, and stops on Don't save", async () => {
+    const call = await shopperWithCart();
+    const state = (await (await call('GET', '/v1/store/checkout')).json()) as Json;
+    expect(state.recovery).toEqual({ save: true });
+    const phone = '+8801712000501';
+    expect((await call('PUT', '/v1/store/checkout/draft', { phone: '01712000501' })).status).toBe(
+      204,
+    );
+    expect(await saved(phone)).toEqual([{ status: 'open' }]);
+    expect((await call('PUT', '/v1/store/checkout/draft', { phone: 'nope' })).status).toBe(422);
+    expect((await call('DELETE', '/v1/store/checkout/draft')).status).toBe(204);
+    expect(await saved(phone)).toEqual([]);
+    expect((await call('PUT', '/v1/store/checkout/draft', { phone })).status).toBe(409);
+    const after = (await (await call('GET', '/v1/store/checkout')).json()) as Json;
+    expect(after.recovery).toEqual({ save: false });
+  });
+
+  it('refuses a save without a cart', async () => {
+    const ctx = makeCtx();
+    const res = await createApp().request(
+      '/v1/store/checkout/draft',
+      {
+        method: 'PUT',
+        headers: {
+          'x-forwarded-host': a.host,
+          origin: `https://${a.host}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ phone: '01712000502' }),
+      },
+      env,
+      ctx,
+    );
+    await ctx.settle();
+    expect(res.status).toBe(404);
+  });
+
+  it('lists it for staff, who see the score and can dismiss it', async () => {
+    await owner.query(
+      `update platform.tenants set settings = jsonb_set(settings, '{recovery}', '{"showAfterMinutes": 0}') where id = $1`,
+      [a.id],
+    );
+    try {
+      const call = await shopperWithCart();
+      await call('PUT', '/v1/store/checkout/draft', { phone: '01712000503', name: 'Lima' });
+      const br = await staff(a);
+      const list = (await (await br.get('/api/admin/incomplete-orders')).json()) as Json;
+      const item = list.items.find((i: Json) => i.phone === '+8801712000503');
+      expect(item).toMatchObject({ name: 'Lima', status: 'open', risk: { score: null } });
+      const dismissed = await br.post(`/api/admin/incomplete-orders/${item.id}/dismiss`, {
+        note: 'Test order',
+      });
+      expect(((await dismissed.json()) as Json).status).toBe('dismissed');
+    } finally {
+      await owner.query(
+        `update platform.tenants set settings = settings - 'recovery' where id = $1`,
+        [a.id],
+      );
+    }
+  });
+});

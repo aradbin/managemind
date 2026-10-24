@@ -12,6 +12,7 @@ const { t, layout } = ctx;
 const email = layout.shop.email;
 const terms = layout.pages.find((p) => p.kind === 'terms');
 const keys: StoreMessageKey[] = [
+  'checkout.saveStopped',
   'cart.subtotal',
   'cart.discount',
   'cart.delivery',
@@ -80,8 +81,10 @@ const keys: StoreMessageKey[] = [
         </div>
         <div class="field">
           <label for="c-phone">{t('checkout.phone')}</label>
-          <input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="c-phone-h c-phone-e" />
+          <input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="c-phone-h c-phone-s c-phone-e" />
           <p class="muted small" id="c-phone-h">{t('checkout.phoneHint')}</p>
+          {/* Saved as typed, for the store to call if the order isn't finished (phase-6-plan §3.2). */}
+          <p class="muted small" id="c-phone-s" data-recovery hidden><span data-recovery-text>{t('checkout.saveNotice', { store: ctx.layout.store.name })}</span> <button type="button" class="link" data-dont-save>{t('checkout.dontSave')}</button></p>
           <p class="field-error" id="c-phone-e"></p>
         </div>
         {email !== 'hidden' && (

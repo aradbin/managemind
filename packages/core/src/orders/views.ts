@@ -17,6 +17,7 @@ import { type Actor, authorize } from '../access';
 import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { orderSettings } from '../pricing/quote';
+import { incompleteCounts } from '../recovery/index';
 import type { TenantTx } from '../tenant';
 import { type ConfirmationState, confirmationState, inQueueSql } from './confirmation';
 import type { Localized } from './variants';
@@ -694,6 +695,8 @@ export interface Dashboard {
    * decided (confirmed or cancelled); null when the queue is off.
    */
   confirmation: { confirmed: number; decided: number; rate: number | null } | null;
+  /** Incomplete orders to call, and today's saved and recovered (phase-6-plan §3.8); null when off. */
+  incomplete: { open: number; today: number; recoveredToday: number } | null;
   /** Null without reports.read. */
   sales: {
     today: { orders: number; total: number };
@@ -752,7 +755,12 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
         rate: decided7d ? Math.round((100 * confirmed7d) / decided7d) : null,
       }
     : null;
-  if (!actor.permissions.has('reports.read')) return { counts, confirmation, sales: null };
+  const incomplete = actor.permissions.has('customers.read')
+    ? await incompleteCounts(tx, settings)
+    : null;
+  if (!actor.permissions.has('reports.read')) {
+    return { counts, confirmation, incomplete, sales: null };
+  }
   const dhaka = new Date(now.getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
   const today = dateBound(dhaka, false);
   const month = dateBound(`${dhaka.slice(0, 8)}01`, false);
@@ -778,6 +786,7 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
   return {
     counts,
     confirmation,
+    incomplete,
     sales: { today: byDay.get(dhaka) ?? { orders: 0, total: 0 }, month: monthTotals, days: last7 },
   };
 }

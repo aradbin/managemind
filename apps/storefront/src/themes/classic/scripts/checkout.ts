@@ -52,6 +52,7 @@ interface CheckoutState {
     }[];
   } | null;
   turnstileSiteKey: string | null;
+  recovery: { save: boolean };
 }
 interface Placed {
   id: string;
@@ -317,6 +318,67 @@ function collect(): Record<string, unknown> | null {
   };
 }
 
+/**
+ * The checkout saved as it is typed (phase-6-plan §3.2), so the store can
+ * call a shopper who leaves: once the phone is a valid mobile number, and
+ * again when the name, email or address change, 2 seconds after the last
+ * keystroke, only when something changed. "Don't save" deletes it and stops.
+ */
+function setupRecovery() {
+  const box = document.querySelector<HTMLElement>('[data-recovery]');
+  if (!form || !box) return;
+  box.hidden = false;
+  let stopped = false;
+  let last = '';
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const save = async () => {
+    if (stopped) return;
+    const data = new FormData(form);
+    const value = (k: string) => String(data.get(k) ?? '').trim();
+    const phone = latin(value('phone')).replace(/[\s\-.()]/g, '');
+    if (!PHONE.test(phone)) return;
+    const id = (k: string) => (Number(value(k)) > 0 ? { [k]: Number(value(k)) } : {});
+    const body = {
+      phone,
+      ...(value('name') ? { name: value('name') } : {}),
+      ...(value('email') ? { email: value('email') } : {}),
+      address: {
+        ...id('divisionId'),
+        ...id('districtId'),
+        ...id('areaId'),
+        ...(value('line') ? { line: value('line') } : {}),
+      },
+    };
+    const json = JSON.stringify(body);
+    if (json === last) return;
+    last = json;
+    try {
+      await api('/v1/store/checkout/draft', { method: 'PUT', body });
+    } catch (e) {
+      // Saving never gets in the shopper's way; a refusal just stops it.
+      if (e instanceof ShopError && (e.status === 409 || e.status === 429)) stopped = true;
+    }
+  };
+  const later = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void save(), 2000);
+  };
+  for (const name of ['phone', 'name', 'email', 'line']) {
+    form.querySelector(`[name=${name}]`)?.addEventListener('input', later);
+  }
+  for (const name of ['divisionId', 'districtId', 'areaId']) {
+    form.querySelector(`[name=${name}]`)?.addEventListener('change', later);
+  }
+  box.querySelector('[data-dont-save]')?.addEventListener('click', async () => {
+    stopped = true;
+    clearTimeout(timer);
+    const text = box.querySelector('[data-recovery-text]');
+    if (text) text.textContent = t('checkout.saveStopped');
+    box.querySelector('[data-dont-save]')?.remove();
+    await api('/v1/store/checkout/draft', { method: 'DELETE' }).catch(() => {});
+  });
+}
+
 /** One key per attempt: kept until the order is placed, so retries reuse it. */
 function attemptKey(): string {
   let key: string | null = null;
@@ -560,6 +622,7 @@ async function start() {
   if (state.turnstileSiteKey && box)
     check = mountTurnstile(box, state.turnstileSiteKey, cfg.locale);
   form.addEventListener('submit', (e) => void submit(e));
+  if (state.recovery.save) setupRecovery();
   tracker()?.beginCheckout(
     state.cart.lines.map((l) => ({
       id: l.variantId,
