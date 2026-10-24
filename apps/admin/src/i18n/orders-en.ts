@@ -376,6 +376,20 @@ export const ordersEn = {
   'dashboard.day': 'Day',
   'dashboard.ordersColumn': 'Orders',
   'dashboard.salesColumn': 'Sales',
+  'dashboard.morning': 'Good morning',
+  'dashboard.afternoon': 'Good afternoon',
+  'dashboard.evening': 'Good evening',
+  'dashboard.ordersToday': 'Orders today',
+  'dashboard.average': 'Average order',
+  'dashboard.thisMonth': 'This month',
+  'dashboard.vsYesterday': 'vs. yesterday',
+  'dashboard.vsYesterdaySr': '{change} compared with yesterday',
+  'dashboard.weekTotal': '{count} orders in the last 7 days',
+  'dashboard.recent': 'Recent orders',
+  'dashboard.viewAll': 'View all',
+  'dashboard.noOrders':
+    'No orders yet. Share your store link, or add an order from Facebook or a phone call.',
+  'dashboard.allClear': 'Nothing is waiting for you.',
 
   'delivery.intro':
     'Each zone has a fee, and may charge more for heavy orders. An area listed in a zone wins over its district; the fallback zone covers everywhere else.',

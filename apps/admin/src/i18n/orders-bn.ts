@@ -371,6 +371,20 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'dashboard.day': 'দিন',
   'dashboard.ordersColumn': 'অর্ডার',
   'dashboard.salesColumn': 'বিক্রি',
+  'dashboard.morning': 'শুভ সকাল',
+  'dashboard.afternoon': 'শুভ অপরাহ্ন',
+  'dashboard.evening': 'শুভ সন্ধ্যা',
+  'dashboard.ordersToday': 'আজকের অর্ডার',
+  'dashboard.average': 'গড় অর্ডার',
+  'dashboard.thisMonth': 'এই মাসে',
+  'dashboard.vsYesterday': 'গতকালের তুলনায়',
+  'dashboard.vsYesterdaySr': 'গতকালের তুলনায় {change}',
+  'dashboard.weekTotal': 'গত ৭ দিনে {count}টি অর্ডার',
+  'dashboard.recent': 'সাম্প্রতিক অর্ডার',
+  'dashboard.viewAll': 'সব দেখুন',
+  'dashboard.noOrders':
+    'এখনও কোনো অর্ডার নেই। দোকানের লিংক শেয়ার করুন, বা ফেসবুক কিংবা ফোনের অর্ডার যোগ করুন।',
+  'dashboard.allClear': 'আপনার জন্য কিছু অপেক্ষায় নেই।',
 
   'delivery.intro':
     'প্রতিটি জোনের একটি চার্জ আছে, ভারী অর্ডারে বেশি নেওয়া যায়। কোনো জোনে আলাদা করে দেওয়া এলাকা তার জেলার চেয়ে আগে খাটে; বাকি সব জায়গা ফলব্যাক জোনে পড়ে।',

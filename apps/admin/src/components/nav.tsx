@@ -1,6 +1,7 @@
 // The admin's navigation (ADR 0029), one list for the desktop sidebar, the
 // phone's tab bar and its More page, each item shown only to roles that can
 // open it. Hiding is a convenience: the server checks every request.
+import { formatNumber } from '@managemind/shared/i18n';
 import type { Permission } from '@managemind/shared/permissions';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -135,7 +136,7 @@ export function SidebarLink({ item, badge }: { item: NavItem; badge?: number | u
 }
 
 export function Badge({ count, className }: { count: number; className?: string }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   return (
     <span
       className={cn(
@@ -143,7 +144,9 @@ export function Badge({ count, className }: { count: number; className?: string 
         className,
       )}
     >
-      <span aria-hidden>{count > 99 ? '99+' : count}</span>
+      <span aria-hidden>
+        {count > 99 ? `${formatNumber(locale, 99)}+` : formatNumber(locale, count)}
+      </span>
       <span className="sr-only">{t('nav.toConfirm', { count })}</span>
     </span>
   );

@@ -17,7 +17,7 @@ export function UsageCard() {
   return (
     <section
       aria-labelledby="usage-card-h"
-      className="flex flex-col gap-2 rounded-md border border-danger/40 p-4"
+      className="flex flex-col gap-2 rounded-xl border border-danger/40 bg-background p-4 md:p-5"
     >
       <h2 id="usage-card-h" className="font-semibold">
         {t('usage.title')}
