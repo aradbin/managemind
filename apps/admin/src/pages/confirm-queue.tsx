@@ -208,10 +208,8 @@ function QueueCard({
         </span>
       </div>
       <ul className="flex flex-col gap-0.5 text-sm">
-        {shown.map((i, n) => (
-          // Lines have no ID here; their order is the order's own.
-          // biome-ignore lint/suspicious/noArrayIndexKey: see above
-          <li key={n} className="truncate">
+        {shown.map((i) => (
+          <li key={i.variantId} className="truncate">
             {pickText(i.title, locale)} × {i.quantity}
           </li>
         ))}

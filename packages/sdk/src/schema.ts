@@ -14609,6 +14609,8 @@ export interface components {
             /** @enum {string} */
             locale: "bn" | "en";
             items: {
+                /** Format: uuid */
+                variantId: string;
                 title: {
                     bn?: string;
                     en?: string;

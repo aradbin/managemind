@@ -56,7 +56,7 @@ export interface QueueItem {
   name: string;
   phone: string;
   locale: 'bn' | 'en';
-  items: { title: Localized; quantity: number }[];
+  items: { variantId: string; title: Localized; quantity: number }[];
   itemCount: number;
   total: number;
   codDue: number;
@@ -122,7 +122,7 @@ export async function listConfirmations(
            o.address->'names'->'area' as area, o.placed_at,
            (select coalesce(sum(amount), 0) from store.payments p
              where p.order_id = o.id and p.provider = 'cod' and p.status = 'pending') as cod_due,
-           (select coalesce(json_agg(json_build_object('title', l.title, 'quantity', l.quantity)
+           (select coalesce(json_agg(json_build_object('variantId', l.variant_id, 'title', l.title, 'quantity', l.quantity)
                                      order by l.position), '[]'::json)
               from store.order_lines l where l.order_id = o.id) as items,
            c.attempts, c.last_outcome, c.last_note, c.due_at, c.claimed_by, c.claimed_until,
@@ -147,7 +147,7 @@ export async function listConfirmations(
       unreachable: counts[0]?.unreachable ?? 0,
     },
     items: rows.map((r): QueueItem => {
-      const items = r.items as { title: Localized; quantity: number }[];
+      const items = r.items as QueueItem['items'];
       const claimed = Boolean(r.claimed);
       return {
         orderId: r.id as string,
@@ -254,7 +254,7 @@ export async function claimConfirmation(
            o.address->'names'->'area' as area, z.estimate,
            (select coalesce(sum(amount), 0) from store.payments p
              where p.order_id = o.id and p.provider = 'cod' and p.status = 'pending') as cod_due,
-           (select coalesce(json_agg(json_build_object('title', l.title, 'quantity', l.quantity)
+           (select coalesce(json_agg(json_build_object('variantId', l.variant_id, 'title', l.title, 'quantity', l.quantity)
                                      order by l.position), '[]'::json)
               from store.order_lines l where l.order_id = o.id) as items
       from store.orders o left join store.delivery_zones z on z.id = o.zone_id

@@ -156,7 +156,7 @@ const QueueItem = z
     name: z.string(),
     phone: z.string().openapi({ description: 'Masked without customers.read' }),
     locale: z.enum(['bn', 'en']),
-    items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
+    items: z.array(z.object({ variantId: z.uuid(), title: Localized, quantity: z.number().int() })),
     itemCount: z.number().int(),
     total: z.number().int(),
     codDue: z.number().int(),
