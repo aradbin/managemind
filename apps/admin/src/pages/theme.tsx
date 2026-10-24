@@ -529,11 +529,8 @@ function Editor({
                 : t('theme.upToDate')}
           {status === 'saved' && unpublished ? ` · ${t('theme.saved')}` : ''}
         </p>
-        <div
-          role="group"
-          aria-label={t('theme.previewSize')}
-          className="hidden rounded-lg bg-muted p-0.5 lg:flex"
-        >
+        <fieldset className="hidden min-w-0 rounded-lg border-0 bg-muted p-0.5 lg:flex">
+          <legend className="sr-only">{t('theme.previewSize')}</legend>
           {(['desktop', 'phone'] as const).map((d) => (
             <button
               key={d}
@@ -553,7 +550,7 @@ function Editor({
               {t(d === 'desktop' ? 'theme.desktop' : 'theme.phone')}
             </button>
           ))}
-        </div>
+        </fieldset>
         <Button asChild variant="ghost">
           <a href={storeUrl} target="_blank" rel="noopener">
             <ExternalLink aria-hidden className="size-4" />
