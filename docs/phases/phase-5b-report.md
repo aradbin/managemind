@@ -1,10 +1,10 @@
 # Phase 5B report: Launch readiness and pilot
 
-- Date: 2026-10-23
+- Date: 2026-10-24
 - Plan: `docs/phases/phase-5b-plan.md` (approved with the owner's answers in §14)
 - Pull request: #66, all of Phase 5B with one commit per plan step and its own preview database (`db-branch`). **Not merged or deployed yet.**
 
-> This report covers the build (plan PR 20). The results below are from tests and the local E2E; #66's `full-preview` run and the load test's run on its preview are added when they finish, and the pilot's results at its end.
+> This report covers the build (plan PR 20). The preview results are from #66's `full-preview` run on `bb7ccd9` (Oct 24), and the load test from its preview. The pilot's results are added at its end.
 
 ## Summary
 
@@ -29,7 +29,7 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 
 **What the owner should know:**
 
-1. **Nothing is deployed yet.** #66 has 23 commits and migrations 0034–0038, and its `full-preview` run fills §2 and §3 with preview results.
+1. **#66 is green and ready to merge; nothing is deployed yet.** CI passes, and the full preview run passed all 27 E2E flows, every Lighthouse budget, and the CPU step with no request stopped at the CPU limit. It has migrations 0034–0038.
 2. **The security review found one serious bug, three medium ones and two small ones, all fixed** (§2.1):
    - a store reopened and closed again could be purged at once, on its first closure's approval;
    - exports included shoppers' password hashes and sign-in tokens;
@@ -38,6 +38,7 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 3. **The review also found two things that would have failed quietly:** CI's dependency audit was about to fail on a new zod advisory, and the Worker started the jobs workflow on a branch named `main`, which doesn't exist, so exports and purges would only ever have started at the daily run.
 4. **Acceptance criterion 3 is met in tests** (§2). Criterion 1 runs in the E2E, but it needs a person who has never used the admin, timed with the runbook. Criterion 2 is the pilot itself.
 5. **The Flows E2E had been broken since PR 5**, which replaced the dialog it used to make a store. It now uses the New store screen and passes.
+6. **Previews are slower and less reliable without Hyperdrive** (Q3's trade-off), more than expected. A full run now takes about 37 minutes, 21 of them E2E, so its time limit is 45. On a preview's direct connection, about 45% of store page data requests fail with an empty 503, even one at a time. Through Hyperdrive, as in production, the same routes stop for nothing (§3). The E2E passes anyway; the load test can't measure much there (§3).
 
 ## 1. What was built
 
@@ -61,14 +62,16 @@ Phase 5B is built. A super admin can now onboard, bill, close and purge a store 
 | 16 | `2188ce2`, `cc495ea` | Nightly encrypted backups and the monthly restore test (ADR 0028) |
 | 17 | `288ed5e` | Runbooks |
 | 18 | `9dcb5d5` | CI: the onboarding, billing and closing E2E; the load test script |
-| 19 | _next commit_ | Fixes from the security review (migration 0038) |
-| 20 | _this commit_ | This report |
+| 19 | `3503107` | Fixes from the security review (migration 0038) |
+| 20 | `b325e99`, `7fcbcfd` | This report; PLAN.md's status |
+| — | `362f091`, `0ca7018`, `b25e062`, `bb7ccd9` | Fixes from #66's preview runs: the backup tools' commands reach the tests through turbo; longer E2E waits for slower previews; the load test reports statuses; a 45-minute preview job |
+| — | _this commit_ | The preview and load test results |
 
 ## 2. Acceptance criteria
 
 | Criterion | Status |
 | --- | --- |
-| A non-developer onboards a new store through the super-admin screen in under an hour, excluding the client's own gateway approvals | **Automated in the E2E** (`launch.spec.ts`, at a phone and a desktop viewport, with axe on every screen). A super admin sets up two-factor login and our invoice details, then makes a Starter test store from Platform → New store. Its owner gets the welcome email, signs in, sees the checklist, and meets the custom domain limit. The whole flow takes about 35 seconds locally. **Still needed:** someone who has never used the admin onboards a real pilot client with `docs/runbooks/onboarding.md`, timed from "New store" to the first test order |
+| A non-developer onboards a new store through the super-admin screen in under an hour, excluding the client's own gateway approvals | **Automated in the E2E** (`launch.spec.ts`, at a phone and a desktop viewport, with axe on every screen). A super admin sets up two-factor login and our invoice details, then makes a Starter test store from Platform → New store. Its owner gets the welcome email, signs in, sees the checklist, and meets the custom domain limit. The whole flow takes about 35 seconds locally and 57 on the preview. **Met on the preview** (#66, `bb7ccd9`) at both viewports. **Still needed:** someone who has never used the admin onboards a real pilot client with `docs/runbooks/onboarding.md`, timed from "New store" to the first test order |
 | Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure | **The pilot.** Measured as plan §13 says, and added to this report at its end. "$0" is now "$5 a month" (Q2) |
 | Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history | **Met in tests.** `scripts/jobs/purge.test.ts` seeds three stores with a row in every store table and files in R2, then closes and purges one through the dry run and an approval. Its rows, files and KV keys are gone and the other two are untouched. Its tenant record, billing history, audit log and purge record stay. A run stopped halfway resumes to the same result. **The E2E** closes a test store (its storefront answers 410) and queues the dry run; previews have no jobs runner, so the purge itself stops there. **Once in production:** a `test` store is closed and purged, and its purge record goes here |
 
@@ -122,23 +125,56 @@ Not security bugs, found on the way:
 | `storefront` | 27 (27) |
 | `scripts` | 23 (9): exports, the purge (criterion 3), resets, backups and the restore check |
 
-**E2E, local:** all 27 pass at a phone and a desktop viewport, including the new onboarding, billing and closing flow, with axe and the CSP check on every new screen.
+**E2E:** all 27 pass locally and on the preview (#66, `bb7ccd9`, 20.4 minutes), at a phone and a desktop viewport. That includes the new onboarding, billing and closing flow, with axe and the CSP check on every new screen.
 
 ## 3. Measurements
 
-From a local build of this branch.
+The sizes are from a local build of this branch. The rest is from #66's `full-preview` run on `bb7ccd9`.
 
 | Measure | Result | Budget |
 | --- | --- | --- |
+| Lighthouse, the eight storefront pages (two home pages, a category, a product, the cart, checkout, tracking, and the page back from SSLCommerz) | All budgets met, 24 runs | LCP 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95 |
 | API Worker | 966 KiB gzip (Phase 5A: 918) | 3 MiB (31%) |
 | Storefront Worker | 331 KiB gzip (365) | 3 MiB (11%) |
 | Admin, JavaScript before sign-in | 133 KiB (129) | 150 KiB (89%, CI warns above 85%) |
 
-**The load test** (`pnpm --filter @managemind/scripts load`) sends about 3,000 shopper-shaped requests (catalog pages, carts and a few COD checkouts) and reports status codes, latency percentiles and, given the Workers' names, their CPU time from Workers Logs. A local run against `wrangler dev` checked the script: 52 pages, 21 cart calls and 2 checkouts, with no errors (p50 118 ms). **Its one run on a preview hasn't happened yet** (§5).
+**CPU.** The preview's CPU step, through Hyperdrive, in ms of CPU time. **No request on any route was stopped at the CPU limit** (Phase 5A's run: five).
+
+| Route | Requests | Stopped | p50 | p90 | p99 |
+| --- | --- | --- | --- | --- | --- |
+| `POST /v1/store/checkout/orders` (`placeOrder`) | 15 | 0 | 47 | 87 | 137 |
+| `POST /v1/store/cart/lines` (add) | 15 | 0 | 18 | 33 | 34 |
+| `GET /v1/store/cart` | 30 | 0 | 16 | 30 | 48 |
+| `GET /v1/admin/orders/{id}` | 40 | 0 | 17 | 34 | 169 |
+| `GET /v1/admin/me` | 61 | 0 | 21 | 70 | 153 |
+| `PATCH /v1/admin/products/{id}` (save) | 20 | 0 | 32 | 70 | 206 |
+| `POST /v1/store/returns` (request) | 10 | 0 | 33 | 58 | 101 |
+| API: product page data | 20 | 0 | 21 | 32 | 49 |
+| API: category page data | 20 | 0 | 27 | 59 | 92 |
+| Storefront: a page miss (any of the five) | 100 | 0 | 5–6 | 6–8 | 7–15 |
+
+The medians are a little lower than Phase 5A's (placeOrder 61, cart add 21, order detail 21).
+
+**The load test** (`pnpm --filter @managemind/scripts load`) ran once against #66's preview: 3,780 requests in 167 s, 20 at a time, from one address.
+
+| Kind | Requests | 5xx or no answer | Rate limited | Other 4xx | p50 | p99 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Pages | 2,620 | 278 | 161 | 0 | 819 ms | 2,475 ms |
+| Cart | 1,140 | 248 | 80 | 157 | 537 ms | 1,236 ms |
+| Checkout | 20 | 5 | 5 | 10 | 955 ms | 1,274 ms |
+
+What it shows, and what it doesn't:
+
+- **The 5xx are the preview's direct connection, not the code.** They are empty 503s from Cloudflare. Sent one at a time, the API's store page data fails about 14 times in 30 on the preview, while `/health/deep`, which connects to the database too, never does. Through Hyperdrive the CPU step stopped no request on the same routes. This phase changed nothing heavy on that path (a closed-store check and a parameter for legal pages).
+- **The rate limits work.** All the traffic came from one address, so the per-IP search, cart and checkout limits answered 429, as they should.
+- **Checkouts were refused for Turnstile,** which the demo stores require and a script can't pass. Those are the "other 4xx".
+- **Its CPU readings need a token that can read Workers Logs.** This session's Cloudflare token can't; the CPU step's numbers above stand in for them.
+
+A load test that means something for production needs Hyperdrive, which shares production's 100,000 queries a day (about 10,000 for one run), or production itself. Both are left for the owner to decide (§5).
 
 ## 4. Free-tier impact
 
-As planned (plan §11). Exports, purges, resets, backups and the restore test run in GitHub Actions, about 150 minutes a month, and use no Worker CPU or Hyperdrive queries. The daily rollup and health add a few hundred Hyperdrive queries a day. Previews no longer use production's Hyperdrive queries, except in the CPU step.
+As planned (plan §11). Exports, purges, resets, backups and the restore test run in GitHub Actions, about 150 minutes a month, and use no Worker CPU or Hyperdrive queries. The daily rollup and health add a few hundred Hyperdrive queries a day. Previews no longer use production's Hyperdrive queries, except in the CPU step. A full preview run now takes about 37 Actions minutes; full runs stay opt-in, and the label comes off once a run has passed.
 
 ## 5. Known gaps and follow-ups
 
@@ -153,7 +189,7 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 7. **Workers Paid** when the first pilot client signs (Q2).
 8. **A local legal review** of the four legal page templates, and the signed platform terms.
 9. **A person who has never used the admin**, to onboard the first pilot client for criterion 1.
-10. **The load test's one run on a preview.** It sends about 3,000 requests to a deployed preview, so it waits for your go-ahead.
+10. **Whether to load-test through Hyperdrive.** The preview's run (§3) shows the rate limits work and the code holds, but its errors come from the direct connection. A run through Hyperdrive would use about 10,000 of production's 100,000 daily queries; one after Workers Paid, against production at a quiet hour, would be the real test.
 
 ### Not built yet, or smaller than planned
 
@@ -161,7 +197,7 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 - **The preview's SSLCommerz sandbox payment script** and the IPN's CPU step still wait for the sandbox credentials (Phase 5A, §5).
 - **`usage_daily` keeps every day.** The plan's 13-month retention is a follow-up; the table grows by one row per store a day.
 - **`CREDENTIALS_KEY` can't be rotated** without re-entering every store's credentials. The runbook says so.
-- **CI runs `pg_dump` and `pg_restore` 18 from the `postgres:18` image** for the backup tests. This couldn't be run locally (no Docker daemon), so the first CI run checks it.
+- **Previews' direct connection fails about 45% of store page data requests** with an empty 503 (§3). Previews still pass, but a slow or flaky preview E2E may be this. A follow-up could try Neon's serverless driver for previews.
 
 ### Decisions that differ from the plan
 
@@ -174,3 +210,4 @@ As planned (plan §11). Exports, purges, resets, backups and the restore test ru
 - **Check a destructive job's conditions when it runs, not only when it's asked for.** The purge's approval outlived the closure it approved.
 - **Every export needs a deny list that a test checks against the schema.** A new table with a secret column fails the test instead of leaving in a zip.
 - **Static assets skip the Worker.** Headers set in middleware never reach them.
+- **Turbo passes a task only the variables `turbo.json` names.** CI set `PG_DUMP` for the backup test, and turbo dropped it.
