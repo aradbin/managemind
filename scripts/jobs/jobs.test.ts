@@ -17,7 +17,7 @@ import { permissionsOf } from '@managemind/shared';
 import { strFromU8, unzipSync } from 'fflate';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { type ObjectStore, OMITTED } from './export';
+import { type ObjectStore, OMITTED, OMITTED_COLUMNS } from './export';
 import { claimJob, runJobs } from './runner';
 
 const { ownerUrl } = testUrls('managemind_test_scripts');
@@ -158,10 +158,12 @@ describe('the export job', () => {
     const { rows } = await client.query<{ table_name: string; column_name: string }>(
       `select table_name, column_name from information_schema.columns
         where table_schema = 'store' and table_name = any($1)
-          and column_name ~ '(password|secret|ciphertext|access_token|refresh_token|id_token|^token$)'`,
+          and column_name ~ '(password|secret|ciphertext|access_token|refresh_token|id_token|^token$|^link_hash$)'`,
       [STORE_TABLES.filter((t) => !(t in OMITTED))],
     );
-    expect(rows).toEqual([]);
+    const omittedColumn = (r: { table_name: string; column_name: string }) =>
+      OMITTED_COLUMNS[r.table_name as keyof typeof OMITTED_COLUMNS]?.includes(r.column_name);
+    expect(rows.filter((r) => !omittedColumn(r))).toEqual([]);
   });
 
   it('retries a failed run, and fails it on the third attempt', async () => {

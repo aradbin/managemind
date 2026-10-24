@@ -339,8 +339,18 @@ export function refundShare(
   return upTo(alreadyRefunded + units) - upTo(alreadyRefunded);
 }
 
-/** Flags an order can carry for staff (§3.5, §3.11). */
-export const ORDER_FLAGS = ['payment_risk', 'late_payment', 'flagged_phone'] as const;
+/**
+ * Flags an order can carry for staff (phase-5a-plan §3.5, §3.11; phase-6-plan
+ * §3.4, §3.5): a possible duplicate of an earlier order, and an order nobody
+ * answered for after the store's number of calls.
+ */
+export const ORDER_FLAGS = [
+  'payment_risk',
+  'late_payment',
+  'flagged_phone',
+  'possible_duplicate',
+  'unreachable',
+] as const;
 export type OrderFlag = (typeof ORDER_FLAGS)[number];
 
 /** History rows name the machine they belong to. */
@@ -352,6 +362,7 @@ export const HISTORY_MACHINES = [
   'edit',
   'return',
   'refund',
+  'confirmation',
 ] as const;
 export type HistoryMachine = (typeof HISTORY_MACHINES)[number];
 

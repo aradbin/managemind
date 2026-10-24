@@ -188,6 +188,15 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   payments: (tenant) =>
     `insert into store.payments (tenant_id, order_id, provider, method, amount)
      values (${tenant}, ${first('orders')}, 'cod', 'cod', 100000)`,
+  // Phase 6: incomplete orders and the confirmation queue.
+  incomplete_orders: (tenant) =>
+    `insert into store.incomplete_orders (tenant_id, cart_id, phone, lines, subtotal, locale)
+     values (${tenant}, ${first('carts')}, '+8801700000001',
+             '[{"variantId": "00000000-0000-0000-0000-000000000000", "quantity": 1}]', 100000, 'en')
+     on conflict do nothing`,
+  order_confirmations: (tenant) =>
+    `insert into store.order_confirmations (tenant_id, order_id)
+     values (${tenant}, ${first('orders')}) on conflict do nothing`,
   // Phase 5A: returns, refunds, credentials and messages.
   returns: (tenant) =>
     `insert into store.returns (tenant_id, number, order_id, reason, requested_by)

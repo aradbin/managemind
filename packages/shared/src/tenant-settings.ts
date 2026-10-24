@@ -4,7 +4,14 @@
 // default locale are columns, not settings.
 import { z } from 'zod';
 import { notificationSettings } from './notifications';
-import { checkoutSettings, codSettings, fraudSettings, returnSettings } from './orders/settings';
+import {
+  checkoutSettings,
+  codSettings,
+  confirmationSettings,
+  fraudSettings,
+  recoverySettings,
+  returnSettings,
+} from './orders/settings';
 import { normalizePhone } from './phone';
 import { storefrontSettings } from './storefront/settings';
 import { themeSchema } from './storefront/theme';
@@ -107,8 +114,12 @@ export const tenantSettings = z
     checkout: checkoutSettings.default(() => checkoutSettings.parse({})),
     /** Cash on delivery (phase-4-plan §3.8). */
     cod: codSettings.default(() => codSettings.parse({})),
-    /** When a phone is flagged (phase-5a-plan §3.11). */
+    /** When a phone is risky, and duplicates (phase-5a-plan §3.11, phase-6-plan §3.3, §3.4). */
     fraud: fraudSettings.default(() => fraudSettings.parse({})),
+    /** The confirmation queue and its call script (phase-6-plan §3.5–§3.7). */
+    confirmation: confirmationSettings.default(() => confirmationSettings.parse({})),
+    /** Incomplete orders (phase-6-plan §3.2). */
+    recovery: recoverySettings.default(() => recoverySettings.parse({})),
     /** The return policy (phase-5a-plan §3.10). */
     returns: returnSettings.default(() => returnSettings.parse({})),
     /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */

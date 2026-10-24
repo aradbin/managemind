@@ -59,7 +59,23 @@ export const ORDER_SOURCES = [
   'other',
   'exchange',
 ] as const;
-export const ORDER_FLAGS = ['payment_risk', 'late_payment', 'flagged_phone'] as const;
+export const ORDER_FLAGS = [
+  'payment_risk',
+  'late_payment',
+  'flagged_phone',
+  'possible_duplicate',
+  'unreachable',
+] as const;
+export const CANCEL_CODES = [
+  'shopper_request',
+  'no_answer',
+  'wrong_number',
+  'fake',
+  'duplicate',
+  'out_of_stock',
+  'payment_expired',
+  'other',
+] as const;
 export const ADJUSTMENT_KINDS = ['promotion', 'manual'] as const;
 export const ADJUSTMENT_TARGETS = ['items', 'order', 'delivery'] as const;
 export const HISTORY_MACHINES = [
@@ -70,6 +86,7 @@ export const HISTORY_MACHINES = [
   'edit',
   'return',
   'refund',
+  'confirmation',
 ] as const;
 export const SHIPMENT_STATUSES = ['pending', 'shipped', 'delivered', 'failed', 'returned'] as const;
 export const PAYMENT_PROVIDERS = ['cod', 'manual', 'sslcommerz'] as const;
@@ -188,6 +205,8 @@ export const carts = store.table(
     areaId: integer().references(() => areas.id),
     /** The one code applied (§3.13). */
     code: text(),
+    /** The shopper chose "Don't save": no incomplete order from this cart (phase-6-plan §3.2). */
+    recoveryOptOut: boolean().notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -302,6 +321,12 @@ export const orders = store.table(
     cancelledAt: ts(),
     cancelReason: text(),
     cancelledBy: text({ enum: ACTOR_TYPES }),
+    /** Why, as a code (phase-6-plan §3.5); null on older orders, which count as other. */
+    cancelCode: text({ enum: CANCEL_CODES }),
+    /** The phone's delivery success score at placement; null for a new phone (§3.3). */
+    phoneScore: smallint(),
+    /** The earlier order this one may duplicate (§3.4). */
+    duplicateOf: uuid(),
     updatedAt: updatedAt(),
   },
   (t) => [
@@ -326,11 +351,12 @@ export const orders = store.table(
       [deliveryZones.tenantId, deliveryZones.id],
       'set null',
     ),
+    ref('orders_duplicate_of_fk', [t.tenantId, t.duplicateOf], [t.tenantId, t.id], 'set null'),
     index('orders_tenant_placed_idx').on(t.tenantId, sql`placed_at desc`),
     index('orders_tenant_status_idx').on(t.tenantId, t.status, sql`placed_at desc`),
     index('orders_tenant_delivery_idx').on(t.tenantId, t.deliveryStatus, sql`placed_at desc`),
     index('orders_tenant_customer_idx').on(t.tenantId, t.customerId, sql`placed_at desc`),
-    index('orders_tenant_phone_idx').on(t.tenantId, t.phone),
+    index('orders_tenant_phone_idx').on(t.tenantId, t.phone, sql`placed_at desc`),
     index('orders_shopper_idx')
       .on(t.tenantId, t.shopperUserId, sql`placed_at desc`)
       .where(sql`shopper_user_id is not null`),
@@ -341,6 +367,9 @@ export const orders = store.table(
     oneOf('orders_return_status_valid', t.returnStatus, RETURN_STATUSES),
     oneOf('orders_source_valid', t.source, ORDER_SOURCES),
     oneOf('orders_cancelled_by_valid', t.cancelledBy, ACTOR_TYPES),
+    oneOf('orders_cancel_code_valid', t.cancelCode, CANCEL_CODES),
+    check('orders_phone_score_range', sql`${t.phoneScore} between 0 and 100`),
+    check('orders_duplicate_of_other', sql`${t.duplicateOf} <> ${t.id}`),
     check('orders_number_positive', sql`${t.number} > 0`),
     check('orders_locale_valid', sql`${t.locale} in ('bn', 'en')`),
     check(

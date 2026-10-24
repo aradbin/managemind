@@ -84,4 +84,20 @@ describe('default templates', () => {
     }
     for (const event of STAFF_EVENTS) expect(defaultTemplate(event, 'push', 'bn')).not.toBeNull();
   });
+
+  it('send the confirmation link by SMS only, in one part in English', () => {
+    expect(defaultTemplate('confirm_request', 'email', 'en')).toBeNull();
+    const t = defaultTemplate('confirm_request', 'sms', 'en');
+    const body = renderTemplate(
+      t?.body ?? '',
+      {
+        store_name: 'Rina Fashion House',
+        order_number: '#10234',
+        amount_due: 'Tk 2,450',
+        confirm_url: 'https://rina-fashion.managemind.store/c/a1B2c3D4e5',
+      },
+      'plain',
+    );
+    expect(smsParts(body)).toMatchObject({ encoding: 'gsm', parts: 1 });
+  });
 });
