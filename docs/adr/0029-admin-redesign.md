@@ -36,7 +36,13 @@ The admin works, but it reads as a developer tool: one blue on white, content st
    - **Desktop:** the sidebar is grouped. The store switcher sits at its top, then the selling pages, then a "Store" group.
    - **Top bar:** search first, then View store, the language switch, help and the account menu.
    - **Phone:** the bar holds five tabs: Home, Orders, Products, Customers and More. More is a page with the rest of the navigation, the account, the store switch, help and sign-out, so the header keeps only the store, search and language.
-   - **Platform area:** it keeps the same frame.
+   - **Platform area:** it keeps the same frame, under a dark band with the platform's sections, so nobody mistakes it for a store's admin. The approved screens drew a dark sidebar; a band needs no second frame.
+
+6. **Where the build differs from the approved screens:**
+   - The phone header keeps the language switch, which the E2E uses; the More page doesn't repeat it.
+   - Home shows 7 days only: the dashboard endpoint has no 30-day series. Best sellers and a returns count wait for endpoints.
+   - A delivery zone is still edited in its dialog (a sheet on phones), not in a panel beside the list.
+   - Settings cards show a status where the setup checklist knows it: store profile, delivery, payments, domains, email.
 
 ## Options considered
 
