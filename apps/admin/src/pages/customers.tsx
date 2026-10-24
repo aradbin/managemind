@@ -1,10 +1,11 @@
 // Customers (phase-4-plan §3.10, §7): the list, searched by phone or name and
 // filtered by tag; one customer with their orders, addresses, tags and note;
 // import through the import screen; export.
+import { formatNumber } from '@managemind/shared/i18n';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { ArrowLeft, FileUp, Plus } from 'lucide-react';
+import { ChevronRight, FileUp, MessageCircle, Phone, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
@@ -14,6 +15,7 @@ import { StatusChip } from '../components/order-status';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
+import { initials } from '../components/store-switcher';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -325,49 +327,86 @@ export function CustomerDetailPage() {
   if (customer.isPending) return <p role="status">{t('loading')}</p>;
   if (customer.isError) return <Notice tone="error">{errorMessage(customer.error, t)}</Notice>;
   const c = customer.data;
+  const average = c.orderCount ? Math.round(c.totalSpent / c.orderCount) : 0;
+  // The delivery record, from the orders listed here (the latest 50).
+  const record = {
+    delivered: c.orders.filter((o) => o.deliveryStatus === 'delivered').length,
+    failed: c.orders.filter((o) => o.deliveryStatus === 'failed').length,
+    cancelled: c.orders.filter((o) => o.status === 'cancelled').length,
+  };
+  const settled = record.delivered + record.failed + record.cancelled;
+  const deliveredShare = settled ? Math.round((record.delivered / settled) * 100) : 0;
+  const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
   return (
-    <div className="flex max-w-5xl flex-col gap-4">
-      <div>
-        <Link
-          to="/customers"
-          className="inline-flex min-h-11 items-center gap-1 text-sm text-muted-foreground"
-        >
-          <ArrowLeft aria-hidden className="size-4" />
+    <div className="flex flex-col gap-5">
+      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
+        <Link to="/customers" className="font-medium text-primary hover:underline">
           {t('nav.customers')}
         </Link>
-      </div>
-      <PageHeader
-        title={c.name}
-        description={[c.phone, c.email].filter(Boolean).join(' · ')}
-        actions={
-          canWrite && (
+        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+        <span className="truncate text-muted-foreground">{c.name}</span>
+      </nav>
+      <div className="flex flex-wrap items-center gap-4">
+        <span
+          aria-hidden
+          className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-warning text-lg font-semibold text-warning-foreground"
+        >
+          {initials(c.name)}
+        </span>
+        <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
+          <h1 className="truncate text-2xl font-semibold tracking-tight">{c.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {[
+              c.phone,
+              c.email,
+              c.firstOrderAt && t('customer.since', { date: dateOnly(locale, c.firstOrderAt) }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {c.phone && (
+            <>
+              <Button variant="secondary" asChild>
+                <a href={`tel:${c.phone}`}>
+                  <Phone aria-hidden className="size-4" />
+                  {t('order.call')}
+                </a>
+              </Button>
+              <Button variant="secondary" asChild>
+                <a
+                  href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle aria-hidden className="size-4" />
+                  {t('order.whatsapp')}
+                </a>
+              </Button>
+            </>
+          )}
+          {canWrite && (
             <>
               <Button variant="secondary" onClick={() => setDialog('edit')}>
                 {t('customers.edit')}
               </Button>
-              <Button variant="ghost" onClick={() => setDialog('delete')}>
+              <Button variant="quiet" onClick={() => setDialog('delete')}>
                 {t('action.delete')}
               </Button>
-              {canAnonymize && (
-                <Button variant="ghost" onClick={() => setDialog('anonymize')}>
-                  {t('customers.anonymize')}
-                </Button>
-              )}
             </>
-          )
-        }
-      />
-      {(c.phoneFlagged || c.failedDeliveries > 0) && (
-        <Notice tone={c.phoneFlagged ? 'error' : 'info'}>
+          )}
+        </div>
+      </div>
+      {c.phoneFlagged && (
+        <Notice tone="error">
           <span className="flex flex-wrap items-center justify-between gap-2">
             <span>
-              {c.phoneFlagged
-                ? t(c.flagged ? 'customer.flaggedByHand' : 'customer.flaggedByFailures', {
-                    count: c.failedDeliveries,
-                  })
-                : t('customer.failedDeliveries', { count: c.failedDeliveries })}
+              {t(c.flagged ? 'customer.flaggedByHand' : 'customer.flaggedByFailures', {
+                count: c.failedDeliveries,
+              })}
             </span>
-            {canWrite && c.phoneFlagged && (
+            {canWrite && (
               <Button
                 variant="secondary"
                 disabled={flag.isPending}
@@ -379,95 +418,155 @@ export function CustomerDetailPage() {
           </span>
         </Notice>
       )}
-      {canWrite && !c.phoneFlagged && (
-        <div>
-          <Button variant="ghost" disabled={flag.isPending} onClick={() => flag.mutate(true)}>
-            {t('customer.flag')}
-          </Button>
-        </div>
-      )}
       {flag.error && <Notice tone="error">{saveErrorMessage(flag.error, t)}</Notice>}
-      <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-background md:grid-cols-4">
         {[
-          [t('customer.orders'), String(c.orderCount)],
           [t('customer.totalSpent'), formatPrice(c.totalSpent, locale)],
-          [t('customer.firstOrder'), c.firstOrderAt ? dateOnly(locale, c.firstOrderAt) : '—'],
+          [t('customer.orders'), formatNumber(locale, c.orderCount)],
+          [t('dashboard.average'), formatPrice(average, locale)],
           [t('customer.lastOrder'), c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—'],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-lg border border-border bg-background p-3">
-            <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-semibold">{value}</dd>
+          <div
+            key={label}
+            className="flex flex-col gap-1.5 border-border p-4 not-first:border-l max-md:nth-3:border-l-0 max-md:nth-[n+3]:border-t md:p-5"
+          >
+            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+            <dd className="text-lg font-semibold tracking-tight tabular-nums md:text-xl">
+              {value}
+            </dd>
           </div>
         ))}
       </dl>
-      {(c.tags.length > 0 || c.note) && (
-        <section className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
-          {c.tags.length > 0 && (
-            <p className="flex flex-wrap gap-1">
-              {c.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                  {tag}
-                </span>
-              ))}
-            </p>
-          )}
-          {c.note && <p className="whitespace-pre-wrap text-sm">{c.note}</p>}
-        </section>
-      )}
-      <section aria-labelledby="orders-h" className="flex flex-col gap-2">
-        <h2 id="orders-h" className="font-semibold">
-          {t('customer.orders')}
-        </h2>
-        {c.orders.length === 0 ? (
-          <p className="text-muted-foreground">{t('customer.noOrders')}</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-            {c.orders.map((o) => (
-              <li key={o.id} className="flex flex-wrap items-center gap-2 p-3">
-                <Link
-                  to="/orders/$id"
-                  params={{ id: o.id }}
-                  className="font-medium underline-offset-2 hover:underline"
-                >
-                  #{o.number}
-                </Link>
-                <span className="text-sm text-muted-foreground">
-                  {dateOnly(locale, o.placedAt)}
-                </span>
-                <StatusChip kind="order" status={o.status} />
-                <StatusChip kind="delivery" status={o.deliveryStatus} />
-                <span className="ml-auto">{formatPrice(o.total, locale)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section aria-labelledby="addresses-h" className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 id="addresses-h" className="font-semibold">
-            {t('customer.addresses')}
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section
+          aria-labelledby="orders-h"
+          className="overflow-hidden rounded-xl border border-border bg-background"
+        >
+          <h2 id="orders-h" className="px-4 py-4 font-semibold md:px-5">
+            {t('customer.orders')}
           </h2>
-          {canWrite && c.addresses.length < 10 && (
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setAddress(undefined);
+          {c.orders.length === 0 ? (
+            <p className="px-4 pb-5 text-muted-foreground md:px-5">{t('customer.noOrders')}</p>
+          ) : (
+            <ul className="divide-y divide-border border-t border-border">
+              {c.orders.map((o) => (
+                <li key={o.id}>
+                  <Link
+                    to="/orders/$id"
+                    params={{ id: o.id }}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-muted md:px-5"
+                  >
+                    <span className="font-semibold text-primary">#{o.number}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {dateOnly(locale, o.placedAt)}
+                    </span>
+                    <span className="flex flex-wrap gap-1.5">
+                      <StatusChip kind="order" status={o.status} />
+                      <StatusChip kind="delivery" status={o.deliveryStatus} />
+                    </span>
+                    <span className="ms-auto font-semibold tabular-nums">
+                      {formatPrice(o.total, locale)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <div className="flex flex-col gap-5">
+          <section aria-labelledby="record-h" className={card}>
+            <h2 id="record-h" className="font-semibold">
+              {t('customer.record')}
+            </h2>
+            {settled > 0 && (
+              <div aria-hidden className="flex h-2 overflow-hidden rounded-full bg-danger-soft">
+                <div className="bg-success" style={{ width: `${deliveredShare}%` }} />
+              </div>
+            )}
+            <dl className="grid grid-cols-2 gap-2 text-sm">
+              {(
+                [
+                  ['deliveryStatus.delivered', record.delivered],
+                  ['deliveryStatus.failed', record.failed],
+                  ['orderStatus.cancelled', record.cancelled],
+                ] as const
+              ).map(([key, value]) => (
+                <div key={key} className="flex gap-1.5">
+                  <dt className="text-muted-foreground">{t(key)}</dt>
+                  <dd className="font-semibold tabular-nums">{formatNumber(locale, value)}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="text-xs text-muted-foreground">
+              {c.orderCount > c.orders.length
+                ? t('customer.recordLatest', { count: c.orders.length })
+                : t('customer.recordAll')}
+            </p>
+            {canWrite && !c.phoneFlagged && (
+              <Button
+                variant="secondary"
+                disabled={flag.isPending}
+                onClick={() => flag.mutate(true)}
+              >
+                {t('customer.flag')}
+              </Button>
+            )}
+          </section>
+          <section aria-labelledby="addresses-h" className={card}>
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="addresses-h" className="font-semibold">
+                {t('customer.addresses')}
+              </h2>
+              {canWrite && c.addresses.length < 10 && (
+                <Button
+                  variant="ghost"
+                  className="text-primary"
+                  onClick={() => {
+                    setAddress(undefined);
+                    setDialog('address');
+                  }}
+                >
+                  <Plus aria-hidden className="size-4" />
+                  {t('customer.addAddress')}
+                </Button>
+              )}
+            </div>
+            <AddressList
+              customer={c}
+              onEdit={(a) => {
+                setAddress(a);
                 setDialog('address');
               }}
+            />
+          </section>
+          {(c.tags.length > 0 || c.note) && (
+            <section aria-labelledby="note-h" className={card}>
+              <h2 id="note-h" className="font-semibold">
+                {t('customer.noteAndTags')}
+              </h2>
+              {c.note && <p className="whitespace-pre-wrap text-sm">{c.note}</p>}
+              {c.tags.length > 0 && (
+                <p className="flex flex-wrap gap-1.5">
+                  {c.tags.map((tag) => (
+                    <span key={tag} className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </p>
+              )}
+            </section>
+          )}
+          {canWrite && canAnonymize && (
+            <Button
+              variant="ghost"
+              className="self-start text-danger"
+              onClick={() => setDialog('anonymize')}
             >
-              <Plus aria-hidden className="size-4" />
-              {t('customer.addAddress')}
+              {t('customers.anonymize')}
             </Button>
           )}
         </div>
-        <AddressList
-          customer={c}
-          onEdit={(a) => {
-            setAddress(a);
-            setDialog('address');
-          }}
-        />
-      </section>
+      </div>
       {dialog === 'edit' && <CustomerDialog customer={c} onClose={() => setDialog(null)} />}
       {dialog === 'address' && (
         <AddressDialog customer={c} address={address} onClose={() => setDialog(null)} />

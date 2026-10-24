@@ -76,7 +76,11 @@ export function StoreProfilePage() {
     !me?.supportGrantId && me?.stores.find((s) => s.tenantId === me.activeStore)?.role === 'owner';
   return (
     <div className="max-w-2xl">
-      <PageHeader title={t('settings.store')} description={t('settings.store.description')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('settings.store')}
+        description={t('settings.store.description')}
+      />
       {store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : store.isError ? (

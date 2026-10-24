@@ -26,7 +26,11 @@ export function DomainsPage() {
   const canWrite = usePermission('settings.write');
   return (
     <div className="max-w-3xl">
-      <PageHeader title={t('domains.title')} description={t('domains.description')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('domains.title')}
+        description={t('domains.description')}
+      />
       {domains.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : domains.isError ? (

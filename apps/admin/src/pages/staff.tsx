@@ -80,6 +80,7 @@ export function StaffPage() {
   return (
     <div className="flex max-w-4xl flex-col gap-8">
       <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
         title={t('settings.staff')}
         description={t('settings.staff.description')}
         actions={

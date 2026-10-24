@@ -26,7 +26,11 @@ export function NotificationSettingsPage() {
   const canRead = usePermission('orders.read');
   return (
     <div className="flex max-w-2xl flex-col gap-8">
-      <PageHeader title={t('notify.title')} description={t('notify.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('notify.title')}
+        description={t('notify.intro')}
+      />
       <ShopperChannels />
       <SmsGateway />
       <StoreEmail />

@@ -63,7 +63,11 @@ export function ReturnSettingsPage() {
         if (!badDays && policy.refundMethods.length) save.mutate({ ...policy, windowDays });
       }}
     >
-      <PageHeader title={t('returnSettings.title')} description={t('returnSettings.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('returnSettings.title')}
+        description={t('returnSettings.intro')}
+      />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-6">
         <div className="flex flex-col gap-3">

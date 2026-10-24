@@ -39,7 +39,10 @@ export function BillingPage() {
   const b = billing.data;
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <PageHeader title={t('billing.title')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('billing.title')}
+      />
       {billing.isPending && <p role="status">{t('loading')}</p>}
       {billing.isError && <Notice tone="error">{errorMessage(billing.error, t)}</Notice>}
       {b && (

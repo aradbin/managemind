@@ -117,7 +117,11 @@ export function CheckoutSettingsPage() {
   const err = (bad: boolean) => (bad ? t('form.invalid') : undefined);
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PageHeader title={t('checkoutSettings.title')} description={t('checkoutSettings.intro')} />
+      <PageHeader
+        parent={{ to: '/settings', label: t('settings.title') }}
+        title={t('checkoutSettings.title')}
+        description={t('checkoutSettings.intro')}
+      />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <form
         className="flex flex-col gap-6"

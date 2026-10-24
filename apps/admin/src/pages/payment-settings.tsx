@@ -71,7 +71,11 @@ export function PaymentSettingsPage() {
   if (!canEdit) {
     return (
       <div className="flex max-w-2xl flex-col gap-6">
-        <PageHeader title={t('payments.title')} description={t('payments.intro')} />
+        <PageHeader
+          parent={{ to: '/settings', label: t('settings.title') }}
+          title={t('payments.title')}
+          description={t('payments.intro')}
+        />
         <Notice>{t('payments.ownersOnly')}</Notice>
       </div>
     );
