@@ -249,6 +249,17 @@ export function OrdersPage() {
             </Link>
           );
         })}
+        <Link
+          to="/orders/confirm"
+          className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
+        >
+          {t('queue.tabLabel')}
+          {counts?.toCall ? (
+            <span className="rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground tabular-nums">
+              {counts.toCall}
+            </span>
+          ) : null}
+        </Link>
       </nav>
       <div className="flex flex-wrap items-center gap-2">
         <Input

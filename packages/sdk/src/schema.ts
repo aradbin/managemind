@@ -14729,7 +14729,15 @@ export interface components {
                 toShip: number;
                 cancelledByShopper7d: number;
                 lowStock: number;
+                toCall: number;
+                possibleDuplicates: number;
             };
+            /** @description Last 7 days' COD orders; null when the queue is off */
+            confirmation: {
+                confirmed: number;
+                decided: number;
+                rate: number | null;
+            } | null;
             /** @description Only with reports.read */
             sales: {
                 today: {

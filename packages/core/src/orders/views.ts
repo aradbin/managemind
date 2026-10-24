@@ -18,7 +18,7 @@ import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
-import { type ConfirmationState, confirmationState } from './confirmation';
+import { type ConfirmationState, confirmationState, inQueueSql } from './confirmation';
 import type { Localized } from './variants';
 
 const iso = (d: unknown) =>
@@ -685,7 +685,15 @@ export interface Dashboard {
     toShip: number;
     cancelledByShopper7d: number;
     lowStock: number;
+    /** Due to be called now (phase-6-plan §3.8); 0 when the queue is off. */
+    toCall: number;
+    possibleDuplicates: number;
   };
+  /**
+   * COD orders placed in the last 7 days that were confirmed, of those
+   * decided (confirmed or cancelled); null when the queue is off.
+   */
+  confirmation: { confirmed: number; decided: number; rate: number | null } | null;
   /** Null without reports.read. */
   sales: {
     today: { orders: number; total: number };
@@ -698,9 +706,29 @@ export interface Dashboard {
 /** A handful of summary queries on indexed columns (§3.17); Asia/Dhaka days, cancelled orders excluded. */
 export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): Promise<Dashboard> {
   authorize(actor, 'orders.read');
+  const { settings } = await orderSettings(tx);
+  const queue = settings.confirmation.queue;
   const { rows } = await tx.db.execute<Record<string, number>>(sql`
     select
       (select count(*)::int from store.orders where status = 'pending') as "awaitingConfirmation",
+      ${
+        queue
+          ? sql`(select count(*)::int from store.orders o
+                  left join store.order_confirmations c on c.order_id = o.id
+                 where ${inQueueSql(settings)} and not ('unreachable' = any(o.flags))
+                   and (c.due_at is null or c.due_at <= now()))`
+          : sql`0`
+      } as "toCall",
+      (select count(*)::int from store.orders where 'possible_duplicate' = any(flags)
+         and status <> 'cancelled') as "possibleDuplicates",
+      (select count(*)::int from store.orders o where o.placed_at > now() - interval '7 days'
+         and o.confirmed_at is not null
+         and exists (select 1 from store.payments p where p.order_id = o.id and p.provider = 'cod'))
+        as "confirmed7d",
+      (select count(*)::int from store.orders o where o.placed_at > now() - interval '7 days'
+         and (o.confirmed_at is not null or o.status = 'cancelled')
+         and exists (select 1 from store.payments p where p.order_id = o.id and p.provider = 'cod'))
+        as "decided7d",
       (select count(*)::int from store.orders where status in ('confirmed', 'processing')
          and delivery_status in ('not_shipped', 'partially_shipped', 'failed')) as "toShip",
       (select count(*)::int from store.orders where status = 'cancelled' and cancelled_by = 'shopper'
@@ -709,8 +737,22 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
         where v.archived_at is null and p.status = 'active' and v.track_inventory and v.low_stock_threshold is not null
           and coalesce((select sum(l.on_hand - l.reserved) from store.inventory_levels l where l.variant_id = v.id), 0)
               <= v.low_stock_threshold) as "lowStock"`);
-  const counts = rows[0] as unknown as Dashboard['counts'];
-  if (!actor.permissions.has('reports.read')) return { counts, sales: null };
+  const {
+    confirmed7d = 0,
+    decided7d = 0,
+    ...counts
+  } = (rows[0] ?? {}) as Dashboard['counts'] & {
+    confirmed7d?: number;
+    decided7d?: number;
+  };
+  const confirmation = queue
+    ? {
+        confirmed: confirmed7d,
+        decided: decided7d,
+        rate: decided7d ? Math.round((100 * confirmed7d) / decided7d) : null,
+      }
+    : null;
+  if (!actor.permissions.has('reports.read')) return { counts, confirmation, sales: null };
   const dhaka = new Date(now.getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
   const today = dateBound(dhaka, false);
   const month = dateBound(`${dhaka.slice(0, 8)}01`, false);
@@ -735,6 +777,7 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
     });
   return {
     counts,
+    confirmation,
     sales: { today: byDay.get(dhaka) ?? { orders: 0, total: 0 }, month: monthTotals, days: last7 },
   };
 }

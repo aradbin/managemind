@@ -123,6 +123,7 @@ export function OrderDetailPage() {
         {/* The customer first on phones, where calling them is the next step; beside the items on desktops. */}
         <div className="flex flex-col gap-5 lg:col-start-2 lg:row-start-1">
           <CustomerCard order={o} />
+          {o.confirmation && <ConfirmationCard order={o} />}
           <RiskPanel risk={o.risk} atPlacement={o.phoneScoreAtPlacement}>
             {o.otherOpenOrders.length > 0 && (
               <div className="flex flex-col gap-1.5">
@@ -496,6 +497,40 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
         <p className="text-sm text-muted-foreground">{t('order.noDelivery')}</p>
       )}
       {!canCustomers && <p className="text-xs text-muted-foreground">{t('order.masked')}</p>}
+    </section>
+  );
+}
+
+/** Where the order is in the confirmation queue, or how it was confirmed (phase-6-plan §3.5). */
+function ConfirmationCard({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const c = o.confirmation as NonNullable<OrderDetail['confirmation']>;
+  return (
+    <section aria-labelledby="confirmation-title" className={section}>
+      <h2 id="confirmation-title" className="font-semibold">
+        {t('confirmSettings.title')}
+      </h2>
+      <p className="text-sm">
+        {c.confirmedVia
+          ? t(`confirmedVia.${c.confirmedVia}` as AdminKey)
+          : o.flags.includes('unreachable')
+            ? t('queue.tab.unreachable')
+            : c.inQueue
+              ? c.dueAt && Date.parse(c.dueAt) > Date.now()
+                ? t('queue.dueAt', { time: dateTime(locale, c.dueAt) })
+                : t('queue.tab.to_call')
+              : t('confirmation.notQueued')}
+      </p>
+      {c.attempts > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t('queue.attempts', { count: c.attempts })}
+        </p>
+      )}
+      {c.inQueue && !c.confirmedVia && (
+        <Button variant="secondary" asChild>
+          <Link to="/orders/confirm">{t('confirmation.openQueue')}</Link>
+        </Button>
+      )}
     </section>
   );
 }
@@ -1016,6 +1051,13 @@ function historyText(
       if (!e.to) return t('history.shipmentDeleted');
       if (!e.from) return t('history.shipmentCreated');
       return t('history.shipment', { status: t(`shipmentStatus.${to}` as AdminKey) });
+    case 'confirmation': {
+      const d = (e.data ?? {}) as { attempts?: number; code?: string };
+      const outcome = t(`outcome.${e.event}` as AdminKey);
+      return e.event === 'no_answer' && d.attempts
+        ? t('history.callAttempt', { outcome, count: d.attempts })
+        : t('history.call', { outcome });
+    }
     case 'edit': {
       const number = (e.data as { number?: number } | null)?.number;
       if (e.event === 'merged_into') return t('history.mergedInto', { number: number ?? '' });

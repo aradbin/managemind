@@ -537,7 +537,17 @@ const DashboardView = z
       toShip: z.number().int(),
       cancelledByShopper7d: z.number().int(),
       lowStock: z.number().int(),
+      toCall: z.number().int(),
+      possibleDuplicates: z.number().int(),
     }),
+    confirmation: z
+      .object({
+        confirmed: z.number().int(),
+        decided: z.number().int(),
+        rate: z.number().int().nullable(),
+      })
+      .nullable()
+      .openapi({ description: "Last 7 days' COD orders; null when the queue is off" }),
     sales: z
       .object({
         today: z.object({ orders: z.number().int(), total: Money }),

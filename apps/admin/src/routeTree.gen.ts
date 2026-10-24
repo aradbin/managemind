@@ -33,6 +33,7 @@ import { Route as ShellOnlineStoreSettingsRouteImport } from './routes/_shell/on
 import { Route as ShellOnlineStoreThemeRouteImport } from './routes/_shell/online-store/theme'
 import { Route as ShellOrdersIndexRouteImport } from './routes/_shell/orders/index'
 import { Route as ShellOrdersIdRouteImport } from './routes/_shell/orders/$id'
+import { Route as ShellOrdersConfirmRouteImport } from './routes/_shell/orders/confirm'
 import { Route as ShellOrdersNewRouteImport } from './routes/_shell/orders/new'
 import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
@@ -189,6 +190,11 @@ const ShellOrdersIndexRoute = ShellOrdersIndexRouteImport.update({
 const ShellOrdersIdRoute = ShellOrdersIdRouteImport.update({
   id: '/orders/$id',
   path: '/orders/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellOrdersConfirmRoute = ShellOrdersConfirmRouteImport.update({
+  id: '/orders/confirm',
+  path: '/orders/confirm',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellOrdersNewRoute = ShellOrdersNewRouteImport.update({
@@ -404,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
+  '/orders/confirm': typeof ShellOrdersConfirmRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
+  '/orders/confirm': typeof ShellOrdersConfirmRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/_shell/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/_shell/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/_shell/orders/$id': typeof ShellOrdersIdRoute
+  '/_shell/orders/confirm': typeof ShellOrdersConfirmRoute
   '/_shell/orders/new': typeof ShellOrdersNewRoute
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
   '/_shell/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -593,6 +602,7 @@ export interface FileRouteTypes {
     | '/online-store/settings'
     | '/online-store/theme'
     | '/orders/$id'
+    | '/orders/confirm'
     | '/orders/new'
     | '/platform/audit'
     | '/platform/dashboard'
@@ -654,6 +664,7 @@ export interface FileRouteTypes {
     | '/online-store/settings'
     | '/online-store/theme'
     | '/orders/$id'
+    | '/orders/confirm'
     | '/orders/new'
     | '/platform/audit'
     | '/platform/dashboard'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/_shell/online-store/settings'
     | '/_shell/online-store/theme'
     | '/_shell/orders/$id'
+    | '/_shell/orders/confirm'
     | '/_shell/orders/new'
     | '/_shell/platform/audit'
     | '/_shell/platform/dashboard'
@@ -936,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/orders/$id'
       fullPath: '/orders/$id'
       preLoaderRoute: typeof ShellOrdersIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/orders/confirm': {
+      id: '/_shell/orders/confirm'
+      path: '/orders/confirm'
+      fullPath: '/orders/confirm'
+      preLoaderRoute: typeof ShellOrdersConfirmRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/orders/new': {
@@ -1244,6 +1263,7 @@ interface ShellRouteChildren {
   ShellOnlineStoreSettingsRoute: typeof ShellOnlineStoreSettingsRoute
   ShellOnlineStoreThemeRoute: typeof ShellOnlineStoreThemeRoute
   ShellOrdersIdRoute: typeof ShellOrdersIdRoute
+  ShellOrdersConfirmRoute: typeof ShellOrdersConfirmRoute
   ShellOrdersNewRoute: typeof ShellOrdersNewRoute
   ShellProductsIdRoute: typeof ShellProductsIdRoute
   ShellProductsNewRoute: typeof ShellProductsNewRoute
@@ -1293,6 +1313,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellOnlineStoreSettingsRoute: ShellOnlineStoreSettingsRoute,
   ShellOnlineStoreThemeRoute: ShellOnlineStoreThemeRoute,
   ShellOrdersIdRoute: ShellOrdersIdRoute,
+  ShellOrdersConfirmRoute: ShellOrdersConfirmRoute,
   ShellOrdersNewRoute: ShellOrdersNewRoute,
   ShellProductsIdRoute: ShellProductsIdRoute,
   ShellProductsNewRoute: ShellProductsNewRoute,
