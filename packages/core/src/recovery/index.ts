@@ -178,6 +178,17 @@ function summary(r: Record<string, unknown>, risks: Map<string, PhoneRisk>): Inc
   };
 }
 
+/** The last row's updated_at and id; anything else is no cursor, never a database error. */
+function decodeCursor(cursor: string): { at: string; id: string } | null {
+  try {
+    const [at = '', id = ''] = atob(cursor).split('|');
+    return Number.isNaN(Date.parse(at)) || !UUID.test(id) ? null : { at, id };
+  } catch {
+    return null;
+  }
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const readAccess = (actor: Actor) => {
   authorize(actor, 'orders.read');
   authorize(actor, 'customers.read');
@@ -203,10 +214,8 @@ export async function listIncompleteOrders(
       sql`i.updated_at <= now() - make_interval(mins => ${settings.recovery.showAfterMinutes})`,
     );
   }
-  if (q.after) {
-    const [at, id] = atob(q.after).split('|');
-    if (at && id) where.push(sql`(i.updated_at, i.id) < (${at}::timestamptz, ${id}::uuid)`);
-  }
+  const after = q.after ? decodeCursor(q.after) : null;
+  if (after) where.push(sql`(i.updated_at, i.id) < (${after.at}::timestamptz, ${after.id}::uuid)`);
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
     select i.* from store.incomplete_orders i where ${sql.join(where, sql` and `)}
      order by i.updated_at desc, i.id desc limit ${limit + 1}`);

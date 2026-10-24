@@ -1073,7 +1073,8 @@ export const ORDER_ROUTES = {
   phoneRisk: r({
     method: 'get',
     path: '/phones/{phone}/risk',
-    summary: "A phone's delivery success score in this store, with its counts (orders.read)",
+    summary:
+      "A phone's delivery success score in this store, with its counts (orders.read and customers.read)",
     request: { params: z.object({ phone: z.string().max(32) }) },
     responses: json(PhoneRisk, 'Risk'),
   }),

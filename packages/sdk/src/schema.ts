@@ -8824,7 +8824,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** A phone's delivery success score in this store, with its counts (orders.read) */
+        /** A phone's delivery success score in this store, with its counts (orders.read and customers.read) */
         get: {
             parameters: {
                 query?: never;

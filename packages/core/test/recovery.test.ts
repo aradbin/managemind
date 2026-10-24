@@ -182,9 +182,10 @@ describe('the delivery success score', () => {
       trusted: false,
       reasons: ['failed_deliveries'],
     });
-    // Viewers see it too: counts only.
-    const viewer = await run((tx) => getPhoneRisk(tx, actorAs('viewer'), phone));
-    expect(viewer.score).toBe(60);
+    // A lookup by any phone is a customer lookup: viewers see scores only on orders.
+    await expect(run((tx) => getPhoneRisk(tx, actorAs('viewer'), phone))).rejects.toMatchObject({
+      code: 'forbidden',
+    });
   });
 
   it('calls a phone with no orders new, and accepts it typed as 01…', async () => {
@@ -961,6 +962,11 @@ describe('incomplete orders', () => {
     await setRecovery({ showAfterMinutes: 0 });
     try {
       expect(await listed()).toBe(true);
+      // A cursor that isn't one is the first page, not a database error.
+      for (const after of ['not base64!', btoa('yesterday|x'), btoa('2026-10-24T00:00:00Z|1')]) {
+        const page = await run((tx) => listIncompleteOrders(tx, owner, { after, limit: 100 }));
+        expect(page.items.some((i) => i.phone === phone)).toBe(true);
+      }
     } finally {
       await setRecovery({});
     }

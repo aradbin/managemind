@@ -119,7 +119,9 @@ export async function phoneRisk(
 
 /**
  * The score for the manual order screen as soon as a phone is typed
- * (phase-6-plan §3.8): counts only, so every role that reads orders sees it.
+ * (phase-6-plan §3.8). Counts only, but looked up by any phone, so it needs
+ * customers.read as well: a viewer sees the score on the orders they can
+ * read, never whether some other number has ordered here.
  */
 export async function getPhoneRisk(
   tx: TenantTx,
@@ -127,6 +129,7 @@ export async function getPhoneRisk(
   phoneInput: string,
 ): Promise<PhoneRisk> {
   authorize(actor, 'orders.read');
+  authorize(actor, 'customers.read');
   const phone = normalizePhone(phoneInput);
   if (!phone) {
     throw new AppError('validation_failed', {
