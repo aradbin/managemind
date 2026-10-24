@@ -5,5 +5,8 @@ export default defineConfig({
     globalSetup: ['./test/global-setup.ts'],
     // All files share one database; run them one at a time.
     fileParallelism: false,
+    // CI runs every package's database tests at once on two cores, where
+    // vitest's 5 s default is too tight for the heavier ones.
+    testTimeout: 30_000,
   },
 });
