@@ -37,7 +37,6 @@ export function AuthLayout({
           <div aria-hidden className="flex gap-1.5 px-5 pt-4 md:px-8">
             {Array.from({ length: steps }, (_, i) => (
               <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: the steps never reorder.
                 key={i}
                 className={cn('h-1 flex-1 rounded-full', i < step ? 'bg-primary' : 'bg-border')}
               />
