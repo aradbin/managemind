@@ -211,7 +211,10 @@ test('couriers', async ({ page }, info) => {
         { timeout: 60_000 },
       )
       .toEqual(['booked', 'booked']);
-    // The dashboard counts them as waiting for pickup.
+    // The dashboard counts them as waiting for pickup. The browser keeps it for
+    // 60 seconds (phase-4-plan §3.17), and this run saw it at sign-in: renew the
+    // kept copy first, as the dashboard's own refetch does.
+    await page.evaluate(() => fetch('/v1/admin/dashboard', { cache: 'no-cache' }));
     await page.goto(`${API}/`);
     await expect(
       page.getByRole('link', { name: new RegExp(m('couriers.dash.booked')) }),
