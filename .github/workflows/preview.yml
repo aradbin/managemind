@@ -70,6 +70,7 @@ jobs:
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/choose.ts --base "origin/$BASE"
           ${{ contains(github.event.pull_request.labels.*.name, 'full-preview') && '--full-label' || '' }}
+          ${{ contains(github.event.pull_request.labels.*.name, 'narrow-preview') && '--narrow-label' || '' }}
 
       - name: Choose the database
         id: choice
@@ -188,8 +189,13 @@ jobs:
           API_URL: ${{ steps.workers.outputs.api_url }}
           STOREFRONT_URL: ${{ steps.workers.outputs.storefront_url }}
           FULL: ${{ steps.scope.outputs.full }}
+          # With the narrow-preview label: smoke and the PR's new specs (scope.ts).
+          SPECS: ${{ steps.scope.outputs.specs }}
         run: |
-          if [ "$FULL" = true ]; then
+          if [ "$FULL" = true ] && [ -n "$SPECS" ]; then
+            # shellcheck disable=SC2086 # one argument per spec file
+            pnpm --filter @managemind/e2e e2e $SPECS --no-deps
+          elif [ "$FULL" = true ]; then
             pnpm --filter @managemind/e2e e2e
           else
             pnpm --filter @managemind/e2e e2e --project=smoke

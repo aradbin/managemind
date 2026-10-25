@@ -8,11 +8,21 @@
 // - the `full-preview` label adds the E2E flows, Lighthouse and the CPU step,
 //   all on a Worker bound to Hyperdrive unless today's count (UTC days, as
 //   the quota resets) is past FULL_RUN_CEILING or unknown. Then the E2E flows
-//   and Lighthouse run on the direct connection, without the CPU step.
+//   and Lighthouse run on the direct connection, without the CPU step;
+// - with the `narrow-preview` label too, the E2E is the smoke tests and the
+//   spec files the PR adds, without the flows they depend on: the whole
+//   suite spends more CPU than the Free plan allows one Worker in a window
+//   (ADR 0011, amended Oct 25).
 
 /** Above this many Hyperdrive queries today, a full run would put production at risk. */
 export const FULL_RUN_CEILING = 50_000;
 export const FULL_LABEL = 'full-preview';
+export const NARROW_LABEL = 'narrow-preview';
+
+/** The E2E spec files among the files a PR adds, relative to e2e/. */
+export function addedSpecs(added: readonly string[]): string[] {
+  return added.filter((f) => /^e2e\/tests\/[^/]+\.spec\.ts$/.test(f)).map((f) => f.slice(4));
+}
 
 /** Markdown anywhere, and everything under docs/. */
 export function docsOnly(files: readonly string[]): boolean {
@@ -25,6 +35,8 @@ export interface Scope {
   full: boolean;
   /** The E2E flows, Lighthouse and the CPU step on Hyperdrive; the CPU step runs only then. */
   hyperdrive: boolean;
+  /** The E2E spec files a narrowed full run is limited to, without dependencies; empty for all. */
+  specs: string[];
   /** One line for the preview comment. */
   describe: string;
 }
@@ -34,7 +46,26 @@ export function previewScope(input: {
   fullLabel: boolean;
   /** Today's Hyperdrive queries, asked for only when the label is on; null if unknown. */
   queriesToday?: number | null;
+  narrowLabel?: boolean;
+  /** The files the PR adds (not changes). */
+  added?: readonly string[];
 }): Scope {
+  const scope = { ...baseScope(input), specs: [] as string[] };
+  const specs = addedSpecs(input.added ?? []);
+  if (!scope.full || !input.narrowLabel || specs.length === 0) return scope;
+  const list = specs.map((f) => `\`${f.slice('tests/'.length)}\``).join(', ');
+  return {
+    ...scope,
+    specs: ['tests/smoke.spec.ts', ...specs],
+    describe: `${scope.describe} Narrowed (\`${NARROW_LABEL}\`): the E2E is the smoke tests and ${list}, without the flows they depend on.`,
+  };
+}
+
+function baseScope(input: {
+  files: readonly string[];
+  fullLabel: boolean;
+  queriesToday?: number | null;
+}): Omit<Scope, 'specs'> {
   if (docsOnly(input.files)) {
     return {
       deploy: false,
