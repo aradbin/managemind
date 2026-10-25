@@ -19,7 +19,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   // One flow at a time on a preview: two at once spend CPU fast enough that
   // the Free plan's limit stops requests in bursts (ADR 0011, amended Oct 25).
-  workers: process.env.CI ? 1 : undefined,
+  ...(process.env.CI ? { workers: 1 } : {}),
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: {
     browserName: 'chromium',
