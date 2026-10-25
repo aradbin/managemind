@@ -1,6 +1,6 @@
 # Phase 7 plan: Couriers and fulfillment
 
-- Status: **Proposed (Oct 25), waiting for the owner's approval.** §14 has the questions; nothing is built until they are answered
+- Status: **Approved (Oct 25).** The owner accepted every recommendation in §14 and asked to start the build. Still needed from the owner: courier credentials for each adapter (§1), the platform's own Pathao and RedX accounts for the area lists, and a sample payout statement from each courier
 - Date: 2026-10-25
 - Scope: PLAN.md "Phase 7 — Couriers and fulfillment". Courier states on Phase 4's shipments, a `CourierProvider` with Steadfast, Pathao and RedX adapters, one-click and bulk booking, status sync by webhook with a little polling, COD settled by the courier's delivery, COD reconciliation, courier-driven failed deliveries and returns, and area mapping. It builds on Phase 4's shipments and COD payment (phase-4-plan §3.7, §3.8), Phase 5A's credentials vault, failed deliveries and returns (ADR 0024; phase-5a-plan §3.11, §3.12), and Phase 6's score, which already counts failed deliveries (phase-6-plan §3.3)
 
