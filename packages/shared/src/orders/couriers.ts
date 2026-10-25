@@ -199,3 +199,5 @@ export const bulkBookInput = z
 export const cancelBookingInput = z
   .object({ cancelledAtCourier: z.boolean().default(false) })
   .strict();
+
+export const defaultCourierSettings = (): CourierSettings => courierSettings.parse({});

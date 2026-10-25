@@ -12,6 +12,8 @@ export const en = {
   'delivery.description': 'Zones, fees and the areas each covers',
   'checkoutSettings.title': 'Checkout',
   'checkoutSettings.description': 'Checkout fields, cash on delivery, limits and blocked phones',
+  'couriers.title': 'Couriers',
+  'couriers.description': 'Book parcels with Steadfast, Pathao or RedX, and follow them',
   'payments.title': 'Payments',
   'payments.description': 'Online payment with your SSLCommerz account',
   'notify.title': 'Notifications',

@@ -181,6 +181,8 @@ export interface OrderLineView {
 /** A courier's parcel on a shipment. */
 export interface ShipmentCourier {
   courier: string;
+  /** Our invoice for the parcel, which the courier's panel shows. */
+  invoice: string | null;
   consignmentId: string | null;
   trackingCode: string | null;
   bookingState: string | null;
@@ -338,6 +340,7 @@ const money = (v: unknown) => (v === null || v === undefined ? null : Number(v))
 function shipmentCourier(s: Record<string, unknown>): ShipmentCourier {
   return {
     courier: s.courier as string,
+    invoice: (s.courier_ref as string) ?? null,
     consignmentId: (s.consignment_id as string) ?? null,
     trackingCode: (s.tracking_code as string) ?? null,
     bookingState: (s.booking_state as string) ?? null,
@@ -390,7 +393,7 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
        where order_id = ${id} order by created_at, id`),
       tx.db.execute<Record<string, unknown>>(sql`
       select s.id, s.status, s.carrier, s.tracking_number, s.tracking_url, s.shipped_at, s.delivered_at, s.failed_reason,
-             s.courier, s.consignment_id, s.tracking_code, s.booking_state, s.booking_error, s.courier_status,
+             s.courier, s.courier_ref, s.consignment_id, s.tracking_code, s.booking_state, s.booking_error, s.courier_status,
              s.courier_status_at, s.courier_message, s.booked_at, s.courier_returned_at, s.cod_amount,
              s.cod_collected, s.courier_fee, s.courier_area,
              coalesce((select json_agg(json_build_object('orderLineId', sl.order_line_id, 'quantity', sl.quantity))
@@ -755,6 +758,11 @@ export interface Dashboard {
     /** Due to be called now (phase-6-plan §3.8); 0 when the queue is off. */
     toCall: number;
     possibleDuplicates: number;
+    /** Courier parcels (phase-7-plan §3.9): waiting for pickup, on the way, coming back, back with the courier's word. */
+    booked: number;
+    inTransit: number;
+    returning: number;
+    courierReturns: number;
   };
   /**
    * COD orders placed in the last 7 days that were confirmed, of those
@@ -790,6 +798,13 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
       } as "toCall",
       (select count(*)::int from store.orders where 'possible_duplicate' = any(flags)
          and status <> 'cancelled') as "possibleDuplicates",
+      (select count(*)::int from store.shipments where status = 'booked') as "booked",
+      (select count(*)::int from store.shipments where courier is not null
+         and status in ('shipped', 'in_transit')) as "inTransit",
+      (select count(*)::int from store.shipments where courier is not null and status = 'failed'
+         and courier_returned_at is null) as "returning",
+      (select count(*)::int from store.shipments where status = 'failed'
+         and courier_returned_at is not null) as "courierReturns",
       (select count(*)::int from store.orders o where o.placed_at > now() - interval '7 days'
          and o.confirmed_at is not null
          and exists (select 1 from store.payments p where p.order_id = o.id and p.provider = 'cod'))

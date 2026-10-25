@@ -54,12 +54,43 @@ interface OrderView {
     carrier: string | null;
     trackingNumber: string | null;
     trackingUrl: string | null;
+    /** The courier's updates (phase-7-plan §3.10), oldest first. */
+    events?: { update: string; message: { en?: string; bn?: string }; at: string }[];
   }[];
   cancellable: boolean;
   onlineDue: number;
 }
 
 const cfg = config();
+
+/** The courier's updates, newest first, in the shopper's language. */
+function courierEvents(events: NonNullable<OrderView['shipments'][number]['events']>) {
+  const when = new Intl.DateTimeFormat(cfg.locale === 'bn' ? 'bn-BD' : 'en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Dhaka',
+  });
+  return el(
+    'details',
+    {},
+    el('summary', { text: t('track.updates') }),
+    el(
+      'ol',
+      {},
+      ...[...events]
+        .reverse()
+        .map((e) =>
+          el(
+            'li',
+            {},
+            [t(`courier.${e.update}`), digits(when.format(new Date(e.at))), pick(e.message)]
+              .filter(Boolean)
+              .join(' · '),
+          ),
+        ),
+    ),
+  );
+}
 const row = (label: string, value: string, cls = 'row') =>
   el('div', { class: cls }, el('dt', { text: label }), el('dd', { text: value }));
 
@@ -186,6 +217,7 @@ function view(
                   }),
                 )
               : null,
+            s.events?.length ? courierEvents(s.events) : null,
           ),
         ),
       ),

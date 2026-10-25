@@ -34,6 +34,7 @@ import { Route as ShellOnlineStoreThemeRouteImport } from './routes/_shell/onlin
 import { Route as ShellOrdersIndexRouteImport } from './routes/_shell/orders/index'
 import { Route as ShellOrdersIdRouteImport } from './routes/_shell/orders/$id'
 import { Route as ShellOrdersConfirmRouteImport } from './routes/_shell/orders/confirm'
+import { Route as ShellOrdersCourierReturnsRouteImport } from './routes/_shell/orders/courier-returns'
 import { Route as ShellOrdersNewRouteImport } from './routes/_shell/orders/new'
 import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
@@ -52,6 +53,7 @@ import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings
 import { Route as ShellSettingsBillingRouteImport } from './routes/_shell/settings/billing'
 import { Route as ShellSettingsCheckoutRouteImport } from './routes/_shell/settings/checkout'
 import { Route as ShellSettingsConfirmationRouteImport } from './routes/_shell/settings/confirmation'
+import { Route as ShellSettingsCouriersRouteImport } from './routes/_shell/settings/couriers'
 import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/settings/delivery'
 import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
@@ -199,6 +201,12 @@ const ShellOrdersConfirmRoute = ShellOrdersConfirmRouteImport.update({
   path: '/orders/confirm',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellOrdersCourierReturnsRoute =
+  ShellOrdersCourierReturnsRouteImport.update({
+    id: '/orders/courier-returns',
+    path: '/orders/courier-returns',
+    getParentRoute: () => ShellRoute,
+  } as any)
 const ShellOrdersNewRoute = ShellOrdersNewRouteImport.update({
   id: '/orders/new',
   path: '/orders/new',
@@ -290,6 +298,11 @@ const ShellSettingsConfirmationRoute =
     path: '/settings/confirmation',
     getParentRoute: () => ShellRoute,
   } as any)
+const ShellSettingsCouriersRoute = ShellSettingsCouriersRouteImport.update({
+  id: '/settings/couriers',
+  path: '/settings/couriers',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsDeliveryRoute = ShellSettingsDeliveryRouteImport.update({
   id: '/settings/delivery',
   path: '/settings/delivery',
@@ -424,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
   '/orders/confirm': typeof ShellOrdersConfirmRoute
+  '/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -437,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/settings/confirmation': typeof ShellSettingsConfirmationRoute
+  '/settings/couriers': typeof ShellSettingsCouriersRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
@@ -488,6 +503,7 @@ export interface FileRoutesByTo {
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
   '/orders/confirm': typeof ShellOrdersConfirmRoute
+  '/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -501,6 +517,7 @@ export interface FileRoutesByTo {
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/settings/confirmation': typeof ShellSettingsConfirmationRoute
+  '/settings/couriers': typeof ShellSettingsCouriersRoute
   '/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
@@ -555,6 +572,7 @@ export interface FileRoutesById {
   '/_shell/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/_shell/orders/$id': typeof ShellOrdersIdRoute
   '/_shell/orders/confirm': typeof ShellOrdersConfirmRoute
+  '/_shell/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/_shell/orders/new': typeof ShellOrdersNewRoute
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
   '/_shell/platform/dashboard': typeof ShellPlatformDashboardRoute
@@ -568,6 +586,7 @@ export interface FileRoutesById {
   '/_shell/settings/billing': typeof ShellSettingsBillingRoute
   '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
   '/_shell/settings/confirmation': typeof ShellSettingsConfirmationRoute
+  '/_shell/settings/couriers': typeof ShellSettingsCouriersRoute
   '/_shell/settings/delivery': typeof ShellSettingsDeliveryRoute
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
@@ -622,6 +641,7 @@ export interface FileRouteTypes {
     | '/online-store/theme'
     | '/orders/$id'
     | '/orders/confirm'
+    | '/orders/courier-returns'
     | '/orders/new'
     | '/platform/audit'
     | '/platform/dashboard'
@@ -635,6 +655,7 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/checkout'
     | '/settings/confirmation'
+    | '/settings/couriers'
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
@@ -686,6 +707,7 @@ export interface FileRouteTypes {
     | '/online-store/theme'
     | '/orders/$id'
     | '/orders/confirm'
+    | '/orders/courier-returns'
     | '/orders/new'
     | '/platform/audit'
     | '/platform/dashboard'
@@ -699,6 +721,7 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/checkout'
     | '/settings/confirmation'
+    | '/settings/couriers'
     | '/settings/delivery'
     | '/settings/domains'
     | '/settings/location'
@@ -752,6 +775,7 @@ export interface FileRouteTypes {
     | '/_shell/online-store/theme'
     | '/_shell/orders/$id'
     | '/_shell/orders/confirm'
+    | '/_shell/orders/courier-returns'
     | '/_shell/orders/new'
     | '/_shell/platform/audit'
     | '/_shell/platform/dashboard'
@@ -765,6 +789,7 @@ export interface FileRouteTypes {
     | '/_shell/settings/billing'
     | '/_shell/settings/checkout'
     | '/_shell/settings/confirmation'
+    | '/_shell/settings/couriers'
     | '/_shell/settings/delivery'
     | '/_shell/settings/domains'
     | '/_shell/settings/location'
@@ -982,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellOrdersConfirmRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/orders/courier-returns': {
+      id: '/_shell/orders/courier-returns'
+      path: '/orders/courier-returns'
+      fullPath: '/orders/courier-returns'
+      preLoaderRoute: typeof ShellOrdersCourierReturnsRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/orders/new': {
       id: '/_shell/orders/new'
       path: '/orders/new'
@@ -1106,6 +1138,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/confirmation'
       fullPath: '/settings/confirmation'
       preLoaderRoute: typeof ShellSettingsConfirmationRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings/couriers': {
+      id: '/_shell/settings/couriers'
+      path: '/settings/couriers'
+      fullPath: '/settings/couriers'
+      preLoaderRoute: typeof ShellSettingsCouriersRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/settings/delivery': {
@@ -1303,6 +1342,7 @@ interface ShellRouteChildren {
   ShellOnlineStoreThemeRoute: typeof ShellOnlineStoreThemeRoute
   ShellOrdersIdRoute: typeof ShellOrdersIdRoute
   ShellOrdersConfirmRoute: typeof ShellOrdersConfirmRoute
+  ShellOrdersCourierReturnsRoute: typeof ShellOrdersCourierReturnsRoute
   ShellOrdersNewRoute: typeof ShellOrdersNewRoute
   ShellProductsIdRoute: typeof ShellProductsIdRoute
   ShellProductsNewRoute: typeof ShellProductsNewRoute
@@ -1312,6 +1352,7 @@ interface ShellRouteChildren {
   ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
   ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
   ShellSettingsConfirmationRoute: typeof ShellSettingsConfirmationRoute
+  ShellSettingsCouriersRoute: typeof ShellSettingsCouriersRoute
   ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
@@ -1355,6 +1396,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellOnlineStoreThemeRoute: ShellOnlineStoreThemeRoute,
   ShellOrdersIdRoute: ShellOrdersIdRoute,
   ShellOrdersConfirmRoute: ShellOrdersConfirmRoute,
+  ShellOrdersCourierReturnsRoute: ShellOrdersCourierReturnsRoute,
   ShellOrdersNewRoute: ShellOrdersNewRoute,
   ShellProductsIdRoute: ShellProductsIdRoute,
   ShellProductsNewRoute: ShellProductsNewRoute,
@@ -1364,6 +1406,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsBillingRoute: ShellSettingsBillingRoute,
   ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
   ShellSettingsConfirmationRoute: ShellSettingsConfirmationRoute,
+  ShellSettingsCouriersRoute: ShellSettingsCouriersRoute,
   ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,

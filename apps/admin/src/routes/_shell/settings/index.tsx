@@ -7,6 +7,7 @@ import {
   Bell,
   CreditCard,
   Globe,
+  Package,
   Percent,
   PhoneCall,
   Receipt,
@@ -37,6 +38,7 @@ const GROUPS = [
     paths: [
       '/settings/payments',
       '/settings/delivery',
+      '/settings/couriers',
       '/settings/checkout',
       '/settings/confirmation',
       '/settings/vat',
@@ -80,6 +82,12 @@ function Page() {
       icon: Truck,
       title: t('delivery.title'),
       description: t('delivery.description'),
+    },
+    usePermission('orders.read') && {
+      to: '/settings/couriers' as const,
+      icon: Package,
+      title: t('couriers.title'),
+      description: t('couriers.description'),
     },
     usePermission('settings.read') && {
       to: '/settings/checkout' as const,

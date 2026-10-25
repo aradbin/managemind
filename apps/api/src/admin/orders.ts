@@ -307,6 +307,7 @@ const OrderTotals = z.object({
 const ShipmentCourier = z
   .object({
     courier: z.string(),
+    invoice: z.string().nullable(),
     consignmentId: z.string().nullable(),
     trackingCode: z.string().nullable(),
     bookingState: z.string().nullable(),
@@ -638,6 +639,10 @@ const DashboardView = z
       lowStock: z.number().int(),
       toCall: z.number().int(),
       possibleDuplicates: z.number().int(),
+      booked: z.number().int(),
+      inTransit: z.number().int(),
+      returning: z.number().int(),
+      courierReturns: z.number().int(),
     }),
     confirmation: z
       .object({

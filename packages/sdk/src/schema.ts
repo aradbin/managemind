@@ -15824,6 +15824,7 @@ export interface components {
         } | null;
         ShipmentCourier: {
             courier: string;
+            invoice: string | null;
             consignmentId: string | null;
             trackingCode: string | null;
             bookingState: string | null;
@@ -16093,6 +16094,10 @@ export interface components {
                 lowStock: number;
                 toCall: number;
                 possibleDuplicates: number;
+                booked: number;
+                inTransit: number;
+                returning: number;
+                courierReturns: number;
             };
             /** @description Last 7 days' COD orders; null when the queue is off */
             confirmation: {
