@@ -44,7 +44,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows waited for the monthly reset until the owner made the repository public for now, where Actions minutes are free (#69 ran this way). The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
 | 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24) | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Built (Oct 24): the delivery success score, duplicate orders, the call queue, the SMS link and incomplete orders. Everything ships off or harmless until the pilot's feedback sets the script, the threshold and the defaults (Q1). Merged and deployed (#72 and #73, Oct 25). The checkout notice waits for the legal review's wording, and the SMS link for `CREDENTIALS_KEY` and a store's SMS gateway | [`phase-6-plan.md`](phases/phase-6-plan.md), [`phase-6-report.md`](phases/phase-6-report.md) |
-| 7 — Couriers and fulfillment | Approved (Oct 25), being built. Each courier's adapter waits for its credentials | [`phase-7-plan.md`](phases/phase-7-plan.md) |
+| 7 — Couriers and fulfillment | Built (Oct 25): booking, status by webhook and poll, COD by the amount collected, courier returns, area mapping and COD reconciliation, with a test courier for previews. Not merged yet. The Steadfast, Pathao and RedX adapters wait for credentials to be checked against the couriers before stores are offered them; production waits for `CREDENTIALS_KEY` | [`phase-7-plan.md`](phases/phase-7-plan.md), [`phase-7-report.md`](phases/phase-7-report.md) |
 | 8 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -625,13 +625,13 @@ Each of these starts only when pilot clients need it, in this default order; the
 
 **Phase 7 — Couriers and fulfillment (about 3 weeks)**
 
-- [ ] Extend the Phase 4 shipment records with courier states (booked, picked up, in transit) driven by courier APIs.
-- [ ] `CourierProvider` interface (create parcel, get status, cancel, parse webhook) with adapters for Steadfast, then Pathao, then RedX; credentials per tenant.
-- [ ] One-click and bulk booking from the order list; status sync by courier webhooks, with polling only for open shipments a few times a day; delivered status settles COD payments.
-- [ ] COD reconciliation report: collected, courier fee, amount paid out, differences.
-- [ ] Courier-driven returns: courier return statuses automatically open the failed-delivery and return flows built in Phase 5A.
+- [x] Extend the Phase 4 shipment records with courier states (booked, picked up, in transit) driven by courier APIs. *Built as two new states, `booked` and `in_transit`; "picked up" is `shipped`, where stock leaves (phase-7-plan Q5, [ADR 0030](adr/0030-couriers.md)).*
+- [x] `CourierProvider` interface (create parcel, get status, cancel, parse webhook) with adapters for Steadfast, then Pathao, then RedX; credentials per tenant. *The adapters are built from the couriers' SDKs and wait for credentials to be checked (phase-7-report §5).*
+- [x] One-click and bulk booking from the order list; status sync by courier webhooks, with polling only for open shipments a few times a day; delivered status settles COD payments. *Polls at 13:17 and 19:17 in Dhaka; COD settles for the amount collected.*
+- [x] COD reconciliation report: collected, courier fee, amount paid out, differences. *Its CSV and Excel export is still to come.*
+- [x] Courier-driven returns: courier return statuses automatically open the failed-delivery and return flows built in Phase 5A. *A returned parcel restocks once staff receive it (Q9).*
 
-* [ ] Area mapping: match our division, district and area reference data to each courier's own city, zone and area IDs (pulled from courier APIs and refreshed on a schedule), with a review screen for unmatched areas.
+* [x] Area mapping: match our division, district and area reference data to each courier's own city, zone and area IDs (pulled from courier APIs and refreshed on a schedule), with a review screen for unmatched areas. *Weekly in GitHub Actions with the platform's own accounts, which wait for the owner.*
 
 **Phase 8 — Back office (about 4–6 weeks)**
 
