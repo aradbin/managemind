@@ -479,6 +479,8 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'orders.flag.flagged_phone': 'ঝুঁকিপূর্ণ ফোন',
   'orders.flag.possible_duplicate': 'সম্ভাব্য ডুপ্লিকেট',
   'orders.flag.unreachable': 'যোগাযোগ করা যায়নি',
+  'orders.flag.cod_difference': 'COD-তে গরমিল',
+  'orders.flag.partial_delivery': 'আংশিক ডেলিভারি',
   'order.cancelCode': 'কেন',
   'cancelCode.shopper_request': 'ক্রেতা মত বদলেছেন',
   'cancelCode.no_answer': 'কেউ ফোন ধরেনি',

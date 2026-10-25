@@ -2904,10 +2904,11 @@ export interface paths {
                              * @default [
                              *       "wrong_size",
                              *       "changed_mind",
-                             *       "other"
+                             *       "other",
+                             *       "refused_at_door"
                              *     ]
                              */
-                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[];
                             /**
                              * @default [
                              *       "gateway",
@@ -8903,7 +8904,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
-                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                     orderId?: string;
                     before?: string;
                     limit?: number;
@@ -8942,13 +8943,13 @@ export interface paths {
                         /** Format: uuid */
                         orderId: string;
                         /** @enum {string} */
-                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                         lines: {
                             /** Format: uuid */
                             orderLineId: string;
                             quantity: number;
                             /** @enum {string} */
-                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                         }[];
                         note?: string;
                         shopperPaysReturn?: boolean;
@@ -9839,7 +9840,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    kind: "sslcommerz" | "sms" | "email";
+                    kind: "sslcommerz" | "sms" | "email" | "steadfast" | "pathao" | "redx" | "fake";
                 };
                 cookie?: never;
             };
@@ -9878,7 +9879,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    kind: "sslcommerz" | "sms" | "email";
+                    kind: "sslcommerz" | "sms" | "email" | "steadfast" | "pathao" | "redx" | "fake";
                 };
                 cookie?: never;
             };
@@ -13036,10 +13037,11 @@ export interface components {
                  * @default [
                  *       "wrong_size",
                  *       "changed_mind",
-                 *       "other"
+                 *       "other",
+                 *       "refused_at_door"
                  *     ]
                  */
-                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[];
                 /**
                  * @default [
                  *       "gateway",
@@ -15336,7 +15338,7 @@ export interface components {
             /** @enum {string} */
             status: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
             /** @enum {string} */
-            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
             requestedBy: string;
             units: number;
             createdAt: string;
@@ -15360,7 +15362,7 @@ export interface components {
                 }[];
                 quantity: number;
                 /** @enum {string|null} */
-                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | null;
+                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door" | null;
                 restocked: number;
                 writtenOff: number;
             }[];
@@ -15575,7 +15577,7 @@ export interface components {
         };
         Credential: {
             /** @enum {string} */
-            kind: "sslcommerz" | "sms" | "email";
+            kind: "sslcommerz" | "sms" | "email" | "steadfast" | "pathao" | "redx" | "fake";
             provider: string;
             /** @enum {string|null} */
             mode: "sandbox" | "live" | null;

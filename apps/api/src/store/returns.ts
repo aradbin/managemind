@@ -14,7 +14,11 @@ import {
 } from '@managemind/core';
 import { AppError, objectKey } from '@managemind/shared';
 import { MEDIA_EXTENSIONS, sniffImageType } from '@managemind/shared/catalog';
-import { RETURN_REASONS, shopperReturnInput, verifyOrderToken } from '@managemind/shared/orders';
+import {
+  SHOPPER_RETURN_REASONS,
+  shopperReturnInput,
+  verifyOrderToken,
+} from '@managemind/shared/orders';
 import type { Context } from 'hono';
 import type { AppEnv } from '../env';
 import { verifyTurnstile } from '../turnstile';
@@ -48,7 +52,7 @@ export const RETURN_STORE_ROUTES = {
               open: z.boolean(),
               until: z.string().nullable(),
               turnstileSiteKey: z.string().nullable(),
-              reasons: z.array(z.enum(RETURN_REASONS)),
+              reasons: z.array(z.enum(SHOPPER_RETURN_REASONS)),
               lines: z.array(
                 z.object({
                   orderLineId: z.uuid(),
@@ -128,7 +132,7 @@ export function registerShopperReturns(app: OpenAPIHono<AppEnv>): void {
         open: out.open,
         until: out.until,
         turnstileSiteKey: siteKey,
-        reasons: [...RETURN_REASONS],
+        reasons: [...SHOPPER_RETURN_REASONS],
         lines: out.lines
           .filter((l) => l.delivered > 0)
           .map((l) => ({

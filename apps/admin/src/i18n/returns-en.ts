@@ -32,6 +32,7 @@ export const returnsEn = {
   'return.reason.not_as_described': 'Not as described',
   'return.reason.changed_mind': 'Changed mind',
   'return.reason.other': 'Other',
+  'return.reason.refused_at_door': 'Refused at the door',
   'return.lines': 'Items',
   'return.note': 'Note',
   'return.shopperPays': 'the customer pays the return delivery',

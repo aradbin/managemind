@@ -66,25 +66,89 @@ export const orderMachine = defineMachine<OrderStatus, OrderEvent, OrderContext>
   },
 });
 
-export const SHIPMENT_STATUSES = ['pending', 'shipped', 'delivered', 'failed', 'returned'] as const;
+export const SHIPMENT_STATUSES = [
+  'pending',
+  'booked',
+  'shipped',
+  'in_transit',
+  'delivered',
+  'failed',
+  'returned',
+] as const;
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
-export const SHIPMENT_EVENTS = ['ship', 'deliver', 'fail', 'return'] as const;
+export const SHIPMENT_EVENTS = [
+  'book',
+  'unbook',
+  'ship',
+  'transit',
+  'deliver',
+  'fail',
+  'return',
+] as const;
 export type ShipmentEvent = (typeof SHIPMENT_EVENTS)[number];
 
-/** Phase 7 adds booked, picked_up and in_transit, driven by courier APIs. */
+/**
+ * A shipment's life (phase-4-plan §3.7; phase-7-plan §3.1). A courier's
+ * parcel is `booked` while the goods are still in the store; `shipped` is
+ * the pickup, where stock leaves; `in_transit` is the courier carrying it.
+ * A manual shipment goes pending → shipped → delivered as before.
+ */
 export const shipmentMachine = defineMachine<ShipmentStatus, ShipmentEvent>({
   name: 'shipment',
   initial: 'pending',
   states: SHIPMENT_STATUSES,
   transitions: {
-    pending: { ship: { to: 'shipped', effects: ['sell_from_reservation'] } },
+    pending: {
+      book: { to: 'booked' },
+      ship: { to: 'shipped', effects: ['sell_from_reservation'] },
+    },
+    booked: {
+      unbook: { to: 'pending' },
+      ship: { to: 'shipped', effects: ['sell_from_reservation'] },
+    },
     shipped: {
+      transit: { to: 'in_transit' },
+      deliver: { to: 'delivered', effects: ['settle_cod'] },
+      fail: { to: 'failed' },
+    },
+    in_transit: {
       deliver: { to: 'delivered', effects: ['settle_cod'] },
       fail: { to: 'failed' },
     },
     failed: { return: { to: 'returned', effects: ['restock'] } },
   },
 });
+
+/** Shipments whose goods are with the courier or the shopper's door: on their way. */
+export const SHIPMENT_OUT: readonly ShipmentStatus[] = ['shipped', 'in_transit'];
+
+/**
+ * The events that take a shipment from `from` to `to`, in order, by the
+ * shortest legal path (§3.1): a courier that reports "delivered" for a parcel
+ * still booked here means ship, then deliver. Empty when already there, null
+ * when `to` can't be reached.
+ */
+export function shipmentPath(from: ShipmentStatus, to: ShipmentStatus): ShipmentEvent[] | null {
+  if (from === to) return [];
+  const seen = new Set<ShipmentStatus>([from]);
+  let frontier: Array<{ at: ShipmentStatus; path: ShipmentEvent[] }> = [{ at: from, path: [] }];
+  while (frontier.length) {
+    const next: typeof frontier = [];
+    for (const { at, path } of frontier) {
+      for (const event of shipmentMachine.events(at)) {
+        // A sync never cancels a booking on its way to somewhere else.
+        if (event === 'unbook' && to !== 'pending') continue;
+        const target = shipmentMachine.transition(at, event, undefined).to;
+        if (seen.has(target)) continue;
+        if (target === to) return [...path, event];
+        seen.add(target);
+        next.push({ at: target, path: [...path, event] });
+      }
+    }
+    frontier = next;
+  }
+  return null;
+}
 
 export const PAYMENT_PROVIDERS = ['cod', 'manual', 'sslcommerz'] as const;
 export type PaymentProvider = (typeof PAYMENT_PROVIDERS)[number];
@@ -167,7 +231,7 @@ export function deliveryStatusOf(
   let delivered = 0;
   let failed = false;
   for (const s of shipments) {
-    if (s.status === 'shipped') out += s.quantity;
+    if (SHIPMENT_OUT.includes(s.status)) out += s.quantity;
     if (s.status === 'delivered') delivered += s.quantity;
     if (s.status === 'failed' || s.status === 'returned') failed = true;
   }
@@ -232,8 +296,20 @@ export const RETURN_REASONS = [
   'not_as_described',
   'changed_mind',
   'other',
+  /** The shopper turned items away at the door; staff open it from a partial delivery (phase-7-plan §3.5). */
+  'refused_at_door',
 ] as const;
 export type ReturnReason = (typeof RETURN_REASONS)[number];
+
+/** What a shopper can pick on the tracking page: everything but the staff-only reason. */
+export const SHOPPER_RETURN_REASONS = [
+  'wrong_size',
+  'damaged',
+  'wrong_item',
+  'not_as_described',
+  'changed_mind',
+  'other',
+] as const satisfies readonly ReturnReason[];
 
 /** Reasons the store is at fault for: it pays the return delivery (Q9) and may refund the fee (Q10). */
 export const STORE_FAULT_REASONS: readonly ReturnReason[] = [
@@ -341,8 +417,9 @@ export function refundShare(
 
 /**
  * Flags an order can carry for staff (phase-5a-plan §3.5, §3.11; phase-6-plan
- * §3.4, §3.5): a possible duplicate of an earlier order, and an order nobody
- * answered for after the store's number of calls.
+ * §3.4, §3.5; phase-7-plan §3.5): a possible duplicate of an earlier order, an
+ * order nobody answered for after the store's number of calls, a courier that
+ * collected a different amount, and a parcel the shopper took only part of.
  */
 export const ORDER_FLAGS = [
   'payment_risk',
@@ -350,6 +427,8 @@ export const ORDER_FLAGS = [
   'flagged_phone',
   'possible_duplicate',
   'unreachable',
+  'cod_difference',
+  'partial_delivery',
 ] as const;
 export type OrderFlag = (typeof ORDER_FLAGS)[number];
 

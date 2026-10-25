@@ -185,6 +185,15 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   shipment_lines: (tenant) =>
     `insert into store.shipment_lines (tenant_id, shipment_id, order_line_id, quantity)
      values (${tenant}, ${first('shipments')}, ${first('order_lines')}, 1)`,
+  shipment_events: (tenant) =>
+    `insert into store.shipment_events (tenant_id, shipment_id, courier_status, update, courier_at, source)
+     values (${tenant}, ${first('shipments')}, 'fixture', 'unknown', now(), 'staff')`,
+  courier_payouts: (tenant) =>
+    `insert into store.courier_payouts (tenant_id, courier, reference, paid_at, amount, source)
+     values (${tenant}, 'fake', 'fixture-' || gen_random_uuid(), now(), 0, 'manual')`,
+  courier_payout_lines: (tenant) =>
+    `insert into store.courier_payout_lines (tenant_id, payout_id, shipment_id, collected, net)
+     values (${tenant}, ${first('courier_payouts')}, ${first('shipments')}, 0, 0)`,
   payments: (tenant) =>
     `insert into store.payments (tenant_id, order_id, provider, method, amount)
      values (${tenant}, ${first('orders')}, 'cod', 'cod', 100000)`,

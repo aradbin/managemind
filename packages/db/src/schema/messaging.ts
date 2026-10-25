@@ -22,7 +22,15 @@ import { orders } from './orders';
 import { users } from './platform';
 import { store, tenantColumns, tenantPolicy } from './tenant-table';
 
-export const CREDENTIAL_KINDS = ['sslcommerz', 'sms', 'email'] as const;
+export const CREDENTIAL_KINDS = [
+  'sslcommerz',
+  'sms',
+  'email',
+  'steadfast',
+  'pathao',
+  'redx',
+  'fake',
+] as const;
 export const CREDENTIAL_PROVIDERS = [
   'sslcommerz',
   'sms_net_bd',
@@ -30,6 +38,10 @@ export const CREDENTIAL_PROVIDERS = [
   'sms_http',
   'resend',
   'brevo',
+  'steadfast',
+  'pathao',
+  'redx',
+  'fake',
 ] as const;
 export const CREDENTIAL_MODES = ['sandbox', 'live'] as const;
 export const CHANNELS = ['email', 'sms', 'push'] as const;
@@ -107,10 +119,11 @@ export const providerCredentials = store.table(
       sql`case ${t.kind}
         when 'sslcommerz' then ${t.provider} = 'sslcommerz' and ${t.mode} is not null
         when 'sms' then ${t.provider} in ('sms_net_bd', 'bulksmsbd', 'sms_http') and ${t.mode} is null
-        else ${t.provider} in ('resend', 'brevo') and ${t.mode} is null end`,
+        when 'email' then ${t.provider} in ('resend', 'brevo') and ${t.mode} is null
+        else ${t.provider} = ${t.kind} end`,
     ),
     check('provider_credentials_iv_length', sql`octet_length(${t.iv}) = 12`),
-    check('provider_credentials_ciphertext_size', sql`octet_length(${t.ciphertext}) <= 4096`),
+    check('provider_credentials_ciphertext_size', sql`octet_length(${t.ciphertext}) <= 8192`),
     check('provider_credentials_hint_length', sql`char_length(${t.hint}) <= 8`),
     check('provider_credentials_config_size', sql`octet_length(${t.config}::text) <= 2000`),
     check('provider_credentials_check_error_length', sql`char_length(${t.checkError}) <= 300`),

@@ -1,11 +1,14 @@
 // Every domain event and the zod schema of its payload. emit() refuses an
 // event type that is not listed here or a payload that does not match it.
-import { CANCEL_CODES, CONFIRMED_VIA } from '@managemind/shared/orders';
+import { CREDENTIAL_KINDS } from '@managemind/shared/credentials';
+import { CANCEL_CODES, CONFIRMED_VIA, COURIERS } from '@managemind/shared/orders';
 import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
 const storeRole = z.enum(['owner', 'manager', 'staff', 'viewer']);
 const catalogChange = z.enum(['created', 'updated', 'moved', 'deleted']);
+/** Shipment events name their order, and their courier when a courier carries them. */
+const shipmentPayload = z.object({ orderId: z.uuid(), courier: z.enum(COURIERS).optional() });
 
 export const EVENTS = {
   'tenant.seeded': z.object({ slug: z.string() }),
@@ -57,7 +60,7 @@ export const EVENTS = {
   }),
   'customer.anonymized': z.object({}),
   /** A store's gateway, SMS or email key was saved or removed: its health is checked again. */
-  'credentials.changed': z.object({ kind: z.enum(['sslcommerz', 'sms', 'email']) }),
+  'credentials.changed': z.object({ kind: z.enum(CREDENTIAL_KINDS) }),
   // Custom domains (Phase 3); declared now so the KV host sync handles them.
   'tenant_domain.added': z.object({ hostname: z.string() }),
   'tenant_domain.updated': z.object({ hostname: z.string() }),
@@ -131,11 +134,15 @@ export const EVENTS = {
     problem: z.enum(['risky', 'late']).optional(),
   }),
   'payment.voided': z.object({ orderId: z.uuid() }),
-  'shipment.created': z.object({ orderId: z.uuid() }),
-  'shipment.shipped': z.object({ orderId: z.uuid() }),
-  'shipment.delivered': z.object({ orderId: z.uuid() }),
-  'shipment.failed': z.object({ orderId: z.uuid() }),
-  'shipment.returned': z.object({ orderId: z.uuid() }),
+  'shipment.created': shipmentPayload,
+  'shipment.shipped': shipmentPayload,
+  'shipment.delivered': shipmentPayload,
+  'shipment.failed': shipmentPayload,
+  'shipment.returned': shipmentPayload,
+  /** A courier's parcel (phase-7-plan §4). */
+  'shipment.booked': shipmentPayload,
+  'shipment.in_transit': shipmentPayload,
+  'shipment.booking_cancelled': shipmentPayload,
   // Returns and refunds (phase-5a-plan §3.12, §3.13): shopper messages and staff alerts.
   'return.requested': z.object({
     orderId: z.uuid(),

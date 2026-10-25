@@ -485,6 +485,8 @@ export const ordersEn = {
   'orders.flag.flagged_phone': 'Risky phone',
   'orders.flag.possible_duplicate': 'Possible duplicate',
   'orders.flag.unreachable': 'Unreachable',
+  'orders.flag.cod_difference': 'COD differs',
+  'orders.flag.partial_delivery': 'Partly delivered',
   'order.cancelCode': 'Why',
   'cancelCode.shopper_request': 'The customer changed their mind',
   'cancelCode.no_answer': 'No answer',

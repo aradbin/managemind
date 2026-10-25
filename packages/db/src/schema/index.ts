@@ -1,5 +1,6 @@
 export * from './catalog';
 export * from './content';
+export * from './couriers';
 export * from './customers';
 export * from './imports';
 export * from './inventory';

@@ -11,6 +11,7 @@ import {
   returnMachine,
   returnStatusOf,
   shipmentMachine,
+  shipmentPath,
 } from './machines';
 
 describe('order machine', () => {
@@ -68,6 +69,32 @@ describe('shipment machine', () => {
     expect(shipmentMachine.can('pending', 'deliver', undefined)).toBe(false);
     expect(shipmentMachine.can('delivered', 'fail', undefined)).toBe(false);
   });
+
+  it('books, unbooks, and carries a courier parcel (phase-7-plan §3.1)', () => {
+    expect(shipmentMachine.transition('pending', 'book', undefined).effects).toEqual([]);
+    expect(shipmentMachine.transition('booked', 'unbook', undefined).to).toBe('pending');
+    expect(shipmentMachine.transition('booked', 'ship', undefined).effects).toEqual([
+      'sell_from_reservation',
+    ]);
+    expect(shipmentMachine.transition('shipped', 'transit', undefined).to).toBe('in_transit');
+    expect(shipmentMachine.transition('in_transit', 'deliver', undefined).effects).toEqual([
+      'settle_cod',
+    ]);
+    expect(shipmentMachine.transition('in_transit', 'fail', undefined).to).toBe('failed');
+    expect(shipmentMachine.can('booked', 'deliver', undefined)).toBe(false);
+    expect(shipmentMachine.can('in_transit', 'unbook', undefined)).toBe(false);
+  });
+
+  it("walks the shortest legal path to a courier's state", () => {
+    expect(shipmentPath('booked', 'booked')).toEqual([]);
+    expect(shipmentPath('booked', 'delivered')).toEqual(['ship', 'deliver']);
+    expect(shipmentPath('pending', 'in_transit')).toEqual(['ship', 'transit']);
+    expect(shipmentPath('booked', 'failed')).toEqual(['ship', 'fail']);
+    expect(shipmentPath('booked', 'returned')).toEqual(['ship', 'fail', 'return']);
+    expect(shipmentPath('booked', 'pending')).toEqual(['unbook']);
+    expect(shipmentPath('in_transit', 'shipped')).toBeNull();
+    expect(shipmentPath('delivered', 'failed')).toBeNull();
+  });
 });
 
 describe('payment rows', () => {
@@ -90,6 +117,8 @@ describe('derived statuses', () => {
     expect(deliveryStatusOf(3, [{ status: 'pending', quantity: 3 }])).toBe('not_shipped');
     expect(deliveryStatusOf(3, [{ status: 'shipped', quantity: 1 }])).toBe('partially_shipped');
     expect(deliveryStatusOf(3, [{ status: 'shipped', quantity: 3 }])).toBe('shipped');
+    expect(deliveryStatusOf(3, [{ status: 'in_transit', quantity: 3 }])).toBe('shipped');
+    expect(deliveryStatusOf(3, [{ status: 'booked', quantity: 3 }])).toBe('not_shipped');
     expect(
       deliveryStatusOf(3, [
         { status: 'delivered', quantity: 1 },

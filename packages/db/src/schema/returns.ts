@@ -38,6 +38,7 @@ export const RETURN_REASONS = [
   'not_as_described',
   'changed_mind',
   'other',
+  'refused_at_door',
 ] as const;
 export const RETURN_RESOLUTIONS = ['refunded', 'exchanged', 'store_credit', 'rejected'] as const;
 export const REFUND_METHODS = [
