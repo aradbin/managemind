@@ -430,11 +430,14 @@ describe('acceptance criterion 1: the last unit', () => {
     const refused = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
     expect(placed).toHaveLength(1);
     expect(refused).toHaveLength(9);
+    // Refused at the stock lock if both got that far, or at the quote if the
+    // winner had already committed: either way the line is out of stock.
     for (const r of refused) {
-      expect(r.reason).toMatchObject({
-        code: 'insufficient_stock',
-        extensions: { lines: [{ variantId: a, available: 0 }] },
-      });
+      expect(r.reason).toMatchObject(
+        r.reason?.code === 'cart_invalid'
+          ? { extensions: { lines: [{ variantId: a, problem: 'insufficient_stock' }] } }
+          : { code: 'insufficient_stock', extensions: { lines: [{ variantId: a, available: 0 }] } },
+      );
     }
     expect(await stock(a)).toEqual({ on_hand: 1, reserved: 1 });
     expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
@@ -479,11 +482,20 @@ describe('acceptance criterion 1: the last unit', () => {
     const refused = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
     expect(placed).toHaveLength(1);
     expect(refused).toHaveLength(9);
+    // A shopper whose quote ran after the winner committed finds the code
+    // used up: their total is ৳170 without it, so the price changed. One whose
+    // quote ran first loses at the count. Both keep their ৳150 from going through.
     for (const r of refused) {
-      expect(r.reason).toMatchObject({
-        code: 'promotion_unavailable',
-        extensions: { promotionId: promo.id },
-      });
+      if (r.reason?.code === 'price_changed') {
+        expect(r.reason).toMatchObject({
+          extensions: { expectedTotal: 15_000, totals: { total: 17_000, discountTotal: 0 } },
+        });
+      } else {
+        expect(r.reason).toMatchObject({
+          code: 'promotion_unavailable',
+          extensions: { promotionId: promo.id },
+        });
+      }
     }
     const { rows } = await run((tx) =>
       tx.db.execute<{ n: number }>(
