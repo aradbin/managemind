@@ -2,7 +2,7 @@
 
 - Date: 2026-10-24
 - Plan: `docs/phases/phase-6-plan.md` (approved with the owner's answers in §14)
-- Pull request: #72, one commit per plan step (§1), with its own preview database (`db-branch`). Opened on Oct 24 while the repository is public, so its Actions minutes were free (Q12)
+- Pull request: #72, one commit per plan step (§1), with its own preview database (`db-branch`). Opened on Oct 24 while the repository is public, so its Actions minutes were free (Q12). Merged on Oct 25, and deployed with #73 (§1): migrations 0040–0041 applied and the deploy's smoke, shop API and cache checks passed
 
 > This report covers the build. The preview results are from #72's `full-preview` run on `29c42e7` (Oct 24).
 
@@ -31,7 +31,7 @@ Phase 6 is built. Staff now have tools for the two things that cost COD stores t
 
 **What the owner should know:**
 
-1. **#72 is green and mergeable.** Its full preview run passed all 29 E2E flows, every Lighthouse budget on nine pages (the link page now one of them), and the CPU step with no request stopped at the CPU limit (§3). Merging deploys migrations 0040–0041.
+1. **Phase 6 is in production since Oct 25.** #72's full preview run passed all 29 E2E flows, every Lighthouse budget on nine pages (the link page now one of them), and the CPU step with no request stopped at the CPU limit (§3). CI on `master` then failed two concurrency tests that were stricter than the code (§1, #73); once they were fixed, the deploy applied migrations 0040–0041 and passed its checks.
 2. **Nothing turns on by itself except what is harmless** (plan §11). The score shows, duplicates are flagged, pending COD orders wait in the queue, and incomplete checkouts are saved with the notice. There is no threshold, no auto-confirm, no auto-cancel and no SMS link until a store chooses them.
 3. **Running the new E2E flow locally found a real bug before any preview:** the storefront's checkout saves and the link page called the store's `/api` with a `/v1/store` prefix, so they reached a 404. The API's integration tests had passed, because they call the API directly. It is fixed, and a test now fails if a store script's route has the prefix (§2.1).
 4. **The security review found one medium problem and one small one, both fixed** (§2.1). Any role that reads orders, a viewer included, could look up whether some other phone number had ordered from the store. The lookup now needs `customers.read`.
@@ -57,7 +57,9 @@ Phase 6 is built. Staff now have tools for the two things that cost COD stores t
 | 12 | `46ca4d9` | Fixes from the security review |
 | 13 | `c92c651` | This report; PLAN.md's and the README's status |
 | — | `29c42e7` | Fixes from #72's first preview run: the storefront flow clicks a size option clear of the chat buttons; the new flow sends a read again after the preview's empty 503 |
-| — | This commit | #72's preview results in this report |
+| — | `035232e` | #72's preview results in this report |
+| — | #73 | After the merge, CI on `master` failed two concurrency tests in `core`. Ten shoppers race for a one-use code or the last unit, and a loser whose quote ran after the winner committed was refused at the quote (`price_changed`, `cart_invalid`) rather than at the lock (`promotion_unavailable`, `insufficient_stock`). Both refusals are right; the tests now accept either, as the storefront E2E already did. #72's phone risk read before the quote made the first case likelier. The deploy that followed applied migrations 0040–0041 |
+| — | This commit | This status |
 
 ## 2. Acceptance criteria
 
@@ -159,7 +161,6 @@ As planned (plan §9). The new requests are 1–3 saves for each checkout starte
 2. **The pilot stores' call scripts** (Q3). Until then each store has the default script in both languages, and can edit it.
 3. **The score threshold,** from the pilot's delivery-by-score table (Q4).
 4. **For the SMS link in production:** `CREDENTIALS_KEY` (Phase 5A), and a pilot store's SMS gateway.
-5. **Merging #72.** It is green and mergeable. The deploy applies migrations 0040–0041.
 
 ### Not built yet, or smaller than planned
 
@@ -177,6 +178,7 @@ As planned (plan §9). The new requests are 1–3 saves for each checkout starte
 
 ### Lessons for later phases
 
+- **A concurrency test should accept every correct way to lose.** A test that names one refusal for a race passes until the timing shifts, here by one more query before the quote.
 - **Run the new E2E locally before the preview.** Integration tests that call the API directly can't see a client calling the wrong path, and an error page can look like the right answer.
 - **A screenshot script that swallows errors hides broken clicks.** The earlier screenshots used `.catch(() => {})` on clicks; the E2E found the `tel:` prompt instead.
 - **A lookup by an identifier the caller types is a customer lookup,** however little it returns.
