@@ -7,9 +7,10 @@
 # Every environment shares the account's 100,000 Hyperdrive queries a day, so
 # the preview's API connects to its Neon branch directly and uses none
 # (ADR 0011, amended Oct 23). A preview runs the smoke tests only, a
-# docs-only PR gets none, and the `full-preview` label adds the E2E flows and
-# Lighthouse, then the CPU step on the same Worker deployed again bound to
-# Hyperdrive while today's count leaves room (scripts/preview/scope.ts).
+# docs-only PR gets none, and the `full-preview` label adds the E2E flows,
+# Lighthouse and the CPU step, on the same Worker deployed again bound to
+# Hyperdrive while today's count leaves room (ADR 0011, amended Oct 25;
+# scripts/preview/scope.ts), then back on the direct connection.
 name: Preview
 
 on:
@@ -44,8 +45,8 @@ jobs:
         github.event.label.name == 'db-branch' ||
         (github.event.action == 'labeled' && github.event.label.name == 'full-preview'))
     runs-on: ubuntu-latest
-    # A full run's E2E takes about 21 minutes without Hyperdrive, then
-    # Lighthouse about 5 and the CPU step a few more; a smoke-only run, 3.
+    # A full run's E2E takes about 21 minutes, then Lighthouse about 5 and
+    # the CPU step a few more; a smoke-only run, 3.
     timeout-minutes: 45
     concurrency:
       group: preview-${{ github.event.pull_request.number }}
@@ -164,6 +165,14 @@ jobs:
 
       - run: pnpm --filter @managemind/e2e exec playwright install --with-deps chromium
         if: steps.scope.outputs.deploy == 'true'
+      # A full run goes through Hyperdrive, as in production: on the direct
+      # connection the Free plan's 10 ms CPU limit stopped too many requests
+      # for the E2E to pass (ADR 0011, amended Oct 25). Its secrets stay from
+      # the first deploy.
+      - name: Deploy the API bound to Hyperdrive
+        id: hyperdrive_deploy
+        if: steps.scope.outputs.hyperdrive == 'true'
+        run: pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview-hyperdrive.json
       # The smoke tests. A full run adds the Phase 1 flows, the catalog flows
       # (Phase 2), the storefront and online-store flows (Phase 3), and the
       # shopper, orders and promotions flows (Phase 4), the returns and
@@ -218,29 +227,21 @@ jobs:
           name: lighthouse-reports
           path: e2e/lighthouse/reports
           retention-days: 7
-      # ADR 0003's measurement on a full run: informational, never blocks.
-      # The E2E and Lighthouse ran on the direct connection; the API is
-      # deployed again bound to Hyperdrive, as in production, and only the
-      # CPU step's own requests after that are measured (ADR 0011, amended
-      # Oct 23). Its secrets stay from the first deploy.
-      - name: Deploy the API bound to Hyperdrive
-        id: cpu_deploy
-        if: ${{ !cancelled() && steps.scope.outputs.cpu == 'true' && steps.smoke.outcome == 'success' }}
-        continue-on-error: true
-        run: |
-          pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview-hyperdrive.json
-          echo "CPU_SINCE=$(date +%s%3N)" >> "$GITHUB_ENV"
+      # ADR 0003's measurement on a full run through Hyperdrive:
+      # informational, never blocks. Only the step's own requests are
+      # measured, from its start, so the E2E's import chunks stay out of the
+      # table.
       - name: CPU per route
-        if: ${{ !cancelled() && steps.cpu_deploy.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.hyperdrive_deploy.outcome == 'success' && steps.smoke.outcome == 'success' }}
         continue-on-error: true
         run: >-
           pnpm --filter @managemind/scripts exec tsx preview/cpu.ts --pr "$PR"
           --api-url "${{ steps.workers.outputs.api_url }}"
-          --storefront-url "${{ steps.workers.outputs.storefront_url }}" --since "$CPU_SINCE"
-      # Back to the direct connection, so trying the preview by hand uses no
-      # Hyperdrive queries either.
+          --storefront-url "${{ steps.workers.outputs.storefront_url }}" --since "$(date +%s%3N)"
+      # Back to the direct connection, even after a failure or a cancel, so
+      # trying the preview by hand uses no Hyperdrive queries.
       - name: Deploy the API on the direct connection again
-        if: ${{ !cancelled() && steps.cpu_deploy.outcome == 'success' }}
+        if: ${{ always() && steps.hyperdrive_deploy.outcome == 'success' }}
         run: pnpm --filter @managemind/api exec wrangler deploy -c wrangler.preview.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure() && steps.smoke.outcome == 'failure'

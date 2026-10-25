@@ -16,7 +16,7 @@ describe('what a preview runs', () => {
     expect(previewScope({ files: ['apps/api/src/db.ts'], fullLabel: false })).toMatchObject({
       deploy: true,
       full: false,
-      cpu: false,
+      hyperdrive: false,
     });
   });
 
@@ -24,19 +24,19 @@ describe('what a preview runs', () => {
     const code = ['apps/api/src/db.ts'];
     expect(
       previewScope({ files: code, fullLabel: true, queriesToday: FULL_RUN_CEILING }),
-    ).toMatchObject({ deploy: true, full: true, cpu: true });
+    ).toMatchObject({ deploy: true, full: true, hyperdrive: true });
   });
 
-  it('keeps the E2E flows but drops the CPU step when Hyperdrive has no room', () => {
-    // Only the CPU step uses Hyperdrive queries (ADR 0011, amended Oct 23).
+  it('runs the E2E flows on the direct connection, without the CPU step, when Hyperdrive has no room', () => {
+    // Only a full run uses Hyperdrive queries (ADR 0011, amended Oct 25).
     const code = ['apps/api/src/db.ts'];
     const over = previewScope({ files: code, fullLabel: true, queriesToday: FULL_RUN_CEILING + 1 });
-    expect(over).toMatchObject({ deploy: true, full: true, cpu: false });
+    expect(over).toMatchObject({ deploy: true, full: true, hyperdrive: false });
     expect(over.describe).toContain('50,001');
     expect(previewScope({ files: code, fullLabel: true, queriesToday: null })).toMatchObject({
       deploy: true,
       full: true,
-      cpu: false,
+      hyperdrive: false,
     });
   });
 

@@ -10,11 +10,11 @@
 //    branch ahead of master).
 // 3. Creates the mm_app login role in app_rw and a Hyperdrive config for it if
 //    the config does not exist yet. The password is generated here and stored
-//    only in the role and the Hyperdrive config. Only the CPU step uses it.
+//    only in the role and the Hyperdrive config. Only a full run uses it.
 // 4. Gives the PR's own login role in app_rw a new password and writes its
 //    URL, through the branch's pooler, to --direct-url-file (mode 600): the
-//    rest of the preview connects with it and uses no Hyperdrive queries
-//    (ADR 0011, amended Oct 23). The deploy step reads it into a Worker
+//    smoke tests and trying the preview by hand connect with it and use no
+//    Hyperdrive queries (ADR 0011, amended Oct 23 and Oct 25). The deploy step reads it into a Worker
 //    secret; it never reaches the job log or an output.
 // 5. With --e2e, the E2E suite's stores and people for that run (e2e-seed.ts),
 //    after deleting the store data of runs older than a day.

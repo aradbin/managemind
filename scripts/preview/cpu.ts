@@ -6,11 +6,10 @@
 // Workers Logs since --since. Writes a table to the step summary; it never
 // fails a run.
 //
-// Since Oct 23 (ADR 0011, amended) the E2E runs on a Worker that connects to
-// Neon directly, and the API is deployed again bound to Hyperdrive just
-// before this step, with --since at that deploy: only this step's own
-// requests are measured, on production's connection path. The E2E's import
-// chunks are no longer in the table.
+// Since Oct 23 (ADR 0011, amended) only this step's own requests are
+// measured, with --since at its start, so the E2E's import chunks are no
+// longer in the table. Since Oct 25 the whole full run, this step included,
+// is on a Worker bound to Hyperdrive, production's connection path.
 //
 // Phase 3 (phase-3-plan §9) adds the storefront: a burst of each page type
 // on the demo store. Previews never cache pages, so every one is a miss:
