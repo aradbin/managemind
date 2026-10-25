@@ -104,12 +104,22 @@ export function providerFor(
            where courier = 'fake' and consignment_id = ${consignmentId}`);
         return rows[0]?.state ?? null;
       }),
+    // A renewed token that can't be sealed is asked for again next time;
+    // the call it was renewed for goes on.
     saveSecrets: async (patch) => {
       const keyring = await credentialsKeyring(env);
       if (!keyring) return;
-      await withTenant(client, tenantId, (tx) =>
-        saveCourierSecrets(tx, keyring, connection.courier, patch),
-      );
+      try {
+        await withTenant(client, tenantId, (tx) =>
+          saveCourierSecrets(tx, keyring, connection.courier, patch),
+        );
+      } catch (e) {
+        log('warn', 'courier tokens not saved', {
+          tenant_id: tenantId,
+          courier: connection.courier,
+          error: messageOf(e),
+        });
+      }
     },
   });
 }

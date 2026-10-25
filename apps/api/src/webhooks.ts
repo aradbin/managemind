@@ -63,6 +63,10 @@ export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
     } catch {
       return c.text('not found', 404);
     }
+    // Refused before reading when the courier says how big it is; checked again after.
+    if (Number(c.req.header('content-length') ?? 0) > MAX_WEBHOOK_BYTES) {
+      return c.text('too large', 413);
+    }
     const raw = await c.req.text();
     if (raw.length > MAX_WEBHOOK_BYTES) return c.text('too large', 413);
     let body: unknown = null;

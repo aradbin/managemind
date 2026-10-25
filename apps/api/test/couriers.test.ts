@@ -218,6 +218,9 @@ describe('booking and the webhook', () => {
     );
     expect((await webhook('steadfast', a.id, {})).status).toBe(404);
     expect((await webhook('fake', 'not-a-uuid', {})).status).toBe(404);
+    expect(
+      (await webhook('fake', a.id, { consignment_id: 'x'.repeat(20_000) }, 'Bearer x')).status,
+    ).toBe(413);
 
     // B connects too; B's secret names A's parcel and finds nothing in B.
     const bb = await staff(b);
