@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FAKE_NO_ANSWER, FAKE_REFUSE, fakeCourier } from './fake';
+import { pathaoCourier, pathaoUpdate } from './pathao';
+import { redxCourier, redxUpdate } from './redx';
 import { steadfastCourier, steadfastUpdate } from './steadfast';
 import { CourierError, courierTime, type Parcel, sameSecret, takaToPoisha } from './types';
 
@@ -180,5 +182,163 @@ describe('the test courier', () => {
       codCollected: 125000,
     });
     await expect(fake.status({ consignmentId: 'FK2' })).rejects.toMatchObject({ refused: true });
+  });
+});
+
+describe('Pathao', () => {
+  const base = {
+    mode: 'sandbox' as const,
+    clientId: 'id',
+    clientSecret: 'secret',
+    username: 'shop@example.test',
+    password: 'pw',
+    storeId: 77,
+  };
+  const place = { cityId: 1, zoneId: 52, name: 'Dhanmondi' };
+
+  it('maps its statuses, without case or separators', () => {
+    expect(pathaoUpdate('Pickup_Requested')).toBe('booked');
+    expect(pathaoUpdate('order.picked')).toBe('picked_up');
+    expect(pathaoUpdate('Received_at_Last_Mile_HUB')).toBe('in_transit');
+    expect(pathaoUpdate('order.partial-delivery')).toBe('partial_delivered');
+    expect(pathaoUpdate('Delivery_Failed')).toBe('returning');
+    expect(pathaoUpdate('Pickup_Cancelled')).toBe('cancelled');
+    expect(pathaoUpdate('new thing')).toBe('unknown');
+  });
+
+  it('signs in, seals the tokens back, and books with its places', async () => {
+    const { f, calls } = fakeFetch([
+      { body: { access_token: 'AT', refresh_token: 'RT', expires_in: 432000 } },
+      {
+        body: {
+          code: 200,
+          data: { consignment_id: 'DL121224VS8TTJ', order_status: 'Pending', delivery_fee: 60 },
+        },
+      },
+    ]);
+    const saved: unknown[] = [];
+    const p = pathaoCourier({
+      ...base,
+      fetch: f,
+      now: () => 1_000,
+      saveTokens: async (t) => {
+        saved.push(t);
+      },
+    });
+    const booked = await p.book({ ...parcel, place, weightGrams: 1200 });
+    expect(booked).toMatchObject({ consignmentId: 'DL121224VS8TTJ', update: 'booked', fee: 6000 });
+    expect(saved).toEqual([{ accessToken: 'AT', refreshToken: 'RT', expiresAt: 433_000 }]);
+    expect(calls[0]?.url).toBe('https://courier-api-sandbox.pathao.com/aladdin/api/v1/issue-token');
+    const sent = JSON.parse(String(calls[1]?.init?.body));
+    expect(sent).toMatchObject({
+      store_id: 77,
+      merchant_order_id: '1001-1',
+      recipient_city: 1,
+      recipient_zone: 52,
+      item_weight: 1.2,
+      amount_to_collect: 1250,
+    });
+  });
+
+  it('refuses to book without a zone or a pickup store', async () => {
+    const p = pathaoCourier({ ...base, accessToken: 'AT', expiresAt: 10_000_000_000 });
+    await expect(p.book(parcel)).rejects.toMatchObject({ refused: true });
+    const noStore = pathaoCourier({
+      ...base,
+      storeId: undefined,
+      accessToken: 'AT',
+      expiresAt: 10_000_000_000,
+    });
+    await expect(noStore.book({ ...parcel, place })).rejects.toMatchObject({ refused: true });
+  });
+
+  it('checks its signature, and replies with the integration header when set', () => {
+    const p = pathaoCourier({ ...base, integrationSecret: 'from-pathao' });
+    const body = { consignment_id: 'DL1', merchant_order_id: '1001-1', event: 'order.delivered' };
+    expect(
+      p.parseWebhook(
+        { headers: headers({ 'x-pathao-signature': 's3cret' }), raw: '', body },
+        's3cret',
+      ),
+    ).toMatchObject({ consignmentId: 'DL1', invoice: '1001-1' });
+    expect(
+      p.parseWebhook(
+        { headers: headers({ 'x-pathao-signature': 'nope' }), raw: '', body },
+        's3cret',
+      ),
+    ).toBe('refused');
+    expect(p.webhookReply?.('s3cret')).toEqual({
+      status: 202,
+      headers: { 'X-Pathao-Merchant-Webhook-Integration-Secret': 'from-pathao' },
+    });
+  });
+
+  it('lists its cities, zones and areas', async () => {
+    const { f } = fakeFetch([
+      { body: { data: { data: [{ city_id: 1, city_name: 'Dhaka' }] } } },
+      { body: { data: { data: [{ zone_id: 52, zone_name: 'Dhanmondi' }] } } },
+      { body: { data: { data: [{ area_id: 900, area_name: 'Dhanmondi 27' }] } } },
+    ]);
+    const p = pathaoCourier({ ...base, accessToken: 'AT', expiresAt: 10_000_000_000, fetch: f });
+    const all = [];
+    for await (const x of p.places()) all.push(x);
+    expect(all).toEqual([
+      { kind: 'city', externalId: 1, parentId: null, name: 'Dhaka' },
+      { kind: 'zone', externalId: 52, parentId: 1, name: 'Dhanmondi' },
+      { kind: 'area', externalId: 900, parentId: 52, name: 'Dhanmondi 27' },
+    ]);
+  });
+});
+
+describe('RedX', () => {
+  it('maps its statuses', () => {
+    expect(redxUpdate('pickup-pending')).toBe('booked');
+    expect(redxUpdate('delivery-in-progress')).toBe('in_transit');
+    expect(redxUpdate('agent-returning')).toBe('returning');
+    expect(redxUpdate('delivered')).toBe('delivered');
+    expect(redxUpdate('paid')).toBe('paid_out');
+  });
+
+  it('books with its token header, area and pickup store', async () => {
+    const { f, calls } = fakeFetch([{ body: { tracking_id: '21A427TU4BN3R' } }]);
+    const r = redxCourier({ mode: 'sandbox', token: 'TK', pickupStoreId: 9, fetch: f });
+    const booked = await r.book({ ...parcel, place: { areaId: 7, name: 'Dhanmondi' } });
+    expect(booked).toMatchObject({ consignmentId: '21A427TU4BN3R', update: 'booked' });
+    expect(calls[0]?.url).toBe('https://sandbox.redx.com.bd/v1.0.0-beta/parcel');
+    expect(
+      (calls[0]?.init?.headers as Record<string, string> | undefined)?.['API-ACCESS-TOKEN'],
+    ).toBe('Bearer TK');
+    expect(JSON.parse(String(calls[0]?.init?.body))).toMatchObject({
+      delivery_area_id: 7,
+      cash_collection_amount: '1250',
+      pickup_store_id: 9,
+      merchant_invoice_id: '1001-1',
+    });
+  });
+
+  it('reads the collected cash only from a delivered parcel', async () => {
+    const { f } = fakeFetch([
+      { body: { parcel: { status: 'delivered', cash_collection_amount: 1250, charge: 70 } } },
+    ]);
+    const r = redxCourier({ mode: 'live', token: 'TK', fetch: f });
+    expect(await r.status({ consignmentId: '21A' })).toMatchObject({
+      update: 'delivered',
+      codCollected: 125000,
+      fee: 7000,
+    });
+  });
+
+  it('names the parcel from an unsigned webhook, and nothing more', () => {
+    const r = redxCourier({ mode: 'live', token: 'TK' });
+    expect(
+      r.parseWebhook(
+        {
+          headers: headers({}),
+          raw: '',
+          body: { tracking_number: '21A', status: 'delivered', invoice_number: '1001-1' },
+        },
+        'secret',
+      ),
+    ).toEqual({ consignmentId: '21A', invoice: '1001-1' });
   });
 });

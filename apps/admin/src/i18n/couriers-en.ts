@@ -29,6 +29,9 @@ export const couriersEn = {
   'couriers.mode': 'Mode',
   'couriers.mode.sandbox': 'Sandbox (test parcels)',
   'couriers.mode.live': 'Live',
+  'couriers.integration': 'Webhook reply value (optional)',
+  'couriers.integrationHint':
+    "If Pathao's webhook settings give a value to send back, paste it here.",
   'couriers.pickupStore': 'Pickup store',
   'couriers.pickupNone': 'Check the keys to choose the pickup store',
   'couriers.checkKeys': 'Check keys',
@@ -133,4 +136,17 @@ export const couriersEn = {
     "Parcels a courier says it brought back. Tap Received once they're in the shop: that puts them back in stock.",
   'couriers.returns.empty': 'No parcels waiting.',
   'couriers.returns.items': '{n} items',
+  'courierAreas.description':
+    "Our areas against each courier's own. The weekly sync matches names within a district; match the rest here. A match is used by every store.",
+  'courierAreas.courier': 'Courier',
+  'courierAreas.unmatchedOnly': 'Only areas without a match',
+  'courierAreas.none': 'Every area has a match.',
+  'courierAreas.match': 'Match',
+  'courierAreas.matched': 'Matched: {name}',
+  'courierAreas.byName': 'by name',
+  'courierAreas.manual': 'by hand',
+  'courierAreas.clear': 'Clear',
+  'courierAreas.saved': 'Saved.',
+  'courierAreas.superAdminOnly': 'Only super admins can change matches.',
+  'courierAreas.noSuggestions': "No close names: is the courier's list fetched yet?",
 } as const;

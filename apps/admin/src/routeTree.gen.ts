@@ -38,6 +38,7 @@ import { Route as ShellOrdersCourierReturnsRouteImport } from './routes/_shell/o
 import { Route as ShellOrdersNewRouteImport } from './routes/_shell/orders/new'
 import { Route as ShellPlatformIndexRouteImport } from './routes/_shell/platform/index'
 import { Route as ShellPlatformAuditRouteImport } from './routes/_shell/platform/audit'
+import { Route as ShellPlatformCourierAreasRouteImport } from './routes/_shell/platform/courier-areas'
 import { Route as ShellPlatformDashboardRouteImport } from './routes/_shell/platform/dashboard'
 import { Route as ShellPlatformStaffRouteImport } from './routes/_shell/platform/staff'
 import { Route as ShellPlatformTermsRouteImport } from './routes/_shell/platform/terms'
@@ -222,6 +223,12 @@ const ShellPlatformAuditRoute = ShellPlatformAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => ShellPlatformRoute,
 } as any)
+const ShellPlatformCourierAreasRoute =
+  ShellPlatformCourierAreasRouteImport.update({
+    id: '/courier-areas',
+    path: '/courier-areas',
+    getParentRoute: () => ShellPlatformRoute,
+  } as any)
 const ShellPlatformDashboardRoute = ShellPlatformDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -440,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
+  '/platform/courier-areas': typeof ShellPlatformCourierAreasRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/platform/terms': typeof ShellPlatformTermsRoute
@@ -506,6 +514,7 @@ export interface FileRoutesByTo {
   '/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/orders/new': typeof ShellOrdersNewRoute
   '/platform/audit': typeof ShellPlatformAuditRoute
+  '/platform/courier-areas': typeof ShellPlatformCourierAreasRoute
   '/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/platform/staff': typeof ShellPlatformStaffRoute
   '/platform/terms': typeof ShellPlatformTermsRoute
@@ -575,6 +584,7 @@ export interface FileRoutesById {
   '/_shell/orders/courier-returns': typeof ShellOrdersCourierReturnsRoute
   '/_shell/orders/new': typeof ShellOrdersNewRoute
   '/_shell/platform/audit': typeof ShellPlatformAuditRoute
+  '/_shell/platform/courier-areas': typeof ShellPlatformCourierAreasRoute
   '/_shell/platform/dashboard': typeof ShellPlatformDashboardRoute
   '/_shell/platform/staff': typeof ShellPlatformStaffRoute
   '/_shell/platform/terms': typeof ShellPlatformTermsRoute
@@ -644,6 +654,7 @@ export interface FileRouteTypes {
     | '/orders/courier-returns'
     | '/orders/new'
     | '/platform/audit'
+    | '/platform/courier-areas'
     | '/platform/dashboard'
     | '/platform/staff'
     | '/platform/terms'
@@ -710,6 +721,7 @@ export interface FileRouteTypes {
     | '/orders/courier-returns'
     | '/orders/new'
     | '/platform/audit'
+    | '/platform/courier-areas'
     | '/platform/dashboard'
     | '/platform/staff'
     | '/platform/terms'
@@ -778,6 +790,7 @@ export interface FileRouteTypes {
     | '/_shell/orders/courier-returns'
     | '/_shell/orders/new'
     | '/_shell/platform/audit'
+    | '/_shell/platform/courier-areas'
     | '/_shell/platform/dashboard'
     | '/_shell/platform/staff'
     | '/_shell/platform/terms'
@@ -1033,6 +1046,13 @@ declare module '@tanstack/react-router' {
       path: '/audit'
       fullPath: '/platform/audit'
       preLoaderRoute: typeof ShellPlatformAuditRouteImport
+      parentRoute: typeof ShellPlatformRoute
+    }
+    '/_shell/platform/courier-areas': {
+      id: '/_shell/platform/courier-areas'
+      path: '/courier-areas'
+      fullPath: '/platform/courier-areas'
+      preLoaderRoute: typeof ShellPlatformCourierAreasRouteImport
       parentRoute: typeof ShellPlatformRoute
     }
     '/_shell/platform/dashboard': {
@@ -1299,6 +1319,7 @@ declare module '@tanstack/react-router' {
 
 interface ShellPlatformRouteChildren {
   ShellPlatformAuditRoute: typeof ShellPlatformAuditRoute
+  ShellPlatformCourierAreasRoute: typeof ShellPlatformCourierAreasRoute
   ShellPlatformDashboardRoute: typeof ShellPlatformDashboardRoute
   ShellPlatformStaffRoute: typeof ShellPlatformStaffRoute
   ShellPlatformTermsRoute: typeof ShellPlatformTermsRoute
@@ -1311,6 +1332,7 @@ interface ShellPlatformRouteChildren {
 
 const ShellPlatformRouteChildren: ShellPlatformRouteChildren = {
   ShellPlatformAuditRoute: ShellPlatformAuditRoute,
+  ShellPlatformCourierAreasRoute: ShellPlatformCourierAreasRoute,
   ShellPlatformDashboardRoute: ShellPlatformDashboardRoute,
   ShellPlatformStaffRoute: ShellPlatformStaffRoute,
   ShellPlatformTermsRoute: ShellPlatformTermsRoute,

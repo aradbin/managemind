@@ -16,6 +16,7 @@ import {
   cancelOrder,
   claimBooking,
   confirmOrder,
+  courierAreaReview,
   createProduct,
   createTenant,
   deleteShipment,
@@ -29,10 +30,12 @@ import {
   recordBookingFailed,
   resolvePlace,
   setCartArea,
+  setCourierAreaMatch,
   shopperActor,
   shopperOrderView,
   systemActor,
   type TenantTx,
+  withPlatform,
   withTenant,
 } from '../src';
 import { connectApp, connectOwner } from './setup';
@@ -276,6 +279,25 @@ describe('areas (§3.6)', () => {
     await expect(
       run((tx) => resolvePlace(tx, 'pathao', 513, { zoneId: 999 })),
     ).rejects.toMatchObject({ code: 'validation_failed' });
+  });
+});
+
+describe('the platform review (§3.6)', () => {
+  it('lists unmatched areas with suggestions, and takes a super admin’s match', async () => {
+    const rows = await withPlatform(app, (tx) =>
+      courierAreaReview(tx, systemActor, 'redx', { unmatchedOnly: true, districtId: 47 }),
+    );
+    const dhanmondi = rows.find((r) => r.areaId === 513);
+    expect(dhanmondi?.suggestions[0]).toMatchObject({ externalId: 7, name: 'Dhanmondi' });
+    await withPlatform(app, (tx) => setCourierAreaMatch(tx, systemActor, 'redx', 513, 7));
+    expect(await run((tx) => resolvePlace(tx, 'redx', 513, null))).toEqual({
+      areaId: 7,
+      name: 'Dhanmondi',
+    });
+    await expect(
+      withPlatform(app, (tx) => setCourierAreaMatch(tx, staff, 'redx', 513, 7)),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await withPlatform(app, (tx) => setCourierAreaMatch(tx, systemActor, 'redx', 513, null));
   });
 });
 

@@ -1,0 +1,50 @@
+# The couriers' area lists (phase-7-plan §3.6, ADR 0030): weekly, Pathao's
+# cities, zones and areas and RedX's areas are fetched with the platform's
+# own courier tokens, stored in ref.courier_areas, and our areas matched by
+# name within the district. Platform → Courier areas shows what's left.
+# Pathao's list takes hundreds of requests, beyond what one Worker
+# invocation may make on the Free plan, so it runs here (about 3 minutes).
+# A courier without its secrets is skipped with a warning.
+name: Courier areas
+
+on:
+  schedule:
+    # 21:07 UTC on Saturday is 03:07 on Sunday in Dhaka.
+    - cron: '7 21 * * 6'
+  workflow_dispatch:
+    inputs:
+      courier:
+        description: One courier (pathao or redx; default both)
+        required: false
+
+concurrency:
+  group: courier-areas
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync courier areas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      DATABASE_URL_MIGRATIONS: ${{ secrets.DATABASE_URL_MIGRATIONS }}
+      PATHAO_CLIENT_ID: ${{ secrets.PATHAO_CLIENT_ID }}
+      PATHAO_CLIENT_SECRET: ${{ secrets.PATHAO_CLIENT_SECRET }}
+      PATHAO_USERNAME: ${{ secrets.PATHAO_USERNAME }}
+      PATHAO_PASSWORD: ${{ secrets.PATHAO_PASSWORD }}
+      PATHAO_MODE: ${{ vars.PATHAO_MODE }}
+      REDX_TOKEN: ${{ secrets.REDX_TOKEN }}
+      REDX_MODE: ${{ vars.REDX_MODE }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @managemind/scripts...
+      - run: pnpm --filter @managemind/scripts couriers:areas ${{ inputs.courier }}

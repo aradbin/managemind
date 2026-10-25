@@ -22,6 +22,7 @@ const TABS: {
     | '/platform'
     | '/platform/dashboard'
     | '/platform/terms'
+    | '/platform/courier-areas'
     | '/platform/billing'
     | '/platform/staff'
     | '/platform/audit';
@@ -32,6 +33,7 @@ const TABS: {
   { to: '/platform/dashboard', label: 'platform.dashboard', superAdmin: false },
   { to: '/platform/terms', label: 'platform.terms', superAdmin: false },
   { to: '/platform/billing', label: 'platform.billing', superAdmin: false },
+  { to: '/platform/courier-areas', label: 'platform.courierAreas', superAdmin: false },
   { to: '/platform/staff', label: 'platform.staff', superAdmin: true },
   { to: '/platform/audit', label: 'platform.audit', superAdmin: true },
 ];

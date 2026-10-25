@@ -73,6 +73,7 @@ function CourierCard({
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const [mode, setMode] = useState<'sandbox' | 'live'>('live');
   const [pickup, setPickup] = useState<number | null>(null);
+  const [integration, setIntegration] = useState('');
   const [missing, setMissing] = useState(false);
   const [removing, setRemoving] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: couriersQuery.queryKey });
@@ -81,7 +82,12 @@ function CourierCard({
   const body = () => ({
     ...(moded ? { mode } : {}),
     secrets: Object.fromEntries(fields.map((f) => [f, (secrets[f] ?? '').trim()])),
-    config: needsAreas(courier) && pickup ? { [pickupKey]: pickup } : {},
+    config: {
+      ...(needsAreas(courier) && pickup ? { [pickupKey]: pickup } : {}),
+      ...(courier === 'pathao' && integration.trim()
+        ? { integrationSecret: integration.trim() }
+        : {}),
+    },
   });
 
   const check = useMutation({
@@ -203,6 +209,16 @@ function CourierCard({
                   </label>
                 ))}
               </fieldset>
+            )}
+            {courier === 'pathao' && (
+              <Field
+                label={t('couriers.integration')}
+                hint={t('couriers.integrationHint')}
+                autoComplete="off"
+                value={integration}
+                maxLength={100}
+                onChange={(e) => setIntegration(e.target.value)}
+              />
             )}
             {needsAreas(courier) && (
               <div className="flex flex-col gap-2">

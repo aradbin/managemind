@@ -2,10 +2,14 @@
 // place that builds a store's adapter from its saved credentials.
 import type { Courier } from '@managemind/shared/orders';
 import { type FakeParcelState, fakeCourier } from './fake';
+import { pathaoCourier } from './pathao';
+import { redxCourier } from './redx';
 import { steadfastCourier } from './steadfast';
 import type { CourierProvider, Fetch } from './types';
 
 export * from './fake';
+export * from './pathao';
+export * from './redx';
 export * from './steadfast';
 export * from './types';
 
@@ -26,6 +30,8 @@ export interface CourierDeps {
 }
 
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
+const int = (v: unknown) => (typeof v === 'number' && Number.isInteger(v) ? v : undefined);
+const modeOf = (c: CourierConnection) => (c.mode === 'sandbox' ? 'sandbox' : 'live');
 
 /** The store's adapter for one courier. */
 export function courierProvider(c: CourierConnection, deps: CourierDeps = {}): CourierProvider {
@@ -36,13 +42,35 @@ export function courierProvider(c: CourierConnection, deps: CourierDeps = {}): C
         secretKey: text(c.secrets.secretKey),
         ...(deps.fetch ? { fetch: deps.fetch } : {}),
       });
+    case 'pathao':
+      return pathaoCourier({
+        mode: modeOf(c),
+        clientId: text(c.secrets.clientId),
+        clientSecret: text(c.secrets.clientSecret),
+        username: text(c.secrets.username),
+        password: text(c.secrets.password),
+        accessToken: text(c.secrets.accessToken) || undefined,
+        refreshToken: text(c.secrets.refreshToken) || undefined,
+        expiresAt: int(c.secrets.expiresAt),
+        storeId: int(c.config.storeId),
+        deliveryType: int(c.config.deliveryType),
+        itemType: int(c.config.itemType),
+        integrationSecret: text(c.config.integrationSecret) || undefined,
+        ...(deps.fetch ? { fetch: deps.fetch } : {}),
+        ...(deps.saveSecrets ? { saveTokens: deps.saveSecrets } : {}),
+      });
+    case 'redx':
+      return redxCourier({
+        mode: modeOf(c),
+        token: text(c.secrets.token),
+        pickupStoreId: int(c.config.pickupStoreId),
+        ...(deps.fetch ? { fetch: deps.fetch } : {}),
+      });
     case 'fake':
       return fakeCourier({
         apiKey: text(c.secrets.apiKey),
         ...(deps.fakeLookup ? { lookup: deps.fakeLookup } : {}),
       });
-    default:
-      throw new Error(`${c.courier}: no adapter yet`);
   }
 }
 

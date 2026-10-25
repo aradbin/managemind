@@ -194,6 +194,7 @@ export const en = {
   'platform.title': 'Platform',
   'platform.dashboard': 'Dashboard',
   'platform.terms': 'Terms',
+  'platform.courierAreas': 'Courier areas',
   'platform.billing': 'Billing',
   'help.menu': 'Help',
   'help.guide': 'Help guide',

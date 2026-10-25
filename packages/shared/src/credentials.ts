@@ -115,6 +115,8 @@ export const credentialConfigs = {
       storeId: z.int().positive().optional(),
       deliveryType: z.union([z.literal(48), z.literal(12)]).default(48),
       itemType: z.union([z.literal(1), z.literal(2)]).default(2),
+      /** The value Pathao asks to see in a webhook's reply, copied from Pathao, when it asks. */
+      integrationSecret: z.string().trim().min(1).max(100).optional(),
     })
     .strict(),
   /** The pickup store, chosen from RedX's list on saving. */

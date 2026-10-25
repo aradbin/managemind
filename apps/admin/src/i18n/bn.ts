@@ -188,6 +188,7 @@ export const bn: Record<keyof typeof en, string> = {
   'platform.title': 'প্ল্যাটফর্ম',
   'platform.dashboard': 'ড্যাশবোর্ড',
   'platform.terms': 'শর্তাবলি',
+  'platform.courierAreas': 'কুরিয়ারের এলাকা',
   'platform.billing': 'বিলিং',
   'help.menu': 'সহায়তা',
   'help.guide': 'সহায়িকা',

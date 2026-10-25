@@ -12984,6 +12984,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/courier-areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Our areas against a courier's places, unmatched first (support) */
+        get: {
+            parameters: {
+                query: {
+                    courier: "pathao" | "redx";
+                    unmatched?: "true" | "false";
+                    districtId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Areas */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            areaId: number;
+                            name: string;
+                            district: string;
+                            match: {
+                                externalId: number;
+                                name: string;
+                                how: string;
+                            } | null;
+                            suggestions: {
+                                externalId: number;
+                                name: string;
+                                parent: string | null;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/courier-areas/{courier}/{areaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Match one of our areas to a courier's place, or clear it (super_admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "pathao" | "redx";
+                    areaId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        externalId: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/invoices": {
         parameters: {
             query?: never;

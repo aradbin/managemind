@@ -1,3 +1,4 @@
+export * from './area-sync';
 export * from './areas';
 export * from './booking';
 export * from './connections';

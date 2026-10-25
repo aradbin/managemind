@@ -9,11 +9,13 @@
     "demo:catalog": "tsx demo/catalog.ts",
     "keys": "tsx keys.ts",
     "jobs": "tsx jobs/run.ts",
-    "load": "tsx load/run.ts"
+    "load": "tsx load/run.ts",
+    "couriers:areas": "tsx couriers/areas.ts"
   },
   "dependencies": {
     "@managemind/core": "workspace:*",
     "@managemind/db": "workspace:*",
+    "@managemind/providers": "workspace:*",
     "@managemind/shared": "workspace:*",
     "drizzle-orm": "catalog:",
     "fflate": "catalog:",
