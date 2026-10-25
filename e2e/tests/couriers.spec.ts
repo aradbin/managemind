@@ -211,6 +211,12 @@ test('couriers', async ({ page }, info) => {
         { timeout: 60_000 },
       )
       .toEqual(['booked', 'booked']);
+    // The dashboard counts them as waiting for pickup.
+    await page.goto(`${API}/`);
+    await expect(
+      page.getByRole('link', { name: new RegExp(m('couriers.dash.booked')) }),
+    ).toBeVisible();
+    await expectAccessible(page, 'dashboard with parcels');
   });
 
   await test.step('the delivered parcel’s payout is recorded, and the report shows it', async () => {

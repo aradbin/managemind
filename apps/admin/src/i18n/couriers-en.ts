@@ -131,6 +131,9 @@ export const couriersEn = {
   'couriers.bulk.queued': 'Booking {n} orders…',
   'couriers.bulk.done': '{booked} booked, {failed} not booked',
   'couriers.bulk.noneConnected': 'Connect a courier in Settings → Couriers first.',
+  'couriers.dash.booked': 'Parcels waiting for pickup',
+  'couriers.dash.inTransit': 'Parcels with the courier',
+  'couriers.dash.returning': 'Parcels coming back',
   'couriers.returns.title': 'Courier returns',
   'couriers.returns.description':
     "Parcels a courier says it brought back. Tap Received once they're in the shop: that puts them back in stock.",

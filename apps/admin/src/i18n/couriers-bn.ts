@@ -123,6 +123,9 @@ export const couriersBn: Record<keyof typeof couriersEn, string> = {
   'couriers.bulk.queued': '{n}টি অর্ডার বুক হচ্ছে…',
   'couriers.bulk.done': '{booked}টি বুক হয়েছে, {failed}টি হয়নি',
   'couriers.bulk.noneConnected': 'আগে সেটিংস → কুরিয়ারে একটি কুরিয়ার যুক্ত করুন।',
+  'couriers.dash.booked': 'পিকআপের অপেক্ষায় পার্সেল',
+  'couriers.dash.inTransit': 'কুরিয়ারের কাছে পার্সেল',
+  'couriers.dash.returning': 'ফেরত আসছে এমন পার্সেল',
   'couriers.returns.title': 'কুরিয়ার থেকে ফেরত',
   'couriers.returns.description':
     'কুরিয়ার যেসব পার্সেল ফেরত এনেছে বলছে। দোকানে পৌঁছালে "পেয়েছি" চাপুন: তাতে পণ্য স্টকে ফেরে।',
