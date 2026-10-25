@@ -56,7 +56,6 @@ AS $$
     FROM store.shipments s
    WHERE s.courier IS NOT NULL
      AND s.status IN ('booked', 'shipped', 'in_transit', 'failed')
-     AND s.consignment_id IS NOT NULL
      AND coalesce(s.last_synced_at, s.booked_at, s.created_at)
          < now() - make_interval(hours => quiet_hours)
      AND coalesce(s.booked_at, s.created_at) > now() - make_interval(days => max_days)

@@ -46,6 +46,9 @@ export const COURIER_UPDATES = [
 ] as const;
 export type CourierUpdateKind = (typeof COURIER_UPDATES)[number];
 
+export const isCourierUpdate = (value: unknown): value is CourierUpdateKind =>
+  typeof value === 'string' && (COURIER_UPDATES as readonly string[]).includes(value);
+
 /**
  * The shipment state each update leads to; null when it moves nothing.
  * `returned` keeps the shipment failed and waits for staff (§3.5, Q9), and
@@ -157,3 +160,42 @@ export function courierText(text: string, max: number): string {
     .trim();
   return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
+
+/** A courier's place chosen by staff at booking (§3.4, §3.6). */
+export const courierPlaceInput = z
+  .object({
+    cityId: z.int().positive().optional(),
+    zoneId: z.int().positive().optional(),
+    areaId: z.int().positive().optional(),
+  })
+  .strict();
+export type CourierPlaceInput = z.infer<typeof courierPlaceInput>;
+
+/** Booking one order's parcel (§3.4); `shipmentId` tries an earlier one again. */
+export const bookInput = z
+  .object({
+    courier: z.enum(COURIERS),
+    shipmentId: z.uuid().optional(),
+    lines: z
+      .array(z.object({ orderLineId: z.uuid(), quantity: z.int().min(1).max(10_000) }).strict())
+      .min(1)
+      .max(50)
+      .optional(),
+    weightGrams: z.int().min(100).max(COURIER_LIMITS.maxWeightGrams).optional(),
+    note: z.string().trim().max(COURIER_LIMITS.noteMax).optional(),
+    place: courierPlaceInput.optional(),
+  })
+  .strict();
+export type BookInput = z.infer<typeof bookInput>;
+
+export const bulkBookInput = z
+  .object({
+    courier: z.enum(COURIERS),
+    orderIds: z.array(z.uuid()).min(1).max(COURIER_LIMITS.bulkMax),
+  })
+  .strict();
+
+/** Couriers whose API can't cancel ask staff to cancel in the panel first (§3.4). */
+export const cancelBookingInput = z
+  .object({ cancelledAtCourier: z.boolean().default(false) })
+  .strict();

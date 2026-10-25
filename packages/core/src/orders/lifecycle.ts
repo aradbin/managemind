@@ -14,16 +14,19 @@ import { AppError } from '@managemind/shared';
 import {
   type CancelCode,
   type ConfirmedVia,
+  type Courier,
   deliverInput,
   deliveryStatusOf,
   failInput,
   manualPaymentInput,
   noteInput,
+  type OrderFlag,
   type OrderStatus,
   orderMachine,
   orderTagsInput,
   type PaymentStatus,
   paymentStatusOf,
+  type ShipmentEvent,
   type ShipmentStatus,
   shipmentInput,
   shipmentMachine,
@@ -269,6 +272,13 @@ export async function cancelOrder(
   const t = orderMachine.transition(order.status, 'cancel', {
     shippedQuantity: await shippedUnits(tx, id),
   });
+  // A parcel booked with a courier would still be picked up (phase-7-plan §3.4).
+  const { rows: booked } = await tx.db.execute(sql`
+    select 1 from store.shipments
+     where order_id = ${id} and (status = 'booked' or booking_state is not null) limit 1`);
+  if (booked.length) {
+    throw new AppError('illegal_transition', { detail: 'Cancel the courier booking first' });
+  }
   const lines = await outstanding(tx, id);
   await applyMovements(
     tx,
@@ -394,7 +404,7 @@ export interface ShipmentRow {
   status: ShipmentStatus;
 }
 
-async function lockShipment(tx: TenantTx, id: string): Promise<ShipmentRow> {
+export async function lockShipment(tx: TenantTx, id: string): Promise<ShipmentRow> {
   const s = schema.shipments;
   const [row] = await tx.db
     .select({ id: s.id, orderId: s.orderId, status: s.status })
@@ -489,25 +499,33 @@ export async function createShipment(
   return shipment;
 }
 
-async function moveShipment(
+/**
+ * Moves one shipment and writes the row, the history and the event. A
+ * courier's moves (phase-7-plan §3.1) name the courier in the event.
+ */
+export async function moveShipment(
   tx: TenantTx,
   actor: Actor,
   shipment: ShipmentRow,
-  event: 'ship' | 'deliver' | 'fail' | 'return',
-  extra: { reason?: string; data?: unknown } = {},
+  event: ShipmentEvent,
+  extra: { reason?: string | undefined; data?: unknown; courier?: Courier | null } = {},
 ) {
   const t = shipmentMachine.transition(shipment.status, event, undefined);
   const stamp = {
+    book: 'bookedAt',
+    unbook: null,
     ship: 'shippedAt',
+    transit: 'inTransitAt',
     deliver: 'deliveredAt',
     fail: 'failedAt',
     return: 'returnedAt',
   } as const;
+  const at = stamp[event];
   await tx.db
     .update(schema.shipments)
     .set({
       status: t.to,
-      [stamp[event]]: sql`now()`,
+      ...(at ? { [at]: sql`now()` } : {}),
       ...(event === 'fail' ? { failedReason: extra.reason ?? null } : {}),
     })
     .where(eq(schema.shipments.id, shipment.id));
@@ -521,7 +539,10 @@ async function moveShipment(
     data: { shipmentId: shipment.id, ...(extra.data ? { extra: extra.data } : {}) },
   });
   const type = {
+    book: 'shipment.booked',
+    unbook: 'shipment.booking_cancelled',
     ship: 'shipment.shipped',
+    transit: 'shipment.in_transit',
     deliver: 'shipment.delivered',
     fail: 'shipment.failed',
     return: 'shipment.returned',
@@ -529,17 +550,22 @@ async function moveShipment(
   await emit(tx, type[event], {
     aggregateType: 'shipment',
     aggregateId: shipment.id,
-    payload: { orderId: shipment.orderId },
+    payload: { orderId: shipment.orderId, ...(extra.courier ? { courier: extra.courier } : {}) },
   });
   return t;
 }
 
 /** Marked shipped: its units are sold from the reservation (release and sale together). */
-export async function shipShipment(tx: TenantTx, actor: Actor, id: string): Promise<OrderRow> {
+export async function shipShipment(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  courier: Courier | null = null,
+): Promise<OrderRow> {
   authorize(actor, 'orders.write');
   const shipment = await lockShipment(tx, id);
   await lockOrder(tx, shipment.orderId);
-  await moveShipment(tx, actor, shipment, 'ship');
+  await moveShipment(tx, actor, shipment, 'ship', { courier });
   const lines = await shipmentLines(tx, id);
   const ref = { referenceType: 'shipment', referenceId: id, reason: 'order_shipped' };
   await applyMovements(
@@ -578,17 +604,70 @@ export async function deliverShipment(
   actor: Actor,
   id: string,
   input: unknown = {},
+  courier?: { courier: Courier; collected: number | null; partial: boolean },
 ): Promise<OrderRow> {
   authorize(actor, 'orders.write');
   const { cashCollected } = parseInput(deliverInput, input);
   const shipment = await lockShipment(tx, id);
   await lockOrder(tx, shipment.orderId);
-  await moveShipment(tx, actor, shipment, 'deliver', { data: { cashCollected } });
-  if (cashCollected) await settleCod(tx, actor, shipment.orderId);
+  await moveShipment(tx, actor, shipment, 'deliver', {
+    data: courier
+      ? { cashCollected, collected: courier.collected, partial: courier.partial }
+      : { cashCollected },
+    courier: courier?.courier ?? null,
+  });
+  if (cashCollected) await settleCod(tx, actor, shipment.orderId, courier?.collected ?? null);
+  if (courier?.partial) await addOrderFlag(tx, shipment.orderId, 'partial_delivery');
   return refreshOrder(tx, actor, shipment.orderId);
 }
 
-async function settleCod(tx: TenantTx, actor: Actor, orderId: string) {
+/** Adds a flag for staff once (phase-7-plan §3.5). */
+export async function addOrderFlag(tx: TenantTx, orderId: string, flag: OrderFlag): Promise<void> {
+  await tx.db.execute(sql`
+    update store.orders set flags = array_append(flags, ${flag})
+     where id = ${orderId} and not (${flag} = any(flags))`);
+}
+
+/**
+ * Settles the order's pending COD. With the amount a courier collected
+ * (phase-7-plan §3.5): less than due shrinks the payment to what was
+ * collected, and any difference flags the order for staff.
+ */
+async function settleCod(
+  tx: TenantTx,
+  actor: Actor,
+  orderId: string,
+  collected: number | null = null,
+) {
+  const p = schema.payments;
+  if (collected !== null) {
+    const pending = await tx.db
+      .select({ id: p.id, amount: p.amount })
+      .from(p)
+      .where(and(eq(p.orderId, orderId), eq(p.provider, 'cod'), eq(p.status, 'pending')))
+      .orderBy(p.createdAt)
+      .for('update');
+    const due = pending.reduce((a, r) => a + Number(r.amount), 0);
+    if (collected !== due) await addOrderFlag(tx, orderId, 'cod_difference');
+    if (collected < due) {
+      // Keep what was collected on the first rows; void what nothing paid.
+      let left = collected;
+      for (const r of pending) {
+        const amount = Number(r.amount);
+        if (left >= amount) {
+          left -= amount;
+        } else if (left > 0) {
+          await tx.db.update(p).set({ amount: left }).where(eq(p.id, r.id));
+          left = 0;
+        } else {
+          await tx.db
+            .update(p)
+            .set({ status: 'voided', voidedAt: sql`now()` })
+            .where(eq(p.id, r.id));
+        }
+      }
+    }
+  }
   const settled = await tx.db
     .update(schema.payments)
     .set({ status: 'paid', settledAt: sql`now()`, recordedBy: actor.userId })
@@ -609,18 +688,33 @@ async function settleCod(tx: TenantTx, actor: Actor, orderId: string) {
   }
 }
 
+/** A courier carries the parcel on (phase-7-plan §3.1): no stock or money moves. */
+export async function transitShipment(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  courier: Courier,
+): Promise<OrderRow> {
+  authorize(actor, 'orders.write');
+  const shipment = await lockShipment(tx, id);
+  await lockOrder(tx, shipment.orderId);
+  await moveShipment(tx, actor, shipment, 'transit', { courier });
+  return refreshOrder(tx, actor, shipment.orderId);
+}
+
 /** The courier couldn't deliver: the goods are on their way back. */
 export async function failShipment(
   tx: TenantTx,
   actor: Actor,
   id: string,
   input: unknown,
+  courier: Courier | null = null,
 ): Promise<OrderRow> {
   authorize(actor, 'orders.write');
   const { reason } = parseInput(failInput, input);
   const shipment = await lockShipment(tx, id);
   await lockOrder(tx, shipment.orderId);
-  await moveShipment(tx, actor, shipment, 'fail', { reason });
+  await moveShipment(tx, actor, shipment, 'fail', { reason, courier });
   return refreshOrder(tx, actor, shipment.orderId);
 }
 
@@ -644,7 +738,7 @@ export async function returnShipment(
   await moveShipment(tx, actor, shipment, 'return');
   await tx.db.execute(sql`
     update store.shipments s
-       set return_cost = coalesce(${returnCost ?? null}::bigint,
+       set return_cost = coalesce(${returnCost ?? null}::bigint, s.return_charge,
                                   (select greatest(0, o.delivery_fee - o.delivery_discount)
                                      from store.orders o where o.id = s.order_id))
      where s.id = ${id}`);
@@ -688,6 +782,16 @@ export async function deleteShipment(tx: TenantTx, actor: Actor, id: string): Pr
   if (shipment.status !== 'pending') {
     throw new AppError('illegal_transition', {
       detail: 'Only a shipment not yet shipped can be deleted',
+    });
+  }
+  // A booking in flight, or one that got no answer, may be a parcel at the courier (phase-7-plan §3.4).
+  const [booking] = await tx.db
+    .select({ state: schema.shipments.bookingState })
+    .from(schema.shipments)
+    .where(eq(schema.shipments.id, id));
+  if (booking?.state) {
+    throw new AppError('illegal_transition', {
+      detail: 'Check the courier for this booking first, then cancel it',
     });
   }
   await tx.db.delete(schema.shipments).where(eq(schema.shipments.id, id));
