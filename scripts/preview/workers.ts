@@ -4,9 +4,9 @@
 //
 // The API's main config has no Hyperdrive binding: it connects to the Neon
 // branch directly (its DATABASE_URL secret). wrangler.preview-hyperdrive.json
-// is the same Worker bound to the PR's Hyperdrive config, deployed only for
-// the CPU step, so its numbers stay comparable to production's (ADR 0011,
-// amended Oct 23).
+// is the same Worker bound to the PR's Hyperdrive config, deployed for a
+// full run's E2E flows, Lighthouse and CPU step, then replaced by the direct
+// one again (ADR 0011, amended Oct 23 and Oct 25).
 //
 // Each PR gets its own pair of Workers (ADR 0011): the storefront's service
 // binding points at its own PR's API, which a version preview alias cannot do.

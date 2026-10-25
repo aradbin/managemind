@@ -18,6 +18,7 @@ import { MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import { captureMessage } from '@sentry/cloudflare';
 import { chunkKey } from './admin/imports';
 import { billingEmails, sendsBillingEmail } from './billing';
+import { autoBook } from './couriers';
 import { queueSink, withClient } from './db';
 import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
@@ -117,6 +118,16 @@ export async function handleQueue(
   }
   // Saved credentials and domain changes update the store's health at once
   // (phase-5b-plan §3.3); best effort, since the nightly pass rewrites it.
+  // Auto-booking on confirm (phase-7-plan §3.4): best effort; staff can book by hand.
+  try {
+    await autoBook(
+      env,
+      ctx,
+      batch.messages.map((m) => m.body),
+    );
+  } catch (e) {
+    log('warn', 'auto-booking failed', { error: String(e) });
+  }
   const healthOf = new Set(
     batch.messages
       .filter((m) => HEALTH_EVENTS.has(m.body.eventType) && !unsent.has(m.body.id))

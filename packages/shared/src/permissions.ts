@@ -30,6 +30,8 @@ export const PERMISSIONS = [
   'promotions.write',
   'payments.read',
   'payments.refund',
+  /** Recording and importing couriers' COD payouts (phase-7-plan §3.7, Q13): Owner and Manager. */
+  'payments.reconcile',
   'reports.read',
   /** Our plan, usage and invoices (phase-5b-plan §3.17): Owner and Manager. */
   'billing.read',

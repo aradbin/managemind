@@ -4,6 +4,7 @@
 // default locale are columns, not settings.
 import { z } from 'zod';
 import { notificationSettings } from './notifications';
+import { courierSettings } from './orders/couriers';
 import {
   checkoutSettings,
   codSettings,
@@ -120,6 +121,8 @@ export const tenantSettings = z
     confirmation: confirmationSettings.default(() => confirmationSettings.parse({})),
     /** Incomplete orders (phase-6-plan §3.2). */
     recovery: recoverySettings.default(() => recoverySettings.parse({})),
+    /** Couriers: the default, parcel defaults, auto-booking (phase-7-plan §3.8). */
+    couriers: courierSettings.default(() => courierSettings.parse({})),
     /** The return policy (phase-5a-plan §3.10). */
     returns: returnSettings.default(() => returnSettings.parse({})),
     /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */

@@ -2,6 +2,7 @@ import type { ImportMessage, OutboxEvent } from '@managemind/core';
 import { sentryOptions } from '@managemind/shared/sentry';
 import { withSentry } from '@sentry/cloudflare';
 import { createApp } from './app';
+import { pollCouriers } from './couriers';
 import { type DelayedMessage, handleDelayedQueue } from './domains';
 import type { Env } from './env';
 import { liveMessages } from './gone-stores';
@@ -43,10 +44,15 @@ async function routeQueue(batch: MessageBatch<Message>, env: Env, ctx: Execution
   return handleQueue(await liveMessages(outbox, env, ctx, 'outbox'), env, ctx);
 }
 
+/** Must match wrangler.jsonc's triggers; anything else is the daily batch. */
+const COURIER_POLL_CRONS = new Set(['17 7 * * *', '17 13 * * *']);
+
 export default withSentry<Env, Message>((env) => sentryOptions(env), {
   fetch: app.fetch,
   queue: routeQueue,
-  scheduled: (_controller, env, ctx) => {
-    ctx.waitUntil(runDailyJobs(env, ctx));
+  // The daily batch, and the courier polls at 13:17 and 19:17 in Dhaka (phase-7-plan §7).
+  scheduled: (controller, env, ctx) => {
+    if (COURIER_POLL_CRONS.has(controller.cron)) ctx.waitUntil(pollCouriers(env, ctx));
+    else ctx.waitUntil(runDailyJobs(env, ctx));
   },
 } satisfies ExportedHandler<Env, Message>);

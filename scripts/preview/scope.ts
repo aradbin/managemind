@@ -1,17 +1,28 @@
-// What a preview runs (ADR 0011, amended Oct 18 and Oct 23). Every
+// What a preview runs (ADR 0011, amended Oct 18, Oct 23 and Oct 25). Every
 // environment shares the account's 100,000 Hyperdrive queries a day, so
-// previews connect to their Neon branch directly and use none, except the
-// CPU step, whose numbers must be comparable to production's:
+// previews connect to their Neon branch directly and use none, except a full
+// run, which the Free plan's CPU limit stops too often on that connection:
 //
 // - a PR that changes only docs gets no preview;
 // - by default a preview deploys and runs the smoke tests;
-// - the `full-preview` label adds the E2E flows and Lighthouse, and the CPU
-//   step on a Worker bound to Hyperdrive unless today's count (UTC days, as
-//   the quota resets) is past FULL_RUN_CEILING or unknown.
+// - the `full-preview` label adds the E2E flows, Lighthouse and the CPU step,
+//   all on a Worker bound to Hyperdrive unless today's count (UTC days, as
+//   the quota resets) is past FULL_RUN_CEILING or unknown. Then the E2E flows
+//   and Lighthouse run on the direct connection, without the CPU step;
+// - with the `narrow-preview` label too, the E2E is the smoke tests and the
+//   spec files the PR adds, without the flows they depend on: the whole
+//   suite spends more CPU than the Free plan allows one Worker in a window
+//   (ADR 0011, amended Oct 25).
 
-/** Above this many Hyperdrive queries today, the CPU step would put production at risk. */
+/** Above this many Hyperdrive queries today, a full run would put production at risk. */
 export const FULL_RUN_CEILING = 50_000;
 export const FULL_LABEL = 'full-preview';
+export const NARROW_LABEL = 'narrow-preview';
+
+/** The E2E spec files among the files a PR adds, relative to e2e/. */
+export function addedSpecs(added: readonly string[]): string[] {
+  return added.filter((f) => /^e2e\/tests\/[^/]+\.spec\.ts$/.test(f)).map((f) => f.slice(4));
+}
 
 /** Markdown anywhere, and everything under docs/. */
 export function docsOnly(files: readonly string[]): boolean {
@@ -22,8 +33,10 @@ export interface Scope {
   deploy: boolean;
   /** The E2E flows and Lighthouse. */
   full: boolean;
-  /** The CPU step, the only one that uses Hyperdrive queries. */
-  cpu: boolean;
+  /** The E2E flows, Lighthouse and the CPU step on Hyperdrive; the CPU step runs only then. */
+  hyperdrive: boolean;
+  /** The E2E spec files a narrowed full run is limited to, without dependencies; empty for all. */
+  specs: string[];
   /** One line for the preview comment. */
   describe: string;
 }
@@ -33,12 +46,31 @@ export function previewScope(input: {
   fullLabel: boolean;
   /** Today's Hyperdrive queries, asked for only when the label is on; null if unknown. */
   queriesToday?: number | null;
+  narrowLabel?: boolean;
+  /** The files the PR adds (not changes). */
+  added?: readonly string[];
 }): Scope {
+  const scope = { ...baseScope(input), specs: [] as string[] };
+  const specs = addedSpecs(input.added ?? []);
+  if (!scope.full || !input.narrowLabel || specs.length === 0) return scope;
+  const list = specs.map((f) => `\`${f.slice('tests/'.length)}\``).join(', ');
+  return {
+    ...scope,
+    specs: ['tests/smoke.spec.ts', ...specs],
+    describe: `${scope.describe} Narrowed (\`${NARROW_LABEL}\`): the E2E is the smoke tests and ${list}, without the flows they depend on.`,
+  };
+}
+
+function baseScope(input: {
+  files: readonly string[];
+  fullLabel: boolean;
+  queriesToday?: number | null;
+}): Omit<Scope, 'specs'> {
   if (docsOnly(input.files)) {
     return {
       deploy: false,
       full: false,
-      cpu: false,
+      hyperdrive: false,
       describe: 'No preview: the PR changes only docs.',
     };
   }
@@ -46,34 +78,34 @@ export function previewScope(input: {
     return {
       deploy: true,
       full: false,
-      cpu: false,
+      hyperdrive: false,
       describe: `Smoke tests only. Add the \`${FULL_LABEL}\` label for the E2E flows, the CPU step and Lighthouse.`,
     };
   }
   const used = input.queriesToday;
   if (used == null) {
-    // Unknown usage: the CPU step could be the one that takes production down.
+    // Unknown usage: this run could be the one that takes production down.
     return {
       deploy: true,
       full: true,
-      cpu: false,
+      hyperdrive: false,
       describe:
-        "Full run without the CPU step: smoke, E2E flows, Lighthouse. Today's Hyperdrive usage was unavailable.",
+        "Full run on the direct connection, without the CPU step: smoke, E2E flows, Lighthouse. Today's Hyperdrive usage was unavailable.",
     };
   }
   if (used > FULL_RUN_CEILING) {
     return {
       deploy: true,
       full: true,
-      cpu: false,
-      describe: `Full run without the CPU step: smoke, E2E flows, Lighthouse. ${used.toLocaleString('en-US')} Hyperdrive queries used today, past the ${FULL_RUN_CEILING.toLocaleString('en-US')} the CPU step may start at. Push again after 00:00 UTC for it.`,
+      hyperdrive: false,
+      describe: `Full run on the direct connection, without the CPU step: smoke, E2E flows, Lighthouse. ${used.toLocaleString('en-US')} Hyperdrive queries used today, past the ${FULL_RUN_CEILING.toLocaleString('en-US')} a run on Hyperdrive may start at. Push again after 00:00 UTC for it.`,
     };
   }
   return {
     deploy: true,
     full: true,
-    cpu: true,
-    describe: 'Full run: smoke, E2E flows, CPU step (through Hyperdrive), Lighthouse.',
+    hyperdrive: true,
+    describe: 'Full run through Hyperdrive: smoke, E2E flows, Lighthouse, CPU step.',
   };
 }
 

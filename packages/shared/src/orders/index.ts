@@ -1,3 +1,4 @@
+export * from './couriers';
 export * from './machines';
 export * from './promotions';
 export * from './recovery';

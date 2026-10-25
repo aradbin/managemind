@@ -7,6 +7,7 @@ import './orders';
 import './promotions';
 import './launch';
 import './billing';
+import './couriers';
 
 await loadLocale('en');
 await loadLocale('bn');

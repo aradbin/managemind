@@ -4,11 +4,14 @@
 // §3.9): incomplete orders, confirmation, delivery by score and duplicates.
 // Computed when asked.
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
+import { Button } from '../components/ui/button';
 import { type AdminKey, useLocale } from '../i18n';
+import '../i18n/couriers';
 import '../i18n/orders';
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
@@ -20,7 +23,7 @@ import { pickText } from '../lib/orders';
 const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
 const day = (d: Date) => DHAKA_DAY.format(d);
 
-function Table({
+export function Table({
   caption,
   head,
   rows,
@@ -106,7 +109,16 @@ export function ReportsPage() {
   const orders = r?.payments.reduce((a, p) => a + p.orders, 0) ?? 0;
   return (
     <div className="flex max-w-5xl flex-col gap-5">
-      <PageHeader className="mb-0" title={t('reports.title')} description={t('reports.intro')} />
+      <PageHeader
+        className="mb-0"
+        title={t('reports.title')}
+        description={t('reports.intro')}
+        actions={
+          <Button variant="secondary" asChild>
+            <Link to="/reports/cod">{t('cod.title')}</Link>
+          </Button>
+        }
+      />
       <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-4 md:p-5 md:max-w-md">
         <Field
           label={t('reports.from')}

@@ -1,7 +1,7 @@
 // Chooses what the preview runs (scope.ts) and sets the step outputs
-// deploy, full, cpu and describe.
+// deploy, full, hyperdrive, specs (space-separated) and describe.
 //
-//   tsx preview/choose.ts --base origin/master [--full-label]
+//   tsx preview/choose.ts --base origin/master [--full-label] [--narrow-label]
 import { execFileSync } from 'node:child_process';
 import { notice, parseArgs, requireEnv, setOutput, warning } from '../lib/actions';
 import { Cloudflare } from '../lib/cloudflare';
@@ -11,10 +11,14 @@ const args = parseArgs(process.argv.slice(2));
 const base = args.get('base');
 if (!base) throw new Error('--base <ref> is required');
 const fullLabel = args.get('full-label') === 'true';
+const narrowLabel = args.get('narrow-label') === 'true';
 
-const files = execFileSync('git', ['diff', '--name-only', `${base}...HEAD`], { encoding: 'utf8' })
-  .split('\n')
-  .filter(Boolean);
+const diff = (...flags: string[]) =>
+  execFileSync('git', ['diff', '--name-only', ...flags, `${base}...HEAD`], { encoding: 'utf8' })
+    .split('\n')
+    .filter(Boolean);
+const files = diff();
+const added = diff('--diff-filter=A');
 
 let queriesToday: number | null = null;
 if (fullLabel) {
@@ -38,9 +42,10 @@ if (fullLabel) {
   }
 }
 
-const scope = previewScope({ files, fullLabel, queriesToday });
+const scope = previewScope({ files, fullLabel, queriesToday, narrowLabel, added });
 notice(scope.describe);
 setOutput('deploy', String(scope.deploy));
 setOutput('full', String(scope.full));
-setOutput('cpu', String(scope.cpu));
+setOutput('hyperdrive', String(scope.hyperdrive));
+setOutput('specs', scope.specs.join(' '));
 setOutput('describe', scope.describe);

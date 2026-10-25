@@ -3,12 +3,13 @@
 // actions the state machines allow (the API lists them). Every command sends
 // an Idempotency-Key, kept for the dialog's life, so a retry after a dropped
 // connection doesn't do it twice.
-import { type CancelCode, MANUAL_METHODS } from '@managemind/shared/orders';
+import { type CancelCode, type Courier, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
+import { BookDialog, CourierPanel } from '../components/courier-booking';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
@@ -23,7 +24,8 @@ import '../i18n/orders';
 import '../i18n/returns';
 import { RefundDialog } from '../components/refund-dialog';
 import { api, unwrap } from '../lib/api';
-import { formatPrice, priceInput, readPrice } from '../lib/catalog';
+import { formatPrice, priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
+import { courierName, couriersQuery, orderedCouriers } from '../lib/couriers';
 import { errorMessage } from '../lib/errors';
 import {
   dateTime,
@@ -248,6 +250,8 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
   const { t } = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<'cancel' | 'edit' | 'ship' | 'pay' | null>(null);
+  const [booking, setBooking] = useState<Courier | null>(null);
+  const couriers = useBookingCouriers();
   const confirm = useCommand(o.id, async (key) =>
     unwrap(
       await api.POST('/v1/admin/orders/{id}/confirm', {
@@ -272,6 +276,10 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
       onClick={() => confirm.mutate(undefined, { onSuccess: () => toast(t('order.confirmed')) })}
     >
       {t('order.confirm')}
+    </Button>
+  ) : canShip && couriers[0] ? (
+    <Button onClick={() => setBooking(couriers[0] as Courier)}>
+      {t('couriers.book', { courier: courierName(couriers[0], t) })}
     </Button>
   ) : canShip ? (
     <Button onClick={() => setDialog('ship')}>{t('order.createShipment')}</Button>
@@ -306,7 +314,14 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
             {t('order.process')}
           </Button>
         )}
-        {has('confirm') && canShip && (
+        {canShip &&
+          !has('confirm') &&
+          couriers.slice(1).map((c) => (
+            <Button key={c} variant="secondary" onClick={() => setBooking(c)}>
+              {t('couriers.book', { courier: courierName(c, t) })}
+            </Button>
+          ))}
+        {canShip && (has('confirm') || couriers.length > 0) && (
           <Button variant="secondary" onClick={() => setDialog('ship')}>
             {t('order.createShipment')}
           </Button>
@@ -323,8 +338,18 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
       {dialog === 'ship' && <ShipmentDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'pay' && <PaymentDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'edit' && <EditOrderDialog order={o} onClose={() => setDialog(null)} />}
+      {booking && <BookDialog order={o} courier={booking} onClose={() => setBooking(null)} />}
     </div>
   );
+}
+
+/** The couriers staff can book with, the store's default first (phase-7-plan §3.8). */
+function useBookingCouriers(): Courier[] {
+  const canWrite = usePermission('orders.write');
+  const couriers = useQuery({ ...couriersQuery, enabled: canWrite });
+  const store = useQuery({ ...storeSettingsQuery, enabled: canWrite });
+  if (!canWrite) return [];
+  return orderedCouriers(couriers.data, store.data?.couriers.default ?? null);
 }
 
 function Lines({ order: o }: { order: OrderDetail }) {
@@ -593,6 +618,8 @@ function ShipmentRow({
   const toast = useToast();
   const canWrite = usePermission('orders.write');
   const [dialog, setDialog] = useState<'deliver' | 'fail' | 'delete' | 'back' | null>(null);
+  const [booking, setBooking] = useState<Courier | null>(null);
+  const couriers = useBookingCouriers();
   const [cash, setCash] = useState(true);
   const [reason, setReason] = useState('');
   // What the trip cost (phase-5a-plan §3.11): the delivery fee unless staff say otherwise.
@@ -656,9 +683,17 @@ function ShipmentRow({
       </div>
       <p className="text-sm">{lines.join(', ')}</p>
       {s.failedReason && <p className="text-sm text-danger">{s.failedReason}</p>}
+      <CourierPanel order={o} shipment={s} />
       {canWrite && o.status !== 'cancelled' && (
         <div className="flex flex-wrap gap-2">
-          {s.status === 'pending' && (
+          {s.status === 'pending' &&
+            !s.courier &&
+            couriers.map((c) => (
+              <Button key={c} variant="secondary" onClick={() => setBooking(c)}>
+                {t('couriers.book', { courier: courierName(c, t) })}
+              </Button>
+            ))}
+          {s.status === 'pending' && !s.courier && (
             <>
               <Button
                 disabled={ship.isPending}
@@ -673,7 +708,7 @@ function ShipmentRow({
               </Button>
             </>
           )}
-          {s.status === 'shipped' && (
+          {(s.status === 'shipped' || s.status === 'in_transit') && (
             <>
               <Button onClick={() => setDialog('deliver')}>{t('order.markDelivered')}</Button>
               <Button variant="secondary" onClick={() => setDialog('fail')}>
@@ -681,7 +716,7 @@ function ShipmentRow({
               </Button>
             </>
           )}
-          {s.status === 'failed' && (
+          {s.status === 'failed' && !s.courier?.returnedByCourierAt && (
             <Button variant="secondary" onClick={() => setDialog('back')}>
               {t('order.markReturned')}
             </Button>
@@ -689,6 +724,14 @@ function ShipmentRow({
         </div>
       )}
       {error && <Notice tone="error">{orderErrorMessage(error, t)}</Notice>}
+      {booking && (
+        <BookDialog
+          order={o}
+          courier={booking}
+          shipmentId={s.id}
+          onClose={() => setBooking(null)}
+        />
+      )}
       <ConfirmDialog
         open={dialog === 'deliver'}
         onOpenChange={(open) => !open && setDialog(null)}

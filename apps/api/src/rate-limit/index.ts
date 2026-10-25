@@ -84,6 +84,10 @@ export const RULES = {
    * invoice IPN is recorded by hand from the SSLCommerz panel.
    */
   'ipn:ip': { windows: [{ limit: 600, seconds: HOUR }] },
+  /** Courier webhooks (phase-7-plan §3.5): each one costs a lookup at the courier. */
+  'courier_webhook:ip': { windows: [{ limit: 1200, seconds: HOUR }] },
+  /** Sync now on a shipment: at most once a minute. */
+  'courier_sync:shipment': { windows: [{ limit: 1, seconds: MINUTE }] },
   /** Cart changes from one IP: generous, only to stop scripts filling the database. */
   'cart:ip': { windows: [{ limit: 300, seconds: HOUR }] },
   /** Images fetched by URL for one store's imports (phase-2-plan §3.7): 500 products' worth an hour. */

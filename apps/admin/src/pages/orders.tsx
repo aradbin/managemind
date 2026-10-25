@@ -18,6 +18,8 @@ import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
+import '../i18n/couriers';
+import { BulkBookDialog } from '../components/courier-booking';
 // The Returns button's label lives with the returns screens' messages.
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
@@ -92,6 +94,7 @@ export function OrdersPage() {
   const canWrite = usePermission('orders.write');
   const [q, setQ] = useState(search.q ?? '');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkBooking, setBulkBooking] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const panelCount = PANEL.filter((k) => search[k] !== undefined).length;
   const [panel, setPanel] = useState(panelCount > 0);
@@ -274,6 +277,17 @@ export function OrdersPage() {
             ) : null}
           </Link>
         )}
+        {dashboard?.counts.courierReturns ? (
+          <Link
+            to="/orders/courier-returns"
+            className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
+          >
+            {t('couriers.returns.title')}
+            <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+              {dashboard.counts.courierReturns}
+            </span>
+          </Link>
+        ) : null}
       </nav>
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -462,6 +476,11 @@ export function OrdersPage() {
                   {t('orders.bulkConfirm', { count: pendingSelected.length })}
                 </Button>
               )}
+              {canWrite && (
+                <Button variant="secondary" onClick={() => setBulkBooking(true)}>
+                  {t('couriers.bulk.book')}
+                </Button>
+              )}
               <PrintLinks ids={ids} />
               <Button
                 variant="ghost"
@@ -533,6 +552,15 @@ export function OrdersPage() {
           onClose={(done) => {
             setConfirming(false);
             if (done) setSelected(new Set());
+          }}
+        />
+      )}
+      {bulkBooking && (
+        <BulkBookDialog
+          orderIds={ids}
+          onClose={() => {
+            setBulkBooking(false);
+            setSelected(new Set());
           }}
         />
       )}

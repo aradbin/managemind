@@ -65,6 +65,8 @@ export const ORDER_FLAGS = [
   'flagged_phone',
   'possible_duplicate',
   'unreachable',
+  'cod_difference',
+  'partial_delivery',
 ] as const;
 export const CANCEL_CODES = [
   'shopper_request',
@@ -88,7 +90,31 @@ export const HISTORY_MACHINES = [
   'refund',
   'confirmation',
 ] as const;
-export const SHIPMENT_STATUSES = ['pending', 'shipped', 'delivered', 'failed', 'returned'] as const;
+export const SHIPMENT_STATUSES = [
+  'pending',
+  'booked',
+  'shipped',
+  'in_transit',
+  'delivered',
+  'failed',
+  'returned',
+] as const;
+export const COURIERS = ['steadfast', 'pathao', 'redx', 'fake'] as const;
+export const BOOKING_STATES = ['booking', 'unsure'] as const;
+export const COURIER_UPDATES = [
+  'booked',
+  'picked_up',
+  'in_transit',
+  'on_hold',
+  'delivered',
+  'partial_delivered',
+  'returning',
+  'returned',
+  'cancelled',
+  'paid_out',
+  'unknown',
+] as const;
+export const EVENT_SOURCES = ['booking', 'webhook', 'poll', 'staff'] as const;
 export const PAYMENT_PROVIDERS = ['cod', 'manual', 'sslcommerz'] as const;
 export const PAYMENT_METHODS = [
   'cod',
@@ -585,7 +611,7 @@ export const shipments = store.table(
     id: id(),
     orderId: uuid().notNull(),
     status: text({ enum: SHIPMENT_STATUSES }).notNull().default('pending'),
-    /** Free text in this phase; Phase 7's courier integrations fill metadata. */
+    /** The carrier's name: free text for a manual shipment, the courier's name for a booked one. */
     carrier: text(),
     trackingNumber: text(),
     trackingUrl: text(),
@@ -597,12 +623,64 @@ export const shipments = store.table(
     /** What the failed delivery cost the store (phase-5a-plan §3.11). */
     returnCost: money(),
     metadata: jsonb().notNull().default({}),
+    // A courier's parcel (phase-7-plan §3.1, §4); all null for a manual shipment.
+    courier: text({ enum: COURIERS }),
+    /** Our invoice for the parcel, unique per store and courier. */
+    courierRef: text(),
+    consignmentId: text(),
+    trackingCode: text(),
+    /** The courier's own latest status and message, as it said them. */
+    courierStatus: text(),
+    courierStatusAt: ts(),
+    courierMessage: text(),
+    bookingState: text({ enum: BOOKING_STATES }),
+    bookingError: text(),
+    bookedAt: ts(),
+    inTransitAt: ts(),
+    /** The courier says the parcel came back; staff confirm it arrived (§3.5, Q9). */
+    courierReturnedAt: ts(),
+    lastSyncedAt: ts(),
+    /** What the courier was asked to collect, and what it says it collected. */
+    codAmount: money(),
+    codCollected: money(),
+    /** Delivery plus the COD charge, and the return charge, as the courier gives them. */
+    courierFee: money(),
+    returnCharge: money(),
+    /** The courier's area IDs and names used for the booking. */
+    courierArea: jsonb(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     tenantPolicy(t),
     tenantIdUnique('shipments', t),
+    oneOf('shipments_courier_valid', t.courier, COURIERS),
+    oneOf('shipments_booking_state_valid', t.bookingState, BOOKING_STATES),
+    uniqueIndex('shipments_courier_ref_unique')
+      .on(t.tenantId, t.courier, t.courierRef)
+      .where(sql`courier_ref is not null`),
+    uniqueIndex('shipments_consignment_unique')
+      .on(t.tenantId, t.courier, t.consignmentId)
+      .where(sql`consignment_id is not null`),
+    index('shipments_courier_open_idx')
+      .on(t.lastSyncedAt)
+      .where(sql`courier is not null and status in ('booked', 'shipped', 'in_transit', 'failed')`),
+    check(
+      'shipments_courier_fields',
+      sql`${t.courier} is not null or (${t.courierRef} is null and ${t.consignmentId} is null and ${t.bookingState} is null)`,
+    ),
+    check('shipments_courier_ref_length', sql`char_length(${t.courierRef}) <= 60`),
+    check('shipments_consignment_length', sql`char_length(${t.consignmentId}) <= 100`),
+    check('shipments_tracking_code_length', sql`char_length(${t.trackingCode}) <= 100`),
+    check('shipments_courier_status_length', sql`char_length(${t.courierStatus}) <= 60`),
+    check('shipments_courier_message_length', sql`char_length(${t.courierMessage}) <= 500`),
+    check('shipments_booking_error_length', sql`char_length(${t.bookingError}) <= 300`),
+    check(
+      'shipments_courier_money',
+      sql`coalesce(${t.codAmount}, 0) >= 0 and coalesce(${t.codCollected}, 0) >= 0
+          and coalesce(${t.courierFee}, 0) >= 0 and coalesce(${t.returnCharge}, 0) >= 0`,
+    ),
+    check('shipments_courier_area_size', sql`octet_length(${t.courierArea}::text) <= 1000`),
     ref('shipments_order_fk', [t.tenantId, t.orderId], [orders.tenantId, orders.id], 'restrict'),
     index('shipments_order_idx').on(t.tenantId, t.orderId),
     index('shipments_tenant_status_idx').on(t.tenantId, t.status),

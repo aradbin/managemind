@@ -7,6 +7,8 @@ import { connect, ownerUrl, storeTables } from './helpers';
 /** Indexes allowed not to start with tenant_id, with the reason. */
 const INDEX_EXCEPTIONS: Record<string, string> = {
   outbox_pending_idx: 'the dispatcher sweeps pending events across all tenants (ADR 0010)',
+  shipments_courier_open_idx:
+    'the courier poll lists quiet shipments across all tenants (phase-7-plan §3.5)',
 };
 
 const db = await connect(ownerUrl);

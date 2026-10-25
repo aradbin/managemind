@@ -17,6 +17,9 @@ export default defineConfig({
   // few seconds there.
   expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
+  // One flow at a time on a preview: two at once spend CPU fast enough that
+  // the Free plan's limit stops requests in bursts (ADR 0011, amended Oct 25).
+  ...(process.env.CI ? { workers: 1 } : {}),
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: {
     browserName: 'chromium',
@@ -138,6 +141,21 @@ export default defineConfig({
       name: 'recovery-desktop',
       testMatch: /recovery\.spec\.ts/,
       dependencies: ['returns-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
+    // The courier flows (phase-7-plan §10) with the test courier, after the recovery flows.
+    {
+      name: 'couriers-phone',
+      testMatch: /couriers\.spec\.ts/,
+      dependencies: ['recovery-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'couriers-desktop',
+      testMatch: /couriers\.spec\.ts/,
+      dependencies: ['recovery-desktop'],
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },

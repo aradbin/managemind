@@ -6,6 +6,7 @@
 import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import type { billingEn } from './billing-en';
+import type { couriersEn } from './couriers-en';
 import type { en } from './en';
 import type { launchEn } from './launch-en';
 import type { messagesEn } from './messages-en';
@@ -18,6 +19,7 @@ import type { returnsEn } from './returns-en';
 export type AdminKey =
   | keyof typeof en
   | keyof typeof billingEn
+  | keyof typeof couriersEn
   | keyof typeof launchEn
   | keyof typeof messagesEn
   | keyof typeof onlineStoreEn

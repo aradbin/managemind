@@ -10,7 +10,7 @@ import {
 } from '@managemind/core';
 import { smsProviderFor } from '@managemind/providers/sms';
 import { AppError } from '@managemind/shared';
-import { CREDENTIAL_KINDS, credentialInput } from '@managemind/shared/credentials';
+import { type CREDENTIAL_KINDS, credentialInput } from '@managemind/shared/credentials';
 import { credentialCheck } from '../credential-checks';
 import { credentialsKeyring } from '../notifications';
 import { inStore, type StaffEnv } from './context';
@@ -24,10 +24,16 @@ const r = <
     tags: string[];
   });
 
-const Kind = z.object({ kind: z.enum(CREDENTIAL_KINDS) });
+/** Payment, SMS and email; couriers connect through their own routes (phase-7-plan §3.3). */
+const MESSAGE_KINDS = [
+  'sslcommerz',
+  'sms',
+  'email',
+] as const satisfies readonly (typeof CREDENTIAL_KINDS)[number][];
+const Kind = z.object({ kind: z.enum(MESSAGE_KINDS) });
 const Credential = z
   .object({
-    kind: z.enum(CREDENTIAL_KINDS),
+    kind: z.enum(MESSAGE_KINDS),
     provider: z.string(),
     mode: z.enum(['sandbox', 'live']).nullable(),
     hint: z.string().openapi({ description: 'The last 4 characters of the store ID or key' }),
@@ -92,7 +98,13 @@ export const CREDENTIAL_ROUTES = {
 export function registerCredentials(admin: OpenAPIHono<StaffEnv>): void {
   const R = CREDENTIAL_ROUTES;
   admin.openapi(R.credentials, async (c) =>
-    c.json(await inStore(c, (tx) => listCredentials(tx, c.var.staff.actor)), 200),
+    c.json(
+      (await inStore(c, (tx) => listCredentials(tx, c.var.staff.actor))).filter(
+        (x): x is typeof x & { kind: (typeof MESSAGE_KINDS)[number] } =>
+          (MESSAGE_KINDS as readonly string[]).includes(x.kind),
+      ),
+      200,
+    ),
   );
   admin.openapi(R.saveCredential, async (c) => {
     const { kind } = c.req.valid('param');
@@ -116,7 +128,7 @@ export function registerCredentials(admin: OpenAPIHono<StaffEnv>): void {
         ),
       { write: true },
     );
-    return c.json(saved, 200);
+    return c.json({ ...saved, kind }, 200);
   });
   admin.openapi(R.smsBalance, async (c) => {
     if (!c.var.staff.actor.permissions.has('settings.credentials')) throw new AppError('forbidden');

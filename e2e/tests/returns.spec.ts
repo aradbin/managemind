@@ -57,11 +57,21 @@ async function adminCall<T>(
   method: 'get' | 'post' | 'put',
   path: string,
   data?: unknown,
+  { transition = false } = {},
 ): Promise<T> {
-  const res = await request[method](`${API}${path}`, {
-    ...(data === undefined ? {} : { data }),
-    headers: { origin: API, 'idempotency-key': crypto.randomUUID() },
-  });
+  const send = () =>
+    request[method](`${API}${path}`, {
+      ...(data === undefined ? {} : { data }),
+      headers: { origin: API, 'idempotency-key': crypto.randomUUID() },
+    });
+  let res = await send();
+  // A request stopped at the Free plan's CPU limit answers an empty 503 (ADR 0011,
+  // amended Oct 25). A read is safe to send again, and so is a state transition:
+  // the machine refuses a repeat, so a 409 then means the first one went through.
+  for (let i = 0; (method === 'get' || transition) && res.status() === 503 && i < 2; i++) {
+    res = await send();
+    if (transition && res.status() === 409) return undefined as T;
+  }
   expect(res.ok(), `${method} ${path}: ${res.status()} ${await res.text()}`).toBe(true);
   return (await res.json()) as T;
 }
@@ -135,7 +145,13 @@ test('returns and refunds', async ({
     orderNumber = order.displayNumber;
     await shopper.dispose();
 
-    await adminCall(page.request, 'post', `/v1/admin/orders/${order.id}/confirm`, {});
+    await adminCall(
+      page.request,
+      'post',
+      `/v1/admin/orders/${order.id}/confirm`,
+      {},
+      { transition: true },
+    );
     const detail = await adminCall<{ lines: { id: string }[] }>(
       page.request,
       'get',
@@ -147,10 +163,20 @@ test('returns and refunds', async ({
       `/v1/admin/orders/${order.id}/shipments`,
       { lines: [{ orderLineId: detail.lines[0]?.id, quantity: 1 }], carrier: 'Pathao' },
     );
-    await adminCall(page.request, 'post', `/v1/admin/shipments/${shipment.id}/ship`, {});
-    await adminCall(page.request, 'post', `/v1/admin/shipments/${shipment.id}/deliver`, {
-      cashCollected: true,
-    });
+    await adminCall(
+      page.request,
+      'post',
+      `/v1/admin/shipments/${shipment.id}/ship`,
+      {},
+      { transition: true },
+    );
+    await adminCall(
+      page.request,
+      'post',
+      `/v1/admin/shipments/${shipment.id}/deliver`,
+      { cashCollected: true },
+      { transition: true },
+    );
   });
 
   let returnNumber = '';

@@ -1,6 +1,6 @@
 # ADR 0011: Pull request previews and their databases
 
-- Status: Accepted. Amended Oct 18: what a preview runs is budgeted. Amended Oct 23: previews connect to Neon directly, and only the CPU step uses Hyperdrive (below).
+- Status: Accepted. Amended Oct 18: what a preview runs is budgeted. Amended Oct 23: previews connect to Neon directly, and only the CPU step uses Hyperdrive. Amended Oct 25: a full run goes through Hyperdrive again (below).
 - Date: 2026-10-10
 - Builds on: Q1 (Oct 9: shared preview database), ADR 0009 (roles), ADR 0002 (Hyperdrive)
 
@@ -103,3 +103,16 @@ The Oct 18 budget didn't stop it happening again: preview runs used up the day's
 5. **The ceiling now gates only the CPU step.** A labelled run always runs the E2E flows and Lighthouse. Past 50,000 queries, or when the count can't be read, it skips the CPU step and says so. On Workers Paid (from the first pilot client, phase-5b-plan Q2), the ceiling can go.
 
 **Cost:** previews' queries are a little slower, with no pooling at the edge. Neon's compute use is unchanged, since Hyperdrive's caching was already off on previews.
+
+## Amendment (Oct 25): full runs through Hyperdrive again
+
+On the direct connection, the Free plan's 10 ms CPU limit stopped too many of a full run's requests. #75's preview failed twice in the older flows, with no bug in them. Workers Observability records those empty 503s as `outcome: exceededCpu`, not as connection failures. The same requests, sent to a master preview at the same time, used about as much CPU and weren't stopped. So Cloudflare's enforcement varies, and a full run can't depend on it. The "empty 503s" of phase-5b-report §3 were most likely the same thing. The owner chose to put full runs back on Hyperdrive.
+
+1. **A full run deploys the API bound to Hyperdrive before the tests.** The E2E flows, Lighthouse and the CPU step all run on it. The CPU step still measures only its own requests, from its start.
+2. **Afterwards the API is deployed on the direct connection again**, even after a failure or a cancel. Trying a preview by hand still uses no Hyperdrive queries.
+3. **A smoke-only run stays on the direct connection.** It is a few requests.
+4. **The E2E runs one flow at a time** (`workers: 1` in CI). Through Hyperdrive, two runs still had 8 requests stopped, in bursts while two heavy flows overlapped. One worker spreads the same CPU over about twice the time, roughly 17 minutes of E2E instead of 9.
+5. **A PR may narrow its full run** with the `narrow-preview` label, on top of `full-preview`. The E2E is then the smoke tests and the spec files the PR adds, run with `--no-deps`: each flow runs on the run's freshly seeded store without the flows it normally follows. One worker didn't get #75's whole suite through. The first stopped request came about 12½ minutes into the E2E, later than with two workers (about 8). That fits a CPU allowance per Worker over a window of time, which a full suite uses up, rather than a rate. Lighthouse and the CPU step still run. The flows a narrowed run skips last passed on the PR that added them; a change to them needs a whole run.
+6. **The ceiling gates the run on Hyperdrive.** Past 50,000 queries today, or when the count can't be read, the E2E flows and Lighthouse run on the direct connection without the CPU step, and the comment says so. Such a run may fail as #75's did.
+
+**Cost:** a full run uses about 25,000 of the day's 100,000 queries again (the Oct 18 measure). That is the risk the Oct 23 amendment removed. The ceiling is checked once, at the start of each run, so two full runs on one busy day can still take production close to the limit. Moving to Workers Paid removes both the CPU limit and the daily query limit.

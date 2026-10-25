@@ -3,6 +3,7 @@ export * from './audit';
 export * from './billing/index';
 export * from './cart/index';
 export * from './catalog/index';
+export * from './couriers/index';
 export * from './credentials/index';
 export * from './customers/index';
 export * from './events';

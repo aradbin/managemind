@@ -7,6 +7,7 @@
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { isUuid } from '@managemind/shared';
 import { settleInvoicePayment } from './billing';
+import { courierFromParam, handleCourierWebhook } from './couriers';
 import type { AppEnv } from './env';
 import { log } from './log';
 import { settleFromGateway } from './payments';
@@ -44,4 +45,50 @@ export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
     log('info', 'ipn handled', { tenant_id: tenantId, outcome: outcome.kind });
     return c.text('ok', 200);
   });
+
+  // Couriers (phase-7-plan §3.5): the webhook names a parcel; the courier is
+  // asked about it with the store's own keys. 404 for a store or courier
+  // that isn't connected, 401 for a wrong secret, 500 when the courier
+  // couldn't be asked, so it sends the webhook again.
+  app.use('/v1/webhooks/couriers/*', async (c, next) => {
+    await limiterFor(c).check('courier_webhook:ip', shopperIp(c));
+    await next();
+  });
+  app.post('/v1/webhooks/couriers/:courier/:tenantId', async (c) => {
+    const tenantId = c.req.param('tenantId');
+    if (!isUuid(tenantId)) return c.text('not found', 404);
+    let courier: ReturnType<typeof courierFromParam>;
+    try {
+      courier = courierFromParam(c.env, c.req.param('courier'));
+    } catch {
+      return c.text('not found', 404);
+    }
+    // Refused before reading when the courier says how big it is; checked again after.
+    if (Number(c.req.header('content-length') ?? 0) > MAX_WEBHOOK_BYTES) {
+      return c.text('too large', 413);
+    }
+    const raw = await c.req.text();
+    if (raw.length > MAX_WEBHOOK_BYTES) return c.text('too large', 413);
+    let body: unknown = null;
+    try {
+      body = raw ? JSON.parse(raw) : null;
+    } catch {
+      body = Object.fromEntries(new URLSearchParams(raw));
+    }
+    const outcome = await handleCourierWebhook(c.env, c.executionCtx, courier, tenantId, {
+      headers: c.req.raw.headers,
+      raw,
+      body,
+    });
+    if (outcome.status === 'not_found') return c.text('not found', 404);
+    if (outcome.status === 'refused') return c.text('unauthorized', 401);
+    if (outcome.status === 'retry') return c.text('try again', 500);
+    if (outcome.status === 'ok' && outcome.reply) {
+      return c.body(null, outcome.reply.status as 202, outcome.reply.headers);
+    }
+    return c.text('ok', 200);
+  });
 }
+
+/** Courier webhooks are small JSON bodies; anything larger isn't one. */
+const MAX_WEBHOOK_BYTES = 16 * 1024;

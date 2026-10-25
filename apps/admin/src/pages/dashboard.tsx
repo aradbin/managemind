@@ -12,11 +12,14 @@ import {
   Clock,
   Copy,
   type LucideIcon,
+  Package,
+  PackageCheck,
   PackageX,
   PhoneCall,
   Plus,
   ShoppingCart,
   Truck,
+  Undo2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Notice } from '../components/notice';
@@ -27,6 +30,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardSection } from '../components/ui/card';
 import { UsageCard } from '../components/usage-card';
 import { useLocale } from '../i18n';
+import '../i18n/couriers';
 import '../i18n/orders';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
@@ -365,7 +369,12 @@ function Waiting({
     Icon: LucideIcon,
     tone: string,
     to: {
-      to: '/orders' | '/inventory' | '/orders/confirm' | '/orders/incomplete';
+      to:
+        | '/orders'
+        | '/inventory'
+        | '/orders/confirm'
+        | '/orders/incomplete'
+        | '/orders/courier-returns';
       search: Record<string, unknown>;
     },
   ) => (
@@ -443,6 +452,59 @@ function Waiting({
               Copy,
               'bg-warning text-warning-foreground',
               { to: '/orders', search: { flag: 'possible_duplicate' } },
+            )}
+          </li>
+        )}
+        {counts.booked > 0 && (
+          <li>
+            {row(
+              t('couriers.dash.booked'),
+              counts.booked,
+              Package,
+              'bg-info text-info-foreground',
+              {
+                to: '/orders',
+                search: { status: 'processing' },
+              },
+            )}
+          </li>
+        )}
+        {counts.inTransit > 0 && (
+          <li>
+            {row(
+              t('couriers.dash.inTransit'),
+              counts.inTransit,
+              Truck,
+              'bg-shipped text-shipped-foreground',
+              {
+                to: '/orders',
+                search: { deliveryStatus: 'shipped' },
+              },
+            )}
+          </li>
+        )}
+        {counts.returning > 0 && (
+          <li>
+            {row(
+              t('couriers.dash.returning'),
+              counts.returning,
+              Undo2,
+              'bg-danger-soft text-danger',
+              {
+                to: '/orders',
+                search: { deliveryStatus: 'failed' },
+              },
+            )}
+          </li>
+        )}
+        {counts.courierReturns > 0 && (
+          <li>
+            {row(
+              t('couriers.returns.title'),
+              counts.courierReturns,
+              PackageCheck,
+              'bg-warning text-warning-foreground',
+              { to: '/orders/courier-returns', search: {} },
             )}
           </li>
         )}

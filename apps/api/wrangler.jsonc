@@ -96,8 +96,9 @@
     ]
   },
   // The daily batch (ADR 0010): 23:47 UTC is 05:47 in Dhaka, before the day's
-  // traffic, and off the hour to avoid Cron congestion.
-  "triggers": { "crons": ["47 23 * * *"] },
+  // traffic, and off the hour to avoid Cron congestion. The courier polls
+  // (phase-7-plan §3.5) run at 13:17 and 19:17 in Dhaka.
+  "triggers": { "crons": ["47 23 * * *", "17 7 * * *", "17 13 * * *"] },
   "vars": {
     "ENVIRONMENT": "development",
     "PLATFORM_NAME": "managemind",

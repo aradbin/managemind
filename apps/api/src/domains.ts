@@ -21,6 +21,7 @@ import {
 import { AppError, permissionsOf } from '@managemind/shared';
 import { and, eq } from 'drizzle-orm';
 import { createMailer } from './auth/email';
+import { type CourierMessage, handleCourierMessages } from './couriers';
 import { queueSink, withClient } from './db';
 import { type ApiConfig, type Env, getConfig } from './env';
 import { log } from './log';
@@ -89,7 +90,8 @@ export type DelayedMessage =
   | DomainCheckMessage
   | SaleEdgeMessage
   | PaymentCheckMessage
-  | RefundCheckMessage;
+  | RefundCheckMessage
+  | CourierMessage;
 
 export async function handleDelayedQueue(
   batch: MessageBatch<DelayedMessage>,
@@ -105,15 +107,23 @@ export async function handleDelayedQueue(
   const refunds = batch.messages.filter(
     (m): m is Message<RefundCheckMessage> => m.body.kind === 'refund_check',
   );
+  // Bulk bookings and polls (phase-7-plan §3.4, §3.5).
+  const couriers = batch.messages.filter(
+    (m): m is Message<CourierMessage> =>
+      m.body.kind === 'courier_book' || m.body.kind === 'courier_poll',
+  );
   const domains = batch.messages.filter(
     (m): m is Message<DomainCheckMessage> =>
       m.body.kind !== 'sale_edge' &&
       m.body.kind !== 'payment_check' &&
-      m.body.kind !== 'refund_check',
+      m.body.kind !== 'refund_check' &&
+      m.body.kind !== 'courier_book' &&
+      m.body.kind !== 'courier_poll',
   );
   if (sales.length) await handleSaleEdges(sales, env, ctx);
   if (payments.length) await handlePaymentChecks(payments, env, ctx);
   if (refunds.length) await handleRefundChecks(refunds, env, ctx);
+  if (couriers.length) await handleCourierMessages(couriers, env, ctx);
   if (domains.length) await handleDomainQueue({ ...batch, messages: domains }, env, ctx);
 }
 

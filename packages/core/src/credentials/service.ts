@@ -100,15 +100,20 @@ export async function saveCredentials(
   check: CredentialCheck,
 ): Promise<CredentialSummary> {
   authorize(actor, 'settings.credentials');
-  // The store's own gateway, SMS and email key are plan features (phase-5b-plan §3.5).
-  await requireFeature(
-    tx,
-    kind === 'sslcommerz' ? 'sslcommerz' : kind === 'sms' ? 'sms' : 'customEmailKey',
-  );
+  // The store's own gateway, SMS and email key are plan features (phase-5b-plan
+  // §3.5); couriers are in every plan (phase-7-plan §3.3).
+  if (kind === 'sslcommerz' || kind === 'sms' || kind === 'email') {
+    await requireFeature(
+      tx,
+      kind === 'sslcommerz' ? 'sslcommerz' : kind === 'sms' ? 'sms' : 'customEmailKey',
+    );
+  }
   const v = parseInput(credentialInput, input);
   const provider = providerOf(kind, v.provider);
   if (!provider) throw invalid('provider', `not a ${kind} provider`);
-  const mode = kind === 'sslcommerz' ? (v.mode ?? null) : null;
+  // SSLCommerz needs a mode; Pathao and RedX have sandboxes too (phase-7-plan §3.3).
+  const moded = kind === 'sslcommerz' || kind === 'pathao' || kind === 'redx';
+  const mode = moded ? (v.mode ?? (kind === 'sslcommerz' ? null : 'live')) : null;
   if (kind === 'sslcommerz' && !mode) throw invalid('mode', 'sandbox or live');
   const secrets = parseInput(credentialSecrets[provider], v.secrets) as Record<string, unknown>;
   const config = parseInput(credentialConfigs[provider], v.config) as Record<string, unknown>;
@@ -225,5 +230,29 @@ export async function markCredentialsFailing(
   await tx.db
     .update(c)
     .set({ checkError: error?.slice(0, 300) ?? null, checkedAt: new Date() })
+    .where(eq(c.kind, kind));
+}
+
+/**
+ * Seals a store's secrets again with changes the system made itself: a
+ * courier's renewed tokens, or a new webhook secret (phase-7-plan §3.3).
+ * Nothing staff typed passes here, so there is no provider check.
+ */
+export async function resealCredentials(
+  tx: TenantTx,
+  keyring: Keyring,
+  kind: CredentialKind,
+  secrets: Record<string, unknown>,
+): Promise<void> {
+  const [row] = await tx.db.select({ provider: c.provider }).from(c).where(eq(c.kind, kind));
+  if (!row) throw new AppError('not_found');
+  const valid = parseInput(
+    credentialSecrets[row.provider as CredentialProvider],
+    secrets,
+  ) as Record<string, unknown>;
+  const sealed = await sealCredentials(keyring, tx.tenantId, kind, valid);
+  await tx.db
+    .update(c)
+    .set({ ciphertext: sealed.ciphertext, iv: sealed.iv, keyVersion: sealed.keyVersion })
     .where(eq(c.kind, kind));
 }

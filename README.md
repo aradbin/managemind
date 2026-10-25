@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Status: Phases 0–4 are done. Phases 5A and 5B are built and deployed; online payment, SMS, push, backups and online invoice payment wait for their keys. Phase 5C, the admin redesign, is built and deployed. Phase 6, sales recovery, is built and deployed ([plans and reports](docs/phases/))
+- Status: Phases 0–4 are done. Phases 5A and 5B are built and deployed; online payment, SMS, push, backups and online invoice payment wait for their keys. Phase 5C, the admin redesign, is built and deployed. Phase 6, sales recovery, is built and deployed. Phase 7, couriers, is built; its adapters wait for courier credentials ([plans and reports](docs/phases/))
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development
@@ -65,8 +65,8 @@ Dependency updates come from Renovate (`renovate.json`): one weekly group for mi
 
 - **Database:** the shared Neon branch `preview`. Add the `db-branch` label for the PR's own branch `pr-<n>`, which you need when the PR changes migrations.
 - **Queues:** each preview consumes its own outbox queue, `managemind-outbox-pr-<n>`, and import queue, `managemind-imports-pr-<n>` (with its dead-letter queue), so notifications and spreadsheet imports run on previews too.
-- **Connection:** previews connect to their Neon branch directly, as the PR's own role, so they use none of the account's 100,000 Hyperdrive queries a day. Only the CPU step runs on Hyperdrive, so its numbers match production's ([ADR 0011](docs/adr/0011-previews.md), amended Oct 23).
-- **What runs:** a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows and Lighthouse, and the CPU step while today's Hyperdrive count leaves room.
+- **Connection:** previews connect to their Neon branch directly, as the PR's own role, so the smoke tests and trying a preview by hand use none of the account's 100,000 Hyperdrive queries a day. A full run goes through Hyperdrive, then back ([ADR 0011](docs/adr/0011-previews.md), amended Oct 23 and Oct 25).
+- **What runs:** a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows, Lighthouse and the CPU step, through Hyperdrive while today's count leaves room. Past that, the E2E flows and Lighthouse run on the direct connection, without the CPU step. Adding `narrow-preview` as well limits the E2E to the smoke tests and the specs the PR adds, for a phase whose whole suite outgrows the Free plan's CPU allowance.
 - **Cleanup:** closing the PR deletes its Workers, its import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
 
 Run the smoke test against local Workers (both `wrangler dev` servers running):
@@ -105,6 +105,7 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
 | `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
 | `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches and the usage alarm | No previews, no Neon numbers in the alarm |
+| `PATHAO_CLIENT_ID`, `PATHAO_CLIENT_SECRET`, `PATHAO_USERNAME`, `PATHAO_PASSWORD`, `REDX_TOKEN` (and `PATHAO_MODE`, `REDX_MODE` variables, `sandbox` or `live`) | Secrets | The weekly **Courier areas** workflow: the platform's own Pathao and RedX accounts fetch their area lists ([ADR 0030](docs/adr/0030-couriers.md)) | That courier's areas aren't fetched, and its bookings ask staff to pick the area |
 
 `pnpm --filter @managemind/scripts keys` prints a new `CREDENTIALS_KEY` and VAPID pair to copy. Make them once: a new `CREDENTIALS_KEY` makes every saved store credential unreadable. Previews use `CREDENTIALS_KEY_PREVIEW` and `AUTH_SECRET_PREVIEW` when they are set, and fresh keys for each deploy otherwise.
 

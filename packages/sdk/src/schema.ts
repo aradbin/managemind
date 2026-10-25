@@ -2893,6 +2893,24 @@ export interface paths {
                             /** @default 30 */
                             keepDays?: number;
                         };
+                        couriers?: {
+                            /**
+                             * @default null
+                             * @enum {string|null}
+                             */
+                            default?: "steadfast" | "pathao" | "redx" | "fake" | null;
+                            /** @default 500 */
+                            defaultWeightGrams?: number;
+                            /** @default  */
+                            note?: string;
+                            /**
+                             * @default never
+                             * @enum {string}
+                             */
+                            autoBook?: "never" | "on_confirm";
+                            /** @default false */
+                            autoReceive?: boolean;
+                        };
                         returns?: {
                             /** @default true */
                             shopperRequests?: boolean;
@@ -2904,10 +2922,11 @@ export interface paths {
                              * @default [
                              *       "wrong_size",
                              *       "changed_mind",
-                             *       "other"
+                             *       "other",
+                             *       "refused_at_door"
                              *     ]
                              */
-                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                            shopperPaysFor?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[];
                             /**
                              * @default [
                              *       "gateway",
@@ -8903,7 +8922,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
-                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                     orderId?: string;
                     before?: string;
                     limit?: number;
@@ -8942,13 +8961,13 @@ export interface paths {
                         /** Format: uuid */
                         orderId: string;
                         /** @enum {string} */
-                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                        reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                         lines: {
                             /** Format: uuid */
                             orderLineId: string;
                             quantity: number;
                             /** @enum {string} */
-                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+                            reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
                         }[];
                         note?: string;
                         shopperPaysReturn?: boolean;
@@ -9931,6 +9950,873 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The couriers offered, and the store's connected ones without secrets */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Couriers */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Couriers"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/{courier}/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Check keys with the courier without saving; its pickup stores (settings.credentials) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode?: "sandbox" | "live";
+                        secrets: {
+                            [key: string]: unknown;
+                        };
+                        /** @default {} */
+                        config?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Checked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            pickupStores: {
+                                id: number;
+                                name: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/{courier}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Check with the courier, then save its keys (settings.credentials) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode?: "sandbox" | "live";
+                        secrets: {
+                            [key: string]: unknown;
+                        };
+                        /** @default {} */
+                        config?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Connected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectedCourier"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Remove a courier (settings.credentials) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/{courier}/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The callback URL and secret to paste into the courier's panel (settings.credentials) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Webhook */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CourierWebhook"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/{courier}/webhook-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A new webhook secret; paste it into the courier panel too (settings.credentials) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Webhook */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CourierWebhook"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/{courier}/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The courier's zones or areas by name, for the booking sheet (orders.write) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                };
+                header?: never;
+                path: {
+                    courier: "steadfast" | "pathao" | "redx" | "fake";
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Places */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            kind: string;
+                            externalId: number;
+                            parentId: number | null;
+                            name: string;
+                            parent: string | null;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/booking/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What a booking would send, and what stops it (orders.read) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        /** Format: uuid */
+                        shipmentId?: string;
+                        lines?: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                        }[];
+                        weightGrams?: number;
+                        note?: string;
+                        place?: {
+                            cityId?: number;
+                            zoneId?: number;
+                            areaId?: number;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingPreview"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/booking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Book the order's parcel with a courier (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        /** Format: uuid */
+                        shipmentId?: string;
+                        lines?: {
+                            /** Format: uuid */
+                            orderLineId: string;
+                            quantity: number;
+                        }[];
+                        weightGrams?: number;
+                        note?: string;
+                        place?: {
+                            cityId?: number;
+                            zoneId?: number;
+                            areaId?: number;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description The booking */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BookingOutcome"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/book/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Each order’s checks before a bulk booking (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        orderIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Checks */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            orderId: string;
+                            displayNumber: string | null;
+                            problems: string[];
+                            codAmount: number;
+                        }[];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Book up to 100 orders in the background (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        orderIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            queued: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Each order's latest shipment, as bookings land (orders.read) */
+        get: {
+            parameters: {
+                query: {
+                    orderIds: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description States */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            orderId: string;
+                            /** Format: uuid */
+                            shipmentId: string | null;
+                            status: string | null;
+                            courier: string | null;
+                            bookingState: string | null;
+                            bookingError: string | null;
+                            consignmentId: string | null;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/cancel-booking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a booked parcel at the courier, or record that staff did (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @default false */
+                        cancelledAtCourier?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cancelledByApi: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/shipments/{id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the courier now; once a minute per shipment (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Asked */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            asked: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/courier-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Parcels the courier returned, waiting to be received (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Returns */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            shipmentId: string;
+                            /** Format: uuid */
+                            orderId: string;
+                            displayNumber: string;
+                            courier: string;
+                            consignmentId: string | null;
+                            name: string;
+                            failedReason: string | null;
+                            returnedByCourierAt: string;
+                            items: number;
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/cod": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** COD reconciliation by courier, for a range of delivery dates (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    courier?: "steadfast" | "pathao" | "redx" | "fake";
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CodReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/courier-payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a courier payout or import a statement; preview first (payments.reconcile) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        reference: string;
+                        /** Format: date-time */
+                        paidAt: string;
+                        /**
+                         * @default manual
+                         * @enum {string}
+                         */
+                        source?: "import" | "manual";
+                        note?: string;
+                        rows: {
+                            consignmentId: string;
+                            collected?: number;
+                            fee?: number;
+                        }[];
+                        /** @default false */
+                        preview?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview or saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/courier-payouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a payout recorded by mistake (payments.reconcile) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/couriers/fake/parcels/{consignmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a test parcel as the courier would; not in production (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consignmentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        status: "booked" | "picked_up" | "in_transit" | "on_hold" | "delivered" | "partial_delivered" | "returning" | "returned" | "cancelled" | "paid_out" | "unknown";
+                        codCollected?: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Moved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            ok: boolean;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -12233,6 +13119,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/courier-areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Our areas against a courier's places, unmatched first (support) */
+        get: {
+            parameters: {
+                query: {
+                    courier: "pathao" | "redx";
+                    unmatched?: "true" | "false";
+                    districtId?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Areas */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            areaId: number;
+                            name: string;
+                            district: string;
+                            match: {
+                                externalId: number;
+                                name: string;
+                                how: string;
+                            } | null;
+                            suggestions: {
+                                externalId: number;
+                                name: string;
+                                parent: string | null;
+                            }[];
+                        }[];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/courier-areas/{courier}/{areaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Match one of our areas to a courier's place, or clear it (super_admin) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    courier: "pathao" | "redx";
+                    areaId: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        externalId: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Saved */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/invoices": {
         parameters: {
             query?: never;
@@ -12837,7 +13820,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -13025,6 +14008,24 @@ export interface components {
                 /** @default 30 */
                 keepDays: number;
             };
+            couriers: {
+                /**
+                 * @default null
+                 * @enum {string|null}
+                 */
+                default: "steadfast" | "pathao" | "redx" | "fake" | null;
+                /** @default 500 */
+                defaultWeightGrams: number;
+                /** @default  */
+                note: string;
+                /**
+                 * @default never
+                 * @enum {string}
+                 */
+                autoBook: "never" | "on_confirm";
+                /** @default false */
+                autoReceive: boolean;
+            };
             returns: {
                 /** @default true */
                 shopperRequests: boolean;
@@ -13036,10 +14037,11 @@ export interface components {
                  * @default [
                  *       "wrong_size",
                  *       "changed_mind",
-                 *       "other"
+                 *       "other",
+                 *       "refused_at_door"
                  *     ]
                  */
-                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other")[];
+                shopperPaysFor: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[];
                 /**
                  * @default [
                  *       "gateway",
@@ -15007,6 +16009,8 @@ export interface components {
                     orderLineId: string;
                     quantity: number;
                 }[];
+                courier: components["schemas"]["ShipmentCourier"];
+                bookingError: string | null;
             }[];
             timeline: {
                 /** @enum {string} */
@@ -15049,6 +16053,34 @@ export interface components {
             linkSentAt: string | null;
             /** @enum {string|null} */
             linkAnswer: "confirm" | "cancel" | null;
+        } | null;
+        ShipmentCourier: {
+            courier: string;
+            invoice: string | null;
+            consignmentId: string | null;
+            trackingCode: string | null;
+            bookingState: string | null;
+            status: string | null;
+            statusAt: string | null;
+            message: string | null;
+            bookedAt: string | null;
+            returnedByCourierAt: string | null;
+            codAmount: number | null;
+            codCollected: number | null;
+            fee: number | null;
+            place: {
+                name?: string;
+            } | null;
+            events: {
+                status: string;
+                update: string;
+                message: {
+                    en?: string;
+                    bn?: string;
+                };
+                at: string;
+                source: string;
+            }[];
         } | null;
         ManualOrderPlaced: {
             /** Format: uuid */
@@ -15294,6 +16326,10 @@ export interface components {
                 lowStock: number;
                 toCall: number;
                 possibleDuplicates: number;
+                booked: number;
+                inTransit: number;
+                returning: number;
+                courierReturns: number;
             };
             /** @description Last 7 days' COD orders; null when the queue is off */
             confirmation: {
@@ -15336,7 +16372,7 @@ export interface components {
             /** @enum {string} */
             status: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
             /** @enum {string} */
-            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other";
+            reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
             requestedBy: string;
             units: number;
             createdAt: string;
@@ -15360,7 +16396,7 @@ export interface components {
                 }[];
                 quantity: number;
                 /** @enum {string|null} */
-                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | null;
+                reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door" | null;
                 restocked: number;
                 writtenOff: number;
             }[];
@@ -15587,6 +16623,123 @@ export interface components {
             checkedAt: string | null;
             checkError: string | null;
             updatedAt: string;
+        };
+        Couriers: {
+            available: ("steadfast" | "pathao" | "redx" | "fake")[];
+            connected: components["schemas"]["ConnectedCourier"][];
+        };
+        ConnectedCourier: {
+            /** @enum {string} */
+            courier: "steadfast" | "pathao" | "redx" | "fake";
+            /** @enum {string|null} */
+            mode: "sandbox" | "live" | null;
+            hint: string;
+            config: {
+                [key: string]: unknown;
+            };
+            checkedAt: string | null;
+            checkError: string | null;
+            updatedAt: string;
+        };
+        CourierWebhook: {
+            url: string;
+            secret: string;
+        };
+        BookingPreview: {
+            parcel: components["schemas"]["CourierParcel"];
+            codAmount: number;
+            place: {
+                [key: string]: unknown;
+            } | null;
+            problems: string[];
+        };
+        CourierParcel: {
+            [key: string]: unknown;
+        } | null;
+        BookingOutcome: {
+            /** Format: uuid */
+            orderId: string;
+            /** Format: uuid */
+            shipmentId: string | null;
+            /** @enum {string} */
+            result: "booked" | "refused" | "unsure";
+            consignmentId?: string | null;
+            error?: string;
+        };
+        CodReport: {
+            from: string;
+            to: string;
+            couriers: {
+                courier: string;
+                delivered: number;
+                codAsked: number;
+                collected: number;
+                fees: number;
+                net: number;
+                paidOut: number;
+                outstanding: number;
+                outstandingParcels: number;
+                returned: number;
+                returnCharges: number;
+            }[];
+            outstanding: {
+                /** Format: uuid */
+                shipmentId: string;
+                /** Format: uuid */
+                orderId: string;
+                displayNumber: string;
+                courier: string;
+                consignmentId: string | null;
+                deliveredAt: string;
+                net: number;
+                days: number;
+            }[];
+            differences: {
+                /** Format: uuid */
+                shipmentId: string;
+                /** Format: uuid */
+                orderId: string;
+                displayNumber: string;
+                courier: string;
+                consignmentId: string | null;
+                asked: number;
+                collected: number;
+                paidNet: number | null;
+                expectedNet: number;
+                /** @enum {string} */
+                kind: "collected" | "paid";
+            }[];
+            payouts: {
+                /** Format: uuid */
+                id: string;
+                courier: string;
+                reference: string;
+                paidAt: string;
+                amount: number;
+                fees: number;
+                parcels: number;
+                source: string;
+            }[];
+        };
+        PayoutResult: {
+            /** Format: uuid */
+            payoutId: string | null;
+            matched: {
+                consignmentId: string;
+                /** Format: uuid */
+                shipmentId: string;
+                collected: number;
+                fee: number;
+                net: number;
+            }[];
+            unknown: string[];
+            alreadyPaid: string[];
+            notDelivered: string[];
+            totals: {
+                collected: number;
+                fee: number;
+                net: number;
+            };
         };
         Message: {
             /** Format: uuid */

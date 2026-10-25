@@ -178,6 +178,32 @@ export interface OrderLineView {
   weightGrams: number | null;
 }
 
+/** A courier's parcel on a shipment. */
+export interface ShipmentCourier {
+  courier: string;
+  /** Our invoice for the parcel, which the courier's panel shows. */
+  invoice: string | null;
+  consignmentId: string | null;
+  trackingCode: string | null;
+  bookingState: string | null;
+  status: string | null;
+  statusAt: string | null;
+  message: string | null;
+  bookedAt: string | null;
+  returnedByCourierAt: string | null;
+  codAmount: number | null;
+  codCollected: number | null;
+  fee: number | null;
+  place: { name?: string } | null;
+  events: {
+    status: string;
+    update: string;
+    message: { en?: string; bn?: string };
+    at: string;
+    source: string;
+  }[];
+}
+
 export interface OrderDetail {
   id: string;
   number: number;
@@ -277,6 +303,10 @@ export interface OrderDetail {
     deliveredAt: string | null;
     failedReason: string | null;
     lines: { orderLineId: string; quantity: number }[];
+    /** The courier's parcel (phase-7-plan §3.9); null for a manual shipment. */
+    courier: ShipmentCourier | null;
+    /** A refused booking's reason, kept after the courier is cleared. */
+    bookingError: string | null;
   }[];
   timeline: {
     kind: 'history' | 'note';
@@ -303,6 +333,31 @@ export interface OrderDetail {
   cancelledAt: string | null;
   /** What the order machine and the shipments allow now. */
   actions: string[];
+}
+
+const money = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+
+function shipmentCourier(s: Record<string, unknown>): ShipmentCourier {
+  return {
+    courier: s.courier as string,
+    invoice: (s.courier_ref as string) ?? null,
+    consignmentId: (s.consignment_id as string) ?? null,
+    trackingCode: (s.tracking_code as string) ?? null,
+    bookingState: (s.booking_state as string) ?? null,
+    status: (s.courier_status as string) ?? null,
+    statusAt: iso(s.courier_status_at),
+    message: (s.courier_message as string) ?? null,
+    bookedAt: iso(s.booked_at),
+    returnedByCourierAt: iso(s.courier_returned_at),
+    codAmount: money(s.cod_amount),
+    codCollected: money(s.cod_collected),
+    fee: money(s.courier_fee),
+    place: (s.courier_area as { name?: string } | null) ?? null,
+    events: (s.events as ShipmentCourier['events']).map((e) => ({
+      ...e,
+      at: new Date(e.at).toISOString(),
+    })),
+  };
 }
 
 const mask = (detail: OrderDetail): OrderDetail => ({
@@ -338,8 +393,15 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
        where order_id = ${id} order by created_at, id`),
       tx.db.execute<Record<string, unknown>>(sql`
       select s.id, s.status, s.carrier, s.tracking_number, s.tracking_url, s.shipped_at, s.delivered_at, s.failed_reason,
+             s.courier, s.courier_ref, s.consignment_id, s.tracking_code, s.booking_state, s.booking_error, s.courier_status,
+             s.courier_status_at, s.courier_message, s.booked_at, s.courier_returned_at, s.cod_amount,
+             s.cod_collected, s.courier_fee, s.courier_area,
              coalesce((select json_agg(json_build_object('orderLineId', sl.order_line_id, 'quantity', sl.quantity))
-                         from store.shipment_lines sl where sl.shipment_id = s.id), '[]'::json) as lines
+                         from store.shipment_lines sl where sl.shipment_id = s.id), '[]'::json) as lines,
+             coalesce((select json_agg(json_build_object('status', e.courier_status, 'update', e.update,
+                                 'message', e.message, 'at', e.courier_at, 'source', e.source)
+                                 order by e.courier_at, e.id)
+                         from store.shipment_events e where e.shipment_id = s.id), '[]'::json) as events
         from store.shipments s where s.order_id = ${id} order by s.created_at`),
       tx.db.execute<Record<string, unknown>>(sql`
       select id, machine, from_status, to_status, event, actor_type, actor_id, reason, data, created_at
@@ -538,6 +600,8 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       deliveredAt: iso(s.delivered_at),
       failedReason: (s.failed_reason as string) ?? null,
       lines: s.lines as { orderLineId: string; quantity: number }[],
+      courier: s.courier ? shipmentCourier(s) : null,
+      bookingError: (s.booking_error as string) ?? null,
     })),
     timeline,
     customerNote: (r.customer_note as string) ?? null,
@@ -605,6 +669,8 @@ export interface ShopperOrderView {
     carrier: string | null;
     trackingNumber: string | null;
     trackingUrl: string | null;
+    /** The courier's events, for the tracking page (phase-7-plan §3.10): never fees or payouts. */
+    events: { update: string; message: { en?: string; bn?: string }; at: string }[];
   }[];
   /** Shoppers can cancel until the store confirms (§3.9). */
   cancellable: boolean;
@@ -653,6 +719,9 @@ export async function shopperOrderView(tx: TenantTx, id: string): Promise<Shoppe
         carrier: s.carrier,
         trackingNumber: s.trackingNumber,
         trackingUrl: s.trackingUrl,
+        events: (s.courier?.events ?? [])
+          .filter((e) => e.update !== 'paid_out' && e.update !== 'unknown')
+          .map((e) => ({ update: e.update, message: e.message, at: e.at })),
       })),
     cancellable: d.status === 'pending',
     onlineDue:
@@ -689,6 +758,11 @@ export interface Dashboard {
     /** Due to be called now (phase-6-plan §3.8); 0 when the queue is off. */
     toCall: number;
     possibleDuplicates: number;
+    /** Courier parcels (phase-7-plan §3.9): waiting for pickup, on the way, coming back, back with the courier's word. */
+    booked: number;
+    inTransit: number;
+    returning: number;
+    courierReturns: number;
   };
   /**
    * COD orders placed in the last 7 days that were confirmed, of those
@@ -724,6 +798,13 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
       } as "toCall",
       (select count(*)::int from store.orders where 'possible_duplicate' = any(flags)
          and status <> 'cancelled') as "possibleDuplicates",
+      (select count(*)::int from store.shipments where status = 'booked') as "booked",
+      (select count(*)::int from store.shipments where courier is not null
+         and status in ('shipped', 'in_transit')) as "inTransit",
+      (select count(*)::int from store.shipments where courier is not null and status = 'failed'
+         and courier_returned_at is null) as "returning",
+      (select count(*)::int from store.shipments where status = 'failed'
+         and courier_returned_at is not null) as "courierReturns",
       (select count(*)::int from store.orders o where o.placed_at > now() - interval '7 days'
          and o.confirmed_at is not null
          and exists (select 1 from store.payments p where p.order_id = o.id and p.provider = 'cod'))

@@ -34,6 +34,7 @@ export const returnsBn: Record<keyof typeof returnsEn, string> = {
   'return.reason.not_as_described': 'বর্ণনার সাথে মেলেনি',
   'return.reason.changed_mind': 'মত বদলেছেন',
   'return.reason.other': 'অন্য কারণ',
+  'return.reason.refused_at_door': 'দরজায় ফেরত দিয়েছেন',
   'return.lines': 'পণ্য',
   'return.note': 'নোট',
   'return.shopperPays': 'ফেরতের ডেলিভারি খরচ ক্রেতার',

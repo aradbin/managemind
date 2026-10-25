@@ -15,6 +15,7 @@ import {
   RETURN_REASONS,
   RETURN_RECORD_STATUSES,
   RETURN_STATUSES,
+  SHOPPER_RETURN_REASONS,
 } from './machines';
 import { CALL_CANCEL_CODES, CANCEL_CODES, CONFIRMATION_OUTCOMES } from './recovery';
 
@@ -393,19 +394,21 @@ export type OrderListQuery = z.infer<typeof orderListQuery>;
 
 // ---- Returns and refunds (phase-5a-plan §3.12, §3.13) ---------------------------------
 
-const returnLines = z
-  .array(
-    z
-      .object({
-        orderLineId: z.uuid(),
-        quantity: z.int().min(1).max(10_000),
-        /** When this line's reason differs from the return's. */
-        reason: z.enum(RETURN_REASONS).optional(),
-      })
-      .strict(),
-  )
-  .min(1)
-  .max(50);
+const returnLinesOf = <R extends readonly [string, ...string[]]>(reasons: R) =>
+  z
+    .array(
+      z
+        .object({
+          orderLineId: z.uuid(),
+          quantity: z.int().min(1).max(10_000),
+          /** When this line's reason differs from the return's. */
+          reason: z.enum(reasons).optional(),
+        })
+        .strict(),
+    )
+    .min(1)
+    .max(50);
+const returnLines = returnLinesOf(RETURN_REASONS);
 
 /** A return staff create: approved at once, as they decided it. */
 export const returnInput = z
@@ -422,8 +425,8 @@ export const returnInput = z
 /** A shopper's request from the tracking page (§3.12): photos by their hash, uploaded first. */
 export const shopperReturnInput = z
   .object({
-    reason: z.enum(RETURN_REASONS),
-    lines: returnLines,
+    reason: z.enum(SHOPPER_RETURN_REASONS),
+    lines: returnLinesOf(SHOPPER_RETURN_REASONS),
     note: optionalText(500),
     photos: z
       .array(z.string().regex(/^[0-9a-f]{64}\.(jpg|png|webp)$/))

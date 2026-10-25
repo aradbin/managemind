@@ -21,6 +21,10 @@ export const STORE_TABLES = [
   // Sales recovery (Phase 6)
   'incomplete_orders',
   'order_confirmations',
+  // Couriers (Phase 7)
+  'courier_payout_lines',
+  'courier_payouts',
+  'shipment_events',
   // Orders, payments and shipments (Phase 4)
   'payments',
   'shipment_lines',

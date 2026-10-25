@@ -8,6 +8,7 @@ import {
   CHECKLIST_ITEMS,
   type Checklist,
   closeTenant,
+  courierAreaReview,
   createPlan,
   createTenant,
   getPurge,
@@ -32,6 +33,7 @@ import {
   requestPurge,
   requestReset,
   revokeSupportAccess,
+  setCourierAreaMatch,
   setPlatformRole,
   setSubscription,
   setSupport,
@@ -51,6 +53,7 @@ import {
   SUSPENSION_REASONS,
   TENANT_KINDS,
 } from '@managemind/shared/billing';
+import { AREA_COURIERS } from '@managemind/shared/orders';
 import { THEME_PRESETS } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -587,6 +590,51 @@ export const PLATFORM_ROUTES = {
       'Entries',
     ),
   }),
+  courierAreas: r({
+    method: 'get',
+    path: '/courier-areas',
+    summary: "Our areas against a courier's places, unmatched first (support)",
+    request: {
+      query: z.object({
+        courier: z.enum(AREA_COURIERS),
+        unmatched: z.enum(['true', 'false']).default('true'),
+        districtId: z.coerce.number().int().positive().optional(),
+      }),
+    },
+    responses: json(
+      z.array(
+        z.object({
+          areaId: z.number().int(),
+          name: z.string(),
+          district: z.string(),
+          match: z
+            .object({ externalId: z.number().int(), name: z.string(), how: z.string() })
+            .nullable(),
+          suggestions: z.array(
+            z.object({
+              externalId: z.number().int(),
+              name: z.string(),
+              parent: z.string().nullable(),
+            }),
+          ),
+        }),
+      ),
+      'Areas',
+    ),
+  }),
+  setCourierArea: r({
+    method: 'put',
+    path: '/courier-areas/{courier}/{areaId}',
+    summary: "Match one of our areas to a courier's place, or clear it (super_admin)",
+    request: {
+      params: z.object({
+        courier: z.enum(AREA_COURIERS),
+        areaId: z.coerce.number().int().positive(),
+      }),
+      ...body(z.object({ externalId: z.number().int().positive().nullable() }).strict()),
+    },
+    responses: { 204: { description: 'Saved' } },
+  }),
 } as const;
 
 /** Written by the daily usage alarm (scripts/monitor/usage.ts). */
@@ -1027,6 +1075,23 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       listPlatformAudit(tx, c.var.staff.actor, { limit, ...(before ? { before } : {}) }),
     );
     return c.json({ items, next: items.length === limit ? (items.at(-1)?.id ?? null) : null }, 200);
+  });
+  platform.openapi(R.courierAreas, async (c) => {
+    const { courier, unmatched, districtId } = c.req.valid('query');
+    const rows = await withPlatform(c.var.staff.client, (tx) =>
+      courierAreaReview(tx, c.var.staff.actor, courier, {
+        unmatchedOnly: unmatched === 'true',
+        districtId,
+      }),
+    );
+    return c.json(rows, 200);
+  });
+  platform.openapi(R.setCourierArea, async (c) => {
+    const { courier, areaId } = c.req.valid('param');
+    await withPlatform(c.var.staff.client, (tx) =>
+      setCourierAreaMatch(tx, c.var.staff.actor, courier, areaId, c.req.valid('json').externalId),
+    );
+    return c.body(null, 204);
   });
   registerPlatformBilling(platform);
 }

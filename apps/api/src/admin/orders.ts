@@ -303,6 +303,35 @@ const OrderTotals = z.object({
   refundDue: Money,
   refundedTotal: Money,
 });
+/** A courier's parcel on a shipment (phase-7-plan §3.9). */
+const ShipmentCourier = z
+  .object({
+    courier: z.string(),
+    invoice: z.string().nullable(),
+    consignmentId: z.string().nullable(),
+    trackingCode: z.string().nullable(),
+    bookingState: z.string().nullable(),
+    status: z.string().nullable(),
+    statusAt: z.string().nullable(),
+    message: z.string().nullable(),
+    bookedAt: z.string().nullable(),
+    returnedByCourierAt: z.string().nullable(),
+    codAmount: z.number().int().nullable(),
+    codCollected: z.number().int().nullable(),
+    fee: z.number().int().nullable(),
+    place: z.object({ name: z.string().optional() }).nullable(),
+    events: z.array(
+      z.object({
+        status: z.string(),
+        update: z.string(),
+        message: z.object({ en: z.string().optional(), bn: z.string().optional() }),
+        at: z.string(),
+        source: z.string(),
+      }),
+    ),
+  })
+  .openapi('ShipmentCourier');
+
 export const OrderDetail = z
   .object({
     id: z.uuid(),
@@ -432,6 +461,8 @@ export const OrderDetail = z
         deliveredAt: z.string().nullable(),
         failedReason: z.string().nullable(),
         lines: z.array(z.object({ orderLineId: z.uuid(), quantity: z.number().int() })),
+        courier: ShipmentCourier.nullable(),
+        bookingError: z.string().nullable(),
       }),
     ),
     timeline: z.array(
@@ -608,6 +639,10 @@ const DashboardView = z
       lowStock: z.number().int(),
       toCall: z.number().int(),
       possibleDuplicates: z.number().int(),
+      booked: z.number().int(),
+      inTransit: z.number().int(),
+      returning: z.number().int(),
+      courierReturns: z.number().int(),
     }),
     confirmation: z
       .object({
