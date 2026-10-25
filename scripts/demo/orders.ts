@@ -5,7 +5,8 @@
 // spread over the month by moving their dates (as the migration role).
 // Five customers order again and again, so their delivery scores differ
 // (phase-6-plan §11); the pending orders fill the confirmation queue, and a
-// few checkouts were left unfinished.
+// few checkouts were left unfinished. The sent ones are Steadfast parcels
+// with the courier's updates (phase-7-plan §11).
 import {
   cancelOrder,
   createShipment,
@@ -111,7 +112,51 @@ export async function seedDemoOrders(client: pg.Client, tenantId: string): Promi
     tenantId,
     variants.map((v) => v.id),
   );
+  await seedCourierParcels(client, tenantId);
   return placed;
+}
+
+/**
+ * The sent orders as Steadfast parcels with their courier updates
+ * (phase-7-plan §11), so sales meetings can show the courier's timeline
+ * without a courier account. No tracking link: the consignments are made up.
+ */
+async function seedCourierParcels(client: pg.Client, tenantId: string) {
+  await client.query(
+    `update store.shipments s
+        set courier = 'steadfast', courier_ref = 'demo-' || n.row_number,
+            consignment_id = 'DEMO' || lpad((row_number)::text, 5, '0'),
+            tracking_code = 'DEMO' || lpad((row_number)::text, 5, '0'),
+            tracking_number = 'DEMO' || lpad((row_number)::text, 5, '0'),
+            carrier = 'Steadfast', booked_at = s.shipped_at - interval '3 hours',
+            cod_amount = o.total, courier_fee = 6000,
+            cod_collected = case when s.status = 'delivered' then o.total end,
+            courier_status = case s.status when 'shipped' then 'pending' when 'delivered' then 'delivered'
+                                           else 'cancelled' end,
+            courier_status_at = coalesce(s.delivered_at, s.failed_at, s.shipped_at),
+            courier_returned_at = case when s.status = 'returned' then s.returned_at end,
+            last_synced_at = now()
+       from (select id, row_number() over (order by created_at) as row_number
+               from store.shipments where tenant_id = $1) n,
+            store.orders o
+      where s.tenant_id = $1 and n.id = s.id and o.id = s.order_id
+        and s.status in ('shipped', 'delivered', 'failed', 'returned')`,
+    [tenantId],
+  );
+  await client.query(
+    `insert into store.shipment_events (tenant_id, shipment_id, courier_status, update, message, courier_at, source)
+     select s.tenant_id, s.id, e.status, e.update, jsonb_build_object('en', e.message), e.at, 'webhook'
+       from store.shipments s
+       cross join lateral (values
+         ('in_review', 'booked', 'Booked', s.booked_at),
+         ('pending', 'in_transit', 'Picked up from the store', s.shipped_at),
+         ('delivered', 'delivered', 'Delivered to the customer', s.delivered_at),
+         ('cancelled', 'returning', 'Customer not at the address', s.failed_at)
+       ) as e(status, update, message, at)
+      where s.tenant_id = $1 and s.courier = 'steadfast' and e.at is not null
+     on conflict do nothing`,
+    [tenantId],
+  );
 }
 
 /** Three checkouts left unfinished in the last day, for the Incomplete orders screen. */

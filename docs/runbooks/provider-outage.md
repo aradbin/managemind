@@ -11,7 +11,7 @@ The stores keep selling through most outages. Find the provider in the table, th
 | **Brevo** | Shopper email from the store domain | Everything else | As Resend |
 | **Neon** | Everything that reads the database: admin, checkout, uncached store pages | Cached store pages | Check neonstatus.com. Nothing to do but wait; check `/health/deep` after |
 | **Cloudflare** | Everything | — | Check cloudflarestatus.com |
-| **Couriers** | (Phase 7) | — | — |
+| **A courier** (Steadfast, Pathao, RedX) | Booking with it, and its status updates | Bookings with another connected courier; manual shipments; parcels already booked are picked up as usual | Nothing in code. A booking that got no answer is marked *unsure* on the order: check the courier's panel before booking again. Updates that failed come back with the courier's retries, or the next poll (13:17 and 19:17 in Dhaka); **Ask now** on the order asks at once (phase-7-plan §3.5) |
 
 ## Afterwards
 
