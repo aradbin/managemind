@@ -111,6 +111,7 @@ On the direct connection, the Free plan's 10 ms CPU limit stopped too many of a 
 1. **A full run deploys the API bound to Hyperdrive before the tests.** The E2E flows, Lighthouse and the CPU step all run on it. The CPU step still measures only its own requests, from its start.
 2. **Afterwards the API is deployed on the direct connection again**, even after a failure or a cancel. Trying a preview by hand still uses no Hyperdrive queries.
 3. **A smoke-only run stays on the direct connection.** It is a few requests.
-4. **The ceiling gates the run on Hyperdrive.** Past 50,000 queries today, or when the count can't be read, the E2E flows and Lighthouse run on the direct connection without the CPU step, and the comment says so. Such a run may fail as #75's did.
+4. **The E2E runs one flow at a time** (`workers: 1` in CI). Through Hyperdrive, two runs still had 8 requests stopped, in bursts while two heavy flows overlapped. One worker spreads the same CPU over about twice the time, roughly 17 minutes of E2E instead of 9.
+5. **The ceiling gates the run on Hyperdrive.** Past 50,000 queries today, or when the count can't be read, the E2E flows and Lighthouse run on the direct connection without the CPU step, and the comment says so. Such a run may fail as #75's did.
 
 **Cost:** a full run uses about 25,000 of the day's 100,000 queries again (the Oct 18 measure). That is the risk the Oct 23 amendment removed. The ceiling is checked once, at the start of each run, so two full runs on one busy day can still take production close to the limit. Moving to Workers Paid removes both the CPU limit and the daily query limit.
