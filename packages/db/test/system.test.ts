@@ -122,6 +122,7 @@ describe('cleanup_expired', () => {
       shopper_verifications: 0,
       order_ips: 0,
       messages: 0,
+      incomplete_orders: 0,
     });
     const platform = await owner.query(
       `select (select count(*)::int from platform.sessions where token like 'cleanup-%') as sessions,
@@ -188,5 +189,50 @@ describe('cleanup_expired, Phase 4', () => {
       ),
     );
     expect(left.rows[0]).toEqual({ carts: 1, cleared: true });
+  });
+});
+
+describe('cleanup_expired, Phase 6', () => {
+  it("deletes incomplete orders after the store's keepDays, 30 at most", async () => {
+    const insert = (tenant: string, days: number) =>
+      inTenant(owner, tenant, () =>
+        owner.query(
+          `insert into store.incomplete_orders (phone, lines, subtotal, locale, updated_at)
+           values ('+8801700000009', '[{"quantity": 1}]', 100, 'en', now() - make_interval(days => $1))`,
+          [days],
+        ),
+      );
+    await owner.query(
+      `update platform.tenants set settings = jsonb_set(settings, '{recovery}', '{"keepDays": 7}')
+        where id = $1`,
+      [TENANT_B],
+    );
+    try {
+      await insert(TENANT_A, 31);
+      await insert(TENANT_A, 29);
+      await insert(TENANT_B, 8);
+      await insert(TENANT_B, 6);
+      const { rows } = await app.query<{ name: string; deleted: string }>(
+        'select * from app.cleanup_expired()',
+      );
+      const deleted = Object.fromEntries(rows.map((r) => [r.name, Number(r.deleted)]));
+      expect(deleted).toMatchObject({ incomplete_orders: 2 });
+      const left = await owner.query<{ tenant_id: string; days: number }>(
+        `select tenant_id, extract(day from now() - updated_at)::int as days
+           from store.incomplete_orders where phone = '+8801700000009' order by tenant_id, days`,
+      );
+      expect(left.rows).toEqual(
+        [
+          { tenant_id: TENANT_A, days: 29 },
+          { tenant_id: TENANT_B, days: 6 },
+        ].sort((x, y) => x.tenant_id.localeCompare(y.tenant_id)),
+      );
+    } finally {
+      await owner.query(
+        `update platform.tenants set settings = settings - 'recovery' where id = $1`,
+        [TENANT_B],
+      );
+      await owner.query(`delete from store.incomplete_orders where phone = '+8801700000009'`);
+    }
   });
 });

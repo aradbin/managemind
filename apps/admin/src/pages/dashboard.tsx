@@ -6,7 +6,18 @@
 import { formatDateTime, formatNumber, type Locale } from '@managemind/shared/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ChevronRight, CircleX, Clock, type LucideIcon, PackageX, Plus, Truck } from 'lucide-react';
+import {
+  ChevronRight,
+  CircleX,
+  Clock,
+  Copy,
+  type LucideIcon,
+  PackageX,
+  PhoneCall,
+  Plus,
+  ShoppingCart,
+  Truck,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
@@ -82,7 +93,11 @@ export function DashboardView() {
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             {/* First on phones, where acting on it matters most; beside the chart on desktops. */}
             <div className="lg:col-start-2 lg:row-start-1">
-              <Waiting counts={data.data.counts} />
+              <Waiting
+                counts={data.data.counts}
+                confirmation={data.data.confirmation}
+                incomplete={data.data.incomplete}
+              />
             </div>
             <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
               {data.data.sales && <WeekChart days={data.data.sales.days} locale={locale} />}
@@ -334,14 +349,25 @@ function RecentOrders() {
   );
 }
 
-function Waiting({ counts }: { counts: Dashboard['counts'] }) {
+function Waiting({
+  counts,
+  confirmation,
+  incomplete,
+}: {
+  counts: Dashboard['counts'];
+  confirmation: Dashboard['confirmation'];
+  incomplete: Dashboard['incomplete'];
+}) {
   const { t, locale } = useLocale();
   const row = (
     label: string,
     value: number,
     Icon: LucideIcon,
     tone: string,
-    to: { to: '/orders' | '/inventory'; search: Record<string, unknown> },
+    to: {
+      to: '/orders' | '/inventory' | '/orders/confirm' | '/orders/incomplete';
+      search: Record<string, unknown>;
+    },
   ) => (
     <Link
       to={to.to}
@@ -360,7 +386,11 @@ function Waiting({ counts }: { counts: Dashboard['counts'] }) {
     </Link>
   );
   const nothing =
-    counts.awaitingConfirmation + counts.toShip + counts.lowStock + counts.cancelledByShopper7d ===
+    counts.awaitingConfirmation +
+      counts.toShip +
+      counts.lowStock +
+      counts.cancelledByShopper7d +
+      counts.possibleDuplicates ===
     0;
   return (
     <CardSection title={t('dashboard.waiting')} padded={false}>
@@ -368,6 +398,17 @@ function Waiting({ counts }: { counts: Dashboard['counts'] }) {
         <p className="px-4 pb-4 text-sm text-muted-foreground md:px-5">{t('dashboard.allClear')}</p>
       )}
       <ul className="divide-y divide-border border-t border-border">
+        {confirmation && (
+          <li>
+            {row(
+              t('queue.tab.to_call'),
+              counts.toCall,
+              PhoneCall,
+              'bg-warning text-warning-foreground',
+              { to: '/orders/confirm', search: {} },
+            )}
+          </li>
+        )}
         <li>
           {row(
             t('dashboard.awaiting'),
@@ -386,6 +427,25 @@ function Waiting({ counts }: { counts: Dashboard['counts'] }) {
             search: { status: 'confirmed', deliveryStatus: 'not_shipped' },
           })}
         </li>
+        {incomplete && (
+          <li>
+            {row(t('incomplete.title'), incomplete.open, ShoppingCart, 'bg-muted text-foreground', {
+              to: '/orders/incomplete',
+              search: {},
+            })}
+          </li>
+        )}
+        {counts.possibleDuplicates > 0 && (
+          <li>
+            {row(
+              t('orders.flag.possible_duplicate'),
+              counts.possibleDuplicates,
+              Copy,
+              'bg-warning text-warning-foreground',
+              { to: '/orders', search: { flag: 'possible_duplicate' } },
+            )}
+          </li>
+        )}
         <li>
           {row(t('dashboard.lowStock'), counts.lowStock, PackageX, 'bg-danger-soft text-danger', {
             to: '/inventory',
@@ -402,6 +462,23 @@ function Waiting({ counts }: { counts: Dashboard['counts'] }) {
           )}
         </li>
       </ul>
+      {incomplete && incomplete.today > 0 && (
+        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
+          {t('dashboard.incompleteToday', {
+            saved: formatNumber(locale, incomplete.today),
+            recovered: formatNumber(locale, incomplete.recoveredToday),
+          })}
+        </p>
+      )}
+      {confirmation && confirmation.rate !== null && (
+        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
+          {t('dashboard.confirmationRate', {
+            rate: formatNumber(locale, confirmation.rate),
+            confirmed: formatNumber(locale, confirmation.confirmed),
+            decided: formatNumber(locale, confirmation.decided),
+          })}
+        </p>
+      )}
     </CardSection>
   );
 }

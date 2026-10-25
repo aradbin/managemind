@@ -11,6 +11,7 @@ import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -68,12 +69,21 @@ const TABS = [
 }[];
 
 /** The filters behind the Filters button: everything but search and the tabs. */
-const PANEL = ['paymentStatus', 'source', 'zoneId', 'from', 'to', 'cancelledByShopper'] as const;
+const PANEL = [
+  'paymentStatus',
+  'source',
+  'zoneId',
+  'flag',
+  'from',
+  'to',
+  'cancelledByShopper',
+] as const;
 
 const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'] as const;
 const PAYMENTS = ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'] as const;
 const DELIVERIES = ['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'] as const;
 const SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other', 'exchange'] as const;
+const FLAGS = ['flagged_phone', 'possible_duplicate', 'unreachable'] as const;
 
 export function OrdersPage() {
   const { t, locale } = useLocale();
@@ -85,7 +95,8 @@ export function OrdersPage() {
   const [confirming, setConfirming] = useState(false);
   const panelCount = PANEL.filter((k) => search[k] !== undefined).length;
   const [panel, setPanel] = useState(panelCount > 0);
-  const counts = useQuery(dashboardQuery).data?.counts;
+  const dashboard = useQuery(dashboardQuery).data;
+  const counts = dashboard?.counts;
   const tabCount = (key: string) =>
     key === 'pending'
       ? counts?.awaitingConfirmation
@@ -156,9 +167,12 @@ export function OrdersPage() {
     {
       header: t('order.customer'),
       cell: (o) => (
-        <span className="flex flex-col">
+        <span className="flex flex-col items-start gap-0.5">
           <span>{o.name}</span>
-          <span className="text-xs text-muted-foreground">{o.phone}</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {o.phone}
+            <ScoreBadge risk={o.risk} className="h-5 px-2" />
+          </span>
         </span>
       ),
     },
@@ -169,6 +183,7 @@ export function OrdersPage() {
           <StatusChip kind="order" status={o.status} />
           <StatusChip kind="payment" status={o.paymentStatus} />
           <StatusChip kind="delivery" status={o.deliveryStatus} />
+          <FlagChips flags={o.flags} />
         </span>
       ),
     },
@@ -235,6 +250,30 @@ export function OrdersPage() {
             </Link>
           );
         })}
+        <Link
+          to="/orders/confirm"
+          className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
+        >
+          {t('queue.tabLabel')}
+          {counts?.toCall ? (
+            <span className="rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground tabular-nums">
+              {counts.toCall}
+            </span>
+          ) : null}
+        </Link>
+        {dashboard?.incomplete && (
+          <Link
+            to="/orders/incomplete"
+            className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
+          >
+            {t('incomplete.title')}
+            {dashboard.incomplete.open ? (
+              <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+                {dashboard.incomplete.open}
+              </span>
+            ) : null}
+          </Link>
+        )}
       </nav>
       <div className="flex flex-wrap items-center gap-2">
         <Input
@@ -326,6 +365,21 @@ export function OrdersPage() {
             {SOURCES.map((s) => (
               <option key={s} value={s}>
                 {t(`source.${s}`)}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label={t('orders.flag')}
+            className={selectClass}
+            value={search.flag ?? ''}
+            onChange={(e) =>
+              setFilter({ flag: (e.target.value || undefined) as OrderSearch['flag'] })
+            }
+          >
+            <option value="">{t('orders.allFlags')}</option>
+            {FLAGS.map((f) => (
+              <option key={f} value={f}>
+                {t(`orders.flag.${f}`)}
               </option>
             ))}
           </select>
@@ -456,6 +510,8 @@ export function OrdersPage() {
               <StatusChip kind="order" status={o.status} />
               <StatusChip kind="payment" status={o.paymentStatus} />
               <StatusChip kind="delivery" status={o.deliveryStatus} />
+              <ScoreBadge risk={o.risk} />
+              <FlagChips flags={o.flags} />
             </div>
           </div>
         )}
@@ -481,6 +537,25 @@ export function OrdersPage() {
         />
       )}
     </div>
+  );
+}
+
+/** What staff should look at: a possible duplicate, an order nobody answered for. */
+function FlagChips({ flags }: { flags: readonly string[] }) {
+  const { t } = useLocale();
+  return (
+    <>
+      {(['possible_duplicate', 'unreachable'] as const)
+        .filter((f) => flags.includes(f))
+        .map((f) => (
+          <span
+            key={f}
+            className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground"
+          >
+            {t(`orders.flag.${f}`)}
+          </span>
+        ))}
+    </>
   );
 }
 

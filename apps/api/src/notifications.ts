@@ -92,6 +92,8 @@ export async function notify(
       const urls = await storeUrlsFor(config, tx);
       const planned = await planMessages(tx, event, {
         trackUrl: urls.page('track'),
+        pageUrl: urls.page,
+        linkKey: `confirm-link:${config.AUTH_SECRET}`,
         smsGateway: sms !== null,
       });
       const queued = await recordMessages(tx, planned);

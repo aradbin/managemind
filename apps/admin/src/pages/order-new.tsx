@@ -4,9 +4,9 @@
 // exactly what saving will charge; a blocked phone is warned about first.
 
 import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
-import { normalizePhone } from '@managemind/shared/phone';
+import { formatPhone, normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { Field } from '../components/field';
@@ -14,6 +14,7 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
+import { type PhoneRisk, RiskReasons, ScoreBadge, useRiskCounts } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -25,6 +26,7 @@ import { formatPrice, readPrice } from '../lib/catalog';
 import {
   type CustomerAddress,
   customerQuery,
+  dateTime,
   fetchCustomers,
   geoQuery,
   idempotencyKey,
@@ -35,6 +37,7 @@ import {
   withKey,
   zonesQuery,
 } from '../lib/orders';
+import { cn } from '../lib/utils';
 
 interface LineDraft {
   variantId: string;
@@ -78,6 +81,46 @@ export function NewOrderPage() {
   const [note, setNote] = useState('');
   const [allowBlocked, setAllowBlocked] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+
+  // Started from an incomplete checkout (phase-6-plan §3.2): its customer,
+  // the lines still orderable, the address typed so far and the cart's code.
+  const { incomplete: incompleteId } = useSearch({ strict: false }) as { incomplete?: string };
+  const incomplete = useQuery({
+    queryKey: ['incomplete-order', incompleteId] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/incomplete-orders/{id}', {
+          params: { path: { id: incompleteId as string } },
+        }),
+      ),
+    enabled: Boolean(incompleteId),
+  });
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    const d = incomplete.data;
+    if (!d || prefilled) return;
+    setPrefilled(true);
+    setPhone(formatPhone(d.phone));
+    setName(d.name ?? '');
+    setEmail(d.email ?? '');
+    setPlace({
+      divisionId: d.address.divisionId ?? null,
+      districtId: d.address.districtId ?? null,
+      areaId: d.address.areaId ?? null,
+      line: d.address.line ?? '',
+    });
+    setLines(
+      d.lines
+        .filter((l) => l.orderable)
+        .map((l) => ({
+          variantId: l.variantId,
+          label: lineLabel(l, locale),
+          available: l.available,
+          quantity: String(l.quantity),
+        })),
+    );
+    if (d.cartCode) setCode(d.cartCode);
+  }, [incomplete.data, prefilled, locale]);
 
   const normalized = normalizePhone(phone);
   const zones = useQuery(zonesQuery);
@@ -166,6 +209,19 @@ export function NewOrderPage() {
     placeholderData: (prev) => prev,
   });
 
+  // The phone's delivery score as soon as it's typed (phase-6-plan §3.8), before any item.
+  const risk = useQuery({
+    queryKey: ['phone-risk', normalized] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/phones/{phone}/risk', {
+          params: { path: { phone: normalized as string } },
+        }),
+      ),
+    enabled: normalized !== null,
+    staleTime: 30_000,
+  });
+
   const contactValid = normalized !== null && name.trim() !== '';
   const ready =
     contactValid &&
@@ -188,6 +244,7 @@ export function NewOrderPage() {
         confirm: opts.confirm,
         completeNow: opts.completeNow,
         allowBlocked,
+        ...(incompleteId && incomplete.data ? { incompleteOrderId: incompleteId } : {}),
       } as ManualOrderBody;
       return unwrap(await api.POST('/v1/admin/orders', { ...withKey(key), body }));
     },
@@ -232,6 +289,11 @@ export function NewOrderPage() {
         title={t('newOrder.title')}
         description={t('newOrder.intro')}
       />
+      {incomplete.data && (
+        <Notice>
+          {t('incomplete.startedFrom', { date: dateTime(locale, incomplete.data.updatedAt) })}
+        </Notice>
+      )}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex min-w-0 flex-col gap-5">
           <section aria-labelledby="customer-h" className={section}>
@@ -275,24 +337,27 @@ export function NewOrderPage() {
                 maxLength={254}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                {t('order.source')}
-                <select
-                  className={selectClass}
-                  value={source}
-                  onChange={(e) => {
-                    const next = e.target.value as Source;
-                    setSource(next);
-                    if (next === 'walk_in') setDelivery(false);
-                  }}
-                >
-                  {MANUAL_ORDER_SOURCES.map((s) => (
-                    <option key={s} value={s}>
-                      {t(`source.${s}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {/* A website order when it comes from an incomplete checkout. */}
+              {!incompleteId && (
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  {t('order.source')}
+                  <select
+                    className={selectClass}
+                    value={source}
+                    onChange={(e) => {
+                      const next = e.target.value as Source;
+                      setSource(next);
+                      if (next === 'walk_in') setDelivery(false);
+                    }}
+                  >
+                    {MANUAL_ORDER_SOURCES.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`source.${s}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
             {quote.data?.blocked && (
               <div className="flex flex-col gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">
@@ -310,6 +375,23 @@ export function NewOrderPage() {
             )}
             {normalized && quote.data && !quote.data.blocked && quote.data.firstOrder && (
               <p className="text-sm text-muted-foreground">{t('newOrder.firstOrder')}</p>
+            )}
+            {normalized && quote.data?.duplicate && (
+              <p role="alert" className="rounded-md bg-warning p-3 text-sm text-warning-foreground">
+                {t('duplicate.newOrder')}{' '}
+                <Link
+                  to="/orders/$id"
+                  params={{ id: quote.data.duplicate.id }}
+                  target="_blank"
+                  className="font-medium underline"
+                >
+                  {quote.data.duplicate.displayNumber}
+                </Link>{' '}
+                ({dateTime(locale, quote.data.duplicate.placedAt)})
+              </p>
+            )}
+            {normalized && risk.data && risk.data.decided + risk.data.history.open > 0 && (
+              <PhoneRecord risk={risk.data} />
             )}
           </section>
 
@@ -756,6 +838,27 @@ function SavedAddresses({
           </Button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** The phone's record in one line, and why it's risky, beside the customer's details. */
+function PhoneRecord({ risk }: { risk: PhoneRisk }) {
+  const { t } = useLocale();
+  const counts = useRiskCounts();
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-1.5 rounded-md p-3 text-sm',
+        risk.risky ? 'bg-danger-soft' : 'bg-muted',
+      )}
+    >
+      <p className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">{t('risk.title')}</span>
+        <ScoreBadge risk={risk} />
+        <span>{counts(risk)}</span>
+      </p>
+      <RiskReasons risk={risk} />
     </div>
   );
 }

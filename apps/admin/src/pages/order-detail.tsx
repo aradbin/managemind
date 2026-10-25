@@ -3,9 +3,9 @@
 // actions the state machines allow (the API lists them). Every command sends
 // an Idempotency-Key, kept for the dialog's life, so a retry after a dropped
 // connection doesn't do it twice.
-import { MANUAL_METHODS } from '@managemind/shared/orders';
+import { type CancelCode, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -13,6 +13,7 @@ import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { usePermission } from '../components/permission-gate';
+import { RiskPanel } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -109,17 +110,44 @@ export function OrderDetailPage() {
         </Notice>
       )}
       {o.flags.includes('late_payment') && <Notice tone="error">{t('order.flag.late')}</Notice>}
+      {o.flags.includes('possible_duplicate') && o.duplicateOf && <DuplicateBanner order={o} />}
       {o.status === 'cancelled' && (
         <Notice tone="error">
           {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
             reason: o.cancelReason ?? '—',
           })}
+          {o.cancelCode && o.cancelledBy !== 'shopper' && ` (${t(`cancelCode.${o.cancelCode}`)})`}
         </Notice>
       )}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* The customer first on phones, where calling them is the next step; beside the items on desktops. */}
-        <div className="lg:col-start-2 lg:row-start-1">
+        <div className="flex flex-col gap-5 lg:col-start-2 lg:row-start-1">
           <CustomerCard order={o} />
+          {o.confirmation && <ConfirmationCard order={o} />}
+          <RiskPanel risk={o.risk} atPlacement={o.phoneScoreAtPlacement}>
+            {o.otherOpenOrders.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <h3 className="text-sm font-semibold">{t('risk.otherOpen')}</h3>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {o.otherOpenOrders.map((other) => (
+                    <li key={other.id} className="flex flex-wrap items-center gap-2">
+                      <Link
+                        to="/orders/$id"
+                        params={{ id: other.id }}
+                        className="font-medium text-primary underline-offset-2 hover:underline"
+                      >
+                        {other.displayNumber}
+                      </Link>
+                      <StatusChip kind="order" status={other.status} />
+                      <span className="ms-auto tabular-nums">
+                        {formatPrice(other.total, locale)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </RiskPanel>
         </div>
         <div className="flex min-w-0 flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <Lines order={o} />
@@ -132,6 +160,86 @@ export function OrderDetailPage() {
           <Tags order={o} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A possible duplicate (phase-6-plan §3.4): merge it into the older order,
+ * cancel it as a duplicate, or say it isn't one. Shoppers hear about none.
+ */
+function DuplicateBanner({ order: o }: { order: OrderDetail }) {
+  const { t } = useLocale();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const canWrite = usePermission('orders.write');
+  const other = o.duplicateOf as NonNullable<OrderDetail['duplicateOf']>;
+  const merge = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/duplicate/merge', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+      }),
+    ),
+  );
+  const cancel = useCommand(o.id, async (key) =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/cancel', {
+        params: { path: { id: o.id }, ...withKey(key).params },
+        body: {
+          reason: t('duplicate.cancelReason', { number: other.displayNumber }),
+          code: 'duplicate',
+        },
+      }),
+    ),
+  );
+  const dismiss = useCommand(o.id, async () =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/duplicate/dismiss', { params: { path: { id: o.id } } }),
+    ),
+  );
+  const busy = merge.isPending || cancel.isPending || dismiss.isPending;
+  const error = merge.error ?? cancel.error ?? dismiss.error;
+  return (
+    <div role="status" className="rounded-lg bg-warning p-3 text-sm text-warning-foreground md:p-4">
+      <span className="flex flex-col gap-3">
+        <span>
+          {t('duplicate.banner')}{' '}
+          <Link to="/orders/$id" params={{ id: other.id }} className="font-medium underline">
+            {other.displayNumber}
+          </Link>{' '}
+          ({t(`orderStatus.${other.status}` as AdminKey)})
+        </span>
+        {canWrite && o.status !== 'cancelled' && (
+          <span className="flex flex-wrap gap-2">
+            <Button
+              disabled={busy}
+              onClick={() =>
+                merge.mutate(undefined, {
+                  onSuccess: () => {
+                    toast(t('duplicate.merged', { number: other.displayNumber }));
+                    void navigate({ to: '/orders/$id', params: { id: other.id } });
+                  },
+                })
+              }
+            >
+              {t('duplicate.merge', { number: other.displayNumber })}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() =>
+                cancel.mutate(undefined, { onSuccess: () => toast(t('order.cancelled')) })
+              }
+            >
+              {t('duplicate.cancel')}
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={() => dismiss.mutate(undefined)}>
+              {t('duplicate.dismiss')}
+            </Button>
+          </span>
+        )}
+        {error && <span className="text-danger">{orderErrorMessage(error, t)}</span>}
+      </span>
     </div>
   );
 }
@@ -389,6 +497,68 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
         <p className="text-sm text-muted-foreground">{t('order.noDelivery')}</p>
       )}
       {!canCustomers && <p className="text-xs text-muted-foreground">{t('order.masked')}</p>}
+    </section>
+  );
+}
+
+/** Where the order is in the confirmation queue, or how it was confirmed (phase-6-plan §3.5). */
+function ConfirmationCard({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const c = o.confirmation as NonNullable<OrderDetail['confirmation']>;
+  const toast = useToast();
+  const canWrite = usePermission('orders.write');
+  const resend = useCommand(o.id, async () =>
+    unwrap(
+      await api.POST('/v1/admin/orders/{id}/confirmation/link', { params: { path: { id: o.id } } }),
+    ),
+  );
+  return (
+    <section aria-labelledby="confirmation-title" className={section}>
+      <h2 id="confirmation-title" className="font-semibold">
+        {t('confirmSettings.title')}
+      </h2>
+      <p className="text-sm">
+        {c.confirmedVia
+          ? t(`confirmedVia.${c.confirmedVia}` as AdminKey)
+          : o.flags.includes('unreachable')
+            ? t('queue.tab.unreachable')
+            : c.inQueue
+              ? c.dueAt && Date.parse(c.dueAt) > Date.now()
+                ? t('queue.dueAt', { time: dateTime(locale, c.dueAt) })
+                : t('queue.tab.to_call')
+              : t('confirmation.notQueued')}
+      </p>
+      {c.attempts > 0 && (
+        <p className="text-sm text-muted-foreground">
+          {t('queue.attempts', { count: c.attempts })}
+        </p>
+      )}
+      {c.linkSentAt && (
+        <p className="text-sm text-muted-foreground">
+          {c.linkAnswer
+            ? t(c.linkAnswer === 'confirm' ? 'queue.linkConfirmed' : 'confirmation.linkCancelled')
+            : t('confirmation.linkSent', { time: dateTime(locale, c.linkSentAt) })}
+        </p>
+      )}
+      {c.inQueue && !c.confirmedVia && (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" asChild>
+            <Link to="/orders/confirm">{t('confirmation.openQueue')}</Link>
+          </Button>
+          {canWrite && c.linkSentAt && !c.linkAnswer && (
+            <Button
+              variant="ghost"
+              disabled={resend.isPending}
+              onClick={() =>
+                resend.mutate(undefined, { onSuccess: () => toast(t('confirmation.linkResent')) })
+              }
+            >
+              {t('confirmation.resend')}
+            </Button>
+          )}
+        </div>
+      )}
+      {resend.error && <Notice tone="error">{orderErrorMessage(resend.error, t)}</Notice>}
     </section>
   );
 }
@@ -909,8 +1079,20 @@ function historyText(
       if (!e.to) return t('history.shipmentDeleted');
       if (!e.from) return t('history.shipmentCreated');
       return t('history.shipment', { status: t(`shipmentStatus.${to}` as AdminKey) });
-    case 'edit':
+    case 'confirmation': {
+      const d = (e.data ?? {}) as { attempts?: number; code?: string };
+      const outcome = t(`outcome.${e.event}` as AdminKey);
+      return e.event === 'no_answer' && d.attempts
+        ? t('history.callAttempt', { outcome, count: d.attempts })
+        : t('history.call', { outcome });
+    }
+    case 'edit': {
+      const number = (e.data as { number?: number } | null)?.number;
+      if (e.event === 'merged_into') return t('history.mergedInto', { number: number ?? '' });
+      if (e.event === 'merged_from') return t('history.mergedFrom', { number: number ?? '' });
+      if (e.event === 'duplicate_dismissed') return t('history.duplicateDismissed');
       return t('history.edited');
+    }
     default:
       return e.event ?? '';
   }
@@ -964,15 +1146,26 @@ function Tags({ order: o }: { order: OrderDetail }) {
   );
 }
 
+/** The codes staff pick from the order page; duplicates have their own actions, expiry is the system's. */
+const STAFF_CANCEL_CODES = [
+  'shopper_request',
+  'no_answer',
+  'wrong_number',
+  'fake',
+  'out_of_stock',
+  'other',
+] as const satisfies readonly CancelCode[];
+
 function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const [reason, setReason] = useState('');
+  const [code, setCode] = useState<CancelCode | ''>('');
   const cancel = useCommand(o.id, async (key, why: string) =>
     unwrap(
       await api.POST('/v1/admin/orders/{id}/cancel', {
         params: { path: { id: o.id }, ...withKey(key).params },
-        body: { reason: why },
+        body: { reason: why, ...(code ? { code } : {}) },
       }),
     ),
   );
@@ -982,7 +1175,7 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
       onOpenChange={(open) => !open && onClose()}
       title={t('order.cancelTitle', { number: o.displayNumber })}
       confirmLabel={t('order.cancel')}
-      canConfirm={reason.trim().length > 0}
+      canConfirm={reason.trim().length > 0 && code !== ''}
       busy={cancel.isPending}
       error={cancel.error ? orderErrorMessage(cancel.error, t) : undefined}
       onConfirm={() =>
@@ -999,6 +1192,21 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
         {o.totals.paidTotal > 0 &&
           ` ${t('order.cancelRefund', { amount: formatPrice(o.totals.paidTotal, locale) })}`}
       </p>
+      <fieldset className="flex flex-col gap-1">
+        <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
+        {STAFF_CANCEL_CODES.map((c) => (
+          <label key={c} className="flex min-h-11 items-center gap-3">
+            <input
+              type="radio"
+              name="cancel-code"
+              className="size-5"
+              checked={code === c}
+              onChange={() => setCode(c)}
+            />
+            {t(`cancelCode.${c}`)}
+          </label>
+        ))}
+      </fieldset>
       <Field
         label={t('order.cancelReason')}
         value={reason}

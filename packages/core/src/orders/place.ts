@@ -17,20 +17,22 @@ import {
 } from '@managemind/shared/orders';
 import { holidayActive } from '@managemind/shared/storefront';
 import { eq, sql } from 'drizzle-orm';
-import { type Actor, auditActor, authorize } from '../access';
+import { type Actor, auditActor, authorize, systemActor } from '../access';
 import { recordAudit } from '../audit';
 import { cartByToken, cartLines } from '../cart/service';
 import type { Locale } from '../catalog/common';
 import { addressSnapshot, findOrCreateCustomer } from '../customers/service';
-import { otpRequired, phoneFlagged } from '../fraud/index';
+import { findDuplicate, otpRequired, phoneRisk } from '../fraud/index';
 import { type IdempotentResponse, runIdempotent } from '../idempotency';
 import { applyMovements } from '../inventory/service';
 import { emit } from '../outbox';
 import { reissueCreditRemainder } from '../payments/store-credit';
 import type { ManualDiscount } from '../pricing/engine';
 import { type OrderSettings, orderSettings, type Quote, quote } from '../pricing/quote';
+import { closeIncompleteOrders } from '../recovery/index';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
+import { confirmOrder } from './lifecycle';
 
 export const MANUAL_PAYMENT_METHODS = [
   'bkash',
@@ -90,6 +92,8 @@ export interface PlaceOrderInput {
   /** The shopper verified this phone with a code for this order. */
   otpVerified?: boolean | undefined;
   acceptTerms?: boolean | undefined;
+  /** Admin: the incomplete order this order was made from (phase-6-plan §3.2). */
+  incompleteOrderId?: string | null | undefined;
 }
 
 export interface PlacedOrder {
@@ -236,6 +240,10 @@ export async function placeOrder(
     });
   }
 
+  // The phone's risk, read once (phase-6-plan §3.3): the advance, the code
+  // and the order's flag read it, and the order keeps the score it saw.
+  const risk = await phoneRisk(tx, phone, settings.settings);
+
   // 2. Price it, exactly as the cart did (§3.1).
   const q = await quote(tx, {
     lines,
@@ -283,8 +291,7 @@ export async function placeOrder(
     kind === 'cod' &&
     input.onlineReady &&
     deliveryCharge >= MIN_ONLINE_AMOUNT &&
-    (settings.cod.advance === 'always' ||
-      (settings.cod.advance === 'flagged' && (await phoneFlagged(tx, phone, settings.settings))))
+    (settings.cod.advance === 'always' || (settings.cod.advance === 'flagged' && risk.risky))
   ) {
     throw new AppError('cod_unavailable', {
       extensions: { reason: 'advance_required', advance: deliveryCharge },
@@ -296,7 +303,7 @@ export async function placeOrder(
     kind === 'cod' &&
     input.smsReady &&
     !input.otpVerified &&
-    (await otpRequired(tx, phone, settings.settings))
+    (await otpRequired(tx, phone, settings.settings, risk))
   ) {
     throw new AppError('otp_required');
   }
@@ -361,6 +368,14 @@ export async function placeOrder(
   const number = await nextOrderNumber(tx);
   const status = input.confirm && !storefront ? 'confirmed' : 'pending';
 
+  // A possible duplicate of a recent order from this phone (phase-6-plan §3.4): flagged, never refused.
+  const duplicate = await findDuplicate(
+    tx,
+    phone,
+    q.priced.map((p) => p.variant.id),
+    settings.settings,
+  );
+
   // 5. The order, its lines, adjustments, payments and history.
   const address = input.address ? addressSnapshot(input.address) : null;
   const zone = q.zone
@@ -401,12 +416,22 @@ export async function placeOrder(
       locale: input.locale,
       customerNote: input.note ?? null,
       tags: [...(input.tags ?? [])],
-      metadata: input.deliveryFeeOverride
-        ? { deliveryFeeReason: input.deliveryFeeOverride.reason }
-        : {},
+      metadata: {
+        ...(input.deliveryFeeOverride
+          ? { deliveryFeeReason: input.deliveryFeeOverride.reason }
+          : {}),
+        ...(input.incompleteOrderId ? { incompleteOrderId: input.incompleteOrderId } : {}),
+      },
       ip: input.ip ?? null,
       userAgent: input.userAgent?.slice(0, 500) ?? null,
       createdBy: storefront ? null : actor.userId,
+      phoneScore: risk.score,
+      // A risky phone shows on the order, for staff (phase-5a-plan §3.11).
+      flags: [
+        ...(risk.risky ? ['flagged_phone'] : []),
+        ...(duplicate ? ['possible_duplicate'] : []),
+      ],
+      duplicateOf: duplicate?.id ?? null,
       ...(status === 'confirmed' ? { confirmedAt: sql`now()` } : {}),
     })
     .returning({ placedAt: schema.orders.placedAt });
@@ -514,14 +539,28 @@ export async function placeOrder(
       payload: { number },
     });
   }
-  // A flagged phone shows on the order, for staff (phase-5a-plan §3.11).
-  if (await phoneFlagged(tx, phone, settings.settings)) {
-    await tx.db.execute(sql`
-      update store.orders set flags = array_append(flags, 'flagged_phone') where id = ${orderId}`);
-  }
+  // The incomplete checkouts this order answers (phase-6-plan §3.2).
+  await closeIncompleteOrders(tx, {
+    id: orderId,
+    phone,
+    cartId,
+    fromIncomplete: input.incompleteOrderId ?? null,
+  });
   // A store credit code the order didn't use up comes back as a new one (phase-5a-plan §3.13).
   for (const p of q.promotions) {
     if (p.codeId) await reissueCreditRemainder(tx, orderId, p.promotionId, p.amount);
+  }
+  // A trusted phone's COD order skips the confirmation queue when the store
+  // says so (phase-6-plan §3.5, Q10): the system confirms it at once.
+  let finalStatus: PlacedOrder['status'] = status;
+  if (
+    status === 'pending' &&
+    settings.settings.confirmation.autoConfirm === 'trusted' &&
+    risk.trusted &&
+    codAmount > 0 &&
+    onlineAmount === 0
+  ) {
+    finalStatus = (await confirmOrder(tx, systemActor, orderId, 'auto')).status as 'confirmed';
   }
   if (!storefront) {
     await recordAudit(tx, {
@@ -536,7 +575,7 @@ export async function placeOrder(
     id: orderId,
     number,
     displayNumber: formatOrderNumber(settings.checkout.orderNumberPrefix, number),
-    status,
+    status: finalStatus,
     total,
     codAmount,
     onlinePayment,

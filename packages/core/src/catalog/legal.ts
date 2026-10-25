@@ -65,6 +65,7 @@ export async function legalContext(tx: TenantTx, platformName: string): Promise<
     }),
     cod: settings.cod.enabled,
     online: Boolean(gateway),
+    savedCheckoutDays: settings.recovery.incomplete ? settings.recovery.keepDays : null,
     abuseEmail: support.abuseEmail,
     platformName,
   };

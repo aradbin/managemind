@@ -3,6 +3,7 @@
 export { default as Account } from './templates/Account.astro';
 export { default as Cart } from './templates/Cart.astro';
 export { default as Checkout } from './templates/Checkout.astro';
+export { default as Confirm } from './templates/Confirm.astro';
 export { default as Home } from './templates/Home.astro';
 export { default as Listing } from './templates/Listing.astro';
 export { default as NotFound } from './templates/NotFound.astro';

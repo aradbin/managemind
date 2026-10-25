@@ -32,6 +32,12 @@ export const OMITTED: Partial<Record<(typeof STORE_TABLES)[number], string>> = {
   outbox: 'events already delivered',
 };
 
+/** Columns left out of tables that are exported, with why; the manifest lists them. */
+export const OMITTED_COLUMNS: Partial<Record<(typeof STORE_TABLES)[number], readonly string[]>> = {
+  // The hash of a code that confirms an order by SMS (phase-6-plan §3.7).
+  order_confirmations: ['link_hash'],
+};
+
 /** The lists a person opens in a spreadsheet. */
 export const CSV_TABLES = [
   'products',
@@ -170,9 +176,13 @@ export async function exportStore(
     const lines: string[] = [];
     const csv = (CSV_TABLES as readonly string[]).includes(table);
     const parsed: Record<string, unknown>[] = [];
+    const dropped = OMITTED_COLUMNS[table];
+    const row = dropped
+      ? `(to_jsonb(t) - array[${dropped.map((c) => `'${c}'`).join(', ')}])::text`
+      : 'row_to_json(t)::text';
     for await (const j of rowsOf(
       client,
-      `select row_to_json(t)::text as j from store."${table}" t where tenant_id = $1`,
+      `select ${row} as j from store."${table}" t where tenant_id = $1`,
       [tenantId],
     )) {
       lines.push(j);
@@ -220,6 +230,7 @@ export async function exportStore(
     tables,
     platform,
     omitted: OMITTED,
+    omittedColumns: OMITTED_COLUMNS,
     files: entries,
   };
   zip['manifest.json'] = encoder.encode(`${JSON.stringify(manifest, null, 2)}\n`);

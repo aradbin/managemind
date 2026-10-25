@@ -26,6 +26,8 @@ export const SHELL_PATHS = {
   thanks: 'orders/thanks',
   track: 'track',
   account: 'account',
+  /** The SMS link to confirm or cancel an order (phase-6-plan §3.7); its code is the fragment. */
+  confirm: 'c',
 } as const;
 export type ShellKind = keyof typeof SHELL_PATHS;
 const SHELL_BY_PATH = Object.fromEntries(
@@ -113,6 +115,7 @@ function withPrefix(route: StoreRoute, prefix: string): string {
     case 'thanks':
     case 'track':
     case 'account':
+    case 'confirm':
       return `${prefix}/${SHELL_PATHS[route.kind]}`;
     default:
       return `${prefix}/${ROUTE_SEGMENTS[route.kind]}/${encodeURIComponent(route.slug)}`;

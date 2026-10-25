@@ -12,11 +12,15 @@ import { type NotificationSettings, notificationSettings } from '@managemind/sha
 import {
   type CheckoutSettings,
   type CodSettings,
+  type ConfirmationSettings,
   checkoutSettings,
   codSettings,
+  confirmationSettings,
   type FraudSettings,
   fraudSettings,
+  type RecoverySettings,
   type ReturnSettings,
+  recoverySettings,
   returnSettings,
 } from '@managemind/shared/orders';
 import {
@@ -243,8 +247,12 @@ export interface Store {
   checkout: CheckoutSettings;
   /** Cash on delivery. */
   cod: CodSettings;
-  /** When a phone is flagged (phase-5a-plan §3.11). */
+  /** When a phone is risky, and duplicates (phase-5a-plan §3.11, phase-6-plan §3.3, §3.4). */
   fraud: FraudSettings;
+  /** The confirmation queue and its call script (phase-6-plan §3.5–§3.7). */
+  confirmation: ConfirmationSettings;
+  /** Incomplete orders (phase-6-plan §3.2). */
+  recovery: RecoverySettings;
   /** The return policy (phase-5a-plan §3.10). */
   returns: ReturnSettings;
   /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
@@ -278,6 +286,8 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     checkout: settings.checkout,
     cod: settings.cod,
     fraud: settings.fraud,
+    confirmation: settings.confirmation,
+    recovery: settings.recovery,
     returns: settings.returns,
     notifications: settings.notifications,
     setup: settings.setup,
@@ -321,6 +331,10 @@ export interface StoreProfilePatch {
   cod?: unknown;
   /** Replaces the phone flag settings (phase-5a-plan §3.11). */
   fraud?: unknown;
+  /** Replaces the confirmation queue's settings (phase-6-plan §3.5). */
+  confirmation?: unknown;
+  /** Replaces the incomplete orders settings (phase-6-plan §3.2). */
+  recovery?: unknown;
   /** Replaces the return policy (phase-5a-plan §3.10). */
   returns?: unknown;
   /** Replaces the shopper message channels (phase-5a-plan §3.6). */
@@ -362,6 +376,14 @@ export async function updateStoreProfile(
     cod: patch.cod !== undefined ? parseSection('cod', codSettings, patch.cod) : current.cod,
     fraud:
       patch.fraud !== undefined ? parseSection('fraud', fraudSettings, patch.fraud) : current.fraud,
+    confirmation:
+      patch.confirmation !== undefined
+        ? parseSection('confirmation', confirmationSettings, patch.confirmation)
+        : current.confirmation,
+    recovery:
+      patch.recovery !== undefined
+        ? parseSection('recovery', recoverySettings, patch.recovery)
+        : current.recovery,
     returns:
       patch.returns !== undefined
         ? parseSection('returns', returnSettings, patch.returns)
@@ -386,6 +408,8 @@ export async function updateStoreProfile(
       'checkout',
       'cod',
       'fraud',
+      'confirmation',
+      'recovery',
       'returns',
       'notifications',
       'setup',
@@ -412,6 +436,8 @@ export async function updateStoreProfile(
         checkout: next.checkout,
         cod: next.cod,
         fraud: next.fraud,
+        confirmation: next.confirmation,
+        recovery: next.recovery,
         returns: next.returns,
         notifications: next.notifications,
         setup: next.setup,

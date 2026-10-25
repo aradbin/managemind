@@ -12,6 +12,7 @@ import {
   cancelOrder,
   checkout,
   clearCartCode,
+  draftAllowed,
   findOrderForTracking,
   getCart,
   orderOfGatewayPayment,
@@ -159,6 +160,8 @@ const CheckoutState = z
       })
       .nullable(),
     turnstileSiteKey: z.string().nullable(),
+    /** Whether the checkout is saved as it is typed, with the notice (phase-6-plan §3.2). */
+    recovery: z.object({ save: z.boolean() }),
   })
   .openapi('CheckoutState');
 const PlacedOrder = z
@@ -604,6 +607,12 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
               }
             : null,
         turnstileSiteKey: await shopSiteKey(c, tx),
+        recovery: {
+          save:
+            settings.settings.recovery.incomplete &&
+            view !== null &&
+            (await draftAllowed(tx, view.id)),
+        },
       };
     });
     c.header('Cache-Control', 'no-store');

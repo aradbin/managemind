@@ -16,6 +16,7 @@ import {
   RETURN_RECORD_STATUSES,
   RETURN_STATUSES,
 } from './machines';
+import { CALL_CANCEL_CODES, CANCEL_CODES, CONFIRMATION_OUTCOMES } from './recovery';
 
 const price = z.int().min(0).max(CATALOG_LIMITS.maxPrice);
 
@@ -127,6 +128,78 @@ export const trackInput = z
   .strict();
 
 export const reasonInput = z.object({ reason: cleanString(300) }).strict();
+
+// ---- Incomplete orders (phase-6-plan §3.2) ---------------------------------------------
+
+/** What the checkout saves as it is typed: a valid phone, and whatever else is there so far. */
+export const checkoutDraftInput = z
+  .object({
+    phone: phoneNumber(),
+    name: z.string().trim().max(100).optional(),
+    email: z.string().trim().max(254).optional(),
+    address: z
+      .object({
+        divisionId: z.int().min(1).max(99).optional(),
+        districtId: z.int().min(1).max(999).optional(),
+        areaId: z.int().min(1).max(99_999).optional(),
+        line: z.string().trim().max(250).optional(),
+      })
+      .strict()
+      .default({}),
+  })
+  .strict();
+export type CheckoutDraftInput = z.infer<typeof checkoutDraftInput>;
+
+export const INCOMPLETE_TABS = ['open', 'converted', 'recovered', 'dismissed'] as const;
+
+export const incompleteListQuery = z.object({
+  tab: z.enum(INCOMPLETE_TABS).default('open'),
+  after: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type IncompleteListQuery = z.infer<typeof incompleteListQuery>;
+
+export const incompleteNoteInput = z.object({ note: optionalText(500) }).strict();
+
+// ---- The confirmation queue (phase-6-plan §3.5) ---------------------------------------
+
+export const CONFIRMATION_TABS = ['to_call', 'later', 'unreachable', 'risky'] as const;
+
+export const confirmationQuery = z.object({
+  tab: z.enum(CONFIRMATION_TABS).default('to_call'),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
+export type ConfirmationQuery = z.infer<typeof confirmationQuery>;
+
+/** One call's outcome: a call back needs a time and a note; a cancellation needs why. */
+export const confirmationOutcomeInput = z
+  .object({
+    outcome: z.enum(CONFIRMATION_OUTCOMES),
+    note: optionalText(500),
+    code: z.enum(CALL_CANCEL_CODES).optional(),
+    dueAt: z.iso.datetime({ offset: true }).optional(),
+    /** Wrong number: also add the phone to the blocklist (settings.write). */
+    block: z.boolean().optional(),
+  })
+  .strict()
+  .superRefine((v, ctx) => {
+    const need = (path: string, message: string) =>
+      ctx.addIssue({ code: 'custom', path: [path], message });
+    if (v.outcome === 'call_back') {
+      if (!v.dueAt) need('dueAt', 'when to call back');
+      if (!v.note) need('note', 'a note for the next call');
+    }
+    if (v.outcome === 'cancelled') {
+      if (!v.code) need('code', 'why the order is cancelled');
+      if (v.code === 'other' && !v.note) need('note', 'why the order is cancelled');
+    }
+  });
+export type ConfirmationOutcomeInput = z.infer<typeof confirmationOutcomeInput>;
+
+/** Staff's cancellation: a reason, and why as a code (phase-6-plan §3.5); `other` when none. */
+export const cancelInput = z
+  .object({ reason: cleanString(300), code: z.enum(CANCEL_CODES).optional() })
+  .strict();
 
 const customerTags = z
   .array(z.string())
@@ -281,6 +354,8 @@ export const manualOrderInput = z
     /** A walk-in sale that leaves the shop at once: shipped and delivered in one step. */
     completeNow: z.boolean().default(false),
     allowBlocked: z.boolean().default(false),
+    /** The incomplete order this one is made from (phase-6-plan §3.2). */
+    incompleteOrderId: z.uuid().optional(),
   })
   .strict();
 export type ManualOrderInput = z.infer<typeof manualOrderInput>;
@@ -306,6 +381,8 @@ export const orderListQuery = z.object({
   tag: z.string().max(50).optional(),
   /** Cancelled by the shopper (§3.9). */
   cancelledByShopper: z.coerce.boolean().optional(),
+  /** A flag staff filter by: risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
+  flag: z.enum(['flagged_phone', 'possible_duplicate', 'unreachable']).optional(),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   q: z.string().trim().max(100).optional(),

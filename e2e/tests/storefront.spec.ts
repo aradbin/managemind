@@ -62,7 +62,10 @@ test('browsing the English demo store', async ({ page }) => {
       page.getByRole('heading', { level: 1, name: 'White cotton panjabi' }),
     ).toBeVisible();
     await expect(page.locator('[data-sku]')).toHaveText('FAS-WHITE-COTTON-PANJABI-1');
-    await page.getByRole('radio', { name: 'L', exact: true }).check({ force: true });
+    const size = page.getByRole('radio', { name: 'L', exact: true });
+    // Mid-screen: a store's chat buttons float over the bottom corner on phones.
+    await size.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await size.check({ force: true });
     await expect(page.locator('[data-sku]')).toHaveText('FAS-WHITE-COTTON-PANJABI-3');
     await expect(page.locator('[data-stock]')).toHaveText('In stock');
     await expect(page.locator('script[type="application/ld+json"]').first()).toBeAttached();

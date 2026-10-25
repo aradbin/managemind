@@ -34,8 +34,20 @@ export const STAFF_EVENTS = [
 ] as const;
 export type StaffEvent = (typeof STAFF_EVENTS)[number];
 
-export type MessageEvent = ShopperEvent | StaffEvent;
-export const MESSAGE_EVENTS: readonly MessageEvent[] = [...SHOPPER_EVENTS, ...STAFF_EVENTS];
+/**
+ * Shopper messages a store setting sends rather than the notification
+ * settings, by SMS only: the link to confirm or cancel a COD order
+ * (phase-6-plan §3.7), sent when `confirmation.smsLink` is on.
+ */
+export const SHOPPER_SMS_EVENTS = ['confirm_request'] as const;
+export type ShopperSmsEvent = (typeof SHOPPER_SMS_EVENTS)[number];
+
+export type MessageEvent = ShopperEvent | ShopperSmsEvent | StaffEvent;
+export const MESSAGE_EVENTS: readonly MessageEvent[] = [
+  ...SHOPPER_EVENTS,
+  ...SHOPPER_SMS_EVENTS,
+  ...STAFF_EVENTS,
+];
 
 /** Staff channels on by default: push for everything (§3.9). */
 export const DEFAULT_STAFF_CHANNELS: Readonly<Record<Channel, boolean>> = {
@@ -79,6 +91,7 @@ export const TEMPLATE_VARIABLES: Readonly<Record<MessageEvent, readonly string[]
   return_received: [...ORDER, 'return_number'],
   refund_issued: [...ORDER, 'refund_amount', 'refund_method'],
   store_credit_issued: [...ORDER, 'credit_code', 'credit_amount'],
+  confirm_request: ['store_name', 'order_number', 'customer_name', 'amount_due', 'confirm_url'],
   new_order: [...ORDER, 'source'],
   online_payment: [...ORDER, 'amount'],
   shopper_cancelled: ORDER,

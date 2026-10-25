@@ -4,7 +4,7 @@
 // part, and every part costs the store. Email bodies are paragraphs
 // separated by blank lines; the layout adds the store's name and a footer.
 import type { Locale } from '../money';
-import type { Channel, MessageEvent, ShopperEvent, StaffEvent } from './index';
+import type { Channel, MessageEvent, ShopperEvent, ShopperSmsEvent, StaffEvent } from './index';
 
 export interface Template {
   /** Email subjects and push titles. */
@@ -188,6 +188,14 @@ const SHOPPER_SMS: Record<ShopperEvent, Record<Locale, string>> = {
   },
 };
 
+/** One SMS part in English (160 GSM characters) with a store name of about 20. */
+const SHOPPER_SMS_ONLY: Record<ShopperSmsEvent, Record<Locale, string>> = {
+  confirm_request: {
+    en: '{store_name}: confirm your order {order_number} ({amount_due} on delivery): {confirm_url}',
+    bn: '{store_name}: অর্ডার {order_number} নিশ্চিত করুন ({amount_due} ডেলিভারিতে): {confirm_url}',
+  },
+};
+
 const STAFF: Record<StaffEvent, ByLocale> = {
   new_order: {
     en: { subject: 'New order {order_number}', body: '{total} from {customer_name} ({source}).' },
@@ -227,6 +235,7 @@ const STAFF: Record<StaffEvent, ByLocale> = {
 };
 
 const isStaffEvent = (event: MessageEvent): event is StaffEvent => event in STAFF;
+const isSmsOnly = (event: MessageEvent): event is ShopperSmsEvent => event in SHOPPER_SMS_ONLY;
 
 /** The default template, or null when the event isn't sent on that channel. */
 export function defaultTemplate(
@@ -235,6 +244,7 @@ export function defaultTemplate(
   locale: Locale,
 ): Template | null {
   if (isStaffEvent(event)) return channel === 'sms' ? null : STAFF[event][locale];
+  if (isSmsOnly(event)) return channel === 'sms' ? { body: SHOPPER_SMS_ONLY[event][locale] } : null;
   if (channel === 'email') return SHOPPER_EMAIL[event][locale];
   if (channel === 'sms') return { body: SHOPPER_SMS[event][locale] };
   return null;

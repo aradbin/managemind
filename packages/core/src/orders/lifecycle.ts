@@ -12,6 +12,8 @@
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import {
+  type CancelCode,
+  type ConfirmedVia,
   deliverInput,
   deliveryStatusOf,
   failInput,
@@ -97,12 +99,18 @@ const EVENT_OF: Partial<
   completed: 'order.completed',
 };
 
-/** Moves the order machine and writes the row, the history and the event. */
+/**
+ * Moves the order machine and writes the row, the history and the event. A
+ * confirmation says how it happened (phase-6-plan §3.5): a call, the
+ * shopper's SMS link, staff's button, or the system for a trusted phone;
+ * it takes the order out of the confirmation queue.
+ */
 async function moveOrder(
   tx: TenantTx,
   actor: Actor,
   order: OrderRow,
   event: 'confirm' | 'process' | 'complete',
+  via: ConfirmedVia = 'staff',
 ): Promise<OrderRow> {
   const t = orderMachine.transition(order.status, event, {
     shippedQuantity: await shippedUnits(tx, order.id),
@@ -117,19 +125,28 @@ async function moveOrder(
       ...(t.to === 'completed' ? { completedAt: sql`now()` } : {}),
     })
     .where(eq(o.id, order.id));
+  const confirming = t.to === 'confirmed';
   await recordHistory(tx, actor, {
     orderId: order.id,
     machine: 'order',
     from: t.from,
     to: t.to,
     event,
+    ...(confirming ? { data: { via } } : {}),
   });
+  if (confirming) {
+    await tx.db.execute(sql`
+      insert into store.order_confirmations (order_id, confirmed_via) values (${order.id}, ${via})
+      on conflict (tenant_id, order_id) do update
+        set confirmed_via = excluded.confirmed_via, claimed_by = null, claimed_until = null,
+            due_at = null`);
+  }
   const type = EVENT_OF[t.to];
   if (type)
     await emit(tx, type, {
       aggregateType: 'order',
       aggregateId: order.id,
-      payload: { number: order.number },
+      payload: confirming ? { number: order.number, via } : { number: order.number },
     });
   return { ...order, status: t.to };
 }
@@ -204,9 +221,14 @@ export async function refreshOrder(tx: TenantTx, actor: Actor, orderId: string):
 
 // ---- The order machine ----------------------------------------------------------------
 
-export async function confirmOrder(tx: TenantTx, actor: Actor, id: string): Promise<OrderRow> {
-  authorize(actor, 'orders.write');
-  return moveOrder(tx, actor, await lockOrder(tx, id), 'confirm');
+export async function confirmOrder(
+  tx: TenantTx,
+  actor: Actor,
+  id: string,
+  via: ConfirmedVia = 'staff',
+): Promise<OrderRow> {
+  if (via !== 'auto' && via !== 'link') authorize(actor, 'orders.write');
+  return moveOrder(tx, actor, await lockOrder(tx, id), 'confirm', via);
 }
 
 /** "Start processing": also happens on its own with the first shipment. */
@@ -226,14 +248,15 @@ async function outstanding(tx: TenantTx, orderId: string) {
 /**
  * Cancels while nothing is shipped (§3.9): releases the reservations, voids
  * pending payments and gives promotion uses back, so a cancelled order
- * doesn't use up a coupon. Staff give a reason; a shopper may cancel only
- * while the order is pending.
+ * doesn't use up a coupon. Staff give a reason and a code (phase-6-plan
+ * §3.5; `other` when none); a shopper may cancel only while the order is
+ * pending, and their cancellation is `shopper_request`.
  */
 export async function cancelOrder(
   tx: TenantTx,
   actor: Actor,
   id: string,
-  input: { reason: string; cause?: 'payment_expired' },
+  input: { reason: string; cause?: 'payment_expired'; code?: CancelCode | undefined },
 ): Promise<OrderRow> {
   const byShopper = actor.kind === 'shopper';
   if (!byShopper) authorize(actor, 'orders.write');
@@ -269,6 +292,12 @@ export async function cancelOrder(
     .returning({ id: schema.payments.id });
   await giveBackPromotionUses(tx, id);
   const who = auditActor(actor, 'staff');
+  const code: CancelCode =
+    input.cause === 'payment_expired'
+      ? 'payment_expired'
+      : byShopper
+        ? 'shopper_request'
+        : (input.code ?? 'other');
   await tx.db
     .update(o)
     .set({
@@ -276,6 +305,11 @@ export async function cancelOrder(
       cancelledAt: sql`now()`,
       cancelReason: input.reason,
       cancelledBy: who.actorType,
+      cancelCode: code,
+      // A duplicate cancelled as one is settled (phase-6-plan §3.4).
+      ...(code === 'duplicate'
+        ? { flags: sql`array_remove(${o.flags}, 'possible_duplicate')` }
+        : {}),
     })
     .where(eq(o.id, id));
   await tx.db.execute(sql`
@@ -287,6 +321,7 @@ export async function cancelOrder(
     to: t.to,
     event: 'cancel',
     reason: input.reason,
+    data: { code },
   });
   for (const p of voided) {
     await emit(tx, 'payment.voided', {
@@ -301,6 +336,7 @@ export async function cancelOrder(
     payload: {
       number: order.number,
       by: who.actorType,
+      code,
       ...(input.cause ? { reason: input.cause } : {}),
     },
   });
@@ -310,7 +346,7 @@ export async function cancelOrder(
       action: 'order.cancelled',
       entityType: 'order',
       entityId: id,
-      after: { reason: input.reason },
+      after: { reason: input.reason, code },
     });
   }
   return { ...order, status: 'cancelled' };

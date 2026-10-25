@@ -8,6 +8,7 @@ import {
   CreditCard,
   Globe,
   Percent,
+  PhoneCall,
   Receipt,
   RotateCcw,
   Search,
@@ -37,6 +38,7 @@ const GROUPS = [
       '/settings/payments',
       '/settings/delivery',
       '/settings/checkout',
+      '/settings/confirmation',
       '/settings/vat',
       '/settings/returns',
     ],
@@ -84,6 +86,12 @@ function Page() {
       icon: ShoppingCart,
       title: t('checkoutSettings.title'),
       description: t('checkoutSettings.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/confirmation' as const,
+      icon: PhoneCall,
+      title: t('confirmSettings.title'),
+      description: t('confirmSettings.description'),
     },
     usePermission('settings.read') && {
       to: '/settings/returns' as const,

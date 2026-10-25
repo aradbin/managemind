@@ -281,6 +281,20 @@
       "when": 1792817358217,
       "tag": "0039_phase_5b_usage_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792859827301,
+      "tag": "0040_phase_6",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792859832475,
+      "tag": "0041_phase_6_grants",
+      "breakpoints": true
     }
   ]
 }

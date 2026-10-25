@@ -125,5 +125,21 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },
+    // The sales recovery flows (phase-6-plan §10), after the returns flows:
+    // they confirm the store's earlier pending orders to start an empty queue.
+    {
+      name: 'recovery-phone',
+      testMatch: /recovery\.spec\.ts/,
+      dependencies: ['returns-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'recovery-desktop',
+      testMatch: /recovery\.spec\.ts/,
+      dependencies: ['returns-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
   ],
 });

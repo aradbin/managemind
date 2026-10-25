@@ -1402,6 +1402,159 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/checkout/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save the checkout as typed so far, for the cookie's cart, once the phone is valid (rate-limited) */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CheckoutDraft"];
+                };
+            };
+            responses: {
+                /** @description Saved, or nothing to save */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        /** "Don't save": delete the saved checkout, and save nothing more from this cart */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/confirm/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The order behind an SMS confirmation link: no street, no phone (rate-limited) */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConfirmLinkOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm or cancel from the SMS link. A risky phone's confirmation is noted, and the store calls first */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        code: string;
+                        /** @enum {string} */
+                        action: "confirm" | "cancel";
+                    };
+                };
+            };
+            responses: {
+                /** @description Answered */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            result: "confirmed" | "noted" | "cancelled";
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/checkout/otp": {
         parameters: {
             query?: never;
@@ -2699,6 +2852,46 @@ export interface paths {
                         fraud?: {
                             /** @default 1 */
                             flagAfterFailed?: number;
+                            /** @default null */
+                            minScore?: number | null;
+                            /** @default 2 */
+                            minDecided?: number;
+                            /** @default 30 */
+                            duplicateMinutes?: number;
+                        };
+                        confirmation?: {
+                            /** @default true */
+                            queue?: boolean;
+                            /** @default false */
+                            includePaid?: boolean;
+                            /** @default 3 */
+                            maxAttempts?: number;
+                            /** @default 60 */
+                            retryAfterMinutes?: number;
+                            /** @default false */
+                            cancelUnreachable?: boolean;
+                            /** @default false */
+                            smsLink?: boolean;
+                            /** @default true */
+                            callRisky?: boolean;
+                            /**
+                             * @default never
+                             * @enum {string}
+                             */
+                            autoConfirm?: "never" | "trusted";
+                            /** @default {} */
+                            script?: {
+                                bn?: string;
+                                en?: string;
+                            };
+                        };
+                        recovery?: {
+                            /** @default true */
+                            incomplete?: boolean;
+                            /** @default 30 */
+                            showAfterMinutes?: number;
+                            /** @default 30 */
+                            keepDays?: number;
                         };
                         returns?: {
                             /** @default true */
@@ -6484,6 +6677,7 @@ export interface paths {
                     source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange";
                     tag?: string;
                     cancelledByShopper?: boolean | null;
+                    flag?: "flagged_phone" | "possible_duplicate" | "unreachable";
                     from?: string;
                     to?: string;
                     q?: string;
@@ -6569,6 +6763,8 @@ export interface paths {
                         completeNow?: boolean;
                         /** @default false */
                         allowBlocked?: boolean;
+                        /** Format: uuid */
+                        incompleteOrderId?: string;
                     };
                 };
             };
@@ -6655,6 +6851,8 @@ export interface paths {
                         completeNow?: boolean;
                         /** @default false */
                         allowBlocked?: boolean;
+                        /** Format: uuid */
+                        incompleteOrderId?: string;
                     };
                 };
             };
@@ -6669,6 +6867,13 @@ export interface paths {
                             quote: components["schemas"]["OrderQuote"];
                             blocked: boolean;
                             firstOrder: boolean;
+                            risk: components["schemas"]["PhoneRisk"] & (Record<string, never> | null);
+                            duplicate: {
+                                /** Format: uuid */
+                                id: string;
+                                displayNumber: string;
+                                placedAt: string;
+                            } | null;
                         };
                     };
                 };
@@ -6875,7 +7080,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Cancel with a reason while nothing is shipped (orders.write) */
+        /** Cancel with a reason and a code while nothing is shipped (orders.write) */
         post: {
             parameters: {
                 query?: never;
@@ -6891,6 +7096,8 @@ export interface paths {
                 content: {
                     "application/json": {
                         reason: string;
+                        /** @enum {string} */
+                        code?: "shopper_request" | "no_answer" | "wrong_number" | "fake" | "duplicate" | "out_of_stock" | "payment_expired" | "other";
                     };
                 };
             };
@@ -6902,6 +7109,468 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["OrderState"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/confirmations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The confirmation queue: To call, Later, Unreachable, or Risky first (orders.read) */
+        get: {
+            parameters: {
+                query?: {
+                    tab?: "to_call" | "later" | "unreachable" | "risky";
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queue */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConfirmationQueue"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirmation/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim an order to call for 5 minutes; 409 while someone else holds it. Returns the call panel with the script (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Claimed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CallPanel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirmation/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** One call's outcome: confirmed, no answer, call back, wrong number or cancelled (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        outcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled";
+                        note?: string;
+                        /** @enum {string} */
+                        code?: "shopper_request" | "fake" | "other";
+                        /** Format: date-time */
+                        dueAt?: string;
+                        block?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            orderId: string;
+                            status: string;
+                            attempts: number;
+                            dueAt: string | null;
+                            unreachable: boolean;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checkouts shoppers left after typing a phone, newest first (orders.read and customers.read) */
+        get: {
+            parameters: {
+                query?: {
+                    tab?: "open" | "converted" | "recovered" | "dismissed";
+                    after?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Incomplete orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["IncompleteOrderSummary"][];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One, with today's price and stock of each line */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Incomplete order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/contacted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a call or a note (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Contacted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close it: a test, a wrong number, not interested (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        note?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Dismissed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompleteOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/incomplete-orders/{id}/prefill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the manual order screen starts from; POST /orders with incompleteOrderId (orders.write) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prefill */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["IncompletePrefill"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/confirmation/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the SMS link to confirm or cancel again, with a new code (at most twice an order; orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Sent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            sends: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/duplicate/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge a possible duplicate into the order it duplicates; returns that order (orders.write; accepts Idempotency-Key) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The order merged into */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/{id}/duplicate/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Not a duplicate: clears the flag (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrderDetail"];
                     };
                 };
             };
@@ -8148,6 +8817,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/phones/{phone}/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A phone's delivery success score in this store, with its counts (orders.read and customers.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    phone: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Risk */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PhoneRisk"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/dashboard": {
         parameters: {
             query?: never;
@@ -9043,6 +9750,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales recovery for a date range: incomplete orders, confirmation, delivery by score and duplicates (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecoveryReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/credentials": {
         parameters: {
             query?: never;
@@ -9309,7 +10055,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "confirm_request" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
                         /** @enum {string} */
                         channel: "email" | "sms" | "push";
                         /** @enum {string} */
@@ -9359,7 +10105,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
+                        event: "order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued" | "confirm_request" | "new_order" | "online_payment" | "shopper_cancelled" | "return_requested" | "payment_problem";
                         /** @enum {string} */
                         channel: "email" | "sms" | "push";
                         /** @enum {string} */
@@ -11983,6 +12729,9 @@ export interface components {
                 }[];
             } | null;
             turnstileSiteKey: string | null;
+            recovery: {
+                save: boolean;
+            };
         };
         PlacedOrder: {
             /** Format: uuid */
@@ -12004,6 +12753,40 @@ export interface components {
         TrackedOrder: {
             order: components["schemas"]["ShopperOrder"];
             token: string;
+        };
+        CheckoutDraft: {
+            phone: string;
+            name?: string;
+            email?: string;
+            address?: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+                line?: string;
+            };
+        };
+        ConfirmLinkOrder: {
+            displayNumber: string;
+            /** @enum {string} */
+            locale: "bn" | "en";
+            storeName: string;
+            items: {
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                quantity: number;
+            }[];
+            total: number;
+            codDue: number;
+            area: {
+                bn?: string;
+                en?: string;
+            } | null;
         };
         ShopperProfile: {
             /** Format: uuid */
@@ -12201,6 +12984,46 @@ export interface components {
             fraud: {
                 /** @default 1 */
                 flagAfterFailed: number;
+                /** @default null */
+                minScore: number | null;
+                /** @default 2 */
+                minDecided: number;
+                /** @default 30 */
+                duplicateMinutes: number;
+            };
+            confirmation: {
+                /** @default true */
+                queue: boolean;
+                /** @default false */
+                includePaid: boolean;
+                /** @default 3 */
+                maxAttempts: number;
+                /** @default 60 */
+                retryAfterMinutes: number;
+                /** @default false */
+                cancelUnreachable: boolean;
+                /** @default false */
+                smsLink: boolean;
+                /** @default true */
+                callRisky: boolean;
+                /**
+                 * @default never
+                 * @enum {string}
+                 */
+                autoConfirm: "never" | "trusted";
+                /** @default {} */
+                script: {
+                    bn?: string;
+                    en?: string;
+                };
+            };
+            recovery: {
+                /** @default true */
+                incomplete: boolean;
+                /** @default 30 */
+                showAfterMinutes: number;
+                /** @default 30 */
+                keepDays: number;
             };
             returns: {
                 /** @default true */
@@ -13882,8 +14705,29 @@ export interface components {
             total: number;
             itemCount: number;
             tags: string[];
+            flags: string[];
             cancelledBy: string | null;
+            risk: components["schemas"]["PhoneRisk"];
             placedAt: string;
+        };
+        PhoneRisk: {
+            history: {
+                delivered: number;
+                /** @description Came back undelivered */
+                returned: number;
+                fake: number;
+                wrongNumber: number;
+                noAnswer: number;
+                /** @description For other reasons: not counted */
+                cancelled: number;
+                open: number;
+            };
+            /** @description 0–100; null for a new phone */
+            score: number | null;
+            decided: number;
+            risky: boolean;
+            trusted: boolean;
+            reasons: ("flagged" | "failed_deliveries" | "low_score")[];
         };
         OrderQuote: {
             lines: {
@@ -14088,8 +14932,27 @@ export interface components {
                 refundDue: number;
                 refundedTotal: number;
             };
-            /** @description payment_risk, late_payment */
+            /** @description payment_risk, late_payment, flagged_phone (risky), possible_duplicate, unreachable */
             flags: string[];
+            risk: components["schemas"]["PhoneRisk"];
+            phoneScoreAtPlacement: number | null;
+            otherOpenOrders: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                status: string;
+                total: number;
+                placedAt: string;
+            }[];
+            duplicateOf: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                status: string;
+            } | null;
+            /** @enum {string|null} */
+            cancelCode: "shopper_request" | "no_answer" | "wrong_number" | "fake" | "duplicate" | "out_of_stock" | "payment_expired" | "other" | null;
+            confirmation: components["schemas"]["ConfirmationState"];
             refunds: {
                 /** Format: uuid */
                 id: string;
@@ -14175,6 +15038,18 @@ export interface components {
             cancelledAt: string | null;
             actions: string[];
         };
+        ConfirmationState: {
+            inQueue: boolean;
+            attempts: number;
+            /** @enum {string|null} */
+            lastOutcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled" | null;
+            dueAt: string | null;
+            /** @enum {string|null} */
+            confirmedVia: "call" | "link" | "staff" | "auto" | null;
+            linkSentAt: string | null;
+            /** @enum {string|null} */
+            linkAnswer: "confirm" | "cancel" | null;
+        } | null;
         ManualOrderPlaced: {
             /** Format: uuid */
             id: string;
@@ -14195,6 +15070,150 @@ export interface components {
             paymentStatus: string;
             deliveryStatus: string;
         };
+        ConfirmationQueue: {
+            enabled: boolean;
+            counts: {
+                toCall: number;
+                later: number;
+                unreachable: number;
+            };
+            items: components["schemas"]["ConfirmationQueueItem"][];
+        };
+        ConfirmationQueueItem: {
+            /** Format: uuid */
+            orderId: string;
+            displayNumber: string;
+            name: string;
+            /** @description Masked without customers.read */
+            phone: string;
+            /** @enum {string} */
+            locale: "bn" | "en";
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                quantity: number;
+            }[];
+            itemCount: number;
+            total: number;
+            codDue: number;
+            area: {
+                bn?: string;
+                en?: string;
+            } | null;
+            risk: components["schemas"]["PhoneRisk"];
+            flags: string[];
+            attempts: number;
+            /** @enum {string|null} */
+            lastOutcome: "confirmed" | "no_answer" | "call_back" | "wrong_number" | "cancelled" | null;
+            lastNote: string | null;
+            dueAt: string | null;
+            claim: {
+                /** Format: uuid */
+                userId: string;
+                name: string;
+                until: string;
+                mine: boolean;
+            } | null;
+            /** @enum {string|null} */
+            linkAnswer: "confirm" | "cancel" | null;
+            placedAt: string;
+        };
+        CallPanel: {
+            /** Format: uuid */
+            orderId: string;
+            displayNumber: string;
+            name: string;
+            phone: string;
+            script: string;
+            claimedUntil: string;
+            attempts: number;
+            maxAttempts: number;
+        };
+        IncompleteOrderSummary: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "open" | "contacted" | "converted" | "recovered" | "dismissed";
+            name: string | null;
+            phone: string;
+            area: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+            } | null;
+            itemCount: number;
+            subtotal: number;
+            items: {
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                quantity: number;
+            }[];
+            risk: components["schemas"]["PhoneRisk"];
+            note: string | null;
+            contactedAt: string | null;
+            /** Format: uuid */
+            orderId: string | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        IncompleteOrder: components["schemas"]["IncompleteOrderSummary"] & {
+            email: string | null;
+            address: {
+                divisionId?: number;
+                districtId?: number;
+                areaId?: number;
+                line?: string;
+            };
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                quantity: number;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                price: number;
+                priceNow: number | null;
+                available: number | null;
+                orderable: boolean;
+            }[];
+            cartCode: string | null;
+            /** @enum {string} */
+            locale: "bn" | "en";
+        };
+        IncompletePrefill: {
+            /** Format: uuid */
+            incompleteOrderId: string;
+            contact: {
+                name: string;
+                phone: string;
+                email: string | null;
+            };
+            address: {
+                divisionId: number;
+                districtId: number;
+                areaId: number;
+                line: string;
+            } | null;
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                quantity: number;
+            }[];
+            code: string | null;
+            /** @enum {string} */
+            locale: "bn" | "en";
+        };
         Customer: {
             /** Format: uuid */
             id: string;
@@ -14213,8 +15232,9 @@ export interface components {
             flagged: boolean;
         };
         CustomerDetail: components["schemas"]["Customer"] & {
-            /** @description By hand or by failed deliveries: asks for an advance or a code */
+            /** @description Risky: by hand, by failed deliveries or by score; asks for an advance or a code */
             phoneFlagged: boolean;
+            risk: components["schemas"]["PhoneRisk"];
             addresses: components["schemas"]["CustomerAddress"][];
             orders: {
                 /** Format: uuid */
@@ -14272,7 +15292,21 @@ export interface components {
                 toShip: number;
                 cancelledByShopper7d: number;
                 lowStock: number;
+                toCall: number;
+                possibleDuplicates: number;
             };
+            /** @description Last 7 days' COD orders; null when the queue is off */
+            confirmation: {
+                confirmed: number;
+                decided: number;
+                rate: number | null;
+            } | null;
+            /** @description Null when off or without customers.read */
+            incomplete: {
+                open: number;
+                today: number;
+                recoveredToday: number;
+            } | null;
             /** @description Only with reports.read */
             sales: {
                 today: {
@@ -14495,6 +15529,49 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+        };
+        RecoveryReport: {
+            from: string;
+            to: string;
+            incomplete: {
+                saved: number;
+                contacted: number;
+                converted: number;
+                recovered: number;
+                recoveredAfterCall: number;
+                dismissed: number;
+                savedValue: number;
+                convertedValue: number;
+                recoveredValue: number;
+            };
+            confirmation: {
+                placed: number;
+                confirmedBy: {
+                    call: number;
+                    link: number;
+                    staff: number;
+                    auto: number;
+                };
+                cancelledBy: {
+                    code: string;
+                    orders: number;
+                }[];
+                unreachable: number;
+                medianMinutes: number | null;
+                rate: number | null;
+            };
+            deliveryByScore: {
+                /** @enum {string} */
+                band: "0-49" | "50-79" | "80-100" | "new";
+                delivered: number;
+                notReceived: number;
+            }[];
+            duplicates: {
+                flagged: number;
+                merged: number;
+                cancelled: number;
+                dismissed: number;
+            };
         };
         Credential: {
             /** @enum {string} */

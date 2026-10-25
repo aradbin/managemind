@@ -167,8 +167,8 @@ jobs:
       # The smoke tests. A full run adds the Phase 1 flows, the catalog flows
       # (Phase 2), the storefront and online-store flows (Phase 3), and the
       # shopper, orders and promotions flows (Phase 4), the returns and
-      # refunds flow (Phase 5A), and onboarding, billing and closing a store
-      # (Phase 5B) at a phone and a desktop viewport with axe on every screen
+      # refunds flow (Phase 5A), onboarding, billing and closing a store
+      # (Phase 5B), and sales recovery (Phase 6) at a phone and a desktop viewport with axe on every screen
       # (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke
@@ -188,7 +188,9 @@ jobs:
       # 2.5 s, CLS 0.1, TBT 200 ms, accessibility 95, and SEO basics. Phase 4
       # adds the cart and checkout pages (phase-4-plan §9), Phase 5B the
       # tracking page and the page a shopper lands on back from SSLCommerz
-      # (phase-5b-plan §9). The return form opens on a click, which
+      # (phase-5b-plan §9), Phase 6 the page an SMS link to confirm an order
+      # opens (phase-6-plan §10; without a code it says the link has expired).
+      # The return form opens on a click, which
       # Lighthouse can't do: the E2E checks its JavaScript budget instead.
       # @lhci/cli runs from the registry at a pinned version, so installs
       # elsewhere never pull in Lighthouse and its Chrome tooling.
@@ -207,7 +209,8 @@ jobs:
             --collect.url="$u/cart?store=demo-grocery" \
             --collect.url="$u/checkout?store=demo-grocery" \
             --collect.url="$u/track?store=demo-grocery" \
-            --collect.url="$u/orders/thanks?store=demo-grocery&payment=paid"
+            --collect.url="$u/orders/thanks?store=demo-grocery&payment=paid" \
+            --collect.url="$u/c?store=demo-grocery"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: ${{ !cancelled() && steps.lighthouse.outcome != 'skipped' }}
         with:

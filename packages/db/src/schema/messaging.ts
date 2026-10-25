@@ -48,6 +48,7 @@ export const MESSAGE_EVENTS = [
   'return_received',
   'refund_issued',
   'store_credit_issued',
+  'confirm_request',
   'new_order',
   'online_payment',
   'shopper_cancelled',

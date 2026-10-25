@@ -16,7 +16,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput, pgError } from '../catalog/common';
-import { phoneFlagged } from '../fraud/index';
+import { type PhoneRisk, phoneRisk } from '../fraud/index';
 import { emit } from '../outbox';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
@@ -188,6 +188,8 @@ export async function customerAddresses(
 export interface CustomerDetail extends Customer {
   /** Flagged by hand or by failed deliveries under the store's setting: asks for an advance or a code. */
   phoneFlagged: boolean;
+  /** The phone's delivery success score, with its counts (phase-6-plan §3.3). */
+  risk: PhoneRisk;
   addresses: CustomerAddress[];
   orders: {
     id: string;
@@ -207,9 +209,11 @@ export async function getCustomer(tx: TenantTx, actor: Actor, id: string): Promi
     select id, number::int, status, payment_status as "paymentStatus", delivery_status as "deliveryStatus",
            total, placed_at as "placedAt"
       from store.orders where customer_id = ${id} order by placed_at desc limit 50`);
+  const risk = await phoneRisk(tx, customer.phone, (await orderSettings(tx)).settings);
   return {
     ...customer,
-    phoneFlagged: await phoneFlagged(tx, customer.phone, (await orderSettings(tx)).settings),
+    phoneFlagged: risk.risky,
+    risk,
     addresses: await customerAddresses(tx, id),
     orders: rows.map((r) => ({
       ...r,

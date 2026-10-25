@@ -17,6 +17,7 @@ import {
 import { formatOrderNumber } from '@managemind/shared/orders';
 import { tenantSettings } from '@managemind/shared/settings';
 import { eq, sql } from 'drizzle-orm';
+import { issueLink } from '../orders/confirm-link';
 import type { OutboxEvent } from '../outbox';
 import type { TenantTx } from '../tenant';
 
@@ -39,6 +40,10 @@ export interface PlannedMessage {
 export interface PlanOptions {
   /** The store's tracking page, on its own host. */
   trackUrl: string;
+  /** A page of the store by path, for the confirmation link (phase-6-plan §3.7). */
+  pageUrl?: (path: string) => string;
+  /** The key confirmation link codes are derived from; no links without it. */
+  linkKey?: string;
   /** Whether the store has a working SMS gateway. */
   smsGateway: boolean;
 }
@@ -53,6 +58,8 @@ interface Triggered {
   returnId?: string;
   refundId?: string;
   credit?: { code: string; amount: number };
+  /** The confirmation link's send number, when the event may send it (phase-6-plan §3.7). */
+  link?: number;
 }
 
 /** Which message events an outbox event triggers, or null for none. */
@@ -61,6 +68,8 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
     orderId?: string;
     by?: string;
     reason?: string;
+    code?: string;
+    via?: string;
     problem?: string;
     creditCode?: string;
     method?: string;
@@ -69,14 +78,21 @@ export function triggeredBy(event: OutboxEvent): Triggered | null {
   const id = event.aggregateId ?? '';
   switch (event.eventType) {
     case 'order.placed':
-      return { orderId: id, shopper: ['order_placed'], staff: ['new_order'] };
+      return { orderId: id, shopper: ['order_placed'], staff: ['new_order'], link: 1 };
+    case 'confirmation.link_requested':
+      return { orderId: id, shopper: [], staff: [], link: (p as { send?: number }).send ?? 2 };
     case 'order.confirmed':
-      return { orderId: id, shopper: ['order_confirmed'], staff: [] };
+      // A shopper who just confirmed by link needs no message saying so (phase-6-plan §4).
+      return { orderId: id, shopper: p.via === 'link' ? [] : ['order_confirmed'], staff: [] };
     case 'order.cancelled':
-      // An unpaid online order says why it was cancelled, in one message.
+      // An unpaid online order says why it was cancelled, in one message. A
+      // duplicate's shopper keeps the other order and its messages (phase-6-plan §3.4).
       return {
         orderId: id,
-        shopper: [p.reason === 'payment_expired' ? 'payment_expired' : 'order_cancelled'],
+        shopper:
+          p.code === 'duplicate'
+            ? []
+            : [p.reason === 'payment_expired' ? 'payment_expired' : 'order_cancelled'],
         staff: p.by === 'shopper' ? ['shopper_cancelled'] : [],
       };
     case 'shipment.shipped':
@@ -261,7 +277,7 @@ export async function planMessages(
 
   const t = schema.tenants;
   const [tenant] = await tx.db
-    .select({ name: t.name, settings: t.settings })
+    .select({ name: t.name, settings: t.settings, defaultLocale: t.defaultLocale })
     .from(t)
     .where(eq(t.id, tx.tenantId));
   const settings = tenantSettings.parse(tenant?.settings ?? {});
@@ -324,6 +340,35 @@ export async function planMessages(
         orderId: order.id,
         locale: shopperLocale,
         values: valuesFor(shopperLocale),
+        skip: options.smsGateway ? null : 'no_gateway',
+      });
+    }
+  }
+
+  // The link to confirm or cancel, by SMS only, when the store turned it on.
+  const c = settings.confirmation;
+  if (triggered.link && c.queue && c.smsLink && options.linkKey && options.pageUrl) {
+    const e = 'confirm_request' as const;
+    const code = options.smsGateway
+      ? await issueLink(tx, options.linkKey, order.id, triggered.link)
+      : null;
+    if (code || !options.smsGateway) {
+      planned.push({
+        idempotencyKey: key(e, 'sms', order.phone),
+        event: e,
+        channel: 'sms',
+        recipientType: 'shopper',
+        recipient: order.phone,
+        orderId: order.id,
+        locale: shopperLocale,
+        values: {
+          ...valuesFor(shopperLocale),
+          // The code is the fragment, after any query: it never reaches a server.
+          // The page in the order's language: a prefix when it isn't the store's default.
+          confirm_url: code
+            ? `${options.pageUrl(shopperLocale === tenant?.defaultLocale ? 'c' : `${shopperLocale}/c`)}#${code}`
+            : '',
+        },
         skip: options.smsGateway ? null : 'no_gateway',
       });
     }

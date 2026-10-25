@@ -8,6 +8,7 @@ export * from './messaging';
 export * from './orders';
 export * from './platform';
 export * from './promotions';
+export * from './recovery';
 export * from './ref';
 export * from './returns';
 export * from './store';

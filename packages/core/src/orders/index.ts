@@ -1,3 +1,6 @@
+export * from './confirm-link';
+export * from './confirmation';
+export * from './duplicates';
 export * from './edit';
 export * from './history';
 export * from './lifecycle';

@@ -1,5 +1,6 @@
 // Every domain event and the zod schema of its payload. emit() refuses an
 // event type that is not listed here or a payload that does not match it.
+import { CANCEL_CODES, CONFIRMED_VIA } from '@managemind/shared/orders';
 import { z } from 'zod';
 
 const tenantStatus = z.enum(['active', 'suspended', 'closed', 'purged']);
@@ -22,6 +23,8 @@ export const EVENTS = {
         'checkout',
         'cod',
         'fraud',
+        'confirmation',
+        'recovery',
         'returns',
         'notifications',
         'setup',
@@ -98,7 +101,11 @@ export const EVENTS = {
     source: z.string(),
     total: z.number().int(),
   }),
-  'order.confirmed': z.object({ number: z.number().int() }),
+  'order.confirmed': z.object({
+    number: z.number().int(),
+    /** How (phase-6-plan §3.5); an order confirmed by the shopper's link sends no "confirmed" SMS. */
+    via: z.enum(CONFIRMED_VIA).optional(),
+  }),
   'order.processing': z.object({ number: z.number().int() }),
   'order.completed': z.object({ number: z.number().int() }),
   'order.cancelled': z.object({
@@ -106,8 +113,12 @@ export const EVENTS = {
     by: z.enum(['staff', 'platform', 'system', 'shopper']),
     /** An online payment that never came (phase-5a-plan §3.3): its own message. */
     reason: z.enum(['payment_expired']).optional(),
+    /** Why (phase-6-plan §3.5); a duplicate's cancellation sends the shopper nothing. */
+    code: z.enum(CANCEL_CODES).optional(),
   }),
   'order.edited': z.object({ number: z.number().int(), total: z.number().int() }),
+  /** Staff sent the SMS link again (phase-6-plan §3.7): its send number, from 2. */
+  'confirmation.link_requested': z.object({ send: z.number().int().min(2).max(10) }),
   'payment.recorded': z.object({
     orderId: z.uuid(),
     provider: z.string(),

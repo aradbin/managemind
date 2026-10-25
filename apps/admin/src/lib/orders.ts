@@ -37,6 +37,33 @@ export type CustomerAddress = Customer['addresses'][number];
 export type Zone = Json<'/v1/admin/delivery-zones', 'get'>[number];
 export type BlockedPhone = Json<'/v1/admin/blocked-phones', 'get'>[number];
 export type Dashboard = Json<'/v1/admin/dashboard', 'get'>;
+export type ConfirmationQueue = Json<'/v1/admin/confirmations', 'get'>;
+export type QueueItem = ConfirmationQueue['items'][number];
+export type CallPanel = Json<'/v1/admin/orders/{id}/confirmation/claim', 'post'>;
+export type QueueTab = 'to_call' | 'later' | 'unreachable' | 'risky';
+export type IncompletePage = Json<'/v1/admin/incomplete-orders', 'get'>;
+export type IncompleteSummary = IncompletePage['items'][number];
+export type IncompleteDetail = Json<'/v1/admin/incomplete-orders/{id}', 'get'>;
+export type IncompleteTab = 'open' | 'converted' | 'recovered' | 'dismissed';
+
+/** Incomplete checkouts (phase-6-plan §3.2), newest change first. */
+export const incompleteQuery = (tab: IncompleteTab) => ({
+  queryKey: ['incomplete-orders', tab] as const,
+  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+    api
+      .GET('/v1/admin/incomplete-orders', {
+        params: { query: { tab, limit: 50, ...(pageParam ? { after: pageParam } : {}) } },
+      })
+      .then(unwrap),
+  initialPageParam: undefined as string | undefined,
+  getNextPageParam: (last: IncompletePage) => last.nextCursor ?? undefined,
+});
+
+export const incompleteOrderQuery = (id: string) => ({
+  queryKey: ['incomplete-order', id] as const,
+  queryFn: async () =>
+    unwrap(await api.GET('/v1/admin/incomplete-orders/{id}', { params: { path: { id } } })),
+});
 export type Localized = { bn?: string | undefined; en?: string | undefined };
 
 /** The value in `locale`, else the other language, else ''. */
@@ -73,6 +100,8 @@ export interface OrderFilters {
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;
+  /** Risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
+  flag?: 'flagged_phone' | 'possible_duplicate' | 'unreachable' | undefined;
   from?: string | undefined;
   to?: string | undefined;
   q?: string | undefined;
@@ -99,6 +128,14 @@ export const ordersQuery = (filters: OrderFilters) => ({
   queryFn: ({ pageParam }: { pageParam: string | undefined }) => fetchOrders(filters, pageParam),
   initialPageParam: undefined as string | undefined,
   getNextPageParam: (last: OrderPage) => last.nextCursor ?? undefined,
+});
+
+/** One tab of the confirmation queue (phase-6-plan §3.5); refreshed every 30 seconds while open. */
+export const confirmationsQuery = (tab: QueueTab) => ({
+  queryKey: ['confirmations', tab] as const,
+  queryFn: async () =>
+    unwrap(await api.GET('/v1/admin/confirmations', { params: { query: { tab, limit: 100 } } })),
+  refetchInterval: 30_000,
 });
 
 export const orderQuery = (id: string) => ({

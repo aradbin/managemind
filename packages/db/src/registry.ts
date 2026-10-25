@@ -18,6 +18,9 @@ export const STORE_TABLES = [
   'return_photos',
   'return_lines',
   'returns',
+  // Sales recovery (Phase 6)
+  'incomplete_orders',
+  'order_confirmations',
   // Orders, payments and shipments (Phase 4)
   'payments',
   'shipment_lines',

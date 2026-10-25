@@ -11,6 +11,7 @@ import {
   anonymizeCustomer,
   blockPhone,
   cancelOrder,
+  claimConfirmation,
   confirmOrder,
   createCustomer,
   createManualOrder,
@@ -23,18 +24,30 @@ import {
   deleteShipment,
   deleteZone,
   deliverShipment,
+  dismissDuplicate,
+  dismissIncompleteOrder,
   editOrder,
   failShipment,
   getCustomer,
+  getIncompleteOrder,
   getOrder,
+  getPhoneRisk,
+  incompletePrefill,
   listBlockedPhones,
+  listConfirmations,
   listCustomers,
+  listIncompleteOrders,
   listOrders,
   listZones,
+  loadCredentials,
+  markIncompleteContacted,
+  mergeDuplicate,
   ordersForPrint,
   previewManualOrder,
   quoteDelivery,
+  recordOutcome,
   recordPayment,
+  resendLink,
   returnShipment,
   runIdempotent,
   setCustomerFlag,
@@ -51,12 +64,22 @@ import { AppError } from '@managemind/shared';
 import { GEO_VERSION, geoFilePath } from '@managemind/shared/geo';
 import {
   addressInput,
+  CANCEL_CODES,
+  CONFIRMATION_OUTCOMES,
+  CONFIRMED_VIA,
+  cancelInput,
+  confirmationOutcomeInput,
+  confirmationQuery,
   customerFlagInput,
   customerInput,
   customerPatch,
   deliverInput,
   deliveryZoneInput,
   failInput,
+  INCOMPLETE_ORDER_STATUSES,
+  incompleteListQuery,
+  incompleteNoteInput,
+  LINK_ANSWERS,
   manualOrderInput,
   manualPaymentInput,
   manualQuoteInput,
@@ -65,12 +88,13 @@ import {
   orderEditInput,
   orderListQuery,
   orderTagsInput,
-  reasonInput,
+  RISK_REASONS,
   shipmentInput,
   shipmentReturnInput,
   signOrderToken,
 } from '@managemind/shared/orders';
 import type { Context } from 'hono';
+import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
 import { inStore, type StaffEnv } from './context';
 import { storeUrlsFor } from './store-urls';
@@ -106,6 +130,142 @@ const Address = z.object({
   line: z.string(),
   names: z.object({ division: Localized, district: Localized, area: Localized }),
 });
+/** A phone's delivery success score in this store, with the counts behind it (phase-6-plan §3.3). */
+export const PhoneRisk = z
+  .object({
+    history: z.object({
+      delivered: z.number().int(),
+      returned: z.number().int().openapi({ description: 'Came back undelivered' }),
+      fake: z.number().int(),
+      wrongNumber: z.number().int(),
+      noAnswer: z.number().int(),
+      cancelled: z.number().int().openapi({ description: 'For other reasons: not counted' }),
+      open: z.number().int(),
+    }),
+    score: z.number().int().nullable().openapi({ description: '0–100; null for a new phone' }),
+    decided: z.number().int(),
+    risky: z.boolean(),
+    trusted: z.boolean(),
+    reasons: z.array(z.enum(RISK_REASONS)),
+  })
+  .openapi('PhoneRisk');
+const ConfirmationStateView = z
+  .object({
+    inQueue: z.boolean(),
+    attempts: z.number().int(),
+    lastOutcome: z.enum(CONFIRMATION_OUTCOMES).nullable(),
+    dueAt: z.string().nullable(),
+    confirmedVia: z.enum(CONFIRMED_VIA).nullable(),
+    linkSentAt: z.string().nullable(),
+    linkAnswer: z.enum(LINK_ANSWERS).nullable(),
+  })
+  .openapi('ConfirmationState');
+const QueueItem = z
+  .object({
+    orderId: z.uuid(),
+    displayNumber: z.string(),
+    name: z.string(),
+    phone: z.string().openapi({ description: 'Masked without customers.read' }),
+    locale: z.enum(['bn', 'en']),
+    items: z.array(z.object({ variantId: z.uuid(), title: Localized, quantity: z.number().int() })),
+    itemCount: z.number().int(),
+    total: z.number().int(),
+    codDue: z.number().int(),
+    area: Localized.nullable(),
+    risk: PhoneRisk,
+    flags: z.array(z.string()),
+    attempts: z.number().int(),
+    lastOutcome: z.enum(CONFIRMATION_OUTCOMES).nullable(),
+    lastNote: z.string().nullable(),
+    dueAt: z.string().nullable(),
+    claim: z
+      .object({ userId: z.uuid(), name: z.string(), until: z.string(), mine: z.boolean() })
+      .nullable(),
+    linkAnswer: z.enum(LINK_ANSWERS).nullable(),
+    placedAt: z.string(),
+  })
+  .openapi('ConfirmationQueueItem');
+const QueueView = z
+  .object({
+    enabled: z.boolean(),
+    counts: z.object({
+      toCall: z.number().int(),
+      later: z.number().int(),
+      unreachable: z.number().int(),
+    }),
+    items: z.array(QueueItem),
+  })
+  .openapi('ConfirmationQueue');
+const CallPanel = z
+  .object({
+    orderId: z.uuid(),
+    displayNumber: z.string(),
+    name: z.string(),
+    phone: z.string(),
+    script: z.string(),
+    claimedUntil: z.string(),
+    attempts: z.number().int(),
+    maxAttempts: z.number().int(),
+  })
+  .openapi('CallPanel');
+const IncompleteArea = z.object({
+  divisionId: z.number().int().optional(),
+  districtId: z.number().int().optional(),
+  areaId: z.number().int().optional(),
+});
+const IncompleteSummary = z
+  .object({
+    id: z.uuid(),
+    status: z.enum(INCOMPLETE_ORDER_STATUSES),
+    name: z.string().nullable(),
+    phone: z.string(),
+    area: IncompleteArea.nullable(),
+    itemCount: z.number().int(),
+    subtotal: z.number().int(),
+    items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
+    risk: PhoneRisk,
+    note: z.string().nullable(),
+    contactedAt: z.string().nullable(),
+    orderId: z.uuid().nullable(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .openapi('IncompleteOrderSummary');
+const IncompleteDetail = IncompleteSummary.extend({
+  email: z.string().nullable(),
+  address: IncompleteArea.extend({ line: z.string().optional() }),
+  lines: z.array(
+    z.object({
+      variantId: z.uuid(),
+      quantity: z.number().int(),
+      title: Localized,
+      optionLabels: z.array(Localized),
+      price: z.number().int(),
+      priceNow: z.number().int().nullable(),
+      available: z.number().int().nullable(),
+      orderable: z.boolean(),
+    }),
+  ),
+  cartCode: z.string().nullable(),
+  locale: z.enum(['bn', 'en']),
+}).openapi('IncompleteOrder');
+const IncompletePrefill = z
+  .object({
+    incompleteOrderId: z.uuid(),
+    contact: z.object({ name: z.string(), phone: z.string(), email: z.string().nullable() }),
+    address: z
+      .object({
+        divisionId: z.number().int(),
+        districtId: z.number().int(),
+        areaId: z.number().int(),
+        line: z.string(),
+      })
+      .nullable(),
+    lines: z.array(z.object({ variantId: z.uuid(), quantity: z.number().int() })),
+    code: z.string().nullable(),
+    locale: z.enum(['bn', 'en']),
+  })
+  .openapi('IncompletePrefill');
 const OrderSummary = z
   .object({
     id: z.uuid(),
@@ -122,7 +282,9 @@ const OrderSummary = z
     total: z.number().int(),
     itemCount: z.number().int(),
     tags: z.array(z.string()),
+    flags: z.array(z.string()),
     cancelledBy: z.string().nullable(),
+    risk: PhoneRisk,
     placedAt: z.string(),
   })
   .openapi('OrderSummary');
@@ -196,7 +358,26 @@ export const OrderDetail = z
       }),
     ),
     totals: OrderTotals,
-    flags: z.array(z.string()).openapi({ description: 'payment_risk, late_payment' }),
+    flags: z.array(z.string()).openapi({
+      description:
+        'payment_risk, late_payment, flagged_phone (risky), possible_duplicate, unreachable',
+    }),
+    risk: PhoneRisk,
+    phoneScoreAtPlacement: z.number().int().nullable(),
+    otherOpenOrders: z.array(
+      z.object({
+        id: z.uuid(),
+        displayNumber: z.string(),
+        status: z.string(),
+        total: Money,
+        placedAt: z.string(),
+      }),
+    ),
+    duplicateOf: z
+      .object({ id: z.uuid(), displayNumber: z.string(), status: z.string() })
+      .nullable(),
+    cancelCode: z.enum(CANCEL_CODES).nullable(),
+    confirmation: ConfirmationStateView.nullable(),
     refunds: z.array(
       z.object({
         id: z.uuid(),
@@ -378,9 +559,10 @@ const CustomerAddress = z
   })
   .openapi('CustomerAddress');
 const CustomerDetail = Customer.extend({
-  phoneFlagged: z
-    .boolean()
-    .openapi({ description: 'By hand or by failed deliveries: asks for an advance or a code' }),
+  phoneFlagged: z.boolean().openapi({
+    description: 'Risky: by hand, by failed deliveries or by score; asks for an advance or a code',
+  }),
+  risk: PhoneRisk,
   addresses: z.array(CustomerAddress),
   orders: z.array(
     z.object({
@@ -424,7 +606,25 @@ const DashboardView = z
       toShip: z.number().int(),
       cancelledByShopper7d: z.number().int(),
       lowStock: z.number().int(),
+      toCall: z.number().int(),
+      possibleDuplicates: z.number().int(),
     }),
+    confirmation: z
+      .object({
+        confirmed: z.number().int(),
+        decided: z.number().int(),
+        rate: z.number().int().nullable(),
+      })
+      .nullable()
+      .openapi({ description: "Last 7 days' COD orders; null when the queue is off" }),
+    incomplete: z
+      .object({
+        open: z.number().int(),
+        today: z.number().int(),
+        recoveredToday: z.number().int(),
+      })
+      .nullable()
+      .openapi({ description: 'Null when off or without customers.read' }),
     sales: z
       .object({
         today: z.object({ orders: z.number().int(), total: Money }),
@@ -494,7 +694,15 @@ export const ORDER_ROUTES = {
     summary: 'Prices a manual order before it is saved, and warns about a blocked phone',
     request: body(manualQuoteInput),
     responses: json(
-      z.object({ quote: QuoteView, blocked: z.boolean(), firstOrder: z.boolean() }),
+      z.object({
+        quote: QuoteView,
+        blocked: z.boolean(),
+        firstOrder: z.boolean(),
+        risk: PhoneRisk.nullable(),
+        duplicate: z
+          .object({ id: z.uuid(), displayNumber: z.string(), placedAt: z.string() })
+          .nullable(),
+      }),
       'Quote',
     ),
   }),
@@ -522,9 +730,104 @@ export const ORDER_ROUTES = {
   cancel: r({
     method: 'post',
     path: '/orders/{id}/cancel',
-    summary: 'Cancel with a reason while nothing is shipped (orders.write)',
-    request: { params: Id, headers: IdemHeader, ...body(reasonInput) },
+    summary: 'Cancel with a reason and a code while nothing is shipped (orders.write)',
+    request: { params: Id, headers: IdemHeader, ...body(cancelInput) },
     responses: json(OrderState, 'Cancelled'),
+  }),
+  confirmations: r({
+    method: 'get',
+    path: '/confirmations',
+    summary: 'The confirmation queue: To call, Later, Unreachable, or Risky first (orders.read)',
+    request: { query: confirmationQuery },
+    responses: json(QueueView, 'Queue'),
+  }),
+  claimConfirmation: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/claim',
+    summary:
+      'Claim an order to call for 5 minutes; 409 while someone else holds it. Returns the call panel with the script (orders.write)',
+    request: { params: Id },
+    responses: json(CallPanel, 'Claimed'),
+  }),
+  confirmationOutcome: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/outcomes',
+    summary:
+      "One call's outcome: confirmed, no answer, call back, wrong number or cancelled (orders.write; accepts Idempotency-Key)",
+    request: { params: Id, headers: IdemHeader, ...body(confirmationOutcomeInput) },
+    responses: json(
+      z.object({
+        orderId: z.uuid(),
+        status: z.string(),
+        attempts: z.number().int(),
+        dueAt: z.string().nullable(),
+        unreachable: z.boolean(),
+      }),
+      'Recorded',
+    ),
+  }),
+  incompleteOrders: r({
+    method: 'get',
+    path: '/incomplete-orders',
+    summary:
+      'Checkouts shoppers left after typing a phone, newest first (orders.read and customers.read)',
+    request: { query: incompleteListQuery },
+    responses: json(
+      z.object({ items: z.array(IncompleteSummary), nextCursor: z.string().nullable() }),
+      'Incomplete orders',
+    ),
+  }),
+  incompleteOrder: r({
+    method: 'get',
+    path: '/incomplete-orders/{id}',
+    summary: "One, with today's price and stock of each line",
+    request: { params: Id },
+    responses: json(IncompleteDetail, 'Incomplete order'),
+  }),
+  incompleteContacted: r({
+    method: 'post',
+    path: '/incomplete-orders/{id}/contacted',
+    summary: 'Record a call or a note (orders.write)',
+    request: { params: Id, ...body(incompleteNoteInput) },
+    responses: json(IncompleteDetail, 'Contacted'),
+  }),
+  incompleteDismiss: r({
+    method: 'post',
+    path: '/incomplete-orders/{id}/dismiss',
+    summary: 'Close it: a test, a wrong number, not interested (orders.write)',
+    request: { params: Id, ...body(incompleteNoteInput) },
+    responses: json(IncompleteDetail, 'Dismissed'),
+  }),
+  incompletePrefill: r({
+    method: 'get',
+    path: '/incomplete-orders/{id}/prefill',
+    summary:
+      'What the manual order screen starts from; POST /orders with incompleteOrderId (orders.write)',
+    request: { params: Id },
+    responses: json(IncompletePrefill, 'Prefill'),
+  }),
+  resendLink: r({
+    method: 'post',
+    path: '/orders/{id}/confirmation/link',
+    summary:
+      'Send the SMS link to confirm or cancel again, with a new code (at most twice an order; orders.write)',
+    request: { params: Id },
+    responses: json(z.object({ sends: z.number().int() }), 'Sent'),
+  }),
+  mergeDuplicate: r({
+    method: 'post',
+    path: '/orders/{id}/duplicate/merge',
+    summary:
+      'Merge a possible duplicate into the order it duplicates; returns that order (orders.write; accepts Idempotency-Key)',
+    request: { params: Id, headers: IdemHeader },
+    responses: json(OrderDetail, 'The order merged into'),
+  }),
+  dismissDuplicate: r({
+    method: 'post',
+    path: '/orders/{id}/duplicate/dismiss',
+    summary: 'Not a duplicate: clears the flag (orders.write)',
+    request: { params: Id },
+    responses: json(OrderDetail, 'Order'),
   }),
   editPreview: r({
     method: 'post',
@@ -767,6 +1070,14 @@ export const ORDER_ROUTES = {
     request: { params: z.object({ phone: z.string().max(32) }) },
     responses: ok('Unblocked'),
   }),
+  phoneRisk: r({
+    method: 'get',
+    path: '/phones/{phone}/risk',
+    summary:
+      "A phone's delivery success score in this store, with its counts (orders.read and customers.read)",
+    request: { params: z.object({ phone: z.string().max(32) }) },
+    responses: json(PhoneRisk, 'Risk'),
+  }),
   dashboard: r({
     method: 'get',
     path: '/dashboard',
@@ -910,8 +1221,70 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
   command<{ reason: string }>(
     R.cancel,
     'cancel',
-    (tx, c, input) => cancelOrder(tx, actor(c), id(c), reasonInput.parse(input)),
+    (tx, c, input) => cancelOrder(tx, actor(c), id(c), cancelInput.parse(input)),
     state,
+  );
+  admin.openapi(R.confirmations, async (c) =>
+    c.json(await inStore(c, (tx) => listConfirmations(tx, actor(c), c.req.valid('query'))), 200),
+  );
+  admin.openapi(R.claimConfirmation, async (c) =>
+    c.json(await inStore(c, (tx) => claimConfirmation(tx, actor(c), id(c)), write), 200),
+  );
+  command(R.confirmationOutcome, 'confirmation_outcome', (tx, c, input) =>
+    recordOutcome(tx, actor(c), id(c), input),
+  );
+  admin.openapi(R.incompleteOrders, async (c) =>
+    c.json(await inStore(c, (tx) => listIncompleteOrders(tx, actor(c), c.req.valid('query'))), 200),
+  );
+  admin.openapi(R.incompleteOrder, async (c) =>
+    c.json(await inStore(c, (tx) => getIncompleteOrder(tx, actor(c), id(c))), 200),
+  );
+  admin.openapi(R.incompleteContacted, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => markIncompleteContacted(tx, actor(c), id(c), input), write),
+      200,
+    );
+  });
+  admin.openapi(R.incompleteDismiss, async (c) => {
+    const input = c.req.valid('json');
+    return c.json(
+      await inStore(c, (tx) => dismissIncompleteOrder(tx, actor(c), id(c), input), write),
+      200,
+    );
+  });
+  admin.openapi(R.incompletePrefill, async (c) =>
+    c.json(await inStore(c, (tx) => incompletePrefill(tx, actor(c), id(c))), 200),
+  );
+  admin.openapi(R.resendLink, async (c) =>
+    c.json(
+      await inStore(
+        c,
+        async (tx) =>
+          resendLink(tx, actor(c), id(c), {
+            smsReady: (await loadCredentials(tx, await credentialsKeyring(c.env), 'sms')) !== null,
+          }),
+        write,
+      ),
+      200,
+    ),
+  );
+  command(R.mergeDuplicate, 'merge', async (tx, c) => {
+    const { orderId } = await mergeDuplicate(tx, actor(c), id(c));
+    return getOrder(tx, actor(c), orderId);
+  });
+  admin.openapi(R.dismissDuplicate, async (c) =>
+    c.json(
+      await inStore(
+        c,
+        async (tx) => {
+          await dismissDuplicate(tx, actor(c), id(c));
+          return getOrder(tx, actor(c), id(c));
+        },
+        write,
+      ),
+      200,
+    ),
   );
   command(R.edit, 'edit', async (tx, c, input) => {
     await editOrder(tx, actor(c), id(c), input);
@@ -1067,6 +1440,14 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     const { phone } = c.req.valid('param');
     await inStore(c, (tx) => unblockPhone(tx, actor(c), decodeURIComponent(phone)), write);
     return c.body(null, 204);
+  });
+
+  admin.openapi(R.phoneRisk, async (c) => {
+    const { phone } = c.req.valid('param');
+    return c.json(
+      await inStore(c, (tx) => getPhoneRisk(tx, actor(c), decodeURIComponent(phone))),
+      200,
+    );
   });
 
   admin.openapi(R.dashboard, async (c) => {
