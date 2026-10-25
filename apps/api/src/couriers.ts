@@ -9,9 +9,12 @@ import {
   applyCourierUpdate,
   type CourierConnection,
   claimBooking,
+  courierActor,
   findCourierShipment,
   loadCourier,
   markCourierSynced,
+  type OutboxEvent,
+  orderSettings,
   recordBooked,
   recordBookingFailed,
   relayEvents,
@@ -45,7 +48,8 @@ type Ctx = Pick<ExecutionContext, 'waitUntil'>;
 export interface CourierBookMessage {
   kind: 'courier_book';
   tenantId: string;
-  userId: string;
+  /** Who asked; null for the store's auto-booking on confirm (Q8). */
+  userId: string | null;
   courier: Courier;
   orderIds: string[];
 }
@@ -440,9 +444,10 @@ export async function queueBookings(
 }
 
 async function runBookings(env: Env, ctx: Ctx, m: CourierBookMessage): Promise<void> {
-  const actor = await withClient(env, ctx, (client) =>
-    actorFor(createDb(client), m.userId, m.tenantId),
-  );
+  const userId = m.userId;
+  const actor = userId
+    ? await withClient(env, ctx, (client) => actorFor(createDb(client), userId, m.tenantId))
+    : courierActor;
   for (const orderId of m.orderIds) {
     try {
       await bookOrder(env, ctx, m.tenantId, actor, orderId, { courier: m.courier });
@@ -454,6 +459,40 @@ async function runBookings(env: Env, ctx: Ctx, m: CourierBookMessage): Promise<v
         error: messageOf(e),
       });
     }
+  }
+}
+
+/**
+ * Auto-booking (§3.4, Q8): a store with `couriers.autoBook` on books each
+ * confirmed order with its default courier (or the first connected), in the
+ * background like a bulk booking. Off by default.
+ */
+export async function autoBook(env: Env, ctx: Ctx, events: readonly OutboxEvent[]): Promise<void> {
+  const byStore = new Map<string, string[]>();
+  for (const e of events) {
+    const tenantId = e.tenantId;
+    const orderId = e.aggregateId;
+    if (e.eventType !== 'order.confirmed' || !tenantId || !orderId) continue;
+    byStore.set(tenantId, [...(byStore.get(tenantId) ?? []), orderId]);
+  }
+  for (const [tenantId, orderIds] of byStore) {
+    const courier = await withClient(env, ctx, (client) =>
+      withTenant(client, tenantId, async (tx) => {
+        const { settings } = await orderSettings(tx);
+        if (settings.couriers.autoBook !== 'on_confirm') return null;
+        const { rows } = await tx.db.execute<{ kind: string }>(sql`
+          select kind from store.provider_credentials
+           where kind in ('steadfast', 'pathao', 'redx', 'fake') order by created_at`);
+        const connected = rows
+          .map((r) => r.kind)
+          .filter((k): k is Courier => isCourier(k) && (k !== 'fake' || fakeAllowed(env)));
+        const preferred = settings.couriers.default;
+        return preferred && connected.includes(preferred) ? preferred : (connected[0] ?? null);
+      }),
+    );
+    if (!courier) continue;
+    await queueBookings(env, ctx, { tenantId, userId: null, courier, orderIds });
+    log('info', 'auto-booking queued', { tenant_id: tenantId, courier, orders: orderIds.length });
   }
 }
 

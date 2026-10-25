@@ -424,6 +424,13 @@ describe('isolation suite', () => {
       );
       return rows[0]?.id as string;
     });
+    const bPayout = await inB(async (tx) => {
+      const { rows } = await tx.db.execute<{ id: string }>(
+        sql`insert into store.courier_payouts (courier, reference, paid_at, amount, source)
+             values ('fake', ${`b-${crypto.randomUUID()}`}, now(), 0, 'manual') returning id`,
+      );
+      return rows[0]?.id as string;
+    });
     const bMessage = await inB(async (tx) => {
       const { rows } = await tx.db.execute<{ id: string }>(
         sql`insert into store.messages (idempotency_key, event, channel, recipient_type, recipient, locale, status)
@@ -592,6 +599,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/promotions/{id}/codes': { id: promotion.id, body: { count: 1 } },
       'GET /v1/admin/promotions/{id}/codes': { id: promotion.id },
       'POST /v1/admin/messages/{id}/resend': { id: bMessage },
+      'DELETE /v1/admin/courier-payouts/{id}': { id: bPayout },
       'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
       'GET /v1/admin/billing/invoices/{id}': { id: bInvoice },
       'POST /v1/admin/billing/invoices/{id}/pay': { id: bInvoice },

@@ -8,13 +8,16 @@ import {
   type CredentialCheck,
   cancelBooking,
   checkBulkBooking,
+  codReconciliation,
   connectCourier,
   courierConnectInput,
   courierWebhookSecret,
+  deletePayout,
   disconnectCourier,
   listCourierReturns,
   listCouriers,
   lockOrder,
+  recordPayout,
   rotateWebhookSecret,
   searchCourierPlaces,
   setFakeParcel,
@@ -29,8 +32,10 @@ import {
   COURIERS,
   type Courier,
   cancelBookingInput,
+  codReportQuery,
   LIVE_COURIERS,
   needsAreas,
+  payoutInput,
 } from '@managemind/shared/orders';
 import {
   bookOrder,
@@ -136,6 +141,83 @@ const CourierReturn = z.object({
   returnedByCourierAt: z.string(),
   items: z.number().int(),
 });
+
+const Matched = z.object({
+  consignmentId: z.string(),
+  shipmentId: z.uuid(),
+  collected: z.number().int(),
+  fee: z.number().int(),
+  net: z.number().int(),
+});
+const PayoutResult = z
+  .object({
+    payoutId: z.uuid().nullable(),
+    matched: z.array(Matched),
+    unknown: z.array(z.string()),
+    alreadyPaid: z.array(z.string()),
+    notDelivered: z.array(z.string()),
+    totals: z.object({ collected: z.number().int(), fee: z.number().int(), net: z.number().int() }),
+  })
+  .openapi('PayoutResult');
+const CodReport = z
+  .object({
+    from: z.string(),
+    to: z.string(),
+    couriers: z.array(
+      z.object({
+        courier: z.string(),
+        delivered: z.number().int(),
+        codAsked: z.number().int(),
+        collected: z.number().int(),
+        fees: z.number().int(),
+        net: z.number().int(),
+        paidOut: z.number().int(),
+        outstanding: z.number().int(),
+        outstandingParcels: z.number().int(),
+        returned: z.number().int(),
+        returnCharges: z.number().int(),
+      }),
+    ),
+    outstanding: z.array(
+      z.object({
+        shipmentId: z.uuid(),
+        orderId: z.uuid(),
+        displayNumber: z.string(),
+        courier: z.string(),
+        consignmentId: z.string().nullable(),
+        deliveredAt: z.string(),
+        net: z.number().int(),
+        days: z.number().int(),
+      }),
+    ),
+    differences: z.array(
+      z.object({
+        shipmentId: z.uuid(),
+        orderId: z.uuid(),
+        displayNumber: z.string(),
+        courier: z.string(),
+        consignmentId: z.string().nullable(),
+        asked: z.number().int(),
+        collected: z.number().int(),
+        paidNet: z.number().int().nullable(),
+        expectedNet: z.number().int(),
+        kind: z.enum(['collected', 'paid']),
+      }),
+    ),
+    payouts: z.array(
+      z.object({
+        id: z.uuid(),
+        courier: z.string(),
+        reference: z.string(),
+        paidAt: z.string(),
+        amount: z.number().int(),
+        fees: z.number().int(),
+        parcels: z.number().int(),
+        source: z.string(),
+      }),
+    ),
+  })
+  .openapi('CodReport');
 
 export const COURIER_ROUTES = {
   couriers: r({
@@ -245,6 +327,27 @@ export const COURIER_ROUTES = {
     path: '/courier-returns',
     summary: 'Parcels the courier returned, waiting to be received (orders.read)',
     responses: json(z.array(CourierReturn), 'Returns'),
+  }),
+  codReport: r({
+    method: 'get',
+    path: '/reports/cod',
+    summary: 'COD reconciliation by courier, for a range of delivery dates (reports.read)',
+    request: { query: codReportQuery },
+    responses: json(CodReport, 'Report'),
+  }),
+  recordPayout: r({
+    method: 'post',
+    path: '/courier-payouts',
+    summary: 'Record a courier payout or import a statement; preview first (payments.reconcile)',
+    request: body(payoutInput),
+    responses: json(PayoutResult, 'Preview or saved'),
+  }),
+  deletePayout: r({
+    method: 'delete',
+    path: '/courier-payouts/{id}',
+    summary: 'Delete a payout recorded by mistake (payments.reconcile)',
+    request: { params: Id },
+    responses: { 204: { description: 'Deleted' } },
   }),
   fakeParcel: r({
     method: 'post',
@@ -431,7 +534,7 @@ export function registerCouriers(admin: OpenAPIHono<StaffEnv>): void {
     await inStore(c, async () => null, { write: true });
     await queueBookings(c.env, c.executionCtx, {
       tenantId: tenant(c),
-      userId: actor(c).userId as string,
+      userId: actor(c).userId ?? null,
       courier: v.courier,
       orderIds: [...new Set(v.orderIds)],
     });
@@ -480,6 +583,21 @@ export function registerCouriers(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.courierReturns, async (c) =>
     c.json(await inStore(c, (tx) => listCourierReturns(tx, actor(c))), 200),
   );
+  admin.openapi(R.codReport, async (c) =>
+    c.json(await inStore(c, (tx) => codReconciliation(tx, actor(c), c.req.valid('query'))), 200),
+  );
+  admin.openapi(R.recordPayout, async (c) => {
+    const v = c.req.valid('json');
+    const result = await inStore(c, (tx) => recordPayout(tx, actor(c), v), {
+      write: !v.preview,
+    });
+    return c.json(result, 200);
+  });
+  admin.openapi(R.deletePayout, async (c) => {
+    const { id } = c.req.valid('param');
+    await inStore(c, (tx) => deletePayout(tx, actor(c), id), { write: true });
+    return c.body(null, 204);
+  });
   admin.openapi(R.fakeParcel, async (c) => {
     if (!fakeAllowed(c.env)) throw new AppError('not_found');
     const { consignmentId } = c.req.valid('param');

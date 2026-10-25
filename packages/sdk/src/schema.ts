@@ -10640,6 +10640,141 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/cod": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** COD reconciliation by courier, for a range of delivery dates (reports.read) */
+        get: {
+            parameters: {
+                query: {
+                    courier?: "steadfast" | "pathao" | "redx" | "fake";
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CodReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/courier-payouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a courier payout or import a statement; preview first (payments.reconcile) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        courier: "steadfast" | "pathao" | "redx" | "fake";
+                        reference: string;
+                        /** Format: date-time */
+                        paidAt: string;
+                        /**
+                         * @default manual
+                         * @enum {string}
+                         */
+                        source?: "import" | "manual";
+                        note?: string;
+                        rows: {
+                            consignmentId: string;
+                            collected?: number;
+                            fee?: number;
+                        }[];
+                        /** @default false */
+                        preview?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Preview or saved */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayoutResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/courier-payouts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a payout recorded by mistake (payments.reconcile) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/couriers/fake/parcels/{consignmentId}": {
         parameters: {
             query?: never;
@@ -13685,7 +13820,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -16530,6 +16665,81 @@ export interface components {
             result: "booked" | "refused" | "unsure";
             consignmentId?: string | null;
             error?: string;
+        };
+        CodReport: {
+            from: string;
+            to: string;
+            couriers: {
+                courier: string;
+                delivered: number;
+                codAsked: number;
+                collected: number;
+                fees: number;
+                net: number;
+                paidOut: number;
+                outstanding: number;
+                outstandingParcels: number;
+                returned: number;
+                returnCharges: number;
+            }[];
+            outstanding: {
+                /** Format: uuid */
+                shipmentId: string;
+                /** Format: uuid */
+                orderId: string;
+                displayNumber: string;
+                courier: string;
+                consignmentId: string | null;
+                deliveredAt: string;
+                net: number;
+                days: number;
+            }[];
+            differences: {
+                /** Format: uuid */
+                shipmentId: string;
+                /** Format: uuid */
+                orderId: string;
+                displayNumber: string;
+                courier: string;
+                consignmentId: string | null;
+                asked: number;
+                collected: number;
+                paidNet: number | null;
+                expectedNet: number;
+                /** @enum {string} */
+                kind: "collected" | "paid";
+            }[];
+            payouts: {
+                /** Format: uuid */
+                id: string;
+                courier: string;
+                reference: string;
+                paidAt: string;
+                amount: number;
+                fees: number;
+                parcels: number;
+                source: string;
+            }[];
+        };
+        PayoutResult: {
+            /** Format: uuid */
+            payoutId: string | null;
+            matched: {
+                consignmentId: string;
+                /** Format: uuid */
+                shipmentId: string;
+                collected: number;
+                fee: number;
+                net: number;
+            }[];
+            unknown: string[];
+            alreadyPaid: string[];
+            notDelivered: string[];
+            totals: {
+                collected: number;
+                fee: number;
+                net: number;
+            };
         };
         Message: {
             /** Format: uuid */

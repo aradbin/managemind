@@ -19,6 +19,7 @@ import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/couriers';
+import { BulkBookDialog } from '../components/courier-booking';
 // The Returns button's label lives with the returns screens' messages.
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
@@ -93,6 +94,7 @@ export function OrdersPage() {
   const canWrite = usePermission('orders.write');
   const [q, setQ] = useState(search.q ?? '');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [bulkBooking, setBulkBooking] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const panelCount = PANEL.filter((k) => search[k] !== undefined).length;
   const [panel, setPanel] = useState(panelCount > 0);
@@ -474,6 +476,11 @@ export function OrdersPage() {
                   {t('orders.bulkConfirm', { count: pendingSelected.length })}
                 </Button>
               )}
+              {canWrite && (
+                <Button variant="secondary" onClick={() => setBulkBooking(true)}>
+                  {t('couriers.bulk.book')}
+                </Button>
+              )}
               <PrintLinks ids={ids} />
               <Button
                 variant="ghost"
@@ -545,6 +552,15 @@ export function OrdersPage() {
           onClose={(done) => {
             setConfirming(false);
             if (done) setSelected(new Set());
+          }}
+        />
+      )}
+      {bulkBooking && (
+        <BulkBookDialog
+          orderIds={ids}
+          onClose={() => {
+            setBulkBooking(false);
+            setSelected(new Set());
           }}
         />
       )}

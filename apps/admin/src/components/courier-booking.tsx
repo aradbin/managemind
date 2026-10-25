@@ -9,7 +9,12 @@ import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
-import { type BookingOutcome, type CourierPlace, courierName } from '../lib/couriers';
+import {
+  type BookingOutcome,
+  type CourierPlace,
+  courierName,
+  couriersQuery,
+} from '../lib/couriers';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateTime, type OrderDetail, type Shipment } from '../lib/orders';
 import { ConfirmDialog } from './confirm-dialog';
@@ -428,5 +433,137 @@ export function CourierPanel({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Booking a selection from the order list (§3.4): each order checked first,
+ * then the ones ready are booked in the background, and the list shows
+ * each result as it lands.
+ */
+export function BulkBookDialog({ orderIds, onClose }: { orderIds: string[]; onClose: () => void }) {
+  const { t } = useLocale();
+  const queryClient = useQueryClient();
+  const couriers = useQuery(couriersQuery);
+  const connected = couriers.data?.connected.map((c) => c.courier) ?? [];
+  const [courier, setCourier] = useState<Courier | null>(null);
+  const chosen = courier ?? connected[0] ?? null;
+  const [queued, setQueued] = useState<string[] | null>(null);
+  const checks = useQuery({
+    queryKey: ['bulk-book-check', chosen, orderIds],
+    queryFn: async () =>
+      unwrap(
+        await api.POST('/v1/admin/shipments/book/check', {
+          body: { courier: chosen as Courier, orderIds },
+        }),
+      ),
+    enabled: !!chosen && !queued,
+  });
+  const ready = checks.data?.filter((c) => c.problems.length === 0) ?? [];
+  const blocked = checks.data?.filter((c) => c.problems.length > 0) ?? [];
+  const book = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/admin/shipments/book', {
+          body: { courier: chosen as Courier, orderIds: ready.map((r) => r.orderId) },
+        }),
+      ),
+    onSuccess: () => setQueued(ready.map((r) => r.orderId)),
+  });
+  const states = useQuery({
+    queryKey: ['bulk-book-states', queued],
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/shipments/bookings', {
+          params: { query: { orderIds: (queued ?? []).join(',') } },
+        }),
+      ),
+    enabled: !!queued?.length,
+    refetchInterval: (q) =>
+      q.state.data?.every((s) => s.bookingState !== 'booking' && (s.courier || s.bookingError))
+        ? false
+        : 2000,
+  });
+  const booked = states.data?.filter((s) => s.status === 'booked').length ?? 0;
+  const failed =
+    states.data?.filter(
+      (s) => s.status !== 'booked' && (s.bookingError || s.bookingState === 'unsure'),
+    ).length ?? 0;
+  const close = () => {
+    void queryClient.invalidateQueries({ queryKey: ['orders'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    onClose();
+  };
+  return (
+    <Dialog
+      open
+      onOpenChange={(v) => !v && close()}
+      title={t('couriers.bulk.title', { n: orderIds.length })}
+    >
+      {couriers.data && connected.length === 0 && (
+        <Notice>{t('couriers.bulk.noneConnected')}</Notice>
+      )}
+      {connected.length > 0 && !queued && (
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{t('couriers.bulk.courier')}</span>
+            <select
+              className="min-h-11 rounded-md border border-input bg-background px-3"
+              value={chosen ?? ''}
+              onChange={(e) => setCourier(e.target.value as Courier)}
+            >
+              {connected.map((c) => (
+                <option key={c} value={c}>
+                  {courierName(c, t)}
+                </option>
+              ))}
+            </select>
+          </label>
+          {checks.isPending && <p role="status">{t('loading')}</p>}
+          {checks.isError && <Notice tone="error">{errorMessage(checks.error, t)}</Notice>}
+          {checks.data && (
+            <>
+              <p>{t('couriers.bulk.ready', { n: ready.length })}</p>
+              {blocked.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium">
+                    {t('couriers.bulk.problems', { n: blocked.length })}
+                  </p>
+                  <ul className="text-sm">
+                    {blocked.map((b) => (
+                      <li key={b.orderId}>
+                        {b.displayNumber ?? '—'}:{' '}
+                        {b.problems
+                          .map((p) =>
+                            t(`couriers.problem.${p}` as AdminKey, {
+                              courier: courierName(chosen ?? '', t),
+                            }),
+                          )
+                          .join(' ')}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+          {book.error && <Notice tone="error">{saveErrorMessage(book.error, t)}</Notice>}
+          <Button disabled={!ready.length || book.isPending} onClick={() => book.mutate()}>
+            {t('couriers.bulk.confirm', { n: ready.length })}
+          </Button>
+        </div>
+      )}
+      {queued && (
+        <div className="flex flex-col gap-3" aria-live="polite">
+          <p>{t('couriers.bulk.queued', { n: queued.length })}</p>
+          {states.data && (
+            <p className="font-medium">{t('couriers.bulk.done', { booked, failed })}</p>
+          )}
+          <Button variant="secondary" onClick={close}>
+            {t('action.close')}
+          </Button>
+        </div>
+      )}
+    </Dialog>
   );
 }

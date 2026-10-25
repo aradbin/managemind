@@ -15,10 +15,12 @@ import {
   cancelBooking,
   cancelOrder,
   claimBooking,
+  codReconciliation,
   confirmOrder,
   courierAreaReview,
   createProduct,
   createTenant,
+  deletePayout,
   deleteShipment,
   findCourierShipment,
   getOrder,
@@ -28,6 +30,7 @@ import {
   receiveCourierReturn,
   recordBooked,
   recordBookingFailed,
+  recordPayout,
   resolvePlace,
   setCartArea,
   setCourierAreaMatch,
@@ -419,5 +422,91 @@ describe('updates (§3.5)', () => {
       'select * from app.courier_poll_due(6, 30, 2000)',
     );
     expect(rows.map((r) => r.shipment_id)).toContain(claim.shipmentId);
+  });
+});
+
+describe('payouts and reconciliation (§3.7)', () => {
+  const owner = (): Actor => ({
+    ...staff,
+    permissions: permissionsOf('owner'),
+    storeRole: 'owner',
+  });
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+
+  async function delivered(collected?: number) {
+    const v = await product(40_000, 5);
+    const orderId = await confirmedOrder([[v, 1]]);
+    const { claim, consignmentId } = await bookFake(orderId);
+    await run((tx) =>
+      applyCourierUpdate(
+        tx,
+        claim.shipmentId,
+        update('delivered', { codCollected: collected ?? claim.codAmount, fee: 6_000 }),
+        'webhook',
+      ),
+    );
+    return { consignmentId, codAmount: claim.codAmount, shipmentId: claim.shipmentId };
+  }
+
+  it('previews a statement, records it once, and the report balances', async () => {
+    const a = await delivered();
+    const b = await delivered();
+    const input = {
+      courier: 'fake',
+      reference: `stmt-${Date.now()}`,
+      paidAt: new Date().toISOString(),
+      source: 'import',
+      rows: [
+        { consignmentId: a.consignmentId, collected: a.codAmount, fee: 6_000 },
+        { consignmentId: 'NOPE' },
+      ],
+    };
+    await expect(run((tx) => recordPayout(tx, staff, input))).rejects.toMatchObject({
+      code: 'forbidden',
+    });
+    const preview = await run((tx) => recordPayout(tx, owner(), { ...input, preview: true }));
+    expect(preview).toMatchObject({ payoutId: null, unknown: ['NOPE'] });
+    expect(preview.matched).toHaveLength(1);
+    const saved = await run((tx) => recordPayout(tx, owner(), input));
+    expect(saved.payoutId).not.toBeNull();
+    const again = await run((tx) =>
+      recordPayout(tx, owner(), { ...input, reference: `${input.reference}-2`, preview: true }),
+    );
+    expect(again.alreadyPaid).toEqual([a.consignmentId]);
+
+    const report = await run((tx) =>
+      codReconciliation(tx, owner(), { courier: 'fake', from: today, to: today }),
+    );
+    const fake = report.couriers.find((c) => c.courier === 'fake');
+    expect(fake?.paidOut).toBeGreaterThanOrEqual(a.codAmount - 6_000);
+    expect(fake?.outstanding).toBe((fake?.net ?? 0) - (fake?.paidOut ?? 0));
+    expect(report.outstanding.map((o) => o.shipmentId)).toContain(b.shipmentId);
+    expect(report.outstanding.map((o) => o.shipmentId)).not.toContain(a.shipmentId);
+
+    await run((tx) => deletePayout(tx, owner(), saved.payoutId as string));
+    const after = await run((tx) =>
+      codReconciliation(tx, owner(), { courier: 'fake', from: today, to: today }),
+    );
+    expect(after.outstanding.map((o) => o.shipmentId)).toContain(a.shipmentId);
+  });
+
+  it('lists a short collection as a difference, and takes the courier’s paid status', async () => {
+    const short = await delivered(10_000);
+    const report = await run((tx) =>
+      codReconciliation(tx, owner(), { courier: 'fake', from: today, to: today }),
+    );
+    expect(report.differences).toContainEqual(
+      expect.objectContaining({
+        shipmentId: short.shipmentId,
+        kind: 'collected',
+        collected: 10_000,
+      }),
+    );
+    await run((tx) => applyCourierUpdate(tx, short.shipmentId, update('paid_out'), 'webhook'));
+    const paid = await run((tx) =>
+      codReconciliation(tx, owner(), { courier: 'fake', from: today, to: today }),
+    );
+    expect(paid.outstanding.map((o) => o.shipmentId)).not.toContain(short.shipmentId);
+    expect(paid.payouts.some((p) => p.source === 'courier' && p.parcels >= 1)).toBe(true);
   });
 });

@@ -27,6 +27,7 @@ import {
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 import { recordCourierEvent } from './events';
+import { recordCourierPaid } from './payouts';
 
 /** The courier acting through its updates: it moves shipments, nothing else. */
 export const courierActor: Actor = { ...systemActor, permissions: new Set(['orders.write']) };
@@ -124,6 +125,10 @@ export async function applyCourierUpdate(
       return { moved: [], repeated: !isNew, ignored: 'unreachable' };
     await courierCancelled(tx, shipment, courier, message);
     return { moved: ['unbook'], repeated: !isNew };
+  }
+  if (status.update === 'paid_out') {
+    await recordCourierPaid(tx, shipmentId, courier, status.at);
+    return { moved: [], repeated: !isNew };
   }
   const target = UPDATE_STATUS[status.update];
   if (!target) return { moved: [], repeated: !isNew };

@@ -18,6 +18,7 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 import {
+  autoBook,
   type CourierMessage,
   courierFromParam,
   fakeAllowed,
@@ -304,5 +305,34 @@ describe('bulk booking and the poll', () => {
       (m) => m.kind === 'courier_poll' && m.shipmentIds.includes(booked.shipmentId),
     );
     expect(poll).toMatchObject({ tenantId: a.id, courier: 'fake' });
+  });
+});
+
+describe('auto-booking on confirm (Q8)', () => {
+  it('queues a confirmed order only for a store that turned it on', async () => {
+    const orderId = await confirmed(a);
+    const event = {
+      id: crypto.randomUUID(),
+      tenantId: a.id,
+      eventType: 'order.confirmed',
+      aggregateType: 'order',
+      aggregateId: orderId,
+      payload: {},
+    } as never;
+    delayed.sent = [];
+    await autoBook(env, makeCtx(), [event]);
+    expect(delayed.sent).toEqual([]);
+    await owner.query(
+      `update platform.tenants set settings = jsonb_set(settings, '{couriers}', '{"autoBook": "on_confirm"}') where id = $1`,
+      [a.id],
+    );
+    await autoBook(env, makeCtx(), [event]);
+    expect(delayed.sent).toMatchObject([
+      { kind: 'courier_book', tenantId: a.id, userId: null, courier: 'fake', orderIds: [orderId] },
+    ]);
+    await owner.query(
+      `update platform.tenants set settings = settings - 'couriers' where id = $1`,
+      [a.id],
+    );
   });
 });

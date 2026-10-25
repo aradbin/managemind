@@ -201,3 +201,38 @@ export const cancelBookingInput = z
   .strict();
 
 export const defaultCourierSettings = (): CourierSettings => courierSettings.parse({});
+
+/** A payout from a courier (§3.7): recorded by hand, or a statement's rows; `preview` saves nothing. */
+export const payoutInput = z
+  .object({
+    courier: z.enum(COURIERS),
+    reference: z.string().trim().min(1).max(100),
+    paidAt: z.iso.datetime({ offset: true }),
+    source: z.enum(['import', 'manual']).default('manual'),
+    note: z.string().trim().max(500).optional(),
+    rows: z
+      .array(
+        z
+          .object({
+            consignmentId: z.string().trim().min(1).max(100),
+            /** Poisha the courier says it collected; the parcel's own when absent. */
+            collected: z.int().min(0).max(100_000_000).optional(),
+            fee: z.int().min(0).max(10_000_000).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(2000),
+    preview: z.boolean().default(false),
+  })
+  .strict();
+export type PayoutInput = z.infer<typeof payoutInput>;
+
+export const codReportQuery = z
+  .object({
+    courier: z.enum(COURIERS).optional(),
+    /** Dhaka dates, inclusive, of the deliveries. */
+    from: z.iso.date(),
+    to: z.iso.date(),
+  })
+  .strict();
