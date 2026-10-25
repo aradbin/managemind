@@ -565,6 +565,10 @@ describe('isolation suite', () => {
       'POST /v1/admin/shipments/{id}/fail': { id: shipment.id, body: { reason: 'x' } },
       'POST /v1/admin/shipments/{id}/return': { id: shipment.id },
       'DELETE /v1/admin/shipments/{id}': { id: shipment.id },
+      'POST /v1/admin/orders/{id}/booking/preview': { id: order.id, body: { courier: 'fake' } },
+      'POST /v1/admin/orders/{id}/booking': { id: order.id, body: { courier: 'fake' } },
+      'POST /v1/admin/shipments/{id}/cancel-booking': { id: shipment.id, body: {} },
+      'POST /v1/admin/shipments/{id}/sync': { id: shipment.id },
       'GET /v1/admin/customers/{id}': { id: customer.id },
       'POST /v1/admin/customers/{id}/anonymize': { id: customer.id },
       'PATCH /v1/admin/customers/{id}': { id: customer.id, body: { name: 'x' } },
@@ -604,6 +608,20 @@ describe('isolation suite', () => {
         'the kind is one of three fixed names, resolved inside the caller’s own store',
       'DELETE /v1/admin/templates/{event}/{channel}/{locale}':
         'the key names a template of the caller’s own store, never a row of another',
+      'GET /v1/admin/couriers/{courier}/places':
+        'the courier is a fixed name, and places are the platform’s, the same for every store',
+      'POST /v1/admin/couriers/{courier}/check':
+        'the courier is a fixed name; the check saves nothing',
+      'PUT /v1/admin/couriers/{courier}':
+        'the courier is a fixed name, resolved inside the caller’s own store',
+      'DELETE /v1/admin/couriers/{courier}':
+        'the courier is a fixed name, resolved inside the caller’s own store',
+      'GET /v1/admin/couriers/{courier}/webhook':
+        'the courier is a fixed name, resolved inside the caller’s own store',
+      'POST /v1/admin/couriers/{courier}/webhook-secret':
+        'the courier is a fixed name, resolved inside the caller’s own store',
+      'POST /v1/admin/couriers/fake/parcels/{consignmentId}':
+        'the consignment is looked up in the caller’s own store only; couriers.test.ts checks another store’s parcel never moves',
       'GET /v1/admin/phones/{phone}/risk':
         'the phone is counted in the caller’s own store’s orders only; recovery.test.ts checks another store’s record never shows',
     };

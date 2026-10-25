@@ -36,6 +36,7 @@ import {
   checkoutSettings,
   codSettings,
   confirmationSettings,
+  courierSettings,
   fraudSettings,
   recoverySettings,
   returnSettings,
@@ -51,6 +52,7 @@ import { gatewayFor } from '../payments';
 import { BILLING_ROUTES, registerBilling } from './billing';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
+import { COURIER_ROUTES, registerCouriers } from './couriers';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
 import { DOMAIN_ROUTES, registerDomains } from './domains';
 import { EXPORT_ROUTES, registerExport } from './export';
@@ -118,6 +120,7 @@ const Store = z
     fraud: fraudSettings,
     confirmation: confirmationSettings,
     recovery: recoverySettings,
+    couriers: courierSettings,
     returns: returnSettings,
     notifications: notificationSettings,
     setup: tenantSettings.shape.setup,
@@ -167,6 +170,7 @@ export const ADMIN_ROUTES = {
   ...EXPORT_ROUTES,
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
+  ...COURIER_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
   help: r({
@@ -232,6 +236,7 @@ export const ADMIN_ROUTES = {
         fraud: fraudSettings.optional(),
         confirmation: confirmationSettings.optional(),
         recovery: recoverySettings.optional(),
+        couriers: courierSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
         setup: tenantSettings.shape.setup.optional(),
@@ -620,6 +625,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerExport(admin);
   registerReports(admin);
   registerCredentials(admin);
+  registerCouriers(admin);
   registerMessages(admin);
   registerPromotions(admin);
   admin.openapi(R.accept, async (c) => {

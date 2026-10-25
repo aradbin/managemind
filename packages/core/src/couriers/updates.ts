@@ -220,3 +220,8 @@ export async function receiveCourierReturn(
 ) {
   return returnShipment(tx, actor, shipmentId, input);
 }
+
+/** A poll that couldn't ask the courier still counts, so it isn't asked again at once. */
+export async function markCourierSynced(tx: TenantTx, shipmentId: string): Promise<void> {
+  await tx.db.update(s).set({ lastSyncedAt: sql`now()` }).where(eq(s.id, shipmentId));
+}

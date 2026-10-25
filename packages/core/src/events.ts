@@ -28,6 +28,7 @@ export const EVENTS = {
         'fraud',
         'confirmation',
         'recovery',
+        'couriers',
         'returns',
         'notifications',
         'setup',

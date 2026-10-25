@@ -13,9 +13,11 @@ import {
   type CheckoutSettings,
   type CodSettings,
   type ConfirmationSettings,
+  type CourierSettings,
   checkoutSettings,
   codSettings,
   confirmationSettings,
+  courierSettings,
   type FraudSettings,
   fraudSettings,
   type RecoverySettings,
@@ -253,6 +255,8 @@ export interface Store {
   confirmation: ConfirmationSettings;
   /** Incomplete orders (phase-6-plan §3.2). */
   recovery: RecoverySettings;
+  /** Couriers (phase-7-plan §3.8). */
+  couriers: CourierSettings;
   /** The return policy (phase-5a-plan §3.10). */
   returns: ReturnSettings;
   /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
@@ -288,6 +292,7 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     fraud: settings.fraud,
     confirmation: settings.confirmation,
     recovery: settings.recovery,
+    couriers: settings.couriers,
     returns: settings.returns,
     notifications: settings.notifications,
     setup: settings.setup,
@@ -335,6 +340,8 @@ export interface StoreProfilePatch {
   confirmation?: unknown;
   /** Replaces the incomplete orders settings (phase-6-plan §3.2). */
   recovery?: unknown;
+  /** Replaces the courier settings (phase-7-plan §3.8). */
+  couriers?: unknown;
   /** Replaces the return policy (phase-5a-plan §3.10). */
   returns?: unknown;
   /** Replaces the shopper message channels (phase-5a-plan §3.6). */
@@ -384,6 +391,10 @@ export async function updateStoreProfile(
       patch.recovery !== undefined
         ? parseSection('recovery', recoverySettings, patch.recovery)
         : current.recovery,
+    couriers:
+      patch.couriers !== undefined
+        ? parseSection('couriers', courierSettings, patch.couriers)
+        : current.couriers,
     returns:
       patch.returns !== undefined
         ? parseSection('returns', returnSettings, patch.returns)
@@ -410,6 +421,7 @@ export async function updateStoreProfile(
       'fraud',
       'confirmation',
       'recovery',
+      'couriers',
       'returns',
       'notifications',
       'setup',
@@ -438,6 +450,7 @@ export async function updateStoreProfile(
         fraud: next.fraud,
         confirmation: next.confirmation,
         recovery: next.recovery,
+        couriers: next.couriers,
         returns: next.returns,
         notifications: next.notifications,
         setup: next.setup,
