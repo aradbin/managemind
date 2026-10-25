@@ -51,9 +51,12 @@ export function CourierAreasPage() {
       <PageHeader title={t('platform.courierAreas')} description={t('courierAreas.description')} />
       {!canEdit && <Notice>{t('courierAreas.superAdminOnly')}</Notice>}
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2">
-          <span className="text-sm font-medium">{t('courierAreas.courier')}</span>
+        <div className="flex items-center gap-2">
+          <label htmlFor="areas-courier" className="text-sm font-medium">
+            {t('courierAreas.courier')}
+          </label>
           <select
+            id="areas-courier"
             className="min-h-11 rounded-md border border-input bg-background px-3"
             value={courier}
             onChange={(e) => setCourier(e.target.value as AreaCourier)}
@@ -64,7 +67,7 @@ export function CourierAreasPage() {
               </option>
             ))}
           </select>
-        </label>
+        </div>
         <label className="flex min-h-11 items-center gap-3">
           <input
             type="checkbox"

@@ -88,9 +88,12 @@ export function CodReportPage() {
           value={to}
           onChange={(e) => setTo(e.target.value)}
         />
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">{t('cod.courier')}</span>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="cod-courier" className="text-sm font-medium">
+            {t('cod.courier')}
+          </label>
           <select
+            id="cod-courier"
             className="min-h-11 rounded-md border border-input bg-background px-3"
             value={courier}
             onChange={(e) => setCourier(e.target.value as Courier | '')}
@@ -102,7 +105,7 @@ export function CodReportPage() {
               </option>
             ))}
           </select>
-        </label>
+        </div>
       </div>
       {report.isPending && <p role="status">{t('loading')}</p>}
       {report.isError && <Notice tone="error">{errorMessage(report.error, t)}</Notice>}
@@ -280,9 +283,12 @@ function PayoutDialog({
   });
   const p = check.data;
   const columnSelect = (label: AdminKey, key: keyof typeof cols, optional: boolean) => (
-    <label className="flex flex-col gap-1">
-      <span className="text-sm font-medium">{t(label)}</span>
+    <div className="flex flex-col gap-1">
+      <label htmlFor={`payout-col-${key}`} className="text-sm font-medium">
+        {t(label)}
+      </label>
       <select
+        id={`payout-col-${key}`}
         className="min-h-11 rounded-md border border-input bg-background px-3"
         value={cols[key]}
         onChange={(e) => {
@@ -297,7 +303,7 @@ function PayoutDialog({
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
   return (
     <Dialog
@@ -307,9 +313,12 @@ function PayoutDialog({
       description={mode === 'import' ? t('cod.import.intro') : undefined}
     >
       <div className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">{t('cod.courier')}</span>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="payout-courier" className="text-sm font-medium">
+            {t('cod.courier')}
+          </label>
           <select
+            id="payout-courier"
             className="min-h-11 rounded-md border border-input bg-background px-3"
             value={courier}
             onChange={(e) => {
@@ -323,7 +332,7 @@ function PayoutDialog({
               </option>
             ))}
           </select>
-        </label>
+        </div>
         <Field
           label={t('cod.reference')}
           value={reference}

@@ -353,27 +353,29 @@ function Webhook({ courier, name }: { courier: Courier; name: string }) {
           {t('couriers.webhook.show')}
         </Button>
       ) : hook.data ? (
-        <dl className="flex flex-col gap-2 text-sm">
-          {(
-            [
-              ['couriers.webhook.url', hook.data.url],
-              ['couriers.webhook.secret', hook.data.secret],
-            ] as const
-          ).map(([label, value]) => (
-            <div key={label} className="flex flex-col gap-1">
-              <dt className="font-medium">{t(label)}</dt>
-              <dd className="flex flex-wrap items-center gap-2">
-                <code className="break-all rounded bg-background px-2 py-1">{value}</code>
-                <Button variant="ghost" onClick={() => copy(value)}>
-                  {t('couriers.copy')}
-                </Button>
-              </dd>
-            </div>
-          ))}
+        <>
+          <dl className="flex flex-col gap-2 text-sm">
+            {(
+              [
+                ['couriers.webhook.url', hook.data.url],
+                ['couriers.webhook.secret', hook.data.secret],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label} className="flex flex-col gap-1">
+                <dt className="font-medium">{t(label)}</dt>
+                <dd className="flex flex-wrap items-center gap-2">
+                  <code className="break-all rounded bg-background px-2 py-1">{value}</code>
+                  <Button variant="ghost" onClick={() => copy(value)}>
+                    {t('couriers.copy')}
+                  </Button>
+                </dd>
+              </div>
+            ))}
+          </dl>
           <Button variant="quiet" className="self-start" onClick={() => setRotating(true)}>
             {t('couriers.webhook.rotate')}
           </Button>
-        </dl>
+        </>
       ) : hook.isError ? (
         <Notice tone="error">{errorMessage(hook.error, t)}</Notice>
       ) : (

@@ -168,7 +168,8 @@ jobs:
       # (Phase 2), the storefront and online-store flows (Phase 3), and the
       # shopper, orders and promotions flows (Phase 4), the returns and
       # refunds flow (Phase 5A), onboarding, billing and closing a store
-      # (Phase 5B), and sales recovery (Phase 6) at a phone and a desktop viewport with axe on every screen
+      # (Phase 5B), sales recovery (Phase 6) and couriers with the test courier (Phase 7) at a phone
+      # and a desktop viewport with axe on every screen
       # (E2E_RUN and DEV_TOKEN are in the env).
       - name: Smoke test and E2E flows
         id: smoke

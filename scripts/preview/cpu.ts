@@ -60,6 +60,7 @@ const BURST = {
   returns: 10,
   queue: 30,
   incomplete: 20,
+  report: 10,
 };
 
 /** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
@@ -395,6 +396,58 @@ for (const order of placedOrders.slice(BURST.returns)) {
   }
 }
 
+// Phase 7's routes with the test courier: connect it, then for each order
+// the queue confirmed, the booking preview and the booking, and the
+// courier's webhook saying it was delivered (phase-7-plan §10); then the
+// COD reconciliation report.
+let booked = 0;
+try {
+  await json(
+    await call('PUT', '/v1/admin/couriers/fake', { secrets: { apiKey: 'cpu' } }),
+    'connect',
+  );
+  const hook = await json<{ url: string; secret: string }>(
+    await call('GET', '/v1/admin/couriers/fake/webhook'),
+    'webhook',
+  );
+  const webhookPath = new URL(hook.url).pathname;
+  for (const order of placedOrders.slice(BURST.returns)) {
+    try {
+      await json(
+        await call('POST', `/v1/admin/orders/${order.id}/booking/preview`, { courier: 'fake' }),
+        'booking preview',
+      );
+      const b = await json<{ consignmentId: string | null }>(
+        await call('POST', `/v1/admin/orders/${order.id}/booking`, { courier: 'fake' }),
+        'book',
+      );
+      if (!b.consignmentId) continue;
+      booked++;
+      // What the courier will answer when asked, then its webhook, as it sends it.
+      await json(
+        await call('POST', `/v1/admin/couriers/fake/parcels/${b.consignmentId}`, {
+          status: 'picked_up',
+        }),
+        'move parcel',
+      );
+      const res = await fetch(`${api}${webhookPath}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${hook.secret}` },
+        body: JSON.stringify({ consignment_id: b.consignmentId }),
+      });
+      if (!res.ok) failures.push(`courier webhook: ${res.status}`);
+    } catch (e) {
+      failures.push(`booking ${order.number}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+} catch (e) {
+  failures.push(`courier: ${e instanceof Error ? e.message : String(e)}`);
+}
+const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+for (let i = 0; i < BURST.report; i++) {
+  await call('GET', `/v1/admin/reports/cod?from=${day}&to=${day}`);
+}
+
 if (failures.length) {
   notice(`${failures.length} requests in the bursts failed: ${failures.slice(0, 10).join('; ')}`);
 }
@@ -407,7 +460,9 @@ notice(
     `${BURST.cart} cart reads, ${BURST.orders} each of the order list and an order, ` +
     `${BURST.returns} returns (track, request, approve, receive, inspect, refund), ` +
     `${BURST.queue} call queue reads, ${BURST.incomplete} incomplete order lists, ` +
-    `and ${BURST.order - BURST.returns} calls confirmed from the queue`,
+    `${BURST.order - BURST.returns} calls confirmed from the queue, ` +
+    `${booked} parcels booked with the test courier with a webhook each, ` +
+    `and ${BURST.report} COD reconciliation reports`,
 );
 
 // Workers Logs names an invocation by its method and path, with IDs in the
@@ -446,6 +501,19 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
     label: 'POST /v1/admin/orders/{id}/confirmation/outcomes',
   },
   { trigger: 'GET /v1/admin/incomplete-orders', label: 'GET /v1/admin/incomplete-orders' },
+  {
+    trigger: 'POST /v1/admin/orders/REDACTED/booking/preview',
+    label: 'POST /v1/admin/orders/{id}/booking/preview',
+  },
+  {
+    trigger: 'POST /v1/admin/orders/REDACTED/booking',
+    label: 'POST /v1/admin/orders/{id}/booking',
+  },
+  {
+    trigger: 'POST /v1/webhooks/couriers/fake/REDACTED',
+    label: 'POST /v1/webhooks/couriers/{courier}/{store} (webhook)',
+  },
+  { trigger: 'GET /v1/admin/reports/cod', label: 'GET /v1/admin/reports/cod' },
   { trigger: 'POST /v1/store/returns', label: 'POST /v1/store/returns (request)' },
   {
     trigger: 'POST /v1/admin/returns/REDACTED/inspect',

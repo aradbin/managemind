@@ -505,9 +505,12 @@ export function BulkBookDialog({ orderIds, onClose }: { orderIds: string[]; onCl
       )}
       {connected.length > 0 && !queued && (
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{t('couriers.bulk.courier')}</span>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="bulk-courier" className="text-sm font-medium">
+              {t('couriers.bulk.courier')}
+            </label>
             <select
+              id="bulk-courier"
               className="min-h-11 rounded-md border border-input bg-background px-3"
               value={chosen ?? ''}
               onChange={(e) => setCourier(e.target.value as Courier)}
@@ -518,7 +521,7 @@ export function BulkBookDialog({ orderIds, onClose }: { orderIds: string[]; onCl
                 </option>
               ))}
             </select>
-          </label>
+          </div>
           {checks.isPending && <p role="status">{t('loading')}</p>}
           {checks.isError && <Notice tone="error">{errorMessage(checks.error, t)}</Notice>}
           {checks.data && (

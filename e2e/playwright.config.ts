@@ -141,5 +141,20 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },
+    // The courier flows (phase-7-plan §10) with the test courier, after the recovery flows.
+    {
+      name: 'couriers-phone',
+      testMatch: /couriers\.spec\.ts/,
+      dependencies: ['recovery-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'couriers-desktop',
+      testMatch: /couriers\.spec\.ts/,
+      dependencies: ['recovery-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
   ],
 });
