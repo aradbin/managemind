@@ -430,11 +430,14 @@ describe('acceptance criterion 1: the last unit', () => {
     const refused = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
     expect(placed).toHaveLength(1);
     expect(refused).toHaveLength(9);
+    // Refused at the stock lock if both got that far, or at the quote if the
+    // winner had already committed: either way the line is out of stock.
     for (const r of refused) {
-      expect(r.reason).toMatchObject({
-        code: 'insufficient_stock',
-        extensions: { lines: [{ variantId: a, available: 0 }] },
-      });
+      expect(r.reason).toMatchObject(
+        r.reason?.code === 'cart_invalid'
+          ? { extensions: { lines: [{ variantId: a, problem: 'insufficient_stock' }] } }
+          : { code: 'insufficient_stock', extensions: { lines: [{ variantId: a, available: 0 }] } },
+      );
     }
     expect(await stock(a)).toEqual({ on_hand: 1, reserved: 1 });
     expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
