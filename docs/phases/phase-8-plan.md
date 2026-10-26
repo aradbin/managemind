@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Draft (Oct 26), waiting for the owner's approval.** Still needed from the owner: sample supplier, purchase and expense data from a pilot client, and an accountant's review of the profit and stock valuation definitions (§1, §3.8)
+- Status: **Approved (Oct 26).** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
