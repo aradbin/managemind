@@ -33,6 +33,15 @@ export const PERMISSIONS = [
   /** Recording and importing couriers' COD payouts (phase-7-plan §3.7, Q13): Owner and Manager. */
   'payments.reconcile',
   'reports.read',
+  /** Suppliers, POs and receipts, without costs (phase-8-plan §3.11): every role. */
+  'purchasing.read',
+  /** Suppliers and POs; receiving with costs, or without a PO: Owner and Manager. */
+  'purchasing.write',
+  /** Supplier payments, balances and dues: Owner and Manager. */
+  'purchasing.pay',
+  /** Expenses: read by Owner, Manager and Viewer, written by Owner and Manager (Q12). */
+  'expenses.read',
+  'expenses.write',
   /** Our plan, usage and invoices (phase-5b-plan §3.17): Owner and Manager. */
   'billing.read',
 ] as const;
@@ -63,6 +72,7 @@ const ROLE_PERMISSIONS: Record<StoreRole, ReadonlySet<Permission>> = {
     'promotions.read',
     'payments.read',
     'settings.read',
+    'purchasing.read',
   ]),
   // Shoppers' personal data and our invoices stay out of read-only access.
   viewer: new Set(

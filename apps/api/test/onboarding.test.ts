@@ -59,7 +59,7 @@ describe('onboarding through the platform screen', () => {
       `insert into platform.plans (code, name, monthly_price, setup_fee, entitlements)
        select 'test-' || substr(md5(random()::text), 1, 8), '{"bn":"পরীক্ষা","en":"Test"}', 100000, 0,
               '{"limits":{"products":10,"staff":2,"ordersPerMonth":100,"emailsPerMonth":100,"storageMb":100,"customDomains":0},
-                "features":{"sslcommerz":false,"sms":false,"shopperAccounts":true,"promotionCoupons":true,"promotionAutomatic":true,"promotionBuyXGetY":false,"promotionFreeDelivery":true,"reports":true,"customEmailKey":false}}'
+                "features":{"sslcommerz":false,"sms":false,"shopperAccounts":true,"promotionCoupons":true,"promotionAutomatic":true,"promotionBuyXGetY":false,"promotionFreeDelivery":true,"reports":true,"customEmailKey":false,"backOffice":false}}'
         where not exists (select 1 from platform.plans where code like 'test-%')`,
     );
     const plan = (await plans(admin)).find((p: Json) => p.code.startsWith('test-'));

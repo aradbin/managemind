@@ -206,6 +206,55 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   order_confirmations: (tenant) =>
     `insert into store.order_confirmations (tenant_id, order_id)
      values (${tenant}, ${first('orders')}) on conflict do nothing`,
+  // Phase 8: the back office.
+  suppliers: (tenant) =>
+    `insert into store.suppliers (tenant_id, name) values (${tenant}, 'Fixture')`,
+  purchase_orders: (tenant) =>
+    `insert into store.purchase_orders (tenant_id, number, supplier_id, location_id)
+     values (${tenant}, (select coalesce(max(number), 0) + 1 from store.purchase_orders where tenant_id = app.current_tenant_id()),
+             ${first('suppliers')}, ${first('stock_locations', "name = 'Fixture'")})`,
+  purchase_order_lines: (tenant) =>
+    `insert into store.purchase_order_lines (tenant_id, purchase_order_id, variant_id, quantity, unit_cost)
+     values (${tenant}, ${first('purchase_orders')}, ${first('variants')}, 1, 100) on conflict do nothing`,
+  goods_receipts: (tenant) =>
+    `insert into store.goods_receipts (tenant_id, number, location_id, received_on, subtotal, total)
+     values (${tenant}, (select coalesce(max(number), 0) + 1 from store.goods_receipts where tenant_id = app.current_tenant_id()),
+             ${first('stock_locations', "name = 'Fixture'")}, current_date, 100, 100)`,
+  goods_receipt_lines: (tenant) =>
+    `insert into store.goods_receipt_lines (tenant_id, goods_receipt_id, variant_id, quantity, unit_cost, landed_unit_cost)
+     values (${tenant}, ${first('goods_receipts')}, ${first('variants')}, 1, 100, 100) on conflict do nothing`,
+  supplier_payments: (tenant) =>
+    `insert into store.supplier_payments (tenant_id, supplier_id, paid_on, amount, method)
+     values (${tenant}, ${first('suppliers')}, current_date, 100, 'cash')`,
+  cost_changes: (tenant) =>
+    `insert into store.cost_changes (tenant_id, variant_id, new_cost, on_hand, source, actor_type)
+     values (${tenant}, ${first('variants')}, 100, 0, 'manual', 'system')`,
+  stock_counts: (tenant) =>
+    `insert into store.stock_counts (tenant_id, number, location_id, scope)
+     values (${tenant}, (select coalesce(max(number), 0) + 1 from store.stock_counts where tenant_id = app.current_tenant_id()),
+             ${first('stock_locations', "name = 'Fixture'")}, '{"kind": "all"}')`,
+  stock_count_lines: (tenant) =>
+    `insert into store.stock_count_lines (tenant_id, stock_count_id, variant_id)
+     values (${tenant}, ${first('stock_counts')}, ${first('variants')}) on conflict do nothing`,
+  expense_categories: (tenant) =>
+    `insert into store.expense_categories (tenant_id, name) values (${tenant}, '{"bn": "অন্যান্য", "en": "Fixture"}')`,
+  recurring_expenses: (tenant) =>
+    `insert into store.recurring_expenses (tenant_id, category_id, amount, method, cadence, day, starts_on)
+     values (${tenant}, ${first('expense_categories')}, 100, 'cash', 'monthly', 1, current_date)`,
+  expenses: (tenant) =>
+    `insert into store.expenses (tenant_id, spent_on, category_id, amount, method)
+     values (${tenant}, current_date, ${first('expense_categories')}, 100, 'cash')`,
+  daily_sales: (tenant) =>
+    `insert into store.daily_sales (tenant_id, day) values (${tenant}, current_date - (random() * 10000)::int)
+     on conflict do nothing`,
+  daily_product_sales: (tenant) =>
+    `insert into store.daily_product_sales (tenant_id, day, variant_id, product_id)
+     values (${tenant}, current_date, ${first('variants')}, (select product_id from store.variants where id = ${first('variants')}))
+     on conflict do nothing`,
+  monthly_stock_values: (tenant) =>
+    `insert into store.monthly_stock_values (tenant_id, month, variant_id, location_id, on_hand)
+     values (${tenant}, current_date, ${first('variants')}, ${first('stock_locations', "name = 'Fixture'")}, 0)
+     on conflict do nothing`,
   // Phase 5A: returns, refunds, credentials and messages.
   returns: (tenant) =>
     `insert into store.returns (tenant_id, number, order_id, reason, requested_by)

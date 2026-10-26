@@ -5128,7 +5128,7 @@ export interface paths {
                         locationId?: string;
                         quantity: number;
                         /** @enum {string} */
-                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
                         note?: string | null;
                     } | {
                         /** @enum {string} */
@@ -5139,7 +5139,7 @@ export interface paths {
                         locationId?: string;
                         onHand: number;
                         /** @enum {string} */
-                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
                         note?: string | null;
                     })[];
                 };
@@ -11807,6 +11807,7 @@ export interface paths {
                                     promotionFreeDelivery?: boolean;
                                     reports?: boolean;
                                     customEmailKey?: boolean;
+                                    backOffice?: boolean;
                                 };
                             } | null;
                             billingDay: number;
@@ -12775,6 +12776,7 @@ export interface paths {
                                 promotionFreeDelivery?: boolean;
                                 reports?: boolean;
                                 customEmailKey?: boolean;
+                                backOffice?: boolean;
                             };
                         } | null;
                         billingDay: number;
@@ -13820,7 +13822,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "purchasing.read" | "purchasing.write" | "purchasing.pay" | "expenses.read" | "expenses.write" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -17029,6 +17031,7 @@ export interface components {
                     promotionFreeDelivery: boolean;
                     reports: boolean;
                     customEmailKey: boolean;
+                    backOffice: boolean;
                 };
             };
             offered: boolean;
@@ -17056,6 +17059,7 @@ export interface components {
                     promotionFreeDelivery?: boolean;
                     reports?: boolean;
                     customEmailKey?: boolean;
+                    backOffice?: boolean;
                 };
             } | null;
             billingDay: number;

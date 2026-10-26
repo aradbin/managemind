@@ -3,6 +3,7 @@
 // are refused, so a typo can never be stored silently. The store's name and
 // default locale are columns, not settings.
 import { z } from 'zod';
+import { backOfficeSettings } from './back-office/settings';
 import { notificationSettings } from './notifications';
 import { courierSettings } from './orders/couriers';
 import {
@@ -123,6 +124,8 @@ export const tenantSettings = z
     recovery: recoverySettings.default(() => recoverySettings.parse({})),
     /** Couriers: the default, parcel defaults, auto-booking (phase-7-plan §3.8). */
     couriers: courierSettings.default(() => courierSettings.parse({})),
+    /** Count approval and reorder (phase-8-plan §4). */
+    backOffice: backOfficeSettings.default(() => backOfficeSettings.parse({})),
     /** The return policy (phase-5a-plan §3.10). */
     returns: returnSettings.default(() => returnSettings.parse({})),
     /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */

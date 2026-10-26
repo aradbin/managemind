@@ -29,6 +29,7 @@ export const EVENTS = {
         'confirmation',
         'recovery',
         'couriers',
+        'backOffice',
         'returns',
         'notifications',
         'setup',
@@ -144,6 +145,15 @@ export const EVENTS = {
   'shipment.booked': shipmentPayload,
   'shipment.in_transit': shipmentPayload,
   'shipment.booking_cancelled': shipmentPayload,
+  // The back office (phase-8-plan §4): for the audit trail and later
+  // integrations; no message reads them yet.
+  'purchase_order.placed': z.object({ number: z.number().int(), supplierId: z.uuid() }),
+  'goods_receipt.created': z.object({
+    number: z.number().int(),
+    purchaseOrderId: z.uuid().nullable(),
+    lines: z.number().int(),
+  }),
+  'stock_count.applied': z.object({ number: z.number().int(), adjusted: z.number().int() }),
   // Returns and refunds (phase-5a-plan §3.12, §3.13): shopper messages and staff alerts.
   'return.requested': z.object({
     orderId: z.uuid(),

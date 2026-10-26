@@ -22,8 +22,19 @@ import { errorMessage, saveErrorMessage } from '../lib/errors';
 
 export type InventorySearch = { q?: string | undefined; lowStock?: boolean | undefined };
 
-const MODES = ['received', 'count', 'damaged', 'lost', 'returned', 'correction'] as const;
+const MODES = [
+  'received',
+  'count',
+  'damaged',
+  'lost',
+  'expired',
+  'sample',
+  'returned',
+  'correction',
+] as const;
 type Mode = (typeof MODES)[number];
+/** Modes that take stock out (phase-8-plan §3.4). */
+const OUT_MODES: readonly Mode[] = ['damaged', 'lost', 'expired', 'sample'];
 
 const REASONS = [
   'received',
@@ -33,6 +44,8 @@ const REASONS = [
   'returned',
   'correction',
   'import',
+  'expired',
+  'sample',
   'other',
 ] as const;
 /** A movement's reason in words; reasons from later phases (orders) show as they are. */
@@ -206,7 +219,7 @@ function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void
           : {
               mode: 'delta' as const,
               variantId: row.variantId,
-              quantity: mode === 'damaged' || mode === 'lost' ? -amount : amount,
+              quantity: OUT_MODES.includes(mode) ? -amount : amount,
               reason: mode,
             };
       return unwrap(

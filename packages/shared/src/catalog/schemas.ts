@@ -434,8 +434,21 @@ export const ADJUSTMENT_REASONS = [
   'returned',
   'correction',
   'import',
+  /** Past its date (phase-8-plan §3.4). */
+  'expired',
+  /** Gifts, samples and the store's own use. */
+  'sample',
   'other',
 ] as const;
+export type AdjustmentReason = (typeof ADJUSTMENT_REASONS)[number];
+
+/** Reasons whose units count as a stock loss in net profit (phase-8-plan §3.8). */
+export const LOSS_REASONS = [
+  'damaged',
+  'lost',
+  'expired',
+  'sample',
+] as const satisfies readonly AdjustmentReason[];
 
 export const inventoryAdjustments = z
   .array(
@@ -465,5 +478,12 @@ export const inventoryAdjustments = z
     ]),
   )
   .min(1)
-  .max(L.bulkVariantEdits);
+  .max(L.bulkVariantEdits)
+  .superRefine((lines, ctx) => {
+    lines.forEach((line, i) => {
+      if (line.reason === 'other' && !line.note) {
+        ctx.addIssue({ code: 'custom', path: [i, 'note'], message: 'say what happened' });
+      }
+    });
+  });
 export type InventoryAdjustments = z.infer<typeof inventoryAdjustments>;
