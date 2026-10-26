@@ -16,7 +16,7 @@ import { permissionsOf } from '@managemind/shared';
 import { signPreviewToken } from '@managemind/shared/storefront';
 import { productTag, storeTag } from '@managemind/shared/storefront/cache';
 import type pg from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createApp } from '../src/app';
 import { hostnameProvider } from '../src/domains';
 import { getConfig } from '../src/env';
@@ -160,6 +160,13 @@ describe('store pages', () => {
   });
 
   it('limits search misses to 30 a minute per shopper', async () => {
+    // The limiter's windows are whole minutes: a run that crossed one would
+    // start counting again, so the clock stays at the start of a minute.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Math.ceil(Date.now() / 60_000) * 60_000 + 1_000));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     const ip = { 'x-shopper-ip': '198.51.100.9' };
     for (let i = 0; i < 30; i++) {
       expect((await get(`/v1/store/pages/search?q=x${i}`, a.host, ip)).status).toBe(200);
