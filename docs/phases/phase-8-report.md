@@ -58,7 +58,9 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 | 11 | `f618413`, `8b951f4` | Fixes from the security review |
 | — | `7e01c4b` | The search rate-limit test holds its clock (§2) |
 | 8 | `33a0997` | Supplier and expense imports, after step 11 as the plan allows, since the pilot's data hasn't come |
-| 12 | this commit | This report; PLAN.md's, the plan's and the README's status |
+| 12 | `9da1885` | This report; PLAN.md's, the plan's and the README's status |
+| — | `4bb7e50` | The CPU step's receipts pay nothing (§2) |
+| 12 | this commit | The preview's results and measurements in this report |
 
 ## 2. Acceptance criteria
 
@@ -70,7 +72,7 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 | 4. Reports match hand totals; summaries equal live; exports open in Excel with Bangla | **Met in tests,** except Excel by hand. A hand-computed fixture over three Dhaka days (a line delivered in two parts, a sale without a cost, an 11:30 pm delivery, a failed delivery, a return, a refund that isn't a return, a loss, an expense) checks every daily figure, the profit statement, products, per-order profit (adding up to the statement) and the dashboard. The summaries equal the live SQL. Stock, slow movers, suppliers, expenses and COD outstanding each have a hand-computed test. The exports were opened as files: the `.xlsx` with openpyxl (numbers as numbers), the CSV with its byte-order mark and Bangla intact. **Opening one in Excel and LibreOffice by hand is still to do** |
 | 5. The accountant accepts the definitions | **Open: waiting for the review** (§5) |
 
-**On the preview** (#85, `33a0997`, narrowed to the smoke tests and the back office flow): running when this was written; its results go here.
+**On the preview** (#85, `4bb7e50`, narrowed, through Hyperdrive): the smoke tests and the back office flow pass at a phone and a desktop viewport, Lighthouse holds all nine storefront pages within their budgets, and the CPU step measured every new route (§3). The first full run (`9da1885`) showed a fault in the CPU step itself: its receipts asked to pay without a supplier, which the API rightly refuses, so the receipts and the count went unmeasured. `4bb7e50` fixed the step.
 
 **Run locally** against `wrangler dev` with a seeded run, the back office flow passes at a phone and a desktop viewport, with axe and the CSP check on 17 screens, and left the rows it should in the database.
 
@@ -118,7 +120,32 @@ Reviewed against PLAN.md's baseline: every new admin and platform route, the rec
 
 ## 3. Measurements
 
-Waiting for #85's full preview run: the bundles from CI's build, Lighthouse, and the CPU step's new routes (a 50-line receipt, a 500-line count's apply, and the profit, stock and sales reports).
+Bundles from CI's build of `4bb7e50`; the rest from #85's preview run on it.
+
+| Measure | Result | Budget |
+| --- | --- | --- |
+| API Worker | 1,059 KiB gzip (Phase 7: 1,014); startup 317–431 ms | 3 MiB (34%) |
+| Storefront Worker | 333 KiB gzip (332) | 3 MiB (11%) |
+| Admin, JavaScript before sign-in | 137 KiB (135) | 150 KiB (91%; CI warns above 85%, as since 5B) |
+
+**Lighthouse:** all nine storefront pages within their budgets (LCP, CLS, TBT, accessibility, SEO).
+
+**CPU** (the preview's CPU step through Hyperdrive, ms):
+
+| Route | Requests | Stopped | p50 | p90 | Max |
+| --- | --- | --- | --- | --- | --- |
+| `POST /v1/admin/goods-receipts` (50 lines, at cost) | 5 | 0 | 73 | 88 | 88 |
+| `PUT /v1/admin/stock-counts/{id}/lines/{variantId}` | 497 | 0 | 15 | 35 | 139 |
+| `POST /v1/admin/stock-counts/{id}/apply` (500 lines) | 1 | 0 | 110 | 110 | 110 |
+| `GET /v1/admin/reports/profit` (the month so far, with the period before) | 12 | 2 | 13 | 27 | 59 |
+| `GET /v1/admin/reports/stock` (over 500 variants) | 10 | 0 | 32 | 42 | 47 |
+| `GET /v1/admin/reports/sales` | 11 | 1 | 17 | 25 | 25 |
+| `POST /v1/store/checkout/orders` (placeOrder, for comparison) | 15 | 0 | 47 | 83 | 90 |
+
+- **A 500-line count applies in one request in 110 ms,** and a 50-line receipt in under 90. Both are one batch of movements, as planned (plan §9).
+- **The three stopped report requests came last,** right after the 500 count requests, when the Worker had spent a lot of CPU in a few minutes: the pattern of phase-7-report §3.1. The step sends a stopped request once more, and each was answered then. In the first full run, without the count before them, no report request was stopped (profit p50 19, max 36; stock 10 and 23; sales 12 and 24).
+- **The stock report is the heaviest new read,** at 32 ms for a store of over 500 variants; it reads levels and labels in two queries and doesn't depend on the summaries.
+- **The older routes are close to Phase 7's numbers,** placeOrder lower (p50 47 against 78); none was stopped.
 
 ## 4. Free-tier impact
 
