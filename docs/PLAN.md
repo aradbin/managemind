@@ -45,7 +45,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24) | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Built (Oct 24): the delivery success score, duplicate orders, the call queue, the SMS link and incomplete orders. Everything ships off or harmless until the pilot's feedback sets the script, the threshold and the defaults (Q1). Merged and deployed (#72 and #73, Oct 25). The checkout notice waits for the legal review's wording, and the SMS link for `CREDENTIALS_KEY` and a store's SMS gateway | [`phase-6-plan.md`](phases/phase-6-plan.md), [`phase-6-report.md`](phases/phase-6-report.md) |
 | 7 — Couriers and fulfillment | Built (Oct 25): booking, status by webhook and poll, COD by the amount collected, courier returns, area mapping and COD reconciliation, with a test courier for previews. Merged and deployed (#75, Oct 25). The Steadfast, Pathao and RedX adapters wait for credentials to be checked against the couriers before stores are offered them; production waits for `CREDENTIALS_KEY` | [`phase-7-plan.md`](phases/phase-7-plan.md), [`phase-7-report.md`](phases/phase-7-report.md) |
-| 8 — Back office | Approved (Oct 26), being built in one pull request. Steps 0–3 are done: suppliers, purchase orders, receiving with the weighted average cost, supplier payments and dues. Counts, expenses and the reports follow. The accountant's review of the report definitions (§3.8) and a pilot's sample data are still to come | [`phase-8-plan.md`](phases/phase-8-plan.md) |
+| 8 — Back office | Approved (Oct 26), being built in one pull request. Steps 0–4 are done: suppliers, purchase orders, receiving with the weighted average cost, supplier payments and dues, adjustment values and stock counts. Expenses and the reports follow. The accountant's review of the report definitions (§3.8) and a pilot's sample data are still to come | [`phase-8-plan.md`](phases/phase-8-plan.md) |
 | 9 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
@@ -637,7 +637,7 @@ Each of these starts only when pilot clients need it, in this default order; the
 **Phase 8 — Back office (about 4–6 weeks)**
 
 - [x] Suppliers, purchase orders, goods receipt (partial and full) updating stock and weighted average cost. *Also receiving without a PO, other costs landed by value, supplier payments and dues aged oldest first; an order line's cost is now frozen at its first shipment ([ADR 0031](adr/0031-costing-and-reporting.md)).*
-- [ ] Stock adjustments with reasons and stock-count sessions.
+- [x] Stock adjustments with reasons and stock-count sessions. *Counts run while selling: each line's difference is measured at the moment it was counted, and counts over 500 lines are applied on the queue (phase-8-plan §3.5).*
 - [ ] Expenses with categories and recurring entries.
 - [ ] Reports: sales by day and product, gross profit per order and product (cost snapshot on order lines), net profit after expenses, stock valuation, supplier dues, COD outstanding; CSV and Excel export.
 - [ ] Reports read from summary tables refreshed by cron to keep queries light.

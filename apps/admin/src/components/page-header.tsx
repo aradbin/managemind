@@ -27,7 +27,8 @@ export function PageHeader({
       | '/orders'
       | '/reports'
       | '/inventory/purchase-orders'
-      | '/inventory/suppliers';
+      | '/inventory/suppliers'
+      | '/inventory/counts';
     label: string;
   };
 }) {

@@ -1,6 +1,6 @@
 // The inventory area's sections (phase-8-plan §3.12), under the catalog's
-// own row: stock, purchase orders, receiving and suppliers. Shown in the
-// same pill and tab style as CatalogNav (ADR 0029).
+// own row: stock, purchase orders, receiving, suppliers, counts and
+// adjustments, as pills.
 import { Link } from '@tanstack/react-router';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/purchasing';
@@ -15,6 +15,8 @@ const SECTIONS = [
   },
   { to: '/inventory/receive', label: 'inventory.tab.receive', permission: 'inventory.write' },
   { to: '/inventory/suppliers', label: 'inventory.tab.suppliers', permission: 'purchasing.read' },
+  { to: '/inventory/counts', label: 'inventory.tab.counts' },
+  { to: '/inventory/adjustments', label: 'inventory.tab.adjustments' },
 ] as const satisfies readonly {
   to: string;
   label: AdminKey;

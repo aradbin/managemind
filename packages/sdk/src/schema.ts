@@ -2911,6 +2911,12 @@ export interface paths {
                             /** @default false */
                             autoReceive?: boolean;
                         };
+                        backOffice?: {
+                            /** @default 500000 */
+                            countApprovalThreshold?: number;
+                            /** @default 2 */
+                            reorderMultiple?: number;
+                        };
                         returns?: {
                             /** @default true */
                             shopperRequests?: boolean;
@@ -5107,7 +5113,35 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Adjustments and hand receipts with totals; values with catalog.cost (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    reason?: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
+                    locationId?: string;
+                    actorId?: string;
+                    from?: string;
+                    to?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Adjustments */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdjustmentPage"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** Receive, count or write off stock (inventory.write; accepts Idempotency-Key) */
         post: {
@@ -11726,6 +11760,345 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/stock-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock counts, newest first (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "counting" | "review" | "applying" | "applied" | "cancelled";
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                number: number;
+                                reference: string;
+                                /** @enum {string} */
+                                status: "counting" | "review" | "applying" | "applied" | "cancelled";
+                                /** Format: uuid */
+                                locationId: string;
+                                scope: {
+                                    [key: string]: unknown;
+                                };
+                                lineCount: number;
+                                countedLines: number;
+                                createdAt: string;
+                                appliedAt: string | null;
+                            }[];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Start a count of a location, a category, a tag or chosen items (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        locationId?: string;
+                        scope: {
+                            /** @enum {string} */
+                            kind: "all";
+                        } | {
+                            /** @enum {string} */
+                            kind: "category";
+                            /** Format: uuid */
+                            categoryId: string;
+                        } | {
+                            /** @enum {string} */
+                            kind: "tag";
+                            tag: string;
+                        } | {
+                            /** @enum {string} */
+                            kind: "variants";
+                            variantIds: string[];
+                        };
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Started */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A count; expected quantities from review on (inventory.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Count */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/lines/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A counter's number for one item, stamped with when (inventory.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    variantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        counted: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Counted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCountLine"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Counting is done: on to review (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description In review */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Back to counting (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counting */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a count that is not applied (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply the differences; above the store's threshold also catalog.cost (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Applied, or applying in the background */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/messages": {
         parameters: {
             query?: never;
@@ -14931,6 +15304,12 @@ export interface components {
                 /** @default false */
                 autoReceive: boolean;
             };
+            backOffice: {
+                /** @default 500000 */
+                countApprovalThreshold: number;
+                /** @default 2 */
+                reorderMultiple: number;
+            };
             returns: {
                 /** @default true */
                 shopperRequests: boolean;
@@ -17917,6 +18296,98 @@ export interface components {
             actorType: string;
             actorId: string | null;
             createdAt: string;
+        };
+        AdjustmentPage: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                quantity: number;
+                reason: string;
+                note: string | null;
+                referenceType: string | null;
+                /** Format: uuid */
+                referenceId: string | null;
+                actorType: string;
+                actorId: string | null;
+                createdAt: string;
+                /** @description Only with catalog.cost */
+                unitCost?: number | null;
+                /** @description Only with catalog.cost */
+                value?: number | null;
+            }[];
+            nextCursor: string | null;
+            totals: {
+                count: number;
+                units: number;
+                unvalued: number;
+                value?: number;
+            };
+        };
+        StockCount: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            reference: string;
+            /** Format: uuid */
+            locationId: string;
+            /** @enum {string} */
+            status: "counting" | "review" | "applying" | "applied" | "cancelled";
+            scope: {
+                [key: string]: unknown;
+            };
+            note: string | null;
+            lineCount: number;
+            countedLines: number;
+            startedBy: string | null;
+            submittedAt: string | null;
+            appliedAt: string | null;
+            appliedBy: string | null;
+            applyError: string | null;
+            createdAt: string;
+            lines: components["schemas"]["StockCountLine"][];
+            differences?: {
+                lines: number;
+                units: number;
+                value?: number;
+            };
+            approvalThreshold?: number;
+        };
+        StockCountLine: {
+            /** Format: uuid */
+            variantId: string;
+            productId: string;
+            title: {
+                bn?: string;
+                en?: string;
+            };
+            optionLabels: {
+                bn?: string;
+                en?: string;
+            }[];
+            sku: string | null;
+            barcode: string | null;
+            counted: number | null;
+            countedAt: string | null;
+            countedBy: string | null;
+            expected?: number;
+            difference?: number;
+            unitCost?: number | null;
+            value?: number;
+            applied?: boolean;
         };
         Message: {
             /** Format: uuid */

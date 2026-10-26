@@ -20,6 +20,7 @@ import {
   createPromotion,
   createPurchaseOrder,
   createShipment,
+  createStockCount,
   createSupplier,
   createSupplierPayment,
   createTenant,
@@ -493,6 +494,10 @@ describe('isolation suite', () => {
       }),
     );
 
+    const bCount = await inB((tx) =>
+      createStockCount(tx, bOwner, { scope: { kind: 'variants', variantIds: [liveVariant] } }),
+    );
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
@@ -643,6 +648,16 @@ describe('isolation suite', () => {
       'PATCH /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id, body: { note: 'x' } },
       'DELETE /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id },
       'GET /v1/admin/variants/{id}/cost-history': { id: liveVariant },
+      'GET /v1/admin/stock-counts/{id}': { id: bCount.id },
+      'PUT /v1/admin/stock-counts/{id}/lines/{variantId}': {
+        id: bCount.id,
+        second: liveVariant,
+        body: { counted: 1 },
+      },
+      'POST /v1/admin/stock-counts/{id}/submit': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/reopen': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/apply': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/cancel': { id: bCount.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -686,7 +701,7 @@ describe('isolation suite', () => {
       const path = route.path
         .replace('/v1/admin', '/api/admin')
         .replace(/\{(id|file|phone)\}/, encodeURIComponent(fixture.id))
-        .replace(/\{(addressId|photo)\}/, fixture.second ?? crypto.randomUUID())
+        .replace(/\{(addressId|photo|variantId)\}/, fixture.second ?? crypto.randomUUID())
         .replace('{n}', '0')
         .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);

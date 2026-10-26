@@ -28,6 +28,11 @@ export type ReorderLine = Json<'/v1/admin/purchase-orders/reorder', 'get'>['item
 export type GoodsReceipt = Json<'/v1/admin/goods-receipts/{id}', 'get'>;
 export type GoodsReceiptBody = Body<'/v1/admin/goods-receipts', 'post'>;
 export type SupplierPayment = Json<'/v1/admin/supplier-payments', 'get'>['items'][number];
+export type StockCount = Json<'/v1/admin/stock-counts/{id}', 'get'>;
+export type StockCountLine = StockCount['lines'][number];
+export type StockCountSummary = Json<'/v1/admin/stock-counts', 'get'>['items'][number];
+export type AdjustmentPage = Json<'/v1/admin/inventory/adjustments', 'get'>;
+export type Adjustment = AdjustmentPage['items'][number];
 export type CostChange = Json<'/v1/admin/variants/{id}/cost-history', 'get'>['items'][number];
 
 export const SPEND_METHODS = ['cash', 'bank', 'bkash', 'nagad', 'card', 'other'] as const;
@@ -75,6 +80,12 @@ export const purchaseOrderQuery = (id: string) => ({
     unwrap(await api.GET('/v1/admin/purchase-orders/{id}', { params: { path: { id } } })),
 });
 
+export const stockCountQuery = (id: string) => ({
+  queryKey: ['stock-count', id] as const,
+  queryFn: async () =>
+    unwrap(await api.GET('/v1/admin/stock-counts/{id}', { params: { path: { id } } })),
+});
+
 export const costHistoryQuery = (variantId: string) => ({
   queryKey: ['cost-history', variantId] as const,
   queryFn: async () =>
@@ -95,6 +106,9 @@ export const PURCHASING_KEYS = [
   ['goods-receipts'],
   ['inventory'],
   ['cost-history'],
+  ['stock-counts'],
+  ['stock-count'],
+  ['adjustments'],
 ] as const;
 
 /** Poisha as money, or a dash. */

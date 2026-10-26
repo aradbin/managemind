@@ -32,6 +32,7 @@ import {
   type RefundCheckMessage,
 } from './payments';
 import { handleSaleEdges, type SaleEdgeMessage } from './sales';
+import { handleStockCountMessages, type StockCountMessage } from './stock-counts';
 
 export interface DomainCheckMessage {
   kind: 'domain_check';
@@ -83,15 +84,17 @@ export function dnsInstructions(
 
 /**
  * The delayed queue: domain re-checks, scheduled sales' window edges
- * (sales.ts) and online payments' and refunds' checks (payments.ts), told
- * apart by `kind`.
+ * (sales.ts), online payments' and refunds' checks (payments.ts), couriers'
+ * bookings and polls, and large stock counts' applies (stock-counts.ts),
+ * told apart by `kind`.
  */
 export type DelayedMessage =
   | DomainCheckMessage
   | SaleEdgeMessage
   | PaymentCheckMessage
   | RefundCheckMessage
-  | CourierMessage;
+  | CourierMessage
+  | StockCountMessage;
 
 export async function handleDelayedQueue(
   batch: MessageBatch<DelayedMessage>,
@@ -112,18 +115,24 @@ export async function handleDelayedQueue(
     (m): m is Message<CourierMessage> =>
       m.body.kind === 'courier_book' || m.body.kind === 'courier_poll',
   );
+  // Large stock counts, 500 lines a message (phase-8-plan §7).
+  const counts = batch.messages.filter(
+    (m): m is Message<StockCountMessage> => m.body.kind === 'stock_count_apply',
+  );
   const domains = batch.messages.filter(
     (m): m is Message<DomainCheckMessage> =>
       m.body.kind !== 'sale_edge' &&
       m.body.kind !== 'payment_check' &&
       m.body.kind !== 'refund_check' &&
       m.body.kind !== 'courier_book' &&
-      m.body.kind !== 'courier_poll',
+      m.body.kind !== 'courier_poll' &&
+      m.body.kind !== 'stock_count_apply',
   );
   if (sales.length) await handleSaleEdges(sales, env, ctx);
   if (payments.length) await handlePaymentChecks(payments, env, ctx);
   if (refunds.length) await handleRefundChecks(refunds, env, ctx);
   if (couriers.length) await handleCourierMessages(couriers, env, ctx);
+  if (counts.length) await handleStockCountMessages(counts, env, ctx);
   if (domains.length) await handleDomainQueue({ ...batch, messages: domains }, env, ctx);
 }
 

@@ -31,6 +31,7 @@ import {
 } from '@managemind/core';
 import { invitationEmail } from '@managemind/providers/email';
 import { AppError, PERMISSIONS, STORE_ROLES } from '@managemind/shared';
+import { backOfficeSettings } from '@managemind/shared/back-office';
 import { notificationSettings } from '@managemind/shared/notifications';
 import {
   checkoutSettings,
@@ -64,6 +65,7 @@ import { PROMOTION_ROUTES, registerPromotions } from './promotions';
 import { PURCHASING_ROUTES, registerPurchasing } from './purchasing';
 import { REPORT_ROUTES, registerReports } from './reports';
 import { RETURN_ROUTES, registerReturns } from './returns';
+import { registerStock, STOCK_ROUTES } from './stock';
 import { storeUrls } from './store-urls';
 import { registerStorefrontAdmin, STOREFRONT_ROUTES } from './storefront';
 
@@ -122,6 +124,7 @@ const Store = z
     confirmation: confirmationSettings,
     recovery: recoverySettings,
     couriers: courierSettings,
+    backOffice: backOfficeSettings,
     returns: returnSettings,
     notifications: notificationSettings,
     setup: tenantSettings.shape.setup,
@@ -173,6 +176,7 @@ export const ADMIN_ROUTES = {
   ...CREDENTIAL_ROUTES,
   ...COURIER_ROUTES,
   ...PURCHASING_ROUTES,
+  ...STOCK_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
   help: r({
@@ -239,6 +243,7 @@ export const ADMIN_ROUTES = {
         confirmation: confirmationSettings.optional(),
         recovery: recoverySettings.optional(),
         couriers: courierSettings.optional(),
+        backOffice: backOfficeSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
         setup: tenantSettings.shape.setup.optional(),
@@ -629,6 +634,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerCredentials(admin);
   registerCouriers(admin);
   registerPurchasing(admin);
+  registerStock(admin);
   registerMessages(admin);
   registerPromotions(admin);
   admin.openapi(R.accept, async (c) => {
