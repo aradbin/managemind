@@ -53,8 +53,12 @@ import { Route as ShellPromotionsIndexRouteImport } from './routes/_shell/promot
 import { Route as ShellPromotionsIdRouteImport } from './routes/_shell/promotions/$id'
 import { Route as ShellPromotionsNewRouteImport } from './routes/_shell/promotions/new'
 import { Route as ShellReportsCodRouteImport } from './routes/_shell/reports_.cod'
+import { Route as ShellReportsCodOutstandingRouteImport } from './routes/_shell/reports_.cod-outstanding'
+import { Route as ShellReportsExpensesRouteImport } from './routes/_shell/reports_.expenses'
 import { Route as ShellReportsProfitRouteImport } from './routes/_shell/reports_.profit'
 import { Route as ShellReportsSalesRouteImport } from './routes/_shell/reports_.sales'
+import { Route as ShellReportsStockRouteImport } from './routes/_shell/reports_.stock'
+import { Route as ShellReportsSuppliersRouteImport } from './routes/_shell/reports_.suppliers'
 import { Route as ShellReturnsIndexRouteImport } from './routes/_shell/returns/index'
 import { Route as ShellReturnsIdRouteImport } from './routes/_shell/returns/$id'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
@@ -314,6 +318,17 @@ const ShellReportsCodRoute = ShellReportsCodRouteImport.update({
   path: '/reports/cod',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellReportsCodOutstandingRoute =
+  ShellReportsCodOutstandingRouteImport.update({
+    id: '/reports_/cod-outstanding',
+    path: '/reports/cod-outstanding',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellReportsExpensesRoute = ShellReportsExpensesRouteImport.update({
+  id: '/reports_/expenses',
+  path: '/reports/expenses',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellReportsProfitRoute = ShellReportsProfitRouteImport.update({
   id: '/reports_/profit',
   path: '/reports/profit',
@@ -322,6 +337,16 @@ const ShellReportsProfitRoute = ShellReportsProfitRouteImport.update({
 const ShellReportsSalesRoute = ShellReportsSalesRouteImport.update({
   id: '/reports_/sales',
   path: '/reports/sales',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsStockRoute = ShellReportsStockRouteImport.update({
+  id: '/reports_/stock',
+  path: '/reports/stock',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsSuppliersRoute = ShellReportsSuppliersRouteImport.update({
+  id: '/reports_/suppliers',
+  path: '/reports/suppliers',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellReturnsIndexRoute = ShellReturnsIndexRouteImport.update({
@@ -550,8 +575,12 @@ export interface FileRoutesByFullPath {
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
   '/reports/cod': typeof ShellReportsCodRoute
+  '/reports/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/reports/expenses': typeof ShellReportsExpensesRoute
   '/reports/profit': typeof ShellReportsProfitRoute
   '/reports/sales': typeof ShellReportsSalesRoute
+  '/reports/stock': typeof ShellReportsStockRoute
+  '/reports/suppliers': typeof ShellReportsSuppliersRoute
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -631,8 +660,12 @@ export interface FileRoutesByTo {
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
   '/reports/cod': typeof ShellReportsCodRoute
+  '/reports/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/reports/expenses': typeof ShellReportsExpensesRoute
   '/reports/profit': typeof ShellReportsProfitRoute
   '/reports/sales': typeof ShellReportsSalesRoute
+  '/reports/stock': typeof ShellReportsStockRoute
+  '/reports/suppliers': typeof ShellReportsSuppliersRoute
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -715,8 +748,12 @@ export interface FileRoutesById {
   '/_shell/promotions/$id': typeof ShellPromotionsIdRoute
   '/_shell/promotions/new': typeof ShellPromotionsNewRoute
   '/_shell/reports_/cod': typeof ShellReportsCodRoute
+  '/_shell/reports_/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/_shell/reports_/expenses': typeof ShellReportsExpensesRoute
   '/_shell/reports_/profit': typeof ShellReportsProfitRoute
   '/_shell/reports_/sales': typeof ShellReportsSalesRoute
+  '/_shell/reports_/stock': typeof ShellReportsStockRoute
+  '/_shell/reports_/suppliers': typeof ShellReportsSuppliersRoute
   '/_shell/returns/$id': typeof ShellReturnsIdRoute
   '/_shell/settings/billing': typeof ShellSettingsBillingRoute
   '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -799,8 +836,12 @@ export interface FileRouteTypes {
     | '/promotions/$id'
     | '/promotions/new'
     | '/reports/cod'
+    | '/reports/cod-outstanding'
+    | '/reports/expenses'
     | '/reports/profit'
     | '/reports/sales'
+    | '/reports/stock'
+    | '/reports/suppliers'
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
@@ -880,8 +921,12 @@ export interface FileRouteTypes {
     | '/promotions/$id'
     | '/promotions/new'
     | '/reports/cod'
+    | '/reports/cod-outstanding'
+    | '/reports/expenses'
     | '/reports/profit'
     | '/reports/sales'
+    | '/reports/stock'
+    | '/reports/suppliers'
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
@@ -963,8 +1008,12 @@ export interface FileRouteTypes {
     | '/_shell/promotions/$id'
     | '/_shell/promotions/new'
     | '/_shell/reports_/cod'
+    | '/_shell/reports_/cod-outstanding'
+    | '/_shell/reports_/expenses'
     | '/_shell/reports_/profit'
     | '/_shell/reports_/sales'
+    | '/_shell/reports_/stock'
+    | '/_shell/reports_/suppliers'
     | '/_shell/returns/$id'
     | '/_shell/settings/billing'
     | '/_shell/settings/checkout'
@@ -1329,6 +1378,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellReportsCodRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/reports_/cod-outstanding': {
+      id: '/_shell/reports_/cod-outstanding'
+      path: '/reports/cod-outstanding'
+      fullPath: '/reports/cod-outstanding'
+      preLoaderRoute: typeof ShellReportsCodOutstandingRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/expenses': {
+      id: '/_shell/reports_/expenses'
+      path: '/reports/expenses'
+      fullPath: '/reports/expenses'
+      preLoaderRoute: typeof ShellReportsExpensesRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/reports_/profit': {
       id: '/_shell/reports_/profit'
       path: '/reports/profit'
@@ -1341,6 +1404,20 @@ declare module '@tanstack/react-router' {
       path: '/reports/sales'
       fullPath: '/reports/sales'
       preLoaderRoute: typeof ShellReportsSalesRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/stock': {
+      id: '/_shell/reports_/stock'
+      path: '/reports/stock'
+      fullPath: '/reports/stock'
+      preLoaderRoute: typeof ShellReportsStockRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/suppliers': {
+      id: '/_shell/reports_/suppliers'
+      path: '/reports/suppliers'
+      fullPath: '/reports/suppliers'
+      preLoaderRoute: typeof ShellReportsSuppliersRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/returns/': {
@@ -1647,8 +1724,12 @@ interface ShellRouteChildren {
   ShellPromotionsIdRoute: typeof ShellPromotionsIdRoute
   ShellPromotionsNewRoute: typeof ShellPromotionsNewRoute
   ShellReportsCodRoute: typeof ShellReportsCodRoute
+  ShellReportsCodOutstandingRoute: typeof ShellReportsCodOutstandingRoute
+  ShellReportsExpensesRoute: typeof ShellReportsExpensesRoute
   ShellReportsProfitRoute: typeof ShellReportsProfitRoute
   ShellReportsSalesRoute: typeof ShellReportsSalesRoute
+  ShellReportsStockRoute: typeof ShellReportsStockRoute
+  ShellReportsSuppliersRoute: typeof ShellReportsSuppliersRoute
   ShellReturnsIdRoute: typeof ShellReturnsIdRoute
   ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
   ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
@@ -1714,8 +1795,12 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellPromotionsIdRoute: ShellPromotionsIdRoute,
   ShellPromotionsNewRoute: ShellPromotionsNewRoute,
   ShellReportsCodRoute: ShellReportsCodRoute,
+  ShellReportsCodOutstandingRoute: ShellReportsCodOutstandingRoute,
+  ShellReportsExpensesRoute: ShellReportsExpensesRoute,
   ShellReportsProfitRoute: ShellReportsProfitRoute,
   ShellReportsSalesRoute: ShellReportsSalesRoute,
+  ShellReportsStockRoute: ShellReportsStockRoute,
+  ShellReportsSuppliersRoute: ShellReportsSuppliersRoute,
   ShellReturnsIdRoute: ShellReturnsIdRoute,
   ShellSettingsBillingRoute: ShellSettingsBillingRoute,
   ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,

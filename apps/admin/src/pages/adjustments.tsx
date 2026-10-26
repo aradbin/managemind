@@ -6,6 +6,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
+import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
 import { InventoryNav } from '../components/inventory-nav';
 import { PageHeader } from '../components/page-header';
@@ -16,6 +17,7 @@ import { api, unwrap } from '../lib/api';
 import { errorMessage } from '../lib/errors';
 import { lineLabel } from '../lib/orders';
 import { type Adjustment, priceOrDash } from '../lib/purchasing';
+import { allPages } from '../lib/report-export';
 
 const REASONS = [
   'received',
@@ -88,9 +90,46 @@ export function AdjustmentsPage() {
         ]
       : []),
   ];
+  const exportAll = async () => {
+    const all = await allPages(async (cursor) =>
+      unwrap(
+        await api.GET('/v1/admin/inventory/adjustments', {
+          params: { query: { ...filters, ...(cursor ? { before: cursor } : {}) } },
+        }),
+      ),
+    );
+    return all.map((a) => [
+      a.createdAt.slice(0, 10),
+      [lineLabel(a, locale), a.sku].filter(Boolean).join(' · '),
+      reasonText(a.reason),
+      a.note ?? '',
+      a.quantity,
+      ...(totals?.value !== undefined ? [a.value == null ? null : { money: a.value }] : []),
+    ]);
+  };
   return (
     <div className="max-w-6xl">
-      <PageHeader title={t('adjustments.title')} description={t('adjustments.intro')} />
+      <PageHeader
+        title={t('adjustments.title')}
+        description={t('adjustments.intro')}
+        actions={
+          items.length > 0 ? (
+            <ExportButtons
+              name="adjustments"
+              what={t('adjustments.title')}
+              head={[
+                t('adjustments.when'),
+                t('po.lines'),
+                t('adjustments.reason'),
+                t('inventory.note'),
+                t('inventory.quantity'),
+                ...(totals?.value !== undefined ? [t('counts.value')] : []),
+              ]}
+              rows={exportAll}
+            />
+          ) : undefined
+        }
+      />
       <CatalogNav />
       <InventoryNav />
       <div className="mb-4 grid gap-3 md:grid-cols-3">

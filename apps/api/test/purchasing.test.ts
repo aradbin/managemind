@@ -123,8 +123,10 @@ describe('purchasing over HTTP', () => {
     ).json()) as Json;
     // 0 on hand at ৳200, so the receipt's ৳230 is the cost.
     expect(history.items[0]).toMatchObject({ source: 'receipt', oldCost: 200_00, newCost: 230_00 });
-    const dues = (await (await ownerA.get('/api/admin/reports/suppliers')).json()) as Json;
-    expect(dues.items.find((d: Json) => d.supplierId === supplier.id)?.balance).toBe(1_800_00);
+    const dues = (await (
+      await ownerA.get('/api/admin/reports/suppliers?from=2026-01-01&to=2026-12-31')
+    ).json()) as Json;
+    expect(dues.dues.find((d: Json) => d.supplierId === supplier.id)?.balance).toBe(1_800_00);
 
     // Staff see the PO and the supplier without costs or balances.
     const staffA = await staffIn(await member(a.id, 'staff'), a.id);

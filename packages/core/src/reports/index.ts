@@ -298,6 +298,7 @@ export async function getRecoveryReport(
 }
 
 export * from './back-office';
+export * from './books';
 export {
   monthEnd,
   refreshStoreReports,

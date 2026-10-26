@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
+import { ExportButtons } from '../components/export-buttons';
 import { InventoryNav } from '../components/inventory-nav';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -20,6 +21,7 @@ import {
   type PurchaseOrderSummary,
   priceOrDash,
 } from '../lib/purchasing';
+import { allPages } from '../lib/report-export';
 
 export function PurchaseOrdersPage() {
   const { t, locale } = useLocale();
@@ -72,11 +74,50 @@ export function PurchaseOrdersPage() {
         title={t('po.title')}
         description={t('po.intro')}
         actions={
-          canWrite && (
-            <Button asChild>
-              <Link to="/inventory/purchase-orders/new">{t('po.new')}</Link>
-            </Button>
-          )
+          <>
+            {items.length > 0 && (
+              <ExportButtons
+                name="purchase-orders"
+                what={t('po.title')}
+                head={[
+                  t('po.number'),
+                  t('po.supplier'),
+                  t('po.status'),
+                  t('po.received'),
+                  t('po.expectedOn'),
+                  ...(items.some((o) => o.total !== undefined) ? [t('po.total')] : []),
+                ]}
+                rows={async () => {
+                  const all = await allPages(async (cursor) =>
+                    unwrap(
+                      await api.GET('/v1/admin/purchase-orders', {
+                        params: {
+                          query: {
+                            ...(status ? { status } : {}),
+                            ...(cursor ? { before: cursor } : {}),
+                          },
+                        },
+                      }),
+                    ),
+                  );
+                  const withTotal = all.some((o) => o.total !== undefined);
+                  return all.map((o) => [
+                    o.reference,
+                    o.supplier.name,
+                    t(`po.status.${o.status}`),
+                    t('po.progress', { received: o.received, ordered: o.ordered }),
+                    o.expectedOn ?? '',
+                    ...(withTotal ? [o.total === undefined ? null : { money: o.total }] : []),
+                  ]);
+                }}
+              />
+            )}
+            {canWrite && (
+              <Button asChild>
+                <Link to="/inventory/purchase-orders/new">{t('po.new')}</Link>
+              </Button>
+            )}
+          </>
         }
       />
       <CatalogNav />

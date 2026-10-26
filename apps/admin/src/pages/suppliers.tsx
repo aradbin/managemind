@@ -7,6 +7,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
+import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
 import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
@@ -83,7 +84,33 @@ export function SuppliersPage() {
         title={t('suppliers.title')}
         description={t('suppliers.intro')}
         actions={
-          canWrite && <Button onClick={() => setCreating(true)}>{t('suppliers.new')}</Button>
+          <>
+            {list.data && list.data.length > 0 && (
+              <ExportButtons
+                name="suppliers"
+                what={t('suppliers.title')}
+                head={[
+                  t('suppliers.name'),
+                  t('suppliers.phone'),
+                  t('suppliers.contactName'),
+                  ...(list.data.some((s) => s.balance !== undefined)
+                    ? [t('suppliers.balance')]
+                    : []),
+                ]}
+                rows={() =>
+                  (list.data ?? []).map((s) => [
+                    s.name,
+                    s.phones.join(', '),
+                    s.contactName ?? '',
+                    ...(list.data?.some((x) => x.balance !== undefined)
+                      ? [s.balance === undefined ? null : { money: s.balance }]
+                      : []),
+                  ])
+                }
+              />
+            )}
+            {canWrite && <Button onClick={() => setCreating(true)}>{t('suppliers.new')}</Button>}
+          </>
         }
       />
       <CatalogNav />

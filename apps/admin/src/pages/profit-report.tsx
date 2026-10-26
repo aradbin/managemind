@@ -10,10 +10,10 @@ import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/expenses';
 import '../i18n/returns';
+import { Table } from '../components/report-table';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
-import { Table } from './reports';
 
 type Statement = {
   netSales: number;
@@ -88,6 +88,13 @@ export function ProfitReportPage() {
               change(r.current[key], r.previous[key]),
             ])}
             empty={t('reports.none')}
+            exportName={`profit-${range.from}-${range.to}`}
+            exportRows={LINES.map(([label, key]) => [
+              t(label),
+              { money: r.current[key] },
+              { money: r.previous[key] },
+              change(r.current[key], r.previous[key]),
+            ])}
           />
           <p className="-mt-2 text-sm text-muted-foreground">
             {t('profit.vatNote', { amount: money(r.current.vat) })} {t('reports.salesBasis')}
@@ -97,6 +104,11 @@ export function ProfitReportPage() {
             head={[t('expenses.category'), t('reports.amount')]}
             rows={r.current.expensesByCategory.map((c) => [c.name[locale], money(c.amount)])}
             empty={t('reports.none')}
+            exportName={`profit-expenses-${range.from}-${range.to}`}
+            exportRows={r.current.expensesByCategory.map((c) => [
+              c.name[locale],
+              { money: c.amount },
+            ])}
           />
         </>
       )}

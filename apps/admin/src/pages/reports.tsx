@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
+import { Table } from '../components/report-table';
 import { ReportsNav } from '../components/reports-nav';
 import { Button } from '../components/ui/button';
 import { type AdminKey, useLocale } from '../i18n';
@@ -20,67 +21,11 @@ import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { pickText } from '../lib/orders';
 
+export { Table };
+
 // The server reads the range as Dhaka dates, so today is Dhaka's today.
 const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
 const day = (d: Date) => DHAKA_DAY.format(d);
-
-export function Table({
-  caption,
-  head,
-  rows,
-  empty,
-}: {
-  caption: string;
-  head: string[];
-  rows: (string | number)[][];
-  empty: string;
-}) {
-  return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5">
-      <h2 className="font-semibold">{caption}</h2>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <div
-          // Wide tables scroll sideways on phones; keyboard users can scroll them too.
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be focusable (WCAG 2.1.1).
-          tabIndex={0}
-          className="-mx-4 overflow-x-auto border-y border-border md:-mx-5"
-        >
-          <table className="w-full text-left text-sm">
-            <thead className="bg-canvas text-xs text-muted-foreground">
-              <tr>
-                {head.map((h, i) => (
-                  <th
-                    key={i}
-                    scope="col"
-                    className={`px-4 py-2.5 font-medium md:px-5 ${i ? 'text-right' : ''}`}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, j) => (
-                <tr key={j} className="border-t border-border">
-                  {r.map((cell, i) => (
-                    <td
-                      key={i}
-                      className={`px-4 py-2.5 md:px-5 ${i ? 'text-right tabular-nums whitespace-nowrap' : ''}`}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  );
-}
 
 export function ReportsPage() {
   const { t, locale } = useLocale();

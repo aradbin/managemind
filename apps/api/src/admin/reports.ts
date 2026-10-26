@@ -3,12 +3,19 @@
 // summary tables; costs and profit need catalog.cost.
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  COD_AGE_BUCKETS,
+  codOutstanding,
+  expenseReport,
   getRecoveryReport,
   getReports,
   productsReport,
   profitReport,
   salesReport,
+  slowMovers,
+  stockValuation,
+  supplierReport,
 } from '@managemind/core';
+import { AGEING_BUCKETS } from '@managemind/shared/back-office';
 import { inStore, type StaffEnv } from './context';
 
 const Localized = z.record(z.string(), z.string());
@@ -164,6 +171,126 @@ const ProfitStatement = z
   })
   .openapi('ProfitStatement');
 
+const ValuationRow = z.object({
+  variantId: z.uuid(),
+  productId: z.string(),
+  title: Names,
+  optionLabels: z.array(Names),
+  sku: z.string().nullable(),
+  locationId: z.uuid(),
+  location: z.string(),
+  categoryId: z.uuid().nullable(),
+  category: Names.nullable(),
+  onHand: Count,
+  unitCost: Money.nullable(),
+  value: Money,
+});
+const StockValuation = z
+  .object({
+    asOf: z.string(),
+    month: z.string().nullable(),
+    items: z.array(ValuationRow),
+    negative: z.array(ValuationRow).openapi({ description: 'Below zero, never netted' }),
+    byLocation: z.array(
+      z.object({ locationId: z.uuid(), location: z.string(), units: Count, value: Money }),
+    ),
+    byCategory: z.array(
+      z.object({
+        categoryId: z.uuid().nullable(),
+        category: Names.nullable(),
+        units: Count,
+        value: Money,
+      }),
+    ),
+    totals: z.object({ units: Count, value: Money, missingCostUnits: Count }),
+    months: z.array(z.string()).openapi({ description: 'Month ends with stored values' }),
+  })
+  .openapi('StockValuation');
+const SlowMovers = z
+  .object({
+    days: Count,
+    items: z.array(
+      z.object({
+        variantId: z.uuid(),
+        productId: z.string(),
+        title: Names,
+        optionLabels: z.array(Names),
+        sku: z.string().nullable(),
+        onHand: Count,
+        lastSoldAt: z.string().nullable(),
+        value: Money.optional().openapi({ description: 'With catalog.cost' }),
+      }),
+    ),
+  })
+  .openapi('SlowMovers');
+const Buckets = z.object(
+  Object.fromEntries(AGEING_BUCKETS.map((b) => [b, Money])) as Record<
+    (typeof AGEING_BUCKETS)[number],
+    typeof Money
+  >,
+);
+const SupplierReport = z
+  .object({
+    from: z.string(),
+    to: z.string(),
+    dues: z.array(
+      z.object({
+        supplierId: z.uuid(),
+        name: z.string(),
+        archived: z.boolean(),
+        balance: Money,
+        buckets: Buckets,
+      }),
+    ),
+    duesTotal: z.object({ balance: Money, buckets: Buckets }),
+    purchases: z.array(
+      z.object({
+        supplierId: z.uuid().nullable(),
+        name: z.string().nullable(),
+        receipts: Count,
+        received: Money,
+        paid: Money,
+      }),
+    ),
+  })
+  .openapi('SupplierReport');
+const ExpenseReport = z
+  .object({
+    from: z.string(),
+    to: z.string(),
+    months: z.array(z.string()),
+    categories: z.array(
+      z.object({
+        categoryId: z.uuid(),
+        name: z.object({ bn: z.string(), en: z.string() }),
+        amounts: z.array(Money),
+        total: Money,
+      }),
+    ),
+    monthTotals: z.array(Money),
+    total: Money,
+  })
+  .openapi('ExpenseReport');
+const CodOutstanding = z
+  .object({
+    holders: z.array(
+      z.object({
+        courier: z.string().nullable().openapi({ description: "Null for the store's own riders" }),
+        parcels: Count,
+        amount: Money,
+        buckets: z.object(
+          Object.fromEntries(COD_AGE_BUCKETS.map((b) => [b, Money])) as Record<
+            (typeof COD_AGE_BUCKETS)[number],
+            typeof Money
+          >,
+        ),
+        oldestDays: Count,
+      }),
+    ),
+    total: Money,
+  })
+  .openapi('CodOutstanding');
+
 export const REPORT_ROUTES = {
   reports: createRoute({
     method: 'get',
@@ -228,6 +355,60 @@ export const REPORT_ROUTES = {
       },
     },
   }),
+  stock: createRoute({
+    method: 'get',
+    path: '/v1/admin/reports/stock',
+    tags: ['admin'],
+    summary:
+      "What the stock is worth today, or at a past month's end (reports.read, catalog.cost, back office)",
+    request: {
+      query: z.object({ month: z.string().optional().openapi({ description: 'YYYY-MM' }) }),
+    },
+    responses: {
+      200: { content: { 'application/json': { schema: StockValuation } }, description: 'Report' },
+    },
+  }),
+  slowMovers: createRoute({
+    method: 'get',
+    path: '/v1/admin/reports/slow-movers',
+    tags: ['admin'],
+    summary: 'On hand with no sale in a number of days, 60 by default (reports.read, back office)',
+    request: { query: z.object({ days: z.string().optional() }) },
+    responses: {
+      200: { content: { 'application/json': { schema: SlowMovers } }, description: 'Report' },
+    },
+  }),
+  suppliers: createRoute({
+    method: 'get',
+    path: '/v1/admin/reports/suppliers',
+    tags: ['admin'],
+    summary:
+      'Supplier balances and ageing today, purchases and payments in a range (reports.read, purchasing.pay, back office)',
+    request: { query: Range },
+    responses: {
+      200: { content: { 'application/json': { schema: SupplierReport } }, description: 'Report' },
+    },
+  }),
+  expenses: createRoute({
+    method: 'get',
+    path: '/v1/admin/reports/expenses',
+    tags: ['admin'],
+    summary: 'Expenses by category and month (reports.read, expenses.read, back office)',
+    request: { query: Range },
+    responses: {
+      200: { content: { 'application/json': { schema: ExpenseReport } }, description: 'Report' },
+    },
+  }),
+  codOutstanding: createRoute({
+    method: 'get',
+    path: '/v1/admin/reports/cod-outstanding',
+    tags: ['admin'],
+    summary:
+      "Delivered COD couriers haven't paid out and own riders haven't handed in, by age (reports.read, back office)",
+    responses: {
+      200: { content: { 'application/json': { schema: CodOutstanding } }, description: 'Report' },
+    },
+  }),
 } as const;
 
 export function registerReports(admin: OpenAPIHono<StaffEnv>): void {
@@ -248,6 +429,30 @@ export function registerReports(admin: OpenAPIHono<StaffEnv>): void {
       await inStore(c, (tx) => profitReport(tx, c.var.staff.actor, c.req.valid('query'))),
       200,
     ),
+  );
+  admin.openapi(REPORT_ROUTES.stock, async (c) =>
+    c.json(
+      await inStore(c, (tx) => stockValuation(tx, c.var.staff.actor, c.req.valid('query'))),
+      200,
+    ),
+  );
+  admin.openapi(REPORT_ROUTES.slowMovers, async (c) =>
+    c.json(await inStore(c, (tx) => slowMovers(tx, c.var.staff.actor, c.req.valid('query'))), 200),
+  );
+  admin.openapi(REPORT_ROUTES.suppliers, async (c) =>
+    c.json(
+      await inStore(c, (tx) => supplierReport(tx, c.var.staff.actor, c.req.valid('query'))),
+      200,
+    ),
+  );
+  admin.openapi(REPORT_ROUTES.expenses, async (c) =>
+    c.json(
+      await inStore(c, (tx) => expenseReport(tx, c.var.staff.actor, c.req.valid('query'))),
+      200,
+    ),
+  );
+  admin.openapi(REPORT_ROUTES.codOutstanding, async (c) =>
+    c.json(await inStore(c, (tx) => codOutstanding(tx, c.var.staff.actor)), 200),
   );
   admin.openapi(REPORT_ROUTES.recovery, async (c) =>
     c.json(

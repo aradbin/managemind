@@ -639,7 +639,7 @@ Each of these starts only when pilot clients need it, in this default order; the
 - [x] Suppliers, purchase orders, goods receipt (partial and full) updating stock and weighted average cost. *Also receiving without a PO, other costs landed by value, supplier payments and dues aged oldest first; an order line's cost is now frozen at its first shipment ([ADR 0031](adr/0031-costing-and-reporting.md)).*
 - [x] Stock adjustments with reasons and stock-count sessions. *Counts run while selling: each line's difference is measured at the moment it was counted, and counts over 500 lines are applied on the queue (phase-8-plan §3.5).*
 - [x] Expenses with categories and recurring entries. *With an optional receipt photo; recurring entries post themselves in the daily batch, once per day however often it runs (phase-8-plan §3.6).*
-- [ ] Reports: sales by day and product, gross profit per order and product (cost snapshot on order lines), net profit after expenses, stock valuation, supplier dues, COD outstanding; CSV and Excel export.
+- [x] Reports: sales by day and product, gross profit per order and product (cost snapshot on order lines), net profit after expenses, stock valuation, supplier dues, COD outstanding; CSV and Excel export. *A sale counts on its delivery day without VAT; the profit statement sits beside the period before it, and every report table and back-office list exports to Excel and CSV (phase-8-plan §3.8).*
 - [x] Reports read from summary tables refreshed by cron to keep queries light. *The same SQL fills them each night and answers for today, so the summary and the live figures can't disagree; days whose courier fees arrive late are redone (phase-8-plan §3.9).*
 
 **Phase 9 — Meta and messaging (about 4 weeks)**

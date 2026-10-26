@@ -22,7 +22,6 @@ import {
   listSuppliers,
   placePurchaseOrder,
   reorderSuggestions,
-  supplierDues,
   supplierLedger,
   updatePurchaseOrder,
   updateSupplier,
@@ -30,7 +29,6 @@ import {
   variantCostHistory,
 } from '@managemind/core';
 import {
-  AGEING_BUCKETS,
   COST_SOURCES,
   goodsReceiptInput,
   PURCHASE_ORDER_STATUSES,
@@ -108,21 +106,6 @@ const Ledger = z
     ),
   })
   .openapi('SupplierLedger');
-
-const Due = z
-  .object({
-    supplierId: z.uuid(),
-    name: z.string(),
-    archived: z.boolean(),
-    balance: Money,
-    buckets: z.object(
-      Object.fromEntries(AGEING_BUCKETS.map((b) => [b, Money])) as Record<
-        (typeof AGEING_BUCKETS)[number],
-        typeof Money
-      >,
-    ),
-  })
-  .openapi('SupplierDue');
 
 const VariantLine = {
   variantId: z.uuid(),
@@ -324,13 +307,6 @@ export const PURCHASING_ROUTES = {
     request: { params: Id, query: z.object({ from: day.optional(), to: day.optional() }) },
     responses: json(Ledger, 'Ledger'),
   }),
-  supplierDues: r({
-    method: 'get',
-    path: '/reports/suppliers',
-    summary: 'What the store owes each supplier, aged oldest receipt first (purchasing.pay)',
-    request: { query: z.object({ on: day.optional() }) },
-    responses: json(z.object({ items: z.array(Due) }), 'Dues'),
-  }),
   purchaseOrders: r({
     method: 'get',
     path: '/purchase-orders',
@@ -507,14 +483,6 @@ export function registerPurchasing(admin: OpenAPIHono<StaffEnv>): void {
       200,
     ),
   );
-  admin.openapi(R.supplierDues, async (c) => {
-    const { on } = c.req.valid('query');
-    const items = await inStore(c, (tx) =>
-      on ? supplierDues(tx, actor(c), on) : supplierDues(tx, actor(c)),
-    );
-    return c.json({ items }, 200);
-  });
-
   admin.openapi(R.purchaseOrders, async (c) =>
     c.json(await inStore(c, (tx) => listPurchaseOrders(tx, actor(c), c.req.valid('query'))), 200),
   );

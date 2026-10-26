@@ -31,3 +31,27 @@ export async function readXlsx(file: File): Promise<string[][]> {
     }),
   );
 }
+
+/** A report cell: text, a count, or poisha shown as taka. */
+export type ReportCell = string | number | null | { money: number };
+
+/** An .xlsx of a report table: counts and money as numbers, so the sheet can sum them. */
+export async function writeReportXlsx(header: string[], rows: ReportCell[][]): Promise<Blob> {
+  return writeXlsxFile(
+    [
+      header.map((value) => ({ value, fontWeight: 'bold' as const })),
+      ...rows.map((row) =>
+        row.map((cell) =>
+          cell === null
+            ? null
+            : typeof cell === 'object'
+              ? { value: cell.money / 100, type: Number, format: '#,##0.00' }
+              : typeof cell === 'number'
+                ? { value: cell, type: Number }
+                : { value: cell, type: String },
+        ),
+      ),
+    ],
+    { stickyRowsCount: 1 },
+  ).toBlob();
+}

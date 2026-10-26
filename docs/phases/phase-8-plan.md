@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–6 are done (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
+- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–7 are done (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
@@ -408,7 +408,8 @@ What the build has done so far, and where it differs from the sections above. Th
 | 4 | Done: adjustments valued at their cost and listed with totals; stock counts with blind counting, scanning (a scanner, or the camera where `BarcodeDetector` exists), review largest value first, recounts, the approval threshold, and the apply in batches of 500 on the delayed-work queue (in the request on previews, which have no queue). Acceptance criterion 2 is an integration test |
 | 5 | Done: expense categories (seeded the first time a store opens them, renamed, added and archived), expenses by month with category totals, receipt photos (shrunk in the browser, at most 2 MB, under the store's private R2 prefix, counted in its storage), and recurring entries posted by the daily batch. Acceptance criterion 3 is an integration test |
 | 6 | Done: the summary tables filled by one SQL that also answers for days not refreshed (today), so the two can't disagree; the nightly refresh of the last 7 days and the month-end stock values on the 1st; `GET /reports/sales`, `/reports/products` and `/reports/profit`; the order list's profit column and the dashboard's month so far for cost holders; Reports tabs (Overview, Sales, Profit). A hand-computed fixture over three days and the summaries-equal-live check are integration tests |
-| 7–12 | To do |
+| 7 | Done: `GET /reports/stock` (today, or a past month's end, by location, category and variant, with stock below zero apart), `/reports/slow-movers`, `/reports/suppliers` (dues aged today, purchases and payments in a range), `/reports/expenses` (by category and month) and `/reports/cod-outstanding` (per courier and the own riders, by age); the Reports tabs for each; Excel and CSV on every report table, Phase 7's COD reconciliation, and the supplier, PO, adjustment and expense lists. Each report has a hand-computed integration test |
+| 8–12 | To do |
 
 **Differences from the plan:**
 
@@ -429,3 +430,8 @@ What the build has done so far, and where it differs from the sections above. Th
 - **A refund that isn't a return** is today only the refund of an order an edit left overpaid. It counts with returns on its processed date when the order was already delivered; its delivery part reduces delivery income (§3.8).
 - **Gross profit per order** is its delivered net sales less returns and refunds, less the cost of the units that stayed sold; it is empty until a unit is delivered, and marked when a delivered unit had no cost.
 - **Day, week and month** are Dhaka dates; a week starts on Monday. A range is at most two years.
+- **`GET /reports/suppliers` replaces step 3's dues-only route** at the same path: it returns the dues with their totals and the range's purchases and payments, and needs `reports.read` as well as `purchasing.pay`.
+- **A product in several categories is valued under its first** (the shallowest, then by position), so the categories add up to the total.
+- **COD held by the store's own riders** is an order delivered without a courier whose COD payment is still pending; a courier's is a delivered parcel no payout line covers, less its fee. Ages count Dhaka days since delivery, in four bands (0–7, 8–14, 15–30, over 30 days).
+- **Slow movers** are variants still on sale with stock above zero and no `sale` movement in the chosen days (30 to 180, 60 by default), largest value first, at most 500.
+- **Exports carry numbers as numbers:** in Excel, counts are numbers and money is taka with two decimals, so a sheet can sum them; CSV writes money as plain taka (`1234.56`). A list's export reads every page of the current filter (at most 100 pages); the expense list exports its month. The Overview tab (Phase 5A) gains no export.

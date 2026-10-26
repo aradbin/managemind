@@ -11,11 +11,11 @@ import { ReportsNav } from '../components/reports-nav';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
+import { Table } from '../components/report-table';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { lineLabel } from '../lib/orders';
-import { Table } from './reports';
 
 type By = 'day' | 'week' | 'month';
 type Sort = 'netSales' | 'units' | 'grossProfit' | 'marginBp';
@@ -62,6 +62,9 @@ export function SalesReportPage() {
     (x, y) => (y[sort] ?? Number.NEGATIVE_INFINITY) - (x[sort] ?? Number.NEGATIVE_INFINITY),
   );
   const error = sales.error ?? products.error;
+  const periods = (s?.buckets ?? []).filter(
+    (b) => b.units || b.returnedUnits || b.returns || b.deliveryIncome,
+  );
   return (
     <div className="flex max-w-5xl flex-col gap-5">
       <PageHeader className="mb-0" title={t('sales.title')} description={t('sales.intro')} />
@@ -115,19 +118,28 @@ export function SalesReportPage() {
               t('sales.returns'),
               t('sales.deliveryIncome'),
             ]}
-            rows={s.buckets
-              .filter((b) => b.units || b.returnedUnits || b.returns || b.deliveryIncome)
-              .map((b) => [
-                dateLabel(b.start),
-                n(b.ordersDelivered),
-                n(b.units),
-                money(b.grossSales),
-                money(b.discounts),
-                money(b.netSales),
-                money(b.returns),
-                money(b.deliveryIncome),
-              ])}
+            rows={periods.map((b) => [
+              dateLabel(b.start),
+              n(b.ordersDelivered),
+              n(b.units),
+              money(b.grossSales),
+              money(b.discounts),
+              money(b.netSales),
+              money(b.returns),
+              money(b.deliveryIncome),
+            ])}
             empty={t('reports.none')}
+            exportName={`sales-by-${by}`}
+            exportRows={periods.map((b) => [
+              b.start,
+              b.ordersDelivered,
+              b.units,
+              { money: b.grossSales },
+              { money: b.discounts },
+              { money: b.netSales },
+              { money: b.returns },
+              { money: b.deliveryIncome },
+            ])}
           />
         </section>
       )}
@@ -175,6 +187,21 @@ export function SalesReportPage() {
                 : []),
             ])}
             empty={t('reports.none')}
+            exportName="sales-by-product"
+            exportRows={items.map((p) => [
+              [lineLabel(p, locale), p.sku].filter(Boolean).join(' · '),
+              p.units,
+              p.returnedUnits,
+              { money: p.netSales },
+              { money: p.returns },
+              ...(cost
+                ? [
+                    { money: p.cogs ?? 0 },
+                    { money: p.grossProfit ?? 0 },
+                    p.marginBp == null ? null : p.marginBp / 100,
+                  ]
+                : []),
+            ])}
           />
         </section>
       )}

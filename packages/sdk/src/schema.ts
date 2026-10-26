@@ -9921,6 +9921,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the stock is worth today, or at a past month's end (reports.read, catalog.cost, back office) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description YYYY-MM */
+                    month?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockValuation"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/slow-movers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** On hand with no sale in a number of days, 60 by default (reports.read, back office) */
+        get: {
+            parameters: {
+                query?: {
+                    days?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SlowMovers"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Supplier balances and ageing today, purchases and payments in a range (reports.read, purchasing.pay, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expenses by category and month (reports.read, expenses.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/cod-outstanding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivered COD couriers haven't paid out and own riders haven't handed in, by age (reports.read, back office) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CodOutstanding"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/reports/recovery": {
         parameters: {
             query?: never;
@@ -11160,46 +11351,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["SupplierLedger"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/reports/suppliers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** What the store owes each supplier, aged oldest receipt first (purchasing.pay) */
-        get: {
-            parameters: {
-                query?: {
-                    on?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Dues */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            items: components["schemas"]["SupplierDue"][];
-                        };
                     };
                 };
             };
@@ -18573,6 +18724,175 @@ export interface components {
             grossSales: number;
             discounts: number;
         };
+        StockValuation: {
+            asOf: string;
+            month: string | null;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                onHand: number;
+                unitCost: number | null;
+                value: number;
+            }[];
+            /** @description Below zero, never netted */
+            negative: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                onHand: number;
+                unitCost: number | null;
+                value: number;
+            }[];
+            byLocation: {
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                units: number;
+                value: number;
+            }[];
+            byCategory: {
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                units: number;
+                value: number;
+            }[];
+            totals: {
+                units: number;
+                value: number;
+                missingCostUnits: number;
+            };
+            /** @description Month ends with stored values */
+            months: string[];
+        };
+        SlowMovers: {
+            days: number;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                onHand: number;
+                lastSoldAt: string | null;
+                /** @description With catalog.cost */
+                value?: number;
+            }[];
+        };
+        SupplierReport: {
+            from: string;
+            to: string;
+            dues: {
+                /** Format: uuid */
+                supplierId: string;
+                name: string;
+                archived: boolean;
+                balance: number;
+                buckets: {
+                    "0_30": number;
+                    "31_60": number;
+                    "61_90": number;
+                    over_90: number;
+                };
+            }[];
+            duesTotal: {
+                balance: number;
+                buckets: {
+                    "0_30": number;
+                    "31_60": number;
+                    "61_90": number;
+                    over_90: number;
+                };
+            };
+            purchases: {
+                /** Format: uuid */
+                supplierId: string | null;
+                name: string | null;
+                receipts: number;
+                received: number;
+                paid: number;
+            }[];
+        };
+        ExpenseReport: {
+            from: string;
+            to: string;
+            months: string[];
+            categories: {
+                /** Format: uuid */
+                categoryId: string;
+                name: {
+                    bn: string;
+                    en: string;
+                };
+                amounts: number[];
+                total: number;
+            }[];
+            monthTotals: number[];
+            total: number;
+        };
+        CodOutstanding: {
+            holders: {
+                /** @description Null for the store's own riders */
+                courier: string | null;
+                parcels: number;
+                amount: number;
+                buckets: {
+                    "0_7": number;
+                    "8_14": number;
+                    "15_30": number;
+                    over_30: number;
+                };
+                oldestDays: number;
+            }[];
+            total: number;
+        };
         RecoveryReport: {
             from: string;
             to: string;
@@ -18782,19 +19102,6 @@ export interface components {
                 amount: number;
                 balance: number;
             }[];
-        };
-        SupplierDue: {
-            /** Format: uuid */
-            supplierId: string;
-            name: string;
-            archived: boolean;
-            balance: number;
-            buckets: {
-                "0_30": number;
-                "31_60": number;
-                "61_90": number;
-                over_90: number;
-            };
         };
         PurchaseOrderPage: {
             items: {

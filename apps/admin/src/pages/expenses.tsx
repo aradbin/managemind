@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
+import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
@@ -169,11 +170,33 @@ function Entries({ month }: { month: string }) {
         <Button variant="ghost" size="icon" aria-label={t('expenses.next')} onClick={() => go(1)}>
           <ChevronRight aria-hidden className="size-5" />
         </Button>
-        {canWrite && (
-          <Button className="ml-auto" onClick={() => setEditing('new')}>
-            {t('expenses.new')}
-          </Button>
-        )}
+        <div className="ml-auto flex flex-wrap gap-2">
+          {list.data && list.data.items.length > 0 && (
+            <ExportButtons
+              name={`expenses-${month}`}
+              what={t('expenses.title')}
+              head={[
+                t('expenses.date'),
+                t('expenses.category'),
+                t('expenses.payee'),
+                t('expenses.method'),
+                t('expenses.note'),
+                t('expenses.amount'),
+              ]}
+              rows={() =>
+                (list.data?.items ?? []).map((e) => [
+                  e.spentOn,
+                  categoryName(categories.data, e.categoryId, locale),
+                  e.payee ?? '',
+                  t(`purchasing.method.${e.method}`),
+                  e.note ?? '',
+                  { money: e.amount },
+                ])
+              }
+            />
+          )}
+          {canWrite && <Button onClick={() => setEditing('new')}>{t('expenses.new')}</Button>}
+        </div>
       </div>
       {list.data && list.data.totals.count > 0 && (
         <section className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">

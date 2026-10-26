@@ -88,10 +88,42 @@ describe('reports over HTTP', () => {
     expect((await viewer.get(`/api/admin/reports/profit?${range}`)).status).toBe(403);
     expect(((await (await viewer.get('/api/admin/dashboard')).json()) as Json).profit).toBeNull();
 
+    // Values and dues need costs and payments; slow movers, expenses and COD don't.
+    expect((await viewer.get('/api/admin/reports/stock')).status).toBe(403);
+    expect((await viewer.get(`/api/admin/reports/suppliers?${range}`)).status).toBe(403);
+    expect((await viewer.get(`/api/admin/reports/expenses?${range}`)).status).toBe(200);
+    expect((await viewer.get('/api/admin/reports/cod-outstanding')).status).toBe(200);
+    expect((await viewer.get('/api/admin/reports/slow-movers?days=30')).status).toBe(200);
+
     const staff = await as(emails.staff);
-    for (const path of ['sales', 'products', 'profit']) {
-      expect((await staff.get(`/api/admin/reports/${path}?${range}`)).status).toBe(403);
+    for (const path of [
+      'sales',
+      'products',
+      'profit',
+      'stock',
+      'slow-movers',
+      'suppliers',
+      'expenses',
+      'cod-outstanding',
+    ]) {
+      expect((await staff.get(`/api/admin/reports/${path}?${range}`)).status, path).toBe(403);
     }
+  });
+
+  it('gives the owner stock, suppliers, expenses and COD outstanding', async () => {
+    const b = await as(emails.owner);
+    const stock = (await (await b.get('/api/admin/reports/stock')).json()) as Json;
+    expect(stock).toMatchObject({ month: null, totals: { units: 0, value: 0 }, items: [] });
+    expect((await b.get('/api/admin/reports/stock?month=2026-13')).status).toBe(422);
+    expect(
+      ((await (await b.get(`/api/admin/reports/suppliers?${range}`)).json()) as Json).duesTotal,
+    ).toMatchObject({ balance: 0 });
+    const expenses = (await (await b.get(`/api/admin/reports/expenses?${range}`)).json()) as Json;
+    expect(expenses).toMatchObject({ months: ['2026-10'], total: 0 });
+    expect(await (await b.get('/api/admin/reports/cod-outstanding')).json()).toEqual({
+      holders: [],
+      total: 0,
+    });
   });
 
   it('needs the back office in the plan', async () => {
