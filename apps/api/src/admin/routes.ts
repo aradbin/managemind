@@ -56,6 +56,7 @@ import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { COURIER_ROUTES, registerCouriers } from './couriers';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
 import { DOMAIN_ROUTES, registerDomains } from './domains';
+import { EXPENSE_ROUTES, registerExpenses } from './expenses';
 import { EXPORT_ROUTES, registerExport } from './export';
 import { IMPORT_ROUTES, registerImports } from './imports';
 import { MEDIA_ROUTES, registerMediaRoutes } from './media';
@@ -177,6 +178,7 @@ export const ADMIN_ROUTES = {
   ...COURIER_ROUTES,
   ...PURCHASING_ROUTES,
   ...STOCK_ROUTES,
+  ...EXPENSE_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
   help: r({
@@ -635,6 +637,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerCouriers(admin);
   registerPurchasing(admin);
   registerStock(admin);
+  registerExpenses(admin);
   registerMessages(admin);
   registerPromotions(admin);
   admin.openapi(R.accept, async (c) => {

@@ -292,6 +292,7 @@ export const bn: Record<keyof typeof en, string> = {
   'nav.reports': 'রিপোর্ট',
   'nav.returns': 'রিটার্ন',
   'nav.inventory': 'স্টক',
+  'nav.expenses': 'খরচ',
   'nav.store': 'দোকান',
   'nav.sell': 'বিক্রি',
   'nav.more': 'আরও',

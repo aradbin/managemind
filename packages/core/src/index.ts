@@ -7,6 +7,7 @@ export * from './couriers/index';
 export * from './credentials/index';
 export * from './customers/index';
 export * from './events';
+export * from './expenses/index';
 export * from './fraud/index';
 export * from './idempotency';
 export * from './identity/index';

@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Store,
   Users,
+  Wallet,
   Warehouse,
 } from 'lucide-react';
 import { type AdminKey, useLocale } from '../i18n';
@@ -33,6 +34,7 @@ export type NavTo =
   | '/customers'
   | '/promotions'
   | '/reports'
+  | '/expenses'
   | '/returns'
   | '/inventory'
   | '/online-store'
@@ -56,6 +58,7 @@ const SELL: NavItem[] = [
   { to: '/customers', label: 'nav.customers', icon: Users, permission: 'customers.read' },
   { to: '/promotions', label: 'nav.promotions', icon: BadgePercent, permission: 'promotions.read' },
   { to: '/reports', label: 'nav.reports', icon: ChartLine, permission: 'reports.read' },
+  { to: '/expenses', label: 'nav.expenses', icon: Wallet, permission: 'expenses.read' },
 ];
 const MORE_SELL: NavItem[] = [
   { to: '/returns', label: 'nav.returns', icon: RotateCcw, permission: 'orders.read' },

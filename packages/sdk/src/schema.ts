@@ -12099,6 +12099,511 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/expense-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's expense categories, seeded the first time (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Categories */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A new category (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: {
+                            bn: string;
+                            en: string;
+                        };
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expense-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename, reorder or archive a category (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: {
+                            bn: string;
+                            en: string;
+                        };
+                        position?: number;
+                        archived?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expenses, newest first, with the range’s totals per category (expenses.read) */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    categoryId?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Expenses */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpensePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Record an expense (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn: string;
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expenses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an expense and its receipt photo; audited (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Correct an expense; audited (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn?: string;
+                        /** Format: uuid */
+                        categoryId?: string;
+                        amount?: number;
+                        /** @enum {string} */
+                        method?: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/expenses/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The expense's receipt photo (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The photo */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** The expense's receipt photo, replacing any (expenses.write; at most 2 MB) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/webp": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            responses: {
+                /** @description Stored */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        /** Remove the expense's receipt photo (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/recurring-expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recurring entries, active first (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recurring entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A recurring entry; it posts from today on (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        /** @enum {string} */
+                        cadence: "monthly" | "weekly";
+                        day: number;
+                        /** Format: date */
+                        startsOn: string;
+                        /** Format: date */
+                        endsOn?: string | null;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/recurring-expenses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a recurring entry; what it posted stays (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Change a recurring entry; only future posts change (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        categoryId?: string;
+                        amount?: number;
+                        /** @enum {string} */
+                        method?: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        /** @enum {string} */
+                        cadence?: "monthly" | "weekly";
+                        day?: number;
+                        /** Format: date */
+                        startsOn?: string;
+                        /** Format: date */
+                        endsOn?: string | null;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/v1/admin/messages": {
         parameters: {
             query?: never;
@@ -18388,6 +18893,66 @@ export interface components {
             unitCost?: number | null;
             value?: number;
             applied?: boolean;
+        };
+        ExpenseCategory: {
+            /** Format: uuid */
+            id: string;
+            key: string | null;
+            name: {
+                bn: string;
+                en: string;
+            };
+            position: number;
+            archived: boolean;
+        };
+        ExpensePage: {
+            items: components["schemas"]["Expense"][];
+            nextCursor: string | null;
+            totals: {
+                total: number;
+                count: number;
+                byCategory: {
+                    /** Format: uuid */
+                    categoryId: string;
+                    amount: number;
+                }[];
+            };
+        };
+        Expense: {
+            /** Format: uuid */
+            id: string;
+            spentOn: string;
+            /** Format: uuid */
+            categoryId: string;
+            amount: number;
+            /** @enum {string} */
+            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+            payee: string | null;
+            note: string | null;
+            hasReceipt: boolean;
+            /** Format: uuid */
+            recurringExpenseId: string | null;
+            recordedBy: string | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        RecurringExpense: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            categoryId: string;
+            amount: number;
+            /** @enum {string} */
+            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+            payee: string | null;
+            note: string | null;
+            /** @enum {string} */
+            cadence: "monthly" | "weekly";
+            day: number;
+            startsOn: string;
+            endsOn: string | null;
+            nextOn: string | null;
+            active: boolean;
         };
         Message: {
             /** Format: uuid */

@@ -12,6 +12,7 @@ import {
   createCategory,
   createCollection,
   createCustomer,
+  createExpense,
   createGoodsReceipt,
   createImportJob,
   createManualInvoice,
@@ -19,6 +20,7 @@ import {
   createProduct,
   createPromotion,
   createPurchaseOrder,
+  createRecurringExpense,
   createShipment,
   createStockCount,
   createSupplier,
@@ -26,6 +28,7 @@ import {
   createTenant,
   createZone,
   grantSupportAccess,
+  listExpenseCategories,
   listLocations,
   placeOrder,
   receive,
@@ -498,6 +501,26 @@ describe('isolation suite', () => {
       createStockCount(tx, bOwner, { scope: { kind: 'variants', variantIds: [liveVariant] } }),
     );
 
+    const [bCategory] = await inB((tx) => listExpenseCategories(tx, bOwner));
+    const bExpense = await inB((tx) =>
+      createExpense(tx, bOwner, {
+        spentOn: dhakaDate(new Date()),
+        categoryId: bCategory?.id as string,
+        amount: 100,
+        method: 'cash',
+      }),
+    );
+    const bRecurring = await inB((tx) =>
+      createRecurringExpense(tx, bOwner, {
+        categoryId: bCategory?.id as string,
+        amount: 100,
+        method: 'cash',
+        cadence: 'monthly',
+        day: 1,
+        startsOn: dhakaDate(new Date()),
+      }),
+    );
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
@@ -658,6 +681,17 @@ describe('isolation suite', () => {
       'POST /v1/admin/stock-counts/{id}/reopen': { id: bCount.id },
       'POST /v1/admin/stock-counts/{id}/apply': { id: bCount.id },
       'POST /v1/admin/stock-counts/{id}/cancel': { id: bCount.id },
+      'PATCH /v1/admin/expense-categories/{id}': {
+        id: bCategory?.id as string,
+        body: { archived: true },
+      },
+      'PATCH /v1/admin/expenses/{id}': { id: bExpense.id, body: { amount: 1 } },
+      'DELETE /v1/admin/expenses/{id}': { id: bExpense.id },
+      'POST /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'GET /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'DELETE /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'PATCH /v1/admin/recurring-expenses/{id}': { id: bRecurring.id, body: { amount: 1 } },
+      'DELETE /v1/admin/recurring-expenses/{id}': { id: bRecurring.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

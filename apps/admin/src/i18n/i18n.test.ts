@@ -9,6 +9,7 @@ import './launch';
 import './billing';
 import './couriers';
 import './purchasing';
+import './expenses';
 
 await loadLocale('en');
 await loadLocale('bn');

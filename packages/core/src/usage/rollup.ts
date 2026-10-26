@@ -39,6 +39,8 @@ export async function measureDay(tx: TenantTx, day: string): Promise<DayUsage> {
         where md.tenant_id = ${tx.tenantId} and md.created_at < ${to})
       + (select coalesce(sum(p.bytes), 0) from store.return_photos p
         where p.tenant_id = ${tx.tenantId} and p.created_at < ${to})
+      + (select coalesce(sum((e.receipt_media->>'bytes')::bigint), 0) from store.expenses e
+        where e.tenant_id = ${tx.tenantId} and e.receipt_media is not null and e.created_at < ${to})
         as storage_bytes,
       (select count(*) from store.products p
         where p.tenant_id = ${tx.tenantId} and p.status <> 'archived' and p.created_at < ${to})

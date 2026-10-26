@@ -8,6 +8,7 @@ import { createContext, type ReactNode, useContext, useEffect, useMemo, useState
 import type { billingEn } from './billing-en';
 import type { couriersEn } from './couriers-en';
 import type { en } from './en';
+import type { expensesEn } from './expenses-en';
 import type { launchEn } from './launch-en';
 import type { messagesEn } from './messages-en';
 import type { onlineStoreEn } from './online-store-en';
@@ -21,6 +22,7 @@ export type AdminKey =
   | keyof typeof en
   | keyof typeof billingEn
   | keyof typeof couriersEn
+  | keyof typeof expensesEn
   | keyof typeof launchEn
   | keyof typeof messagesEn
   | keyof typeof onlineStoreEn

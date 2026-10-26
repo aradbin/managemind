@@ -306,6 +306,7 @@ export const en = {
   'nav.reports': 'Reports',
   'nav.returns': 'Returns',
   'nav.inventory': 'Inventory',
+  'nav.expenses': 'Expenses',
   'nav.store': 'Store',
   'nav.sell': 'Sell',
   'nav.more': 'More',

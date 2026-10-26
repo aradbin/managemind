@@ -15,6 +15,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
+import { Route as ShellExpensesRouteImport } from './routes/_shell/expenses'
 import { Route as ShellMoreRouteImport } from './routes/_shell/more'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
 import { Route as ShellReportsRouteImport } from './routes/_shell/reports'
@@ -115,6 +116,11 @@ const ShellIndexRoute = ShellIndexRouteImport.update({
 const ShellAccountRoute = ShellAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellExpensesRoute = ShellExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellMoreRoute = ShellMoreRouteImport.update({
@@ -501,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
+  '/expenses': typeof ShellExpensesRoute
   '/more': typeof ShellMoreRoute
   '/platform': typeof ShellPlatformRouteWithChildren
   '/reports': typeof ShellReportsRoute
@@ -579,6 +586,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
+  '/expenses': typeof ShellExpensesRoute
   '/more': typeof ShellMoreRoute
   '/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
@@ -659,6 +667,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
+  '/_shell/expenses': typeof ShellExpensesRoute
   '/_shell/more': typeof ShellMoreRoute
   '/_shell/platform': typeof ShellPlatformRouteWithChildren
   '/_shell/reports': typeof ShellReportsRoute
@@ -741,6 +750,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/account'
+    | '/expenses'
     | '/more'
     | '/platform'
     | '/reports'
@@ -819,6 +829,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/account'
+    | '/expenses'
     | '/more'
     | '/reports'
     | '/print/invoice'
@@ -898,6 +909,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/_shell/account'
+    | '/_shell/expenses'
     | '/_shell/more'
     | '/_shell/platform'
     | '/_shell/reports'
@@ -1025,6 +1037,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof ShellAccountRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/expenses': {
+      id: '/_shell/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ShellExpensesRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/more': {
@@ -1566,6 +1585,7 @@ const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(
 
 interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
+  ShellExpensesRoute: typeof ShellExpensesRoute
   ShellMoreRoute: typeof ShellMoreRoute
   ShellPlatformRoute: typeof ShellPlatformRouteWithChildren
   ShellReportsRoute: typeof ShellReportsRoute
@@ -1630,6 +1650,7 @@ interface ShellRouteChildren {
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
+  ShellExpensesRoute: ShellExpensesRoute,
   ShellMoreRoute: ShellMoreRoute,
   ShellPlatformRoute: ShellPlatformRouteWithChildren,
   ShellReportsRoute: ShellReportsRoute,
