@@ -254,13 +254,11 @@ test('back office', async ({ page }, info) => {
     await dialog.getByLabel(m('expenses.category')).selectOption({ index: 3 });
     await dialog.getByLabel(m('expenses.amount')).fill('3500');
     await dialog.getByLabel(m('purchasing.method.card')).check();
-    await dialog
-      .locator('input[type=file]')
-      .setInputFiles({
-        name: 'receipt.png',
-        mimeType: 'image/png',
-        buffer: pngImage(64, 64, [200, 120, 40]),
-      });
+    await dialog.locator('input[type=file]').setInputFiles({
+      name: 'receipt.png',
+      mimeType: 'image/png',
+      buffer: pngImage(64, 64, [200, 120, 40]),
+    });
     await expectAccessible(page, 'expense form');
     await dialog.getByRole('button', { name: m('action.save') }).click();
     await expect(toast(page, m('expenses.saved'))).toBeVisible();
