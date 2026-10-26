@@ -486,7 +486,6 @@ try {
         lines: variantIds
           .slice(r * 50, r * 50 + 50)
           .map((variantId, i) => ({ variantId, quantity: 4, unitCost: 30_000 + i * 100 })),
-        payment: { amount: 1_000_00, method: 'cash' },
       }),
       'receipt',
     );
