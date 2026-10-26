@@ -29,6 +29,7 @@ export const en = {
   'settings.title': 'Settings',
   'account.title': 'Account',
   'signIn.title': 'Sign in',
+  'error.screen': 'This page did not load',
   'error.generic': 'Something went wrong. Please try again.',
   'error.offline': 'You are offline. Changes will not be saved.',
   'update.available': 'A new version is ready.',
