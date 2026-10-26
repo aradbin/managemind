@@ -29,7 +29,7 @@ import { log } from './log';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
-import { exportEmails } from './tenant-jobs';
+import { dispatchJobs, exportEmails } from './tenant-jobs';
 import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
 
 const HEALTH_EVENTS = new Set<EventType>([
@@ -393,8 +393,11 @@ export async function runDailyJobs(
       const reports = await runReportRefresh(client, dhakaDate(new Date()));
       log(reports.failed.length ? 'error' : 'info', 'report refresh', {
         stores: reports.stores,
+        backfills: reports.backfills,
         failed: reports.failed.length,
       });
+      // Stores that just turned the back office on: their history, in Actions.
+      if (reports.backfills) dispatchJobs(env, ctx);
       if (reports.failed.length) {
         captureMessage('report refresh failed for some stores', {
           level: 'error',

@@ -3,6 +3,8 @@
 // event that tells the Worker to email the owners. A failed run goes back to
 // pending until its third attempt.
 import {
+  type BackfillProgress,
+  backfillReports,
   type EventSink,
   EXPORT_DAYS,
   emit,
@@ -21,7 +23,7 @@ const STALE_MINUTES = 90;
 const MAX_ATTEMPTS = 3;
 
 /** The kinds this runner knows; others stay pending for the runner that does. */
-export const RUNNABLE: readonly JobKind[] = ['export', 'purge', 'reset'];
+export const RUNNABLE: readonly JobKind[] = ['export', 'purge', 'reset', 'reports_backfill'];
 
 export interface ClaimedJob {
   id: string;
@@ -175,6 +177,25 @@ export async function runJobs(
         await finishReset(deps.client, job, result);
         log(
           `  ${result.deleted.rows} rows and ${result.deleted.files} files deleted, ${result.orders} sample orders`,
+        );
+      }
+      if (job.kind === 'reports_backfill') {
+        // Each chunk commits with its progress; a lost runner's retry carries on.
+        // The core runs as app_rw, as in the API, so row-level security applies.
+        await deps.client.query('grant app_rw to current_user with set true, inherit false');
+        const result = await backfillReports(
+          deps.client,
+          job.tenantId,
+          (job.progress ?? {}) as BackfillProgress,
+          (p) => saveProgress(deps.client, job.id, p),
+        );
+        await deps.client.query(
+          `update platform.tenant_jobs set status = 'succeeded', finished_at = now(), result = $2
+            where id = $1`,
+          [job.id, result],
+        );
+        log(
+          `  ${result.days} days and ${result.months} month ends from ${result.from ?? 'nothing'}`,
         );
       }
       if (job.kind === 'purge' && (await runPurge(deps, job)) === 'waiting') {

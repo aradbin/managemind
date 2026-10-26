@@ -14154,6 +14154,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/platform/tenants/{id}/reports/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rebuild the store's report summaries from its first day, in the Store jobs workflow (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/platform/tenants/{id}/purge": {
         parameters: {
             query?: never;
@@ -18577,7 +18615,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            kind: "export" | "purge" | "reset";
+            kind: "export" | "purge" | "reset" | "reports_backfill";
             /** @enum {string} */
             status: "pending" | "running" | "succeeded" | "failed";
             progress: {

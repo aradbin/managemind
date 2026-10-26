@@ -18,7 +18,7 @@ const WORKFLOW = 'tenant-jobs.yml';
 export const Job = z
   .object({
     id: z.uuid(),
-    kind: z.enum(['export', 'purge', 'reset']),
+    kind: z.enum(['export', 'purge', 'reset', 'reports_backfill']),
     status: z.enum(['pending', 'running', 'succeeded', 'failed']),
     progress: z.record(z.string(), z.unknown()),
     error: z.string().nullable(),

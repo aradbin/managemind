@@ -480,6 +480,18 @@ export function JobsSection({
       await queryClient.invalidateQueries({ queryKey: key });
     },
   });
+  const rebuild = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.POST('/v1/platform/tenants/{id}/reports/rebuild', {
+          params: { path: { id: tenantId } },
+        }),
+      ),
+    onSuccess: async () => {
+      toast(t('jobs.rebuildQueued'));
+      await queryClient.invalidateQueries({ queryKey: key });
+    },
+  });
   const reset = useMutation({
     mutationFn: async () =>
       unwrap(
@@ -496,6 +508,9 @@ export function JobsSection({
   });
   const open = jobs.data?.some(
     (j) => j.kind === 'export' && (j.status === 'pending' || j.status === 'running'),
+  );
+  const rebuilding = jobs.data?.some(
+    (j) => j.kind === 'reports_backfill' && (j.status === 'pending' || j.status === 'running'),
   );
   return (
     <section
@@ -515,6 +530,13 @@ export function JobsSection({
             )}
             <Button
               variant="secondary"
+              disabled={rebuild.isPending || rebuilding}
+              onClick={() => rebuild.mutate()}
+            >
+              {t('jobs.rebuildReports')}
+            </Button>
+            <Button
+              variant="secondary"
               disabled={exportNow.isPending || open}
               onClick={() => exportNow.mutate()}
             >
@@ -525,6 +547,7 @@ export function JobsSection({
       </div>
       {jobs.isError && <Notice tone="error">{errorMessage(jobs.error, t)}</Notice>}
       {exportNow.isError && <Notice tone="error">{errorMessage(exportNow.error, t)}</Notice>}
+      {rebuild.isError && <Notice tone="error">{errorMessage(rebuild.error, t)}</Notice>}
       {jobs.data?.length === 0 && <p className="text-muted-foreground">{t('jobs.none')}</p>}
       {resettable && (
         <ConfirmDialog

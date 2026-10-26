@@ -126,6 +126,23 @@ describe('store exports', () => {
     expect(await seen(admin)).toMatch(/\/v1\/exports\//);
   });
 
+  it('lets a super admin rebuild a store’s reports, once at a time (phase-8-plan §3.9)', async () => {
+    const { admin, id } = await setup();
+    const support = await signedIn(`${unique()}@example.test`, 'support');
+    expect((await support.post(`/api/platform/tenants/${id}/reports/rebuild`)).status).toBe(403);
+    const first = await admin.post(`/api/platform/tenants/${id}/reports/rebuild`);
+    expect(first.status).toBe(202);
+    const again = await admin.post(`/api/platform/tenants/${id}/reports/rebuild`);
+    expect(((await again.json()) as Json).id).toBe(((await first.json()) as Json).id);
+    const jobs = (await (await admin.get(`/api/platform/tenants/${id}/jobs`)).json()) as Json;
+    expect(jobs.map((j: Json) => [j.kind, j.status])).toEqual([['reports_backfill', 'pending']]);
+    const { rows } = await owner.query<{ action: string }>(
+      `select action from store.audit_log where tenant_id = $1 and action like 'reports.%'`,
+      [id],
+    );
+    expect(rows.map((r) => r.action)).toEqual(['reports.rebuild_requested']);
+  });
+
   it('emails the owners the link when an export is ready', async () => {
     const { admin, id, slug } = await setup();
     await admin.post(`/api/platform/tenants/${id}/export`);

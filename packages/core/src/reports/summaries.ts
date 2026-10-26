@@ -10,10 +10,8 @@
 //   parcel came back, stock losses on the adjustment's day.
 // The same SQL fills the tables (the nightly refresh) and answers for days
 // not refreshed (today), so the two can never disagree.
-import { createDb, schema } from '@managemind/db';
-import { eq, type SQL, sql } from 'drizzle-orm';
-import { storeEntitlements } from '../billing/entitlements';
-import { type DbClient, type TenantTx, withTenant } from '../tenant';
+import { type SQL, sql } from 'drizzle-orm';
+import type { TenantTx } from '../tenant';
 
 const day = (ts: SQL) => sql`(${ts} at time zone 'Asia/Dhaka')::date`;
 const start = (date: string) => sql`(${date}::date)::timestamp at time zone 'Asia/Dhaka'`;
@@ -248,27 +246,4 @@ export async function refreshStoreReports(tx: TenantTx, on: string): Promise<{ d
   await refreshSummaries(tx, from, to);
   if (on.endsWith('-01')) await writeMonthEndValues(tx, to);
   return { days: 7 + older.length };
-}
-
-/** The daily batch over every active store with the back office (`on` is today in Dhaka). */
-export async function runReportRefresh(
-  client: DbClient,
-  on: string,
-): Promise<{ stores: number; failed: { tenantId: string; error: string }[] }> {
-  const t = schema.tenants;
-  const stores = await createDb(client).select({ id: t.id }).from(t).where(eq(t.status, 'active'));
-  const result = { stores: 0, failed: [] as { tenantId: string; error: string }[] };
-  for (const store of stores) {
-    try {
-      const done = await withTenant(client, store.id, async (tx) => {
-        if (!(await storeEntitlements(tx)).features.backOffice) return false;
-        await refreshStoreReports(tx, on);
-        return true;
-      });
-      if (done) result.stores += 1;
-    } catch (e) {
-      result.failed.push({ tenantId: store.id, error: String(e) });
-    }
-  }
-  return result;
 }

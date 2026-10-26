@@ -28,6 +28,7 @@ import {
   productsReport,
   productTotals,
   profitReport,
+  queueBackfillIfNeeded,
   receive,
   refreshStoreReports,
   refreshSummaries,
@@ -449,5 +450,29 @@ describe('who may see what', () => {
     await expect(run((tx) => salesReport(tx, owner, { from: D3, to: D1 }))).rejects.toMatchObject({
       code: 'validation_failed',
     });
+  });
+});
+
+describe('the backfill (§3.9)', () => {
+  it('is queued once for a store with history before the nightly window', async () => {
+    const week = '2026-10-19';
+    // Everything here happened this week, as far as placed_at and created_at go.
+    await su.query(`update store.orders set placed_at = now() where tenant_id = $1`, [store]);
+    await su.query(`update store.stock_movements set created_at = now() where tenant_id = $1`, [
+      store,
+    ]);
+    expect(await run((tx) => queueBackfillIfNeeded(tx, week))).toBe(false);
+    await su.query(
+      `update store.stock_movements set created_at = '2026-08-01T10:00:00+06:00'
+        where tenant_id = $1 and type = 'receive'`,
+      [store],
+    );
+    expect(await run((tx) => queueBackfillIfNeeded(tx, week))).toBe(true);
+    expect(await run((tx) => queueBackfillIfNeeded(tx, week))).toBe(false);
+    const { rows } = await su.query<{ kind: string; status: string }>(
+      `select kind, status from platform.tenant_jobs where tenant_id = $1`,
+      [store],
+    );
+    expect(rows).toEqual([{ kind: 'reports_backfill', status: 'pending' }]);
   });
 });
