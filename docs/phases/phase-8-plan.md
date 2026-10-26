@@ -460,7 +460,7 @@ Accepted as they are:
 Checked, and found fine:
 
 - **Every route checks its permission, then again in core:** costs and profit need `catalog.cost`, dues and payments `purchasing.pay`, expenses `expenses.read` and `expenses.write`; staff receive an ordered PO's quantities only; the count's approval threshold needs `catalog.cost`; the rebuild needs a super admin. Without a permission, fields are left out, not blanked. Each is a test with staff and viewer sessions.
-- **The 16 new store tables have forced RLS** and a tenant policy, are in the isolation suite through the API and as raw SQL, and are in the export and purge. `cost_changes` is append-only for the app; the summaries can't be updated in place.
+- **The 15 new store tables have forced RLS** and a tenant policy, are in the isolation suite through the API and as raw SQL, and are in the export and purge. `cost_changes` is append-only for the app; the summaries can't be updated in place.
 - **Receipt photos** are sniffed (JPEG, PNG or WebP only), at most 2 MB, stored under the store's own prefix with a server-made name, served `private, no-store` with `nosniff`, and go with the store's export and purge.
 - **The Store jobs runner's backfill runs as `app_rw`,** so row-level security applies on the migration role.
 - **SQL takes parameters throughout;** `sql.raw` holds only constant column lists.
