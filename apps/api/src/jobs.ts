@@ -10,6 +10,7 @@ import {
   runBilling,
   runDailyRollup,
   runRecurringExpenses,
+  runReportRefresh,
   withTenant,
   writeStoreHealth,
 } from '@managemind/core';
@@ -385,6 +386,24 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'recurring expenses failed', { error: String(e) });
       captureMessage('recurring expenses failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // The reports' summaries (phase-8-plan §3.9): the last 7 days, and on the
+    // 1st the month-end stock values; a store that fails is redone tomorrow.
+    try {
+      const reports = await runReportRefresh(client, dhakaDate(new Date()));
+      log(reports.failed.length ? 'error' : 'info', 'report refresh', {
+        stores: reports.stores,
+        failed: reports.failed.length,
+      });
+      if (reports.failed.length) {
+        captureMessage('report refresh failed for some stores', {
+          level: 'error',
+          extra: { failed: reports.failed.slice(0, 10) },
+        });
+      }
+    } catch (e) {
+      log('error', 'report refresh failed', { error: String(e) });
+      captureMessage('report refresh failed', { level: 'error', extra: { error: String(e) } });
     }
     // Our billing (phase-5b-plan §3.7, §3.8): drafts on billing days, drafts
     // issued after review, reminders and the suspension at +14.

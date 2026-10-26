@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
+import { ReportsNav } from '../components/reports-nav';
 import { Button } from '../components/ui/button';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
@@ -66,7 +67,7 @@ export function Table({
                   {r.map((cell, i) => (
                     <td
                       key={i}
-                      className={`px-4 py-2.5 md:px-5 ${i ? 'text-right tabular-nums' : ''}`}
+                      className={`px-4 py-2.5 md:px-5 ${i ? 'text-right tabular-nums whitespace-nowrap' : ''}`}
                     >
                       {cell}
                     </td>
@@ -119,6 +120,7 @@ export function ReportsPage() {
           </Button>
         }
       />
+      <ReportsNav />
       <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-background p-4 md:p-5 md:max-w-md">
         <Field
           label={t('reports.from')}

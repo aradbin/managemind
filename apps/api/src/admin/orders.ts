@@ -286,6 +286,13 @@ const OrderSummary = z
     cancelledBy: z.string().nullable(),
     risk: PhoneRisk,
     placedAt: z.string(),
+    grossProfit: z
+      .number()
+      .int()
+      .nullable()
+      .optional()
+      .openapi({ description: 'With catalog.cost and the back office; null before delivery' }),
+    missingCostUnits: z.number().int().optional(),
   })
   .openapi('OrderSummary');
 const Money = z.number().int();
@@ -668,6 +675,15 @@ const DashboardView = z
       })
       .nullable()
       .openapi({ description: 'Only with reports.read' }),
+    profit: z
+      .object({
+        grossProfit: Money,
+        expenses: Money,
+        netProfit: Money,
+        missingCostUnits: z.number().int(),
+      })
+      .nullable()
+      .openapi({ description: 'This month so far; with catalog.cost and the back office' }),
   })
   .openapi('Dashboard');
 const PrintData = z

@@ -17,6 +17,7 @@ import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
+import '../i18n/back-office-reports';
 import '../i18n/orders';
 import '../i18n/couriers';
 import { BulkBookDialog } from '../components/courier-booking';
@@ -141,6 +142,21 @@ export function OrdersPage() {
     });
   const allSelected = items.length > 0 && items.every((o) => selected.has(o.id));
 
+  const showProfit = items.some((o) => o.grossProfit !== undefined);
+  const profitText = (o: OrderSummary) =>
+    o.grossProfit == null ? (
+      '—'
+    ) : (
+      <>
+        {formatPrice(o.grossProfit, locale)}
+        {o.missingCostUnits ? (
+          <span title={t('orders.profitNoCost')}>
+            <span aria-hidden> *</span>
+            <span className="sr-only">{t('orders.profitNoCost')}</span>
+          </span>
+        ) : null}
+      </>
+    );
   const columns: Column<OrderSummary>[] = [
     {
       header: t('order.number'),
@@ -192,6 +208,10 @@ export function OrdersPage() {
     },
     { header: t('order.area'), cell: (o) => pickText(o.area, locale) || '—' },
     { header: t('order.total'), cell: (o) => formatPrice(o.total, locale) },
+    // Gross profit for cost holders (phase-8-plan §3.8): the server leaves it out otherwise.
+    ...(showProfit
+      ? [{ header: t('orders.col.profit'), cell: (o: OrderSummary) => profitText(o) }]
+      : []),
     { header: t('order.source'), cell: (o) => t(`source.${o.source}` as AdminKey) },
   ];
 
@@ -523,7 +543,14 @@ export function OrdersPage() {
                   {pickText(o.area, locale) ? ` · ${pickText(o.area, locale)}` : ''}
                 </span>
               </Link>
-              <span className="font-semibold tabular-nums">{formatPrice(o.total, locale)}</span>
+              <span className="flex flex-col items-end">
+                <span className="font-semibold tabular-nums">{formatPrice(o.total, locale)}</span>
+                {showProfit && o.grossProfit != null && (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {t('orders.col.profit')} {profitText(o)}
+                  </span>
+                )}
+              </span>
             </div>
             <div className="flex flex-wrap gap-1.5 ps-8">
               <StatusChip kind="order" status={o.status} />

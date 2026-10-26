@@ -14,10 +14,12 @@ import {
 import { dhakaToUtc } from '@managemind/shared/storefront';
 import { type SQL, sql } from 'drizzle-orm';
 import { type Actor, authorize } from '../access';
+import { storeEntitlements } from '../billing/entitlements';
 import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { orderSettings } from '../pricing/quote';
 import { incompleteCounts } from '../recovery/index';
+import { monthToDateProfit, orderProfits } from '../reports/back-office';
 import type { TenantTx } from '../tenant';
 import { type ConfirmationState, confirmationState, inQueueSql } from './confirmation';
 import type { Localized } from './variants';
@@ -58,6 +60,10 @@ export interface OrderSummary {
   /** The phone's delivery success score now (phase-6-plan §3.3): counts only. */
   risk: PhoneRisk;
   placedAt: string;
+  /** With catalog.cost and the back office (phase-8-plan §3.8); null before delivery. */
+  grossProfit?: number | null;
+  /** Delivered units without a cost: the profit is overstated. */
+  missingCostUnits?: number;
 }
 
 function dateBound(day: string, end: boolean): string {
@@ -153,6 +159,17 @@ export async function listOrders(
       placedAt: iso(r.placed_at) as string,
     }),
   );
+  if (actor.permissions.has('catalog.cost') && (await storeEntitlements(tx)).features.backOffice) {
+    const profits = await orderProfits(
+      tx,
+      items.map((i) => i.id),
+    );
+    for (const item of items) {
+      const p = profits.get(item.id);
+      item.grossProfit = p?.grossProfit ?? null;
+      item.missingCostUnits = p?.missingCostUnits ?? 0;
+    }
+  }
   const last = rows.length > limit ? items[items.length - 1] : undefined;
   return { items, nextCursor: last ? encodeCursor(last.placedAt, last.id) : null };
 }
@@ -778,6 +795,13 @@ export interface Dashboard {
     /** The last 7 Dhaka days, oldest first. */
     days: { date: string; orders: number; total: number }[];
   } | null;
+  /** This month so far, for catalog.cost holders with the back office (phase-8-plan §3.12). */
+  profit: {
+    grossProfit: number;
+    expenses: number;
+    netProfit: number;
+    missingCostUnits: number;
+  } | null;
 }
 
 /** A handful of summary queries on indexed columns (§3.17); Asia/Dhaka days, cancelled orders excluded. */
@@ -840,7 +864,7 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
     ? await incompleteCounts(tx, settings)
     : null;
   if (!actor.permissions.has('reports.read')) {
-    return { counts, confirmation, incomplete, sales: null };
+    return { counts, confirmation, incomplete, sales: null, profit: null };
   }
   const dhaka = new Date(now.getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
   const today = dateBound(dhaka, false);
@@ -864,11 +888,16 @@ export async function dashboard(tx: TenantTx, actor: Actor, now = new Date()): P
       orders: 0,
       total: 0,
     });
+  const profit =
+    actor.permissions.has('catalog.cost') && (await storeEntitlements(tx)).features.backOffice
+      ? await monthToDateProfit(tx, dhaka)
+      : null;
   return {
     counts,
     confirmation,
     incomplete,
     sales: { today: byDay.get(dhaka) ?? { orders: 0, total: 0 }, month: monthTotals, days: last7 },
+    profit,
   };
 }
 

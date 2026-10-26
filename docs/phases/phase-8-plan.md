@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–5 are done (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
+- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–6 are done (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
@@ -407,7 +407,8 @@ What the build has done so far, and where it differs from the sections above. Th
 | 3 | Done: the routes in §6 for suppliers, POs, receipts, payments, dues and cost history; the admin's Inventory tabs, supplier pages, PO editor, receiving and the PO's print view |
 | 4 | Done: adjustments valued at their cost and listed with totals; stock counts with blind counting, scanning (a scanner, or the camera where `BarcodeDetector` exists), review largest value first, recounts, the approval threshold, and the apply in batches of 500 on the delayed-work queue (in the request on previews, which have no queue). Acceptance criterion 2 is an integration test |
 | 5 | Done: expense categories (seeded the first time a store opens them, renamed, added and archived), expenses by month with category totals, receipt photos (shrunk in the browser, at most 2 MB, under the store's private R2 prefix, counted in its storage), and recurring entries posted by the daily batch. Acceptance criterion 3 is an integration test |
-| 6–12 | To do |
+| 6 | Done: the summary tables filled by one SQL that also answers for days not refreshed (today), so the two can't disagree; the nightly refresh of the last 7 days and the month-end stock values on the 1st; `GET /reports/sales`, `/reports/products` and `/reports/profit`; the order list's profit column and the dashboard's month so far for cost holders; Reports tabs (Overview, Sales, Profit). A hand-computed fixture over three days and the summaries-equal-live check are integration tests |
+| 7–12 | To do |
 
 **Differences from the plan:**
 
@@ -422,3 +423,9 @@ What the build has done so far, and where it differs from the sections above. Th
 - **A new recurring entry posts from the day it is made,** never for days already past, even when its start date is earlier: months before the store started here come through the expense import (§3.6, §3.10).
 - **The daily batch posts recurring expenses store by store,** in each store's own transaction, as the usage rollup does, so `app.recurring_expenses_due()` (§4) isn't needed. A store that fails posts its missed days the next morning.
 - **Deleting a recurring entry keeps what it posted,** as ordinary expenses.
+- **`daily_sales` gains `stock_losses`** (migration 0046), so the profit statement reads every line from the summary.
+- **The nightly refresh also redoes any older day whose shipments or refunds changed since the day before**: a courier's fee or a failed delivery's cost often arrives days later, and the refresh would otherwise keep the old figure until a backfill (§3.9).
+- **A discount and VAT are shared by delivered units cumulatively:** each delivery takes the rounded share of all units delivered so far less what earlier deliveries took, so a line shipped in parts adds up to the line exactly. Returns take their share of the line's net value, rounded per return.
+- **A refund that isn't a return** is today only the refund of an order an edit left overpaid. It counts with returns on its processed date when the order was already delivered; its delivery part reduces delivery income (§3.8).
+- **Gross profit per order** is its delivered net sales less returns and refunds, less the cost of the units that stayed sold; it is empty until a unit is delivered, and marked when a delivered unit had no cost.
+- **Day, week and month** are Dhaka dates; a week starts on Monday. A range is at most two years.

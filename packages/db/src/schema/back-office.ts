@@ -635,6 +635,8 @@ export const dailySales = store.table(
     returnedCogs: money().notNull().default(0),
     /** Delivered units whose line had no cost: profit is overstated by them. */
     missingCostUnits: integer().notNull().default(0),
+    /** Damaged, lost, expired and sample adjustments and count differences at their value; gains lower it. */
+    stockLosses: money().notNull().default(0),
     refreshedAt: ts().notNull().defaultNow(),
   },
   (t) => [tenantPolicy(t), primaryKey({ columns: [t.tenantId, t.day] })],

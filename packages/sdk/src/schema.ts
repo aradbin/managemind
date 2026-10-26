@@ -9803,6 +9803,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivered sales by day, week or month (reports.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                    by?: "day" | "week" | "month";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalesReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales per variant, with cost and profit for catalog.cost (reports.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductsReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/profit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The profit statement for a range and the same number of days before (reports.read, catalog.cost, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProfitReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/reports/recovery": {
         parameters: {
             query?: never;
@@ -17500,6 +17618,9 @@ export interface components {
             cancelledBy: string | null;
             risk: components["schemas"]["PhoneRisk"];
             placedAt: string;
+            /** @description With catalog.cost and the back office; null before delivery */
+            grossProfit?: number | null;
+            missingCostUnits?: number;
         };
         PhoneRisk: {
             history: {
@@ -18148,6 +18269,13 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+            /** @description This month so far; with catalog.cost and the back office */
+            profit: {
+                grossProfit: number;
+                expenses: number;
+                netProfit: number;
+                missingCostUnits: number;
+            } | null;
         };
         ReturnSummary: {
             /** Format: uuid */
@@ -18354,6 +18482,96 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+        };
+        SalesReport: {
+            from: string;
+            to: string;
+            /** @enum {string} */
+            by: "day" | "week" | "month";
+            buckets: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+                /** @description The day, the week's Monday or the month's 1st */
+                start: string;
+            }[];
+            totals: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+            };
+        };
+        ProductsReport: {
+            from: string;
+            to: string;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                /** Format: uuid */
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                units: number;
+                returnedUnits: number;
+                netSales: number;
+                returns: number;
+                /** @description With catalog.cost */
+                cogs?: number;
+                grossProfit?: number;
+                marginBp?: number | null;
+                missingCostUnits?: number;
+            }[];
+        };
+        ProfitReport: {
+            current: components["schemas"]["ProfitStatement"];
+            previous: components["schemas"]["ProfitStatement"];
+        };
+        ProfitStatement: {
+            from: string;
+            to: string;
+            netSales: number;
+            returns: number;
+            cogs: number;
+            grossProfit: number;
+            deliveryIncome: number;
+            courierFees: number;
+            failedDeliveryCosts: number;
+            deliveryResult: number;
+            stockLosses: number;
+            expenses: number;
+            expensesByCategory: {
+                /** Format: uuid */
+                categoryId: string;
+                name: {
+                    bn: string;
+                    en: string;
+                };
+                amount: number;
+            }[];
+            netProfit: number;
+            /** @description Delivered units without a cost */
+            missingCostUnits: number;
+            ordersDelivered: number;
+            vat: number;
+            grossSales: number;
+            discounts: number;
         };
         RecoveryReport: {
             from: string;

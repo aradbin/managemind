@@ -1,0 +1,1 @@
+ALTER TABLE "store"."daily_sales" ADD COLUMN "stock_losses" bigint DEFAULT 0 NOT NULL;

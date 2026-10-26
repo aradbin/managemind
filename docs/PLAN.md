@@ -640,7 +640,7 @@ Each of these starts only when pilot clients need it, in this default order; the
 - [x] Stock adjustments with reasons and stock-count sessions. *Counts run while selling: each line's difference is measured at the moment it was counted, and counts over 500 lines are applied on the queue (phase-8-plan §3.5).*
 - [x] Expenses with categories and recurring entries. *With an optional receipt photo; recurring entries post themselves in the daily batch, once per day however often it runs (phase-8-plan §3.6).*
 - [ ] Reports: sales by day and product, gross profit per order and product (cost snapshot on order lines), net profit after expenses, stock valuation, supplier dues, COD outstanding; CSV and Excel export.
-- [ ] Reports read from summary tables refreshed by cron to keep queries light.
+- [x] Reports read from summary tables refreshed by cron to keep queries light. *The same SQL fills them each night and answers for today, so the summary and the live figures can't disagree; days whose courier fees arrive late are redone (phase-8-plan §3.9).*
 
 **Phase 9 — Meta and messaging (about 4 weeks)**
 
