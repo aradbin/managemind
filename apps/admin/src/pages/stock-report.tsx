@@ -166,6 +166,7 @@ export function StockReportPage() {
                     rows={v.negative.map((r) => [variant(r), r.location, n(r.onHand)])}
                     empty={t('reports.none')}
                     exportName={`stock-below-zero-${suffix}`}
+                    exportRows={v.negative.map((r) => [variant(r), r.location, r.onHand])}
                   />
                   <p className="-mt-2 text-sm text-muted-foreground">
                     {t('stockReport.negativeHint')}

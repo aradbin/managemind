@@ -11,6 +11,7 @@ import {
   systemActor,
   withTenant,
 } from '@managemind/core';
+import { isUuid } from '@managemind/shared';
 import { captureMessage } from '@sentry/cloudflare';
 import type pg from 'pg';
 import { queueSink, withClient } from './db';
@@ -59,6 +60,14 @@ export async function handleStockCountMessages(
   await withClient(env, ctx, async (client) => {
     for (const message of messages) {
       const { tenantId, countId } = message.body;
+      // Only this Worker sends these, but a malformed one is dropped, not retried.
+      if (!isUuid(tenantId) || !isUuid(countId)) {
+        log('error', 'stock count message malformed', {
+          body: JSON.stringify(message.body).slice(0, 200),
+        });
+        message.ack();
+        continue;
+      }
       try {
         const { done, applied } = await applyBatch(env, client, tenantId, countId);
         log('info', 'stock count batch applied', {

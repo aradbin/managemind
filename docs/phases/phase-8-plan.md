@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–7, 9 and 10 are done; step 8 waits for the pilot's sample data (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
+- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–7 and 9–11 are done; step 8 waits for the pilot's sample data (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
@@ -412,7 +412,8 @@ What the build has done so far, and where it differs from the sections above. Th
 | 8 | Waiting for the pilot's sample data; moved to the end (§12), where it uses §3.10's columns if the data hasn't come |
 | 9 | Done: the `reports_backfill` job kind (migration 0047) in the Store jobs workflow, resumable per 31 days and per month end; queued by the nightly refresh for a store with older history and no backfill, and by `POST /v1/platform/tenants/{id}/reports/rebuild` (Platform → the store → Rebuild reports); the demo stores' back office (suppliers, a received PO that gives the catalog its costs, two months of expenses, a monthly rent) with their sample orders' deliveries spread over the month; the onboarding runbook's "Opening balances and costs" |
 | 10 | Done: `e2e/tests/back-office.spec.ts` (projects `back-office-phone` and `-desktop`, after the courier flows): a supplier made on its screen, a PO placed and received in two parts with a bKash payment on the first, the cost and balance checked; a count by tag with an order shipped between two lines, applying only the real difference; an expense with a receipt photo and a monthly rent; the profit report exported to Excel; axe and the CSP check on every new screen. Run locally against `wrangler dev` at both viewports. The CPU step gains five 50-line receipts, a 500-line count counted and applied, and the profit, stock and sales reports |
-| 11–12 | To do |
+| 11 | Done: the security review below, with two fixes |
+| 12 | To do |
 
 **Differences from the plan:**
 
@@ -441,3 +442,28 @@ What the build has done so far, and where it differs from the sections above. Th
 - **The nightly refresh queues the backfill itself** for a store with an order or movement older than its 7 days and no backfill yet, which is what turning the back office on looks like; Platform's button is for rebuilding after a fix. Month ends before Phase 8 are valued at the cost then where `cost_changes` has it, else at today's cost.
 - **Demo orders' parcels move with their orders:** each was sent and delivered the day after it was placed, so the demo's sales spread over the month.
 - **Exports carry numbers as numbers:** in Excel, counts are numbers and money is taka with two decimals, so a sheet can sum them; CSV writes money as plain taka (`1234.56`). A list's export reads every page of the current filter (at most 100 pages); the expense list exports its month. The Overview tab (Phase 5A) gains no export.
+
+**Security review (step 11),** against PLAN.md's baseline: every new admin and platform route, the receipt photos, the queue messages, the jobs, isolation, exports and logs.
+
+| Finding | Severity | Fix |
+| --- | --- | --- |
+| A report's CSV wrote text as typed, so a supplier's name or an expense's note starting with `=`, `+`, `-` or `@` would run as a formula when the file opens in Excel (CSV injection) | Low: only staff type these | Such text gets a leading apostrophe; numbers and money are written by us and stay numbers. Excel files already write text as text |
+| A stock count's queue message wasn't checked before use | Low: only the Worker sends them | A message without UUIDs is logged and dropped, not retried |
+
+Accepted as they are:
+
+- **Receipt uploads are refused from `Content-Length` before reading and checked again after,** as media, import and return-photo uploads are; a body sent without a length is read before the second check. Only `expenses.write` staff can send one.
+- **A report over two years without summaries is computed live,** in Postgres, for the period and the one before. It costs database time, not Worker CPU, and the backfill makes it rare.
+- **COD outstanding is shown to viewers,** as Phase 7's reconciliation is (`reports.read`): it holds no cost.
+- **The order and customer CSV exports (Phases 4 and 5B) have the same formula risk,** with text shoppers type. Their courier formats must keep `+880` phones as they are, so the fix there needs its own decision; it is reported, not changed here.
+
+Checked, and found fine:
+
+- **Every route checks its permission, then again in core:** costs and profit need `catalog.cost`, dues and payments `purchasing.pay`, expenses `expenses.read` and `expenses.write`; staff receive an ordered PO's quantities only; the count's approval threshold needs `catalog.cost`; the rebuild needs a super admin. Without a permission, fields are left out, not blanked. Each is a test with staff and viewer sessions.
+- **The 16 new store tables have forced RLS** and a tenant policy, are in the isolation suite through the API and as raw SQL, and are in the export and purge. `cost_changes` is append-only for the app; the summaries can't be updated in place.
+- **Receipt photos** are sniffed (JPEG, PNG or WebP only), at most 2 MB, stored under the store's own prefix with a server-made name, served `private, no-store` with `nosniff`, and go with the store's export and purge.
+- **The Store jobs runner's backfill runs as `app_rw`,** so row-level security applies on the migration role.
+- **SQL takes parameters throughout;** `sql.raw` holds only constant column lists.
+- **Logs carry IDs and counts,** never names, phones or amounts.
+- **No new dependencies.** `pnpm audit` reports the same 3 moderate and 3 low advisories as Phase 7, all in build tooling.
+

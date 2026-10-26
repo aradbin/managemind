@@ -132,5 +132,11 @@ describe('stock counts over HTTP', () => {
       [count.id],
     );
     expect(Number(moved[0]?.n)).toBe(501);
+
+    // A malformed message is dropped, not retried.
+    const bad = message({ kind: 'stock_count_apply', tenantId: 'x', countId: count.id });
+    await handleStockCountMessages([bad as never], env, makeCtx());
+    expect(bad.acked).toBe(true);
+    expect(delayed.sent).toHaveLength(2);
   });
 });

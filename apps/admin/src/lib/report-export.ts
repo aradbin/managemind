@@ -8,8 +8,21 @@ import type { ReportCell } from './xlsx';
 export type { ReportCell };
 export type ReportFormat = 'xlsx' | 'csv';
 
+// Text a spreadsheet would read as a formula (=, +, -, @, or a tab or
+// return first) gets a leading apostrophe, so a supplier's name or an
+// expense's note can't run as one (OWASP's CSV injection). Numbers and
+// money are written by us and stay as they are.
+const FORMULA = /^[=+\-@\t\r]/;
 const text = (cell: ReportCell) =>
-  cell === null ? '' : typeof cell === 'object' ? (cell.money / 100).toFixed(2) : String(cell);
+  cell === null
+    ? ''
+    : typeof cell === 'object'
+      ? (cell.money / 100).toFixed(2)
+      : typeof cell === 'number'
+        ? String(cell)
+        : FORMULA.test(cell)
+          ? `'${cell}`
+          : cell;
 
 /** The CSV text: money as taka with two decimals and no separators, so Excel reads numbers. */
 export const reportCsv = (header: string[], rows: ReportCell[][]) =>
