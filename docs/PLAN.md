@@ -31,7 +31,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5C) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 25, 2026)**
+**Status (Oct 26, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
@@ -45,7 +45,8 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24) | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Built (Oct 24): the delivery success score, duplicate orders, the call queue, the SMS link and incomplete orders. Everything ships off or harmless until the pilot's feedback sets the script, the threshold and the defaults (Q1). Merged and deployed (#72 and #73, Oct 25). The checkout notice waits for the legal review's wording, and the SMS link for `CREDENTIALS_KEY` and a store's SMS gateway | [`phase-6-plan.md`](phases/phase-6-plan.md), [`phase-6-report.md`](phases/phase-6-report.md) |
 | 7 — Couriers and fulfillment | Built (Oct 25): booking, status by webhook and poll, COD by the amount collected, courier returns, area mapping and COD reconciliation, with a test courier for previews. Merged and deployed (#75, Oct 25). The Steadfast, Pathao and RedX adapters wait for credentials to be checked against the couriers before stores are offered them; production waits for `CREDENTIALS_KEY` | [`phase-7-plan.md`](phases/phase-7-plan.md), [`phase-7-report.md`](phases/phase-7-report.md) |
-| 8 onwards | Not started | — |
+| 8 — Back office | Plan drafted (Oct 26), waiting for the owner's approval and an accountant's review of its report definitions (§3.8) | [`phase-8-plan.md`](phases/phase-8-plan.md) |
+| 9 onwards | Not started | — |
 
 The phase reports are the record of what was built. A ticked item below is built; where the build differs from the item's wording, a note says how and links the decision.
 
