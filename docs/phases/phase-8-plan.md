@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Approved (Oct 26).** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
+- Status: **Approved (Oct 26), being built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Steps 0–3 are done (§15). Still needed from the owner: sample supplier, purchase and expense data from a pilot client (before step 8), and an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5)
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
@@ -394,3 +394,25 @@ Step 8 waits for the pilot's sample data. If it hasn't arrived by its turn, the 
 | Q11 | Importing past purchases | **No.** They don't change today's stock or cost; a supplier's opening balance carries what the store owes |
 | Q12 | Viewers and expenses | **Viewers read expenses, as they read every other report,** but not costs or profit, which need `catalog.cost`. An outside accountant would be a Manager, or a custom role later |
 | Q13 | Which plans get the back office | **Growth and Pilot; not Starter.** It's the clearest reason to move up a plan. Plans are data, so you can change this from Platform → Billing at any time |
+
+## 15. Build notes
+
+What the build has done so far, and where it differs from the sections above. The phase report replaces this section at step 12.
+
+| Step | Status |
+| --- | --- |
+| 0 | Done: the plan approved |
+| 1 | Done: permissions, the `backOffice` feature (Starter off, Growth and Pilot on), `backOffice` settings, the reasons `expired` and `sample`, the PO and count machines, every table in §4, `unit_cost` on movements, migrations 0044–0045, ADR 0031 |
+| 2 | Done: `core/purchasing` with suppliers, POs, receipts, the cost rule and its history, supplier payments, balances and ageing; returns and failed deliveries restocked at the line's cost; the line's cost frozen at first shipment. Acceptance criterion 1 is an integration test |
+| 3 | Done: the routes in §6 for suppliers, POs, receipts, payments, dues and cost history; the admin's Inventory tabs, supplier pages, PO editor, receiving and the PO's print view |
+| 4–12 | To do |
+
+**Differences from the plan:**
+
+- **Migration 0045 writes `backOffice` into every stored plan and store entitlement.** Entitlements are validated strictly, so a stored set without the new feature would read as invalid. Each store's value follows its plan and override; a store with a set but no subscription gets it on, as stores from before plans have every feature.
+- **The summary tables are written by the app role, inside each store's own transaction** (`withTenant`), as the usage rollup is. They are ordinary store tables with forced RLS; the app may select, insert and delete their rows, never update them. `app.report_refresh` as `mm_system` (§4) would have needed read policies on every source table. The daily batch loops over stores itself, so `app.recurring_expenses_due()` isn't needed either (ADR 0031).
+- **A count has a fifth state, `applying`,** while the queue applies a count over 500 lines. A batch that keeps failing sends it back to `review` with the error, instead of a flag on a `review` count (§3.5, §7).
+- **A receipt is never edited.** A wrong receipt is corrected with an adjustment and a cost correction, as the stock ledger is (ADR 0031).
+- **The supplier's opening balance comes first in the ageing,** before any receipt, whatever the dates: it is what was owed before the store started here (§3.7).
+- **Adjustments are valued at the variant's cost at that moment** by the inventory service itself, so every adjustment written from this phase on has a `unit_cost`, including those of Phase 2's dialog and the catalog import (§3.4).
+
