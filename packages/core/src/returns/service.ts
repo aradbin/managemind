@@ -32,6 +32,7 @@ import { lockOrder } from '../orders/lifecycle';
 import { type PlacedOrder, placeOrder } from '../orders/place';
 import { emit } from '../outbox';
 import { orderSettings, quote } from '../pricing/quote';
+import { restockAtLineCost } from '../purchasing/costs';
 import type { TenantTx } from '../tenant';
 
 const r = schema.returns;
@@ -384,8 +385,9 @@ export async function inspectReturn(
     order_line_id: string;
     quantity: number;
     variant_id: string;
+    cost_price: string | null;
   }>(sql`
-    select rl.order_line_id, rl.quantity, l.variant_id
+    select rl.order_line_id, rl.quantity, l.variant_id, l.cost_price
       from store.return_lines rl join store.order_lines l on l.id = rl.order_line_id
      where rl.return_id = ${id}`);
   const found = new Map(v.lines.map((l) => [l.orderLineId, l]));
@@ -413,6 +415,7 @@ export async function inspectReturn(
       variantId: line.variant_id,
       type: 'return',
       quantity: line.quantity,
+      unitCost: line.cost_price === null ? null : Number(line.cost_price),
       reason: 'return_inspected',
       idempotencyKey: `return:${id}:${line.order_line_id}:return`,
       ...ref,
@@ -422,6 +425,7 @@ export async function inspectReturn(
         variantId: line.variant_id,
         type: 'adjustment',
         quantity: -got.damaged,
+        unitCost: line.cost_price === null ? null : Number(line.cost_price),
         reason: 'damaged',
         note: formatReturnNumber(ret.number),
         idempotencyKey: `return:${id}:${line.order_line_id}:damaged`,
@@ -429,6 +433,8 @@ export async function inspectReturn(
       });
     }
   });
+  // Back in at the cost they were sold at, before the stock moves (phase-8-plan §3.3).
+  await restockAtLineCost(tx, actor, lines, { referenceType: 'return', referenceId: id });
   await applyMovements(tx, actor, movements);
   for (const l of v.lines) {
     await tx.db

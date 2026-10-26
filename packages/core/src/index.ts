@@ -19,6 +19,7 @@ export * from './payments/index';
 export * from './platform';
 export * from './pricing/index';
 export * from './promotions/index';
+export * from './purchasing/index';
 export * from './recovery/index';
 export * from './reports/index';
 export * from './returns/index';

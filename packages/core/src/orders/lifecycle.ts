@@ -39,6 +39,7 @@ import { parseInput } from '../catalog/common';
 import { applyMovements, type Movement } from '../inventory/service';
 import { emit } from '../outbox';
 import { revokeCreditRemainder } from '../payments/store-credit';
+import { restockAtLineCost } from '../purchasing/costs';
 import type { TenantTx } from '../tenant';
 import { recordHistory } from './history';
 
@@ -420,8 +421,9 @@ async function shipmentLines(tx: TenantTx, shipmentId: string) {
     order_line_id: string;
     variant_id: string;
     quantity: number;
+    cost_price: string | null;
   }>(sql`
-    select sl.order_line_id, l.variant_id, sl.quantity from store.shipment_lines sl
+    select sl.order_line_id, l.variant_id, sl.quantity, l.cost_price from store.shipment_lines sl
       join store.order_lines l on l.id = sl.order_line_id where sl.shipment_id = ${shipmentId}`);
   return rows;
 }
@@ -566,6 +568,13 @@ export async function shipShipment(
   const shipment = await lockShipment(tx, id);
   await lockOrder(tx, shipment.orderId);
   await moveShipment(tx, actor, shipment, 'ship', { courier });
+  // A line's cost is frozen when its first unit ships, at the average then
+  // (phase-8-plan §3.8, Q10): stock leaves now, at what it costs now.
+  await tx.db.execute(sql`
+    update store.order_lines l set cost_price = coalesce(v.cost_price, l.cost_price)
+      from store.shipment_lines sl, store.variants v
+     where sl.shipment_id = ${id} and sl.order_line_id = l.id and v.id = l.variant_id
+       and l.shipped_quantity = 0`);
   const lines = await shipmentLines(tx, id);
   const ref = { referenceType: 'shipment', referenceId: id, reason: 'order_shipped' };
   await applyMovements(
@@ -747,6 +756,8 @@ export async function returnShipment(
      where id = ${order.customerId}`);
   const lines = await shipmentLines(tx, id);
   const ref = { referenceType: 'shipment', referenceId: id };
+  // The units come back at the cost they left at (phase-8-plan §3.3).
+  await restockAtLineCost(tx, actor, lines, ref);
   await applyMovements(
     tx,
     actor,
@@ -756,6 +767,7 @@ export async function returnShipment(
         variantId: l.variant_id,
         type: 'return',
         quantity: l.quantity,
+        unitCost: l.cost_price === null ? null : Number(l.cost_price),
         reason: 'failed_delivery',
         idempotencyKey: `shipment:${id}:${l.order_line_id}:return`,
       },
