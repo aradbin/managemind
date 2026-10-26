@@ -7,7 +7,7 @@ packages:
 # One version of each shared dependency across the workspace.
 # Packages reference these with "catalog:".
 catalog:
-  "@astrojs/check": 0.9.10
+  "@astrojs/check": 0.9.12
   "@astrojs/cloudflare": 14.3.4
   "@axe-core/playwright": 4.13.0
   "@biomejs/biome": 2.5.15
