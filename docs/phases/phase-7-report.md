@@ -3,7 +3,7 @@
 - Date: 2026-10-25
 - Plan: `docs/phases/phase-7-plan.md` (approved with every recommendation in §14)
 - Branch: `claude/bold-shannon-s6t57c`, one commit per plan step (§1), and #75's preview fixes
-- Pull request: #75, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2)
+- Pull request: #75, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2). Merged on Oct 25 and deployed: migrations 0042–0043 applied, the two courier polls' Cron Triggers added, and the deploy's smoke, shop API and cache checks passed
 
 ## Summary
 
@@ -57,7 +57,8 @@ Phase 7 is built. Stores can connect Steadfast, Pathao and RedX, book parcels fr
 | — | `f9905a3`, `60e42f3` | E2E: one flow at a time on a preview |
 | — | `6ea9411` | Preview: the `narrow-preview` label |
 | — | `409981c` | E2E: the courier flow renews the kept dashboard before reading it |
-| — | This commit | The preview's results in this report |
+| — | `26f5e59` | The preview's results in this report |
+| — | This commit | Merged and deployed |
 
 ## 2. Acceptance criteria
 
