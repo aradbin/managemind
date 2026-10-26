@@ -97,6 +97,40 @@ describe('expenses over HTTP', () => {
     expect(keys()).toHaveLength(0);
   });
 
+  it('imports past expenses and suppliers once under one Idempotency-Key (phase-8-plan §3.10)', async () => {
+    const b = browser(env);
+    expect((await signIn(b, owner, store.email)).status).toBe(200);
+    await b.call('PUT', '/api/admin/me/active-store', { tenantId: store.id });
+    const categories = (await (await b.get('/api/admin/expense-categories')).json()) as Json;
+    const rent = categories.find((c: Json) => c.key === 'rent');
+    const rows = [
+      { row: 2, spentOn: '2026-05-05', categoryId: rent.id, amount: 15_000_00, method: 'bank' },
+      { row: 3, spentOn: '2026-06-05', categoryId: rent.id, amount: 15_000_00, method: 'bank' },
+    ];
+    const key = { 'idempotency-key': `expense-import-${store.id}` };
+    const first = await b.post('/api/admin/expenses/import', rows, key);
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({ created: 2, skipped: [] });
+    expect(await (await b.post('/api/admin/expenses/import', rows, key)).json()).toEqual({
+      created: 2,
+      skipped: [],
+    });
+    const { rows: saved } = await owner.query<{ n: number }>(
+      `select count(*)::int as n from store.expenses where tenant_id = $1 and spent_on < '2026-07-01'`,
+      [store.id],
+    );
+    expect(saved[0]?.n).toBe(2);
+
+    const suppliers = await b.post(
+      '/api/admin/suppliers/import',
+      [{ row: 2, name: 'Imported Traders', phones: ['01711000009'], openingBalance: 7_000_00 }],
+      { 'idempotency-key': `supplier-import-${store.id}` },
+    );
+    expect(suppliers.status).toBe(200);
+    expect(await suppliers.json()).toEqual({ created: 1, skipped: [] });
+    expect((await b.post('/api/admin/suppliers/import', [])).status).toBe(422);
+  });
+
   it('posts recurring expenses once however often the batch runs', async () => {
     const { rows: cats } = await owner.query<{ id: string }>(
       `select id from store.expense_categories where tenant_id = $1 and key = 'rent'`,

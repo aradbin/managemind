@@ -11244,6 +11244,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/suppliers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suppliers from a file the browser read, up to 200 a request; a name already there is skipped (purchasing.write; balances purchasing.pay) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        contactName?: string | null;
+                        phones?: string[];
+                        /** Format: email */
+                        email?: string | null;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            city?: string;
+                        } | null;
+                        note?: string | null;
+                        openingBalance?: number;
+                        row: number;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Imported */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/suppliers/{id}": {
         parameters: {
             query?: never;
@@ -12551,6 +12607,66 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expenses/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Past expenses from a file the browser read, up to 200 a request; one identical to a recorded expense is skipped (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn: string;
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        row: number;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Imported */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            created: number;
+                            skipped: {
+                                row: number;
+                                /** @enum {string} */
+                                reason: "exists";
+                            }[];
+                        };
                     };
                 };
             };
@@ -19126,6 +19242,14 @@ export interface components {
             openingBalance?: number;
             /** @description Only with purchasing.pay */
             balance?: number;
+        };
+        ImportResult: {
+            created: number;
+            skipped: {
+                row: number;
+                /** @enum {string} */
+                reason: "exists";
+            }[];
         };
         SupplierLedger: {
             opening: number;

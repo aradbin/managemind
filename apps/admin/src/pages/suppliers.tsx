@@ -109,6 +109,11 @@ export function SuppliersPage() {
                 }
               />
             )}
+            {canWrite && (
+              <Button variant="secondary" asChild>
+                <Link to="/inventory/suppliers/import">{t('boImport.import')}</Link>
+              </Button>
+            )}
             {canWrite && <Button onClick={() => setCreating(true)}>{t('suppliers.new')}</Button>}
           </>
         }

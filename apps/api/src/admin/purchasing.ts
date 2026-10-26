@@ -16,6 +16,7 @@ import {
   getGoodsReceipt,
   getPurchaseOrder,
   getSupplier,
+  importSuppliers,
   listGoodsReceipts,
   listPurchaseOrders,
   listSupplierPayments,
@@ -29,8 +30,10 @@ import {
   variantCostHistory,
 } from '@managemind/core';
 import {
+  BACK_OFFICE_IMPORT_LIMITS,
   COST_SOURCES,
   goodsReceiptInput,
+  importSupplier,
   PURCHASE_ORDER_STATUSES,
   purchaseOrderInput,
   purchaseOrderPatch,
@@ -59,6 +62,12 @@ const body = <T extends z.ZodType>(schema: T) => ({
 });
 const Id = z.object({ id: z.uuid() });
 const IdemHeader = z.object({ 'idempotency-key': z.string().min(8).max(255).optional() });
+const ImportResult = z
+  .object({
+    created: z.number().int(),
+    skipped: z.array(z.object({ row: z.number().int(), reason: z.enum(['exists']) })),
+  })
+  .openapi('ImportResult');
 const Money = z.number().int();
 const Localized = z.object({ bn: z.string().optional(), en: z.string().optional() });
 const Page = <T extends z.ZodType>(item: T, name: string) =>
@@ -286,6 +295,17 @@ export const PURCHASING_ROUTES = {
     request: body(supplierInput),
     responses: json(Supplier, 'Created', 201),
   }),
+  importSuppliers: r({
+    method: 'post',
+    path: '/suppliers/import',
+    summary:
+      'Suppliers from a file the browser read, up to 200 a request; a name already there is skipped (purchasing.write; balances purchasing.pay)',
+    request: {
+      headers: IdemHeader,
+      ...body(z.array(importSupplier).min(1).max(BACK_OFFICE_IMPORT_LIMITS.chunk)),
+    },
+    responses: json(ImportResult, 'Imported'),
+  }),
   supplier: r({
     method: 'get',
     path: '/suppliers/{id}',
@@ -462,6 +482,16 @@ export function registerPurchasing(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.createSupplier, async (c) =>
     c.json(await inStore(c, (tx) => createSupplier(tx, actor(c), c.req.valid('json')), write), 201),
   );
+  admin.openapi(R.importSuppliers, async (c) => {
+    const input = c.req.valid('json');
+    const result = await inStore(
+      c,
+      (tx) =>
+        idempotent(c, tx, 'supplier_import', input, () => importSuppliers(tx, actor(c), input)),
+      write,
+    );
+    return c.json(result.body as never, 200);
+  });
   admin.openapi(R.supplier, async (c) =>
     c.json(await inStore(c, (tx) => getSupplier(tx, actor(c), c.req.valid('param').id)), 200),
   );

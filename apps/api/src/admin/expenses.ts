@@ -11,6 +11,7 @@ import {
   deleteRecurringExpense,
   expenseReceipt,
   getExpense,
+  importExpenses,
   listExpenseCategories,
   listExpenses,
   listRecurringExpenses,
@@ -21,11 +22,13 @@ import {
 } from '@managemind/core';
 import { AppError, objectKey, uuidv7 } from '@managemind/shared';
 import {
+  BACK_OFFICE_IMPORT_LIMITS,
   EXPENSE_CADENCES,
   expenseCategoryInput,
   expenseCategoryPatch,
   expenseInput,
   expensePatch,
+  importExpense,
   RECEIPT_PHOTO_MAX_BYTES,
   recurringExpenseInput,
   recurringExpensePatch,
@@ -154,6 +157,23 @@ export const EXPENSE_ROUTES = {
     request: { headers: IdemHeader, ...body(expenseInput) },
     responses: json(Expense, 'Recorded', 201),
   }),
+  importExpenses: r({
+    method: 'post',
+    path: '/expenses/import',
+    summary:
+      'Past expenses from a file the browser read, up to 200 a request; one identical to a recorded expense is skipped (expenses.write)',
+    request: {
+      headers: IdemHeader,
+      ...body(z.array(importExpense).min(1).max(BACK_OFFICE_IMPORT_LIMITS.chunk)),
+    },
+    responses: json(
+      z.object({
+        created: z.number().int(),
+        skipped: z.array(z.object({ row: z.number().int(), reason: z.enum(['exists']) })),
+      }),
+      'Imported',
+    ),
+  }),
   updateExpense: r({
     method: 'patch',
     path: '/expenses/{id}',
@@ -255,6 +275,15 @@ export function registerExpenses(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.expenses, async (c) =>
     c.json(await inStore(c, (tx) => listExpenses(tx, actor(c), c.req.valid('query'))), 200),
   );
+  admin.openapi(R.importExpenses, async (c) => {
+    const input = c.req.valid('json');
+    const result = await inStore(
+      c,
+      (tx) => idempotent(c, tx, 'expense_import', input, () => importExpenses(tx, actor(c), input)),
+      write,
+    );
+    return c.json(result.body as never, 200);
+  });
   admin.openapi(R.createExpense, async (c) => {
     const input = c.req.valid('json');
     const result = await inStore(

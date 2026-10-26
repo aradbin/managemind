@@ -3,7 +3,7 @@
 // categories. Viewers read; owners and managers write (Q12).
 import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -194,6 +194,11 @@ function Entries({ month }: { month: string }) {
                 ])
               }
             />
+          )}
+          {canWrite && (
+            <Button variant="secondary" asChild>
+              <Link to="/expenses/import">{t('boImport.import')}</Link>
+            </Button>
           )}
           {canWrite && <Button onClick={() => setEditing('new')}>{t('expenses.new')}</Button>}
         </div>

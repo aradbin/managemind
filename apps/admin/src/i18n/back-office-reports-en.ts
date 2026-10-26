@@ -1,6 +1,28 @@
 // The back office's reports (phase-8-plan §3.8, §3.12): the Reports tabs,
 // sales by period and product, and the profit statement. Loaded with them.
 export const boReportsEn = {
+  'boImport.import': 'Import',
+  'boImport.supplierTitle': 'Import suppliers',
+  'boImport.supplierIntro':
+    'A CSV or Excel file with a row per supplier, and what the store owed each one the day it started here. Nothing is saved until you confirm.',
+  'boImport.supplierColumns':
+    'Columns: name (needed), phone, contact, email, address, city, note, opening balance. Headers in English or Bangla.',
+  'boImport.expenseTitle': 'Import expenses',
+  'boImport.expenseIntro':
+    'Expenses from the months before the store moved here, so a year’s reports are complete. Nothing is saved until you confirm.',
+  'boImport.expenseColumns':
+    'Columns: date (YYYY-MM-DD or DD/MM/YYYY), category, amount (both needed), paid by, paid to, note. Headers in English or Bangla.',
+  'boImport.found': 'Columns found: {columns}',
+  'boImport.missingSupplier': 'The file needs a name column.',
+  'boImport.missingExpense': 'The file needs a date and an amount column.',
+  'boImport.tooMany': 'At most {count} rows at a time. Split the file and import each part.',
+  'boImport.summary':
+    '{valid} rows to import, {errors} with errors (left out), {warnings} warnings.',
+  'boImport.start': 'Import {count} rows',
+  'boImport.progress': 'Importing: {done} of {total} rows…',
+  'boImport.done': '{created} imported. {skipped} were already in the store and were skipped.',
+  'boImport.again': 'Import another file',
+  'boImport.notAllowed': 'You don’t have permission to import these.',
   'reports.sections': 'Report sections',
   'reports.export.xlsx': 'Excel',
   'reports.export.csv': 'CSV',

@@ -1,6 +1,27 @@
 import type { boReportsEn } from './back-office-reports-en';
 
 export const boReportsBn: Record<keyof typeof boReportsEn, string> = {
+  'boImport.import': 'ইমপোর্ট',
+  'boImport.supplierTitle': 'সরবরাহকারী ইমপোর্ট',
+  'boImport.supplierIntro':
+    'প্রতি সরবরাহকারীর জন্য একটি সারিসহ CSV বা এক্সেল ফাইল, আর এখানে শুরু করার দিনে প্রত্যেকের কাছে দোকানের বাকি। নিশ্চিত না করা পর্যন্ত কিছু সংরক্ষণ হয় না।',
+  'boImport.supplierColumns':
+    'কলাম: নাম (লাগবে), ফোন, যোগাযোগ, ইমেইল, ঠিকানা, শহর, নোট, শুরুর বাকি। শিরোনাম ইংরেজি বা বাংলায়।',
+  'boImport.expenseTitle': 'খরচ ইমপোর্ট',
+  'boImport.expenseIntro':
+    'দোকান এখানে আসার আগের মাসগুলোর খরচ, যাতে এক বছরের রিপোর্ট পূর্ণ হয়। নিশ্চিত না করা পর্যন্ত কিছু সংরক্ষণ হয় না।',
+  'boImport.expenseColumns':
+    'কলাম: তারিখ (YYYY-MM-DD বা DD/MM/YYYY), ক্যাটাগরি, টাকা (দুটোই লাগবে), মাধ্যম, প্রাপক, নোট। শিরোনাম ইংরেজি বা বাংলায়।',
+  'boImport.found': 'পাওয়া কলাম: {columns}',
+  'boImport.missingSupplier': 'ফাইলে একটি নামের কলাম লাগবে।',
+  'boImport.missingExpense': 'ফাইলে তারিখ আর টাকার কলাম লাগবে।',
+  'boImport.tooMany': 'একবারে সর্বোচ্চ {count}টি সারি। ফাইল ভাগ করে প্রতিটি অংশ ইমপোর্ট করুন।',
+  'boImport.summary': '{valid}টি সারি ইমপোর্ট হবে, {errors}টিতে ভুল (বাদ যাবে), {warnings}টি সতর্কতা।',
+  'boImport.start': '{count}টি সারি ইমপোর্ট করুন',
+  'boImport.progress': 'ইমপোর্ট হচ্ছে: {total}টির মধ্যে {done}টি…',
+  'boImport.done': '{created}টি ইমপোর্ট হয়েছে। {skipped}টি আগে থেকেই দোকানে ছিল, বাদ দেওয়া হয়েছে।',
+  'boImport.again': 'আরেকটি ফাইল ইমপোর্ট করুন',
+  'boImport.notAllowed': 'এগুলো ইমপোর্ট করার অনুমতি আপনার নেই।',
   'reports.sections': 'রিপোর্টের অংশ',
   'reports.export.xlsx': 'এক্সেল',
   'reports.export.csv': 'CSV',
