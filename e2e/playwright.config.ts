@@ -159,5 +159,20 @@ export default defineConfig({
       retries: 0,
       use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
     },
+    // The back office flows (phase-8-plan §10), after the courier flows.
+    {
+      name: 'back-office-phone',
+      testMatch: /back-office\.spec\.ts/,
+      dependencies: ['couriers-phone'],
+      retries: 0,
+      use: { viewport: { width: 390, height: 844 }, hasTouch: true, actionTimeout: 20_000 },
+    },
+    {
+      name: 'back-office-desktop',
+      testMatch: /back-office\.spec\.ts/,
+      dependencies: ['couriers-desktop'],
+      retries: 0,
+      use: { viewport: { width: 1280, height: 800 }, actionTimeout: 20_000 },
+    },
   ],
 });
