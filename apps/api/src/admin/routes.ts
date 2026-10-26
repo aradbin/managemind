@@ -61,6 +61,7 @@ import { MEDIA_ROUTES, registerMediaRoutes } from './media';
 import { MESSAGE_ROUTES, registerMessages } from './messages';
 import { ORDER_ROUTES, registerOrders } from './orders';
 import { PROMOTION_ROUTES, registerPromotions } from './promotions';
+import { PURCHASING_ROUTES, registerPurchasing } from './purchasing';
 import { REPORT_ROUTES, registerReports } from './reports';
 import { RETURN_ROUTES, registerReturns } from './returns';
 import { storeUrls } from './store-urls';
@@ -171,6 +172,7 @@ export const ADMIN_ROUTES = {
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...COURIER_ROUTES,
+  ...PURCHASING_ROUTES,
   ...MESSAGE_ROUTES,
   ...PROMOTION_ROUTES,
   help: r({
@@ -626,6 +628,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerReports(admin);
   registerCredentials(admin);
   registerCouriers(admin);
+  registerPurchasing(admin);
   registerMessages(admin);
   registerPromotions(admin);
   admin.openapi(R.accept, async (c) => {

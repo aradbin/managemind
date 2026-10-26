@@ -12,12 +12,16 @@ import {
   createCategory,
   createCollection,
   createCustomer,
+  createGoodsReceipt,
   createImportJob,
   createManualInvoice,
   createPage,
   createProduct,
   createPromotion,
+  createPurchaseOrder,
   createShipment,
+  createSupplier,
+  createSupplierPayment,
   createTenant,
   createZone,
   grantSupportAccess,
@@ -466,6 +470,29 @@ describe('isolation suite', () => {
       return rows[0]?.id as string;
     });
 
+    // Store B's supplier, PO, receipt and payment (phase-8-plan §8).
+    const bSupplier = await inB((tx) => createSupplier(tx, bOwner, { name: 'B supplier' }));
+    const bPo = await inB((tx) =>
+      createPurchaseOrder(tx, bOwner, {
+        supplierId: bSupplier.id,
+        lines: [{ variantId: liveVariant, quantity: 1, unitCost: 100 }],
+      }),
+    );
+    const bReceipt = await inB((tx) =>
+      createGoodsReceipt(tx, bOwner, {
+        supplierId: bSupplier.id,
+        lines: [{ variantId: liveVariant, quantity: 1, unitCost: 100 }],
+      }),
+    );
+    const bSupplierPayment = await inB((tx) =>
+      createSupplierPayment(tx, bOwner, {
+        supplierId: bSupplier.id,
+        paidOn: dhakaDate(new Date()),
+        amount: 100,
+        method: 'cash',
+      }),
+    );
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
@@ -603,6 +630,19 @@ describe('isolation suite', () => {
       'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
       'GET /v1/admin/billing/invoices/{id}': { id: bInvoice },
       'POST /v1/admin/billing/invoices/{id}/pay': { id: bInvoice },
+      'GET /v1/admin/suppliers/{id}': { id: bSupplier.id },
+      'PATCH /v1/admin/suppliers/{id}': { id: bSupplier.id, body: { name: 'x' } },
+      'GET /v1/admin/suppliers/{id}/ledger': { id: bSupplier.id },
+      'GET /v1/admin/purchase-orders/{id}': { id: bPo.id },
+      'PATCH /v1/admin/purchase-orders/{id}': { id: bPo.id, body: { note: 'x' } },
+      'DELETE /v1/admin/purchase-orders/{id}': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/place': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/close': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/cancel': { id: bPo.id },
+      'GET /v1/admin/goods-receipts/{id}': { id: bReceipt.id },
+      'PATCH /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id, body: { note: 'x' } },
+      'DELETE /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id },
+      'GET /v1/admin/variants/{id}/cost-history': { id: liveVariant },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {

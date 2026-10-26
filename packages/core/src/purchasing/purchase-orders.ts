@@ -28,6 +28,9 @@ import { nextNumber, requireBackOffice, requireCost, seesCost } from './common';
 import { activeSupplier } from './suppliers';
 import { type Localized, variantLabels } from './variants';
 
+/** What staff do to a PO by hand; receiving is a receipt. */
+export type PurchaseOrderAction = Extract<PurchaseOrderEvent, 'place' | 'close' | 'cancel'>;
+
 const po = schema.purchaseOrders;
 const pol = schema.purchaseOrderLines;
 
@@ -60,7 +63,7 @@ export interface PurchaseOrder {
   lines: PurchaseOrderLine[];
   receipts: { id: string; number: number; reference: string; receivedOn: string }[];
   /** The events allowed now: place, close, cancel. */
-  actions: PurchaseOrderEvent[];
+  actions: PurchaseOrderAction[];
   placedAt: string | null;
   closedAt: string | null;
   cancelledAt: string | null;
@@ -135,7 +138,7 @@ async function view(tx: TenantTx, actor: Actor, row: Row): Promise<PurchaseOrder
     receipts: receipts.map((r) => ({ ...r, reference: documentNumber('GR', r.number) })),
     actions: purchaseOrderMachine
       .events(row.status)
-      .filter((e) => e === 'place' || e === 'close' || e === 'cancel'),
+      .filter((e): e is PurchaseOrderAction => e === 'place' || e === 'close' || e === 'cancel'),
     placedAt: iso(row.placedAt),
     closedAt: iso(row.closedAt),
     cancelledAt: iso(row.cancelledAt),

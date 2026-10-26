@@ -8,6 +8,7 @@ import './promotions';
 import './launch';
 import './billing';
 import './couriers';
+import './purchasing';
 
 await loadLocale('en');
 await loadLocale('bn');

@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -19,6 +20,7 @@ import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import { compact, type InventoryRow, pick } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { costHistoryQuery, priceOrDash } from '../lib/purchasing';
 
 export type InventorySearch = { q?: string | undefined; lowStock?: boolean | undefined };
 
@@ -148,6 +150,7 @@ export function InventoryPage() {
     <div className="max-w-6xl">
       <PageHeader title={t('catalog.inventory')} description={t('inventory.intro')} />
       <CatalogNav />
+      <InventoryNav />
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
         <Input
           type="search"
@@ -197,6 +200,8 @@ function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void
   const toast = useToast();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<Mode>('received');
+  // With purchasing, stock bought is received there, so its cost is kept (phase-8-plan §3.4).
+  const canReceive = usePermission('purchasing.write');
   const [quantity, setQuantity] = useState('');
   const [note, setNote] = useState('');
   const [key] = useState(() => crypto.randomUUID());
@@ -270,6 +275,17 @@ function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void
             </label>
           ))}
         </fieldset>
+        {mode === 'received' && canReceive && (
+          <Notice tone="info">
+            <Link
+              to="/inventory/receive"
+              className="font-medium text-primary hover:underline"
+              onClick={onClose}
+            >
+              {t('inventory.receiveHint')}
+            </Link>
+          </Notice>
+        )}
         <Field
           label={mode === 'count' ? t('inventory.countedQuantity') : t('inventory.quantity')}
           inputMode="numeric"
@@ -315,6 +331,8 @@ function HistoryDialog({ row, onClose }: { row: InventoryRow; onClose: () => voi
     queryFn: async () => unwrap(await api.GET('/v1/admin/locations')),
   });
   const many = (locations.data?.length ?? 0) > 1;
+  const seesCost = usePermission('catalog.cost');
+  const costs = useQuery({ ...costHistoryQuery(row.variantId), enabled: seesCost });
   return (
     <Dialog
       open
@@ -322,6 +340,34 @@ function HistoryDialog({ row, onClose }: { row: InventoryRow; onClose: () => voi
       title={t('inventory.historyTitle')}
       description={rowLabel(row, locale)}
     >
+      {seesCost && costs.data && (
+        <section className="flex flex-col gap-1">
+          <h3 className="font-medium">{t('cost.history')}</h3>
+          {costs.data.items.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('cost.empty')}</p>
+          ) : (
+            <ol className="flex flex-col divide-y divide-border">
+              {costs.data.items.slice(0, 10).map((c) => (
+                <li key={c.id} className="flex flex-col gap-0.5 py-2 text-sm">
+                  <span className="flex justify-between gap-2">
+                    <span className="font-medium">{t(`cost.source.${c.source}`)}</span>
+                    <span className="tabular-nums">
+                      {t('cost.change', {
+                        old: priceOrDash(c.oldCost, locale),
+                        new: priceOrDash(c.newCost, locale),
+                      })}
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {formatDateTime(locale, new Date(c.createdAt))} ·{' '}
+                    {t('cost.onHand', { n: c.onHand })}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      )}
       {movements.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : movements.isError ? (
