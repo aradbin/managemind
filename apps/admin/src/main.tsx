@@ -12,6 +12,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { AppError } from './components/app-error';
 import { ToastProvider } from './components/toast';
 import { initialLocale, LocaleProvider, loadLocale } from './i18n';
 import { ApiError, queryClient } from './lib/api';
@@ -23,7 +24,14 @@ import { initSentry, rootErrorHandlers } from './sentry';
 initTheme();
 initSentry();
 
-const router = createRouter({ routeTree, context: { queryClient }, defaultPreload: 'intent' });
+// The error screen is part of the entry chunk, so it shows even when a
+// route's own chunk can't load.
+const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  defaultPreload: 'intent',
+  defaultErrorComponent: AppError,
+});
 
 // A session that ends mid-visit (expired, or signed out from another device)
 // goes back to sign-in. First loads are handled by the routes' own guards.

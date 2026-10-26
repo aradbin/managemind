@@ -28,6 +28,7 @@ export const bn: Record<keyof typeof en, string> = {
   'settings.title': 'সেটিংস',
   'account.title': 'অ্যাকাউন্ট',
   'signIn.title': 'সাইন ইন',
+  'error.screen': 'পেজটি লোড হয়নি',
   'error.generic': 'কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।',
   'error.offline': 'আপনি অফলাইনে আছেন। পরিবর্তন সংরক্ষণ হবে না।',
   'update.available': 'নতুন সংস্করণ প্রস্তুত।',
