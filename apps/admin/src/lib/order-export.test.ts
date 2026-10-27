@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { customerTable, localPhone, orderTable } from './order-export';
+import { csvRows, customerTable, localPhone, orderTable } from './order-export';
 import type { OrderDetail } from './orders';
 
 const names = (en: string, bn: string) => ({ en, bn });
@@ -124,5 +124,51 @@ describe('order export', () => {
       '2026-10-01',
     ]);
     expect(localPhone('+8801999000000')).toBe('01999000000');
+  });
+
+  it('keeps typed text from running as a formula in the CSV, and the courier files as typed', () => {
+    const risky = order({
+      contact: { name: '=HYPERLINK("http://x.test")', phone: '+8801712000111' },
+      customerNote: '@SUM(A1)',
+      tags: ['-vip'],
+    } as Partial<OrderDetail>);
+    const full = orderTable('full', [risky], 'en');
+    const col = (name: string) => full.header.indexOf(name);
+    const [first, second] = csvRows(full);
+    expect(first?.[col('name')]).toBe(`'=HYPERLINK("http://x.test")`);
+    expect(first?.[col('note')]).toBe(`'@SUM(A1)`);
+    expect(first?.[col('tags')]).toBe(`'-vip`);
+    // The phone the server checked, and money, stay as they are.
+    expect(first?.[col('phone')]).toBe('+8801712000111');
+    expect(first?.[col('total')]).toBe('3520');
+    expect(second?.[col('note')]).toBe('');
+    // The Excel file writes text as text: its rows are left alone.
+    expect(full.rows[0]?.[col('name')]).toBe('=HYPERLINK("http://x.test")');
+
+    const steadfast = orderTable('steadfast', [risky], 'en');
+    expect(csvRows(steadfast)).toEqual(steadfast.rows);
+
+    const customers = customerTable([
+      {
+        name: '+Rahim',
+        phone: '+8801711000001',
+        email: null,
+        tags: [],
+        note: '=1+1',
+        orderCount: 1,
+        totalSpent: 0,
+        lastOrderAt: null,
+      },
+    ]);
+    expect(csvRows(customers)[0]).toEqual([
+      "'+Rahim",
+      '01711000001',
+      '',
+      '',
+      "'=1+1",
+      '1',
+      '0',
+      '',
+    ]);
   });
 });

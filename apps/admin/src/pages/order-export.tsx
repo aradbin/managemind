@@ -12,6 +12,7 @@ import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import { errorMessage } from '../lib/errors';
 import {
+  csvRows,
   customerTable,
   EXPORT_FORMATS,
   type ExportFormat,
@@ -63,7 +64,7 @@ async function save(name: string, table: ExportTable, format: 'csv' | 'xlsx') {
   } else {
     download(
       `${name}-${stamp}.csv`,
-      new Blob([toCsv(table.header, table.rows)], { type: 'text/csv;charset=utf-8' }),
+      new Blob([toCsv(table.header, csvRows(table))], { type: 'text/csv;charset=utf-8' }),
     );
   }
 }

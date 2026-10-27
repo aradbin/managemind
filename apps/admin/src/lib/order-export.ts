@@ -4,6 +4,7 @@
 // sample files, when the owner sends them, replace these lists here.
 import type { Locale } from '@managemind/shared/i18n';
 import { amountToDecimal } from '@managemind/shared/money';
+import { formulaSafe } from './download';
 import type { OrderDetail } from './orders';
 import { pickText } from './orders';
 
@@ -13,6 +14,20 @@ export type ExportFormat = (typeof EXPORT_FORMATS)[number];
 export interface ExportTable {
   header: string[];
   rows: string[][];
+  /**
+   * The columns of text a shopper or staff typed, which the CSV keeps from
+   * running as a formula (csvRows). The courier files have none: their
+   * uploads take the text exactly as it is (phase-8-report §5).
+   */
+  typed?: string[];
+}
+
+/** The rows for a CSV: typed text made safe to open in Excel. Excel files write text as text. */
+export function csvRows(table: ExportTable): string[][] {
+  const typed = new Set(table.typed);
+  if (!typed.size) return table.rows;
+  const guard = table.header.map((h) => typed.has(h));
+  return table.rows.map((r) => r.map((v, i) => (guard[i] ? formulaSafe(v) : v)));
 }
 
 /** 01712345678 from +8801712345678: couriers want the local form. */
@@ -161,7 +176,12 @@ export function orderTable(
         : ['', '', '', '', '', '', '', '', '']),
     ]),
   );
-  return { header, rows };
+  // The phone is checked by the server and money is ours: they stay as they are.
+  return {
+    header,
+    rows,
+    typed: ['name', 'email', 'address', 'zone', 'sku', 'item', 'tags', 'note'],
+  };
 }
 
 /** Customers, one row per customer, with the columns the customer import reads back. */
@@ -189,5 +209,6 @@ export function customerTable(
       amountToDecimal(c.totalSpent),
       c.lastOrderAt?.slice(0, 10) ?? '',
     ]),
+    typed: ['name', 'email', 'tags', 'note'],
   };
 }
