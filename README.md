@@ -61,7 +61,7 @@ gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f ro
   - the two Workers by wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md));
   - the admin by the JavaScript a phone downloads before the sign-in screen, gzipped: a warning at 130 KiB, a failure at 150 KiB (phase-1-plan §7.3).
 
-A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again. The repository is public for now, so GitHub-hosted runners cost no Actions minutes. Made private again, it has 2,000 free minutes a month for every workflow: a push to a pull request costs about 10 of them and a `full-preview` run about 37, and `docs/runbooks/free-tier-limit.md` says what stops when they run out.
+A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again. The repository is private, with 2,000 free Actions minutes a month for every workflow: a push to a pull request costs about 10 of them and a `full-preview` run about 37, and `docs/runbooks/free-tier-limit.md` says what stops when they run out.
 
 Dependency updates come from Renovate (`renovate.json`): one weekly group for minor and patch updates, held for 3 days after release.
 

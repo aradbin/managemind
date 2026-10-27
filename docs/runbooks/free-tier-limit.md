@@ -12,11 +12,9 @@ The platform runs on free plans. The daily usage alarm (**Actions → Usage alar
 | **Email** (Resend, 100 a day; not in the alarm: the API logs a warning in Workers Logs from 70%) | 00:00 UTC | Staff sign-in codes stop; shoppers' order updates after "order placed" are skipped from 70% | Wait for the reset; staff already signed in keep working | Resend's paid plan, or Brevo for shoppers |
 | **Neon compute** (100 CU-hours a month) | Monthly | The database suspends until the next period | Delete idle preview branches; check nothing polls the database | Neon Launch |
 | **Neon storage** (0.5 GB, all branches) | — | Writes fail | Delete old preview branches; the E2E cleanup purges old test stores | Neon Launch |
-| **Actions minutes** (none used while the repository is public; 2,000 a month if it is private again; not in the alarm) | Monthly, on the account's billing date | Every workflow stops (see below). This happened on Oct 24, while the repository was private | Cancel preview runs and push nothing until the reset | A budget above $0 for Actions (pay as you go) |
+| **Actions minutes** (2,000 a month, private repository; not in the alarm) | Monthly, on the account's billing date | Every workflow stops (see below). This happened on Oct 24 | Cancel preview runs and push nothing until the reset | A budget above $0 for Actions (pay as you go) |
 
 ## When the Actions minutes run out
-
-This applies only while the repository is private. It is public for now (since Oct 24), and GitHub-hosted runners cost public repositories no minutes.
 
 **The sign:** every job fails within two seconds with no steps, and the run's *Annotations* say "The job was not started because recent account payments have failed or your spending limit needs to be increased". To tell the two apart, open **Settings → Billing and licensing → Usage** (github.com/settings/billing/usage) and filter by Actions: 2,000 minutes used means the minutes ran out. The same page shows when the next period starts.
 

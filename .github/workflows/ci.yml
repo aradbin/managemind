@@ -1,12 +1,12 @@
 # Checks every pull request and every push to master (phase-0-plan §8).
 # Previews and their Playwright smoke test run in preview.yml.
 #
-# Actions minutes (phase-5b-plan Q10): the repository is public for now, so
-# GitHub-hosted runners cost no minutes; private on a free account, it has
-# 2,000 minutes a month for every workflow. So a change to docs only skips
-# the checks (the jobs still pass, for branch protection), and turbo's cache
-# is kept between runs for a week, so a package whose inputs didn't change
-# isn't typechecked and tested again. Each week starts from an empty cache.
+# Actions minutes (phase-5b-plan Q10): the repository is private on a free
+# account, with 2,000 minutes a month for every workflow. So a change to docs
+# only skips the checks (the jobs still pass, for branch protection), and
+# turbo's cache is kept between runs for a week, so a package whose inputs
+# didn't change isn't typechecked and tested again. Each week starts from an
+# empty cache.
 name: CI
 
 on:

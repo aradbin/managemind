@@ -18,7 +18,7 @@ Because of the last column, **production migrations and deploys always run in Gi
 
 Create these on free plans. Use one email you control long term (ideally a company address, not a personal one) and turn on two-factor login for every account.
 
-1. **GitHub:** already done (`aradbin/managemind`). It started private and has been public since Oct 24, so Actions minutes are free (PLAN.md status, Phase 5B; `docs/runbooks/free-tier-limit.md`).
+1. **GitHub:** already done (`aradbin/managemind`). Private, so Actions minutes are limited to 2,000 a month (`docs/runbooks/free-tier-limit.md`). It was public from Oct 24 to Oct 27 (PLAN.md status, Phase 5B).
 2. **Cloudflare:** sign up at dash.cloudflare.com (Free plan).
    - Open **Workers & Pages** once and choose your `workers.dev` subdomain (for example `managemind`). Preview URLs will be `<worker>.<subdomain>.workers.dev`.
    - Open **R2** and enable it. Cloudflare may ask for a payment card even for the free tier; nothing is charged inside the free limits.

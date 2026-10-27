@@ -9,8 +9,8 @@
 # Inputs reach the script as environment variables, never inside the shell
 # command. Email addresses are masked from the step that masks them onward,
 # so the CLI's output never shows them; the inputs themselves stay visible on
-# the run's page to anyone who can see the repository, which, while it is
-# public, is everyone.
+# the run's page to anyone with access to the repository, so keep the
+# repository private.
 name: Platform
 
 on:
