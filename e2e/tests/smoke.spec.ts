@@ -53,6 +53,35 @@ test('an admin client-side route is served without the Worker', async ({ request
   expect(await res.text()).toContain('<div id="root">');
 });
 
+// Without its cached copy of the shell, the service worker fetches
+// /index.html for every address but /. A redirect there (to /) can't answer
+// a page load, so every other address failed to open.
+test('an admin address opens when the service worker has lost its copy of the shell', async ({
+  page,
+}) => {
+  const direct = await page.request.get(`${API}/index.html`, { maxRedirects: 0 });
+  expect(direct.status()).toBe(200);
+
+  await page.goto(`${API}/`);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  const removed = await page.evaluate(async () => {
+    let count = 0;
+    for (const name of await caches.keys()) {
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        if (new URL(request.url).pathname === '/index.html')
+          count += Number(await cache.delete(request));
+      }
+    }
+    return { controlled: Boolean(navigator.serviceWorker.controller), count };
+  });
+  expect(removed).toEqual({ controlled: true, count: 1 });
+
+  await page.goto(`${API}/reports`);
+  await expect(page).toHaveURL(/\/sign-in\?redirect=%2Freports$/);
+});
+
 // Phase 4 (phase-4-plan §10): the shop API answers through the store's own
 // /api, never cached, and an anonymous read makes no cart.
 test('the cart and checkout answer on a demo store', async ({ request }) => {

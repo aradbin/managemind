@@ -12,10 +12,14 @@
   // The admin SPA (apps/admin, built into its dist) at the root of the host
   // (phase-1-plan §3.5). Files and client-side routes are served without
   // invoking the Worker; unknown paths get index.html. Only the API paths
-  // reach the Worker first.
+  // reach the Worker first. /index.html is served as it is, not redirected
+  // to /: the service worker falls back to fetching it when its cached copy
+  // is missing, and a page load can't use a redirected response, so every
+  // address but / failed to open.
   "assets": {
     "directory": "../admin/dist",
     "binding": "ASSETS",
+    "html_handling": "none",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/v1/*", "/health", "/health/*", "/openapi.json"]
   },
