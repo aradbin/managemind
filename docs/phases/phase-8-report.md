@@ -3,7 +3,7 @@
 - Date: 2026-10-26
 - Plan: `docs/phases/phase-8-plan.md` (approved Oct 26 with every recommendation in §14)
 - Branch: `claude/magical-babbage-5ykded`, one commit per plan step (§1)
-- Pull request: #85, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2). Merged on Oct 27
+- Pull request: #85, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2). Merged on Oct 27 and deployed: migrations 0044–0047 applied, and the deploy's smoke, shop API and cache checks passed
 
 ## Summary
 
@@ -62,7 +62,8 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 | — | `4bb7e50` | The CPU step's receipts pay nothing (§2) |
 | 12 | `84cc1c4` | The preview's results and measurements in this report |
 | 12 | `c806304` | The exports opened in LibreOffice (§2) |
-| — | This commit | Merged |
+| — | `db3e524` | Merged |
+| — | This commit | Deployed |
 
 ## 2. Acceptance criteria
 
