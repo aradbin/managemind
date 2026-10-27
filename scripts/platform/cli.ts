@@ -123,7 +123,9 @@ try {
       break;
     }
     default:
-      throw new Error('usage: pnpm platform tenant:create | platform:grant-role | kv:sync');
+      throw new Error(
+        'usage: pnpm platform tenant:create | plans:seed | platform:grant-role | kv:sync',
+      );
   }
 } finally {
   await client.end();

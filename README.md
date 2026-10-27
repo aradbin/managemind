@@ -31,7 +31,11 @@ pnpm --filter @managemind/api dev
 pnpm --filter @managemind/storefront dev
 # After changing packages/db/src/schema: generate a migration, then review the SQL
 pnpm --filter @managemind/db db:generate --name <change>
+# After changing API routes: regenerate the typed client in packages/sdk (CI checks it)
+pnpm --filter @managemind/sdk generate
 ```
+
+The API's `dev` script builds the admin first and serves it at `http://localhost:8787/`. To sign in locally, give yourself a platform role with `pnpm platform platform:grant-role --email you@example.com --role super_admin`, ask for a code on the sign-in screen, and read it at `http://localhost:8787/v1/_dev/mailbox?to=you@example.com`: outside production, email is saved to `platform.dev_emails` instead of being sent ([ADR 0014](docs/adr/0014-email-provider.md)).
 
 ## Platform CLI
 
@@ -52,10 +56,12 @@ gh workflow run platform.yml -f command=platform:grant-role -f email=a@b.c -f ro
 
 `.github/workflows/ci.yml` runs on every pull request and every push to `master`:
 
-- **Lint, typecheck and test:** Biome, a check that every schema change has a migration, typecheck, all test suites (including the tenant isolation and catalog tests) against a `postgres:18` service container, and `pnpm audit --audit-level high`.
-- **Build and bundle size:** builds the apps, then `node scripts/bundle-size.mjs apps/api apps/storefront` reads wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md)).
+- **Lint, typecheck and test:** Biome, a check that every schema change has a migration, a check that `packages/sdk` matches the API's routes (`pnpm --filter @managemind/sdk generate` leaves no diff), typecheck, all test suites (including the tenant isolation and catalog tests) against a `postgres:18` service container, and `pnpm audit --audit-level high`.
+- **Build and bundle size:** builds the apps, then `node scripts/bundle-size.mjs apps/api apps/storefront apps/admin`:
+  - the two Workers by wrangler's dry-run gzip size: a warning at 2.5 MiB, a failure at 3 MiB ([ADR 0004](docs/adr/0004-bundle-size.md));
+  - the admin by the JavaScript a phone downloads before the sign-in screen, gzipped: a warning at 130 KiB, a failure at 150 KiB (phase-1-plan §7.3).
 
-A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again: the repository has 2,000 free Actions minutes a month for every workflow. A push to a pull request costs about 10 of them and a `full-preview` run about 37; `docs/runbooks/free-tier-limit.md` says what stops when they run out.
+A change to docs only skips the checks, and turbo's cache is kept for a week, so unchanged packages aren't tested again. The repository is private, with 2,000 free Actions minutes a month for every workflow: a push to a pull request costs about 10 of them and a `full-preview` run about 37, and `docs/runbooks/free-tier-limit.md` says what stops when they run out.
 
 Dependency updates come from Renovate (`renovate.json`): one weekly group for minor and patch updates, held for 3 days after release.
 
@@ -67,7 +73,7 @@ Dependency updates come from Renovate (`renovate.json`): one weekly group for mi
 - **Queues:** each preview consumes its own outbox queue, `managemind-outbox-pr-<n>`, and import queue, `managemind-imports-pr-<n>` (with its dead-letter queue), so notifications and spreadsheet imports run on previews too.
 - **Connection:** previews connect to their Neon branch directly, as the PR's own role, so the smoke tests and trying a preview by hand use none of the account's 100,000 Hyperdrive queries a day. A full run goes through Hyperdrive, then back ([ADR 0011](docs/adr/0011-previews.md), amended Oct 23 and Oct 25).
 - **What runs:** a preview runs the smoke tests only, and a docs-only PR gets none. The `full-preview` label adds the E2E flows, Lighthouse and the CPU step, through Hyperdrive while today's count leaves room. Past that, the E2E flows and Lighthouse run on the direct connection, without the CPU step. Adding `narrow-preview` as well limits the E2E to the smoke tests and the specs the PR adds, for a phase whose whole suite outgrows the Free plan's CPU allowance.
-- **Cleanup:** closing the PR deletes its Workers, its import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
+- **Cleanup:** closing the PR deletes its Workers, its outbox and import queues and its own branch ([ADR 0011](docs/adr/0011-previews.md)).
 
 Run the smoke test against local Workers (both `wrangler dev` servers running):
 
@@ -80,9 +86,9 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 
 `.github/workflows/deploy.yml` deploys `master` after CI passes on it.
 
-1. It provisions and migrates: queues, KV, R2 buckets with lifecycle rules, then the migrations, then the `mm_app` role and its Hyperdrive config. This is idempotent (`scripts/production/provision.ts`).
-2. It uploads source maps to Sentry, then deploys `managemind-api`, then `managemind-storefront`.
-3. It smoke-tests `/health`, `/health/deep` and the storefront.
+1. It provisions and migrates: queues, KV, R2 buckets with lifecycle rules, then the migrations, the placeholder plans and the demo stores, then the `mm_app` role and its Hyperdrive config. This is idempotent (`scripts/production/provision.ts`).
+2. It sets the DNS records and zone settings (`scripts/production/zones.ts`), uploads source maps to Sentry, then deploys `managemind-api`, then `managemind-storefront`.
+3. It smoke-tests `/health` (until it reports the new commit), `/health/deep`, the admin and the storefront; then, without blocking, the shop API and a storefront cache hit ([docs/runbooks/deploy.md](docs/runbooks/deploy.md)).
 
 - **Without deploying:** `provision.yml` runs step 1 by hand, and can rotate the `mm_app` password.
 - **Secrets and variables:** see the table below. A missing optional one never fails the deploy: it warns and leaves its feature off.
@@ -100,11 +106,11 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Variable, secret | Turnstile on checkout, sign-in and return requests ([ADR 0023](docs/adr/0023-turnstile-hostnames.md)) | Rate limits alone |
 | `CREDENTIALS_KEY` | Secret, **with a copy kept offline** | Stores' SSLCommerz, SMS and email credentials ([ADR 0024](docs/adr/0024-credentials-vault.md)) | Online payment and SMS are off |
 | `PLATFORM_SSLCOMMERZ_STORE_ID`, `PLATFORM_SSLCOMMERZ_PASSWORD` | Variable, secret | Stores paying our invoices online, on our own SSLCommerz merchant account (phase-5b-plan §3.7) | Stores pay by bank, bKash or Nagad, and a super admin records it |
-| `GITHUB_DISPATCH_TOKEN` | Secret: a fine-grained token with Actions read and write on this repository only | Starting the Store jobs workflow when an export or a report rebuild is asked for ([ADR 0027](docs/adr/0027-store-jobs-in-actions.md)) | Exports and report backfills start with the workflow's daily run, at 02:37 in Dhaka |
+| `GITHUB_DISPATCH_TOKEN` | Secret: a fine-grained token with Actions read and write on this repository only | Starting the Store jobs workflow when an export, a purge, a reset or a report rebuild is asked for ([ADR 0027](docs/adr/0027-store-jobs-in-actions.md)) | Those jobs start with the workflow's daily run, at 02:37 in Dhaka |
 | `BACKUP_AGE_RECIPIENT`, `BACKUP_AGE_KEY` | Variable, secret, **with a copy of the key kept offline** | The nightly encrypted backup and its monthly restore test ([ADR 0028](docs/adr/0028-backups.md)); make the pair with `age-keygen -o backup.key` | No backups beyond Neon's own history |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
 | `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
-| `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches and the usage alarm | No previews, no Neon numbers in the alarm |
+| `NEON_API_KEY`, `NEON_PROJECT_ID` | Secret, variable | Previews' database branches, the usage alarm and the monthly restore test's branch | No previews, no Neon numbers in the alarm, no restore test |
 | `PATHAO_CLIENT_ID`, `PATHAO_CLIENT_SECRET`, `PATHAO_USERNAME`, `PATHAO_PASSWORD`, `REDX_TOKEN` (and `PATHAO_MODE`, `REDX_MODE` variables, `sandbox` or `live`) | Secrets | The weekly **Courier areas** workflow: the platform's own Pathao and RedX accounts fetch their area lists ([ADR 0030](docs/adr/0030-couriers.md)) | That courier's areas aren't fetched, and its bookings ask staff to pick the area |
 
 `pnpm --filter @managemind/scripts keys` prints a new `CREDENTIALS_KEY` and VAPID pair to copy. Make them once: a new `CREDENTIALS_KEY` makes every saved store credential unreadable. Previews use `CREDENTIALS_KEY_PREVIEW` and `AUTH_SECRET_PREVIEW` when they are set, and fresh keys for each deploy otherwise.

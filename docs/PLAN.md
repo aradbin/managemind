@@ -31,7 +31,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 
 **Timeline:** the MVP (Phases 0–5C) is roughly 5 months for one developer working with an AI coding agent, followed by a 4–6 week pilot with two or three clients. These are estimates; each phase plan refines them.
 
-**Status (Oct 26, 2026)**
+**Status (Oct 27, 2026)**
 
 | Phase | Status | Record |
 | --- | --- | --- |
@@ -41,7 +41,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 3 — Storefront, themes and domains | Done; demo stores in production, demo-fashion on a custom domain | [`phase-3-report.md`](phases/phase-3-report.md) |
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
-| 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows waited for the monthly reset until the owner made the repository public for now, where Actions minutes are free (#69 ran this way). The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
+| 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows waited for the monthly reset until the owner made the repository public for a while, where Actions minutes are free (#69 ran this way); it was made private again on Oct 27. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
 | 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24) | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Built (Oct 24): the delivery success score, duplicate orders, the call queue, the SMS link and incomplete orders. Everything ships off or harmless until the pilot's feedback sets the script, the threshold and the defaults (Q1). Merged and deployed (#72 and #73, Oct 25). The checkout notice waits for the legal review's wording, and the SMS link for `CREDENTIALS_KEY` and a store's SMS gateway | [`phase-6-plan.md`](phases/phase-6-plan.md), [`phase-6-report.md`](phases/phase-6-report.md) |
 | 7 — Couriers and fulfillment | Built (Oct 25): booking, status by webhook and poll, COD by the amount collected, courier returns, area mapping and COD reconciliation, with a test courier for previews. Merged and deployed (#75, Oct 25). The Steadfast, Pathao and RedX adapters wait for credentials to be checked against the couriers before stores are offered them; production waits for `CREDENTIALS_KEY` | [`phase-7-plan.md`](phases/phase-7-plan.md), [`phase-7-report.md`](phases/phase-7-report.md) |
@@ -148,8 +148,7 @@ These rules apply to every module and every phase; the agent should treat them a
 - Money is an integer in minor units (poisha) with a currency code column, even though only BDT exists today. No floats anywhere in money math.
 - Rounding happens once, at defined points (line total, order total), with a documented rule.
 - All timestamps are UTC (`timestamptz`); display in Asia/Dhaka.
-
-* Phone numbers are stored in one international format (E.164, for example `+8801712345678`) and shown in local format; every input (checkout, import, admin, manual orders) is normalized before saving or matching.
+- Phone numbers are stored in one international format (E.164, for example `+8801712345678`) and shown in local format; every input (checkout, import, admin, manual orders) is normalized before saving or matching.
 
 **Identifiers**
 
@@ -175,8 +174,7 @@ These rules apply to every module and every phase; the agent should treat them a
 - Every meaningful change emits a domain event (for example `order.placed`, `payment.settled`, `fulfillment.shipped`) written to an `outbox` table in the same transaction.
 - A dispatcher moves outbox rows to Cloudflare Queues; consumers send email and SMS, sync couriers and refresh caches. Consumers are idempotent because delivery is at least once.
 - Scheduled work (reservation expiry, cleanup, report rollups) runs once a day in a single Cron Trigger batch; work due later (such as checking a pending payment) uses delayed queue messages. Nothing polls the database on a short timer.
-
-* Each queue has a dead-letter queue: messages that still fail after their retries are kept, raise an alert, and can be retried from the platform dashboard.
+- Each queue has a dead-letter queue: messages that still fail after their retries are kept, raise an alert, and can be retried from the platform dashboard.
 
 **Extensibility**
 
@@ -198,7 +196,7 @@ One pnpm + Turborepo monorepo with only two deployable Workers (API and storefro
 | --- | --- | --- |
 | API | Hono on Cloudflare Workers, REST with OpenAPI generated from zod schemas | Small, fast, Workers-native; REST is cacheable and cheap on CPU |
 | Database access | Drizzle ORM over Cloudflare Hyperdrive to Neon Postgres | Typed SQL, real transactions (needed for row-level security), connection pooling at the edge |
-| Auth | Better Auth as two separate instances with the Drizzle adapter: staff (organization, two-factor and admin plugins) and shoppers (email and phone code plugins; social providers and passkeys later) | One well-tested library for every login method; each side grows by switching on plugins, and its user-plus-accounts model needs no schema change for new methods. Verify on Workers in Phase 0 |
+| Auth | Better Auth as two separate instances with the Drizzle adapter: staff (email code and two-factor plugins) and shoppers (email and phone code plugins; social providers and passkeys later). *Memberships and roles live in our own tables, not Better Auth's organization plugin ([ADR 0005](adr/0005-auth.md), amendment)* | One well-tested library for every login method; each side grows by switching on plugins, and its user-plus-accounts model needs no schema change for new methods. Verify on Workers in Phase 0 |
 | Storefront | Astro with the Cloudflare adapter, small interactive islands for cart and checkout | Very little JavaScript for low-end phones, strong SEO, first-class Workers support |
 | Admin dashboard | React + Vite single-page app (TanStack Router and Query, shadcn/ui), served as static assets by the API Worker | Static asset requests are free; no separate deployment |
 | Background work | Cloudflare Queues consumer and Cron Triggers in the API Worker | Free tier, same codebase, same deploy |
@@ -220,9 +218,12 @@ One pnpm + Turborepo monorepo with only two deployable Workers (API and storefro
   /providers      Adapters: sslcommerz, cod, steadfast, pathao, redx, sms-*, email-*
   /shared         zod schemas, money utils, state machine helper, error types, i18n keys
   /sdk            Typed API client generated from the OpenAPI spec
-  /ui             Design tokens and shared components
-/docs             ADRs, runbooks, module docs
+/scripts          Platform CLI, provisioning, previews, store jobs, backups, monitoring
+/e2e              Playwright end-to-end tests and Lighthouse budgets
+/docs             PLAN, ADRs, phase plans and reports, runbooks, setup
 ```
+
+*As built, there is no `packages/ui`: the admin keeps its design tokens and components in `apps/admin` ([ADR 0029](adr/0029-admin-redesign.md)). Providers are grouped by kind (`email`, `sms`, `couriers`, `sslcommerz`, …); COD needs no adapter.*
 
 Domain logic lives in `packages/core`, independent of Hono and Workers, so it is unit-testable and portable if hosting ever changes.
 
@@ -230,17 +231,17 @@ Domain logic lives in `packages/core`, independent of Hono and Workers, so it is
 
 | Environment | API and storefront | Database | Purpose |
 | --- | --- | --- | --- |
-| Local | `wrangler dev` | Postgres in Docker | Daily development |
-| Preview | Workers preview versions per pull request | Postgres container in CI; Neon branch only when labeled | Review |
-| Production | Workers on the platform domain and client domains | Neon main branch | Live clients |
+| Local | `wrangler dev` | Postgres 18 installed in the session ([ADR 0008](adr/0008-local-postgres.md)) | Daily development |
+| Preview | Separate Workers per pull request (`managemind-api-pr-<n>`, `managemind-storefront-pr-<n>`) | The shared Neon branch `preview`; the PR's own branch `pr-<n>` with the `db-branch` label ([ADR 0011](adr/0011-previews.md)). CI's tests use a Postgres container | Review |
+| Production | Workers on the platform domain and client domains | Neon `production` branch | Live clients |
 
 **CI/CD (GitHub Actions)**
 
 1. Pull request: install, Biome check, type-check, unit and integration tests (including the isolation suite), build, deploy preview, run Playwright smoke tests against it.
-2. Merge to `main`: apply migrations to production with the migration role, then deploy both Workers. Keep the previous Worker version for one-command rollback.
+2. Merge to `master`: apply migrations to production with the migration role, then deploy both Workers. Keep the previous Worker version for one-command rollback.
 3. Migrations are generated by drizzle-kit, reviewed in the pull request, backward compatible (expand, then contract) so a rollback of code never breaks on the new schema.
 
-The repository lives on a personal GitHub account on the free plan, where branch protection is not available for private repositories. So the deploy job depends on the test job (a failing commit on `main` never deploys), and changes reach `main` only through pull requests whose checks pass. GitHub Pro or a move to an organization can add enforced protection later.
+The repository lives on a personal GitHub account on the free plan, where branch protection is not available for private repositories. So the deploy runs only after CI passes on `master` (a failing commit never deploys), and changes reach `master` only through pull requests whose checks pass. GitHub Pro or a move to an organization can add enforced protection later.
 
 **Secrets and configuration**
 
@@ -285,9 +286,8 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] **CPU budget:** confirm a typical API request (auth check, 3–5 queries, JSON response) and a server-rendered Astro product page stay under the free plan's 10 ms CPU per request. If not, identify what to cache or move to the paid plan. *Built differently: staff requests run over 10 ms, which Cloudflare tolerates; an alarm triggers Workers Paid on the first termination (ADR 0003, ADR 0013).*
 - [x] **Bundle size:** confirm each Worker stays under the free plan's 3 MiB compressed limit.
 - [x] **Auth:** two Better Auth instances on Workers with Drizzle. Staff: `platform` schema, organization plugin for store membership and roles. Shoppers: tables in the `store` schema with `tenant_id`, email and phone unique per store, and RLS so the instance only ever sees the current store; prove that two shoppers with the same email in two stores stay fully separate. Measure password-hashing CPU time against the free plan's 10 ms limit; if it does not fit, staff sign in with email codes and passkeys until the paid plan.
-
-* [x] **Edge state on the free plan:** KV allows only [1,000 writes a day](https://developers.cloudflare.com/kv/platform/limits) on the free plan, so use it only for rarely changing data (domain-to-store map, cache versions). Rate-limit counters use the Workers rate-limiting binding or a Durable Object; turn off Astro's default KV session storage. Confirm each choice works on the free plan.
-* [x] **Per-store cache invalidation:** test purging one store's cached pages on the free plan. Fallback: a per-store catalog version in every cache key, bumped on change (debounced, so a bulk import causes one write), so old pages simply stop being used.
+- [x] **Edge state on the free plan:** KV allows only [1,000 writes a day](https://developers.cloudflare.com/kv/platform/limits) on the free plan, so use it only for rarely changing data (domain-to-store map, cache versions). Rate-limit counters use the Workers rate-limiting binding or a Durable Object; turn off Astro's default KV session storage. Confirm each choice works on the free plan.
+- [x] **Per-store cache invalidation:** test purging one store's cached pages on the free plan. Fallback: a per-store catalog version in every cache key, bumped on change (debounced, so a bulk import causes one write), so old pages simply stop being used.
 
 **Build**
 
@@ -298,8 +298,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] `apps/storefront`: Astro on Workers with a placeholder page that resolves the tenant from the hostname.
 - [x] CI/CD as described: tests against a Postgres container in GitHub Actions; a Neon preview branch only when a pull request is labeled for it, deleted after merge. Neon compute fixed at 0.25 CU; Cloudflare bot protection on both domains; R2 lifecycle rules for exports, temporary uploads and backups. *Built differently: unlabeled PRs share one `preview` database branch (ADR 0011); "Block AI bots" waits for the owner (phase-1-report §5).*
 - [x] Monitoring on free tiers: Workers Logs and analytics, Sentry (free plan) for errors in API, admin and storefront, an external uptime check on `/health`.
-
-* [x] Development without a domain: `{slug}.localhost` hostnames for testing several stores locally, previews on `workers.dev` addresses with a development-only store selector that is switched off in production, and a local mail catcher for email codes. Domain setup happens when each domain arrives: the main domain by the end of Phase 1, the store domain by Phase 3.
+- [x] Development without a domain: `{slug}.localhost` hostnames for testing several stores locally, previews on `workers.dev` addresses with a development-only store selector that is switched off in production, and a local mail catcher for email codes. Domain setup happens when each domain arrives: the main domain by the end of Phase 1, the store domain by Phase 3.
 
 **Acceptance criteria**
 
@@ -330,18 +329,14 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Roles: Owner, Manager, Staff, Viewer, each a set of fine-grained permissions (for example `catalog.write`, `orders.read`, `payments.refund`, `settings.write`). Permissions are checked in the route layer and again in the core service.
 - [x] Platform roles (super admin, support) kept separate from tenant roles, with two-factor login required for them; support access to a store is time-limited and audited.
 - [x] Security: rate limits on login and OTP (Workers rate-limiting binding or a Durable Object counter, never KV), lockout after repeated failures, session expiry and rotation, `HttpOnly` `Secure` `SameSite=Lax` cookies, CSRF protection for cookie-authenticated writes.
-
-* [x] Basic email sending behind an `EmailProvider` interface: the platform's default sender, from the main domain for staff emails (sign-in codes, password reset, invitations) and from the store domain for shopper emails once Phase 4 needs them. Phase 5A adds per-store providers, order notifications and editable templates on top.
-
+- [x] Basic email sending behind an `EmailProvider` interface: the platform's default sender, from the main domain for staff emails (sign-in codes, password reset, invitations) and from the store domain for shopper emails once Phase 4 needs them. Phase 5A adds per-store providers, order notifications and editable templates on top.
 - [x] Connect the main domain: Worker routes for the admin and webhook hosts, the email sender verified with SPF, DKIM and DMARC, and Search Console alerts on.
 
 **Admin shell**
 
 - [x] Login, store switcher, navigation, settings pages for store profile and staff management, Bangla and English UI.
 - [x] Shared table, form and dialog components used by every later module.
-
-* [x] Mobile-first admin: every screen designed for a phone first, then widened for desktop; installable as a Progressive Web App (home-screen icon, full-screen, web push support) at no cost.
-
+- [x] Mobile-first admin: every screen designed for a phone first, then widened for desktop; installable as a Progressive Web App (home-screen icon, full-screen, web push support) at no cost.
 - [x] Admin meets WCAG 2.1 AA for contrast, form labels and keyboard use.
 
 **Acceptance criteria**
@@ -360,8 +355,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Translations stored in per-locale translation tables for product, variant option labels, category and collection text, with a fallback locale.
 - [x] Categories (tree, for navigation) and collections (manual or rule-based, for merchandising).
 - [x] Slugs unique per tenant and locale; redirects table so renamed slugs keep working.
-
-* [x] VAT settings per store: VAT on or off, the rate, and whether prices include VAT; a VAT category per product where needed. VAT is calculated and stored per order line and shown on invoices. *Settings built in Phase 2; the per-line calculation comes with orders in Phase 4.*
+- [x] VAT settings per store: VAT on or off, the rate, and whether prices include VAT; a VAT category per product where needed. VAT is calculated and stored per order line and shown on invoices. *Settings built in Phase 2; the per-line calculation comes with orders in Phase 4.*
 
 **Media**
 
@@ -407,25 +401,19 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Home, category, collection, product, search, cart, checkout, order confirmation, order tracking (order number + phone), account, static pages (about, contact, policies). *Phase 3 built home, category, collection, product, search and static pages; Phase 4 the rest (Q1).*
 - [x] Per-tenant sitemap, robots, canonical URLs, Open Graph, schema.org Product and Offer data, hreflang for Bangla and English.
 - [x] Performance targets on a mid-range Android phone over 4G: LCP under 2.5 s, INP under 200 ms, CLS under 0.1; JavaScript on product pages under about 50 KB compressed. *Checked by Lighthouse CI and the E2E on every preview (TBT stands in for INP).*
-
-* [x] Tracking settings per store: Meta Pixel ID and Google Analytics 4 ID; browser events for page view, product view, add to cart, checkout started and purchase, with a cookie consent banner. Server-side Meta Conversions API follows in Phase 9. *Page and product views in Phase 3; cart, checkout and purchase events come with Phase 4.*
-* [x] Floating WhatsApp and Messenger chat buttons, configured per store (number or page link, greeting text, show or hide by page).
-
+- [x] Tracking settings per store: Meta Pixel ID and Google Analytics 4 ID; browser events for page view, product view, add to cart, checkout started and purchase, with a cookie consent banner. Server-side Meta Conversions API follows in Phase 9. *Page and product views in Phase 3; cart, checkout and purchase events come with Phase 4.*
+- [x] Floating WhatsApp and Messenger chat buttons, configured per store (number or page link, greeting text, show or hide by page).
 - [x] Product search using Postgres trigram matching (`pg_trgm`) on Bangla and English names, SKUs and tags, tolerant of typos and spelling variants; filters by category, price and availability.
-
-* [x] Holiday mode per store: pause new orders for a date range (for example Eid) with a notice banner, while browsing stays on. *The banner and date window in Phase 3; pausing orders comes with orders in Phase 4.*
-* [x] Display options per store: Bangla or Western numerals for prices and dates; image alt text taken from product names (editable) for search engines and screen readers.
-* [x] Storefront meets WCAG 2.1 AA for contrast, labels and keyboard use.
-
+- [x] Holiday mode per store: pause new orders for a date range (for example Eid) with a notice banner, while browsing stays on. *The banner and date window in Phase 3; pausing orders comes with orders in Phase 4.*
+- [x] Display options per store: Bangla or Western numerals for prices and dates; image alt text taken from product names (editable) for search engines and screen readers.
+- [x] Storefront meets WCAG 2.1 AA for contrast, labels and keyboard use.
 - [x] Business details in the store profile (registered name, address, trade license and DBID numbers), shown in the storefront footer and on invoices; the legal review confirms which fields are required.
 
 **Domains**
 
 - [x] Every tenant gets `<slug>.<store domain>` through a wildcard route.
 - [x] Custom domains through Cloudflare for SaaS custom hostnames: the admin shows the CNAME record to add, the platform verifies it and Cloudflare issues the certificate. Recommend `www` plus a redirect from the bare domain. *Built ([ADR 0019](adr/0019-custom-domains.md)); verified in production with `shop-test.asrexpress.com`.*
-
-* [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on. *The wildcard route and the fallback origin are in place and Search Console alerts are on; sender records come with Phase 4's first shopper email.*
-
+- [ ] Connect the store domain: wildcard route for store subdomains, the Cloudflare for SaaS fallback origin for client domains, shopper email sender records (SPF, DKIM, DMARC), and Search Console alerts on. *The wildcard route and the fallback origin are in place and Search Console alerts are on; sender records come with Phase 4's first shopper email.*
 - [x] Once a custom domain is connected, the store's subdomain permanently (301) redirects to it, and canonical URLs, sitemap and feeds use the custom domain, so search engines never see two copies of the store.
 
 **Acceptance criteria**
@@ -453,8 +441,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Phone-first guest checkout: name, phone (validated Bangladeshi format), optional email, address with division, district, area and street.
 - [x] One `placeOrder` command with an idempotency key that, in a single transaction: revalidates the cart, reserves stock with conditional updates, freezes snapshots, creates the order and its lines, creates the payment record, writes `order.placed` to the outbox, and marks the cart converted.
 - [x] Optional fraud basics: order rate limit per phone and IP, a per-tenant blocklist, and an "OTP before COD order, for stores with SMS" toggle. *Built, except the OTP toggle, which moved to Phase 5A with SMS (Phase 4 Q11).*
-
-* [x] Cloudflare Turnstile (free and usually invisible) on sign-in code requests, checkout, return requests and the contact form, so bots cannot place fake orders or trigger SMS and email codes. *On checkout and both sign-ins (ADR 0023); return requests join in Phase 5A. Production needs the owner's widget.*
+- [x] Cloudflare Turnstile (free and usually invisible) on sign-in code requests, checkout, return requests and the contact form, so bots cannot place fake orders or trigger SMS and email codes. *On checkout and both sign-ins (ADR 0023); return requests join in Phase 5A. Production needs the owner's widget.*
 
 **Orders**
 
@@ -463,15 +450,12 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Admin: order list with filters (status, date, payment, delivery zone), order detail, confirm, cancel (releases stock), mark shipped with tracking number, mark delivered, printable invoice and packing slip.
 - [x] Order editing before shipping (change quantity, add or remove items) recalculates totals and adjusts reservations, recorded in history.
 - [x] Customers created or matched by phone within the tenant; customer list and detail with order history; customer import from CSV or Excel (name, phone, email, addresses), matched by phone, for clients moving from spreadsheets or WooCommerce.
-
-* [x] Manual order entry for Facebook, phone and walk-in orders: search or create the customer by phone, add products with live stock, apply discounts, choose delivery zone and payment method, and save. Uses the same `placeOrder` command as the storefront, with an order source field (website, Facebook, phone, walk-in, other) for reporting.
-* [x] Admin home dashboard: today's and this month's orders and sales, orders waiting for confirmation, orders to ship, low-stock items, and a 7-day sales trend. Figures come from lightweight summary queries, cached briefly.
-
+- [x] Manual order entry for Facebook, phone and walk-in orders: search or create the customer by phone, add products with live stock, apply discounts, choose delivery zone and payment method, and save. Uses the same `placeOrder` command as the storefront, with an order source field (website, Facebook, phone, walk-in, other) for reporting.
+- [x] Admin home dashboard: today's and this month's orders and sales, orders waiting for confirmation, orders to ship, low-stock items, and a 7-day sales trend. Figures come from lightweight summary queries, cached briefly.
 - [x] Shipments: one or more per order, each covering specific lines and quantities, with carrier name, tracking number and its own states (pending, shipped, delivered, failed, returned). Updated by staff in this phase; Phase 7 adds courier booking and automatic status updates on the same records.
 - [x] Shopper accounts (optional for shoppers) on the Better Auth shopper instance, scoped to the store (accounts unique per store, enforced with `tenant_id` and RLS): sign-in by email code, or phone code when the store has SMS configured; login methods switched on per store; session cookie on the store's own domain; rate-limited. Guests track orders with order number and phone. *Email codes only (Phase 4 Q3); phone codes when Phase 5A adds SMS. Production needs the Brevo key (ADR 0020, ADR 0022).*
-
-* [x] Order export to CSV and Excel, including Steadfast and Pathao bulk-upload formats for booking couriers by hand until Phase 7; bulk printing of invoices and packing slips for selected orders.
-* [x] Shoppers can cancel their own order from the tracking page until it is confirmed; stock is released and staff are notified. *Staff see these on the dashboard and in the order list; notifications come with Phase 5A.*
+- [x] Order export to CSV and Excel, including Steadfast and Pathao bulk-upload formats for booking couriers by hand until Phase 7; bulk printing of invoices and packing slips for selected orders.
+- [x] Shoppers can cancel their own order from the tracking page until it is confirmed; stock is released and staff are notified. *Staff see these on the dashboard and in the order list; notifications come with Phase 5A.*
 
 **Promotions, discounts and free delivery**
 
@@ -488,8 +472,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 - [x] COD provider: payment created as `pending` at order placement, `paid` when delivered and collected (manual now, courier-driven in Phase 7).
 - [x] Per-tenant COD settings: enabled, maximum order value, optional advance delivery charge. *The advance charge is saved now and enforced once online payment arrives in Phase 5A.*
-
-* [x] Orders support several payments, for example an online advance for the delivery charge plus cash for the rest; an order is paid when settled payments cover its total. The advance option goes live once SSLCommerz arrives in Phase 5A.
+- [x] Orders support several payments, for example an online advance for the delivery charge plus cash for the rest; an order is paid when settled payments cover its total. The advance option goes live once SSLCommerz arrives in Phase 5A.
 
 **Acceptance criteria**
 
@@ -514,8 +497,7 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Events: order placed, confirmed, shipped, delivered and cancelled, delivered through the outbox and Queues.
 - [x] Templates per tenant and locale with safe variable substitution; a delivery log with status and retries per message. *Defaults in code, overrides per store ([ADR 0025](adr/0025-notifications.md)).*
 - [x] The free email allowance is shared by all stores: track daily volume against the provider's cap, send transactional messages first, and alert at 70%.
-
-* [x] New-order alerts for the seller: instant web push to the installed admin app, plus email and optional SMS, chosen per staff member; also alerts for SSLCommerz payments received and return requests.
+- [x] New-order alerts for the seller: instant web push to the installed admin app, plus email and optional SMS, chosen per staff member; also alerts for SSLCommerz payments received and return requests.
 
 **Returns, exchanges, failed deliveries and refunds**
 
@@ -543,10 +525,8 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 
 - [x] Onboarding screen in the super-admin area: create store, invite owner, choose plan, subdomain and theme preset, with a checklist of missing setup (payments, delivery zones, legal pages, domain, email and SMS). Replaces the CLI for day-to-day onboarding; the CLI stays for automation.
 - [x] Store health view: payment, email, SMS and domain status per store.
-
-* [x] Platform dashboard for super admins: active stores, orders and sales across stores, resource usage per store (storage, emails, requests), and free-tier usage against each limit with alerts at 70%.
-* [x] Demo store with realistic sample products, orders and a polished theme for sales meetings, reset to clean sample data by the weekly job.
-
+- [x] Platform dashboard for super admins: active stores, orders and sales across stores, resource usage per store (storage, emails, requests), and free-tier usage against each limit with alerts at 70%.
+- [x] Demo store with realistic sample products, orders and a polished theme for sales meetings, reset to clean sample data by the weekly job.
 - [x] Terms acceptance: record which version of the platform terms each client owner accepted and when, and ask again when the terms change.
 
 **Platform plans and billing (our charges to clients)**
@@ -575,15 +555,13 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Independent backups: a scheduled GitHub Actions workflow runs an encrypted pg\_dump of Neon every night and uploads it to R2, keeping 7 daily and 4 weekly copies; a monthly test restores one into a Neon branch. Neon's own restore window on the free plan covers only recent mistakes, and the dumps stay far below R2's free 10 GB. The backup encryption key and the credential encryption key are also kept in a password manager outside Cloudflare, since losing them makes backups and stored client credentials unreadable.
 - [ ] Legal pages templates (terms, privacy, returns) per tenant; platform terms and data processing agreement with clients. The per-store templates (terms, privacy, returns, delivery) are built, filled from each store's settings; they, the platform terms and the agreement wait for a local legal review.
 - [ ] Security review against the cross-cutting checklist; load test of catalog and checkout against free-tier limits. The review is done (phase-5b-report §2.1); the load test script is built, and its one run on a preview waits.
-
-* [x] Runbooks in `docs/runbooks/`: deploy, rollback, restore a backup, rotate a leaked secret, payment or courier outage, a free-tier limit reached, onboarding and offboarding a client.
+- [x] Runbooks in `docs/runbooks/`: deploy, rollback, restore a backup, rotate a leaked secret, payment or courier outage, a free-tier limit reached, onboarding and offboarding a client.
 
 **Acceptance criteria**
 
 - A non-developer onboards a new store through the super-admin screen in under an hour, excluding the client's own gateway approvals.
 - Pilot clients take real orders for four weeks with no cross-tenant incident and no lost orders, still on $0 infrastructure.
-
-* Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history.
+- Purging a seeded test store leaves zero store rows and files for it, leaves the other tenants untouched, and keeps its platform record and billing history.
 
 ## Phase 5C — Admin redesign
 
@@ -618,21 +596,19 @@ Each of these starts only when pilot clients need it, in this default order; the
 
 **Phase 6 — Sales recovery (about 2–3 weeks, right after the pilot)**
 
-- [ ] Incomplete orders: when a shopper enters a phone number at checkout but does not finish, save the cart and contact details (with a short notice at checkout). Staff see an "Incomplete orders" list, can call, and can convert one to an order in a click. Records expire automatically after a set number of days.
-- [ ] Fake-order check: a delivery success score per phone number from the store's own history (delivered, failed, returned, cancelled), shown on every order and in manual order entry, with per-store rules such as requiring an advance delivery charge below a score. Sharing scores across stores is off by default and only allowed if platform terms and client consent permit it; courier-provided fraud data can be added in Phase 7.
-- [ ] Order confirmation workflow: a confirmation queue for new COD orders, click-to-call, call outcomes (confirmed, no answer, wrong number, cancelled) with retry counts and notes, and an optional SMS link or OTP (stores with SMS) that lets shoppers confirm or cancel themselves. Confirmation rates appear on the dashboard.
-
-* [ ] Duplicate order detection: flag orders from the same phone number with the same items placed within a few minutes, with one-click merge or cancel.
+- [x] Incomplete orders: when a shopper enters a phone number at checkout but does not finish, save the cart and contact details (with a short notice at checkout). Staff see an "Incomplete orders" list, can call, and can convert one to an order in a click. Records expire automatically after a set number of days. *Saved once a valid phone is typed, with a notice and **Don't save**; kept 30 days at most; **Create order** opens the manual order screen filled in (phase-6-report).*
+- [x] Fake-order check: a delivery success score per phone number from the store's own history (delivered, failed, returned, cancelled), shown on every order and in manual order entry, with per-store rules such as requiring an advance delivery charge below a score. Sharing scores across stores is off by default and only allowed if platform terms and client consent permit it; courier-provided fraud data can be added in Phase 7. *Risky phones get Phase 5A's advance delivery charge or code by SMS; no minimum score until the pilot's data sets one. Sharing scores across stores is not built (phase-6-plan Q6).*
+- [x] Order confirmation workflow: a confirmation queue for new COD orders, click-to-call, call outcomes (confirmed, no answer, wrong number, cancelled) with retry counts and notes, and an optional SMS link or OTP (stores with SMS) that lets shoppers confirm or cancel themselves. Confirmation rates appear on the dashboard. *The SMS link is built, off by default; Phase 5A's code by SMS stays the check before COD (phase-6-plan §3.7).*
+- [x] Duplicate order detection: flag orders from the same phone number with the same items placed within a few minutes, with one-click merge or cancel. *Within 30 minutes, with merge, cancel as duplicate or dismiss; the manual order screen warns first.*
 
 **Phase 7 — Couriers and fulfillment (about 3 weeks)**
 
 - [x] Extend the Phase 4 shipment records with courier states (booked, picked up, in transit) driven by courier APIs. *Built as two new states, `booked` and `in_transit`; "picked up" is `shipped`, where stock leaves (phase-7-plan Q5, [ADR 0030](adr/0030-couriers.md)).*
 - [x] `CourierProvider` interface (create parcel, get status, cancel, parse webhook) with adapters for Steadfast, then Pathao, then RedX; credentials per tenant. *The adapters are built from the couriers' SDKs and wait for credentials to be checked (phase-7-report §5).*
 - [x] One-click and bulk booking from the order list; status sync by courier webhooks, with polling only for open shipments a few times a day; delivered status settles COD payments. *Polls at 13:17 and 19:17 in Dhaka; COD settles for the amount collected.*
-- [x] COD reconciliation report: collected, courier fee, amount paid out, differences. *Its CSV and Excel export is still to come.*
+- [x] COD reconciliation report: collected, courier fee, amount paid out, differences. *Its CSV and Excel export came with Phase 8.*
 - [x] Courier-driven returns: courier return statuses automatically open the failed-delivery and return flows built in Phase 5A. *A returned parcel restocks once staff receive it (Q9).*
-
-* [x] Area mapping: match our division, district and area reference data to each courier's own city, zone and area IDs (pulled from courier APIs and refreshed on a schedule), with a review screen for unmatched areas. *Weekly in GitHub Actions with the platform's own accounts, which wait for the owner.*
+- [x] Area mapping: match our division, district and area reference data to each courier's own city, zone and area IDs (pulled from courier APIs and refreshed on a schedule), with a review screen for unmatched areas. *Weekly in GitHub Actions with the platform's own accounts, which wait for the owner.*
 
 **Phase 8 — Back office (about 4–6 weeks)**
 
@@ -667,14 +643,11 @@ Each of these starts only when pilot clients need it, in this default order; the
 - [ ] Back-in-stock alerts: shoppers leave a phone or email on sold-out variants and get an SMS or email when stock returns.
 - [ ] Store pickup: pickup locations per store as a delivery option, with a ready-for-pickup status and notification.
 - [ ] Blog and content pages: simple posts with categories, SEO fields and product links, to help stores rank in search.
-
-* [ ] Platform SMS: our own gateway account offered to stores without one, paid through prepaid SMS credits per store with low-balance alerts.
-* [ ] VAT invoices in the official Mushak 6.3 format for VAT-registered stores.
-
+- [ ] Platform SMS: our own gateway account offered to stores without one, paid through prepaid SMS credits per store with low-balance alerts.
+- [ ] VAT invoices in the official Mushak 6.3 format for VAT-registered stores.
 - [ ] Social login for shoppers (Google, Facebook) through one shared login address, `auth.yourstores.com`: the shopper signs in there and is sent back to the store with a one-time code that the store exchanges for its own session cookie, so one Google app and one Facebook app serve every store. Account linking lets one shopper use several methods. Passkeys for shoppers and staff.
-
-* [ ] Combo packs and bundles: a bundle product made of other variants, priced together, with stock taken from each component.
-* [ ] Off-platform backup copy: the weekly encrypted backup also copied to a second free provider (for example Backblaze B2), so backups survive a Cloudflare account problem.
+- [ ] Combo packs and bundles: a bundle product made of other variants, priced together, with stock taken from each component.
+- [ ] Off-platform backup copy: the weekly encrypted backup also copied to a second free provider (for example Backblaze B2), so backups survive a Cloudflare account problem.
 
 ## Security, testing and quality (every phase)
 
@@ -718,9 +691,7 @@ Because we own all the commerce logic, correctness of money, stock and tenant is
 - Bangla and English strings for anything user-facing.
 - OpenAPI updated, docs or ADR updated, changelog entry.
 - Verified on the preview environment against the phase's acceptance criteria.
-
-* New user-facing screens meet WCAG 2.1 AA for contrast, labels and keyboard use.
-
+- New user-facing screens meet WCAG 2.1 AA for contrast, labels and keyboard use.
 - KV only for rarely changing data (domain-to-store map, cache versions): the free plan allows 100,000 reads but only 1,000 writes a day.
 
 ## Free-tier budget and upgrade triggers
@@ -762,7 +733,7 @@ Steady low traffic is the worst case for Neon: the database sleeps only after 5 
 
 - Cache all browsing at the edge (catalog pages and public API responses, refreshed in the background), so only cart, checkout and admin actions reach the API Worker and the database. This one rule cuts Worker, Hyperdrive and Neon usage together.
 - Nothing on a timer touches the database: outbox events are pushed through Queues as they happen; checks that must happen later (for example re-validating a pending payment after 30 minutes) use delayed queue messages instead of polling; scheduled jobs run once a day in a single batch and exit without a query when there is nothing to do.
-- `/health` never touches the database; a deeper check that does runs hourly.
+- `/health` never touches the database, so the uptime monitor polls it; `/health/deep`, which does, runs only in the deploy's and the previews' smoke tests.
 - Neon compute fixed at the smallest size (0.25 CU, autoscaling off), with an alert at 70% of monthly compute hours.
 - One queue message per event; its consumer handles every side effect of that event (email, SMS, cache refresh).
 - Each request combines its queries into as few round-trips as possible, sets the tenant in the first one, and never runs N+1 queries; every list is paginated.
@@ -771,9 +742,8 @@ Steady low traffic is the worst case for Neon: the database sleeps only after 5 
 - Small dependencies only: built-in `Intl` for dates and numbers, no heavy utility libraries.
 - Routine request logs sampled; errors and warnings always kept; Sentry errors sampled and grouped.
 - Staff can choose a daily email summary instead of an email per order.
-- CI runs tests against a Postgres container inside GitHub Actions; Neon preview branches are created only when a pull request is labeled for it and deleted after merge; dependency caching on, full end-to-end suite only on `main` or labeled pull requests.
-
-* Never put production on a plan whose terms forbid commercial use.
+- CI runs tests against a Postgres container inside GitHub Actions; Neon preview branches are created only when a pull request is labeled for it and deleted after merge; dependency caching on, full end-to-end suite only on pull requests labeled `full-preview` (a preview otherwise runs the smoke tests).
+- Never put production on a plan whose terms forbid commercial use.
 
 **Database storage**
 
@@ -833,10 +803,8 @@ This plan is deliberately high level: you own the low-level design, and you are 
 - Never add a paid service, or a dependency that would push a Worker past its size limit, without asking.
 - Never commit secrets or real customer data.
 - Every user-facing string in Bangla and English.
-
-* Never start a phase until its prerequisites (see Prerequisites by phase) have been provided; list anything missing and ask for it first.
-
-- Never push directly to `main`: open a pull request and merge only after all checks pass.
+- Never start a phase until its prerequisites (see Prerequisites by phase) have been provided; list anything missing and ask for it first.
+- Never push directly to `master`: open a pull request and merge only after all checks pass.
 
 **Conventions**
 
@@ -869,6 +837,5 @@ This plan is deliberately high level: you own the low-level design, and you are 
 - [Cloudflare: Astro on Workers](https://developers.cloudflare.com/workers/frameworks/framework-guides/astro/)
 - [Neon: Free plan limits](https://neon.com/faqs/free-plan-limits-and-quotas)
 - [OpenNext: Cloudflare (Worker size limits)](https://opennext.js.org/cloudflare)
-
-* [Cloudflare Workers KV: Limits](https://developers.cloudflare.com/kv/platform/limits)
-* [Cloudflare R2: Pricing](https://developers.cloudflare.com/r2/pricing)
+- [Cloudflare Workers KV: Limits](https://developers.cloudflare.com/kv/platform/limits)
+- [Cloudflare R2: Pricing](https://developers.cloudflare.com/r2/pricing)

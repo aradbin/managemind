@@ -16,6 +16,8 @@ Rotate a secret when it may have leaked (a laptop lost, a token pasted somewhere
 | `PLATFORM_SSLCOMMERZ_PASSWORD` | Our merchant account | From the SSLCommerz merchant panel | The pay-online button fails until the deploy |
 | `GITHUB_DISPATCH_TOKEN` | Starting the Store jobs workflow | A new fine-grained token (Actions read and write, this repository only), update, deploy, delete the old one | Jobs start at the daily run instead |
 | `BACKUP_AGE_KEY` (and `BACKUP_AGE_RECIPIENT`) | Reading backups | `age-keygen -o backup.key`; set both; keep the key offline. **Keep the old key** until its last backup expires (35 days) | Old backups need the old key |
-| `NEON_API_KEY`, `SENTRY_AUTH_TOKEN` | Previews and the alarm; source maps | New key, update, revoke the old one | Those workflows fail until updated |
+| `NEON_API_KEY`, `SENTRY_AUTH_TOKEN` | Previews, the alarm and the monthly restore test; source maps | New key, update, revoke the old one | Those workflows fail until updated |
+| `PATHAO_CLIENT_ID`, `PATHAO_CLIENT_SECRET`, `PATHAO_USERNAME`, `PATHAO_PASSWORD`, `REDX_TOKEN` | The platform's own courier accounts, used only by the weekly **Courier areas** workflow | New credentials in the courier's merchant panel, update, revoke the old ones | That courier's area list isn't refreshed; nothing else depends on them |
+| `AUTH_SECRET_PREVIEW`, `CREDENTIALS_KEY_PREVIEW` | Previews only: their sessions, two-factor setups and saved test credentials | `openssl rand -base64 32` and the keys command; update, then push to an open PR | Preview sign-ins and saved test credentials stop working. Without these secrets each preview deploy makes fresh keys |
 
 After any rotation: check the next deploy's warnings (`deploy.md`) and `/health/deep`.

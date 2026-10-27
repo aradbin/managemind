@@ -15,5 +15,5 @@ The stores keep selling through most outages. Find the provider in the table, th
 
 ## Afterwards
 
-- Look at the dead letters in the morning's usage alarm (`free-tier-limit.md`): events that failed during the outage go there after their retries.
+- Look at **Platform → Dashboard → Failed messages waiting**: events that failed during the outage go to the dead-letter queues after their retries. The count comes from the morning's usage alarm run, which records it for the dashboard but doesn't raise an alarm for it, and it covers the outbox and import queues only, not `managemind-purge-dlq` (check that one in the Cloudflare dashboard, under Queues).
 - Sentry groups the errors by provider; resolve them once the provider is back.

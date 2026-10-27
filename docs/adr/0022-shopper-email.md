@@ -1,6 +1,6 @@
 # ADR 0022: Shopper email from the store domain
 
-- Status: Accepted. Production needs the Brevo API key from the owner (phase-4-plan §1); until then shopper accounts stay off.
+- Status: Accepted. Production needs the Brevo API key from the owner (phase-4-plan §1); until then shopper email goes through Resend from the platform domain (amendment below).
 - Date: 2026-10-17
 - Plan: phase-4-plan §1, §3.11, Q2. Code: `packages/providers/src/email/brevo.ts`, `apps/api/src/auth/email.ts`
 - Builds on: ADR 0014 (staff email through Resend)
@@ -28,5 +28,5 @@ Brevo's account verification sends a code by SMS, and it didn't arrive on the ow
 
 1. **`SHOPPER_EMAIL_PROVIDER=resend`** is what the deploy sets when `BREVO_API_KEY` is missing. With the key, it sets `brevo`, as before.
 2. **From the platform domain.** Resend's free plan verifies one domain, `managemind.site`, so the email goes out under the store's name at the staff sender's address (`ডেমো গ্রোসারি <no-reply@managemind.site>`). Replies still go to the store's own address when it has one.
-3. **One quota.** Shopper codes count against the same Resend daily quota as staff email (100 a day on the free plan), and the daily alarm watches it. That is plenty until the first clients. Order notifications (Phase 5A) still need Brevo or a paid plan.
+3. **One quota.** Shopper codes count against the same Resend daily quota as staff email (100 a day on the free plan). The API counts it and logs a warning in Workers Logs from 70%; the daily usage alarm doesn't check it. That is plenty until the first clients. Order notifications (Phase 5A) still need Brevo or a paid plan.
 4. **Switching to Brevo** needs no code change: adding `BREVO_API_KEY` and deploying moves shopper email to the store domain.
