@@ -3,7 +3,7 @@
 - Date: 2026-10-26
 - Plan: `docs/phases/phase-8-plan.md` (approved Oct 26 with every recommendation in §14)
 - Branch: `claude/magical-babbage-5ykded`, one commit per plan step (§1)
-- Pull request: #85, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2). Not merged yet
+- Pull request: #85, with the `db-branch`, `full-preview` and `narrow-preview` labels (§2). Merged on Oct 27
 
 ## Summary
 
@@ -60,7 +60,9 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 | 8 | `33a0997` | Supplier and expense imports, after step 11 as the plan allows, since the pilot's data hasn't come |
 | 12 | `9da1885` | This report; PLAN.md's, the plan's and the README's status |
 | — | `4bb7e50` | The CPU step's receipts pay nothing (§2) |
-| 12 | this commit | The preview's results and measurements in this report |
+| 12 | `84cc1c4` | The preview's results and measurements in this report |
+| 12 | `c806304` | The exports opened in LibreOffice (§2) |
+| — | This commit | Merged |
 
 ## 2. Acceptance criteria
 
