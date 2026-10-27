@@ -37,7 +37,7 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 2. **The imports were built without the pilot's sample data**, with the columns the plan describes. They should be tried on the pilot's real files before onboarding.
 3. **Starter stores don't get the back office** (Q13): its routes answer `feature_not_in_plan`. Growth and Pilot get it, and their history is filled the first night.
 4. **An order line's cost is now frozen at its first shipment**, not at placement (Q10), for every store.
-5. **The security review found two small problems, both fixed** (§2.1). It also found that **the older order and customer CSV exports** can carry a shopper's text that Excel would run as a formula. That needs its own decision (§5).
+5. **The security review found two small problems, both fixed** (§2.1). It also found that **the older order and customer CSV exports** can carry a shopper's text that Excel would run as a formula. That needed its own decision; the owner chose the fix, done on Oct 27 (§5).
 6. **A flaky test was fixed on the way:** the search rate-limit test failed when its 31 requests crossed a minute (CI on `8b951f4`). It now holds the clock still.
 
 ## 1. What was built
@@ -70,7 +70,7 @@ Phase 8 is built. A store can buy from suppliers and know what it owes them, cou
 | Criterion | Status |
 | --- | --- |
 | 1. A three-line PO received in two parts: stock, average cost and the supplier's balance as by hand; no drift | **Met in tests and the local E2E.** Integration test: three lines, two partial receipts with transport spread by value, the averages and the balance to the poisha, `inventoryDrift` empty. The E2E receives a PO in two parts with a bKash payment and checks the landed cost and the balance. **In the pilot:** one month against a store's khata |
-| 2. A count while selling applies only the real differences; every adjustment has a reason, a user and a value, and the list totals them | **Met in tests and the local E2E,** on fewer variants than the plan's 50: the integration test counts three, with a sale before one line was counted and another after; the E2E counts two with an order shipped between them. Batching is a separate test of a 501-line count, stopped part-way and finished. **In the pilot:** one full count per store |
+| 2. A count while selling applies only the real differences; every adjustment has a reason, a user and a value, and the list totals them | **Met in tests and the local E2E:** the integration test counts three, with a sale before one line was counted and another after, and since Oct 27 also the plan's 50, with sales before and after counting (§5); the E2E counts two with an order shipped between them. Batching is a separate test of a 501-line count, stopped part-way and finished. **In the pilot:** one full count per store |
 | 3. A monthly recurring expense posts once, also when the batch runs late or twice; edits and deletions audited | **Met in tests:** a doubled run posts nothing more, a run three days late posts each missed day once; the audit keeps the old values |
 | 4. Reports match hand totals; summaries equal live; exports open in Excel with Bangla | **Met in tests and in LibreOffice;** Excel itself not yet. A hand-computed fixture over three Dhaka days (a line delivered in two parts, a sale without a cost, an 11:30 pm delivery, a failed delivery, a return, a refund that isn't a return, a loss, an expense) checks every daily figure, the profit statement, products, per-order profit (adding up to the statement) and the dashboard. The summaries equal the live SQL. Stock, slow movers, suppliers, expenses and COD outstanding each have a hand-computed test. The exports were opened as files: the `.xlsx` with openpyxl (numbers as numbers), the CSV with its byte-order mark and Bangla intact. LibreOffice Calc 24.2 opened both files, made by the admin's own export code with Bangla headers and names, money and a name starting with `=`: the Bangla intact (the CSV read as UTF-8 from its byte-order mark, with no options chosen), counts and money as numbers (`#,##0.00` kept in the `.xlsx`), dates in the CSV read as dates, and the `=` name as text in both. In the CSV the guard's apostrophe shows, as intended. **Excel itself is still to open one** |
 | 5. The accountant accepts the definitions | **Open: waiting for the review** (§5) |
@@ -93,7 +93,7 @@ Reviewed against PLAN.md's baseline: every new admin and platform route, the rec
 - **Receipt uploads are refused from `Content-Length` before reading and checked again after,** as media, import and return-photo uploads are; a body sent without a length is read before the second check. Only `expenses.write` staff can send one.
 - **A report over two years without summaries is computed live** in Postgres, for the period and the one before. It costs database time, not Worker CPU, and the backfill makes it rare.
 - **COD outstanding is shown to viewers,** as Phase 7's reconciliation is (`reports.read`): it holds no cost.
-- **The order and customer CSV exports (Phases 4 and 5B) have the same formula risk,** with text shoppers type. Their courier formats must keep `+880` phones as they are, so the fix needs its own decision (§5).
+- **The order and customer CSV exports (Phases 4 and 5B) have the same formula risk,** with text shoppers type. Their courier formats must keep `+880` phones as they are, so the fix needed its own decision. The owner chose it: done on Oct 27 (§5).
 
 **Checked, and found fine:**
 
@@ -171,15 +171,19 @@ As planned (plan §9):
    - stock losses include count differences at their value, gains reducing the loss;
    - month ends before this phase are valued at the cost then where the history has it, else at today's cost.
 2. **The pilot's sample supplier, purchase and expense files,** to try the imports on before onboarding.
-3. **The older CSV exports' formula risk** (orders, customers): fix them as the reports were, except for the courier formats, or accept it.
-4. **Workers Paid** remains the way back to running the whole E2E suite on a preview (phase-7-report §3.1).
+3. **Workers Paid** remains the way back to running the whole E2E suite on a preview (phase-7-report §3.1).
 
 ### Not built yet, or smaller than planned
 
 - **Opening an export in Excel,** as criterion 4 asks once; LibreOffice has (§2).
-- **Criterion 2's count of 50 variants** is tested on three, and the batching on 501 (§2).
-- **The Overview tab (Phase 5A) has no export;** every Phase 8 report, its lists and Phase 7's reconciliation do.
-- **The PO editor's variant picker isn't in the E2E:** the flow creates the PO's lines through the API and places it on its page. The picker is the order screen's, tested there.
+
+### Done after the phase (Oct 27)
+
+- **The older CSV exports' formula risk** (orders, customers), as the owner chose: the order and customer CSVs guard the text people type (names, addresses, notes, tags, items) as the reports do. The phone the server checked and the money stay as they are, the Steadfast and Pathao files keep their text exactly as typed, and the Excel files already wrote text as text.
+- **Criterion 2 at the plan's 50 variants:** the integration test counts 50, ten each of a sale before counting, a sale after, one missing, two found and untouched, and checks every line, the stock, the drift and the adjustments' values.
+- **The Overview tab exports** each table to Excel and CSV like the other reports, counts, money and percentages as numbers; the returns flow saves the refunds table as CSV.
+- **The PO editor's variant picker is in the E2E:** the flow writes the purchase order in the editor, picking both products, then places it.
+- **The duplicate banner's Merge and Cancel** now show their message, and Merge opens the order kept. Refreshing the order removed the banner before its handlers ran, so staff stayed on the cancelled order. The recovery flow failed on it when run locally.
 
 ### Decisions that differ from the plan
 

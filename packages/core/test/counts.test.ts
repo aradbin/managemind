@@ -140,6 +140,64 @@ describe('acceptance criterion 2: counting while selling', () => {
     expect(list.totals).toMatchObject({ units: 1, value: 100_00, unvalued: 0 });
   });
 
+  it('does the same over the plan’s 50 variants, with sales before and after counting', async () => {
+    // Five kinds of line, ten of each, every variant starting with 10 at its own cost:
+    // sold before it is counted (counted right); sold after (counted right);
+    // one missing, then sold; two found after a sale; counted untouched.
+    const kinds = [
+      { before: 1, counted: 9, after: 0, difference: 0 },
+      { before: 0, counted: 10, after: 2, difference: 0 },
+      { before: 0, counted: 9, after: 1, difference: -1 },
+      { before: 1, counted: 11, after: 0, difference: 2 },
+      { before: 0, counted: 10, after: 0, difference: 0 },
+    ];
+    const lines = [];
+    for (let i = 0; i < 50; i++) {
+      const cost = (i + 1) * 10_00;
+      lines.push({ id: await variant(10, cost), cost, ...(kinds[i % 5] as (typeof kinds)[0]) });
+    }
+    const sc = await start(lines.map((l) => l.id));
+    expect(sc.lineCount).toBe(50);
+
+    for (const l of lines) {
+      if (l.before)
+        await run((tx) =>
+          sell(tx, owner, { variantId: l.id, quantity: l.before, reason: 'order' }),
+        );
+      await count(sc.id, l.id, l.counted);
+      if (l.after)
+        await run((tx) => sell(tx, owner, { variantId: l.id, quantity: l.after, reason: 'order' }));
+    }
+    await run((tx) => submitStockCount(tx, staff, sc.id));
+    const review = await run((tx) => getStockCount(tx, owner, sc.id));
+    for (const l of lines) {
+      expect(review.lines.find((x) => x.variantId === l.id)).toMatchObject({
+        counted: l.counted,
+        difference: l.difference,
+      });
+    }
+    const changed = lines.filter((l) => l.difference);
+    const value = changed.reduce((a, l) => a + l.difference * l.cost, 0);
+    expect(review.differences).toEqual({
+      lines: 20,
+      units: changed.reduce((a, l) => a + l.difference, 0),
+      value,
+    });
+
+    // Above the approval threshold, so the owner applies it.
+    expect((await run((tx) => applyStockCount(tx, owner, sc.id))).count.status).toBe('applied');
+    for (const l of lines) {
+      expect(await onHand(l.id)).toBe(10 - l.before - l.after + l.difference);
+    }
+    expect(await run((tx) => inventoryDrift(tx))).toEqual([]);
+
+    const list = await run((tx) => listAdjustments(tx, owner, { reason: 'count', limit: 200 }));
+    const mine = list.items.filter((i) => i.referenceId === sc.id);
+    expect(mine).toHaveLength(20);
+    expect(mine.every((i) => i.reason === 'count' && i.actorId === owner.userId)).toBe(true);
+    expect(mine.reduce((a, i) => a + (i.value ?? 0), 0)).toBe(value);
+  });
+
   it('lets a line be recounted in review, and reopened for counting', async () => {
     const a = await variant(3);
     const sc = await start([a]);

@@ -2,17 +2,15 @@
 // the JSON the page already has, as the catalog and order exports are. CSV
 // is UTF-8 with a byte-order mark so Excel shows Bangla; Excel keeps counts
 // and money as numbers.
-import { download, toCsv } from './download';
+import { download, formulaSafe, toCsv } from './download';
 import type { ReportCell } from './xlsx';
 
 export type { ReportCell };
 export type ReportFormat = 'xlsx' | 'csv';
 
-// Text a spreadsheet would read as a formula (=, +, -, @, or a tab or
-// return first) gets a leading apostrophe, so a supplier's name or an
-// expense's note can't run as one (OWASP's CSV injection). Numbers and
-// money are written by us and stay as they are.
-const FORMULA = /^[=+\-@\t\r]/;
+// Text that would run as a formula gets a leading apostrophe (formulaSafe),
+// so a supplier's name or an expense's note can't. Numbers and money are
+// written by us and stay as they are.
 const text = (cell: ReportCell) =>
   cell === null
     ? ''
@@ -20,9 +18,7 @@ const text = (cell: ReportCell) =>
       ? (cell.money / 100).toFixed(2)
       : typeof cell === 'number'
         ? String(cell)
-        : FORMULA.test(cell)
-          ? `'${cell}`
-          : cell;
+        : formulaSafe(cell);
 
 /** The CSV text: money as taka with two decimals and no separators, so Excel reads numbers. */
 export const reportCsv = (header: string[], rows: ReportCell[][]) =>

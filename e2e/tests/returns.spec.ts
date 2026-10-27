@@ -4,10 +4,12 @@
 // request sent. Staff find it under Returns, see the photo, approve it, mark
 // it received, inspect it back into stock and refund the item and the
 // delivery charge by bKash with its transaction ID; the shopper gets the
-// refund email, and the reports count the return and the refund. Axe on every
+// refund email, and the reports count the return and the refund, whose table
+// exports as a CSV. Axe on every
 // new screen, and the store's JavaScript budget on the tracking page with the
 // return form open.
 import { type APIRequestContext, expect, type Page, test } from '@playwright/test';
+import { boReportsBn } from '../../apps/admin/src/i18n/back-office-reports-bn';
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { returnsBn } from '../../apps/admin/src/i18n/returns-bn';
@@ -26,7 +28,7 @@ import { API, STOREFRONT } from './urls';
 test.skip(!RUN || !DEV_TOKEN, 'needs a seeded preview: E2E_RUN and DEV_TOKEN');
 test.describe.configure({ mode: 'serial', timeout: 300_000 });
 
-const adminMessages = { ...bn, ...ordersBn, ...returnsBn };
+const adminMessages = { ...bn, ...ordersBn, ...returnsBn, ...boReportsBn };
 type AdminKey = keyof typeof adminMessages;
 
 function m(key: AdminKey, params: Record<string, string> = {}): string {
@@ -264,5 +266,24 @@ test('returns and refunds', async ({
     const byMethod = page.getByRole('row').filter({ hasText: m('refund.method.bkash') });
     await expect(byMethod.first()).toBeVisible();
     await expectAccessible(page, 'reports');
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page
+        .getByRole('button', {
+          name: m('reports.exportOf', {
+            what: m('reports.refunds'),
+            format: m('reports.export.csv'),
+          }),
+        })
+        .click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(
+      /^refunds-by-method-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.csv$/,
+    );
+    const { readFile } = await import('node:fs/promises');
+    const csv = await readFile((await download.path()) as string, 'utf8');
+    // The method in Bangla, the count and the taka as plain numbers.
+    expect(csv).toMatch(new RegExp(`^${m('refund.method.bkash')},\\d+,\\d+\\.\\d{2}\\r?$`, 'm'));
   });
 });
