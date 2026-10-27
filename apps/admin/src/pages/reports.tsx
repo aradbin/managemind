@@ -2,7 +2,8 @@
 // product and by reason, refunds by method, failed deliveries and their
 // cost by zone, and how orders were paid; and sales recovery (phase-6-plan
 // §3.9): incomplete orders, confirmation, delivery by score and duplicates.
-// Computed when asked.
+// Computed when asked. Each table saves itself as Excel or CSV, as the back
+// office's reports do (phase-8-plan §3.8).
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -43,6 +44,9 @@ export function ReportsPage() {
     whole
       ? `${(Math.round((part / whole) * 1000) / 10).toLocaleString(locale === 'bn' ? 'bn-BD' : 'en-BD')}%`
       : '—';
+  // The same share for an export: a number of percent, empty when there's no whole.
+  const share = (part: number, whole: number) =>
+    whole ? Math.round((part / whole) * 1000) / 10 : null;
   const recovery = useQuery({
     queryKey: ['reports', 'recovery', from, to],
     queryFn: async () =>
@@ -102,6 +106,14 @@ export function ReportsPage() {
               pct(p.revenue, paid),
             ])}
             empty={t('reports.none')}
+            exportName={`payments-${from}-${to}`}
+            exportRows={r.payments.map((p) => [
+              t(`reports.kind.${p.kind}` as AdminKey),
+              p.orders,
+              share(p.orders, orders),
+              { money: p.revenue },
+              share(p.revenue, paid),
+            ])}
           />
           <Table
             caption={t('reports.returnsByProduct')}
@@ -118,6 +130,13 @@ export function ReportsPage() {
               pct(p.returned, p.delivered),
             ])}
             empty={t('reports.none')}
+            exportName={`returns-by-product-${from}-${to}`}
+            exportRows={r.returnsByProduct.map((p) => [
+              pickText(p.title, locale),
+              p.delivered,
+              p.returned,
+              share(p.returned, p.delivered),
+            ])}
           />
           <Table
             caption={t('reports.returnsByReason')}
@@ -128,6 +147,12 @@ export function ReportsPage() {
               n(x.units),
             ])}
             empty={t('reports.none')}
+            exportName={`returns-by-reason-${from}-${to}`}
+            exportRows={r.returnsByReason.map((x) => [
+              t(`return.reason.${x.reason}` as AdminKey),
+              x.returns,
+              x.units,
+            ])}
           />
           <Table
             caption={t('reports.refunds')}
@@ -138,6 +163,12 @@ export function ReportsPage() {
               formatPrice(x.amount, locale),
             ])}
             empty={t('reports.none')}
+            exportName={`refunds-by-method-${from}-${to}`}
+            exportRows={r.refundsByMethod.map((x) => [
+              t(`refund.method.${x.method}` as AdminKey),
+              x.refunds,
+              { money: x.amount },
+            ])}
           />
           <Table
             caption={t('reports.failed')}
@@ -156,6 +187,14 @@ export function ReportsPage() {
               formatPrice(z.cost, locale),
             ])}
             empty={t('reports.none')}
+            exportName={`failed-deliveries-${from}-${to}`}
+            exportRows={r.failedByZone.map((z) => [
+              z.zone ? pickText(z.zone, locale) : t('reports.noZone'),
+              z.shipped,
+              z.failed,
+              share(z.failed, z.shipped),
+              { money: z.cost },
+            ])}
           />
         </>
       )}
@@ -186,6 +225,23 @@ export function ReportsPage() {
               [t('incomplete.tab.dismissed'), n(s.incomplete.dismissed), ''],
             ]}
             empty={t('reports.none')}
+            exportName={`incomplete-orders-${from}-${to}`}
+            exportRows={[
+              [t('recoveryReport.saved'), s.incomplete.saved, { money: s.incomplete.savedValue }],
+              [t('recoveryReport.contacted'), s.incomplete.contacted, null],
+              [
+                t('recoveryReport.converted'),
+                s.incomplete.converted,
+                { money: s.incomplete.convertedValue },
+              ],
+              [
+                t('recoveryReport.recovered'),
+                s.incomplete.recovered,
+                { money: s.incomplete.recoveredValue },
+              ],
+              [t('recoveryReport.afterCall'), s.incomplete.recoveredAfterCall, null],
+              [t('incomplete.tab.dismissed'), s.incomplete.dismissed, null],
+            ]}
           />
           <Table
             caption={t('recoveryReport.confirmation')}
@@ -217,6 +273,28 @@ export function ReportsPage() {
               ],
             ]}
             empty={t('reports.none')}
+            exportName={`confirmation-${from}-${to}`}
+            // The rate's and the median's units go in their labels, so the cells stay numbers.
+            exportRows={[
+              [t('recoveryReport.codPlaced'), s.confirmation.placed, null],
+              ...(['call', 'link', 'staff', 'auto'] as const).map((via) => [
+                t(`confirmedVia.${via}` as AdminKey),
+                s.confirmation.confirmedBy[via],
+                share(s.confirmation.confirmedBy[via], s.confirmation.placed),
+              ]),
+              ...s.confirmation.cancelledBy.map((x) => [
+                t('recoveryReport.cancelled', { why: t(`cancelCode.${x.code}` as AdminKey) }),
+                x.orders,
+                share(x.orders, s.confirmation.placed),
+              ]),
+              [t('queue.tab.unreachable'), s.confirmation.unreachable, null],
+              [`${t('recoveryReport.rate')} (%)`, s.confirmation.rate, null],
+              [
+                `${t('recoveryReport.median')} (${t('recoveryReport.minutes', { count: '' }).trim()})`,
+                s.confirmation.medianMinutes,
+                null,
+              ],
+            ]}
           />
           <Table
             caption={t('recoveryReport.byScore')}
@@ -233,6 +311,13 @@ export function ReportsPage() {
               pct(b.notReceived, b.delivered + b.notReceived),
             ])}
             empty={t('reports.none')}
+            exportName={`delivery-by-score-${from}-${to}`}
+            exportRows={s.deliveryByScore.map((b) => [
+              b.band === 'new' ? t('risk.new') : `${b.band}%`,
+              b.delivered,
+              b.notReceived,
+              share(b.notReceived, b.delivered + b.notReceived),
+            ])}
           />
           <p className="-mt-2 text-sm text-muted-foreground">{t('recoveryReport.byScoreHint')}</p>
           <Table
@@ -245,6 +330,13 @@ export function ReportsPage() {
               [t('duplicate.dismiss'), n(s.duplicates.dismissed)],
             ]}
             empty={t('reports.none')}
+            exportName={`duplicate-orders-${from}-${to}`}
+            exportRows={[
+              [t('recoveryReport.flagged'), s.duplicates.flagged],
+              [t('recoveryReport.merged'), s.duplicates.merged],
+              [t('duplicate.cancel'), s.duplicates.cancelled],
+              [t('duplicate.dismiss'), s.duplicates.dismissed],
+            ]}
           />
         </>
       )}
