@@ -12,15 +12,23 @@ import {
   createCategory,
   createCollection,
   createCustomer,
+  createExpense,
+  createGoodsReceipt,
   createImportJob,
   createManualInvoice,
   createPage,
   createProduct,
   createPromotion,
+  createPurchaseOrder,
+  createRecurringExpense,
   createShipment,
+  createStockCount,
+  createSupplier,
+  createSupplierPayment,
   createTenant,
   createZone,
   grantSupportAccess,
+  listExpenseCategories,
   listLocations,
   placeOrder,
   receive,
@@ -466,6 +474,53 @@ describe('isolation suite', () => {
       return rows[0]?.id as string;
     });
 
+    // Store B's supplier, PO, receipt and payment (phase-8-plan §8).
+    const bSupplier = await inB((tx) => createSupplier(tx, bOwner, { name: 'B supplier' }));
+    const bPo = await inB((tx) =>
+      createPurchaseOrder(tx, bOwner, {
+        supplierId: bSupplier.id,
+        lines: [{ variantId: liveVariant, quantity: 1, unitCost: 100 }],
+      }),
+    );
+    const bReceipt = await inB((tx) =>
+      createGoodsReceipt(tx, bOwner, {
+        supplierId: bSupplier.id,
+        lines: [{ variantId: liveVariant, quantity: 1, unitCost: 100 }],
+      }),
+    );
+    const bSupplierPayment = await inB((tx) =>
+      createSupplierPayment(tx, bOwner, {
+        supplierId: bSupplier.id,
+        paidOn: dhakaDate(new Date()),
+        amount: 100,
+        method: 'cash',
+      }),
+    );
+
+    const bCount = await inB((tx) =>
+      createStockCount(tx, bOwner, { scope: { kind: 'variants', variantIds: [liveVariant] } }),
+    );
+
+    const [bCategory] = await inB((tx) => listExpenseCategories(tx, bOwner));
+    const bExpense = await inB((tx) =>
+      createExpense(tx, bOwner, {
+        spentOn: dhakaDate(new Date()),
+        categoryId: bCategory?.id as string,
+        amount: 100,
+        method: 'cash',
+      }),
+    );
+    const bRecurring = await inB((tx) =>
+      createRecurringExpense(tx, bOwner, {
+        categoryId: bCategory?.id as string,
+        amount: 100,
+        method: 'cash',
+        cadence: 'monthly',
+        day: 1,
+        startsOn: dhakaDate(new Date()),
+      }),
+    );
+
     /** Store B's resource for each route with an ID; a new route must add one. */
     const fixtures: Record<string, { id: string; second?: string; body?: unknown }> = {
       'PATCH /v1/admin/members/{id}': { id: bMember.memberId, body: { role: 'viewer' } },
@@ -603,6 +658,40 @@ describe('isolation suite', () => {
       'DELETE /v1/admin/me/push-devices/{id}': { id: bDevice },
       'GET /v1/admin/billing/invoices/{id}': { id: bInvoice },
       'POST /v1/admin/billing/invoices/{id}/pay': { id: bInvoice },
+      'GET /v1/admin/suppliers/{id}': { id: bSupplier.id },
+      'PATCH /v1/admin/suppliers/{id}': { id: bSupplier.id, body: { name: 'x' } },
+      'GET /v1/admin/suppliers/{id}/ledger': { id: bSupplier.id },
+      'GET /v1/admin/purchase-orders/{id}': { id: bPo.id },
+      'PATCH /v1/admin/purchase-orders/{id}': { id: bPo.id, body: { note: 'x' } },
+      'DELETE /v1/admin/purchase-orders/{id}': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/place': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/close': { id: bPo.id },
+      'POST /v1/admin/purchase-orders/{id}/cancel': { id: bPo.id },
+      'GET /v1/admin/goods-receipts/{id}': { id: bReceipt.id },
+      'PATCH /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id, body: { note: 'x' } },
+      'DELETE /v1/admin/supplier-payments/{id}': { id: bSupplierPayment.id },
+      'GET /v1/admin/variants/{id}/cost-history': { id: liveVariant },
+      'GET /v1/admin/stock-counts/{id}': { id: bCount.id },
+      'PUT /v1/admin/stock-counts/{id}/lines/{variantId}': {
+        id: bCount.id,
+        second: liveVariant,
+        body: { counted: 1 },
+      },
+      'POST /v1/admin/stock-counts/{id}/submit': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/reopen': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/apply': { id: bCount.id },
+      'POST /v1/admin/stock-counts/{id}/cancel': { id: bCount.id },
+      'PATCH /v1/admin/expense-categories/{id}': {
+        id: bCategory?.id as string,
+        body: { archived: true },
+      },
+      'PATCH /v1/admin/expenses/{id}': { id: bExpense.id, body: { amount: 1 } },
+      'DELETE /v1/admin/expenses/{id}': { id: bExpense.id },
+      'POST /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'GET /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'DELETE /v1/admin/expenses/{id}/receipt': { id: bExpense.id },
+      'PATCH /v1/admin/recurring-expenses/{id}': { id: bRecurring.id, body: { amount: 1 } },
+      'DELETE /v1/admin/recurring-expenses/{id}': { id: bRecurring.id },
     };
     /** Routes whose path parameter names new content, not a stored row, with the reason. */
     const exempt: Record<string, string> = {
@@ -646,7 +735,7 @@ describe('isolation suite', () => {
       const path = route.path
         .replace('/v1/admin', '/api/admin')
         .replace(/\{(id|file|phone)\}/, encodeURIComponent(fixture.id))
-        .replace(/\{(addressId|photo)\}/, fixture.second ?? crypto.randomUUID())
+        .replace(/\{(addressId|photo|variantId)\}/, fixture.second ?? crypto.randomUUID())
         .replace('{n}', '0')
         .replace('{imageId}', crypto.randomUUID());
       const res = await user.call(route.method.toUpperCase(), path, fixture.body);

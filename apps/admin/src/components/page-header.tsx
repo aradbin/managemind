@@ -19,7 +19,16 @@ export function PageHeader({
   className?: string;
   /** The page this one sits under, as a breadcrumb above the title. */
   parent?: {
-    to: '/settings' | '/online-store' | '/products' | '/customers' | '/orders' | '/reports';
+    to:
+      | '/settings'
+      | '/online-store'
+      | '/products'
+      | '/customers'
+      | '/orders'
+      | '/reports'
+      | '/inventory/purchase-orders'
+      | '/inventory/suppliers'
+      | '/inventory/counts';
     label: string;
   };
 }) {

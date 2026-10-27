@@ -161,6 +161,10 @@ export const launchEn = {
   'jobs.kind.export': 'Export',
   'jobs.kind.purge': 'Purge',
   'jobs.kind.reset': 'Reset',
+  'jobs.kind.reports_backfill': 'Report history',
+  'jobs.rebuildReports': 'Rebuild reports',
+  'jobs.rebuildQueued':
+    'Report rebuild queued. The summaries are filled from the store’s first day in a few minutes.',
   'jobs.status.pending': 'Waiting to start',
   'jobs.status.running': 'Running',
   'jobs.status.succeeded': 'Done',

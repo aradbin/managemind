@@ -31,6 +31,7 @@ import {
   reopenTenant,
   requestExport,
   requestPurge,
+  requestReportsRebuild,
   requestReset,
   revokeSupportAccess,
   setCourierAreaMatch,
@@ -277,6 +278,14 @@ export const PLATFORM_ROUTES = {
     method: 'post',
     path: '/tenants/{id}/export',
     summary: "Export the store's data; the owners are emailed the link (super_admin)",
+    request: { params: Id },
+    responses: json(Job, 'Queued', 202),
+  }),
+  rebuildReports: r({
+    method: 'post',
+    path: '/tenants/{id}/reports/rebuild',
+    summary:
+      "Rebuild the store's report summaries from its first day, in the Store jobs workflow (super_admin)",
     request: { params: Id },
     responses: json(Job, 'Queued', 202),
   }),
@@ -813,6 +822,18 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
       c.var.staff.client,
       id,
       (tx) => requestExport(tx, c.var.staff.actor),
+      { requestId: c.var.requestId },
+    );
+    if (created) dispatchJobs(c.env, c.executionCtx);
+    return c.json(await jobOut(c.env, job, true), 202);
+  });
+  platform.openapi(R.rebuildReports, async (c) => {
+    const { id } = c.req.valid('param');
+    requireSuperAdmin(c);
+    const { job, created } = await withTenant(
+      c.var.staff.client,
+      id,
+      (tx) => requestReportsRebuild(tx, c.var.staff.actor),
       { requestId: c.var.requestId },
     );
     if (created) dispatchJobs(c.env, c.executionCtx);

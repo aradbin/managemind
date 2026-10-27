@@ -15,6 +15,7 @@ import {
 import { permissionsOf, tenantObjectPrefixes } from '@managemind/shared';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
+import { refreshDemoReports, seedDemoBackOffice } from '../demo/back-office';
 import { seedDemoCatalog } from '../demo/catalog';
 import { seedDemoOrders } from '../demo/orders';
 import type { ObjectStore } from './export';
@@ -84,7 +85,10 @@ export async function resetStore(
   });
   const catalog =
     store.kind === 'demo' && (await seedDemoCatalog(client, {}, job.tenantId)).length > 0;
+  // The back office first, so the sample orders' lines take its costs (phase-8-plan §9).
+  const backOffice = catalog && (await seedDemoBackOffice(client, job.tenantId));
   const orders = catalog ? await seedDemoOrders(client, job.tenantId) : 0;
+  if (backOffice) await refreshDemoReports(client, job.tenantId);
   await onProgress('reseeded');
 
   // The reseed's own events (new products, sample orders) changed nothing

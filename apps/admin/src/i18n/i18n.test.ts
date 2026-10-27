@@ -8,6 +8,9 @@ import './promotions';
 import './launch';
 import './billing';
 import './couriers';
+import './purchasing';
+import './expenses';
+import './back-office-reports';
 
 await loadLocale('en');
 await loadLocale('bn');

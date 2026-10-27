@@ -26,6 +26,9 @@
 // queue and the incomplete orders; the orders the returns don't use are
 // claimed and confirmed from the queue.
 //
+// Phase 8 (phase-8-plan §10) adds a 50-line receipt, a 500-line count's
+// apply, and the profit, stock and sales reports.
+//
 //   tsx preview/cpu.ts --pr 12 --api-url <url> --storefront-url <url> --since <epoch ms>
 import { appendFileSync } from 'node:fs';
 import { notice, parseArgs, prNumber, requireEnv } from '../lib/actions';
@@ -60,6 +63,8 @@ const BURST = {
   queue: 30,
   incomplete: 20,
   report: 10,
+  receipt: 5,
+  backOffice: 10,
 };
 
 /** One of each storefront page type on demo-fashion (scripts/demo/catalog.ts). */
@@ -447,6 +452,73 @@ for (let i = 0; i < BURST.report; i++) {
   await call('GET', `/v1/admin/reports/cod?from=${day}&to=${day}`);
 }
 
+// Phase 8's routes (phase-8-plan §9, §10): five products of 100 variants,
+// tagged for a count; five 50-line receipts without a PO, at cost; a count
+// of all 500 lines, every line counted, then applied in the request (a
+// preview has no queue, and 500 lines is one batch); then the profit,
+// stock and sales reports.
+let counted = 0;
+try {
+  const variantIds: string[] = [];
+  for (let p = 0; p < 5; p++) {
+    const made = await json<{ id: string }>(
+      await call('POST', '/v1/admin/products', {
+        translations: { bn: { title: `সিপিইউ গণনা ${p + 1}` } },
+        variant: { price: 50_000 },
+        tags: ['cpu-count'],
+      }),
+      'count product',
+    );
+    const options = await json<{ variants: { id: string }[] }>(
+      await call('PUT', `/v1/admin/products/${made.id}/options`, [
+        {
+          name: { bn: 'নম্বর' },
+          values: Array.from({ length: 100 }, (_, i) => ({ label: { bn: String(i + 1) } })),
+        },
+      ]),
+      'count options',
+    );
+    variantIds.push(...options.variants.map((v) => v.id));
+  }
+  for (let r = 0; r < BURST.receipt; r++) {
+    await json(
+      await call('POST', '/v1/admin/goods-receipts', {
+        lines: variantIds
+          .slice(r * 50, r * 50 + 50)
+          .map((variantId, i) => ({ variantId, quantity: 4, unitCost: 30_000 + i * 100 })),
+      }),
+      'receipt',
+    );
+  }
+  const count = await json<{ id: string }>(
+    await call('POST', '/v1/admin/stock-counts', { scope: { kind: 'tag', tag: 'cpu-count' } }),
+    'start count',
+  );
+  // Ten at a time; every line one less than the receipts left, or 4 where none came.
+  for (let i = 0; i < variantIds.length; i += 10) {
+    const done = await Promise.all(
+      variantIds.slice(i, i + 10).map(async (variantId, j) => {
+        const res = await call('PUT', `/v1/admin/stock-counts/${count.id}/lines/${variantId}`, {
+          counted: i + j < BURST.receipt * 50 ? 3 : 4,
+        });
+        await res.arrayBuffer();
+        return res.ok;
+      }),
+    );
+    counted += done.filter(Boolean).length;
+  }
+  await json(await call('POST', `/v1/admin/stock-counts/${count.id}/submit`), 'submit count');
+  await json(await call('POST', `/v1/admin/stock-counts/${count.id}/apply`), 'apply count');
+} catch (e) {
+  failures.push(`back office: ${e instanceof Error ? e.message : String(e)}`);
+}
+const monthStart = `${day.slice(0, 8)}01`;
+for (let i = 0; i < BURST.backOffice; i++) {
+  await call('GET', `/v1/admin/reports/profit?from=${monthStart}&to=${day}`);
+  await call('GET', '/v1/admin/reports/stock');
+  await call('GET', `/v1/admin/reports/sales?from=${monthStart}&to=${day}`);
+}
+
 if (failures.length) {
   notice(`${failures.length} requests in the bursts failed: ${failures.slice(0, 10).join('; ')}`);
 }
@@ -461,7 +533,9 @@ notice(
     `${BURST.queue} call queue reads, ${BURST.incomplete} incomplete order lists, ` +
     `${BURST.order - BURST.returns} calls confirmed from the queue, ` +
     `${booked} parcels booked with the test courier with a webhook each, ` +
-    `and ${BURST.report} COD reconciliation reports`,
+    `${BURST.report} COD reconciliation reports, ` +
+    `${BURST.receipt} receipts of 50 lines, a count of ${counted} counted lines applied, ` +
+    `and ${BURST.backOffice} each of the profit, stock and sales reports`,
 );
 
 // Workers Logs names an invocation by its method and path, with IDs in the
@@ -513,6 +587,18 @@ const ROUTES: { trigger: string; label: string; worker?: string }[] = [
     label: 'POST /v1/webhooks/couriers/{courier}/{store} (webhook)',
   },
   { trigger: 'GET /v1/admin/reports/cod', label: 'GET /v1/admin/reports/cod' },
+  { trigger: 'POST /v1/admin/goods-receipts', label: 'POST /v1/admin/goods-receipts (50 lines)' },
+  {
+    trigger: 'PUT /v1/admin/stock-counts/REDACTED/lines/REDACTED',
+    label: 'PUT /v1/admin/stock-counts/{id}/lines/{variantId}',
+  },
+  {
+    trigger: 'POST /v1/admin/stock-counts/REDACTED/apply',
+    label: 'POST /v1/admin/stock-counts/{id}/apply (500 lines)',
+  },
+  { trigger: 'GET /v1/admin/reports/profit', label: 'GET /v1/admin/reports/profit' },
+  { trigger: 'GET /v1/admin/reports/stock', label: 'GET /v1/admin/reports/stock' },
+  { trigger: 'GET /v1/admin/reports/sales', label: 'GET /v1/admin/reports/sales' },
   { trigger: 'POST /v1/store/returns', label: 'POST /v1/store/returns (request)' },
   {
     trigger: 'POST /v1/admin/returns/REDACTED/inspect',

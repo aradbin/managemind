@@ -3,6 +3,7 @@
 // tenant transaction, writes its audit entries and emits its event there.
 import { schema } from '@managemind/db';
 import { AppError, checkSlug, permissionsOf, uuidv7 } from '@managemind/shared';
+import { type BackOfficeSettings, backOfficeSettings } from '@managemind/shared/back-office';
 import {
   PURGE_GRACE_DAYS,
   type SuspensionReason,
@@ -257,6 +258,8 @@ export interface Store {
   recovery: RecoverySettings;
   /** Couriers (phase-7-plan §3.8). */
   couriers: CourierSettings;
+  /** Count approval and reorder (phase-8-plan §4). */
+  backOffice: BackOfficeSettings;
   /** The return policy (phase-5a-plan §3.10). */
   returns: ReturnSettings;
   /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
@@ -293,6 +296,7 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     confirmation: settings.confirmation,
     recovery: settings.recovery,
     couriers: settings.couriers,
+    backOffice: settings.backOffice,
     returns: settings.returns,
     notifications: settings.notifications,
     setup: settings.setup,
@@ -342,6 +346,8 @@ export interface StoreProfilePatch {
   recovery?: unknown;
   /** Replaces the courier settings (phase-7-plan §3.8). */
   couriers?: unknown;
+  /** Replaces the back office's settings (phase-8-plan §4). */
+  backOffice?: unknown;
   /** Replaces the return policy (phase-5a-plan §3.10). */
   returns?: unknown;
   /** Replaces the shopper message channels (phase-5a-plan §3.6). */
@@ -395,6 +401,10 @@ export async function updateStoreProfile(
       patch.couriers !== undefined
         ? parseSection('couriers', courierSettings, patch.couriers)
         : current.couriers,
+    backOffice:
+      patch.backOffice !== undefined
+        ? parseSection('backOffice', backOfficeSettings, patch.backOffice)
+        : current.backOffice,
     returns:
       patch.returns !== undefined
         ? parseSection('returns', returnSettings, patch.returns)
@@ -422,6 +432,7 @@ export async function updateStoreProfile(
       'confirmation',
       'recovery',
       'couriers',
+      'backOffice',
       'returns',
       'notifications',
       'setup',
@@ -451,6 +462,7 @@ export async function updateStoreProfile(
         confirmation: next.confirmation,
         recovery: next.recovery,
         couriers: next.couriers,
+        backOffice: next.backOffice,
         returns: next.returns,
         notifications: next.notifications,
         setup: next.setup,

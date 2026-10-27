@@ -184,5 +184,16 @@ describe('resetting a store', () => {
     expect(new Set(shipments.rows.map((r) => r.status))).toEqual(
       new Set(['pending', 'shipped', 'delivered', 'failed', 'returned']),
     );
+    // The back office (phase-8-plan §9): suppliers, a received PO that gave
+    // the catalog its costs, expenses, and the reports' summaries filled.
+    const count = (table: string, where = 'true') =>
+      n(`select count(*) as n from store.${table} where tenant_id = $1 and ${where}`, [demo.id]);
+    expect(await count('suppliers')).toBe(2);
+    expect(await count('purchase_orders', `status = 'received'`)).toBe(1);
+    expect(await count('purchase_orders', `status = 'ordered'`)).toBe(1);
+    expect(await count('expenses')).toBe(11);
+    expect(await count('recurring_expenses')).toBe(1);
+    expect(await count('daily_sales', 'net_sales > 0')).toBeGreaterThan(5);
+    expect(await count('order_lines', 'cost_price is not null')).toBeGreaterThan(0);
   }, 60_000);
 });

@@ -158,6 +158,10 @@ export const launchBn: Record<keyof typeof launchEn, string> = {
   'jobs.kind.export': 'এক্সপোর্ট',
   'jobs.kind.purge': 'সম্পূর্ণ মুছে ফেলা',
   'jobs.kind.reset': 'রিসেট',
+  'jobs.kind.reports_backfill': 'রিপোর্টের ইতিহাস',
+  'jobs.rebuildReports': 'রিপোর্ট আবার তৈরি করুন',
+  'jobs.rebuildQueued':
+    'রিপোর্ট আবার তৈরির কাজ সারিতে আছে। কয়েক মিনিটে দোকানের প্রথম দিন থেকে সারাংশ ভরে যাবে।',
   'jobs.status.pending': 'শুরুর অপেক্ষায়',
   'jobs.status.running': 'চলছে',
   'jobs.status.succeeded': 'শেষ',

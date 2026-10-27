@@ -17,13 +17,13 @@ import { Dialog } from '../components/ui/dialog';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
 import '../i18n/orders';
+import { Table } from '../components/report-table';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, readPrice } from '../lib/catalog';
 import { courierName } from '../lib/couriers';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateTime } from '../lib/orders';
 import { type Parsed, parseFile } from '../lib/sheet';
-import { Table } from './reports';
 
 const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
 const day = (d: Date) => DHAKA_DAY.format(d);
@@ -138,6 +138,19 @@ export function CodReportPage() {
               money(c.returnCharges),
             ])}
             empty={t('cod.none')}
+            exportName="cod-summary"
+            exportRows={r.couriers.map((c) => [
+              courierName(c.courier, t),
+              c.delivered,
+              { money: c.codAsked },
+              { money: c.collected },
+              { money: c.fees },
+              { money: c.net },
+              { money: c.paidOut },
+              { money: c.outstanding },
+              c.returned,
+              { money: c.returnCharges },
+            ])}
           />
           <Table
             caption={t('cod.outstandingList')}
@@ -149,6 +162,13 @@ export function CodReportPage() {
               t('cod.days', { n: o.days }),
             ])}
             empty={t('cod.none')}
+            exportName="cod-outstanding-parcels"
+            exportRows={r.outstanding.map((o) => [
+              `${o.displayNumber}${o.consignmentId ? ` · ${o.consignmentId}` : ''}`,
+              courierName(o.courier, t),
+              { money: o.net },
+              o.days,
+            ])}
           />
           <Table
             caption={t('cod.differences')}
@@ -164,6 +184,7 @@ export function CodReportPage() {
                   }),
             ])}
             empty={t('cod.none')}
+            exportName="cod-differences"
           />
           <section className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5">
             <h2 className="font-semibold">{t('cod.payouts')}</h2>

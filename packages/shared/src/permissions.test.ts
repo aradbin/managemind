@@ -14,8 +14,9 @@ import {
 describe('role matrix', () => {
   // The reviewed matrix (phase-1-plan §5.2, approved Oct 11; catalog.cost
   // for Owner and Manager, phase-2-plan Q5; billing.read and
-  // customers.delete for Owner and Manager, phase-5b-plan §3.17). A change to any
-  // role must change this list on purpose.
+  // customers.delete for Owner and Manager, phase-5b-plan §3.17; purchasing
+  // and expenses, phase-8-plan §3.11). A change to any role must change this
+  // list on purpose.
   const expected: Record<StoreRole, Permission[]> = {
     owner: [...PERMISSIONS],
     manager: PERMISSIONS.filter((p) => p !== 'staff.manage_owners'),
@@ -31,6 +32,7 @@ describe('role matrix', () => {
       'customers.write',
       'promotions.read',
       'payments.read',
+      'purchasing.read',
     ],
     viewer: [
       'settings.read',
@@ -41,6 +43,8 @@ describe('role matrix', () => {
       'promotions.read',
       'payments.read',
       'reports.read',
+      'purchasing.read',
+      'expenses.read',
     ],
   };
 

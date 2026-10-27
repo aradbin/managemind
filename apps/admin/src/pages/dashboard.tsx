@@ -30,6 +30,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardSection } from '../components/ui/card';
 import { UsageCard } from '../components/usage-card';
 import { useLocale } from '../i18n';
+import '../i18n/back-office-reports';
 import '../i18n/couriers';
 import '../i18n/orders';
 import { formatPrice } from '../lib/catalog';
@@ -94,6 +95,7 @@ export function DashboardView() {
       {data.data && (
         <>
           {data.data.sales && <KeyNumbers sales={data.data.sales} locale={locale} />}
+          {data.data.profit && <ProfitNumbers profit={data.data.profit} locale={locale} />}
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             {/* First on phones, where acting on it matters most; beside the chart on desktops. */}
             <div className="lg:col-start-2 lg:row-start-1">
@@ -150,6 +152,47 @@ function KeyNumbers({ sales, locale }: { sales: NonNullable<Dashboard['sales']>;
         value={formatPrice(average, locale)}
         note={t('dashboard.thisMonth')}
       />
+    </section>
+  );
+}
+
+/** This month's profit so far, for cost holders (phase-8-plan §3.12). */
+function ProfitNumbers({
+  profit,
+  locale,
+}: {
+  profit: NonNullable<Dashboard['profit']>;
+  locale: Locale;
+}) {
+  const { t } = useLocale();
+  return (
+    <section aria-labelledby="dashboard-profit" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="dashboard-profit" className="font-semibold">
+          {t('dashboard.profit.title')}
+        </h2>
+        <Link to="/reports/profit" className="text-sm font-medium text-primary hover:underline">
+          {t('dashboard.profit.open')}
+        </Link>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
+        <Figure
+          label={t('dashboard.profit.gross')}
+          value={formatPrice(profit.grossProfit, locale)}
+          {...(profit.missingCostUnits
+            ? {
+                note: t('dashboard.profit.missing', {
+                  count: formatNumber(locale, profit.missingCostUnits),
+                }),
+              }
+            : {})}
+        />
+        <Figure
+          label={t('dashboard.profit.expenses')}
+          value={formatPrice(profit.expenses, locale)}
+        />
+        <Figure label={t('dashboard.profit.net')} value={formatPrice(profit.netProfit, locale)} />
+      </div>
     </section>
   );
 }

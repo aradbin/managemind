@@ -11,6 +11,8 @@ const SAFE = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** Image uploads send the file itself (ADR 0016); a cross-site form can't send these types either. */
 // As /v1/admin/... or, on the admin host, /api/admin/... (app.ts).
 const UPLOAD = /^\/(?:v1|api)\/admin\/media\/files\/[^/]+$/;
+/** An expense's receipt photo (phase-8-plan §3.6). */
+const RECEIPT = /^\/(?:v1|api)\/admin\/expenses\/[0-9a-f-]{36}\/receipt$/;
 const IMAGE_TYPES = new Set(['image/webp', 'image/jpeg', 'image/png']);
 
 export const staffWrites = createMiddleware<AppEnv>(async (c, next) => {
@@ -20,7 +22,8 @@ export const staffWrites = createMiddleware<AppEnv>(async (c, next) => {
     const type = c.req.header('content-type')?.split(';')[0]?.trim().toLowerCase();
     const allowed =
       type === 'application/json' ||
-      (c.req.method === 'PUT' && UPLOAD.test(c.req.path) && IMAGE_TYPES.has(type ?? ''));
+      (c.req.method === 'PUT' && UPLOAD.test(c.req.path) && IMAGE_TYPES.has(type ?? '')) ||
+      (c.req.method === 'POST' && RECEIPT.test(c.req.path) && IMAGE_TYPES.has(type ?? ''));
     if (hasBody && !allowed) throw new AppError('forbidden');
   }
   await next();

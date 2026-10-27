@@ -3,6 +3,7 @@
 // writer of levels and movements; a level is a cache of its movements' sum.
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   foreignKey,
@@ -103,6 +104,8 @@ export const stockMovements = store.table(
     referenceId: uuid(),
     /** Unique per store: a retried request or a redelivered import chunk writes nothing twice. */
     idempotencyKey: text(),
+    /** The cost per unit it was valued at (phase-8-plan §3.4): receipts, adjustments, counts, returns. */
+    unitCost: bigint({ mode: 'number' }),
     actorType: text({ enum: ACTOR_TYPES }).notNull(),
     actorId: uuid(),
     createdAt: ts().notNull().defaultNow(),
@@ -148,6 +151,7 @@ export const stockMovements = store.table(
     ),
     check('stock_movements_reason_length', sql`char_length(${t.reason}) between 1 and 50`),
     check('stock_movements_note_length', sql`char_length(${t.note}) <= 500`),
+    check('stock_movements_unit_cost', sql`coalesce(${t.unitCost}, 0) >= 0`),
     check(
       'stock_movements_idempotency_key_length',
       sql`char_length(${t.idempotencyKey}) between 1 and 255`,

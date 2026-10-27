@@ -39,6 +39,7 @@ import { countProducts } from '../catalog/products';
 import { chooseSlug, recordSlugChange } from '../catalog/slugs';
 import { type OnHandTarget, setOnHand } from '../inventory/service';
 import { emit } from '../outbox';
+import { type CostChange, recordCostCorrections } from '../purchasing/costs';
 import { type DbClient, type TenantTx, type WithTenantOptions, withTenant } from '../tenant';
 
 const j = schema.importJobs;
@@ -400,6 +401,8 @@ interface ChunkContext {
   attributes: Map<string, { id: string; type: string }>;
   categories: Map<string, string>;
   stock: OnHandTarget[];
+  /** Costs the chunk set, for the cost history (phase-8-plan §3.3). */
+  costs: CostChange[];
   /** New products the plan still allows (phase-5b-plan §3.5); null is unlimited. */
   productsLeft: number | null;
 }
@@ -468,6 +471,7 @@ export async function processImportChunk(
       for (const product of valid) {
         await tx.db.execute(sql`savepoint import_product`);
         const stockBefore = ctx.stock.length;
+        const costsBefore = ctx.costs.length;
         try {
           const result = await writeProduct(tx, ctx, product);
           await tx.db.execute(sql`release savepoint import_product`);
@@ -477,11 +481,16 @@ export async function processImportChunk(
         } catch (e) {
           await tx.db.execute(sql`rollback to savepoint import_product`);
           ctx.stock.length = stockBefore;
+          ctx.costs.length = costsBefore;
           failed += 1;
           errors.push(toRowError(e, product));
         }
       }
       if (ctx.stock.length) await setOnHand(tx, systemActor, ctx.stock);
+      await recordCostCorrections(tx, systemActor, ctx.costs, 'import', {
+        referenceType: 'import_job',
+        referenceId: job.id,
+      });
       await recordErrors(tx, job.id, errors);
 
       const next = message.chunk + 1;
@@ -597,6 +606,7 @@ async function chunkContext(
     categories: new Map(),
     productsLeft: await productsLeft(tx),
     stock: [],
+    costs: [],
   };
 }
 
@@ -946,6 +956,12 @@ async function writeVariants(
     const bySku = row.sku ? ctx.skus.get(row.sku.toLowerCase()) : undefined;
     let id = bySku?.productId === productId ? bySku.variantId : byKey.get(key);
     const values = variantValues(ctx, row);
+    if (id && ctx.withCost) {
+      const [prev] = await tx.db.select({ cost: v.costPrice }).from(v).where(eq(v.id, id));
+      if (prev && prev.cost !== row.costPrice) {
+        ctx.costs.push({ variantId: id, oldCost: prev.cost, newCost: row.costPrice });
+      }
+    }
     if (id) {
       if (bySku && !isNew) {
         // Matched by SKU: the row may move it to another combination.
@@ -966,6 +982,9 @@ async function writeVariants(
       await tx.db
         .insert(v)
         .values({ id, productId, optionsKey: key, position: position++, ...values });
+      if (ctx.withCost && row.costPrice !== null) {
+        ctx.costs.push({ variantId: id, oldCost: null, newCost: row.costPrice });
+      }
     }
     byKey.set(key, id);
     for (const valueId of ids) links.push({ variantId: id, valueId });

@@ -105,6 +105,21 @@ export async function seedDemoOrders(client: pg.Client, tenantId: string): Promi
       'update store.orders set placed_at = placed_at - make_interval(days => $2) where id = $1',
       [orderId, daysAgo],
     );
+    // Its parcel went the day after, so the reports book its sale then (phase-8-plan §3.8).
+    const sent = Math.max(daysAgo - 1, 0);
+    await client.query(
+      `update store.shipments set shipped_at = shipped_at - make_interval(days => $2),
+              delivered_at = delivered_at - make_interval(days => $2),
+              failed_at = failed_at - make_interval(days => $2),
+              returned_at = returned_at - make_interval(days => $2)
+        where order_id = $1`,
+      [orderId, sent],
+    );
+    await client.query(
+      `update store.stock_movements m set created_at = m.created_at - make_interval(days => $2)
+         from store.shipments s where s.order_id = $1 and m.reference_id = s.id`,
+      [orderId, sent],
+    );
     placed++;
   }
   await seedIncompleteOrders(

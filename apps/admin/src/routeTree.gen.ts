@@ -15,12 +15,13 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as TwoFactorRouteImport } from './routes/two-factor'
 import { Route as ShellIndexRouteImport } from './routes/_shell/index'
 import { Route as ShellAccountRouteImport } from './routes/_shell/account'
-import { Route as ShellInventoryRouteImport } from './routes/_shell/inventory'
+import { Route as ShellExpensesRouteImport } from './routes/_shell/expenses'
 import { Route as ShellMoreRouteImport } from './routes/_shell/more'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
 import { Route as ShellReportsRouteImport } from './routes/_shell/reports'
 import { Route as PrintInvoiceRouteImport } from './routes/print.invoice'
 import { Route as PrintOrdersRouteImport } from './routes/print.orders'
+import { Route as PrintPurchaseOrderRouteImport } from './routes/print.purchase-order'
 import { Route as ShellCatalogAttributesRouteImport } from './routes/_shell/catalog/attributes'
 import { Route as ShellCatalogCategoriesRouteImport } from './routes/_shell/catalog/categories'
 import { Route as ShellCatalogImportRouteImport } from './routes/_shell/catalog/import'
@@ -28,6 +29,10 @@ import { Route as ShellCustomersIndexRouteImport } from './routes/_shell/custome
 import { Route as ShellCustomersIdRouteImport } from './routes/_shell/customers/$id'
 import { Route as ShellCustomersImportRouteImport } from './routes/_shell/customers/import'
 import { Route as ShellDevMailboxRouteImport } from './routes/_shell/dev/mailbox'
+import { Route as ShellExpensesImportRouteImport } from './routes/_shell/expenses_.import'
+import { Route as ShellInventoryIndexRouteImport } from './routes/_shell/inventory/index'
+import { Route as ShellInventoryAdjustmentsRouteImport } from './routes/_shell/inventory/adjustments'
+import { Route as ShellInventoryReceiveRouteImport } from './routes/_shell/inventory/receive'
 import { Route as ShellOnlineStoreIndexRouteImport } from './routes/_shell/online-store/index'
 import { Route as ShellOnlineStoreSettingsRouteImport } from './routes/_shell/online-store/settings'
 import { Route as ShellOnlineStoreThemeRouteImport } from './routes/_shell/online-store/theme'
@@ -49,6 +54,12 @@ import { Route as ShellPromotionsIndexRouteImport } from './routes/_shell/promot
 import { Route as ShellPromotionsIdRouteImport } from './routes/_shell/promotions/$id'
 import { Route as ShellPromotionsNewRouteImport } from './routes/_shell/promotions/new'
 import { Route as ShellReportsCodRouteImport } from './routes/_shell/reports_.cod'
+import { Route as ShellReportsCodOutstandingRouteImport } from './routes/_shell/reports_.cod-outstanding'
+import { Route as ShellReportsExpensesRouteImport } from './routes/_shell/reports_.expenses'
+import { Route as ShellReportsProfitRouteImport } from './routes/_shell/reports_.profit'
+import { Route as ShellReportsSalesRouteImport } from './routes/_shell/reports_.sales'
+import { Route as ShellReportsStockRouteImport } from './routes/_shell/reports_.stock'
+import { Route as ShellReportsSuppliersRouteImport } from './routes/_shell/reports_.suppliers'
 import { Route as ShellReturnsIndexRouteImport } from './routes/_shell/returns/index'
 import { Route as ShellReturnsIdRouteImport } from './routes/_shell/returns/$id'
 import { Route as ShellSettingsIndexRouteImport } from './routes/_shell/settings/index'
@@ -69,6 +80,14 @@ import { Route as ShellSettingsTemplatesRouteImport } from './routes/_shell/sett
 import { Route as ShellSettingsVatRouteImport } from './routes/_shell/settings/vat'
 import { Route as ShellCatalogCollectionsIndexRouteImport } from './routes/_shell/catalog/collections/index'
 import { Route as ShellCatalogCollectionsIdRouteImport } from './routes/_shell/catalog/collections/$id'
+import { Route as ShellInventoryCountsIndexRouteImport } from './routes/_shell/inventory/counts/index'
+import { Route as ShellInventoryCountsIdRouteImport } from './routes/_shell/inventory/counts/$id'
+import { Route as ShellInventoryPurchaseOrdersIndexRouteImport } from './routes/_shell/inventory/purchase-orders/index'
+import { Route as ShellInventoryPurchaseOrdersIdRouteImport } from './routes/_shell/inventory/purchase-orders/$id'
+import { Route as ShellInventoryPurchaseOrdersNewRouteImport } from './routes/_shell/inventory/purchase-orders/new'
+import { Route as ShellInventorySuppliersIndexRouteImport } from './routes/_shell/inventory/suppliers/index'
+import { Route as ShellInventorySuppliersIdRouteImport } from './routes/_shell/inventory/suppliers/$id'
+import { Route as ShellInventorySuppliersImportRouteImport } from './routes/_shell/inventory/suppliers/import'
 import { Route as ShellOnlineStorePagesIndexRouteImport } from './routes/_shell/online-store/pages/index'
 import { Route as ShellOnlineStorePagesIdRouteImport } from './routes/_shell/online-store/pages/$id'
 import { Route as ShellOrdersIncompleteIndexRouteImport } from './routes/_shell/orders/incomplete/index'
@@ -107,9 +126,9 @@ const ShellAccountRoute = ShellAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ShellRoute,
 } as any)
-const ShellInventoryRoute = ShellInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
+const ShellExpensesRoute = ShellExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellMoreRoute = ShellMoreRouteImport.update({
@@ -135,6 +154,11 @@ const PrintInvoiceRoute = PrintInvoiceRouteImport.update({
 const PrintOrdersRoute = PrintOrdersRouteImport.update({
   id: '/print/orders',
   path: '/print/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrintPurchaseOrderRoute = PrintPurchaseOrderRouteImport.update({
+  id: '/print/purchase-order',
+  path: '/print/purchase-order',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShellCatalogAttributesRoute = ShellCatalogAttributesRouteImport.update({
@@ -170,6 +194,27 @@ const ShellCustomersImportRoute = ShellCustomersImportRouteImport.update({
 const ShellDevMailboxRoute = ShellDevMailboxRouteImport.update({
   id: '/dev/mailbox',
   path: '/dev/mailbox',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellExpensesImportRoute = ShellExpensesImportRouteImport.update({
+  id: '/expenses_/import',
+  path: '/expenses/import',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellInventoryIndexRoute = ShellInventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellInventoryAdjustmentsRoute =
+  ShellInventoryAdjustmentsRouteImport.update({
+    id: '/inventory/adjustments',
+    path: '/inventory/adjustments',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventoryReceiveRoute = ShellInventoryReceiveRouteImport.update({
+  id: '/inventory/receive',
+  path: '/inventory/receive',
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellOnlineStoreIndexRoute = ShellOnlineStoreIndexRouteImport.update({
@@ -280,6 +325,37 @@ const ShellReportsCodRoute = ShellReportsCodRouteImport.update({
   path: '/reports/cod',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellReportsCodOutstandingRoute =
+  ShellReportsCodOutstandingRouteImport.update({
+    id: '/reports_/cod-outstanding',
+    path: '/reports/cod-outstanding',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellReportsExpensesRoute = ShellReportsExpensesRouteImport.update({
+  id: '/reports_/expenses',
+  path: '/reports/expenses',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsProfitRoute = ShellReportsProfitRouteImport.update({
+  id: '/reports_/profit',
+  path: '/reports/profit',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsSalesRoute = ShellReportsSalesRouteImport.update({
+  id: '/reports_/sales',
+  path: '/reports/sales',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsStockRoute = ShellReportsStockRouteImport.update({
+  id: '/reports_/stock',
+  path: '/reports/stock',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellReportsSuppliersRoute = ShellReportsSuppliersRouteImport.update({
+  id: '/reports_/suppliers',
+  path: '/reports/suppliers',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellReturnsIndexRoute = ShellReturnsIndexRouteImport.update({
   id: '/returns/',
   path: '/returns/',
@@ -384,6 +460,53 @@ const ShellCatalogCollectionsIdRoute =
     path: '/catalog/collections/$id',
     getParentRoute: () => ShellRoute,
   } as any)
+const ShellInventoryCountsIndexRoute =
+  ShellInventoryCountsIndexRouteImport.update({
+    id: '/inventory/counts/',
+    path: '/inventory/counts/',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventoryCountsIdRoute = ShellInventoryCountsIdRouteImport.update({
+  id: '/inventory/counts/$id',
+  path: '/inventory/counts/$id',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellInventoryPurchaseOrdersIndexRoute =
+  ShellInventoryPurchaseOrdersIndexRouteImport.update({
+    id: '/inventory/purchase-orders/',
+    path: '/inventory/purchase-orders/',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventoryPurchaseOrdersIdRoute =
+  ShellInventoryPurchaseOrdersIdRouteImport.update({
+    id: '/inventory/purchase-orders/$id',
+    path: '/inventory/purchase-orders/$id',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventoryPurchaseOrdersNewRoute =
+  ShellInventoryPurchaseOrdersNewRouteImport.update({
+    id: '/inventory/purchase-orders/new',
+    path: '/inventory/purchase-orders/new',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventorySuppliersIndexRoute =
+  ShellInventorySuppliersIndexRouteImport.update({
+    id: '/inventory/suppliers/',
+    path: '/inventory/suppliers/',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventorySuppliersIdRoute =
+  ShellInventorySuppliersIdRouteImport.update({
+    id: '/inventory/suppliers/$id',
+    path: '/inventory/suppliers/$id',
+    getParentRoute: () => ShellRoute,
+  } as any)
+const ShellInventorySuppliersImportRoute =
+  ShellInventorySuppliersImportRouteImport.update({
+    id: '/inventory/suppliers/import',
+    path: '/inventory/suppliers/import',
+    getParentRoute: () => ShellRoute,
+  } as any)
 const ShellOnlineStorePagesIndexRoute =
   ShellOnlineStorePagesIndexRouteImport.update({
     id: '/online-store/pages/',
@@ -434,18 +557,22 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
-  '/inventory': typeof ShellInventoryRoute
+  '/expenses': typeof ShellExpensesRoute
   '/more': typeof ShellMoreRoute
   '/platform': typeof ShellPlatformRouteWithChildren
   '/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
   '/print/orders': typeof PrintOrdersRoute
+  '/print/purchase-order': typeof PrintPurchaseOrderRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
   '/catalog/import': typeof ShellCatalogImportRoute
   '/customers/$id': typeof ShellCustomersIdRoute
   '/customers/import': typeof ShellCustomersImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/expenses/import': typeof ShellExpensesImportRoute
+  '/inventory/adjustments': typeof ShellInventoryAdjustmentsRoute
+  '/inventory/receive': typeof ShellInventoryReceiveRoute
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
@@ -462,6 +589,12 @@ export interface FileRoutesByFullPath {
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
   '/reports/cod': typeof ShellReportsCodRoute
+  '/reports/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/reports/expenses': typeof ShellReportsExpensesRoute
+  '/reports/profit': typeof ShellReportsProfitRoute
+  '/reports/sales': typeof ShellReportsSalesRoute
+  '/reports/stock': typeof ShellReportsStockRoute
+  '/reports/suppliers': typeof ShellReportsSuppliersRoute
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -479,6 +612,7 @@ export interface FileRoutesByFullPath {
   '/settings/templates': typeof ShellSettingsTemplatesRoute
   '/settings/vat': typeof ShellSettingsVatRoute
   '/customers/': typeof ShellCustomersIndexRoute
+  '/inventory/': typeof ShellInventoryIndexRoute
   '/online-store/': typeof ShellOnlineStoreIndexRoute
   '/orders/': typeof ShellOrdersIndexRoute
   '/platform/': typeof ShellPlatformIndexRoute
@@ -487,12 +621,20 @@ export interface FileRoutesByFullPath {
   '/returns/': typeof ShellReturnsIndexRoute
   '/settings/': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/inventory/counts/$id': typeof ShellInventoryCountsIdRoute
+  '/inventory/purchase-orders/$id': typeof ShellInventoryPurchaseOrdersIdRoute
+  '/inventory/purchase-orders/new': typeof ShellInventoryPurchaseOrdersNewRoute
+  '/inventory/suppliers/$id': typeof ShellInventorySuppliersIdRoute
+  '/inventory/suppliers/import': typeof ShellInventorySuppliersImportRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
+  '/inventory/counts/': typeof ShellInventoryCountsIndexRoute
+  '/inventory/purchase-orders/': typeof ShellInventoryPurchaseOrdersIndexRoute
+  '/inventory/suppliers/': typeof ShellInventorySuppliersIndexRoute
   '/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
   '/orders/incomplete/': typeof ShellOrdersIncompleteIndexRoute
   '/platform/billing/': typeof ShellPlatformBillingIndexRoute
@@ -502,11 +644,12 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/account': typeof ShellAccountRoute
-  '/inventory': typeof ShellInventoryRoute
+  '/expenses': typeof ShellExpensesRoute
   '/more': typeof ShellMoreRoute
   '/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
   '/print/orders': typeof PrintOrdersRoute
+  '/print/purchase-order': typeof PrintPurchaseOrderRoute
   '/': typeof ShellIndexRoute
   '/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/catalog/categories': typeof ShellCatalogCategoriesRoute
@@ -514,6 +657,9 @@ export interface FileRoutesByTo {
   '/customers/$id': typeof ShellCustomersIdRoute
   '/customers/import': typeof ShellCustomersImportRoute
   '/dev/mailbox': typeof ShellDevMailboxRoute
+  '/expenses/import': typeof ShellExpensesImportRoute
+  '/inventory/adjustments': typeof ShellInventoryAdjustmentsRoute
+  '/inventory/receive': typeof ShellInventoryReceiveRoute
   '/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/orders/$id': typeof ShellOrdersIdRoute
@@ -530,6 +676,12 @@ export interface FileRoutesByTo {
   '/promotions/$id': typeof ShellPromotionsIdRoute
   '/promotions/new': typeof ShellPromotionsNewRoute
   '/reports/cod': typeof ShellReportsCodRoute
+  '/reports/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/reports/expenses': typeof ShellReportsExpensesRoute
+  '/reports/profit': typeof ShellReportsProfitRoute
+  '/reports/sales': typeof ShellReportsSalesRoute
+  '/reports/stock': typeof ShellReportsStockRoute
+  '/reports/suppliers': typeof ShellReportsSuppliersRoute
   '/returns/$id': typeof ShellReturnsIdRoute
   '/settings/billing': typeof ShellSettingsBillingRoute
   '/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -547,6 +699,7 @@ export interface FileRoutesByTo {
   '/settings/templates': typeof ShellSettingsTemplatesRoute
   '/settings/vat': typeof ShellSettingsVatRoute
   '/customers': typeof ShellCustomersIndexRoute
+  '/inventory': typeof ShellInventoryIndexRoute
   '/online-store': typeof ShellOnlineStoreIndexRoute
   '/orders': typeof ShellOrdersIndexRoute
   '/platform': typeof ShellPlatformIndexRoute
@@ -555,12 +708,20 @@ export interface FileRoutesByTo {
   '/returns': typeof ShellReturnsIndexRoute
   '/settings': typeof ShellSettingsIndexRoute
   '/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/inventory/counts/$id': typeof ShellInventoryCountsIdRoute
+  '/inventory/purchase-orders/$id': typeof ShellInventoryPurchaseOrdersIdRoute
+  '/inventory/purchase-orders/new': typeof ShellInventoryPurchaseOrdersNewRoute
+  '/inventory/suppliers/$id': typeof ShellInventorySuppliersIdRoute
+  '/inventory/suppliers/import': typeof ShellInventorySuppliersImportRoute
   '/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/catalog/collections': typeof ShellCatalogCollectionsIndexRoute
+  '/inventory/counts': typeof ShellInventoryCountsIndexRoute
+  '/inventory/purchase-orders': typeof ShellInventoryPurchaseOrdersIndexRoute
+  '/inventory/suppliers': typeof ShellInventorySuppliersIndexRoute
   '/online-store/pages': typeof ShellOnlineStorePagesIndexRoute
   '/orders/incomplete': typeof ShellOrdersIncompleteIndexRoute
   '/platform/billing': typeof ShellPlatformBillingIndexRoute
@@ -572,12 +733,13 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
   '/_shell/account': typeof ShellAccountRoute
-  '/_shell/inventory': typeof ShellInventoryRoute
+  '/_shell/expenses': typeof ShellExpensesRoute
   '/_shell/more': typeof ShellMoreRoute
   '/_shell/platform': typeof ShellPlatformRouteWithChildren
   '/_shell/reports': typeof ShellReportsRoute
   '/print/invoice': typeof PrintInvoiceRoute
   '/print/orders': typeof PrintOrdersRoute
+  '/print/purchase-order': typeof PrintPurchaseOrderRoute
   '/_shell/': typeof ShellIndexRoute
   '/_shell/catalog/attributes': typeof ShellCatalogAttributesRoute
   '/_shell/catalog/categories': typeof ShellCatalogCategoriesRoute
@@ -585,6 +747,9 @@ export interface FileRoutesById {
   '/_shell/customers/$id': typeof ShellCustomersIdRoute
   '/_shell/customers/import': typeof ShellCustomersImportRoute
   '/_shell/dev/mailbox': typeof ShellDevMailboxRoute
+  '/_shell/expenses_/import': typeof ShellExpensesImportRoute
+  '/_shell/inventory/adjustments': typeof ShellInventoryAdjustmentsRoute
+  '/_shell/inventory/receive': typeof ShellInventoryReceiveRoute
   '/_shell/online-store/settings': typeof ShellOnlineStoreSettingsRoute
   '/_shell/online-store/theme': typeof ShellOnlineStoreThemeRoute
   '/_shell/orders/$id': typeof ShellOrdersIdRoute
@@ -601,6 +766,12 @@ export interface FileRoutesById {
   '/_shell/promotions/$id': typeof ShellPromotionsIdRoute
   '/_shell/promotions/new': typeof ShellPromotionsNewRoute
   '/_shell/reports_/cod': typeof ShellReportsCodRoute
+  '/_shell/reports_/cod-outstanding': typeof ShellReportsCodOutstandingRoute
+  '/_shell/reports_/expenses': typeof ShellReportsExpensesRoute
+  '/_shell/reports_/profit': typeof ShellReportsProfitRoute
+  '/_shell/reports_/sales': typeof ShellReportsSalesRoute
+  '/_shell/reports_/stock': typeof ShellReportsStockRoute
+  '/_shell/reports_/suppliers': typeof ShellReportsSuppliersRoute
   '/_shell/returns/$id': typeof ShellReturnsIdRoute
   '/_shell/settings/billing': typeof ShellSettingsBillingRoute
   '/_shell/settings/checkout': typeof ShellSettingsCheckoutRoute
@@ -618,6 +789,7 @@ export interface FileRoutesById {
   '/_shell/settings/templates': typeof ShellSettingsTemplatesRoute
   '/_shell/settings/vat': typeof ShellSettingsVatRoute
   '/_shell/customers/': typeof ShellCustomersIndexRoute
+  '/_shell/inventory/': typeof ShellInventoryIndexRoute
   '/_shell/online-store/': typeof ShellOnlineStoreIndexRoute
   '/_shell/orders/': typeof ShellOrdersIndexRoute
   '/_shell/platform/': typeof ShellPlatformIndexRoute
@@ -626,12 +798,20 @@ export interface FileRoutesById {
   '/_shell/returns/': typeof ShellReturnsIndexRoute
   '/_shell/settings/': typeof ShellSettingsIndexRoute
   '/_shell/catalog/collections/$id': typeof ShellCatalogCollectionsIdRoute
+  '/_shell/inventory/counts/$id': typeof ShellInventoryCountsIdRoute
+  '/_shell/inventory/purchase-orders/$id': typeof ShellInventoryPurchaseOrdersIdRoute
+  '/_shell/inventory/purchase-orders/new': typeof ShellInventoryPurchaseOrdersNewRoute
+  '/_shell/inventory/suppliers/$id': typeof ShellInventorySuppliersIdRoute
+  '/_shell/inventory/suppliers/import': typeof ShellInventorySuppliersImportRoute
   '/_shell/online-store/pages/$id': typeof ShellOnlineStorePagesIdRoute
   '/_shell/orders/incomplete/$id': typeof ShellOrdersIncompleteIdRoute
   '/_shell/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/_shell/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
   '/_shell/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
+  '/_shell/inventory/counts/': typeof ShellInventoryCountsIndexRoute
+  '/_shell/inventory/purchase-orders/': typeof ShellInventoryPurchaseOrdersIndexRoute
+  '/_shell/inventory/suppliers/': typeof ShellInventorySuppliersIndexRoute
   '/_shell/online-store/pages/': typeof ShellOnlineStorePagesIndexRoute
   '/_shell/orders/incomplete/': typeof ShellOrdersIncompleteIndexRoute
   '/_shell/platform/billing/': typeof ShellPlatformBillingIndexRoute
@@ -644,18 +824,22 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/account'
-    | '/inventory'
+    | '/expenses'
     | '/more'
     | '/platform'
     | '/reports'
     | '/print/invoice'
     | '/print/orders'
+    | '/print/purchase-order'
     | '/catalog/attributes'
     | '/catalog/categories'
     | '/catalog/import'
     | '/customers/$id'
     | '/customers/import'
     | '/dev/mailbox'
+    | '/expenses/import'
+    | '/inventory/adjustments'
+    | '/inventory/receive'
     | '/online-store/settings'
     | '/online-store/theme'
     | '/orders/$id'
@@ -672,6 +856,12 @@ export interface FileRouteTypes {
     | '/promotions/$id'
     | '/promotions/new'
     | '/reports/cod'
+    | '/reports/cod-outstanding'
+    | '/reports/expenses'
+    | '/reports/profit'
+    | '/reports/sales'
+    | '/reports/stock'
+    | '/reports/suppliers'
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
@@ -689,6 +879,7 @@ export interface FileRouteTypes {
     | '/settings/templates'
     | '/settings/vat'
     | '/customers/'
+    | '/inventory/'
     | '/online-store/'
     | '/orders/'
     | '/platform/'
@@ -697,12 +888,20 @@ export interface FileRouteTypes {
     | '/returns/'
     | '/settings/'
     | '/catalog/collections/$id'
+    | '/inventory/counts/$id'
+    | '/inventory/purchase-orders/$id'
+    | '/inventory/purchase-orders/new'
+    | '/inventory/suppliers/$id'
+    | '/inventory/suppliers/import'
     | '/online-store/pages/$id'
     | '/orders/incomplete/$id'
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
     | '/catalog/collections/'
+    | '/inventory/counts/'
+    | '/inventory/purchase-orders/'
+    | '/inventory/suppliers/'
     | '/online-store/pages/'
     | '/orders/incomplete/'
     | '/platform/billing/'
@@ -712,11 +911,12 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/account'
-    | '/inventory'
+    | '/expenses'
     | '/more'
     | '/reports'
     | '/print/invoice'
     | '/print/orders'
+    | '/print/purchase-order'
     | '/'
     | '/catalog/attributes'
     | '/catalog/categories'
@@ -724,6 +924,9 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/customers/import'
     | '/dev/mailbox'
+    | '/expenses/import'
+    | '/inventory/adjustments'
+    | '/inventory/receive'
     | '/online-store/settings'
     | '/online-store/theme'
     | '/orders/$id'
@@ -740,6 +943,12 @@ export interface FileRouteTypes {
     | '/promotions/$id'
     | '/promotions/new'
     | '/reports/cod'
+    | '/reports/cod-outstanding'
+    | '/reports/expenses'
+    | '/reports/profit'
+    | '/reports/sales'
+    | '/reports/stock'
+    | '/reports/suppliers'
     | '/returns/$id'
     | '/settings/billing'
     | '/settings/checkout'
@@ -757,6 +966,7 @@ export interface FileRouteTypes {
     | '/settings/templates'
     | '/settings/vat'
     | '/customers'
+    | '/inventory'
     | '/online-store'
     | '/orders'
     | '/platform'
@@ -765,12 +975,20 @@ export interface FileRouteTypes {
     | '/returns'
     | '/settings'
     | '/catalog/collections/$id'
+    | '/inventory/counts/$id'
+    | '/inventory/purchase-orders/$id'
+    | '/inventory/purchase-orders/new'
+    | '/inventory/suppliers/$id'
+    | '/inventory/suppliers/import'
     | '/online-store/pages/$id'
     | '/orders/incomplete/$id'
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
     | '/catalog/collections'
+    | '/inventory/counts'
+    | '/inventory/purchase-orders'
+    | '/inventory/suppliers'
     | '/online-store/pages'
     | '/orders/incomplete'
     | '/platform/billing'
@@ -781,12 +999,13 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/two-factor'
     | '/_shell/account'
-    | '/_shell/inventory'
+    | '/_shell/expenses'
     | '/_shell/more'
     | '/_shell/platform'
     | '/_shell/reports'
     | '/print/invoice'
     | '/print/orders'
+    | '/print/purchase-order'
     | '/_shell/'
     | '/_shell/catalog/attributes'
     | '/_shell/catalog/categories'
@@ -794,6 +1013,9 @@ export interface FileRouteTypes {
     | '/_shell/customers/$id'
     | '/_shell/customers/import'
     | '/_shell/dev/mailbox'
+    | '/_shell/expenses_/import'
+    | '/_shell/inventory/adjustments'
+    | '/_shell/inventory/receive'
     | '/_shell/online-store/settings'
     | '/_shell/online-store/theme'
     | '/_shell/orders/$id'
@@ -810,6 +1032,12 @@ export interface FileRouteTypes {
     | '/_shell/promotions/$id'
     | '/_shell/promotions/new'
     | '/_shell/reports_/cod'
+    | '/_shell/reports_/cod-outstanding'
+    | '/_shell/reports_/expenses'
+    | '/_shell/reports_/profit'
+    | '/_shell/reports_/sales'
+    | '/_shell/reports_/stock'
+    | '/_shell/reports_/suppliers'
     | '/_shell/returns/$id'
     | '/_shell/settings/billing'
     | '/_shell/settings/checkout'
@@ -827,6 +1055,7 @@ export interface FileRouteTypes {
     | '/_shell/settings/templates'
     | '/_shell/settings/vat'
     | '/_shell/customers/'
+    | '/_shell/inventory/'
     | '/_shell/online-store/'
     | '/_shell/orders/'
     | '/_shell/platform/'
@@ -835,12 +1064,20 @@ export interface FileRouteTypes {
     | '/_shell/returns/'
     | '/_shell/settings/'
     | '/_shell/catalog/collections/$id'
+    | '/_shell/inventory/counts/$id'
+    | '/_shell/inventory/purchase-orders/$id'
+    | '/_shell/inventory/purchase-orders/new'
+    | '/_shell/inventory/suppliers/$id'
+    | '/_shell/inventory/suppliers/import'
     | '/_shell/online-store/pages/$id'
     | '/_shell/orders/incomplete/$id'
     | '/_shell/platform/billing/$id'
     | '/_shell/platform/tenants/$id'
     | '/_shell/platform/tenants/new'
     | '/_shell/catalog/collections/'
+    | '/_shell/inventory/counts/'
+    | '/_shell/inventory/purchase-orders/'
+    | '/_shell/inventory/suppliers/'
     | '/_shell/online-store/pages/'
     | '/_shell/orders/incomplete/'
     | '/_shell/platform/billing/'
@@ -853,6 +1090,7 @@ export interface RootRouteChildren {
   TwoFactorRoute: typeof TwoFactorRoute
   PrintInvoiceRoute: typeof PrintInvoiceRoute
   PrintOrdersRoute: typeof PrintOrdersRoute
+  PrintPurchaseOrderRoute: typeof PrintPurchaseOrderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -899,11 +1137,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellAccountRouteImport
       parentRoute: typeof ShellRoute
     }
-    '/_shell/inventory': {
-      id: '/_shell/inventory'
-      path: '/inventory'
-      fullPath: '/inventory'
-      preLoaderRoute: typeof ShellInventoryRouteImport
+    '/_shell/expenses': {
+      id: '/_shell/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ShellExpensesRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/more': {
@@ -939,6 +1177,13 @@ declare module '@tanstack/react-router' {
       path: '/print/orders'
       fullPath: '/print/orders'
       preLoaderRoute: typeof PrintOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/print/purchase-order': {
+      id: '/print/purchase-order'
+      path: '/print/purchase-order'
+      fullPath: '/print/purchase-order'
+      preLoaderRoute: typeof PrintPurchaseOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_shell/catalog/attributes': {
@@ -988,6 +1233,34 @@ declare module '@tanstack/react-router' {
       path: '/dev/mailbox'
       fullPath: '/dev/mailbox'
       preLoaderRoute: typeof ShellDevMailboxRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/expenses_/import': {
+      id: '/_shell/expenses_/import'
+      path: '/expenses/import'
+      fullPath: '/expenses/import'
+      preLoaderRoute: typeof ShellExpensesImportRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/': {
+      id: '/_shell/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof ShellInventoryIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/adjustments': {
+      id: '/_shell/inventory/adjustments'
+      path: '/inventory/adjustments'
+      fullPath: '/inventory/adjustments'
+      preLoaderRoute: typeof ShellInventoryAdjustmentsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/receive': {
+      id: '/_shell/inventory/receive'
+      path: '/inventory/receive'
+      fullPath: '/inventory/receive'
+      preLoaderRoute: typeof ShellInventoryReceiveRouteImport
       parentRoute: typeof ShellRoute
     }
     '/_shell/online-store/': {
@@ -1137,6 +1410,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellReportsCodRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/reports_/cod-outstanding': {
+      id: '/_shell/reports_/cod-outstanding'
+      path: '/reports/cod-outstanding'
+      fullPath: '/reports/cod-outstanding'
+      preLoaderRoute: typeof ShellReportsCodOutstandingRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/expenses': {
+      id: '/_shell/reports_/expenses'
+      path: '/reports/expenses'
+      fullPath: '/reports/expenses'
+      preLoaderRoute: typeof ShellReportsExpensesRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/profit': {
+      id: '/_shell/reports_/profit'
+      path: '/reports/profit'
+      fullPath: '/reports/profit'
+      preLoaderRoute: typeof ShellReportsProfitRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/sales': {
+      id: '/_shell/reports_/sales'
+      path: '/reports/sales'
+      fullPath: '/reports/sales'
+      preLoaderRoute: typeof ShellReportsSalesRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/stock': {
+      id: '/_shell/reports_/stock'
+      path: '/reports/stock'
+      fullPath: '/reports/stock'
+      preLoaderRoute: typeof ShellReportsStockRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/reports_/suppliers': {
+      id: '/_shell/reports_/suppliers'
+      path: '/reports/suppliers'
+      fullPath: '/reports/suppliers'
+      preLoaderRoute: typeof ShellReportsSuppliersRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/returns/': {
       id: '/_shell/returns/'
       path: '/returns'
@@ -1277,6 +1592,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellCatalogCollectionsIdRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/inventory/counts/': {
+      id: '/_shell/inventory/counts/'
+      path: '/inventory/counts'
+      fullPath: '/inventory/counts/'
+      preLoaderRoute: typeof ShellInventoryCountsIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/counts/$id': {
+      id: '/_shell/inventory/counts/$id'
+      path: '/inventory/counts/$id'
+      fullPath: '/inventory/counts/$id'
+      preLoaderRoute: typeof ShellInventoryCountsIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/purchase-orders/': {
+      id: '/_shell/inventory/purchase-orders/'
+      path: '/inventory/purchase-orders'
+      fullPath: '/inventory/purchase-orders/'
+      preLoaderRoute: typeof ShellInventoryPurchaseOrdersIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/purchase-orders/$id': {
+      id: '/_shell/inventory/purchase-orders/$id'
+      path: '/inventory/purchase-orders/$id'
+      fullPath: '/inventory/purchase-orders/$id'
+      preLoaderRoute: typeof ShellInventoryPurchaseOrdersIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/purchase-orders/new': {
+      id: '/_shell/inventory/purchase-orders/new'
+      path: '/inventory/purchase-orders/new'
+      fullPath: '/inventory/purchase-orders/new'
+      preLoaderRoute: typeof ShellInventoryPurchaseOrdersNewRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/suppliers/': {
+      id: '/_shell/inventory/suppliers/'
+      path: '/inventory/suppliers'
+      fullPath: '/inventory/suppliers/'
+      preLoaderRoute: typeof ShellInventorySuppliersIndexRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/suppliers/$id': {
+      id: '/_shell/inventory/suppliers/$id'
+      path: '/inventory/suppliers/$id'
+      fullPath: '/inventory/suppliers/$id'
+      preLoaderRoute: typeof ShellInventorySuppliersIdRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/inventory/suppliers/import': {
+      id: '/_shell/inventory/suppliers/import'
+      path: '/inventory/suppliers/import'
+      fullPath: '/inventory/suppliers/import'
+      preLoaderRoute: typeof ShellInventorySuppliersImportRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/online-store/pages/': {
       id: '/_shell/online-store/pages/'
       path: '/online-store/pages'
@@ -1368,7 +1739,7 @@ const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(
 
 interface ShellRouteChildren {
   ShellAccountRoute: typeof ShellAccountRoute
-  ShellInventoryRoute: typeof ShellInventoryRoute
+  ShellExpensesRoute: typeof ShellExpensesRoute
   ShellMoreRoute: typeof ShellMoreRoute
   ShellPlatformRoute: typeof ShellPlatformRouteWithChildren
   ShellReportsRoute: typeof ShellReportsRoute
@@ -1379,6 +1750,9 @@ interface ShellRouteChildren {
   ShellCustomersIdRoute: typeof ShellCustomersIdRoute
   ShellCustomersImportRoute: typeof ShellCustomersImportRoute
   ShellDevMailboxRoute: typeof ShellDevMailboxRoute
+  ShellExpensesImportRoute: typeof ShellExpensesImportRoute
+  ShellInventoryAdjustmentsRoute: typeof ShellInventoryAdjustmentsRoute
+  ShellInventoryReceiveRoute: typeof ShellInventoryReceiveRoute
   ShellOnlineStoreSettingsRoute: typeof ShellOnlineStoreSettingsRoute
   ShellOnlineStoreThemeRoute: typeof ShellOnlineStoreThemeRoute
   ShellOrdersIdRoute: typeof ShellOrdersIdRoute
@@ -1390,6 +1764,12 @@ interface ShellRouteChildren {
   ShellPromotionsIdRoute: typeof ShellPromotionsIdRoute
   ShellPromotionsNewRoute: typeof ShellPromotionsNewRoute
   ShellReportsCodRoute: typeof ShellReportsCodRoute
+  ShellReportsCodOutstandingRoute: typeof ShellReportsCodOutstandingRoute
+  ShellReportsExpensesRoute: typeof ShellReportsExpensesRoute
+  ShellReportsProfitRoute: typeof ShellReportsProfitRoute
+  ShellReportsSalesRoute: typeof ShellReportsSalesRoute
+  ShellReportsStockRoute: typeof ShellReportsStockRoute
+  ShellReportsSuppliersRoute: typeof ShellReportsSuppliersRoute
   ShellReturnsIdRoute: typeof ShellReturnsIdRoute
   ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
   ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
@@ -1407,6 +1787,7 @@ interface ShellRouteChildren {
   ShellSettingsTemplatesRoute: typeof ShellSettingsTemplatesRoute
   ShellSettingsVatRoute: typeof ShellSettingsVatRoute
   ShellCustomersIndexRoute: typeof ShellCustomersIndexRoute
+  ShellInventoryIndexRoute: typeof ShellInventoryIndexRoute
   ShellOnlineStoreIndexRoute: typeof ShellOnlineStoreIndexRoute
   ShellOrdersIndexRoute: typeof ShellOrdersIndexRoute
   ShellProductsIndexRoute: typeof ShellProductsIndexRoute
@@ -1414,16 +1795,24 @@ interface ShellRouteChildren {
   ShellReturnsIndexRoute: typeof ShellReturnsIndexRoute
   ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
+  ShellInventoryCountsIdRoute: typeof ShellInventoryCountsIdRoute
+  ShellInventoryPurchaseOrdersIdRoute: typeof ShellInventoryPurchaseOrdersIdRoute
+  ShellInventoryPurchaseOrdersNewRoute: typeof ShellInventoryPurchaseOrdersNewRoute
+  ShellInventorySuppliersIdRoute: typeof ShellInventorySuppliersIdRoute
+  ShellInventorySuppliersImportRoute: typeof ShellInventorySuppliersImportRoute
   ShellOnlineStorePagesIdRoute: typeof ShellOnlineStorePagesIdRoute
   ShellOrdersIncompleteIdRoute: typeof ShellOrdersIncompleteIdRoute
   ShellCatalogCollectionsIndexRoute: typeof ShellCatalogCollectionsIndexRoute
+  ShellInventoryCountsIndexRoute: typeof ShellInventoryCountsIndexRoute
+  ShellInventoryPurchaseOrdersIndexRoute: typeof ShellInventoryPurchaseOrdersIndexRoute
+  ShellInventorySuppliersIndexRoute: typeof ShellInventorySuppliersIndexRoute
   ShellOnlineStorePagesIndexRoute: typeof ShellOnlineStorePagesIndexRoute
   ShellOrdersIncompleteIndexRoute: typeof ShellOrdersIncompleteIndexRoute
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
   ShellAccountRoute: ShellAccountRoute,
-  ShellInventoryRoute: ShellInventoryRoute,
+  ShellExpensesRoute: ShellExpensesRoute,
   ShellMoreRoute: ShellMoreRoute,
   ShellPlatformRoute: ShellPlatformRouteWithChildren,
   ShellReportsRoute: ShellReportsRoute,
@@ -1434,6 +1823,9 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellCustomersIdRoute: ShellCustomersIdRoute,
   ShellCustomersImportRoute: ShellCustomersImportRoute,
   ShellDevMailboxRoute: ShellDevMailboxRoute,
+  ShellExpensesImportRoute: ShellExpensesImportRoute,
+  ShellInventoryAdjustmentsRoute: ShellInventoryAdjustmentsRoute,
+  ShellInventoryReceiveRoute: ShellInventoryReceiveRoute,
   ShellOnlineStoreSettingsRoute: ShellOnlineStoreSettingsRoute,
   ShellOnlineStoreThemeRoute: ShellOnlineStoreThemeRoute,
   ShellOrdersIdRoute: ShellOrdersIdRoute,
@@ -1445,6 +1837,12 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellPromotionsIdRoute: ShellPromotionsIdRoute,
   ShellPromotionsNewRoute: ShellPromotionsNewRoute,
   ShellReportsCodRoute: ShellReportsCodRoute,
+  ShellReportsCodOutstandingRoute: ShellReportsCodOutstandingRoute,
+  ShellReportsExpensesRoute: ShellReportsExpensesRoute,
+  ShellReportsProfitRoute: ShellReportsProfitRoute,
+  ShellReportsSalesRoute: ShellReportsSalesRoute,
+  ShellReportsStockRoute: ShellReportsStockRoute,
+  ShellReportsSuppliersRoute: ShellReportsSuppliersRoute,
   ShellReturnsIdRoute: ShellReturnsIdRoute,
   ShellSettingsBillingRoute: ShellSettingsBillingRoute,
   ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
@@ -1462,6 +1860,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsTemplatesRoute: ShellSettingsTemplatesRoute,
   ShellSettingsVatRoute: ShellSettingsVatRoute,
   ShellCustomersIndexRoute: ShellCustomersIndexRoute,
+  ShellInventoryIndexRoute: ShellInventoryIndexRoute,
   ShellOnlineStoreIndexRoute: ShellOnlineStoreIndexRoute,
   ShellOrdersIndexRoute: ShellOrdersIndexRoute,
   ShellProductsIndexRoute: ShellProductsIndexRoute,
@@ -1469,9 +1868,18 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellReturnsIndexRoute: ShellReturnsIndexRoute,
   ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
+  ShellInventoryCountsIdRoute: ShellInventoryCountsIdRoute,
+  ShellInventoryPurchaseOrdersIdRoute: ShellInventoryPurchaseOrdersIdRoute,
+  ShellInventoryPurchaseOrdersNewRoute: ShellInventoryPurchaseOrdersNewRoute,
+  ShellInventorySuppliersIdRoute: ShellInventorySuppliersIdRoute,
+  ShellInventorySuppliersImportRoute: ShellInventorySuppliersImportRoute,
   ShellOnlineStorePagesIdRoute: ShellOnlineStorePagesIdRoute,
   ShellOrdersIncompleteIdRoute: ShellOrdersIncompleteIdRoute,
   ShellCatalogCollectionsIndexRoute: ShellCatalogCollectionsIndexRoute,
+  ShellInventoryCountsIndexRoute: ShellInventoryCountsIndexRoute,
+  ShellInventoryPurchaseOrdersIndexRoute:
+    ShellInventoryPurchaseOrdersIndexRoute,
+  ShellInventorySuppliersIndexRoute: ShellInventorySuppliersIndexRoute,
   ShellOnlineStorePagesIndexRoute: ShellOnlineStorePagesIndexRoute,
   ShellOrdersIncompleteIndexRoute: ShellOrdersIncompleteIndexRoute,
 }
@@ -1485,6 +1893,7 @@ const rootRouteChildren: RootRouteChildren = {
   TwoFactorRoute: TwoFactorRoute,
   PrintInvoiceRoute: PrintInvoiceRoute,
   PrintOrdersRoute: PrintOrdersRoute,
+  PrintPurchaseOrderRoute: PrintPurchaseOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

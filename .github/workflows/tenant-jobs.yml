@@ -1,6 +1,7 @@
-# Store jobs (phase-5b-plan §3.9–§3.12, ADR 0027): exports, purges and demo
-# or test stores' resets, with the demo stores' weekly reset on Fridays. The
-# platform screen and Settings write a pending row in platform.tenant_jobs;
+# Store jobs (phase-5b-plan §3.9–§3.12, ADR 0027): exports, purges, demo
+# or test stores' resets and report backfills (phase-8-plan §3.9), with the
+# demo stores' weekly reset on Fridays. The platform screen, Settings and
+# the daily batch write a pending row in platform.tenant_jobs;
 # the API starts this workflow with GITHUB_DISPATCH_TOKEN, and the daily run
 # picks up anything left (no token, GitHub didn't answer, or a runner was
 # lost). The script connects to Neon
@@ -49,7 +50,7 @@ jobs:
           : "${DATABASE_URL_MIGRATIONS:?the DATABASE_URL_MIGRATIONS secret is not set}"
           # The runner's own condition (scripts/jobs/runner.ts): a purge waits between its dry run and the approval.
           count=$(psql "$DATABASE_URL_MIGRATIONS" -tAc "select count(*) from platform.tenant_jobs
-            where kind in ('export', 'purge', 'reset')
+            where kind in ('export', 'purge', 'reset', 'reports_backfill')
               and (status = 'pending' or (status = 'running' and updated_at < now() - interval '90 minutes'))
               and (kind <> 'purge' or exists (select 1 from platform.tenant_purges p
                     where p.job_id = tenant_jobs.id and (p.dry_run is null or p.approved_at is not null)))")

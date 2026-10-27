@@ -9,6 +9,8 @@ import {
   relayEvents,
   runBilling,
   runDailyRollup,
+  runRecurringExpenses,
+  runReportRefresh,
   withTenant,
   writeStoreHealth,
 } from '@managemind/core';
@@ -27,7 +29,7 @@ import { log } from './log';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
-import { exportEmails } from './tenant-jobs';
+import { dispatchJobs, exportEmails } from './tenant-jobs';
 import { syncTurnstileHosts, touchesDomains, turnstileWidget } from './turnstile-hosts';
 
 const HEALTH_EVENTS = new Set<EventType>([
@@ -365,6 +367,46 @@ export async function runDailyJobs(
     } catch (e) {
       log('error', 'usage rollup failed', { error: String(e) });
       captureMessage('usage rollup failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // Recurring expenses due by today in Dhaka (phase-8-plan §3.6): a store
+    // that fails posts its missed days the next morning.
+    try {
+      const expenses = await runRecurringExpenses(client, dhakaDate(new Date()));
+      log(expenses.failed.length ? 'error' : 'info', 'recurring expenses', {
+        stores: expenses.stores,
+        posted: expenses.posted,
+        failed: expenses.failed.length,
+      });
+      if (expenses.failed.length) {
+        captureMessage('recurring expenses failed for some stores', {
+          level: 'error',
+          extra: { failed: expenses.failed.slice(0, 10) },
+        });
+      }
+    } catch (e) {
+      log('error', 'recurring expenses failed', { error: String(e) });
+      captureMessage('recurring expenses failed', { level: 'error', extra: { error: String(e) } });
+    }
+    // The reports' summaries (phase-8-plan §3.9): the last 7 days, and on the
+    // 1st the month-end stock values; a store that fails is redone tomorrow.
+    try {
+      const reports = await runReportRefresh(client, dhakaDate(new Date()));
+      log(reports.failed.length ? 'error' : 'info', 'report refresh', {
+        stores: reports.stores,
+        backfills: reports.backfills,
+        failed: reports.failed.length,
+      });
+      // Stores that just turned the back office on: their history, in Actions.
+      if (reports.backfills) dispatchJobs(env, ctx);
+      if (reports.failed.length) {
+        captureMessage('report refresh failed for some stores', {
+          level: 'error',
+          extra: { failed: reports.failed.slice(0, 10) },
+        });
+      }
+    } catch (e) {
+      log('error', 'report refresh failed', { error: String(e) });
+      captureMessage('report refresh failed', { level: 'error', extra: { error: String(e) } });
     }
     // Our billing (phase-5b-plan §3.7, §3.8): drafts on billing days, drafts
     // issued after review, reminders and the suspension at +14.

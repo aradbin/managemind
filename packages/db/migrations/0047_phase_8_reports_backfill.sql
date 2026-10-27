@@ -1,0 +1,2 @@
+ALTER TABLE "platform"."tenant_jobs" DROP CONSTRAINT "tenant_jobs_kind_valid";--> statement-breakpoint
+ALTER TABLE "platform"."tenant_jobs" ADD CONSTRAINT "tenant_jobs_kind_valid" CHECK ("platform"."tenant_jobs"."kind" in ('export', 'purge', 'reset', 'reports_backfill'));

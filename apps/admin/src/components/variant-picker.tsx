@@ -8,7 +8,14 @@ import type { InventoryRow } from '../lib/catalog';
 import { lineLabel, variantSearchQuery } from '../lib/orders';
 import { Input } from './ui/input';
 
-export function VariantPicker({ onPick }: { onPick: (row: InventoryRow) => void }) {
+export function VariantPicker({
+  onPick,
+  anyStock = false,
+}: {
+  onPick: (row: InventoryRow) => void;
+  /** Buying and counting: items out of stock can be picked too. */
+  anyStock?: boolean;
+}) {
   const { t, locale } = useLocale();
   const id = useId();
   const [text, setText] = useState('');
@@ -41,7 +48,8 @@ export function VariantPicker({ onPick }: { onPick: (row: InventoryRow) => void 
           className="flex max-h-72 flex-col divide-y divide-border overflow-y-auto rounded-md border border-border"
         >
           {results.data.map((row) => {
-            const out = row.trackInventory && !row.allowBackorder && row.available <= 0;
+            const out =
+              !anyStock && row.trackInventory && !row.allowBackorder && row.available <= 0;
             return (
               <li key={row.variantId}>
                 <button

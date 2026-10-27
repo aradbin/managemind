@@ -40,6 +40,8 @@ export const FEATURES = [
   'promotionFreeDelivery',
   'reports',
   'customEmailKey',
+  /** Purchasing, stock counts, expenses and the profit reports (phase-8-plan §3.11, Q13). */
+  'backOffice',
 ] as const;
 export type Feature = (typeof FEATURES)[number];
 

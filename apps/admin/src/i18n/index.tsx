@@ -5,26 +5,32 @@
 // the other first. Feature screens bring their own catalogs with their pages.
 import { createTranslator, type Locale, type Message, type Params } from '@managemind/shared/i18n';
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import type { boReportsEn } from './back-office-reports-en';
 import type { billingEn } from './billing-en';
 import type { couriersEn } from './couriers-en';
 import type { en } from './en';
+import type { expensesEn } from './expenses-en';
 import type { launchEn } from './launch-en';
 import type { messagesEn } from './messages-en';
 import type { onlineStoreEn } from './online-store-en';
 import type { ordersEn } from './orders-en';
 import type { promotionsEn } from './promotions-en';
+import type { purchasingEn } from './purchasing-en';
 import type { returnsEn } from './returns-en';
 
 /** Every key, including those of catalogs loaded with their pages. */
 export type AdminKey =
   | keyof typeof en
   | keyof typeof billingEn
+  | keyof typeof boReportsEn
   | keyof typeof couriersEn
+  | keyof typeof expensesEn
   | keyof typeof launchEn
   | keyof typeof messagesEn
   | keyof typeof onlineStoreEn
   | keyof typeof ordersEn
   | keyof typeof promotionsEn
+  | keyof typeof purchasingEn
   | keyof typeof returnsEn;
 const catalogs = {
   en: {} as Record<AdminKey, Message>,

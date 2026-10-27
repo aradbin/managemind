@@ -279,6 +279,15 @@ export const cartLines = store.table(
 // ---- Counters ----------------------------------------------------------------------
 
 /** Per-store sequences: `order_number` now, return numbers in Phase 5A. */
+/** Per-store sequences: orders, returns, and the back office's documents (phase-8-plan §3.2). */
+export const COUNTER_NAMES = [
+  'order_number',
+  'return_number',
+  'purchase_order_number',
+  'goods_receipt_number',
+  'stock_count_number',
+] as const;
+
 export const counters = store.table(
   'counters',
   {
@@ -289,7 +298,7 @@ export const counters = store.table(
   (t) => [
     tenantPolicy(t),
     primaryKey({ columns: [t.tenantId, t.name] }),
-    check('counters_name_valid', sql`${t.name} in ('order_number', 'return_number')`),
+    check('counters_name_valid', sql`${t.name} in (${inList(COUNTER_NAMES)})`),
   ],
 );
 

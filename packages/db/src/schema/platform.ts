@@ -409,7 +409,7 @@ export const DUNNING_STEPS = [
   'final_notice',
   'suspend',
 ] as const;
-export const JOB_KINDS = ['export', 'purge', 'reset'] as const;
+export const JOB_KINDS = ['export', 'purge', 'reset', 'reports_backfill'] as const;
 export const JOB_STATUSES = ['pending', 'running', 'succeeded', 'failed'] as const;
 
 /** Plans a super admin edits (§3.5); entitlements are validated by @managemind/shared/billing. */

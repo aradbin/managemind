@@ -23,6 +23,7 @@ import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
+import { recordCostCorrections } from '../purchasing/costs';
 import type { TenantTx } from '../tenant';
 import { replaceProductAttributes, replaceProductTags } from './attributes';
 import { collectionMatch } from './collections';
@@ -617,11 +618,20 @@ export async function createProduct(
     metadata: data.metadata ?? {},
   });
   await writeTranslations(tx, id, data.translations, store.defaultLocale);
-  await catalogWrite(() =>
+  const [created] = await catalogWrite(() =>
     tx.db
       .insert(v)
-      .values({ productId: id, optionsKey: '', price: 0, ...variantColumns(data.variant ?? {}) }),
+      .values({ productId: id, optionsKey: '', price: 0, ...variantColumns(data.variant ?? {}) })
+      .returning({ id: v.id, costPrice: v.costPrice }),
   );
+  if (created && created.costPrice !== null) {
+    await recordCostCorrections(
+      tx,
+      actor,
+      [{ variantId: created.id, oldCost: null, newCost: created.costPrice }],
+      'manual',
+    );
+  }
   await refreshPriceRange(tx, [id]);
   if (data.categoryIds?.length) await replaceCategories(tx, id, data.categoryIds);
   if (data.tags?.length) await replaceProductTags(tx, id, data.tags);
@@ -1046,6 +1056,14 @@ export async function updateVariant(
   );
   if (!updated) throw new AppError('not_found');
   const changes = variantChanges(current, updated);
+  if (changes.keys.includes('costPrice')) {
+    await recordCostCorrections(
+      tx,
+      actor,
+      [{ variantId, oldCost: current.costPrice, newCost: updated.costPrice }],
+      'manual',
+    );
+  }
   if (changes.keys.length) {
     await tx.db.update(p).set({ updatedAt: sql`now()` }).where(eq(p.id, current.productId));
     await refreshPriceRange(tx, [current.productId]);

@@ -1,6 +1,6 @@
 # Phase 8 plan: Back office
 
-- Status: **Draft (Oct 26), waiting for the owner's approval.** Still needed from the owner: sample supplier, purchase and expense data from a pilot client, and an accountant's review of the profit and stock valuation definitions (§1, §3.8)
+- Status: **Approved (Oct 26), built.** The owner accepted every recommendation in §14 and asked to start the build (Q1: build now). Every step is done; [`phase-8-report.md`](phase-8-report.md) reports it. Still needed from the owner: an accountant's review of the profit and stock valuation definitions (§1, §3.8; acceptance criterion 5), and a pilot client's sample supplier, purchase and expense files to try the imports on
 - Date: 2026-10-26
 - Scope: PLAN.md "Phase 8 — Back office". Suppliers, purchase orders and goods receipts that update stock and a weighted average cost; stock adjustments with reasons and stock-count sessions; expenses with categories and recurring entries; reports for sales, gross and net profit, stock valuation, supplier dues and COD outstanding, read from summary tables refreshed by cron, with CSV and Excel export. It builds on Phase 2's stock ledger and cost prices (phase-2-plan §3.8, Q5), Phase 4's cost snapshot on order lines (phase-4-plan §3.6), Phase 5A's returns and reports (phase-5a-plan §3.12, §3.15), and Phase 7's courier fees and payouts (phase-7-plan §3.7)
 
@@ -394,3 +394,60 @@ Step 8 waits for the pilot's sample data. If it hasn't arrived by its turn, the 
 | Q11 | Importing past purchases | **No.** They don't change today's stock or cost; a supplier's opening balance carries what the store owes |
 | Q12 | Viewers and expenses | **Viewers read expenses, as they read every other report,** but not costs or profit, which need `catalog.cost`. An outside accountant would be a Manager, or a custom role later |
 | Q13 | Which plans get the back office | **Growth and Pilot; not Starter.** It's the clearest reason to move up a plan. Plans are data, so you can change this from Platform → Billing at any time |
+
+## 15. Build notes
+
+[`phase-8-report.md`](phase-8-report.md) replaces this section's progress table. The differences from the sections above, kept here beside the plan they change:
+
+- **Migration 0045 writes `backOffice` into every stored plan and store entitlement.** Entitlements are validated strictly, so a stored set without the new feature would read as invalid. Each store's value follows its plan and override; a store with a set but no subscription gets it on, as stores from before plans have every feature.
+- **The summary tables are written by the app role, inside each store's own transaction** (`withTenant`), as the usage rollup is. They are ordinary store tables with forced RLS; the app may select, insert and delete their rows, never update them. `app.report_refresh` as `mm_system` (§4) would have needed read policies on every source table. The daily batch loops over stores itself, so `app.recurring_expenses_due()` isn't needed either (ADR 0031).
+- **A count has a fifth state, `applying`,** while the queue applies a count over 500 lines. A batch that keeps failing sends it back to `review` with the error, instead of a flag on a `review` count (§3.5, §7).
+- **A receipt is never edited.** A wrong receipt is corrected with an adjustment and a cost correction, as the stock ledger is (ADR 0031).
+- **The supplier's opening balance comes first in the ageing,** before any receipt, whatever the dates: it is what was owed before the store started here (§3.7).
+- **Adjustments are valued at the variant's cost at that moment** by the inventory service itself, so every adjustment written from this phase on has a `unit_cost`, including those of Phase 2's dialog and the catalog import (§3.4).
+- **A count's uncounted lines are left alone** when it is applied: only counted lines get an adjustment. Counting a line as zero is how staff record that none is left (§3.5).
+- **Scanning an item again adds one** to its count, and a number can be typed instead. A camera reading the same code without a pause counts it once (§3.5, Q6).
+- **A new recurring entry posts from the day it is made,** never for days already past, even when its start date is earlier: months before the store started here come through the expense import (§3.6, §3.10).
+- **The daily batch posts recurring expenses store by store,** in each store's own transaction, as the usage rollup does, so `app.recurring_expenses_due()` (§4) isn't needed. A store that fails posts its missed days the next morning.
+- **Deleting a recurring entry keeps what it posted,** as ordinary expenses.
+- **`daily_sales` gains `stock_losses`** (migration 0046), so the profit statement reads every line from the summary.
+- **The nightly refresh also redoes any older day whose shipments or refunds changed since the day before**: a courier's fee or a failed delivery's cost often arrives days later, and the refresh would otherwise keep the old figure until a backfill (§3.9).
+- **A discount and VAT are shared by delivered units cumulatively:** each delivery takes the rounded share of all units delivered so far less what earlier deliveries took, so a line shipped in parts adds up to the line exactly. Returns take their share of the line's net value, rounded per return.
+- **A refund that isn't a return** is today only the refund of an order an edit left overpaid. It counts with returns on its processed date when the order was already delivered; its delivery part reduces delivery income (§3.8).
+- **Gross profit per order** is its delivered net sales less returns and refunds, less the cost of the units that stayed sold; it is empty until a unit is delivered, and marked when a delivered unit had no cost.
+- **Day, week and month** are Dhaka dates; a week starts on Monday. A range is at most two years.
+- **`GET /reports/suppliers` replaces step 3's dues-only route** at the same path: it returns the dues with their totals and the range's purchases and payments, and needs `reports.read` as well as `purchasing.pay`.
+- **A product in several categories is valued under its first** (the shallowest, then by position), so the categories add up to the total.
+- **COD held by the store's own riders** is an order delivered without a courier whose COD payment is still pending; a courier's is a delivered parcel no payout line covers, less its fee. Ages count Dhaka days since delivery, in four bands (0–7, 8–14, 15–30, over 30 days).
+- **Slow movers** are variants still on sale with stock above zero and no `sale` movement in the chosen days (30 to 180, 60 by default), largest value first, at most 500.
+- **The backfill runs each transaction as `app_rw`**, as the demo reset does: the migration role the workflow connects with bypasses row-level security, and the summaries' SQL relies on it.
+- **The nightly refresh queues the backfill itself** for a store with an order or movement older than its 7 days and no backfill yet, which is what turning the back office on looks like; Platform's button is for rebuilding after a fix. Month ends before Phase 8 are valued at the cost then where `cost_changes` has it, else at today's cost.
+- **Demo orders' parcels move with their orders:** each was sent and delivered the day after it was placed, so the demo's sales spread over the month.
+- **The imports send their rows straight to `POST /suppliers/import` and `/expenses/import`,** 200 a request, each one transaction under its own Idempotency-Key, instead of the catalog's staged import job: these files have hundreds of rows, not tens of thousands. Each request is one insert and one audit entry (`suppliers.imported`, `expenses.imported`, with the count), so it stays inside a request's CPU.
+- **An imported supplier whose name the store already has is skipped**, its balance untouched; an imported expense identical to one already recorded (date, category, amount, payee and note) is skipped too, so a file imported twice adds nothing. A category the file names that the store doesn't have goes under Other, and a missing or unknown method is cash, each with a warning. Dates are YYYY-MM-DD or DD/MM/YYYY, never after today.
+- **Exports carry numbers as numbers:** in Excel, counts are numbers and money is taka with two decimals, so a sheet can sum them; CSV writes money as plain taka (`1234.56`). A list's export reads every page of the current filter (at most 100 pages); the expense list exports its month. The Overview tab (Phase 5A) gains no export.
+
+**Security review (step 11),** against PLAN.md's baseline: every new admin and platform route, the receipt photos, the queue messages, the jobs, isolation, exports and logs.
+
+| Finding | Severity | Fix |
+| --- | --- | --- |
+| A report's CSV wrote text as typed, so a supplier's name or an expense's note starting with `=`, `+`, `-` or `@` would run as a formula when the file opens in Excel (CSV injection) | Low: only staff type these | Such text gets a leading apostrophe; numbers and money are written by us and stay numbers. Excel files already write text as text |
+| A stock count's queue message wasn't checked before use | Low: only the Worker sends them | A message without UUIDs is logged and dropped, not retried |
+
+Accepted as they are:
+
+- **Receipt uploads are refused from `Content-Length` before reading and checked again after,** as media, import and return-photo uploads are; a body sent without a length is read before the second check. Only `expenses.write` staff can send one.
+- **A report over two years without summaries is computed live,** in Postgres, for the period and the one before. It costs database time, not Worker CPU, and the backfill makes it rare.
+- **COD outstanding is shown to viewers,** as Phase 7's reconciliation is (`reports.read`): it holds no cost.
+- **The order and customer CSV exports (Phases 4 and 5B) have the same formula risk,** with text shoppers type. Their courier formats must keep `+880` phones as they are, so the fix there needs its own decision; it is reported, not changed here.
+
+Checked, and found fine:
+
+- **Every route checks its permission, then again in core:** costs and profit need `catalog.cost`, dues and payments `purchasing.pay`, expenses `expenses.read` and `expenses.write`; staff receive an ordered PO's quantities only; the count's approval threshold needs `catalog.cost`; the rebuild needs a super admin. Without a permission, fields are left out, not blanked. Each is a test with staff and viewer sessions.
+- **The 15 new store tables have forced RLS** and a tenant policy, are in the isolation suite through the API and as raw SQL, and are in the export and purge. `cost_changes` is append-only for the app; the summaries can't be updated in place.
+- **Receipt photos** are sniffed (JPEG, PNG or WebP only), at most 2 MB, stored under the store's own prefix with a server-made name, served `private, no-store` with `nosniff`, and go with the store's export and purge.
+- **The Store jobs runner's backfill runs as `app_rw`,** so row-level security applies on the migration role.
+- **SQL takes parameters throughout;** `sql.raw` holds only constant column lists.
+- **Logs carry IDs and counts,** never names, phones or amounts.
+- **No new dependencies.** `pnpm audit` reports the same 3 moderate and 3 low advisories as Phase 7, all in build tooling.
+

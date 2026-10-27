@@ -2911,6 +2911,12 @@ export interface paths {
                             /** @default false */
                             autoReceive?: boolean;
                         };
+                        backOffice?: {
+                            /** @default 500000 */
+                            countApprovalThreshold?: number;
+                            /** @default 2 */
+                            reorderMultiple?: number;
+                        };
                         returns?: {
                             /** @default true */
                             shopperRequests?: boolean;
@@ -5107,7 +5113,35 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Adjustments and hand receipts with totals; values with catalog.cost (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    reason?: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
+                    locationId?: string;
+                    actorId?: string;
+                    from?: string;
+                    to?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Adjustments */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdjustmentPage"];
+                    };
+                };
+            };
+        };
         put?: never;
         /** Receive, count or write off stock (inventory.write; accepts Idempotency-Key) */
         post: {
@@ -5128,7 +5162,7 @@ export interface paths {
                         locationId?: string;
                         quantity: number;
                         /** @enum {string} */
-                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
                         note?: string | null;
                     } | {
                         /** @enum {string} */
@@ -5139,7 +5173,7 @@ export interface paths {
                         locationId?: string;
                         onHand: number;
                         /** @enum {string} */
-                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "other";
+                        reason: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
                         note?: string | null;
                     })[];
                 };
@@ -9769,6 +9803,315 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/reports/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivered sales by day, week or month (reports.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                    by?: "day" | "week" | "month";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalesReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sales per variant, with cost and profit for catalog.cost (reports.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductsReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/profit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The profit statement for a range and the same number of days before (reports.read, catalog.cost, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProfitReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the stock is worth today, or at a past month's end (reports.read, catalog.cost, back office) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description YYYY-MM */
+                    month?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockValuation"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/slow-movers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** On hand with no sale in a number of days, 60 by default (reports.read, back office) */
+        get: {
+            parameters: {
+                query?: {
+                    days?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SlowMovers"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Supplier balances and ageing today, purchases and payments in a range (reports.read, purchasing.pay, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expenses by category and month (reports.read, expenses.read, back office) */
+        get: {
+            parameters: {
+                query: {
+                    from: string;
+                    to: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseReport"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/reports/cod-outstanding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Delivered COD couriers haven't paid out and own riders haven't handed in, by age (reports.read, back office) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Report */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CodOutstanding"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/reports/recovery": {
         parameters: {
             query?: never;
@@ -10823,6 +11166,1829 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suppliers by name, with balances for purchasing.pay (purchasing.read) */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    archived?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suppliers */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["Supplier"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A new supplier; an opening balance needs purchasing.pay (purchasing.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        contactName?: string | null;
+                        phones?: string[];
+                        /** Format: email */
+                        email?: string | null;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            city?: string;
+                        } | null;
+                        note?: string | null;
+                        openingBalance?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Supplier"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/suppliers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suppliers from a file the browser read, up to 200 a request; a name already there is skipped (purchasing.write; balances purchasing.pay) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                        contactName?: string | null;
+                        phones?: string[];
+                        /** Format: email */
+                        email?: string | null;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            city?: string;
+                        } | null;
+                        note?: string | null;
+                        openingBalance?: number;
+                        row: number;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Imported */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportResult"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One supplier (purchasing.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Supplier */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Supplier"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edit or archive a supplier (purchasing.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        contactName?: string | null;
+                        phones?: string[];
+                        /** Format: email */
+                        email?: string | null;
+                        address?: {
+                            line1: string;
+                            line2?: string;
+                            city?: string;
+                        } | null;
+                        note?: string | null;
+                        openingBalance?: number;
+                        archived?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Supplier"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/suppliers/{id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The supplier's receipts and payments with the running balance (purchasing.pay) */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ledger */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierLedger"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purchase orders, newest first (purchasing.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
+                    supplierId?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Purchase orders */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrderPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A draft purchase order (purchasing.write, catalog.cost) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        supplierId: string;
+                        /** Format: uuid */
+                        locationId?: string;
+                        /** Format: date */
+                        expectedOn?: string | null;
+                        supplierRef?: string | null;
+                        note?: string | null;
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                            unitCost?: number;
+                        }[];
+                        /** @default [] */
+                        otherCosts?: {
+                            label: string;
+                            amount: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The supplier's variants at or below their low-stock threshold (purchasing.write) */
+        get: {
+            parameters: {
+                query: {
+                    supplierId: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suggestions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: components["schemas"]["ReorderLine"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One purchase order (purchasing.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Purchase order */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a draft (purchasing.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Edit a draft, or what isn't received of an ordered PO (purchasing.write, catalog.cost) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        supplierId?: string;
+                        /** Format: uuid */
+                        locationId?: string;
+                        /** Format: date */
+                        expectedOn?: string | null;
+                        supplierRef?: string | null;
+                        note?: string | null;
+                        lines?: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                            unitCost?: number;
+                        }[];
+                        otherCosts?: {
+                            label: string;
+                            amount: number;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders/{id}/place": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the PO to the supplier (purchasing.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Placed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a partly received PO: the rest won't come (purchasing.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Closed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/purchase-orders/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a PO nothing was received for (purchasing.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurchaseOrder"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/goods-receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Goods received, newest first (purchasing.read) */
+        get: {
+            parameters: {
+                query?: {
+                    supplierId?: string;
+                    purchaseOrderId?: string;
+                    from?: string;
+                    to?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Receipts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GoodsReceiptPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Receive goods: an ordered PO's quantities (inventory.write), or with costs or without a PO (purchasing.write, catalog.cost); paying needs purchasing.pay */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        purchaseOrderId?: string;
+                        /** Format: uuid */
+                        supplierId?: string;
+                        /** Format: uuid */
+                        locationId?: string;
+                        /** Format: date */
+                        receivedOn?: string;
+                        supplierInvoice?: string | null;
+                        note?: string | null;
+                        lines: {
+                            /** Format: uuid */
+                            variantId: string;
+                            quantity: number;
+                            unitCost?: number;
+                        }[];
+                        /** @default [] */
+                        otherCosts?: {
+                            label: string;
+                            amount: number;
+                        }[];
+                        payment?: {
+                            amount: number;
+                            /** @enum {string} */
+                            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                            reference?: string | null;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Received */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GoodsReceipt"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/goods-receipts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One receipt (purchasing.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Receipt */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["GoodsReceipt"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/supplier-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payments to suppliers, newest first (purchasing.pay) */
+        get: {
+            parameters: {
+                query?: {
+                    supplierId?: string;
+                    from?: string;
+                    to?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Payments */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierPaymentPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Record a payment to a supplier (purchasing.pay) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        supplierId: string;
+                        /** Format: date */
+                        paidOn: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        reference?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierPayment"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/supplier-payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a payment recorded by mistake; audited (purchasing.pay) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Correct a payment; audited (purchasing.pay) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        paidOn?: string;
+                        amount?: number;
+                        /** @enum {string} */
+                        method?: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        reference?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SupplierPayment"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/variants/{id}/cost-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every change of the variant's cost, newest first (catalog.cost) */
+        get: {
+            parameters: {
+                query?: {
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description History */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CostHistoryPage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stock counts, newest first (inventory.read) */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "counting" | "review" | "applying" | "applied" | "cancelled";
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                number: number;
+                                reference: string;
+                                /** @enum {string} */
+                                status: "counting" | "review" | "applying" | "applied" | "cancelled";
+                                /** Format: uuid */
+                                locationId: string;
+                                scope: {
+                                    [key: string]: unknown;
+                                };
+                                lineCount: number;
+                                countedLines: number;
+                                createdAt: string;
+                                appliedAt: string | null;
+                            }[];
+                            nextCursor: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Start a count of a location, a category, a tag or chosen items (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        locationId?: string;
+                        scope: {
+                            /** @enum {string} */
+                            kind: "all";
+                        } | {
+                            /** @enum {string} */
+                            kind: "category";
+                            /** Format: uuid */
+                            categoryId: string;
+                        } | {
+                            /** @enum {string} */
+                            kind: "tag";
+                            tag: string;
+                        } | {
+                            /** @enum {string} */
+                            kind: "variants";
+                            variantIds: string[];
+                        };
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Started */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A count; expected quantities from review on (inventory.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Count */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/lines/{variantId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** A counter's number for one item, stamped with when (inventory.write) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    variantId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        counted: number | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Counted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCountLine"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Counting is done: on to review (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description In review */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Back to counting (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Counting */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a count that is not applied (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cancelled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/stock-counts/{id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply the differences; above the store's threshold also catalog.cost (inventory.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Applied, or applying in the background */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StockCount"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expense-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's expense categories, seeded the first time (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Categories */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A new category (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: {
+                            bn: string;
+                            en: string;
+                        };
+                        position?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expense-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename, reorder or archive a category (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: {
+                            bn: string;
+                            en: string;
+                        };
+                        position?: number;
+                        archived?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseCategory"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Expenses, newest first, with the range’s totals per category (expenses.read) */
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    categoryId?: string;
+                    before?: string;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Expenses */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpensePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Record an expense (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn: string;
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Recorded */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expenses/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Past expenses from a file the browser read, up to 200 a request; one identical to a recorded expense is skipped (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "idempotency-key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn: string;
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        row: number;
+                    }[];
+                };
+            };
+            responses: {
+                /** @description Imported */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            created: number;
+                            skipped: {
+                                row: number;
+                                /** @enum {string} */
+                                reason: "exists";
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/expenses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an expense and its receipt photo; audited (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Correct an expense; audited (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: date */
+                        spentOn?: string;
+                        /** Format: uuid */
+                        categoryId?: string;
+                        amount?: number;
+                        /** @enum {string} */
+                        method?: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/v1/admin/expenses/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The expense's receipt photo (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The photo */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/*": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** The expense's receipt photo, replacing any (expenses.write; at most 2 MB) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/webp": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            responses: {
+                /** @description Stored */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Expense"];
+                    };
+                };
+            };
+        };
+        /** Remove the expense's receipt photo (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/recurring-expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recurring entries, active first (expenses.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Recurring entries */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** A recurring entry; it posts from today on (expenses.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        categoryId: string;
+                        amount: number;
+                        /** @enum {string} */
+                        method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        /** @enum {string} */
+                        cadence: "monthly" | "weekly";
+                        day: number;
+                        /** Format: date */
+                        startsOn: string;
+                        /** Format: date */
+                        endsOn?: string | null;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/recurring-expenses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a recurring entry; what it posted stays (expenses.write) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Change a recurring entry; only future posts change (expenses.write) */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        categoryId?: string;
+                        amount?: number;
+                        /** @enum {string} */
+                        method?: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+                        payee?: string | null;
+                        note?: string | null;
+                        /** @enum {string} */
+                        cadence?: "monthly" | "weekly";
+                        day?: number;
+                        /** Format: date */
+                        startsOn?: string;
+                        /** Format: date */
+                        endsOn?: string | null;
+                        active?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecurringExpense"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/v1/admin/messages": {
         parameters: {
             query?: never;
@@ -11807,6 +13973,7 @@ export interface paths {
                                     promotionFreeDelivery?: boolean;
                                     reports?: boolean;
                                     customEmailKey?: boolean;
+                                    backOffice?: boolean;
                                 };
                             } | null;
                             billingDay: number;
@@ -12075,6 +14242,44 @@ export interface paths {
         get?: never;
         put?: never;
         /** Export the store's data; the owners are emailed the link (super_admin) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TenantJob"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/platform/tenants/{id}/reports/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rebuild the store's report summaries from its first day, in the Store jobs workflow (super_admin) */
         post: {
             parameters: {
                 query?: never;
@@ -12775,6 +14980,7 @@ export interface paths {
                                 promotionFreeDelivery?: boolean;
                                 reports?: boolean;
                                 customEmailKey?: boolean;
+                                backOffice?: boolean;
                             };
                         } | null;
                         billingDay: number;
@@ -13820,7 +16026,7 @@ export interface components {
             supportGrant: boolean;
             /** Format: uuid */
             supportGrantId: string | null;
-            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "billing.read")[];
+            permissions: ("settings.read" | "settings.write" | "settings.credentials" | "staff.read" | "staff.write" | "staff.manage_owners" | "catalog.read" | "catalog.write" | "catalog.cost" | "inventory.read" | "inventory.write" | "orders.read" | "orders.write" | "orders.export" | "customers.read" | "customers.write" | "customers.export" | "customers.delete" | "promotions.read" | "promotions.write" | "payments.read" | "payments.refund" | "payments.reconcile" | "reports.read" | "purchasing.read" | "purchasing.write" | "purchasing.pay" | "expenses.read" | "expenses.write" | "billing.read")[];
         };
         Store: {
             /** Format: uuid */
@@ -14025,6 +16231,12 @@ export interface components {
                 autoBook: "never" | "on_confirm";
                 /** @default false */
                 autoReceive: boolean;
+            };
+            backOffice: {
+                /** @default 500000 */
+                countApprovalThreshold: number;
+                /** @default 2 */
+                reorderMultiple: number;
             };
             returns: {
                 /** @default true */
@@ -15711,6 +17923,9 @@ export interface components {
             cancelledBy: string | null;
             risk: components["schemas"]["PhoneRisk"];
             placedAt: string;
+            /** @description With catalog.cost and the back office; null before delivery */
+            grossProfit?: number | null;
+            missingCostUnits?: number;
         };
         PhoneRisk: {
             history: {
@@ -16359,6 +18574,13 @@ export interface components {
                     total: number;
                 }[];
             } | null;
+            /** @description This month so far; with catalog.cost and the back office */
+            profit: {
+                grossProfit: number;
+                expenses: number;
+                netProfit: number;
+                missingCostUnits: number;
+            } | null;
         };
         ReturnSummary: {
             /** Format: uuid */
@@ -16509,7 +18731,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            kind: "export" | "purge" | "reset";
+            kind: "export" | "purge" | "reset" | "reports_backfill";
             /** @enum {string} */
             status: "pending" | "running" | "succeeded" | "failed";
             progress: {
@@ -16565,6 +18787,265 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+        };
+        SalesReport: {
+            from: string;
+            to: string;
+            /** @enum {string} */
+            by: "day" | "week" | "month";
+            buckets: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+                /** @description The day, the week's Monday or the month's 1st */
+                start: string;
+            }[];
+            totals: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+            };
+        };
+        ProductsReport: {
+            from: string;
+            to: string;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                /** Format: uuid */
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                units: number;
+                returnedUnits: number;
+                netSales: number;
+                returns: number;
+                /** @description With catalog.cost */
+                cogs?: number;
+                grossProfit?: number;
+                marginBp?: number | null;
+                missingCostUnits?: number;
+            }[];
+        };
+        ProfitReport: {
+            current: components["schemas"]["ProfitStatement"];
+            previous: components["schemas"]["ProfitStatement"];
+        };
+        ProfitStatement: {
+            from: string;
+            to: string;
+            netSales: number;
+            returns: number;
+            cogs: number;
+            grossProfit: number;
+            deliveryIncome: number;
+            courierFees: number;
+            failedDeliveryCosts: number;
+            deliveryResult: number;
+            stockLosses: number;
+            expenses: number;
+            expensesByCategory: {
+                /** Format: uuid */
+                categoryId: string;
+                name: {
+                    bn: string;
+                    en: string;
+                };
+                amount: number;
+            }[];
+            netProfit: number;
+            /** @description Delivered units without a cost */
+            missingCostUnits: number;
+            ordersDelivered: number;
+            vat: number;
+            grossSales: number;
+            discounts: number;
+        };
+        StockValuation: {
+            asOf: string;
+            month: string | null;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                onHand: number;
+                unitCost: number | null;
+                value: number;
+            }[];
+            /** @description Below zero, never netted */
+            negative: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                onHand: number;
+                unitCost: number | null;
+                value: number;
+            }[];
+            byLocation: {
+                /** Format: uuid */
+                locationId: string;
+                location: string;
+                units: number;
+                value: number;
+            }[];
+            byCategory: {
+                /** Format: uuid */
+                categoryId: string | null;
+                category: {
+                    bn?: string;
+                    en?: string;
+                } | null;
+                units: number;
+                value: number;
+            }[];
+            totals: {
+                units: number;
+                value: number;
+                missingCostUnits: number;
+            };
+            /** @description Month ends with stored values */
+            months: string[];
+        };
+        SlowMovers: {
+            days: number;
+            items: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                onHand: number;
+                lastSoldAt: string | null;
+                /** @description With catalog.cost */
+                value?: number;
+            }[];
+        };
+        SupplierReport: {
+            from: string;
+            to: string;
+            dues: {
+                /** Format: uuid */
+                supplierId: string;
+                name: string;
+                archived: boolean;
+                balance: number;
+                buckets: {
+                    "0_30": number;
+                    "31_60": number;
+                    "61_90": number;
+                    over_90: number;
+                };
+            }[];
+            duesTotal: {
+                balance: number;
+                buckets: {
+                    "0_30": number;
+                    "31_60": number;
+                    "61_90": number;
+                    over_90: number;
+                };
+            };
+            purchases: {
+                /** Format: uuid */
+                supplierId: string | null;
+                name: string | null;
+                receipts: number;
+                received: number;
+                paid: number;
+            }[];
+        };
+        ExpenseReport: {
+            from: string;
+            to: string;
+            months: string[];
+            categories: {
+                /** Format: uuid */
+                categoryId: string;
+                name: {
+                    bn: string;
+                    en: string;
+                };
+                amounts: number[];
+                total: number;
+            }[];
+            monthTotals: number[];
+            total: number;
+        };
+        CodOutstanding: {
+            holders: {
+                /** @description Null for the store's own riders */
+                courier: string | null;
+                parcels: number;
+                amount: number;
+                buckets: {
+                    "0_7": number;
+                    "8_14": number;
+                    "15_30": number;
+                    over_30: number;
+                };
+                oldestDays: number;
+            }[];
+            total: number;
         };
         RecoveryReport: {
             from: string;
@@ -16740,6 +19221,425 @@ export interface components {
                 fee: number;
                 net: number;
             };
+        };
+        Supplier: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            contactName: string | null;
+            phones: string[];
+            email: string | null;
+            address: {
+                line1: string;
+                line2?: string;
+                city?: string;
+            } | null;
+            note: string | null;
+            archived: boolean;
+            createdAt: string;
+            updatedAt: string;
+            /** @description Only with purchasing.pay */
+            openingBalance?: number;
+            /** @description Only with purchasing.pay */
+            balance?: number;
+        };
+        ImportResult: {
+            created: number;
+            skipped: {
+                row: number;
+                /** @enum {string} */
+                reason: "exists";
+            }[];
+        };
+        SupplierLedger: {
+            opening: number;
+            closing: number;
+            entries: {
+                on: string;
+                /** @enum {string} */
+                kind: "opening" | "receipt" | "payment";
+                /** Format: uuid */
+                id: string | null;
+                reference: string | null;
+                amount: number;
+                balance: number;
+            }[];
+        };
+        PurchaseOrderPage: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                reference: string;
+                /** @enum {string} */
+                status: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
+                supplier: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                };
+                expectedOn: string | null;
+                lineCount: number;
+                ordered: number;
+                received: number;
+                createdAt: string;
+                total?: number;
+            }[];
+            nextCursor: string | null;
+        };
+        PurchaseOrder: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            reference: string;
+            supplier: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /** Format: uuid */
+            locationId: string;
+            /** @enum {string} */
+            status: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
+            expectedOn: string | null;
+            supplierRef: string | null;
+            note: string | null;
+            lines: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                barcode: string | null;
+                quantity: number;
+                receivedQuantity: number;
+                remaining: number;
+                unitCost?: number;
+            }[];
+            receipts: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                reference: string;
+                receivedOn: string;
+            }[];
+            actions: ("place" | "close" | "cancel")[];
+            placedAt: string | null;
+            closedAt: string | null;
+            cancelledAt: string | null;
+            createdAt: string;
+            updatedAt: string;
+            otherCosts?: {
+                label: string;
+                amount: number;
+            }[];
+            subtotal?: number;
+            otherCostTotal?: number;
+            total?: number;
+        };
+        ReorderLine: {
+            /** Format: uuid */
+            variantId: string;
+            productId: string;
+            title: {
+                bn?: string;
+                en?: string;
+            };
+            optionLabels: {
+                bn?: string;
+                en?: string;
+            }[];
+            sku: string | null;
+            available: number;
+            lowStockThreshold: number;
+            quantity: number;
+            unitCost?: number | null;
+        };
+        GoodsReceiptPage: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                reference: string;
+                receivedOn: string;
+                supplier: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                } | null;
+                /** Format: uuid */
+                purchaseOrderId: string | null;
+                units: number;
+                total?: number;
+            }[];
+            nextCursor: string | null;
+        };
+        GoodsReceipt: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            reference: string;
+            supplier: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            purchaseOrder: {
+                /** Format: uuid */
+                id: string;
+                number: number;
+                reference: string;
+            } | null;
+            /** Format: uuid */
+            locationId: string;
+            receivedOn: string;
+            supplierInvoice: string | null;
+            note: string | null;
+            lines: {
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                quantity: number;
+                /** Format: uuid */
+                purchaseOrderLineId: string | null;
+                unitCost?: number;
+                landedUnitCost?: number;
+            }[];
+            receivedBy: string | null;
+            createdAt: string;
+            warnings: {
+                /** Format: uuid */
+                variantId: string;
+                /** @enum {string} */
+                code: "over_received";
+                extra: number;
+            }[];
+            otherCosts?: {
+                label: string;
+                amount: number;
+            }[];
+            subtotal?: number;
+            otherCostTotal?: number;
+            total?: number;
+            payment?: {
+                /** Format: uuid */
+                id: string;
+                amount: number;
+                method: string;
+                reference: string | null;
+            } | null;
+        };
+        SupplierPaymentPage: {
+            items: components["schemas"]["SupplierPayment"][];
+            nextCursor: string | null;
+        };
+        SupplierPayment: {
+            /** Format: uuid */
+            id: string;
+            supplier: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            paidOn: string;
+            amount: number;
+            /** @enum {string} */
+            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+            reference: string | null;
+            note: string | null;
+            /** Format: uuid */
+            goodsReceiptId: string | null;
+            recordedBy: string | null;
+            createdAt: string;
+        };
+        CostHistoryPage: {
+            items: components["schemas"]["CostChange"][];
+            nextCursor: string | null;
+        };
+        CostChange: {
+            /** Format: uuid */
+            id: string;
+            oldCost: number | null;
+            newCost: number | null;
+            onHand: number;
+            /** @enum {string} */
+            source: "receipt" | "return" | "manual" | "import";
+            referenceType: string | null;
+            /** Format: uuid */
+            referenceId: string | null;
+            actorType: string;
+            actorId: string | null;
+            createdAt: string;
+        };
+        AdjustmentPage: {
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                variantId: string;
+                productId: string;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                sku: string | null;
+                /** Format: uuid */
+                locationId: string;
+                quantity: number;
+                reason: string;
+                note: string | null;
+                referenceType: string | null;
+                /** Format: uuid */
+                referenceId: string | null;
+                actorType: string;
+                actorId: string | null;
+                createdAt: string;
+                /** @description Only with catalog.cost */
+                unitCost?: number | null;
+                /** @description Only with catalog.cost */
+                value?: number | null;
+            }[];
+            nextCursor: string | null;
+            totals: {
+                count: number;
+                units: number;
+                unvalued: number;
+                value?: number;
+            };
+        };
+        StockCount: {
+            /** Format: uuid */
+            id: string;
+            number: number;
+            reference: string;
+            /** Format: uuid */
+            locationId: string;
+            /** @enum {string} */
+            status: "counting" | "review" | "applying" | "applied" | "cancelled";
+            scope: {
+                [key: string]: unknown;
+            };
+            note: string | null;
+            lineCount: number;
+            countedLines: number;
+            startedBy: string | null;
+            submittedAt: string | null;
+            appliedAt: string | null;
+            appliedBy: string | null;
+            applyError: string | null;
+            createdAt: string;
+            lines: components["schemas"]["StockCountLine"][];
+            differences?: {
+                lines: number;
+                units: number;
+                value?: number;
+            };
+            approvalThreshold?: number;
+        };
+        StockCountLine: {
+            /** Format: uuid */
+            variantId: string;
+            productId: string;
+            title: {
+                bn?: string;
+                en?: string;
+            };
+            optionLabels: {
+                bn?: string;
+                en?: string;
+            }[];
+            sku: string | null;
+            barcode: string | null;
+            counted: number | null;
+            countedAt: string | null;
+            countedBy: string | null;
+            expected?: number;
+            difference?: number;
+            unitCost?: number | null;
+            value?: number;
+            applied?: boolean;
+        };
+        ExpenseCategory: {
+            /** Format: uuid */
+            id: string;
+            key: string | null;
+            name: {
+                bn: string;
+                en: string;
+            };
+            position: number;
+            archived: boolean;
+        };
+        ExpensePage: {
+            items: components["schemas"]["Expense"][];
+            nextCursor: string | null;
+            totals: {
+                total: number;
+                count: number;
+                byCategory: {
+                    /** Format: uuid */
+                    categoryId: string;
+                    amount: number;
+                }[];
+            };
+        };
+        Expense: {
+            /** Format: uuid */
+            id: string;
+            spentOn: string;
+            /** Format: uuid */
+            categoryId: string;
+            amount: number;
+            /** @enum {string} */
+            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+            payee: string | null;
+            note: string | null;
+            hasReceipt: boolean;
+            /** Format: uuid */
+            recurringExpenseId: string | null;
+            recordedBy: string | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        RecurringExpense: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            categoryId: string;
+            amount: number;
+            /** @enum {string} */
+            method: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+            payee: string | null;
+            note: string | null;
+            /** @enum {string} */
+            cadence: "monthly" | "weekly";
+            day: number;
+            startsOn: string;
+            endsOn: string | null;
+            nextOn: string | null;
+            active: boolean;
         };
         Message: {
             /** Format: uuid */
@@ -17029,6 +19929,7 @@ export interface components {
                     promotionFreeDelivery: boolean;
                     reports: boolean;
                     customEmailKey: boolean;
+                    backOffice: boolean;
                 };
             };
             offered: boolean;
@@ -17056,6 +19957,7 @@ export interface components {
                     promotionFreeDelivery?: boolean;
                     reports?: boolean;
                     customEmailKey?: boolean;
+                    backOffice?: boolean;
                 };
             } | null;
             billingDay: number;

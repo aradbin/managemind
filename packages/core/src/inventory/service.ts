@@ -35,6 +35,12 @@ export interface Movement {
   referenceId?: string | undefined;
   /** Unique per store: a repeated key writes nothing (queues and retries deliver twice). */
   idempotencyKey?: string | undefined;
+  /**
+   * The cost per unit it is valued at (phase-8-plan §3.4). Receipts and
+   * returns pass theirs; an adjustment left without one takes the variant's
+   * cost at that moment.
+   */
+  unitCost?: number | null | undefined;
 }
 
 export interface Level {
@@ -113,9 +119,10 @@ export async function applyMovements(
     reserved: number;
     tracked: boolean;
     backorder: boolean;
+    cost: string | null;
   }>(sql`
     select l.variant_id, l.location_id, l.on_hand, l.reserved,
-           v.track_inventory as tracked, v.allow_backorder as backorder
+           v.track_inventory as tracked, v.allow_backorder as backorder, v.cost_price as cost
       from store.inventory_levels l join store.variants v on v.id = l.variant_id
      where (l.variant_id, l.location_id) in (
        select * from unnest(${sql.param(variantIds)}::uuid[], ${sql.param(locationIds)}::uuid[]))
@@ -180,18 +187,24 @@ export async function applyMovements(
   if (written.length) {
     const actorType = auditActor(actor, 'staff').actorType;
     const col = <T>(f: (m: (typeof written)[number]) => T) => sql.param(written.map(f));
+    const unitCost = (m: (typeof written)[number]) => {
+      if (m.unitCost !== undefined) return m.unitCost;
+      if (m.type !== 'adjustment') return null;
+      const cost = levels.get(key(m))?.cost;
+      return cost == null ? null : Number(cost);
+    };
     try {
       await tx.db.execute(sql`
         insert into store.stock_movements
           (variant_id, location_id, type, quantity, reason, note, reference_type, reference_id,
-           idempotency_key, actor_type, actor_id)
-        select v, l, t, q, r, n, rt, ri, k, ${actorType}, ${actor.userId}::uuid
+           idempotency_key, unit_cost, actor_type, actor_id)
+        select v, l, t, q, r, n, rt, ri, k, c, ${actorType}, ${actor.userId}::uuid
           from unnest(${col((m) => m.variantId)}::uuid[], ${col((m) => m.locationId)}::uuid[],
                       ${col((m) => m.type)}::text[], ${col((m) => m.quantity)}::int[],
                       ${col((m) => m.reason)}::text[], ${col((m) => m.note ?? null)}::text[],
                       ${col((m) => m.referenceType ?? null)}::text[], ${col((m) => m.referenceId ?? null)}::uuid[],
-                      ${col((m) => m.idempotencyKey ?? null)}::text[])
-            as x(v, l, t, q, r, n, rt, ri, k)`);
+                      ${col((m) => m.idempotencyKey ?? null)}::text[], ${col(unitCost)}::bigint[])
+            as x(v, l, t, q, r, n, rt, ri, k, c)`);
     } catch (e) {
       const code = (e as { cause?: { code?: string } }).cause?.code;
       if (code === '23505')

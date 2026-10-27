@@ -3,7 +3,7 @@
 Multi-tenant commerce platform for Bangladeshi SMEs on Cloudflare Workers and Neon Postgres.
 
 - Plan: [`docs/PLAN.md`](docs/PLAN.md)
-- Status: Phases 0–4 are done. Phases 5A and 5B are built and deployed; online payment, SMS, push, backups and online invoice payment wait for their keys. Phase 5C, the admin redesign, is built and deployed. Phase 6, sales recovery, is built and deployed. Phase 7, couriers, is built and deployed; its adapters wait for courier credentials, and production for `CREDENTIALS_KEY`. Phase 8's plan, the back office, waits for approval ([plans and reports](docs/phases/))
+- Status: Phases 0–4 are done. Phases 5A and 5B are built and deployed; online payment, SMS, push, backups and online invoice payment wait for their keys. Phase 5C, the admin redesign, is built and deployed. Phase 6, sales recovery, is built and deployed. Phase 7, couriers, is built and deployed; its adapters wait for courier credentials, and production for `CREDENTIALS_KEY`. Phase 8, the back office, is built in #85 and waits on an accountant's review of its report definitions ([plans and reports](docs/phases/))
 - Decisions: [`docs/adr/`](docs/adr/)
 
 ## Development
@@ -100,7 +100,7 @@ API_URL=http://localhost:8787 STOREFRONT_URL=http://localhost:4321 EXPECT_ENVIRO
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Variable, secret | Turnstile on checkout, sign-in and return requests ([ADR 0023](docs/adr/0023-turnstile-hostnames.md)) | Rate limits alone |
 | `CREDENTIALS_KEY` | Secret, **with a copy kept offline** | Stores' SSLCommerz, SMS and email credentials ([ADR 0024](docs/adr/0024-credentials-vault.md)) | Online payment and SMS are off |
 | `PLATFORM_SSLCOMMERZ_STORE_ID`, `PLATFORM_SSLCOMMERZ_PASSWORD` | Variable, secret | Stores paying our invoices online, on our own SSLCommerz merchant account (phase-5b-plan §3.7) | Stores pay by bank, bKash or Nagad, and a super admin records it |
-| `GITHUB_DISPATCH_TOKEN` | Secret: a fine-grained token with Actions read and write on this repository only | Starting the Store jobs workflow when an export is asked for ([ADR 0027](docs/adr/0027-store-jobs-in-actions.md)) | Exports start with the workflow's daily run, at 02:37 in Dhaka |
+| `GITHUB_DISPATCH_TOKEN` | Secret: a fine-grained token with Actions read and write on this repository only | Starting the Store jobs workflow when an export or a report rebuild is asked for ([ADR 0027](docs/adr/0027-store-jobs-in-actions.md)) | Exports and report backfills start with the workflow's daily run, at 02:37 in Dhaka |
 | `BACKUP_AGE_RECIPIENT`, `BACKUP_AGE_KEY` | Variable, secret, **with a copy of the key kept offline** | The nightly encrypted backup and its monthly restore test ([ADR 0028](docs/adr/0028-backups.md)); make the pair with `age-keygen -o backup.key` | No backups beyond Neon's own history |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Variable, secret | Web push to the admin | Staff alerts by email only |
 | `SENTRY_AUTH_TOKEN` | Secret | Source maps in Sentry | Source maps aren't uploaded |
