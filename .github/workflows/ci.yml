@@ -90,7 +90,7 @@ jobs:
         run: echo "TURBO_WEEK=$(date -u +%G-W%V)" >> "$GITHUB_ENV"
       # A PR reads the newest cache of its own branch, else master's; master
       # never reads a PR's. Renovate pins the digest (helpers:pinGitHubActionDigests).
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         if: steps.changes.outputs.docs != 'true'
         with:
           path: .turbo/cache
