@@ -1,6 +1,6 @@
 // The Phase 8 back office flows (phase-8-plan §10), on the run's own store
-// after the courier flows: the owner adds a supplier, places a purchase
-// order and receives it in two parts, paying for the first on the spot, then
+// after the courier flows: the owner adds a supplier, writes a purchase
+// order in the editor, picking its products, places it and receives it in two parts, paying for the first on the spot, then
 // sees the stock, the cost and the supplier's balance; counts two variants
 // by tag while an order ships one of them, and applies only the real
 // difference; records an expense with a receipt photo and a monthly rent;
@@ -10,6 +10,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 import { boReportsBn } from '../../apps/admin/src/i18n/back-office-reports-bn';
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { expensesBn } from '../../apps/admin/src/i18n/expenses-bn';
+import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { purchasingBn } from '../../apps/admin/src/i18n/purchasing-bn';
 import { expectAccessible, pngImage, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
@@ -18,7 +19,7 @@ import { API } from './urls';
 test.skip(!RUN || !DEV_TOKEN, 'needs a seeded preview: E2E_RUN and DEV_TOKEN');
 test.describe.configure({ mode: 'serial', timeout: 300_000 });
 
-const adminMessages = { ...bn, ...purchasingBn, ...expensesBn, ...boReportsBn };
+const adminMessages = { ...bn, ...ordersBn, ...purchasingBn, ...expensesBn, ...boReportsBn };
 type AdminKey = keyof typeof adminMessages;
 
 function m(key: AdminKey, params: Record<string, string> = {}): string {
@@ -64,6 +65,7 @@ test('back office', async ({ page }, info) => {
   const tag = `e2e-count-${stamp}`;
   const supplierName = `ই২ই সরবরাহকারী ${stamp}`;
   const variants: string[] = [];
+  const titles: string[] = [];
   let poId = '';
   let supplierId = '';
 
@@ -82,13 +84,14 @@ test('back office', async ({ page }, info) => {
         {
           status: 'active',
           translations: {
-            bn: { title: `${title} ${RUN}`, slug: `e2e-bo-${viewport}-${stamp}-${i}` },
+            bn: { title: `${title} ${RUN} ${stamp}`, slug: `e2e-bo-${viewport}-${stamp}-${i}` },
           },
           variant: { price: 45_000 },
           tags: [tag],
         },
       );
       variants.push(created.variants[0]?.id as string);
+      titles.push(`${title} ${RUN} ${stamp}`);
     }
 
     await page.goto(`${API}/inventory/suppliers`);
@@ -109,15 +112,45 @@ test('back office', async ({ page }, info) => {
     supplierId = found.items.find((s) => s.name === supplierName)?.id as string;
     expect(supplierId).toBeTruthy();
 
-    // The editor's variant picker is the order screen's, tested there: the
-    // lines go in through the API, and the PO is placed on its page.
-    const po = await adminCall<{ id: string }>(page.request, 'post', '/v1/admin/purchase-orders', {
-      supplierId,
-      lines: variants.map((variantId) => ({ variantId, quantity: 10, unitCost: 20_000 })),
-      otherCosts: [{ label: 'পরিবহন', amount: 2_000 }],
-    });
-    poId = po.id;
-    await page.goto(`${API}/inventory/purchase-orders/${poId}`);
+    // The editor: the supplier, both products from the variant picker at
+    // 10 × ৳200, and ৳20 of transport.
+    await page.goto(`${API}/inventory/purchase-orders`);
+    await page.getByRole('link', { name: m('po.new') }).click();
+    await expect(page.getByRole('heading', { name: m('po.new'), level: 1 })).toBeVisible();
+    await page
+      .getByRole('combobox', { name: m('po.supplier') })
+      .selectOption({ label: supplierName });
+    for (const title of titles) {
+      await page.getByLabel(m('order.addProduct')).fill(title);
+      await page
+        .getByRole('list', { name: m('order.searchResults') })
+        .getByRole('button', { name: new RegExp(title) })
+        .click();
+    }
+    const ordered = page.getByLabel(m('po.ordered'), { exact: true });
+    const unitCost = page.getByLabel(m('po.unitCost'), { exact: true });
+    await expect(ordered).toHaveCount(2);
+    for (let i = 0; i < 2; i++) {
+      await ordered.nth(i).fill('10');
+      await unitCost.nth(i).fill('200');
+    }
+    await page.getByRole('button', { name: m('po.addCost') }).click();
+    await page.getByLabel(m('po.costLabel'), { exact: true }).fill('পরিবহন');
+    await page.getByLabel(m('payment.amount'), { exact: true }).fill('20');
+    await expectAccessible(page, 'new purchase order');
+    await page.getByRole('button', { name: m('po.save') }).click();
+    await expect(toast(page, m('po.saved'))).toBeVisible();
+    await page.waitForURL(/\/inventory\/purchase-orders\/[0-9a-f-]{36}$/);
+    poId = page.url().split('/').pop() as string;
+    const draft = await adminCall<{
+      status: string;
+      lines: { variantId: string; quantity: number; unitCost: number }[];
+    }>(page.request, 'get', `/v1/admin/purchase-orders/${poId}`);
+    expect(draft.status).toBe('draft');
+    expect(draft.lines.map((l) => [l.variantId, l.quantity, l.unitCost]).sort()).toEqual(
+      variants.map((v) => [v, 10, 20_000]).sort(),
+    );
+    await page.reload();
     await expectAccessible(page, 'purchase order, draft');
     await page.getByRole('button', { name: m('po.place') }).click();
     await expect(toast(page, m('po.placed'))).toBeVisible();

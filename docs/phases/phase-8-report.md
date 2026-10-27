@@ -171,15 +171,19 @@ As planned (plan §9):
    - stock losses include count differences at their value, gains reducing the loss;
    - month ends before this phase are valued at the cost then where the history has it, else at today's cost.
 2. **The pilot's sample supplier, purchase and expense files,** to try the imports on before onboarding.
-3. **The older CSV exports' formula risk** (orders, customers): fix them as the reports were, except for the courier formats, or accept it.
-4. **Workers Paid** remains the way back to running the whole E2E suite on a preview (phase-7-report §3.1).
+3. **Workers Paid** remains the way back to running the whole E2E suite on a preview (phase-7-report §3.1).
 
 ### Not built yet, or smaller than planned
 
 - **Opening an export in Excel,** as criterion 4 asks once; LibreOffice has (§2).
-- **Criterion 2's count of 50 variants** is tested on three, and the batching on 501 (§2).
-- **The Overview tab (Phase 5A) has no export;** every Phase 8 report, its lists and Phase 7's reconciliation do.
-- **The PO editor's variant picker isn't in the E2E:** the flow creates the PO's lines through the API and places it on its page. The picker is the order screen's, tested there.
+
+### Done after the phase (Oct 27)
+
+- **The older CSV exports' formula risk** (orders, customers), as the owner chose: the order and customer CSVs guard the text people type (names, addresses, notes, tags, items) as the reports do. The phone the server checked and the money stay as they are, the Steadfast and Pathao files keep their text exactly as typed, and the Excel files already wrote text as text.
+- **Criterion 2 at the plan's 50 variants:** the integration test counts 50, ten each of a sale before counting, a sale after, one missing, two found and untouched, and checks every line, the stock, the drift and the adjustments' values.
+- **The Overview tab exports** each table to Excel and CSV like the other reports, counts, money and percentages as numbers; the returns flow saves the refunds table as CSV.
+- **The PO editor's variant picker is in the E2E:** the flow writes the purchase order in the editor, picking both products, then places it.
+- **The duplicate banner's Merge and Cancel** now show their message, and Merge opens the order kept. Refreshing the order removed the banner before its handlers ran, so staff stayed on the cancelled order. The recovery flow failed on it when run locally.
 
 ### Decisions that differ from the plan
 
