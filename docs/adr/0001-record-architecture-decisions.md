@@ -13,6 +13,10 @@
 - Each ADR has: Status (Proposed, Accepted, Superseded by ADR NNNN), Date, Context, Options, Decision, Consequences. Spike ADRs also record the raw measurements, the method and the date measured.
 - An ADR merges in the same pull request as the change it describes. A later change of mind is a new ADR that supersedes the old one; accepted ADRs are not rewritten, except to update the Status line.
 
+## Amendment (2026-10-27): dated amendments
+
+In practice, a small change to an accepted ADR has been recorded in the ADR itself, as a dated amendment (ADRs 0003, 0005, 0008, 0009, 0011, 0014, 0022 and 0029): the original text stays, and the amendment says what changed, when and why. A change that replaces the decision is still a new ADR that supersedes the old one.
+
 ## Consequences
 
 - Decisions are reviewable in the pull request, next to the code.

@@ -6,7 +6,7 @@ Everything the product owner sets up so the AI coding agent can develop, test an
 
 ## What the session can and cannot do
 
-Checked in a session on Oct 9, 2026:
+Checked in a session on Oct 9, 2026. Since then the session hook installs Postgres 18 from the PostgreSQL apt repository ([ADR 0008](../adr/0008-local-postgres.md)):
 
 | Works today | Blocked until you change settings | Never works through the session proxy |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Because of the last column, **production migrations and deploys always run in Gi
 
 Create these on free plans. Use one email you control long term (ideally a company address, not a personal one) and turn on two-factor login for every account.
 
-1. **GitHub:** already done (`aradbin/managemind`, private).
+1. **GitHub:** already done (`aradbin/managemind`). It started private and has been public since Oct 24, so Actions minutes are free (PLAN.md status, Phase 5B; `docs/runbooks/free-tier-limit.md`).
 2. **Cloudflare:** sign up at dash.cloudflare.com (Free plan).
    - Open **Workers & Pages** once and choose your `workers.dev` subdomain (for example `managemind`). Preview URLs will be `<worker>.<subdomain>.workers.dev`.
    - Open **R2** and enable it. Cloudflare may ask for a payment card even for the free tier; nothing is charged inside the free limits.
@@ -91,7 +91,7 @@ On github.com → `aradbin/managemind` → **Settings**:
    | `CLOUDFLARE_ACCOUNT_ID` | your Cloudflare account ID |
    | `NEON_PROJECT_ID` | your Neon project ID |
 
-3. **Actions → General:** keep "Allow all actions" (the workflows use `cloudflare/wrangler-action`, `pnpm/action-setup` and Neon's branch actions). Under **Workflow permissions**, select **Read and write permissions** so CI can comment preview URLs on pull requests.
+3. **Actions → General:** keep "Allow all actions" (the workflows use only `actions/*` and `pnpm/action-setup`; Wrangler and the Neon API are called from the repository's own scripts). Under **Workflow permissions**, select **Read and write permissions** so CI can comment preview URLs on pull requests.
 4. **Claude GitHub App:** the first push that adds `.github/workflows/*` files may need the app's **Workflows** permission. If GitHub asks you to approve updated permissions for the Claude app, accept them.
 
 ## Part 4 — Cloud environment settings (about 10 minutes)
@@ -182,9 +182,11 @@ Reply in the session with:
 2. **Pilot clients:** who they are, what they sell, and how they take orders today (Facebook, phone, WooCommerce, spreadsheet).
 3. **Providers the pilots use:** SMS gateway, email provider (if any) and courier.
 4. **Who onboards and supports clients:** you alone, or a non-technical teammate.
-5. **Merge rights:** may the agent merge its own pull requests once every check is green, or do you review and merge each one? (The plan forbids pushing to `main` directly either way.)
+5. **Merge rights:** may the agent merge its own pull requests once every check is green, or do you review and merge each one? (The plan forbids pushing to `master` directly either way.)
 
 ## Part 6 — Later phases (start the slow ones now)
+
+Parts 1–5 cover Phase 0 only. The full, current list of repository secrets and variables, with what each one turns on and what happens without it, is the table under **Production** in the [README](../../README.md#production).
 
 | When | You provide | Where it goes |
 | --- | --- | --- |
@@ -200,13 +202,15 @@ Reply in the session with:
 | Phase 7 | Courier sandbox credentials (Steadfast, Pathao, RedX) | The agent lists their exact API hosts in the Phase 7 plan for you to allow |
 | Phase 9 | Meta app and WhatsApp Cloud API access | Same pattern: GitHub secret + network secret + allowed host |
 
+As built, page purges and custom domains use a separate token with Cache Purge, and SSL and Certificates, on the store zone: the `CF_STORE_TOKEN` secret ([ADR 0018](../adr/0018-page-tags-and-purges.md), [ADR 0019](../adr/0019-custom-domains.md)). The keys and credentials Phases 4–7 added are in the README's table.
+
 ## Checklist
 
 - [ ] Cloudflare account, `workers.dev` subdomain chosen, R2 enabled, account ID copied
 - [ ] Neon project (Singapore, Postgres 18, 0.25 CU fixed), project ID copied
 - [ ] Sentry organization created
 - [ ] Two Cloudflare tokens, two Neon keys, Neon owner connection string, Sentry token, all in the password manager
-- [ ] GitHub Actions: 4 secrets and 2 variables added; workflow permissions set to read and write
+- [ ] GitHub Actions: 4 secrets and 2 variables added (Phase 0; later phases add the rest of the README's table); workflow permissions set to read and write
 - [ ] Cloud environment: Custom network list, 2 network secrets, 4 environment variables, saved
 - [ ] New session started
 - [ ] Part 5 answers sent

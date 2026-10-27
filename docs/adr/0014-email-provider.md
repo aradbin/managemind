@@ -21,7 +21,7 @@ Local development, previews and Playwright also need the emails, mainly to read 
 ## Decision
 
 1. **Resend's free plan in production**, sending from `no-reply@<PLATFORM_DOMAIN>`. The owner chose Resend on Oct 11. *Amended Oct 13:* the plan proposed verifying only a `notify.` subdomain, so a deliverability problem would never reach the main domain; the owner verified the main domain instead. The free plan allows one domain, and staff email is tens a day, so the main domain stays. DMARC starts at `p=none`.
-2. **`packages/providers/email`** holds the `EmailProvider` interface and the adapters:
+2. **`packages/providers/src/email`** holds the `EmailProvider` interface and the adapters:
    - **`resend`:** one `fetch` call to Resend's HTTP API; no SDK.
    - **`capture`:** everywhere except production. It hands each message to a `save` function; the API saves to `platform.dev_emails`, where the dev mailbox endpoint and Playwright read it. **Mailpit is dropped**: one mechanism serves local development, previews and tests, with nothing to install.
 3. **Retries:** `sendEmail` makes up to 3 attempts (200 ms, then 400 ms) for errors Resend marks as transient (5xx, locks, per-second rate limits) and for network failures, always with the same `Idempotency-Key`, so a lost response never causes a second email. Quota errors are not retried.
