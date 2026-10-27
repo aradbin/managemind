@@ -215,13 +215,16 @@ function DuplicateBanner({ order: o }: { order: OrderDetail }) {
           <span className="flex flex-wrap gap-2">
             <Button
               disabled={busy}
+              // Awaited, not mutate's onSuccess: the refreshed order has no
+              // duplicate left, so this banner is gone before that would run.
               onClick={() =>
-                merge.mutate(undefined, {
-                  onSuccess: () => {
+                merge.mutateAsync(undefined).then(
+                  () => {
                     toast(t('duplicate.merged', { number: other.displayNumber }));
                     void navigate({ to: '/orders/$id', params: { id: other.id } });
                   },
-                })
+                  () => undefined, // shown below from merge.error
+                )
               }
             >
               {t('duplicate.merge', { number: other.displayNumber })}
@@ -230,7 +233,10 @@ function DuplicateBanner({ order: o }: { order: OrderDetail }) {
               variant="secondary"
               disabled={busy}
               onClick={() =>
-                cancel.mutate(undefined, { onSuccess: () => toast(t('order.cancelled')) })
+                cancel.mutateAsync(undefined).then(
+                  () => toast(t('order.cancelled')),
+                  () => undefined,
+                )
               }
             >
               {t('duplicate.cancel')}
