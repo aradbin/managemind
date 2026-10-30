@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Purchase order — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:40px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-ptab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:13px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:28px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;margin:-8px 0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-row{position:relative;display:flex;align-items:center;gap:4px;min-height:56px;padding:6px 4px 6px 8px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:flex;flex:1;flex-direction:column;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev svg{transition:transform .15s}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-dhead{flex:none;padding:12px 16px 8px;text-align:center}
+.mm-dtitle{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none;color:var(--muted-foreground)}
+.mm-optrow:hover{background:var(--accent)}
+.mm-optrow:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px 0;background:var(--border)}
+.mm{--success:oklch(.723 .219 149.579);--page:oklch(.985 0 0)}
+.mm.dark{--success:oklch(.792 .209 151.711);--page:oklch(.145 0 0)}
+.mm-row{gap:12px;min-height:64px;padding:8px 4px 8px 12px}
+.mm-av{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9999px;background:var(--muted);color:var(--foreground);font-size:13px;font-weight:600}
+.mm-tagchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.mm-badge{display:inline-flex;flex:none;align-items:center;padding:1px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-card{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-statrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-statrow>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-statrow>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-orow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:10px 16px;border-bottom:1px solid var(--border)}
+li:last-child>.mm-orow{border-bottom:0}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-dotlabel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted-foreground);white-space:nowrap}
+.mm-dotlabel>span{width:8px;height:8px;border-radius:9999px}
+.mm-rbar{height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 22%,transparent)}
+.mm-rbar>span{display:block;height:100%;border-radius:9999px;background:var(--success)}
+.mm-addr{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:18px}
+.mm-alert>svg{flex:none;margin-top:1px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-chipbox input{flex:1;min-width:100px;height:28px;padding:0 4px;border:0;outline:none;background:transparent;color:var(--foreground);font:inherit;font-size:16px}
+.mm-chipbox input::placeholder{color:var(--muted-foreground)}
+.mm .mm-chipbox input:focus-visible{box-shadow:none}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;cursor:pointer}
+.mm-radio-row{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;background:var(--background);cursor:pointer}
+.mm-radio[aria-checked=true]{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-combo:disabled{opacity:.5;cursor:not-allowed}
+.mm-alertbox{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-toast{position:absolute;left:16px;right:16px;z-index:80;display:flex;align-items:center;gap:8px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);font-size:13px;line-height:20px;box-shadow:0 4px 12px rgb(0 0 0 / .1)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-sum{position:sticky;top:-12px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;line-height:20px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block;min-width:0}
+.mm-affix>span{position:absolute;left:12px;top:10px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:28px}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-rcard .mm-radio{margin-top:1px}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-rule{display:flex;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:center;margin:-4px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-chipbox{min-height:40px}
+.mm-gh{padding:12px 12px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-checkrow{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:32px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:32px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:18px;cursor:pointer}
+.mm-stepper span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-plist>li:last-child>div{border-bottom:0}
+.mm-prow{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.mm-rowlink{gap:2px}
+.mm-statrow dd{font-size:16px}
+.mm-egrid{display:grid;grid-template-columns:64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px;align-items:center;column-gap:12px}
+.mm-rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) 150px 72px 104px 40px;align-items:center;column-gap:12px}
+.mm-sw{display:inline-block;flex:none;width:8px;height:8px;border-radius:2px}
+.mm-stack{display:flex;gap:2px;height:12px;overflow:hidden;border-radius:4px}
+.mm-seg{display:block;min-width:2px;height:100%;cursor:pointer;transition:opacity .15s}
+.mm-seg:hover{filter:brightness(1.08)}
+.mm-tip{position:absolute;right:0;bottom:calc(100% + 6px);padding:4px 8px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none}
+.mm-legend{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 24px;margin:0;padding:0;list-style:none}
+.mm-lgbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:opacity .15s}
+.mm-lgbtn:hover,.mm-lgbtn[aria-pressed=true]{background:var(--accent)}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-needed{margin-left:6px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;line-height:16px}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-dropbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-dropbtn:hover{background:var(--accent)}
+.mm-filerow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px}
+.mm-rthumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;background:var(--muted);color:var(--muted-foreground)}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:40px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.mm-prow{position:relative}
+
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500;line-height:16px;white-space:nowrap}
+.mm-camera{display:flex;align-items:center;justify-content:center;height:200px;border-radius:10px;background:#111;color:#ddd;font-size:13px}
+.mm-step button:disabled{opacity:.4}
+.mm-input[aria-invalid=true],.mm-combo[aria-invalid=true]{border-color:var(--destructive)}
+.mm-warn{color:var(--warn)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-readonly{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm{--info:oklch(.546 .245 262.881)}
+.mm.dark{--info:oklch(.707 .165 254.624)}
+.mm-secbar{display:inline-flex;align-items:center;height:40px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-secbar .mm-tab{height:34px;padding:0 12px;font-size:14px}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-ttabs .mm-tab{height:34px;gap:6px;padding:0 12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-prog{display:block;height:6px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-prog>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-prog.mm-done>span{background:var(--success)}
+.mm-bad{color:var(--destructive)}
+.mm-good{color:var(--success)}
+.mm-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mm-mlist>li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mm-mlist>li:last-child{border-bottom:0}
+.mm-chg{display:flex;justify-content:space-between;gap:8px}
+.mm-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mm-mode{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;line-height:18px;text-align:left;cursor:pointer}
+.mm-mode[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent);font-weight:500}
+.mm-mode[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-mgroup{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;margin:0;font-size:14px}
+.mm-dl dt{color:var(--muted-foreground)}
+.mm-dl dd{margin:0;white-space:pre-line}
+.mm-big{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.mm-addrow{display:flex;align-items:center;gap:8px;width:100%;height:44px;padding:0 12px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-emptybox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted-foreground)}
+.mm-qty{width:72px;height:40px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums}
+.mm-step{display:inline-flex;flex:none;align-items:center;height:40px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-step button{width:40px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.mm-step input{width:52px;height:100%;padding:0;border:0;border-left:1px solid var(--input);border-right:1px solid var(--input);background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:500;text-align:center;font-variant-numeric:tabular-nums;outline:none}
+.mm-chipq{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-stats2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-stats2>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-stats2>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-stats2>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--page); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+<header style="display: flex; flex: none; align-items: center; gap: 4px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--border); background: var(--background)">
+<a href="PurchaseOrdersPhone.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to purchase orders"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a>
+<h1 class="mm-trunc" style="flex: 1; margin: 0 4px; font-size: 16px; line-height: 24px; font-weight: 600">{{hd.title}}</h1>
+<sc-if value="{{hd.isExisting}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="More actions" aria-haspopup="dialog" onClick="{{toggleMore}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></sc-if>
+</header>
+<main class="mm-scroll" style="gap: 12px; padding: 12px">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 4px 0"><sc-if value="{{hd.isExisting}}" hint-placeholder-val="{{true}}"><span><span class="mm-sbadge" style="background: {{hd.badge.bg}}; color: {{hd.badge.fg}}; box-shadow: inset 0 0 0 1px {{hd.badge.edge}}">{{hd.badge.label}}</span></span></sc-if><p class="mm-muted" style="margin: 0; font-size: 13px">{{hd.sub}}</p></div>
+<sc-if value="{{hasStats}}" hint-placeholder-val="{{true}}"><dl class="mm-stats2"><sc-for list="{{stats}}" as="x" hint-placeholder-count="4"><div><dt>{{x.label}}</dt><dd>{{x.value}}</dd></div></sc-for></dl></sc-if>
+<sc-if value="{{hd.canReceive}}" hint-placeholder-val="{{true}}"><a href="ReceivePhone.dc.html" class="mm-btn mm-primary" style="height: 44px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>Receive what arrived</a></sc-if>
+<sc-if value="{{hd.canPlace}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" style="height: 44px" onClick="{{place}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"></path><path d="m21.854 2.147-10.94 10.939"></path></svg>Mark as ordered</button></sc-if>
+<sc-if value="{{hd.readOnly}}" hint-placeholder-val="{{false}}"><div class="mm-note" style="font-size: 13px; line-height: 18px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><p style="margin: 0">{{hd.readOnlyText}}</p></div></sc-if>
+<sc-if value="{{showProblems}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{problemsText}}</p></div></sc-if>
+<section class="mm-card" aria-labelledby="mm-c-det" style="gap: 14px">
+<h2 id="mm-c-det" class="mm-ctitle">Supplier and dates</h2>
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div class="mm-field"><span class="mm-label" id="mm-l-sup">Supplier</span><sc-if value="{{supEditable}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{sup.aria}}" aria-labelledby="mm-l-sup" disabled="{{sup.disabled}}" onClick="{{sup.toggle}}"><span class="mm-trunc" style="color: {{sup.color}}">{{sup.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{supErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">Choose a supplier.</p></sc-if></sc-if><sc-if value="{{supFixed}}" hint-placeholder-val="{{false}}"><a href="SupplierPhone.dc.html" class="mm-readonly" style="text-decoration: none; color: var(--foreground)"><span class="mm-trunc" style="flex: 1">{{supName}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m9 18 6-6-6-6"></path></svg></a></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-exp">Expected on <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-exp" class="mm-input" type="date" disabled="{{locked}}" value="{{expected}}" onChange="{{onExpected}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-sref">Supplier’s reference <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-sref" class="mm-input" maxLength="100" disabled="{{locked}}" value="{{supRef}}" onChange="{{onSupRef}}" placeholder="Their invoice or order number"></div>
+<div class="mm-field"><label class="mm-label" for="mm-pnote">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-pnote" class="mm-input" maxLength="1000" disabled="{{locked}}" value="{{note}}" onChange="{{onNote}}"></div>
+</div>
+</section>
+<section class="mm-card" aria-labelledby="mm-c-items" style="gap: 14px">
+<div class="mm-chead"><h2 id="mm-c-items" class="mm-ctitle">Items <span class="mm-muted" style="font-weight: 400">· {{lineCount}}</span></h2><sc-if value="{{canReorder}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{reorder}}" style="height: 28px; margin-right: -8px; padding: 0 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Add low stock</button></sc-if></div>
+<sc-if value="{{hasLines}}" hint-placeholder-val="{{true}}"><ul class="mm-plist" aria-label="Items"><sc-for list="{{lines}}" as="l" hint-placeholder-count="3"><li><div class="mm-prow" style="flex-direction: column; align-items: stretch; gap: 10px; padding: 12px"><div style="display: flex; align-items: flex-start; gap: 8px"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{l.title}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{l.opts}}</span><span class="mm-trunc mm-muted" style="font-size: 12px; line-height: 16px">{{l.sub}}</span></span><sc-if value="{{l.canRemove}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{l.removeAria}}" onClick="{{l.remove}}" style="margin: -6px -6px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-if></div><div style="display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; align-items: end; gap: 10px"><div class="mm-field"><span class="mm-label" style="font-size: 12px">Ordered</span><input class="mm-input" inputMode="numeric" aria-label="{{l.qtyAria}}" aria-invalid="{{l.qBad}}" disabled="{{locked}}" value="{{l.qty}}" onChange="{{l.onQty}}" style="text-align: right; font-variant-numeric: tabular-nums"></div><div class="mm-field"><span class="mm-label" style="font-size: 12px">Cost each</span><label class="mm-affix"><span aria-hidden="true" style="top: 10px">৳</span><input class="mm-input" inputMode="decimal" aria-label="{{l.costAria}}" aria-invalid="{{l.cBad}}" disabled="{{locked}}" value="{{l.cost}}" onChange="{{l.onCost}}" style="font-variant-numeric: tabular-nums"></label></div><span style="height: 40px; display: flex; align-items: center; font-weight: 600; font-variant-numeric: tabular-nums">{{l.total}}</span></div><sc-if value="{{l.showErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err" style="margin: -4px 0 0">{{l.err}}</p></sc-if></div></li></sc-for></ul></sc-if>
+<sc-if value="{{noLines}}" hint-placeholder-val="{{false}}"><div class="mm-emptybox" style="padding: 16px; border-color: {{linesEdge}}"><p style="margin: 0">Add the items you are ordering.</p></div></sc-if>
+<sc-if value="{{hasEdit}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-addrow" aria-haspopup="dialog" onClick="{{item.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add an item</button></sc-if>
+</section>
+<section class="mm-card" aria-labelledby="mm-c-costs" style="gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-costs" class="mm-ctitle">Other costs</h2><p class="mm-muted" style="margin: 0; font-size: 13px">Transport, labour or an agent’s fee: spread over the goods by value as they arrive.</p></div>
+<sc-for list="{{costs}}" as="c" hint-placeholder-count="1"><div style="display: grid; grid-template-columns: minmax(0, 1fr) 112px 40px; gap: 8px; align-items: center"><input class="mm-input" aria-label="What for" placeholder="What for" maxLength="100" aria-invalid="{{c.bad}}" disabled="{{locked}}" value="{{c.label}}" onChange="{{c.onLabel}}"><label class="mm-affix"><span aria-hidden="true" style="top: 10px">৳</span><input class="mm-input" inputMode="decimal" aria-label="Amount" aria-invalid="{{c.bad}}" disabled="{{locked}}" value="{{c.amount}}" onChange="{{c.onAmount}}"></label><sc-if value="{{hasEdit}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{c.removeAria}}" onClick="{{c.remove}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-if></div></sc-for>
+<sc-if value="{{canAddCost}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><button type="button" class="mm-btn mm-outline" onClick="{{addCost}}" style="height: 32px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a cost</button><sc-if value="{{noCosts}}" hint-placeholder-val="{{true}}"><sc-for list="{{costQuick}}" as="k" hint-placeholder-count="3"><button type="button" class="mm-chipq" onClick="{{k.add}}">{{k.label}}</button></sc-for></sc-if></div></sc-if>
+<dl class="mm-totals"><div><dt>Goods</dt><dd>{{goods}}</dd></div><div><dt>Other costs</dt><dd>{{other}}</dd></div><div class="mm-total"><dt>Total</dt><dd>{{total}}</dd></div></dl>
+</section>
+<sc-if value="{{hasReceipts}}" hint-placeholder-val="{{true}}"><section class="mm-card" aria-labelledby="mm-c-del" style="gap: 8px"><h2 id="mm-c-del" class="mm-ctitle">Deliveries</h2><ul class="mm-mlist"><sc-for list="{{receipts}}" as="g" hint-placeholder-count="2"><li style="flex-direction: row; align-items: center; gap: 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--muted-foreground)"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-mono" style="font-weight: 500">{{g.ref}}</span><span class="mm-muted" style="font-size: 13px">{{g.date}} · {{g.units}}</span></span><span style="font-variant-numeric: tabular-nums">{{g.value}}</span></li></sc-for></ul></section></sc-if>
+</main>
+<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}">
+<div role="region" aria-label="{{bar.label}}" style="display: flex; flex: none; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--background)">
+<button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{discard}}">{{bar.cancel}}</button>
+<button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{save}}">{{bar.save}}</button>
+</div>
+</sc-if>
+<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-more-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-more-title" class="mm-dtitle">{{hd.title}}</h2></div>
+<div role="menu" aria-labelledby="mm-more-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{print}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>Print or share</button>
+<sc-if value="{{hd.canClose}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{askClose}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Close order</button></sc-if>
+<sc-if value="{{hasDanger}}" hint-placeholder-val="{{false}}"><div role="separator" class="mm-sep"></div></sc-if>
+<sc-if value="{{hd.canCancel}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{askCancel}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></svg>Cancel order</button></sc-if>
+<sc-if value="{{hd.canDelete}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{askDelete}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete draft</button></sc-if>
+</div>
+
+</div>
+</div>
+</sc-if>
+<sc-if value="{{comboOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 60">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cb-title" class="mm-drawer" onKeyDown="{{comboEsc}}" style="height: 70%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cb-title" class="mm-dtitle">{{cbd.title}}</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="{{cbd.ph}}" placeholder="{{cbd.ph}}" autoComplete="off" value="{{cbd.query}}" onChange="{{cbd.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cb-title" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 24px">
+<sc-for list="{{cbd.items}}" as="o" hint-placeholder-count="7"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc mm-muted" style="font-size: 13px">{{o.sub}}</span></sc-if></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for>
+<sc-if value="{{cbd.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">Nothing found.</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{closeOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-alertbox">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">{{closeTitle}}</h2><div id="mm-al-desc" style="display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground)"><p style="margin: 0">{{closeBody}}</p></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" class="mm-btn mm-primary" style="width: 100%; " onClick="{{doClose}}">Close order</button><button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{cancelOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-alertbox">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">{{cancelTitle}}</h2><div id="mm-al-desc" style="display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground)"><p style="margin: 0">Nothing was received, so nothing changes in stock.</p></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doCancel}}">Cancel order</button><button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{deleteOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-alertbox">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">{{deleteTitle}}</h2><div id="mm-al-desc" style="display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground)"><p style="margin: 0">The draft and its items go. Nothing was ordered yet.</p></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button><button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="mm-toast" style="bottom: 84px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span></div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Partly received","Ordered","Draft","New purchase order","Add an item","Unsaved changes","Missing details","More menu","Close order","Received"],"default":"Partly received"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var ROOT = 'mm';
+var TODAY = '2026-10-29';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var METHODS = [['cash', 'Cash'], ['bank', 'Bank'], ['bkash', 'bKash'], ['nagad', 'Nagad'], ['card', 'Card'], ['other', 'Other']];
+var VARIANTS = [
+  { id: 'v1', t: 'Cotton Panjabi', o: 'Ivory / M', sku: 'PNJ-IV-M', bc: '8941100100011', oh: 18, rs: 3, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v2', t: 'Cotton Panjabi', o: 'Ivory / L', sku: 'PNJ-IV-L', bc: '8941100100028', oh: 4, rs: 2, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v3', t: 'Cotton Panjabi', o: 'Ivory / XL', sku: 'PNJ-IV-XL', bc: '8941100100035', oh: 0, rs: 0, low: 3, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v4', t: 'Silk Panjabi', o: 'Navy / L', sku: 'PNJ-SK-NV-L', bc: '8941100100042', oh: 9, rs: 1, low: 2, track: true, cost: 1450, sup: 's2', cat: 'Panjabi', tags: ['eid', 'premium'] },
+  { id: 'v5', t: 'Kids Panjabi', o: 'Mint / 4 years', sku: 'PNJ-KD-MN-4', bc: '8941100100059', oh: 14, rs: 0, low: 4, track: true, cost: 380, sup: 's3', cat: 'Panjabi', tags: ['kids'] },
+  { id: 'v6', t: 'Embroidered Kurti', o: 'Maroon / S', sku: 'KRT-EM-MR-S', bc: '8941100100066', oh: 11, rs: 2, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v7', t: 'Embroidered Kurti', o: 'Maroon / M', sku: 'KRT-EM-MR-M', bc: '8941100100073', oh: 3, rs: 1, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v8', t: 'Jamdani Saree', o: 'Red', sku: 'SAR-JM-RD', bc: '8941100100080', oh: 6, rs: 0, low: 2, track: true, cost: 4200, sup: 's1', cat: 'Saree', tags: ['premium'] },
+  { id: 'v9', t: 'Tangail Cotton Saree', o: 'Green', sku: 'SAR-TG-GR', bc: '8941100100097', oh: 15, rs: 2, low: 4, track: true, cost: 1350, sup: 's1', cat: 'Saree', tags: [] },
+  { id: 'v10', t: 'Cotton Three-piece', o: 'Green / M', sku: '3PC-GR-M', bc: '8941100100103', oh: 22, rs: 4, low: 5, track: true, cost: 1100, sup: 's3', cat: 'Three-piece', tags: ['eid'] },
+  { id: 'v11', t: 'Batik Fatua', o: 'Indigo / L', sku: 'FTU-BT-IN-L', bc: '8941100100110', oh: 7, rs: 0, low: 2, track: true, cost: 520, sup: 's2', cat: 'Fatua', tags: [] },
+  { id: 'v16', t: 'Batik Fatua', o: 'Indigo / XL', sku: 'FTU-BT-IN-XL', bc: '8941100100127', oh: 3, rs: 0, low: 1, track: true, cost: null, sup: '', cat: 'Fatua', tags: [] },
+  { id: 'v12', t: 'Leather Sandal', o: 'Brown / 41', sku: 'SND-BR-41', bc: '8941100100134', oh: 2, rs: 0, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v13', t: 'Leather Sandal', o: 'Brown / 42', sku: 'SND-BR-42', bc: '8941100100141', oh: 5, rs: 1, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v14', t: 'Prayer Cap', o: 'White', sku: 'CAP-WH', bc: '8941100100158', oh: 40, rs: 0, low: 10, track: true, cost: 60, sup: 's3', cat: 'Accessories', tags: ['eid'] },
+  { id: 'v15', t: 'Gift wrap', o: '', sku: 'GFT-WRAP', bc: '', oh: 0, rs: 0, low: 0, track: false, cost: 20, sup: '', cat: 'Accessories', tags: [] }
+];
+var SUPPLIERS = [
+  { id: 's1', name: 'Tangail Tant Ghar', contact: 'Rafiq Mia', phones: ['01711-234567'], email: 'tantghar@gmail.com', address: 'Pathrail, Delduar, Tangail', note: 'Sends by Sundarban Courier. Ask for a photo of the receipt.', opening: 20000, balance: 48500, archived: false, since: '2025-03-10' },
+  { id: 's2', name: 'Rupkotha Embroidery', contact: 'Shahana Begum', phones: ['01819-445566', '01556-778899'], email: '', address: 'Mirpur 10, Dhaka', note: '', opening: 0, balance: -5000, archived: false, since: '2025-06-02' },
+  { id: 's3', name: 'Islampur Fabrics', contact: 'Abdul Karim', phones: ['01912-334455'], email: '', address: 'Islampur Road, Old Dhaka', note: 'Closed on Fridays.', opening: 0, balance: 26000, archived: false, since: '2025-01-15' },
+  { id: 's4', name: 'Chittagong Leather Works', contact: 'Mohammad Hasan', phones: ['01811-998877'], email: 'clw.hasan@yahoo.com', address: 'Hazari Lane, Chattogram', note: '', opening: 0, balance: 12800, archived: false, since: '2025-09-20' },
+  { id: 's5', name: 'Narayanganj Knit', contact: '', phones: ['01611-223344'], email: '', address: '', note: '', opening: 0, balance: 0, archived: true, since: '2025-02-01' }
+];
+var POS = [
+  { id: 'po18', ref: 'PO-0018', sup: 's2', status: 'draft', created: '2026-10-28', expected: '', supRef: '', note: '', lines: [['v6', 10, 890, 0], ['v7', 12, 890, 0], ['v4', 6, 1450, 0]], costs: [], receipts: [] },
+  { id: 'po17', ref: 'PO-0017', sup: 's1', status: 'ordered', created: '2026-10-24', expected: '2026-11-03', supRef: 'TTG-2210', note: '', lines: [['v8', 4, 4200, 0], ['v9', 10, 1350, 0]], costs: [['Courier', 1200]], receipts: [] },
+  { id: 'po16', ref: 'PO-0016', sup: 's3', status: 'partially_received', created: '2026-10-12', expected: '2026-10-25', supRef: 'IF-7781', note: 'XL comes with the next bale.', lines: [['v1', 20, 655, 20], ['v2', 20, 655, 12], ['v3', 10, 655, 0], ['v10', 10, 1100, 8]], costs: [['Transport from Islampur', 1500]], receipts: [['GRN-0029', '2026-10-18', 30, 21410], ['GRN-0031', '2026-10-22', 10, 7350]] },
+  { id: 'po15', ref: 'PO-0015', sup: 's4', status: 'received', created: '2026-10-02', expected: '2026-10-09', supRef: '', note: '', lines: [['v12', 12, 950, 12], ['v13', 12, 950, 12]], costs: [], receipts: [['GRN-0027', '2026-10-09', 24, 22800]] },
+  { id: 'po14', ref: 'PO-0014', sup: 's3', status: 'closed', created: '2026-09-20', expected: '2026-09-28', supRef: '', note: '', lines: [['v5', 30, 380, 25], ['v14', 100, 60, 100]], costs: [], receipts: [['GRN-0024', '2026-09-28', 125, 15500]] },
+  { id: 'po13', ref: 'PO-0013', sup: 's2', status: 'cancelled', created: '2026-09-15', expected: '', supRef: '', note: '', lines: [['v11', 15, 520, 0]], costs: [], receipts: [] }
+];
+var PO_STATUS = {
+  draft: { label: 'Draft', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  ordered: { label: 'Ordered', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  partially_received: { label: 'Partly received', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  received: { label: 'Received', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  closed: { label: 'Closed', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var COUNT_STATUS = {
+  counting: { label: 'Counting', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  review: { label: 'In review', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  applied: { label: 'Applied', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var REASONS = [
+  ['received', 'Received'], ['count', 'Count'], ['damaged', 'Damaged'], ['lost', 'Lost'], ['expired', 'Expired'], ['sample', 'Sample'],
+  ['returned', 'Returned'], ['correction', 'Correction'], ['import', 'Import'], ['other', 'Other']
+];
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(v) { return v < 0 ? '−৳' + Math.round(-v).toLocaleString('en-US') : '৳' + Math.round(Number(v) || 0).toLocaleString('en-US'); }
+function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
+function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
+function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
+function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
+function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
+function label(v) { return v.o ? v.t + ' — ' + v.o : v.t; }
+function available(v) { return v.oh - v.rs; }
+function isLow(v) { return v.track && available(v) <= v.low; }
+function methodLabel(m) { return (METHODS.filter(function (x) { return x[0] === m; })[0] || METHODS[5])[1]; }
+function balanceOf(b) {
+  if (b > 0) return { text: 'You owe ' + money(b), owed: true, fg: 'var(--foreground)', weight: '600' };
+  if (b < 0) return { text: 'Advance ' + money(-b), owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+  return { text: 'Settled', owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+}
+function poTotals(lines, costs) {
+  var goods = lines.reduce(function (a, l) { return a + (num(l[1]) || 0) * (num(l[2]) || 0); }, 0);
+  var other = costs.reduce(function (a, c) { return a + (num(c[1]) || 0); }, 0);
+  return { goods: goods, other: other, total: goods + other };
+}
+function poProgress(po) {
+  var o = po.lines.reduce(function (a, l) { return a + Number(l[1]); }, 0), r = po.lines.reduce(function (a, l) { return a + Number(l[3]); }, 0);
+  return { ordered: o, received: r, text: r + ' of ' + o + ' received', pct: o ? Math.round(r / o * 100) + '%' : '0%' };
+}
+function badgeOf(map, key) { var b = map[key]; return { label: b.label, bg: b.bg, fg: b.fg, edge: b.edge || 'transparent' }; }
+function boot(self, start, fallback) {
+  var startKey = self.props.startOn ?? fallback;
+  var s = self.state || {};
+  if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(start[startKey] || {}));
+  var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+  var toast = function (text) {
+    clearTimeout(self.toastTimer);
+    self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+    return text;
+  };
+  var dark = typeof s.dark === 'boolean' ? s.dark : (self.props.dark ?? false);
+  var vals = {
+    themeClass: ROOT + (dark ? ' dark' : ''), fontStack: FONTS[self.props.font ?? 'Inter'] || FONTS.Inter,
+    isDark: dark, isLight: !dark, themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+    toggleTheme: function () { up({ dark: !dark }); },
+    hasToast: Boolean(s.toast), toastText: s.toast || ''
+  };
+  return { s: s, up: up, toast: toast, vals: vals };
+}
+var START = {
+  'Partly received': { id: 'po16' }, Ordered: { id: 'po17' }, Draft: { id: 'po18' }, 'New purchase order': { id: 'new' },
+  'Add an item': { id: 'po18', combo: 'item' }, 'Unsaved changes': { id: 'po18', d: { sup: 's2', expected: '2026-11-10', supRef: '', note: '', lines: [['v6', '10', '890', 0], ['v7', '15', '890', 0], ['v4', '6', '1450', 0]], costs: [['Courier', '600']] } },
+  'Missing details': { id: 'new', tried: true, d: { sup: '', expected: '', supRef: '', note: '', lines: [['v1', '0', '', 0]], costs: [['', '']] } },
+  'More menu': { id: 'po16', more: true }, 'Close order': { id: 'po16', confirm: 'close' }, Received: { id: 'po15' }
+};
+function draftOf(po) {
+  return po ? { sup: po.sup, expected: po.expected, supRef: po.supRef, note: po.note, lines: po.lines.map(function (l) { return [l[0], String(l[1]), String(l[2]), l[3]]; }), costs: po.costs.map(function (c) { return [c[0], String(c[1])]; }) }
+    : { sup: '', expected: '', supRef: '', note: '', lines: [], costs: [] };
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    var b = boot(this, START, 'Partly received');
+    var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
+    var pos = s.pos || POS;
+    var id = s.id || 'po16';
+    var po = id === 'new' ? null : pos.filter(function (p) { return p.id === id; })[0];
+    var status = po ? po.status : 'draft';
+    var editable = !po || ['draft', 'ordered', 'partially_received'].indexOf(status) !== -1;
+    var supEditable = !po || status === 'draft';
+    var orig = draftOf(po);
+    var d = s.d || orig;
+    var dirty = !po || JSON.stringify(d) !== JSON.stringify(orig);
+    var setD = function (patch, extra) { up(Object.assign({ d: Object.assign({}, d, patch) }, extra || {})); };
+    var tried = Boolean(s.tried);
+
+    // Header.
+    var pr = po ? poProgress(po) : { ordered: 0, received: 0 };
+    vals.hd = {
+      title: po ? po.ref : 'New purchase order', isExisting: Boolean(po), isNew: !po, badge: badgeOf(PO_STATUS, status),
+      sub: po ? sById(po.sup).name + ' · Created ' + longDate(po.created) : 'Order from a supplier, then receive what arrives, all at once or in parts.',
+      canReceive: status === 'ordered' || status === 'partially_received', canPlace: Boolean(po) && status === 'draft',
+      canClose: status === 'partially_received', canCancel: status === 'ordered' && pr.received === 0, canDelete: Boolean(po) && status === 'draft',
+      readOnly: !editable, readOnlyText: status === 'received' ? 'Everything on this order has arrived, so it can’t change.' : status === 'closed' ? 'This order is closed. What didn’t arrive won’t be received.' : 'This order was cancelled. Nothing was received.'
+    };
+    vals.hasMore = vals.hd.canClose || vals.hd.canCancel || vals.hd.canDelete;
+    vals.stats = po && status !== 'draft' ? [
+      { label: 'Ordered', value: plural(pr.ordered, 'unit', 'units') },
+      { label: 'Received', value: pr.received + ' of ' + pr.ordered },
+      { label: 'To come', value: status === 'closed' || status === 'cancelled' ? '—' : String(pr.ordered - pr.received) },
+      { label: 'Expected on', value: po.expected ? short(po.expected) : '—' }
+    ] : [];
+    vals.hasStats = vals.stats.length > 0;
+    vals.progPct = pr.ordered ? Math.round(pr.received / pr.ordered * 100) + '%' : '0%';
+
+    // Comboboxes: supplier and the item picker.
+    var allCombos = {};
+    var combo = function (key, cfg) {
+      var open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var opts = cfg.options.filter(function (o) { return !ql || (o.label + ' ' + (o.sub || '')).toLowerCase().indexOf(ql) !== -1; });
+      var cur = cfg.options.filter(function (o) { return o.v === cfg.current; })[0];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: cfg.title, ph: cfg.ph, query: open ? (s.cq || '') : '', none: opts.length === 0, disabled: Boolean(cfg.disabled),
+        display: cur ? cur.label : cfg.placeholder, color: cur ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); }, onQuery: function (e) { up({ cq: e.target.value }); },
+        items: opts.map(function (o) { var on = o.v === cfg.current; return { label: o.label, sub: o.sub || '', hasSub: Boolean(o.sub), check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { cfg.onPick(o.v); } }; })
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    vals.sup = combo('sup', {
+      title: 'Supplier', ph: 'Search suppliers', placeholder: 'Choose a supplier', current: d.sup,
+      options: SUPPLIERS.filter(function (x) { return !x.archived; }).map(function (x) { return { v: x.id, label: x.name, sub: x.contact }; }),
+      onPick: function (v) { setD({ sup: v }, { combo: null }); }
+    });
+    vals.supEditable = supEditable && editable;
+    vals.supFixed = !(supEditable && editable);
+    vals.supName = d.sup ? sById(d.sup).name : '';
+    vals.supErr = tried && !d.sup;
+    vals.item = combo('item', {
+      title: 'Add an item', ph: 'Search titles and SKUs', placeholder: 'Add an item', current: '',
+      options: VARIANTS.filter(function (v) { return v.track && !d.lines.some(function (l) { return l[0] === v.id; }); }).map(function (v) { return { v: v.id, label: label(v), sub: v.sku + ' · ' + v.oh + ' on hand' }; }),
+      onPick: function (v) { var vv = vById(v); setD({ lines: d.lines.concat([[v, '1', vv.cost === null ? '' : String(vv.cost), 0]]) }, { combo: null, cq: '' }); }
+    });
+    var active = allCombos[s.combo] || null;
+    vals.comboOpen = Boolean(active);
+    vals.cbd = active || vals.sup;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // Details.
+    vals.expected = d.expected; vals.onExpected = function (e) { setD({ expected: e.target.value }); };
+    vals.supRef = d.supRef; vals.onSupRef = function (e) { setD({ supRef: e.target.value }); };
+    vals.note = d.note; vals.onNote = function (e) { setD({ note: e.target.value }); };
+    vals.locked = !editable;
+    vals.hasEdit = editable;
+    vals.supErrAria = tried && !d.sup ? 'true' : 'false';
+
+    // Items.
+    var problems = [];
+    vals.lines = d.lines.map(function (l, i) {
+      var v = vById(l[0]), q = num(l[1]), c = l[2].trim() === '' ? null : num(l[2]);
+      var minQ = Math.max(1, l[3]);
+      var qBad = q === null || !Number.isInteger(q) || q < minQ, cBad = l[2].trim() !== '' && (c === null || c < 0);
+      if (qBad) problems.push(label(v));
+      var setLine = function (k, val) { var nl = d.lines.map(function (x, j) { if (j !== i) return x; var y = x.slice(); y[k] = val; return y; }); setD({ lines: nl }); };
+      return {
+        title: v.t, opts: v.o, hasOpts: Boolean(v.o),
+        sub: [v.sku, po && status !== 'draft' ? l[3] + ' of ' + l[1] + ' received' : v.oh + ' on hand'].join(' · '),
+        qty: l[1], cost: l[2], onQty: function (e) { setLine(1, e.target.value); }, onCost: function (e) { setLine(2, e.target.value); },
+        qBad: qBad ? 'true' : 'false', cBad: cBad ? 'true' : 'false', showErr: tried && qBad,
+        err: l[3] > 0 ? 'At least ' + l[3] + ': that many came already.' : 'At least 1.',
+        total: q !== null && c !== null ? money(q * c) : '—',
+        canRemove: editable && l[3] === 0, cantRemove: !(editable && l[3] === 0),
+        removeAria: 'Remove ' + label(v), remove: function () { setD({ lines: d.lines.filter(function (x, j) { return j !== i; }) }); },
+        qtyAria: 'Ordered: ' + label(v), costAria: 'Cost each: ' + label(v)
+      };
+    });
+    vals.hasLines = d.lines.length > 0;
+    vals.noLines = d.lines.length === 0;
+    vals.linesErr = tried && d.lines.length === 0;
+    vals.linesEdge = tried && d.lines.length === 0 ? 'var(--destructive)' : 'var(--border)';
+    vals.lineCount = plural(d.lines.length, 'item', 'items');
+    vals.canReorder = editable && Boolean(d.sup);
+    vals.reorder = function () {
+      var add = VARIANTS.filter(function (v) { return v.sup === d.sup && isLow(v) && !d.lines.some(function (l) { return l[0] === v.id; }); });
+      if (!add.length) { up({ toast: toast('Nothing from this supplier is low.') }); return; }
+      setD({ lines: d.lines.concat(add.map(function (v) { return [v.id, String(Math.max(1, v.low * 2 - available(v))), v.cost === null ? '' : String(v.cost), 0]; })) }, { toast: toast(plural(add.length, 'low item', 'low items') + ' added.') });
+    };
+
+    // Other costs.
+    var costBad = 0;
+    vals.costs = d.costs.map(function (c, i) {
+      var a = num(c[1]), bad = !c[0].trim() || a === null || a <= 0;
+      if (bad) costBad++;
+      var setC = function (k, val) { var nc = d.costs.map(function (x, j) { if (j !== i) return x; var y = x.slice(); y[k] = val; return y; }); setD({ costs: nc }); };
+      return {
+        label: c[0], amount: c[1], onLabel: function (e) { setC(0, e.target.value); }, onAmount: function (e) { setC(1, e.target.value); },
+        bad: tried && bad ? 'true' : 'false', removeAria: 'Remove ' + (c[0] || 'this cost'), remove: function () { setD({ costs: d.costs.filter(function (x, j) { return j !== i; }) }); }
+      };
+    });
+    vals.hasCosts = d.costs.length > 0;
+    vals.noCosts = d.costs.length === 0;
+    vals.canAddCost = editable && d.costs.length < 10;
+    vals.addCost = function () { setD({ costs: d.costs.concat([['', '']]) }); };
+    vals.costQuick = ['Transport', 'Courier', 'Labour'].map(function (lab) { return { label: lab, add: function () { setD({ costs: d.costs.concat([[lab, '']]) }); } }; });
+    var tt = poTotals(d.lines.map(function (l) { return [l[0], l[1], l[2] || 0]; }), d.costs);
+    vals.goods = money(tt.goods); vals.other = money(tt.other); vals.total = money(tt.total);
+
+    // Deliveries.
+    vals.receipts = po ? po.receipts.map(function (r) { return { ref: r[0], date: longDate(r[1]), units: plural(r[2], 'unit', 'units'), value: money(r[3]) }; }) : [];
+    vals.hasReceipts = vals.receipts.length > 0;
+
+    // Save.
+    if (!d.sup) problems.unshift('the supplier');
+    var valid = d.sup && d.lines.length > 0 && problems.length === 0 && costBad === 0;
+    vals.showProblems = tried && !valid;
+    var msg = [];
+    if (!d.sup) msg.push('Choose the supplier.');
+    if (!d.lines.length) msg.push('Add the items you are ordering.');
+    var qtyProblems = problems.filter(function (p) { return p !== 'the supplier'; }).length;
+    if (qtyProblems) msg.push('Check the quantity of ' + plural(qtyProblems, 'item', 'items') + '.');
+    if (costBad) msg.push('Each other cost needs what it’s for and an amount.');
+    vals.problemsText = msg.join(' ');
+    vals.bar = {
+      show: editable && dirty, label: po ? 'Unsaved changes' : 'New purchase order',
+      cancel: po ? 'Discard' : 'Cancel', save: status === 'draft' ? 'Save draft' : 'Save'
+    };
+    vals.discard = function () { up({ d: null, tried: false }); };
+    vals.save = function () {
+      if (!valid) { up({ tried: true }); return; }
+      var lines = d.lines.map(function (l) { return [l[0], Number(num(l[1])), num(l[2]) || 0, l[3]]; });
+      var costs = d.costs.map(function (c) { return [c[0].trim(), num(c[1])]; });
+      if (po) {
+        up({ pos: pos.map(function (p) { return p.id === po.id ? Object.assign({}, p, { sup: d.sup, expected: d.expected, supRef: d.supRef.trim(), note: d.note.trim(), lines: lines, costs: costs }) : p; }), d: null, tried: false, toast: toast('Purchase order saved.') });
+      } else {
+        var np = { id: 'po19', ref: 'PO-0019', sup: d.sup, status: 'draft', created: TODAY, expected: d.expected, supRef: d.supRef.trim(), note: d.note.trim(), lines: lines, costs: costs, receipts: [] };
+        up({ pos: [np].concat(pos), id: 'po19', d: null, tried: false, toast: toast('Purchase order saved.') });
+      }
+    };
+    vals.place = function () {
+      if (dirty) { up({ toast: toast('Save the changes first.') }); return; }
+      up({ pos: pos.map(function (p) { return p.id === po.id ? Object.assign({}, p, { status: 'ordered' }) : p; }), toast: toast('Marked as ordered.') });
+    };
+    vals.print = function () { up({ more: false, toast: toast((po ? po.ref : 'The order') + ' opened for printing.') }); };
+
+    // More: close, cancel or delete.
+    vals.moreOpen = Boolean(s.more);
+    vals.moreAria = s.more ? 'true' : 'false';
+    vals.hasDanger = vals.hd.canCancel || vals.hd.canDelete;
+    vals.toggleMore = function () { up({ more: !s.more }); };
+    var cf = s.confirm || null;
+    vals.closeOpen = cf === 'close'; vals.cancelOpen = cf === 'cancel'; vals.deleteOpen = cf === 'delete';
+    vals.askClose = function () { up({ more: false, confirm: 'close' }); };
+    vals.askCancel = function () { up({ more: false, confirm: 'cancel' }); };
+    vals.askDelete = function () { up({ more: false, confirm: 'delete' }); };
+    vals.cfRef = po ? po.ref : '';
+    vals.closeTitle = 'Close ' + vals.cfRef + '?'; vals.cancelTitle = 'Cancel ' + vals.cfRef + '?'; vals.deleteTitle = 'Delete draft ' + vals.cfRef + '?';
+    vals.closeBody = po ? plural(pr.ordered - pr.received, 'unit', 'units') + ' haven’t arrived and won’t be received. The quantities stay on the PO.' : '';
+    var move = function (st, text) { up({ pos: pos.map(function (p) { return p.id === po.id ? Object.assign({}, p, { status: st }) : p; }), confirm: null, d: null, toast: toast(text) }); };
+    vals.doClose = function () { move('closed', 'Purchase order closed.'); };
+    vals.doCancel = function () { move('cancelled', 'Purchase order cancelled.'); };
+    vals.doDelete = function () { up({ confirm: null, toast: toast('Draft deleted.') }); };
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+
+    var reset = { more: false, combo: null, confirm: null };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ more: false }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(s.combo ? { combo: null } : reset); } };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

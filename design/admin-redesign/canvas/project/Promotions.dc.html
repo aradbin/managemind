@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Promotions — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:40;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-nav[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);font-weight:500}
+.mm-pgrid{display:grid;grid-template-columns:minmax(0,2fr) 96px 104px 60px 112px 116px 132px 40px;align-items:center;column-gap:12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-codechip{display:inline-flex;flex:none;align-items:center;height:20px;padding:0 6px;border-radius:6px;background:var(--muted);color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-ubar{display:block;width:80px;height:4px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-ubar>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-cmd-item:disabled{opacity:.5;pointer-events:none}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:512px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px}
+.mm-alert>svg{flex:none;margin-top:2px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:6px;padding:14px 18px}
+.mm-statrow>div+div{border-left:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-sum{position:sticky;top:-20px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-bx{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.mm-checkrow{display:inline-flex;align-items:center;gap:8px;min-height:28px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;margin:-4px 0;padding:6px 0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more:hover{color:var(--foreground)}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 2px 0 8px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-addchip{height:26px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-gh{padding:8px 8px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-tagchip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:28px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:28px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
+.mm-stepper button:hover{background:var(--accent)}
+.mm-stepper span{min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-row{position:relative}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Main.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</li>
+<li><a href="Inventory.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav" aria-current="page"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb" style="min-width: 0">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); white-space: nowrap">
+<li aria-current="page" style="color: var(--foreground)">Promotions</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="min-width: 0">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Promotions</h1>
+<p class="mm-muted" style="margin: 2px 0 0">Discounts that apply by themselves, or with a code.</p>
+</div>
+<a href="Promotion.dc.html" class="mm-btn mm-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New promotion</a>
+</div>
+
+<div role="tablist" aria-label="State" class="mm-tabs" style="align-self: flex-start; height: 36px">
+<sc-for list="{{stTabs}}" as="t" hint-placeholder-count="6"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="height: 30px; gap: 6px">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="position: relative; width: 280px; max-width: 100%">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 10px; top: 8px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search by title or code" placeholder="Search by title or code" value="{{q}}" onChange="{{onQ}}" style="height: 32px; padding-left: 32px">
+</div>
+<div style="position: relative">
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" aria-expanded="{{kf.aria}}" onClick="{{kf.toggle}}" style="border-style: dashed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Type<sc-if value="{{kf.has}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><span class="mm-badge-sec">{{kf.label}}</span></sc-if></button>
+<sc-if value="{{kf.open}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close filter" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="dialog" aria-label="Filter by type" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; left: 0; width: 220px">
+<div style="display: flex; align-items: center; gap: 8px; height: 36px; margin: -4px -4px 4px; padding: 0 12px; border-bottom: 1px solid var(--border)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" class="mm-cmd-input" aria-label="Find a type" placeholder="Type" autoComplete="off" autoFocus="{{true}}" value="{{kf.query}}" onChange="{{kf.onQuery}}"></div>
+<div role="listbox" aria-multiselectable="true" aria-label="Type">
+<sc-for list="{{kf.items}}" as="o" hint-placeholder-count="2"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.toggle}}"><span class="mm-fbox" style="background: {{o.box}}; border-color: {{o.edge}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span><span style="flex: 1">{{o.label}}</span><span class="mm-code mm-muted">{{o.count}}</span></button></sc-for><sc-if value="{{kf.none}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 20px 0; text-align: center; color: var(--muted-foreground)">No type found.</p></sc-if>
+</div>
+<sc-if value="{{kf.has}}" hint-placeholder-val="{{false}}"><div role="separator" class="mm-sep"></div><button type="button" class="mm-cmd-item" style="justify-content: center" onClick="{{kf.clear}}">Clear filter</button></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" onClick="{{clearAll}}" style="padding: 0 8px">Reset<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-if>
+</div>
+
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-pgrid mm-thead" aria-hidden="true"><span>Promotion</span><span>State</span><span>Uses</span><span class="mm-num">Orders</span><span class="mm-num">Discount given</span><span class="mm-num">Sales</span><span>Dates</span><span></span></div>
+<ul class="mm-rows" aria-label="Promotions" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<li><div class="mm-pgrid mm-row" style="min-height: 60px; padding-top: 8px; padding-bottom: 8px">
+<span style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<a href="Promotion.dc.html" class="mm-rowlink">{{r.title}}</a>
+<span style="display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 13px; line-height: 18px; color: var(--muted-foreground)"><sc-if value="{{r.hasCode}}" hint-placeholder-val="{{true}}"><span class="mm-codechip">{{r.code}}</span></sc-if><sc-if value="{{r.noShared}}" hint-placeholder-val="{{false}}"><span class="mm-codechip" style="font-family: inherit">{{r.codes}}</span></sc-if><sc-if value="{{r.isAuto}}" hint-placeholder-val="{{false}}"><span class="mm-codechip" style="font-family: inherit">Automatic</span></sc-if><span class="mm-trunc">{{r.what}}</span></span>
+</span>
+<span><span class="mm-sbadge" style="background: {{r.sBg}}; color: {{r.sFg}}; box-shadow: inset 0 0 0 1px {{r.sEdge}}">{{r.state}}</span></span>
+<span style="display: flex; flex-direction: column; gap: 4px; font-variant-numeric: tabular-nums">{{r.uses}}<sc-if value="{{r.hasLimit}}" hint-placeholder-val="{{true}}"><span class="mm-ubar" aria-hidden="true"><span style="width: {{r.usePct}}"></span></span></sc-if></span>
+<span class="mm-num">{{r.orders}}</span>
+<span class="mm-num">{{r.discount}}</span>
+<span class="mm-num">{{r.sales}}</span>
+<span class="mm-muted" style="font-size: 13px">{{r.dates}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" aria-expanded="{{r.menuExpanded}}" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 190px">
+<a href="Promotion.dc.html" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</a>
+<sc-if value="{{r.canCopy}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.copyCode}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Copy code</button></sc-if>
+<sc-if value="{{r.canActivate}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.activate}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>Activate</button></sc-if>
+<sc-if value="{{r.canPause}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.pause}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg>Pause</button></sc-if>
+<sc-if value="{{r.canResume}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.resume}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path></svg>Resume</button></sc-if>
+<sc-if value="{{r.canEnd}}" hint-placeholder-val="{{true}}"><div role="separator" class="mm-sep"></div><button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{r.askEnd}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>End now</button></sc-if>
+</div>
+</sc-if>
+</div>
+</div></li>
+</sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Reset filters</button></sc-if></div></sc-if>
+</div>
+
+</main>
+</div>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-dialog" style="max-width: 448px">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{confirmTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doEnd}}">End now</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["List","Live only","Type filter","Row menu","End now"],"default":"List"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+var ROOT = 'mm mm-root';
+var NOW = '2026-10-29T12:00';
+var ACTIONS = [
+  { v: 'percent_off_order', label: 'A percentage off the order', sub: 'Like 10% off everything' },
+  { v: 'amount_off_order', label: 'An amount off the order', sub: 'Like ৳300 off' },
+  { v: 'percent_off_items', label: 'A percentage off chosen items', sub: 'Like 20% off sarees' },
+  { v: 'amount_off_items', label: 'An amount off each chosen item', sub: 'Like ৳100 off each panjabi' },
+  { v: 'buy_x_get_y', label: 'Buy some, get some', sub: 'Like buy 2, get 1 free' },
+  { v: 'delivery_percent_off', label: 'Free or cheaper delivery (percentage)', sub: '100% makes delivery free' },
+  { v: 'delivery_amount_off', label: 'An amount off delivery', sub: 'Like ৳30 off delivery' }
+];
+var ITEM_GROUPS = [
+  { g: 'Categories', items: [['cat:men', 'Men'], ['cat:panjabi', 'Men › Panjabi'], ['cat:women', 'Women'], ['cat:saree', 'Women › Saree'], ['cat:kurti', 'Women › Kurti'], ['cat:kids', 'Kids'], ['cat:acc', 'Accessories']] },
+  { g: 'Collections', items: [['col:eid', 'Eid collection'], ['col:festive', 'Festive under ৳3,500'], ['col:new', 'New arrivals'], ['col:best', 'Best sellers'], ['col:winter', 'Winter']] },
+  { g: 'Products', items: [['p:p1', 'Cotton Panjabi — Ivory'], ['p:p2', 'Handloom Tangail Saree'], ['p:p3', 'Embroidered Kurti'], ['p:p4', 'Leather Kolhapuri Sandal'], ['p:p7', 'Jute Tote Bag'], ['p:p9', 'Winter Shawl — Kashmiri']] }
+];
+var ZONES = [['inside', 'Inside Dhaka'], ['suburbs', 'Dhaka suburbs'], ['outside', 'Outside Dhaka']];
+var TAGS = ['vip', 'eid', 'wholesale', 'repeat', 'ctg', 'dhaka'];
+var PAYMENTS = [['cod', 'Cash on delivery'], ['manual', 'Paid in advance'], ['online', 'Paid online']];
+var COND_TYPES = [
+  { v: 'min_subtotal', label: 'Order at least', sub: 'A minimum order amount' },
+  { v: 'min_quantity', label: 'At least this many items', sub: 'A minimum item count' },
+  { v: 'items', label: 'The cart holds certain items', sub: 'Categories, collections or products' },
+  { v: 'zones', label: 'Delivery zones', sub: 'Only for some delivery areas' },
+  { v: 'first_order', label: 'First orders only', sub: 'For new customers' },
+  { v: 'tags', label: 'Customers tagged', sub: 'Like vip or wholesale' },
+  { v: 'phones', label: 'Only these phones', sub: 'A list of customer phones' },
+  { v: 'payment', label: 'Payment method', sub: 'Like cash on delivery only' }
+];
+function P(o) {
+  return Object.assign({
+    titleBn: '', titleEn: '', kind: 'automatic', code: '', codeCount: 0, codesUsed: 0, status: 'active', startsAt: '', endsAt: '',
+    action: 'percent_off_order', percent: '10', amount: '', target: [], buyQty: '2', buyItems: [], getQty: '1', getSame: true, getItems: [], maxUses: '',
+    conds: [], usageLimit: '', perCustomer: '', maxDiscount: '', priority: '0', exclusive: false,
+    uses: 0, orders: 0, discount: 0, sales: 0
+  }, o);
+}
+var PROMOS = [
+  P({ id: 'eid', titleBn: 'ঈদে ১০% ছাড়', titleEn: 'Eid 10% off', kind: 'code', code: 'EID10', startsAt: '2026-10-01T00:00', endsAt: '2026-10-31T23:59', percent: '10', conds: [{ type: 'min_subtotal', value: '2000' }], usageLimit: '1000', perCustomer: '1', maxDiscount: '500', uses: 312, orders: 312, discount: 98450, sales: 1184300 }),
+  P({ id: 'freedel', titleBn: 'ফ্রি ডেলিভারি', titleEn: 'Free delivery over ৳1,500', action: 'delivery_percent_off', percent: '100', conds: [{ type: 'min_subtotal', value: '1500' }, { type: 'zones', ids: ['inside'] }], uses: 1284, orders: 1284, discount: 76940, sales: 2940100 }),
+  P({ id: 'bxgy', titleBn: '২টি কিনলে ১টি অর্ধেক দামে', titleEn: 'Buy 2 panjabi, get 1 half price', action: 'buy_x_get_y', percent: '50', buyItems: ['cat:panjabi'], startsAt: '2026-11-01T00:00', endsAt: '2026-11-15T23:59', maxUses: '1' }),
+  P({ id: 'vip', titleBn: 'ভিআইপি ৳৩০০ ছাড়', titleEn: 'VIP ৳300 off', kind: 'code', codeCount: 250, codesUsed: 41, action: 'amount_off_order', amount: '300', percent: '', conds: [{ type: 'tags', tags: ['vip'] }], uses: 41, orders: 41, discount: 12300, sales: 186400 }),
+  P({ id: 'welcome', titleBn: 'প্রথম অর্ডারে ১৫%', titleEn: 'First order 15%', kind: 'code', code: 'WELCOME15', percent: '15', conds: [{ type: 'first_order' }], maxDiscount: '500', perCustomer: '1', uses: 129, orders: 129, discount: 41870, sales: 352600 }),
+  P({ id: 'winter', titleBn: 'শীতের শাল ২০%', titleEn: 'Winter shawls 20% off', status: 'draft', action: 'percent_off_items', percent: '20', target: ['col:winter'], startsAt: '2026-12-01T00:00' }),
+  P({ id: 'falgun', titleBn: 'পহেলা ফাল্গুন', titleEn: 'Pohela Falgun sarees', action: 'percent_off_items', percent: '12', target: ['cat:saree'], startsAt: '2026-02-13T00:00', endsAt: '2026-02-14T23:59', uses: 207, orders: 207, discount: 61240, sales: 512800 }),
+  P({ id: 'flash', titleBn: 'ফ্ল্যাশ সেল', titleEn: 'Flash sale ৳200 off', kind: 'code', code: 'FLASH200', status: 'paused', action: 'amount_off_order', amount: '200', percent: '', conds: [{ type: 'min_subtotal', value: '1500' }], usageLimit: '100', uses: 88, orders: 88, discount: 17600, sales: 214900 })
+];
+var STATE_STYLE = {
+  live: { label: 'Live', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  scheduled: { label: 'Scheduled', bg: 'color-mix(in oklch, var(--sidebar-primary) 14%, transparent)', fg: 'var(--sidebar-primary)' },
+  draft: { label: 'Draft', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  paused: { label: 'Paused', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  ended: { label: 'Ended', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(n) { return '৳' + Math.round(Number(n) || 0).toLocaleString('en-US'); }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '')); return isNaN(v) ? null : v; }
+function day(dt) { if (!dt) return ''; var m = Number(dt.slice(5, 7)), d = Number(dt.slice(8, 10)), y = dt.slice(0, 4); return MONTHS[m - 1] + ' ' + d + (y !== NOW.slice(0, 4) ? ', ' + y : ''); }
+function stateOf(p) {
+  if (p.status !== 'active') return p.status;
+  if (p.startsAt && p.startsAt > NOW) return 'scheduled';
+  if (p.endsAt && p.endsAt < NOW) return 'ended';
+  return 'live';
+}
+function title(p) { return p.titleEn || p.titleBn || 'Untitled promotion'; }
+function itemName(v) {
+  for (var i = 0; i < ITEM_GROUPS.length; i++) for (var k = 0; k < ITEM_GROUPS[i].items.length; k++) if (ITEM_GROUPS[i].items[k][0] === v) return ITEM_GROUPS[i].items[k][1];
+  return v;
+}
+function itemsText(list) {
+  if (!list.length) return 'the chosen items';
+  var names = list.map(itemName);
+  return names.length <= 2 ? names.join(' and ') : names.slice(0, 2).join(', ') + ' and ' + (names.length - 2) + ' more';
+}
+function actionText(p) {
+  var pc = num(p.percent), am = money(num(p.amount) || 0);
+  switch (p.action) {
+    case 'percent_off_order': return (pc || '…') + '% off the order';
+    case 'amount_off_order': return am + ' off the order';
+    case 'percent_off_items': return (pc || '…') + '% off ' + itemsText(p.target);
+    case 'amount_off_items': return am + ' off each of ' + itemsText(p.target);
+    case 'buy_x_get_y': return 'Buy ' + (p.buyQty || '…') + ' of ' + itemsText(p.buyItems) + ', get ' + (p.getQty || '…') + ' ' + (p.getSame ? 'more' : itemsText(p.getItems)) + (pc === 100 ? ' free' : ' at ' + (pc || '…') + '% off');
+    case 'delivery_percent_off': return pc === 100 ? 'Free delivery' : (pc || '…') + '% off delivery';
+    case 'delivery_amount_off': return am + ' off delivery';
+  }
+  return '';
+}
+function summary(p) {
+  var parts = [];
+  p.conds.forEach(function (c) {
+    if (c.type === 'min_subtotal' && num(c.value)) parts.push('on orders over ' + money(num(c.value)));
+    if (c.type === 'min_quantity' && num(c.value)) parts.push('with ' + num(c.value) + ' or more items');
+    if (c.type === 'items' && c.items && c.items.length) parts.push('when the cart has ' + itemsText(c.items));
+    if (c.type === 'zones' && c.ids && c.ids.length) parts.push('delivery zone: ' + c.ids.map(function (z) { return ZONES.filter(function (x) { return x[0] === z; })[0][1]; }).join(', '));
+    if (c.type === 'first_order') parts.push('first orders only');
+    if (c.type === 'tags' && c.tags && c.tags.length) parts.push('for customers tagged ' + c.tags.join(', '));
+    if (c.type === 'phones') { var n = String(c.text || '').split(/\n/).filter(function (x) { return x.trim(); }).length; if (n) parts.push('for ' + plural(n, 'chosen phone', 'chosen phones')); }
+    if (c.type === 'payment' && c.methods && c.methods.length) parts.push(c.methods.length === 1 && c.methods[0] === 'cod' ? 'paying cash on delivery' : c.methods.indexOf('cod') === -1 ? 'paying in advance' : 'paying by ' + c.methods.map(function (m) { return PAYMENTS.filter(function (x) { return x[0] === m; })[0][1].toLowerCase(); }).join(' or '));
+  });
+  if (p.kind === 'code') parts.push(p.code ? 'with code ' + p.code.toUpperCase() : 'with one of its generated codes');
+  if (p.startsAt && p.endsAt) parts.push('from ' + day(p.startsAt) + ' until ' + day(p.endsAt));
+  else if (p.startsAt) parts.push('from ' + day(p.startsAt));
+  else if (p.endsAt) parts.push('until ' + day(p.endsAt));
+  return actionText(p) + (parts.length ? ', ' + parts.join(', ') : '') + '.';
+}
+var START = { List: {}, 'Live only': { st: 'live' }, 'Type filter': { pop: 'kind' }, 'Row menu': { menu: 'eid' }, 'End now': { confirm: 'flash' } };
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'List';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(START[startKey] || {}));
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var toast = function (text) {
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+      return text;
+    };
+    var vals = {};
+    var promos = s.promos || PROMOS;
+    var setP = function (id, patch, text) {
+      up({ promos: promos.map(function (p) { return p.id === id ? Object.assign({}, p, patch) : p; }), menu: null, confirm: null, toast: toast(text) });
+    };
+    var q = (s.q || '').trim().toLowerCase();
+    var st = s.st || 'all';
+    var kinds = s.kinds || [];
+    vals.q = s.q || '';
+    vals.onQ = function (e) { up({ q: e.target.value }); };
+    var base = promos.filter(function (p) {
+      return (!kinds.length || kinds.indexOf(p.kind) !== -1) && (!q || title(p).toLowerCase().indexOf(q) !== -1 || p.titleBn.indexOf(q) !== -1 || (p.code && p.code.toLowerCase().indexOf(q) !== -1));
+    });
+    vals.stTabs = [['all', 'All'], ['live', 'Live'], ['scheduled', 'Scheduled'], ['draft', 'Draft'], ['paused', 'Paused'], ['ended', 'Ended']].map(function (t) {
+      var n = t[0] === 'all' ? base.length : base.filter(function (p) { return stateOf(p) === t[0]; }).length;
+      return { label: t[1], count: String(n), on: st === t[0] ? 'true' : 'false', pick: function () { up({ st: t[0] }); } };
+    });
+    var list = base.filter(function (p) { return st === 'all' || stateOf(p) === st; });
+    var rowOf = function (p) {
+      var state = stateOf(p), ss = STATE_STYLE[state];
+      var menuOpen = s.menu === p.id;
+      var limit = num(p.usageLimit);
+      return {
+        title: title(p), isCode: p.kind === 'code', isAuto: p.kind !== 'code',
+        code: p.code ? p.code : '', hasCode: Boolean(p.code), codes: p.code ? '' : plural(p.codeCount, 'code', 'codes'), noShared: p.kind === 'code' && !p.code,
+        what: actionText(p),
+        state: ss.label, sBg: ss.bg, sFg: ss.fg, sEdge: ss.edge || 'transparent',
+        uses: limit ? p.uses.toLocaleString('en-US') + ' / ' + limit.toLocaleString('en-US') : p.uses.toLocaleString('en-US'),
+        usePct: limit ? Math.min(100, Math.round(p.uses / limit * 100)) + '%' : '0%', hasLimit: Boolean(limit),
+        orders: p.orders.toLocaleString('en-US'), discount: p.discount ? money(p.discount) : '—', sales: p.sales ? money(p.sales) : '—',
+        dates: p.startsAt && p.endsAt ? day(p.startsAt) + ' – ' + day(p.endsAt) : p.startsAt ? 'From ' + day(p.startsAt) : p.endsAt ? 'Until ' + day(p.endsAt) : 'No end date',
+        meta: (p.kind === 'code' ? (p.code ? p.code : plural(p.codeCount, 'code', 'codes')) : 'Automatic') + ' · ' + actionText(p),
+        stats: p.uses ? plural(p.uses, 'use', 'uses') + ' · ' + money(p.discount) + ' off' : 'Not used yet',
+        menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + title(p),
+        toggleMenu: function () { up({ menu: menuOpen ? null : p.id }); },
+        canCopy: Boolean(p.code), copyCode: function () { setP(p.id, {}, 'Code ' + p.code + ' copied.'); },
+        canPause: state === 'live' || state === 'scheduled', pause: function () { setP(p.id, { status: 'paused' }, title(p) + ' is paused.'); },
+        canResume: state === 'paused', resume: function () { setP(p.id, { status: 'active' }, title(p) + ' is live again.'); },
+        canActivate: state === 'draft', activate: function () { setP(p.id, { status: 'active' }, title(p) + ' is active.'); },
+        canEnd: state !== 'ended' && state !== 'draft', askEnd: function () { up({ menu: null, confirm: p.id }); }
+      };
+    };
+    vals.rows = list.map(rowOf);
+    vals.empty = list.length === 0;
+    vals.emptyText = q || kinds.length || st !== 'all' ? 'No promotions match.' : 'No promotions yet.';
+    vals.emptyCanReset = Boolean(q || kinds.length || st !== 'all');
+    vals.emptyReset = function () { up({ q: '', kinds: [], st: 'all' }); };
+    var mp = s.menu ? promos.filter(function (p) { return p.id === s.menu; })[0] : null;
+    vals.menuOpen = Boolean(mp);
+    vals.mp = rowOf(mp || promos[0]);
+
+    var kOpen = s.pop === 'kind';
+    var kq = kOpen ? (s.kq || '') : '';
+    var kShown = [['automatic', 'Automatic'], ['code', 'Code']].filter(function (k) { return !kq.trim() || k[1].toLowerCase().indexOf(kq.trim().toLowerCase()) !== -1; });
+    vals.kf = {
+      open: kOpen, aria: kOpen ? 'true' : 'false', toggle: function () { up({ pop: kOpen ? null : 'kind', kq: '' }); },
+      query: kq, onQuery: function (e) { up({ kq: e.target.value }); }, none: kShown.length === 0,
+      has: kinds.length > 0, label: kinds.length === 1 ? (kinds[0] === 'code' ? 'Code' : 'Automatic') : '2 selected',
+      count: String(kinds.length), buttonText: kinds.length === 1 ? (kinds[0] === 'code' ? 'Code' : 'Automatic') : 'Type',
+      items: kShown.map(function (k) {
+        var on = kinds.indexOf(k[0]) !== -1;
+        return {
+          label: k[1], on: on, aria: on ? 'true' : 'false', box: on ? 'var(--primary)' : 'transparent', edge: on ? 'var(--primary)' : 'var(--input)',
+          count: String(promos.filter(function (p) { return p.kind === k[0]; }).length),
+          toggle: function () { up({ kinds: on ? kinds.filter(function (x) { return x !== k[0]; }) : kinds.concat([k[0]]) }); }
+        };
+      }),
+      clear: function () { up({ kinds: [], pop: null }); }
+    };
+    vals.hasFilters = Boolean(q || kinds.length);
+    vals.clearAll = function () { up({ q: '', kinds: [] }); };
+
+    var ep = s.confirm ? promos.filter(function (p) { return p.id === s.confirm; })[0] : null;
+    vals.confirmOpen = Boolean(ep);
+    vals.confirmTitle = ep ? 'End ' + title(ep) + '?' : '';
+    vals.confirmText = 'It stops applying now. Orders that used it keep their discount, and its numbers stay here.';
+    vals.doEnd = function () { setP(ep.id, { status: 'ended' }, title(ep) + ' has ended.'); };
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+
+    var reset = { menu: null, pop: null, confirm: null };
+    vals.closeAll = function () { up(reset); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(reset); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = ROOT + (dark ? ' dark' : '');
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

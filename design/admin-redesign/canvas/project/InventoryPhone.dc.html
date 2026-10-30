@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inventory — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:40px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-ptab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:13px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:28px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;margin:-8px 0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-row{position:relative;display:flex;align-items:center;gap:4px;min-height:56px;padding:6px 4px 6px 8px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:flex;flex:1;flex-direction:column;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev svg{transition:transform .15s}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-dhead{flex:none;padding:12px 16px 8px;text-align:center}
+.mm-dtitle{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none;color:var(--muted-foreground)}
+.mm-optrow:hover{background:var(--accent)}
+.mm-optrow:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px 0;background:var(--border)}
+.mm{--success:oklch(.723 .219 149.579);--page:oklch(.985 0 0)}
+.mm.dark{--success:oklch(.792 .209 151.711);--page:oklch(.145 0 0)}
+.mm-row{gap:12px;min-height:64px;padding:8px 4px 8px 12px}
+.mm-av{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9999px;background:var(--muted);color:var(--foreground);font-size:13px;font-weight:600}
+.mm-tagchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.mm-badge{display:inline-flex;flex:none;align-items:center;padding:1px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-card{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-statrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-statrow>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-statrow>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-orow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:10px 16px;border-bottom:1px solid var(--border)}
+li:last-child>.mm-orow{border-bottom:0}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-dotlabel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted-foreground);white-space:nowrap}
+.mm-dotlabel>span{width:8px;height:8px;border-radius:9999px}
+.mm-rbar{height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 22%,transparent)}
+.mm-rbar>span{display:block;height:100%;border-radius:9999px;background:var(--success)}
+.mm-addr{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:18px}
+.mm-alert>svg{flex:none;margin-top:1px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-chipbox input{flex:1;min-width:100px;height:28px;padding:0 4px;border:0;outline:none;background:transparent;color:var(--foreground);font:inherit;font-size:16px}
+.mm-chipbox input::placeholder{color:var(--muted-foreground)}
+.mm .mm-chipbox input:focus-visible{box-shadow:none}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;cursor:pointer}
+.mm-radio-row{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;background:var(--background);cursor:pointer}
+.mm-radio[aria-checked=true]{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-combo:disabled{opacity:.5;cursor:not-allowed}
+.mm-alertbox{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-toast{position:absolute;left:16px;right:16px;z-index:80;display:flex;align-items:center;gap:8px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);font-size:13px;line-height:20px;box-shadow:0 4px 12px rgb(0 0 0 / .1)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-sum{position:sticky;top:-12px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;line-height:20px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block;min-width:0}
+.mm-affix>span{position:absolute;left:12px;top:10px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:28px}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-rcard .mm-radio{margin-top:1px}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-rule{display:flex;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:center;margin:-4px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-chipbox{min-height:40px}
+.mm-gh{padding:12px 12px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-checkrow{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:32px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:32px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:18px;cursor:pointer}
+.mm-stepper span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-plist>li:last-child>div{border-bottom:0}
+.mm-prow{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.mm-rowlink{gap:2px}
+.mm-statrow dd{font-size:16px}
+.mm-egrid{display:grid;grid-template-columns:64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px;align-items:center;column-gap:12px}
+.mm-rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) 150px 72px 104px 40px;align-items:center;column-gap:12px}
+.mm-sw{display:inline-block;flex:none;width:8px;height:8px;border-radius:2px}
+.mm-stack{display:flex;gap:2px;height:12px;overflow:hidden;border-radius:4px}
+.mm-seg{display:block;min-width:2px;height:100%;cursor:pointer;transition:opacity .15s}
+.mm-seg:hover{filter:brightness(1.08)}
+.mm-tip{position:absolute;right:0;bottom:calc(100% + 6px);padding:4px 8px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none}
+.mm-legend{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 24px;margin:0;padding:0;list-style:none}
+.mm-lgbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:opacity .15s}
+.mm-lgbtn:hover,.mm-lgbtn[aria-pressed=true]{background:var(--accent)}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-needed{margin-left:6px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;line-height:16px}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-dropbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-dropbtn:hover{background:var(--accent)}
+.mm-filerow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px}
+.mm-rthumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;background:var(--muted);color:var(--muted-foreground)}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:40px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.mm-prow{position:relative}
+
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500;line-height:16px;white-space:nowrap}
+.mm-camera{display:flex;align-items:center;justify-content:center;height:200px;border-radius:10px;background:#111;color:#ddd;font-size:13px}
+.mm-step button:disabled{opacity:.4}
+.mm-input[aria-invalid=true],.mm-combo[aria-invalid=true]{border-color:var(--destructive)}
+.mm-warn{color:var(--warn)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-readonly{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm{--info:oklch(.546 .245 262.881)}
+.mm.dark{--info:oklch(.707 .165 254.624)}
+.mm-secbar{display:inline-flex;align-items:center;height:40px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-secbar .mm-tab{height:34px;padding:0 12px;font-size:14px}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-ttabs .mm-tab{height:34px;gap:6px;padding:0 12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-prog{display:block;height:6px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-prog>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-prog.mm-done>span{background:var(--success)}
+.mm-bad{color:var(--destructive)}
+.mm-good{color:var(--success)}
+.mm-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mm-mlist>li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mm-mlist>li:last-child{border-bottom:0}
+.mm-chg{display:flex;justify-content:space-between;gap:8px}
+.mm-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mm-mode{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;line-height:18px;text-align:left;cursor:pointer}
+.mm-mode[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent);font-weight:500}
+.mm-mode[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-mgroup{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;margin:0;font-size:14px}
+.mm-dl dt{color:var(--muted-foreground)}
+.mm-dl dd{margin:0;white-space:pre-line}
+.mm-big{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.mm-addrow{display:flex;align-items:center;gap:8px;width:100%;height:44px;padding:0 12px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-emptybox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted-foreground)}
+.mm-qty{width:72px;height:40px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums}
+.mm-step{display:inline-flex;flex:none;align-items:center;height:40px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-step button{width:40px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.mm-step input{width:52px;height:100%;padding:0;border:0;border-left:1px solid var(--input);border-right:1px solid var(--input);background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:500;text-align:center;font-variant-numeric:tabular-nums;outline:none}
+.mm-chipq{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-stats2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-stats2>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-stats2>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-stats2>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<header style="display: flex; flex: none; align-items: center; gap: 8px; height: 56px; padding: 0 12px; border-bottom: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-ghost" style="flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 8px 0 4px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span class="mm-trunc" style="font-weight: 600">Nakshi Fashion</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</header>
+
+<main class="mm-scroll" style="gap: 12px; padding: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Inventory</h1>
+<a href="ReceivePhone.dc.html" class="mm-btn mm-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>Receive</a>
+</div>
+<nav aria-label="Inventory sections" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
+<div class="mm-secbar"><a href="InventoryPhone.dc.html" class="mm-tab" aria-current="page">Stock</a><a href="PurchaseOrdersPhone.dc.html" class="mm-tab">Purchase orders</a><a href="ReceivePhone.dc.html" class="mm-tab">Receive stock</a><a href="SuppliersPhone.dc.html" class="mm-tab">Suppliers</a><a href="CountsPhone.dc.html" class="mm-tab">Counts</a><a href="AdjustmentsPhone.dc.html" class="mm-tab">Adjustments</a></div>
+</nav>
+<dl class="mm-stats2"><sc-for list="{{stats}}" as="x" hint-placeholder-count="3"><div><dt>{{x.label}}</dt><dd>{{x.value}}</dd></div></sc-for><div><dt>Low stock</dt><dd style="color: var(--destructive)">{{lowCount}}</dd></div></dl>
+<div style="display: flex; gap: 8px"><div style="position: relative; flex: 1; min-width: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" class="mm-input" aria-label="Search titles and SKUs" placeholder="Search titles and SKUs" value="{{q}}" onChange="{{onQ}}" style="padding-left: 36px"></div><button type="button" class="mm-btn mm-outline" aria-pressed="{{lowAria}}" onClick="{{toggleLow}}" style="height: 40px; background: {{lowBox}}; border-color: {{lowEdge}}"><sc-if value="{{lowOnly}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><span style="color: {{lowText}}">Low stock</span></button></div>
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; justify-content: space-between; margin: -4px 0"><span class="mm-muted" style="font-size: 13px">{{countText}}</span><button type="button" class="mm-btn mm-ghost" style="height: 32px; margin-right: -12px" onClick="{{clearAll}}">Reset</button></div></sc-if>
+<ul class="mm-plist" aria-label="Stock">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10"><li><div class="mm-prow" style="gap: 10px; min-height: 64px; padding: 8px 4px 8px 12px">
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" aria-label="{{r.histAria}}" onClick="{{r.history}}"><span class="mm-trunc" style="font-weight: 500">{{r.title}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.sub}}</span></button>
+<span style="display: flex; flex-direction: column; align-items: flex-end; flex: none"><span style="font-size: 16px; font-weight: {{r.availWeight}}; color: {{r.availColor}}; font-variant-numeric: tabular-nums">{{r.avail}}</span><sc-if value="{{r.tracked}}" hint-placeholder-val="{{true}}"><span class="mm-muted" style="font-size: 12px; line-height: 16px">available</span></sc-if></span>
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="dialog" onClick="{{r.toggleMenu}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</div></li></sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{hasFilters}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{clearAll}}">Reset filters</button></sc-if></div></sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Available is on hand less what open orders have reserved.</p>
+</main>
+
+<nav aria-label="Main" class="mm-tabbar">
+<a href="HomePhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>Home</a>
+<a href="OrdersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span class="mm-tabbadge">5<span class="mm-sr"> to confirm</span></span></span>Orders</a>
+<a href="Phone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span>Products</a>
+<a href="CustomersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Customers</a>
+<a href="#" class="mm-tabitem" aria-current="page"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span>Menu</a>
+</nav>
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-mx-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-mx-title" class="mm-dtitle">{{mxTitle}}</h2></div>
+<div role="menu" aria-labelledby="mm-mx-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<sc-if value="{{mx.tracked}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{mx.adjust}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H3"></path><path d="M12 19H3"></path><path d="M14 3v4"></path><path d="M16 17v4"></path><path d="M21 12h-9"></path><path d="M21 19h-5"></path><path d="M21 5h-7"></path><path d="M8 10v4"></path><path d="M8 12H3"></path></svg>Adjust stock</button></sc-if>
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{mx.history}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>Stock history</button>
+<a href="ProductViewPhone.dc.html" role="menuitem" class="mm-optrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>Open product</a>
+</div>
+
+</div>
+</div>
+</sc-if>
+<sc-if value="{{aj.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAdj}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-aj-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-aj-title" class="mm-dtitle">Adjust stock</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{aj.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-note" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><p style="margin: 0">{{aj.now}}</p></div>
+<div class="mm-field" style="gap: 0"><p id="mm-aj-what" class="mm-label" style="margin: 0 0 10px">What happened</p><div role="radiogroup" aria-labelledby="mm-aj-what" style="display: flex; flex-direction: column; gap: 12px"><sc-for list="{{aj.groups}}" as="g" hint-placeholder-count="3"><div><p class="mm-mgroup">{{g.label}}</p><div class="mm-modes"><sc-for list="{{g.modes}}" as="m" hint-placeholder-count="3"><button type="button" role="radio" class="mm-mode" aria-checked="{{m.aria}}" onClick="{{m.pick}}"><span class="mm-radio" aria-hidden="true"><sc-if value="{{m.on}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span><span>{{m.label}}</span></button></sc-for></div></div></sc-for></div></div>
+<sc-if value="{{aj.isReceived}}" hint-placeholder-val="{{true}}"><div class="mm-note" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg><p style="margin: 0">Bought new stock? <a href="ReceivePhone.dc.html" style="font-weight: 500; color: var(--foreground); text-decoration: underline; text-underline-offset: 2px">Use Receive stock instead</a>, so its cost and supplier are kept.</p></div></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-aj-qty">{{aj.qtyLabel}}</label><input id="mm-aj-qty" class="mm-input" inputMode="numeric" autoComplete="off" value="{{aj.qty}}" onChange="{{aj.onQty}}" style="font-variant-numeric: tabular-nums"><sc-if value="{{aj.showPreview}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="font-weight: 500; color: {{aj.previewColor}}">{{aj.preview}}</p></sc-if><sc-if value="{{aj.negative}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{aj.negText}}</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-aj-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-aj-note" class="mm-input" maxLength="500" value="{{aj.note}}" onChange="{{aj.onNote}}"></div>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeAdj}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" disabled="{{aj.cantSave}}" onClick="{{aj.save}}">Save</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hs.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeHist}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-hs-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-hs-title" class="mm-dtitle">Stock history</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{hs.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<section aria-labelledby="mm-hs-cost" style="display: flex; flex-direction: column; gap: 4px">
+<h3 id="mm-hs-cost" style="margin: 0; font-size: 14px; font-weight: 600">Cost history</h3>
+<sc-if value="{{hs.hasCosts}}" hint-placeholder-val="{{true}}"><ol class="mm-mlist"><sc-for list="{{hs.costs}}" as="c" hint-placeholder-count="2"><li><span class="mm-chg"><span style="font-weight: 500">{{c.source}}</span><span style="font-variant-numeric: tabular-nums">{{c.change}}</span></span><span class="mm-muted" style="font-size: 13px">{{c.meta}}</span></li></sc-for></ol></sc-if>
+<sc-if value="{{hs.noCosts}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No cost changes yet.</p></sc-if>
+</section>
+<section aria-labelledby="mm-hs-moves" style="display: flex; flex-direction: column; gap: 4px">
+<h3 id="mm-hs-moves" style="margin: 0; font-size: 14px; font-weight: 600">Changes</h3>
+<ol class="mm-mlist"><sc-for list="{{hs.moves}}" as="mv" hint-placeholder-count="6"><li><span class="mm-chg"><span style="font-weight: 500">{{mv.type}}</span><span style="font-weight: 500; font-variant-numeric: tabular-nums; color: {{mv.color}}">{{mv.qty}}</span></span><span class="mm-muted" style="font-size: 13px">{{mv.meta}}</span><sc-if value="{{mv.hasNote}}" hint-placeholder-val="{{false}}"><span style="font-size: 13px">{{mv.note}}</span></sc-if></li></sc-for></ol>
+</section>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeHist}}">Close</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{hs.adjust}}">Adjust stock</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="mm-toast" style="bottom: 76px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span></div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Stock","Low stock only","Row menu","Adjust stock","Adjust: damaged","Adjust: counted","Stock history"],"default":"Stock"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var ROOT = 'mm';
+var TODAY = '2026-10-29';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var METHODS = [['cash', 'Cash'], ['bank', 'Bank'], ['bkash', 'bKash'], ['nagad', 'Nagad'], ['card', 'Card'], ['other', 'Other']];
+var VARIANTS = [
+  { id: 'v1', t: 'Cotton Panjabi', o: 'Ivory / M', sku: 'PNJ-IV-M', bc: '8941100100011', oh: 18, rs: 3, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v2', t: 'Cotton Panjabi', o: 'Ivory / L', sku: 'PNJ-IV-L', bc: '8941100100028', oh: 4, rs: 2, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v3', t: 'Cotton Panjabi', o: 'Ivory / XL', sku: 'PNJ-IV-XL', bc: '8941100100035', oh: 0, rs: 0, low: 3, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v4', t: 'Silk Panjabi', o: 'Navy / L', sku: 'PNJ-SK-NV-L', bc: '8941100100042', oh: 9, rs: 1, low: 2, track: true, cost: 1450, sup: 's2', cat: 'Panjabi', tags: ['eid', 'premium'] },
+  { id: 'v5', t: 'Kids Panjabi', o: 'Mint / 4 years', sku: 'PNJ-KD-MN-4', bc: '8941100100059', oh: 14, rs: 0, low: 4, track: true, cost: 380, sup: 's3', cat: 'Panjabi', tags: ['kids'] },
+  { id: 'v6', t: 'Embroidered Kurti', o: 'Maroon / S', sku: 'KRT-EM-MR-S', bc: '8941100100066', oh: 11, rs: 2, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v7', t: 'Embroidered Kurti', o: 'Maroon / M', sku: 'KRT-EM-MR-M', bc: '8941100100073', oh: 3, rs: 1, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v8', t: 'Jamdani Saree', o: 'Red', sku: 'SAR-JM-RD', bc: '8941100100080', oh: 6, rs: 0, low: 2, track: true, cost: 4200, sup: 's1', cat: 'Saree', tags: ['premium'] },
+  { id: 'v9', t: 'Tangail Cotton Saree', o: 'Green', sku: 'SAR-TG-GR', bc: '8941100100097', oh: 15, rs: 2, low: 4, track: true, cost: 1350, sup: 's1', cat: 'Saree', tags: [] },
+  { id: 'v10', t: 'Cotton Three-piece', o: 'Green / M', sku: '3PC-GR-M', bc: '8941100100103', oh: 22, rs: 4, low: 5, track: true, cost: 1100, sup: 's3', cat: 'Three-piece', tags: ['eid'] },
+  { id: 'v11', t: 'Batik Fatua', o: 'Indigo / L', sku: 'FTU-BT-IN-L', bc: '8941100100110', oh: 7, rs: 0, low: 2, track: true, cost: 520, sup: 's2', cat: 'Fatua', tags: [] },
+  { id: 'v16', t: 'Batik Fatua', o: 'Indigo / XL', sku: 'FTU-BT-IN-XL', bc: '8941100100127', oh: 3, rs: 0, low: 1, track: true, cost: null, sup: '', cat: 'Fatua', tags: [] },
+  { id: 'v12', t: 'Leather Sandal', o: 'Brown / 41', sku: 'SND-BR-41', bc: '8941100100134', oh: 2, rs: 0, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v13', t: 'Leather Sandal', o: 'Brown / 42', sku: 'SND-BR-42', bc: '8941100100141', oh: 5, rs: 1, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v14', t: 'Prayer Cap', o: 'White', sku: 'CAP-WH', bc: '8941100100158', oh: 40, rs: 0, low: 10, track: true, cost: 60, sup: 's3', cat: 'Accessories', tags: ['eid'] },
+  { id: 'v15', t: 'Gift wrap', o: '', sku: 'GFT-WRAP', bc: '', oh: 0, rs: 0, low: 0, track: false, cost: 20, sup: '', cat: 'Accessories', tags: [] }
+];
+var SUPPLIERS = [
+  { id: 's1', name: 'Tangail Tant Ghar', contact: 'Rafiq Mia', phones: ['01711-234567'], email: 'tantghar@gmail.com', address: 'Pathrail, Delduar, Tangail', note: 'Sends by Sundarban Courier. Ask for a photo of the receipt.', opening: 20000, balance: 48500, archived: false, since: '2025-03-10' },
+  { id: 's2', name: 'Rupkotha Embroidery', contact: 'Shahana Begum', phones: ['01819-445566', '01556-778899'], email: '', address: 'Mirpur 10, Dhaka', note: '', opening: 0, balance: -5000, archived: false, since: '2025-06-02' },
+  { id: 's3', name: 'Islampur Fabrics', contact: 'Abdul Karim', phones: ['01912-334455'], email: '', address: 'Islampur Road, Old Dhaka', note: 'Closed on Fridays.', opening: 0, balance: 26000, archived: false, since: '2025-01-15' },
+  { id: 's4', name: 'Chittagong Leather Works', contact: 'Mohammad Hasan', phones: ['01811-998877'], email: 'clw.hasan@yahoo.com', address: 'Hazari Lane, Chattogram', note: '', opening: 0, balance: 12800, archived: false, since: '2025-09-20' },
+  { id: 's5', name: 'Narayanganj Knit', contact: '', phones: ['01611-223344'], email: '', address: '', note: '', opening: 0, balance: 0, archived: true, since: '2025-02-01' }
+];
+var POS = [
+  { id: 'po18', ref: 'PO-0018', sup: 's2', status: 'draft', created: '2026-10-28', expected: '', supRef: '', note: '', lines: [['v6', 10, 890, 0], ['v7', 12, 890, 0], ['v4', 6, 1450, 0]], costs: [], receipts: [] },
+  { id: 'po17', ref: 'PO-0017', sup: 's1', status: 'ordered', created: '2026-10-24', expected: '2026-11-03', supRef: 'TTG-2210', note: '', lines: [['v8', 4, 4200, 0], ['v9', 10, 1350, 0]], costs: [['Courier', 1200]], receipts: [] },
+  { id: 'po16', ref: 'PO-0016', sup: 's3', status: 'partially_received', created: '2026-10-12', expected: '2026-10-25', supRef: 'IF-7781', note: 'XL comes with the next bale.', lines: [['v1', 20, 655, 20], ['v2', 20, 655, 12], ['v3', 10, 655, 0], ['v10', 10, 1100, 8]], costs: [['Transport from Islampur', 1500]], receipts: [['GRN-0029', '2026-10-18', 30, 21410], ['GRN-0031', '2026-10-22', 10, 7350]] },
+  { id: 'po15', ref: 'PO-0015', sup: 's4', status: 'received', created: '2026-10-02', expected: '2026-10-09', supRef: '', note: '', lines: [['v12', 12, 950, 12], ['v13', 12, 950, 12]], costs: [], receipts: [['GRN-0027', '2026-10-09', 24, 22800]] },
+  { id: 'po14', ref: 'PO-0014', sup: 's3', status: 'closed', created: '2026-09-20', expected: '2026-09-28', supRef: '', note: '', lines: [['v5', 30, 380, 25], ['v14', 100, 60, 100]], costs: [], receipts: [['GRN-0024', '2026-09-28', 125, 15500]] },
+  { id: 'po13', ref: 'PO-0013', sup: 's2', status: 'cancelled', created: '2026-09-15', expected: '', supRef: '', note: '', lines: [['v11', 15, 520, 0]], costs: [], receipts: [] }
+];
+var PO_STATUS = {
+  draft: { label: 'Draft', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  ordered: { label: 'Ordered', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  partially_received: { label: 'Partly received', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  received: { label: 'Received', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  closed: { label: 'Closed', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var COUNT_STATUS = {
+  counting: { label: 'Counting', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  review: { label: 'In review', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  applied: { label: 'Applied', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var REASONS = [
+  ['received', 'Received'], ['count', 'Count'], ['damaged', 'Damaged'], ['lost', 'Lost'], ['expired', 'Expired'], ['sample', 'Sample'],
+  ['returned', 'Returned'], ['correction', 'Correction'], ['import', 'Import'], ['other', 'Other']
+];
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(v) { return v < 0 ? '−৳' + Math.round(-v).toLocaleString('en-US') : '৳' + Math.round(Number(v) || 0).toLocaleString('en-US'); }
+function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
+function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
+function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
+function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
+function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
+function label(v) { return v.o ? v.t + ' — ' + v.o : v.t; }
+function available(v) { return v.oh - v.rs; }
+function isLow(v) { return v.track && available(v) <= v.low; }
+function methodLabel(m) { return (METHODS.filter(function (x) { return x[0] === m; })[0] || METHODS[5])[1]; }
+function balanceOf(b) {
+  if (b > 0) return { text: 'You owe ' + money(b), owed: true, fg: 'var(--foreground)', weight: '600' };
+  if (b < 0) return { text: 'Advance ' + money(-b), owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+  return { text: 'Settled', owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+}
+function poTotals(lines, costs) {
+  var goods = lines.reduce(function (a, l) { return a + (num(l[1]) || 0) * (num(l[2]) || 0); }, 0);
+  var other = costs.reduce(function (a, c) { return a + (num(c[1]) || 0); }, 0);
+  return { goods: goods, other: other, total: goods + other };
+}
+function poProgress(po) {
+  var o = po.lines.reduce(function (a, l) { return a + Number(l[1]); }, 0), r = po.lines.reduce(function (a, l) { return a + Number(l[3]); }, 0);
+  return { ordered: o, received: r, text: r + ' of ' + o + ' received', pct: o ? Math.round(r / o * 100) + '%' : '0%' };
+}
+function badgeOf(map, key) { var b = map[key]; return { label: b.label, bg: b.bg, fg: b.fg, edge: b.edge || 'transparent' }; }
+function boot(self, start, fallback) {
+  var startKey = self.props.startOn ?? fallback;
+  var s = self.state || {};
+  if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(start[startKey] || {}));
+  var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+  var toast = function (text) {
+    clearTimeout(self.toastTimer);
+    self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+    return text;
+  };
+  var dark = typeof s.dark === 'boolean' ? s.dark : (self.props.dark ?? false);
+  var vals = {
+    themeClass: ROOT + (dark ? ' dark' : ''), fontStack: FONTS[self.props.font ?? 'Inter'] || FONTS.Inter,
+    isDark: dark, isLight: !dark, themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+    toggleTheme: function () { up({ dark: !dark }); },
+    hasToast: Boolean(s.toast), toastText: s.toast || ''
+  };
+  return { s: s, up: up, toast: toast, vals: vals };
+}
+var START = {
+  Stock: {}, 'Low stock only': { low: true }, 'Row menu': { menu: 'v2' }, 'Adjust stock': { adj: 'v2' },
+  'Adjust: damaged': { adj: 'v7', mode: 'damaged', qty: '1', note: 'Torn at the seam' }, 'Adjust: counted': { adj: 'v2', mode: 'count', qty: '3' },
+  'Stock history': { hist: 'v2' }
+};
+var MODE_GROUPS = [
+  ['Adds stock', [['received', 'Received new stock'], ['returned', 'Returned by a customer'], ['correction', 'Correction']]],
+  ['Takes stock out', [['damaged', 'Damaged'], ['lost', 'Lost'], ['expired', 'Expired'], ['sample', 'Sample, gift or own use']]],
+  ['Sets the number', [['count', 'Counted the stock']]]
+];
+var OUT = ['damaged', 'lost', 'expired', 'sample'];
+var REASON_WORD = { received: 'received', returned: 'returned', correction: 'correction', damaged: 'damaged', lost: 'lost', expired: 'expired', sample: 'sample', count: 'count' };
+var MOVES = {
+  v2: [
+    ['2026-10-28', '15:10', 'Sold', -1, 'order #1051', ''],
+    ['2026-10-27', '11:32', 'Reserved', -1, 'order #1053', ''],
+    ['2026-10-22', '16:05', 'Received', 2, 'received', 'GRN-0031 from Islampur Fabrics'],
+    ['2026-10-20', '13:40', 'Sold', -2, 'order #1044', ''],
+    ['2026-10-18', '10:15', 'Received', 10, 'received', 'GRN-0029 from Islampur Fabrics'],
+    ['2026-10-12', '17:15', 'Adjusted', -2, 'count', 'SC-0005'],
+    ['2026-09-28', '14:10', 'Returned', 1, 'returned', 'Order #1011, wrong size']
+  ]
+};
+var COSTS = {
+  v2: [['Received', 640, 655, '2026-10-18', '10:15', 6], ['Received', 620, 640, '2026-09-02', '12:00', 2], ['Set by hand', null, 620, '2026-07-14', '09:30', 0]]
+};
+function movesOf(v, i) {
+  if (MOVES[v.id]) return MOVES[v.id];
+  var n = (i % 4) + 1;
+  return [
+    ['2026-10-27', '18:20', 'Sold', -1, 'order #105' + (i % 10), ''],
+    ['2026-10-21', '12:05', 'Received', 4 + n * 2, 'received', 'GRN-0030'],
+    ['2026-10-14', '15:45', 'Sold', -n, 'order #103' + (i % 10), ''],
+    ['2026-09-30', '11:00', 'Adjusted', -1, 'damaged', '']
+  ];
+}
+function costsOf(v) {
+  if (COSTS[v.id]) return COSTS[v.id];
+  if (v.cost === null) return [];
+  return [['Received', Math.round(v.cost * 0.96), v.cost, '2026-10-21', '12:05', Math.max(0, v.oh - 6)]];
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    var b = boot(this, START, 'Stock');
+    var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
+    var vs = s.vs || VARIANTS;
+    var moves = s.moves || {};
+    var q = (s.q || '').trim().toLowerCase();
+    var low = Boolean(s.low);
+    var tracked = vs.filter(function (v) { return v.track; });
+    var units = tracked.reduce(function (a, v) { return a + v.oh; }, 0);
+    var value = tracked.reduce(function (a, v) { return a + v.oh * (v.cost || 0); }, 0);
+    var lows = vs.filter(isLow);
+    vals.stats = [
+      { label: 'Items tracked', value: String(tracked.length) },
+      { label: 'Units on hand', value: units.toLocaleString('en-US') },
+      { label: 'Value at cost', value: money(value) }
+    ];
+    vals.lowCount = String(lows.length);
+    vals.lowPressed = low ? 'true' : 'false';
+    vals.lowStatAria = low ? 'Show all stock' : 'Show only the ' + lows.length + ' items low on stock';
+
+    var list = vs.filter(function (v) {
+      return (!low || isLow(v)) && (!q || label(v).toLowerCase().indexOf(q) !== -1 || v.sku.toLowerCase().indexOf(q) !== -1);
+    });
+    var rowOf = function (v) {
+      var a = available(v), menuOpen = s.menu === v.id;
+      return {
+        title: v.t, opts: v.o, hasOpts: Boolean(v.o), sku: v.sku, onHand: v.track ? String(v.oh) : '—', reserved: v.track ? String(v.rs) : '—',
+        avail: v.track ? String(a) : 'Not tracked', isLow: isLow(v), tracked: v.track, untracked: !v.track,
+        availColor: !v.track ? 'var(--muted-foreground)' : isLow(v) ? 'var(--destructive)' : 'var(--foreground)', availWeight: v.track ? '600' : '400',
+        sub: [v.o, v.sku].filter(Boolean).join(' · '),
+        histAria: 'Stock history for ' + label(v), adjustAria: 'Adjust stock for ' + label(v), menuAria: 'Actions for ' + label(v),
+        menuOpen: menuOpen, toggleMenu: function () { up({ menu: menuOpen ? null : v.id }); },
+        adjust: function () { up({ adj: v.id, mode: 'received', qty: '', note: '', menu: null, hist: null }); },
+        history: function () { up({ hist: v.id, menu: null }); }
+      };
+    };
+    vals.rows = list.map(rowOf);
+    vals.empty = list.length === 0;
+    vals.emptyText = q || low ? 'No stock matches.' : 'No stock to show.';
+    vals.q = s.q || '';
+    vals.onQ = function (e) { up({ q: e.target.value }); };
+    vals.lowOnly = low;
+    vals.lowAria = low ? 'true' : 'false';
+    vals.lowBox = low ? 'var(--primary)' : 'var(--background)';
+    vals.lowEdge = low ? 'var(--primary)' : 'var(--input)';
+    vals.lowText = low ? 'var(--primary-foreground)' : 'var(--foreground)';
+    vals.toggleLow = function () { up({ low: !low }); };
+    vals.hasFilters = Boolean(q || low);
+    vals.clearAll = function () { up({ q: '', low: false }); };
+    vals.countText = plural(list.length, 'item', 'items');
+    vals.exportStock = function () { up({ toast: toast('Exported stock to Excel.') }); };
+    var mOpen = s.menu ? vs.filter(function (v) { return v.id === s.menu; })[0] : null;
+    vals.menuOpen = Boolean(mOpen);
+    vals.mx = rowOf(mOpen || vs[0]);
+    vals.mxTitle = mOpen ? label(mOpen) : '';
+
+    // Adjust stock: what happened, how many, and a note.
+    var av = s.adj ? vs.filter(function (v) { return v.id === s.adj; })[0] : null;
+    var mode = s.mode || 'received';
+    var amt = num(s.qty || '');
+    var isCount = mode === 'count';
+    var valid = (s.qty || '').trim() !== '' && amt !== null && Number.isInteger(amt) && (isCount ? amt >= 0 : amt > 0);
+    var after = av ? (isCount ? amt : OUT.indexOf(mode) !== -1 ? av.oh - amt : av.oh + amt) : 0;
+    vals.aj = {
+      open: Boolean(av), sub: av ? label(av) : '',
+      now: av ? 'Now: ' + av.oh + ' on hand, ' + av.rs + ' reserved.' : '',
+      groups: MODE_GROUPS.map(function (g) {
+        return {
+          label: g[0], modes: g[1].map(function (m) {
+            var on = mode === m[0];
+            return { label: m[1], aria: on ? 'true' : 'false', on: on, pick: function () { up({ mode: m[0] }); } };
+          })
+        };
+      }),
+      isReceived: mode === 'received',
+      qtyLabel: isCount ? 'How many there are' : 'Quantity', qty: s.qty || '', onQty: function (e) { up({ qty: e.target.value }); },
+      showPreview: Boolean(av) && valid, preview: av && valid ? 'On hand: ' + av.oh + ' → ' + after : '',
+      previewColor: after < (av ? av.oh : 0) ? 'var(--destructive)' : 'var(--foreground)',
+      negative: Boolean(av) && valid && after < 0, negText: 'That leaves less than none on hand. Check the number.',
+      note: s.note || '', onNote: function (e) { up({ note: e.target.value }); },
+      cantSave: !valid || after < 0,
+      save: function () {
+        if (!valid || after < 0) return;
+        var delta = after - av.oh;
+        var mv = [TODAY, '12:00', isCount ? 'Adjusted' : delta > 0 ? (mode === 'returned' ? 'Returned' : mode === 'received' ? 'Received' : 'Adjusted') : 'Adjusted', delta, REASON_WORD[mode], (s.note || '').trim()];
+        var nm = Object.assign({}, moves); nm[av.id] = [mv].concat(moves[av.id] || movesOf(av, vs.indexOf(av)));
+        up({ vs: vs.map(function (v) { return v.id === av.id ? Object.assign({}, v, { oh: after }) : v; }), moves: nm, adj: null, qty: '', note: '', toast: toast('Stock updated.') });
+      }
+    };
+    vals.closeAdj = function () { up({ adj: null, qty: '', note: '' }); };
+
+    // Stock history: what it cost, then every change.
+    var hv = s.hist ? vs.filter(function (v) { return v.id === s.hist; })[0] : null;
+    var hm = hv ? (moves[hv.id] || movesOf(hv, vs.indexOf(hv))) : [];
+    var hc = hv ? costsOf(hv) : [];
+    vals.hs = {
+      open: Boolean(hv), sub: hv ? label(hv) + ' · ' + hv.oh + ' on hand' : '',
+      costs: hc.map(function (c) {
+        return { source: c[0], change: (c[1] === null ? '—' : money(c[1])) + ' → ' + money(c[2]), meta: short(c[3]) + ', ' + clock(c[4]) + ' · ' + c[5] + ' on hand then' };
+      }),
+      hasCosts: hc.length > 0, noCosts: hc.length === 0,
+      moves: hm.map(function (m) {
+        return { type: m[2], qty: m[3] > 0 ? '+' + m[3] : '−' + Math.abs(m[3]), color: m[3] < 0 ? 'var(--destructive)' : 'var(--foreground)', meta: short(m[0]) + ', ' + clock(m[1]) + ' · ' + m[4], note: m[5], hasNote: Boolean(m[5]) };
+      }),
+      adjust: function () { up({ adj: hv.id, hist: null, mode: 'received', qty: '', note: '' }); }
+    };
+    vals.closeHist = function () { up({ hist: null }); };
+
+    var reset = { menu: null, adj: null, hist: null, qty: '', note: '' };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ menu: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(reset); } };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

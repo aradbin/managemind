@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stock counts — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:40;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-nav[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);font-weight:500}
+.mm-pgrid{display:grid;grid-template-columns:minmax(0,2fr) 96px 104px 60px 112px 116px 132px 40px;align-items:center;column-gap:12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-codechip{display:inline-flex;flex:none;align-items:center;height:20px;padding:0 6px;border-radius:6px;background:var(--muted);color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-ubar{display:block;width:80px;height:4px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-ubar>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-cmd-item:disabled{opacity:.5;pointer-events:none}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:512px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px}
+.mm-alert>svg{flex:none;margin-top:2px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:6px;padding:14px 18px}
+.mm-statrow>div+div{border-left:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-sum{position:sticky;top:-20px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-bx{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.mm-checkrow{display:inline-flex;align-items:center;gap:8px;min-height:28px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;margin:-4px 0;padding:6px 0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more:hover{color:var(--foreground)}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 2px 0 8px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-addchip{height:26px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-gh{padding:8px 8px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-tagchip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:28px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:28px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
+.mm-stepper button:hover{background:var(--accent)}
+.mm-stepper span{min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-row{position:relative}
+.mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.mm-radio-row .mm-radio{margin-top:0;padding:0;background:var(--background);cursor:pointer}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-needed{margin-left:6px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;line-height:16px}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:36px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.mm-check{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;padding:0;border:1px solid;border-radius:4px;color:var(--primary-foreground);cursor:pointer;vertical-align:middle;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm{--warn:oklch(.666 .179 58.318);--info:oklch(.546 .245 262.881)}
+.mm.dark{--warn:oklch(.769 .188 70.08);--info:oklch(.707 .165 254.624)}
+.mm-secbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-secbar .mm-tab{height:30px;font-size:14px}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tab:hover{color:var(--foreground)}
+.mm-ttabs .mm-tab{height:30px;gap:6px}
+.mm-sgrid{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr) 84px 84px 120px 132px;align-items:center;column-gap:12px}
+.mm-agrid{display:grid;grid-template-columns:150px minmax(0,2fr) minmax(0,1.6fr) 84px 110px;align-items:center;column-gap:12px}
+.mm-pogrid{display:grid;grid-template-columns:96px minmax(0,1.6fr) 130px minmax(0,1.2fr) 120px 110px 40px;align-items:center;column-gap:12px}
+.mm-supgrid{display:grid;grid-template-columns:minmax(0,1.8fr) 150px minmax(0,1fr) 110px 150px 40px;align-items:center;column-gap:12px}
+.mm-cntgrid{display:grid;grid-template-columns:90px minmax(0,1.6fr) 110px minmax(0,1.3fr) minmax(0,1.2fr) 90px 40px;align-items:center;column-gap:12px}
+.mm-lgrid{display:grid;grid-template-columns:minmax(0,1fr) 84px 120px 104px 32px;align-items:center;column-gap:10px}
+.mm-rvgrid{display:grid;grid-template-columns:minmax(0,1fr) 84px 120px 32px;align-items:center;column-gap:10px}
+.mm-ledgrid{display:grid;grid-template-columns:110px minmax(0,1fr) 110px 110px 36px;align-items:center;column-gap:12px}
+.mm-revgrid{display:grid;grid-template-columns:minmax(0,1fr) 72px 96px 84px 96px;align-items:center;column-gap:12px}
+.mm-cntline{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px}
+.mm-prog{display:block;height:6px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-prog>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-prog.mm-done>span{background:var(--success)}
+.mm-progcell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.mm-sm{height:32px}
+.mm-qty{width:100%;height:32px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums}
+.mm-bad{color:var(--destructive)}
+.mm-good{color:var(--success)}
+.mm-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mm-mlist>li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mm-mlist>li:last-child{border-bottom:0}
+.mm-chg{display:flex;justify-content:space-between;gap:8px}
+.mm-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mm-mode{display:flex;align-items:center;gap:10px;min-height:40px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:13px;line-height:18px;text-align:left;cursor:pointer}
+.mm-mode[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent);font-weight:500}
+.mm-mode[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-mgroup{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-dl{display:grid;grid-template-columns:120px minmax(0,1fr);gap:10px 16px;margin:0}
+.mm-dl dt{color:var(--muted-foreground)}
+.mm-dl dd{margin:0;white-space:pre-line}
+.mm-big{font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.mm-scanbox{display:flex;gap:8px}
+.mm-addrow{display:flex;align-items:center;gap:8px;width:100%;height:40px;padding:0 12px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.mm-addrow:hover{background:var(--accent);color:var(--foreground)}
+.mm-emptybox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted-foreground)}
+.mm-readonly{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm-input[aria-invalid=true],.mm-combo[aria-invalid=true]{border-color:var(--destructive)}
+.mm-warn{color:var(--warn)}
+.mm-step{display:inline-flex;flex:none;align-items:center;height:32px;border:1px solid var(--input);border-radius:8px;overflow:hidden;background:var(--background)}
+.mm-step button{width:32px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.mm-step button:hover{background:var(--accent)}
+.mm-step button:disabled{opacity:.4;cursor:default}
+.mm-step input{width:52px;height:100%;padding:0;border:0;border-left:1px solid var(--input);border-right:1px solid var(--input);background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:center;font-variant-numeric:tabular-nums;outline:none}
+.mm-step input:focus-visible{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-camera{display:flex;align-items:center;justify-content:center;height:180px;border-radius:10px;background:#111;color:#ddd;font-size:13px}
+.mm-statlink{padding:0;border:0;background:transparent;color:var(--destructive);font:inherit;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;cursor:pointer}
+.mm-statlink:hover,.mm-statlink[aria-pressed=true]{text-decoration-color:currentColor}
+.mm-statbtn{display:flex;flex-direction:column;gap:6px;padding:16px 20px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-statbtn:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-chipq{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Main.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</li>
+<li><a href="Inventory.dc.html" class="mm-nav" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(90deg)"><path d="m9 18 6-6-6-6"></path></svg></a>
+<ul class="mm-sub">
+<li><a href="Inventory.dc.html" class="mm-subbtn">Stock</a></li><li><a href="PurchaseOrders.dc.html" class="mm-subbtn">Purchase orders</a></li><li><a href="Receive.dc.html" class="mm-subbtn">Receive stock</a></li><li><a href="Suppliers.dc.html" class="mm-subbtn">Suppliers</a></li><li><a href="Counts.dc.html" class="mm-subbtn" aria-current="page">Counts</a></li><li><a href="Adjustments.dc.html" class="mm-subbtn">Adjustments</a></li>
+</ul></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb" style="min-width: 0">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); white-space: nowrap">
+<li><a href="Inventory.dc.html">Inventory</a></li><li aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></li><li aria-current="page" style="overflow: hidden; text-overflow: ellipsis; color: var(--foreground)">Counts</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Stock counts</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{newCount}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New count</button>
+</div>
+</div>
+
+<nav aria-label="Inventory sections" style="overflow-x: auto">
+<div class="mm-secbar"><a href="Inventory.dc.html" class="mm-tab">Stock</a><a href="PurchaseOrders.dc.html" class="mm-tab">Purchase orders</a><a href="Receive.dc.html" class="mm-tab">Receive stock</a><a href="Suppliers.dc.html" class="mm-tab">Suppliers</a><a href="Counts.dc.html" class="mm-tab" aria-current="page">Counts</a><a href="Adjustments.dc.html" class="mm-tab">Adjustments</a></div>
+</nav>
+<p class="mm-muted" style="margin: 0">Count what is on the shelf while you keep selling, then apply only the real differences.</p>
+<div role="tablist" aria-label="Status" class="mm-tabs mm-ttabs" style="align-self: flex-start; height: 36px"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for></div>
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-cntgrid mm-thead" aria-hidden="true"><span>Count</span><span>What</span><span>Status</span><span>Counted</span><span>Differences</span><span>Started</span><span></span></div>
+<ul aria-label="Stock counts" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4"><li><div class="mm-cntgrid mm-row" style="min-height: 56px">
+<a href="Count.dc.html" class="mm-rowlink mm-mono" aria-label="{{r.aria}}">{{r.ref}}</a>
+<span class="mm-trunc">{{r.what}}</span>
+<span><span class="mm-sbadge" style="background: {{r.badge.bg}}; color: {{r.badge.fg}}; box-shadow: inset 0 0 0 1px {{r.badge.edge}}">{{r.badge.label}}</span></span>
+<span class="mm-progcell"><span style="font-size: 13px; font-variant-numeric: tabular-nums">{{r.progress}}</span><span class="mm-prog"><span style="width: {{r.pct}}; background: {{r.progColor}}"></span></span></span>
+<span class="mm-trunc" style="color: {{r.diffColor}}">{{r.diff}}</span>
+<span class="mm-muted">{{r.started}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 180px">
+<a href="Count.dc.html" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>Open</a>
+<sc-if value="{{r.canCancel}}" hint-placeholder-val="{{true}}"><div role="separator" class="mm-sep"></div><button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{r.ask}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></svg>Cancel count</button></sc-if>
+</div>
+</sc-if>
+</div>
+</div></li></sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Show all counts</button></sc-if></div></sc-if>
+</div>
+</main>
+</div>
+<sc-if value="{{nf.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-nf-title" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead"><h2 id="mm-nf-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">New count</h2><p id="mm-nf-title-sub" class="mm-muted" style="margin: 0">Choose what to count. Selling goes on while you count.</p></div>
+<div class="mm-pbody">
+<div class="mm-field" style="gap: 0"><p id="mm-l-what" class="mm-label" style="margin: 0 0 10px">What to count</p><div role="radiogroup" aria-labelledby="mm-l-what" style="display: flex; flex-direction: column; gap: 8px"><sc-for list="{{nf.kinds}}" as="k" hint-placeholder-count="4"><button type="button" role="radio" class="mm-rcard" aria-checked="{{k.aria}}" onClick="{{k.pick}}"><span class="mm-radio" style="margin-top: 2px" aria-hidden="true"><sc-if value="{{k.on}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">{{k.label}}</span><span class="mm-muted" style="font-size: 13px; line-height: 18px">{{k.sub}}</span></span></button></sc-for></div></div>
+<sc-if value="{{nf.isCat}}" hint-placeholder-val="{{false}}"><div class="mm-field"><span class="mm-label" id="mm-l-ncat">Category</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{nf.cat.aria}}" aria-labelledby="mm-l-ncat" disabled="{{nf.cat.disabled}}" onClick="{{nf.cat.toggle}}"><span class="mm-trunc" style="color: {{nf.cat.color}}">{{nf.cat.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{nf.cat.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{nf.cat.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{nf.cat.ph}}" placeholder="{{nf.cat.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{nf.cat.query}}" onChange="{{nf.cat.onQuery}}"></div><div role="listbox" aria-label="{{nf.cat.title}}" class="mm-poplist" style="max-height: 280px"><sc-for list="{{nf.cat.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc" style="font-size: 12px; color: var(--muted-foreground)">{{o.sub}}</span></sc-if></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{nf.cat.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">Nothing found.</p></sc-if></div></div></sc-if></div></div></sc-if>
+<sc-if value="{{nf.isTag}}" hint-placeholder-val="{{false}}"><div class="mm-field"><span class="mm-label" id="mm-l-ntag">Tag</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{nf.tag.aria}}" aria-labelledby="mm-l-ntag" disabled="{{nf.tag.disabled}}" onClick="{{nf.tag.toggle}}"><span class="mm-trunc" style="color: {{nf.tag.color}}">{{nf.tag.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{nf.tag.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{nf.tag.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{nf.tag.ph}}" placeholder="{{nf.tag.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{nf.tag.query}}" onChange="{{nf.tag.onQuery}}"></div><div role="listbox" aria-label="{{nf.tag.title}}" class="mm-poplist" style="max-height: 280px"><sc-for list="{{nf.tag.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc" style="font-size: 12px; color: var(--muted-foreground)">{{o.sub}}</span></sc-if></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{nf.tag.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">Nothing found.</p></sc-if></div></div></sc-if></div></div></sc-if>
+<sc-if value="{{nf.isItems}}" hint-placeholder-val="{{false}}"><div class="mm-field"><span class="mm-label">Items</span><sc-if value="{{nf.hasChips}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px"><sc-for list="{{nf.chips}}" as="ch" hint-placeholder-count="2"><span class="mm-chip">{{ch.label}}<button type="button" aria-label="{{ch.removeAria}}" onClick="{{ch.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span></sc-for></div></sc-if><div style="position: relative"><button type="button" class="mm-addrow" aria-haspopup="listbox" aria-expanded="{{nf.item.aria}}" onClick="{{nf.item.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add an item</button><sc-if value="{{nf.item.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{nf.item.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{nf.item.ph}}" placeholder="{{nf.item.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{nf.item.query}}" onChange="{{nf.item.onQuery}}"></div><div role="listbox" aria-label="{{nf.item.title}}" class="mm-poplist" style="max-height: 280px"><sc-for list="{{nf.item.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc" style="font-size: 12px; color: var(--muted-foreground)">{{o.sub}}</span></sc-if></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{nf.item.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No item found.</p></sc-if></div></div></sc-if></div></div></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-nc-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-nc-note" class="mm-input" maxLength="500" value="{{nf.note}}" onChange="{{nf.onNote}}" placeholder="Where to look, who counts"></div>
+<sc-if value="{{nf.hasSummary}}" hint-placeholder-val="{{true}}"><div class="mm-note" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M8 7v10"></path><path d="M12 7v10"></path><path d="M17 7v10"></path></svg><p style="margin: 0">{{nf.summary}}</p></div></sc-if>
+</div>
+<div class="mm-pfoot">
+
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeForm}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" disabled="{{nf.cant}}" onClick="{{nf.start}}">Start counting</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeForm}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-dialog" style="max-width: 460px">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{confirmTitle}}</h2><div id="mm-al-desc" style="display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground)"><p style="margin: 0">Nothing changes in stock. The numbers counted so far are kept with the count.</p></div></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px">
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button>
+<button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doCancel}}">Cancel count</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Counts","In review","Row menu","New count","New count: a category","New count: items I choose","Cancel count"],"default":"Counts"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+var ROOT = 'mm mm-root';
+var TODAY = '2026-10-29';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var METHODS = [['cash', 'Cash'], ['bank', 'Bank'], ['bkash', 'bKash'], ['nagad', 'Nagad'], ['card', 'Card'], ['other', 'Other']];
+var VARIANTS = [
+  { id: 'v1', t: 'Cotton Panjabi', o: 'Ivory / M', sku: 'PNJ-IV-M', bc: '8941100100011', oh: 18, rs: 3, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v2', t: 'Cotton Panjabi', o: 'Ivory / L', sku: 'PNJ-IV-L', bc: '8941100100028', oh: 4, rs: 2, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v3', t: 'Cotton Panjabi', o: 'Ivory / XL', sku: 'PNJ-IV-XL', bc: '8941100100035', oh: 0, rs: 0, low: 3, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v4', t: 'Silk Panjabi', o: 'Navy / L', sku: 'PNJ-SK-NV-L', bc: '8941100100042', oh: 9, rs: 1, low: 2, track: true, cost: 1450, sup: 's2', cat: 'Panjabi', tags: ['eid', 'premium'] },
+  { id: 'v5', t: 'Kids Panjabi', o: 'Mint / 4 years', sku: 'PNJ-KD-MN-4', bc: '8941100100059', oh: 14, rs: 0, low: 4, track: true, cost: 380, sup: 's3', cat: 'Panjabi', tags: ['kids'] },
+  { id: 'v6', t: 'Embroidered Kurti', o: 'Maroon / S', sku: 'KRT-EM-MR-S', bc: '8941100100066', oh: 11, rs: 2, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v7', t: 'Embroidered Kurti', o: 'Maroon / M', sku: 'KRT-EM-MR-M', bc: '8941100100073', oh: 3, rs: 1, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v8', t: 'Jamdani Saree', o: 'Red', sku: 'SAR-JM-RD', bc: '8941100100080', oh: 6, rs: 0, low: 2, track: true, cost: 4200, sup: 's1', cat: 'Saree', tags: ['premium'] },
+  { id: 'v9', t: 'Tangail Cotton Saree', o: 'Green', sku: 'SAR-TG-GR', bc: '8941100100097', oh: 15, rs: 2, low: 4, track: true, cost: 1350, sup: 's1', cat: 'Saree', tags: [] },
+  { id: 'v10', t: 'Cotton Three-piece', o: 'Green / M', sku: '3PC-GR-M', bc: '8941100100103', oh: 22, rs: 4, low: 5, track: true, cost: 1100, sup: 's3', cat: 'Three-piece', tags: ['eid'] },
+  { id: 'v11', t: 'Batik Fatua', o: 'Indigo / L', sku: 'FTU-BT-IN-L', bc: '8941100100110', oh: 7, rs: 0, low: 2, track: true, cost: 520, sup: 's2', cat: 'Fatua', tags: [] },
+  { id: 'v16', t: 'Batik Fatua', o: 'Indigo / XL', sku: 'FTU-BT-IN-XL', bc: '8941100100127', oh: 3, rs: 0, low: 1, track: true, cost: null, sup: '', cat: 'Fatua', tags: [] },
+  { id: 'v12', t: 'Leather Sandal', o: 'Brown / 41', sku: 'SND-BR-41', bc: '8941100100134', oh: 2, rs: 0, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v13', t: 'Leather Sandal', o: 'Brown / 42', sku: 'SND-BR-42', bc: '8941100100141', oh: 5, rs: 1, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v14', t: 'Prayer Cap', o: 'White', sku: 'CAP-WH', bc: '8941100100158', oh: 40, rs: 0, low: 10, track: true, cost: 60, sup: 's3', cat: 'Accessories', tags: ['eid'] },
+  { id: 'v15', t: 'Gift wrap', o: '', sku: 'GFT-WRAP', bc: '', oh: 0, rs: 0, low: 0, track: false, cost: 20, sup: '', cat: 'Accessories', tags: [] }
+];
+var SUPPLIERS = [
+  { id: 's1', name: 'Tangail Tant Ghar', contact: 'Rafiq Mia', phones: ['01711-234567'], email: 'tantghar@gmail.com', address: 'Pathrail, Delduar, Tangail', note: 'Sends by Sundarban Courier. Ask for a photo of the receipt.', opening: 20000, balance: 48500, archived: false, since: '2025-03-10' },
+  { id: 's2', name: 'Rupkotha Embroidery', contact: 'Shahana Begum', phones: ['01819-445566', '01556-778899'], email: '', address: 'Mirpur 10, Dhaka', note: '', opening: 0, balance: -5000, archived: false, since: '2025-06-02' },
+  { id: 's3', name: 'Islampur Fabrics', contact: 'Abdul Karim', phones: ['01912-334455'], email: '', address: 'Islampur Road, Old Dhaka', note: 'Closed on Fridays.', opening: 0, balance: 26000, archived: false, since: '2025-01-15' },
+  { id: 's4', name: 'Chittagong Leather Works', contact: 'Mohammad Hasan', phones: ['01811-998877'], email: 'clw.hasan@yahoo.com', address: 'Hazari Lane, Chattogram', note: '', opening: 0, balance: 12800, archived: false, since: '2025-09-20' },
+  { id: 's5', name: 'Narayanganj Knit', contact: '', phones: ['01611-223344'], email: '', address: '', note: '', opening: 0, balance: 0, archived: true, since: '2025-02-01' }
+];
+var POS = [
+  { id: 'po18', ref: 'PO-0018', sup: 's2', status: 'draft', created: '2026-10-28', expected: '', supRef: '', note: '', lines: [['v6', 10, 890, 0], ['v7', 12, 890, 0], ['v4', 6, 1450, 0]], costs: [], receipts: [] },
+  { id: 'po17', ref: 'PO-0017', sup: 's1', status: 'ordered', created: '2026-10-24', expected: '2026-11-03', supRef: 'TTG-2210', note: '', lines: [['v8', 4, 4200, 0], ['v9', 10, 1350, 0]], costs: [['Courier', 1200]], receipts: [] },
+  { id: 'po16', ref: 'PO-0016', sup: 's3', status: 'partially_received', created: '2026-10-12', expected: '2026-10-25', supRef: 'IF-7781', note: 'XL comes with the next bale.', lines: [['v1', 20, 655, 20], ['v2', 20, 655, 12], ['v3', 10, 655, 0], ['v10', 10, 1100, 8]], costs: [['Transport from Islampur', 1500]], receipts: [['GRN-0029', '2026-10-18', 30, 21410], ['GRN-0031', '2026-10-22', 10, 7350]] },
+  { id: 'po15', ref: 'PO-0015', sup: 's4', status: 'received', created: '2026-10-02', expected: '2026-10-09', supRef: '', note: '', lines: [['v12', 12, 950, 12], ['v13', 12, 950, 12]], costs: [], receipts: [['GRN-0027', '2026-10-09', 24, 22800]] },
+  { id: 'po14', ref: 'PO-0014', sup: 's3', status: 'closed', created: '2026-09-20', expected: '2026-09-28', supRef: '', note: '', lines: [['v5', 30, 380, 25], ['v14', 100, 60, 100]], costs: [], receipts: [['GRN-0024', '2026-09-28', 125, 15500]] },
+  { id: 'po13', ref: 'PO-0013', sup: 's2', status: 'cancelled', created: '2026-09-15', expected: '', supRef: '', note: '', lines: [['v11', 15, 520, 0]], costs: [], receipts: [] }
+];
+var PO_STATUS = {
+  draft: { label: 'Draft', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  ordered: { label: 'Ordered', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  partially_received: { label: 'Partly received', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  received: { label: 'Received', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  closed: { label: 'Closed', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var COUNT_STATUS = {
+  counting: { label: 'Counting', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  review: { label: 'In review', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  applied: { label: 'Applied', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var REASONS = [
+  ['received', 'Received'], ['count', 'Count'], ['damaged', 'Damaged'], ['lost', 'Lost'], ['expired', 'Expired'], ['sample', 'Sample'],
+  ['returned', 'Returned'], ['correction', 'Correction'], ['import', 'Import'], ['other', 'Other']
+];
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(v) { return v < 0 ? '−৳' + Math.round(-v).toLocaleString('en-US') : '৳' + Math.round(Number(v) || 0).toLocaleString('en-US'); }
+function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
+function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
+function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
+function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
+function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
+function label(v) { return v.o ? v.t + ' — ' + v.o : v.t; }
+function available(v) { return v.oh - v.rs; }
+function isLow(v) { return v.track && available(v) <= v.low; }
+function methodLabel(m) { return (METHODS.filter(function (x) { return x[0] === m; })[0] || METHODS[5])[1]; }
+function balanceOf(b) {
+  if (b > 0) return { text: 'You owe ' + money(b), owed: true, fg: 'var(--foreground)', weight: '600' };
+  if (b < 0) return { text: 'Advance ' + money(-b), owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+  return { text: 'Settled', owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+}
+function poTotals(lines, costs) {
+  var goods = lines.reduce(function (a, l) { return a + (num(l[1]) || 0) * (num(l[2]) || 0); }, 0);
+  var other = costs.reduce(function (a, c) { return a + (num(c[1]) || 0); }, 0);
+  return { goods: goods, other: other, total: goods + other };
+}
+function poProgress(po) {
+  var o = po.lines.reduce(function (a, l) { return a + Number(l[1]); }, 0), r = po.lines.reduce(function (a, l) { return a + Number(l[3]); }, 0);
+  return { ordered: o, received: r, text: r + ' of ' + o + ' received', pct: o ? Math.round(r / o * 100) + '%' : '0%' };
+}
+function badgeOf(map, key) { var b = map[key]; return { label: b.label, bg: b.bg, fg: b.fg, edge: b.edge || 'transparent' }; }
+function boot(self, start, fallback) {
+  var startKey = self.props.startOn ?? fallback;
+  var s = self.state || {};
+  if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(start[startKey] || {}));
+  var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+  var toast = function (text) {
+    clearTimeout(self.toastTimer);
+    self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+    return text;
+  };
+  var dark = typeof s.dark === 'boolean' ? s.dark : (self.props.dark ?? false);
+  var vals = {
+    themeClass: ROOT + (dark ? ' dark' : ''), fontStack: FONTS[self.props.font ?? 'Inter'] || FONTS.Inter,
+    isDark: dark, isLight: !dark, themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+    toggleTheme: function () { up({ dark: !dark }); },
+    hasToast: Boolean(s.toast), toastText: s.toast || ''
+  };
+  return { s: s, up: up, toast: toast, vals: vals };
+}
+var COUNTS = [
+  { id: 'sc7', ref: 'SC-0007', status: 'counting', scope: ['category', 'Panjabi'], created: '2026-10-28', note: 'Front shelf and the store room.', lines: [['v1', 18, 18], ['v2', 4, 3], ['v3', 0, 0], ['v4', 9, null], ['v5', 14, null]] },
+  { id: 'sc6', ref: 'SC-0006', status: 'review', scope: ['all', ''], created: '2026-10-26', note: '', lines: [['v1', 18, 18], ['v2', 4, 3], ['v3', 0, 0], ['v4', 9, 9], ['v5', 14, 14], ['v6', 11, 11], ['v7', 3, 3], ['v8', 6, 5], ['v9', 15, 15], ['v10', 22, 23], ['v11', 7, 6], ['v16', 3, 3], ['v12', 2, 2], ['v13', 5, 5], ['v14', 40, 36]] },
+  { id: 'sc5', ref: 'SC-0005', status: 'applied', scope: ['tag', 'eid'], created: '2026-10-12', note: 'Before the Eid rush.', applied: '2026-10-12', lines: [['v1', 18, 18], ['v2', 3, 3], ['v3', 2, 0], ['v6', 12, 11], ['v7', 3, 3], ['v10', 22, 22], ['v14', 40, 40]] },
+  { id: 'sc4', ref: 'SC-0004', status: 'cancelled', scope: ['variants', '3'], created: '2026-09-30', note: '', lines: [['v12', 3, 3], ['v13', 5, null], ['v8', 6, null]] }
+];
+var THRESHOLD = 5000;
+function scopeText(c) {
+  var k = c.scope[0];
+  return k === 'all' ? 'Everything at this location' : k === 'category' ? 'Category: ' + c.scope[1] : k === 'tag' ? 'Tag: ' + c.scope[1] : plural(c.lines.length, 'item chosen', 'items chosen');
+}
+function countDiff(c) {
+  var lines = c.lines.filter(function (l) { return l[2] !== null && l[2] !== l[1]; });
+  var units = lines.reduce(function (a, l) { return a + (l[2] - l[1]); }, 0);
+  var value = lines.reduce(function (a, l) { var v = vById(l[0]); return a + (l[2] - l[1]) * (v.cost || 0); }, 0);
+  return { lines: lines.length, units: units, value: value, counted: c.lines.filter(function (l) { return l[2] !== null; }).length };
+}
+var START = {
+  Counts: {}, 'In review': { st: 'review' }, 'Row menu': { menu: 'sc7' }, 'New count': { form: true }, 'New count: a category': { form: true, kind: 'category', cat: 'Kurti' },
+  'New count: items I choose': { form: true, kind: 'variants', chosen: ['v12', 'v13'] }, 'Cancel count': { confirm: 'sc7' }
+};
+var KINDS = [
+  ['all', 'Everything at this location', 'All the tracked items. Best done when the shop is closed.'],
+  ['category', 'A category', 'One shelf or section, like Panjabi or Saree.'],
+  ['tag', 'Products with a tag', 'Like eid, to check before a big sale.'],
+  ['variants', 'Items I choose', 'A few items you want to check.']
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    var b = boot(this, START, 'Counts');
+    var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
+    var counts = s.counts || COUNTS;
+    var st = s.st || 'all';
+    vals.tabs = [['all', 'All'], ['counting', 'Counting'], ['review', 'In review'], ['applied', 'Applied'], ['cancelled', 'Cancelled']].map(function (t) {
+      return { label: t[1], count: String(t[0] === 'all' ? counts.length : counts.filter(function (c) { return c.status === t[0]; }).length), on: st === t[0] ? 'true' : 'false', pick: function () { up({ st: t[0], menu: null }); } };
+    });
+    var list = counts.filter(function (c) { return st === 'all' || c.status === st; });
+    var rowOf = function (c) {
+      var d = countDiff(c), menuOpen = s.menu === c.id;
+      var open = c.status === 'counting' || c.status === 'review';
+      return {
+        ref: c.ref, what: scopeText(c), badge: badgeOf(COUNT_STATUS, c.status),
+        progress: d.counted + ' of ' + c.lines.length + ' counted', pct: Math.round(d.counted / c.lines.length * 100) + '%', progColor: d.counted === c.lines.length ? 'var(--success)' : 'var(--primary)',
+        diff: c.status === 'counting' || c.status === 'cancelled' ? '—' : d.lines === 0 ? 'Everything matches' : plural(d.lines, 'item', 'items') + ', ' + signed(d.units) + ' units',
+        diffColor: d.lines && c.status !== 'counting' && c.status !== 'cancelled' ? 'var(--foreground)' : 'var(--muted-foreground)',
+        hasDiff: !(c.status === 'counting' || c.status === 'cancelled'),
+        started: short(c.created), aria: 'Open ' + c.ref, menuOpen: menuOpen, menuAria: 'Actions for ' + c.ref, toggleMenu: function () { up({ menu: menuOpen ? null : c.id }); },
+        canCancel: open, ask: function () { up({ menu: null, confirm: c.id }); },
+        meta: scopeText(c) + ' · ' + short(c.created)
+      };
+    };
+    vals.rows = list.map(rowOf);
+    vals.empty = list.length === 0;
+    vals.emptyText = st === 'all' ? 'No counts yet.' : 'No counts here.';
+    vals.emptyCanReset = st !== 'all';
+    vals.emptyReset = function () { up({ st: 'all' }); };
+    var mOpen = s.menu ? counts.filter(function (c) { return c.id === s.menu; })[0] : null;
+    vals.menuOpen = Boolean(mOpen);
+    vals.mx = rowOf(mOpen || counts[0]);
+    var cf = s.confirm ? counts.filter(function (c) { return c.id === s.confirm; })[0] : null;
+    vals.confirmOpen = Boolean(cf);
+    vals.confirmTitle = cf ? 'Cancel ' + cf.ref + '?' : '';
+    vals.doCancel = function () { up({ counts: counts.map(function (c) { return c.id === cf.id ? Object.assign({}, c, { status: 'cancelled' }) : c; }), confirm: null, toast: toast('Count cancelled.') }); };
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+
+    // New count.
+    var kind = s.kind || 'all';
+    var cats = [], tags = [];
+    VARIANTS.forEach(function (v) { if (v.track && cats.indexOf(v.cat) === -1) cats.push(v.cat); v.tags.forEach(function (t) { if (tags.indexOf(t) === -1) tags.push(t); }); });
+    var tracked = VARIANTS.filter(function (v) { return v.track; });
+    var chosen = s.chosen || [];
+    var allCombos = {};
+    var combo = function (key, cfg) {
+      var open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var opts = cfg.options.filter(function (o) { return !ql || (o.label + ' ' + (o.sub || '')).toLowerCase().indexOf(ql) !== -1; });
+      var cur = cfg.options.filter(function (o) { return o.v === cfg.current; })[0];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: cfg.title, ph: cfg.ph, query: open ? (s.cq || '') : '', none: opts.length === 0, disabled: false,
+        display: cur ? cur.label : cfg.placeholder, color: cur ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); }, onQuery: function (e) { up({ cq: e.target.value }); },
+        items: opts.map(function (o) { var on = o.v === cfg.current; return { label: o.label, sub: o.sub || '', hasSub: Boolean(o.sub), check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { cfg.onPick(o.v); } }; })
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    var nf = {
+      open: Boolean(s.form),
+      kinds: KINDS.map(function (k) {
+        var on = kind === k[0];
+        return { label: k[1], sub: k[0] === 'all' ? 'All ' + tracked.length + ' tracked items. Best done when the shop is closed.' : k[2], aria: on ? 'true' : 'false', on: on, pick: function () { up({ kind: k[0] }); } };
+      }),
+      isCat: kind === 'category', isTag: kind === 'tag', isItems: kind === 'variants',
+      cat: combo('cat', { title: 'Category', ph: 'Search categories', placeholder: 'Choose a category', current: s.cat || '', options: cats.map(function (c) { return { v: c, label: c, sub: plural(tracked.filter(function (v) { return v.cat === c; }).length, 'item', 'items') }; }), onPick: function (v) { up({ cat: v, combo: null }); } }),
+      tag: combo('tag', { title: 'Tag', ph: 'Search tags', placeholder: 'Choose a tag', current: s.tag || '', options: tags.map(function (t) { return { v: t, label: t, sub: plural(tracked.filter(function (v) { return v.tags.indexOf(t) !== -1; }).length, 'item', 'items') }; }), onPick: function (v) { up({ tag: v, combo: null }); } }),
+      item: combo('item', { title: 'Add an item', ph: 'Search titles and SKUs', placeholder: 'Add an item', current: '', options: tracked.filter(function (v) { return chosen.indexOf(v.id) === -1; }).map(function (v) { return { v: v.id, label: label(v), sub: v.sku }; }), onPick: function (v) { up({ chosen: chosen.concat([v]), combo: null }); } }),
+      chips: chosen.map(function (id) { var v = vById(id); return { label: label(v), removeAria: 'Remove ' + label(v), remove: function () { up({ chosen: chosen.filter(function (x) { return x !== id; }) }); } }; }),
+      hasChips: chosen.length > 0,
+      note: s.note || '', onNote: function (e) { up({ note: e.target.value }); }
+    };
+    var n = kind === 'all' ? tracked.length : kind === 'category' ? (s.cat ? tracked.filter(function (v) { return v.cat === s.cat; }).length : 0) : kind === 'tag' ? (s.tag ? tracked.filter(function (v) { return v.tags.indexOf(s.tag) !== -1; }).length : 0) : chosen.length;
+    nf.cant = n === 0;
+    nf.summary = n ? plural(n, 'item', 'items') + ' to count. Counters won’t see how many there should be.' : '';
+    nf.hasSummary = n > 0;
+    nf.start = function () {
+      if (!n) return;
+      var c = { id: 'sc8', ref: 'SC-0008', status: 'counting', scope: [kind, kind === 'category' ? s.cat : kind === 'tag' ? s.tag : String(n)], created: TODAY, note: (s.note || '').trim(), lines: [] };
+      for (var i = 0; i < n; i++) c.lines.push(['v1', 0, null]);
+      up({ counts: [c].concat(counts), form: false, kind: null, cat: null, tag: null, chosen: null, note: '', st: 'all', toast: toast('SC-0008 started. Open it to count.') });
+    };
+    vals.nf = nf;
+    var active = allCombos[s.combo] || null;
+    vals.comboOpen = Boolean(active) && Boolean(s.form);
+    vals.cbd = active || nf.cat;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+    vals.newCount = function () { up({ form: true, kind: 'all' }); };
+    vals.closeForm = function () { up({ form: false, combo: null }); };
+    var reset = { menu: null, form: false, combo: null, confirm: null };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ menu: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(s.combo ? { combo: null } : reset); } };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

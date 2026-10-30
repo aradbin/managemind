@@ -11,7 +11,8 @@
       "**",
       "!**/migrations/meta",
       "!packages/sdk/src/schema.ts",
-      "!apps/admin/src/routeTree.gen.ts"
+      "!apps/admin/src/routeTree.gen.ts",
+      "!design"
     ]
   },
   "formatter": {

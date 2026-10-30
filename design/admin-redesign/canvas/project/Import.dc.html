@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Import — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:70;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm-agrid{display:grid;grid-template-columns:minmax(0,1.2fr) 150px minmax(0,1.4fr) 150px 80px 48px;align-items:center;column-gap:12px}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-cmd-item:disabled{opacity:.5;pointer-events:none}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.mm-readonly{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;margin:-4px 0;padding:6px 0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more:hover{color:var(--foreground)}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-vlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+@media (max-width:767px){.mm-agrid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-agrid>:nth-child(2),.mm-agrid>:nth-child(3),.mm-agrid>:nth-child(4){display:none}}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-drop{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px 24px;border:1px dashed var(--input);border-radius:10px;text-align:center}
+.mm-dropicon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;margin-bottom:4px;border-radius:9999px;background:var(--muted);color:var(--muted-foreground)}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px}
+.mm-alert>svg{flex:none;margin-top:2px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-alert-ok{border-color:color-mix(in oklch,var(--success) 35%,transparent);background:color-mix(in oklch,var(--success) 6%,transparent)}
+.mm-alert-ok>svg{color:var(--success)}
+.mm-fix{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;background:color-mix(in oklch,var(--warn) 9%,transparent);font-size:13px}
+.mm-gh{padding:8px 8px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mm-stat{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px}
+.mm-stat strong{font-size:22px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--foreground)}
+.mm-progress{position:relative;height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--primary) 20%,transparent)}
+.mm-ind{height:100%;border-radius:9999px;background:var(--primary);transition:width .2s}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-wiz{display:flex;flex-direction:column;gap:16px;width:100%;max-width:760px;margin:0 auto}
+.mm-steps{display:flex;align-items:center;list-style:none;margin:4px 0;padding:0}
+.mm-step{display:flex;flex:1;align-items:center;gap:8px}
+.mm-step:last-child{flex:none}
+.mm-stepdot{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border:1px solid;border-radius:9999px;font-size:12px;font-weight:600}
+.mm-stepline{flex:1;height:1px;min-width:16px;margin:0 8px}
+.mm-mgrid{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);align-items:center;column-gap:16px}
+.mm-mrow{display:flex;flex-direction:column;gap:10px;padding:10px 12px 10px 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-mrow{border-bottom:0}
+.mm-ptable{max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:10px}
+.mm-pgrid{display:grid;grid-template-columns:56px 170px minmax(0,1fr);column-gap:12px;align-items:start;padding:10px 14px}
+.mm-phead{position:sticky;top:0;background:var(--muted);font-weight:500;padding-top:8px;padding-bottom:8px}
+.mm-prob{border-top:1px solid var(--border)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="#" class="mm-nav" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(90deg)"><path d="m9 18 6-6-6-6"></path></svg></a>
+<ul class="mm-sub">
+<li><a href="Main.dc.html" class="mm-subbtn">Products</a></li>
+<li><a href="Categories.dc.html" class="mm-subbtn">Categories</a></li>
+<li><a href="Collections.dc.html" class="mm-subbtn">Collections</a></li>
+<li><a href="Attributes.dc.html" class="mm-subbtn">Attributes</a></li>
+<li><a href="#" class="mm-subbtn" aria-current="page">Import</a></li>
+</ul></li>
+<li><a href="Inventory.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb" style="min-width: 0">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); white-space: nowrap">
+<li class="mm-hide-sm"><a href="#">Catalog</a></li>
+<li class="mm-hide-sm" aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li aria-current="page" style="color: var(--foreground)">Import</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div class="mm-wiz">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="min-width: 0">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Import products</h1>
+<p class="mm-muted" style="margin: 2px 0 0">Add or update many products at once from an Excel or CSV file.</p>
+</div>
+<button type="button" class="mm-btn mm-outline" onClick="{{sample}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Download a sample file</button>
+</div>
+
+<nav aria-label="Catalog sections" style="overflow-x: auto">
+<div class="mm-tabsbar">
+<a href="Main.dc.html" class="mm-ptab">Products</a>
+<a href="Categories.dc.html" class="mm-ptab">Categories</a>
+<a href="Collections.dc.html" class="mm-ptab">Collections</a>
+<a href="Attributes.dc.html" class="mm-ptab">Attributes</a>
+<a href="#" class="mm-ptab" aria-current="page">Import</a>
+</div>
+</nav>
+
+
+<ol class="mm-steps" aria-label="Import steps">
+<sc-for list="{{steps}}" as="p" hint-placeholder-count="4"><li class="mm-step" aria-current="{{p.current}}"><span class="mm-stepdot" style="background: {{p.bg}}; color: {{p.fg}}; border-color: {{p.edge}}"><sc-if value="{{p.done}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{p.notDone}}" hint-placeholder-val="{{true}}">{{p.num}}</sc-if></span><span style="color: {{p.color}}; font-weight: {{p.weight}}; white-space: nowrap">{{p.label}}</span><sc-if value="{{p.notLast}}" hint-placeholder-val="{{true}}"><span class="mm-stepline" aria-hidden="true" style="background: {{p.line}}"></span></sc-if></li></sc-for>
+</ol>
+
+<sc-if value="{{isChoose}}" hint-placeholder-val="{{true}}">
+<section class="mm-card" aria-label="Choose a file" style="gap: 16px">
+<div class="mm-drop">
+<span class="mm-dropicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 12v6"></path><path d="m15 15-3-3-3 3"></path></svg></span>
+<p style="margin: 0; font-weight: 500">Drop a spreadsheet here, or choose one</p>
+<p class="mm-muted" style="margin: 0; max-width: 460px">One row per variant, with a header row. Excel (.xlsx) or CSV. Our product export works as it is, in Bangla or English.</p>
+<button type="button" class="mm-btn mm-primary" onClick="{{pickFile}}" style="margin-top: 4px">Choose a file</button>
+</div>
+<sc-if value="{{err}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><div><p style="margin: 0; font-weight: 500">This file couldn’t be read</p><p style="margin: 0">Save it as .xlsx or .csv and try again.</p></div></div></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-recent" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-recent" class="mm-ctitle">Recent imports</h2></div>
+<ul class="mm-plist" aria-labelledby="mm-c-recent">
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3"><li><div class="mm-prow" style="gap: 12px; padding: 8px 8px 8px 10px">
+<span class="mm-thumb" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{r.file}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.meta}}</span></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; width: 120px; font-size: 13px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 9999px; background: {{r.dotBg}}"></span>{{r.status}}</span>
+<button type="button" class="mm-btn mm-ghost" onClick="{{r.open}}">Open</button>
+</div></li></sc-for>
+</ul>
+</section>
+</sc-if>
+
+<sc-if value="{{isMap}}" hint-placeholder-val="{{false}}">
+<section class="mm-card" aria-labelledby="mm-c-map" style="gap: 16px">
+<div class="mm-chead" style="align-items: flex-start">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+<span class="mm-thumb" aria-hidden="true" style="width: 40px; height: 40px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<div style="min-width: 0"><h2 id="mm-c-map" class="mm-ctitle mm-trunc">{{fileName}}</h2><p class="mm-muted" style="margin: 2px 0 0">{{fileMeta}}</p></div>
+</div>
+<button type="button" class="mm-btn mm-ghost" onClick="{{chooseAgain}}" style="margin-right: -8px">Choose another file</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<p class="mm-muted" style="margin: 0">Check what each column is. Columns we recognised are already set.</p>
+<div style="display: flex; gap: 6px"><span class="mm-badge">{{sumImport}}</span><span class="mm-badge">{{sumSkip}}</span><sc-if value="{{hasAttention}}" hint-placeholder-val="{{true}}"><span class="mm-badge" style="color: var(--warn); border-color: color-mix(in oklch, var(--warn) 40%, transparent)">{{sumAttention}}</span></sc-if></div>
+</div>
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-mgrid mm-thead" aria-hidden="true"><span>Column in your file</span><span></span><span>Imports as</span></div>
+<ul class="mm-rows" aria-label="Columns" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="16"><li><div class="mm-mrow">
+<div class="mm-mgrid">
+<span style="min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500; color: {{c.nameColor}}; font-style: {{c.nameStyle}}">{{c.name}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{c.sample}}</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--muted-foreground)"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+<div style="position: relative">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{c.combo.aria}}" aria-label="{{c.combo.title}}" onClick="{{c.combo.toggle}}"><span class="mm-trunc" style="color: {{c.combo.color}}">{{c.combo.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{c.combo.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{c.combo.title}}" onKeyDown="{{comboEsc}}" style="width: 300px; right: 0; left: auto"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search fields" placeholder="Search fields…" autoComplete="off" autoFocus="{{true}}" value="{{c.combo.query}}" onChange="{{c.combo.onQuery}}"></div><div role="listbox" aria-label="{{c.combo.title}}" class="mm-poplist" style="max-height: 300px"><sc-for list="{{c.combo.items}}" as="o" hint-placeholder-count="8"><sc-if value="{{o.head}}" hint-placeholder-val="{{false}}"><div class="mm-gh" role="presentation">{{o.label}}</div></sc-if><sc-if value="{{o.isOpt}}" hint-placeholder-val="{{true}}"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc" style="font-size: 12px; line-height: 16px; color: var(--muted-foreground)">{{o.sub}}</span></sc-if></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-if></sc-for><sc-if value="{{c.combo.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No field found.</p></sc-if></div></div></sc-if>
+</div>
+</div>
+<sc-if value="{{c.unknown}}" hint-placeholder-val="{{false}}">
+<div class="mm-fix" role="group" aria-label="{{c.unknownText}}">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--warn)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+<span style="flex: 1 1 200px; min-width: 0">{{c.unknownText}}</span>
+<div style="position: relative; width: 180px">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{c.type.aria}}" aria-label="{{c.type.title}}" onClick="{{c.type.toggle}}" style="height: 32px; background: var(--background)"><span class="mm-trunc" style="color: {{c.type.color}}">{{c.type.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{c.type.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{c.type.title}}" onKeyDown="{{comboEsc}}" style="top: 36px; min-width: 200px"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search types" placeholder="Search types…" autoComplete="off" autoFocus="{{true}}" value="{{c.type.query}}" onChange="{{c.type.onQuery}}"></div><div role="listbox" aria-label="{{c.type.title}}" class="mm-poplist"><sc-for list="{{c.type.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{c.type.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No type found.</p></sc-if></div></div></sc-if>
+</div>
+<button type="button" class="mm-btn mm-primary" disabled="{{c.cantCreate}}" onClick="{{c.create}}">Create attribute</button>
+<button type="button" class="mm-btn mm-ghost" onClick="{{c.skip}}">Don’t import</button>
+</div>
+</sc-if>
+</div></li></sc-for>
+</ul>
+</div>
+<sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{missingText}}</p></div></sc-if>
+</section>
+<div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px">
+<sc-if value="{{hasCheckHint}}" hint-placeholder-val="{{true}}"><span class="mm-muted" style="margin-right: auto; font-size: 13px">{{checkHint}}</span></sc-if>
+<button type="button" class="mm-btn mm-outline" onClick="{{chooseAgain}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" disabled="{{cantCheck}}" onClick="{{check}}">Check the file</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isCheck}}" hint-placeholder-val="{{false}}">
+<section class="mm-card" aria-labelledby="mm-c-check" style="gap: 16px">
+<div class="mm-chead"><h2 id="mm-c-check" class="mm-ctitle">Before importing</h2><span class="mm-muted" style="font-size: 13px">{{fileName}}</span></div>
+<div class="mm-stats">
+<div class="mm-stat"><span class="mm-muted">Products ready</span><strong>{{dry.ready}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Variants</span><strong>{{dry.variants}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Left out</span><strong style="color: {{dry.leftColor}}">{{dry.left}}</strong></div>
+</div>
+<sc-if value="{{dry.has}}" hint-placeholder-val="{{true}}">
+<div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{dry.summary}}</p></div>
+<div class="mm-ptable" role="table" aria-label="Problems">
+<div class="mm-pgrid mm-phead" role="row"><span role="columnheader">Row</span><span role="columnheader">Column</span><span role="columnheader">Problem</span></div>
+<sc-for list="{{dry.problems}}" as="p" hint-placeholder-count="9"><div class="mm-pgrid mm-prob" role="row"><span role="cell" style="font-variant-numeric: tabular-nums">{{p.row}}</span><span role="cell" class="mm-trunc">{{p.col}}</span><span role="cell">{{p.msg}}</span></div></sc-for>
+</div>
+<div><button type="button" class="mm-btn mm-outline" onClick="{{downloadProblems}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Download the problems (.csv)</button></div>
+</sc-if>
+<sc-if value="{{dry.none}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert mm-alert-ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><p style="margin: 0">Every row looks right.</p></div></sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Nothing changes until you start. Rows that match a product already in the store update it; the rest are added.</p>
+</section>
+<div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px">
+<button type="button" class="mm-btn mm-outline" onClick="{{back}}">Back</button>
+<button type="button" class="mm-btn mm-primary" onClick="{{start}}">{{dry.startText}}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{isJob}}" hint-placeholder-val="{{false}}">
+<section class="mm-card" aria-labelledby="mm-c-job" style="gap: 16px">
+<div class="mm-chead" style="align-items: flex-start">
+<div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+<span class="mm-thumb" aria-hidden="true" style="width: 40px; height: 40px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<div style="min-width: 0"><h2 id="mm-c-job" class="mm-ctitle mm-trunc">{{jb.file}}</h2><p class="mm-muted" style="margin: 2px 0 0">{{jb.when}}</p></div>
+</div>
+<span class="mm-sbadge" style="background: {{jb.badgeBg}}; color: {{jb.badgeFg}}">{{jb.status}}</span>
+</div>
+<div class="mm-field" style="gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-weight: 500">Products</span><span class="mm-muted" role="status">{{jb.progressText}}</span></div>
+<div class="mm-progress" role="progressbar" aria-label="Import progress" aria-valuetext="{{jb.progressText}}"><div class="mm-ind" style="width: {{jb.pct}}"></div></div>
+<sc-if value="{{jb.staging}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin: 0">{{jb.stagingText}}</p></sc-if>
+</div>
+<div class="mm-stats">
+<div class="mm-stat"><span class="mm-muted">Added</span><strong>{{jb.added}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Updated</span><strong>{{jb.updated}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Problems</span><strong>{{jb.failed}}</strong></div>
+</div>
+<sc-if value="{{jb.showImages}}" hint-placeholder-val="{{true}}">
+<div class="mm-field" style="gap: 8px; padding-top: 16px; border-top: 1px solid var(--border)">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--muted-foreground)"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>Images</span><span class="mm-muted" role="status">{{jb.imgText}}</span></div>
+<div class="mm-progress" role="progressbar" aria-label="Image progress" aria-valuetext="{{jb.imgText}}"><div class="mm-ind" style="width: {{jb.imgPct}}"></div></div>
+<sc-if value="{{jb.isImages}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin: 0">Images are downloaded and resized on this device. Keep this page open; if you close it, open the import again to continue.</p></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{jb.isDone}}" hint-placeholder-val="{{true}}"><div role="status" class="mm-alert mm-alert-ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div><p style="margin: 0; font-weight: 500">Import finished</p><p style="margin: 0">{{jb.doneText}}</p><sc-if value="{{jb.showImages}}" hint-placeholder-val="{{true}}"><p style="margin: 0">{{jb.imgSummary}}</p></sc-if></div></div></sc-if>
+<sc-if value="{{jb.isFailed}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{jb.failedText}}</p></div></sc-if>
+<sc-if value="{{jb.isCancelled}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg><p style="margin: 0">{{jb.cancelledText}}</p></div></sc-if>
+<sc-if value="{{jb.hasErrors}}" hint-placeholder-val="{{false}}">
+<h3 style="margin: 0; font-size: 14px; font-weight: 600">{{jb.errorsTitle}}</h3>
+<div class="mm-ptable" role="table" aria-label="Problems">
+<div class="mm-pgrid mm-phead" role="row"><span role="columnheader">Row</span><span role="columnheader">Column</span><span role="columnheader">Problem</span></div>
+<sc-for list="{{jb.errors}}" as="p" hint-placeholder-count="3"><div class="mm-pgrid mm-prob" role="row"><span role="cell" style="font-variant-numeric: tabular-nums">{{p.row}}</span><span role="cell" class="mm-trunc">{{p.col}}</span><span role="cell">{{p.msg}}</span></div></sc-for>
+</div>
+<div><button type="button" class="mm-btn mm-outline" onClick="{{downloadProblems}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Download the problems (.csv)</button></div>
+</sc-if>
+<sc-if value="{{jb.hasLeft}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border)"><span class="mm-muted">{{jb.leftText}}</span><button type="button" class="mm-btn mm-ghost" onClick="{{downloadProblems}}" style="margin-right: -8px">Download them (.csv)</button></div></sc-if>
+</section>
+<div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px">
+<sc-if value="{{jb.running}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-outline" onClick="{{jb.cancel}}">Cancel the import</button></sc-if>
+<sc-if value="{{jb.finished}}" hint-placeholder-val="{{true}}"><a href="Main.dc.html" class="mm-btn mm-outline">See the products</a><button type="button" class="mm-btn mm-primary" onClick="{{jb.another}}">Import another file</button></sc-if>
+</div>
+</sc-if>
+
+</div>
+</main>
+</div>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 448px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1; font-weight: 600">Cancel this import?</h2>
+<p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Products already done stay as they are. The rest aren’t imported.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px">
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{keepGoing}}">Keep importing</button>
+<button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doCancel}}">Cancel the import</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Choose file","Unreadable file","Match columns","Column list","New attribute","Check","Importing","Adding images","Done","Stopped import"],"default":"Choose file"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+var ROOT = 'mm mm-root';
+var GROUPS = [
+  { g: 'Product', items: [['handle', 'Handle'], ['title:bn', 'Title (বাংলা)'], ['title:en', 'Title (English)'], ['slug', 'URL slug'], ['description:bn', 'Description (বাংলা)'], ['description:en', 'Description (English)'], ['seoTitle:bn', 'SEO title (বাংলা)'], ['seoTitle:en', 'SEO title (English)'], ['status', 'Status'], ['categories', 'Categories'], ['tags', 'Tags'], ['brand', 'Brand'], ['vatCategory', 'VAT category']] },
+  { g: 'Variant', items: [['option1Name', 'Option1 name'], ['option1Value', 'Option1 value'], ['option2Name', 'Option2 name'], ['option2Value', 'Option2 value'], ['option3Name', 'Option3 name'], ['option3Value', 'Option3 value'], ['sku', 'SKU'], ['barcode', 'Barcode'], ['price', 'Price'], ['compareAtPrice', 'Compare-at price'], ['costPrice', 'Cost price'], ['weightGrams', 'Weight (grams)']] },
+  { g: 'Stock', items: [['stock', 'Stock'], ['trackInventory', 'Track stock'], ['allowBackorder', 'Sell when out of stock'], ['lowStockThreshold', 'Low stock alert']] },
+  { g: 'Images', items: [['images', 'Image URLs'], ['variantImage', 'Variant image URL']] },
+  { g: 'Attributes', items: [['attr:fabric', 'Fabric'], ['attr:colour', 'Colour'], ['attr:fit', 'Fit'], ['attr:sleeve', 'Sleeve'], ['attr:weight', 'Weight'], ['attr:handmade', 'Handmade'], ['attr:origin', 'Origin'], ['attr:age_group', 'Age group'], ['attr:care:bn', 'Care (বাংলা)'], ['attr:care:en', 'Care (English)']] }
+];
+var FILE = {
+  name: 'nakshi-products.xlsx', rows: 248, products: 98,
+  columns: [
+    { h: 'Handle', sample: 'cotton-panjabi-ivory', auto: 'handle' },
+    { h: 'নাম', sample: 'সুতি পাঞ্জাবি — আইভরি', auto: 'title:bn' },
+    { h: 'Title (en)', sample: 'Cotton Panjabi — Ivory', auto: 'title:en' },
+    { h: 'Category', sample: 'Men › Panjabi', auto: 'categories' },
+    { h: 'Tags', sample: 'cotton, eid', auto: 'tags' },
+    { h: 'Option1 name', sample: 'Size', auto: 'option1Name' },
+    { h: 'Option1 value', sample: 'M', auto: 'option1Value' },
+    { h: 'Variant SKU', sample: 'PJ-IV-M', auto: 'sku' },
+    { h: 'দাম', sample: '1850', auto: 'price' },
+    { h: 'Compare at price', sample: '2200', auto: 'compareAtPrice' },
+    { h: 'Stock', sample: '12', auto: 'stock' },
+    { h: 'Image Src', sample: 'https://cdn.nakshi.com/p/pj-iv-1.jpg', auto: 'images' },
+    { h: 'Fabric', sample: 'Cotton', auto: 'attr:fabric' },
+    { h: 'material', sample: 'Khadi', auto: 'new:material' },
+    { h: 'Supplier note', sample: 'Ask Rahim before reordering', auto: '' },
+    { h: '', sample: '10023', auto: '' }
+  ]
+};
+var PROBLEMS = [
+  { row: 14, t: 'price', msg: 'Not a number: “1,8OO”.' },
+  { row: 22, t: 'title:bn', msg: 'Empty. Every product needs a name in বাংলা.' },
+  { row: 37, t: 'stock', msg: 'Not a whole number: “12.5”.' },
+  { row: 58, t: 'sku', msg: 'PJ-IV-M is already used in row 3.' },
+  { row: 58, t: 'option1Value', msg: 'M appears twice for this product.' },
+  { row: 91, t: 'categories', msg: 'There’s no category “Mens › Panjabi”.' },
+  { row: 120, t: 'price', msg: 'Empty. Every variant needs a price.' },
+  { row: 120, t: 'compareAtPrice', msg: 'Lower than the price.' },
+  { row: 203, t: 'images', msg: 'Not a web address: “pj-iv-3.jpg”.' }
+];
+var JOBS = [
+  { id: 'j3', file: 'winter-stock.xlsx', when: 'Oct 21, 4:12 pm', phase: 'done', total: 96, processed: 96, created: 84, updated: 12, failed: 0, imgTotal: 190, imgDone: 190, imgFailed: 0, errors: [] },
+  {
+    id: 'j2', file: 'eid-collection.csv', when: 'Oct 2, 11:40 am', phase: 'done', total: 137, processed: 137, created: 120, updated: 14, failed: 3, imgTotal: 410, imgDone: 410, imgFailed: 5,
+    errors: [{ row: 31, col: 'Categories', msg: 'The category was deleted while importing.' }, { row: 77, col: 'SKU', msg: 'EID-KR-L is used by a product added meanwhile.' }, { row: 102, col: 'Image URLs', msg: 'The image is larger than 20 MB.' }]
+  },
+  { id: 'j1', file: 'shopify-export.csv', when: 'Sep 14, 9:05 pm', phase: 'failed', total: 180, processed: 42, created: 40, updated: 0, failed: 2, imgTotal: 0, imgDone: 0, imgFailed: 0, lastError: 'the connection to the server dropped', errors: [{ row: 12, col: 'Variant Price', msg: 'Not a number: “Tk 950”.' }, { row: 40, col: 'Handle', msg: 'Two products use the handle “kurti”.' }] }
+];
+var TYPES = [{ v: 'choice', label: 'One choice' }, { v: 'multi_choice', label: 'Several choices' }, { v: 'number', label: 'Number' }, { v: 'text', label: 'Text' }, { v: 'boolean', label: 'Yes or no' }];
+var STEPS = ['Choose a file', 'Match columns', 'Check', 'Import'];
+var STATUS = {
+  staging: { label: 'Getting ready', tone: 'run' }, running: { label: 'Importing', tone: 'run' }, images: { label: 'Adding images', tone: 'run' },
+  done: { label: 'Done', tone: 'ok' }, failed: { label: 'Stopped', tone: 'bad' }, cancelled: { label: 'Cancelled', tone: 'off' }
+};
+function job(phase, extra) {
+  return Object.assign({ id: 'new', file: FILE.name, when: 'Just now', phase: phase, live: false, chunks: 10, sent: 10, total: 91, processed: 0, created: 0, updated: 0, failed: 0, imgTotal: 540, imgDone: 0, imgFailed: 0, errors: [], leftOut: 7, dryCount: 9 }, extra);
+}
+var START = {
+  'Choose file': {}, 'Unreadable file': { err: true }, 'Match columns': { step: 'map' }, 'Column list': { step: 'map', combo: 'c13' },
+  'New attribute': { step: 'map', combo: 'a13' }, Check: { step: 'check' },
+  Importing: { step: 'job', job: job('running', { processed: 54, created: 47, updated: 7 }) },
+  'Adding images': { step: 'job', job: job('images', { processed: 91, created: 78, updated: 13, imgDone: 312, imgFailed: 1 }) },
+  Done: { step: 'job', job: job('done', { processed: 91, created: 78, updated: 13, imgDone: 540, imgFailed: 2 }) },
+  'Stopped import': { step: 'job', job: JOBS[2] }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function n(x) { return x.toLocaleString('en-US'); }
+function plural(x, one, many) { return n(x) + ' ' + (x === 1 ? one : many); }
+function advance(j) {
+  j = Object.assign({}, j);
+  if (j.phase === 'staging') {
+    j.sent = Math.min(j.chunks, j.sent + 2);
+    if (j.sent >= j.chunks) j.phase = 'running';
+  } else if (j.phase === 'running') {
+    j.processed = Math.min(j.total, j.processed + 4);
+    j.created = Math.round(j.processed * 0.86);
+    j.updated = j.processed - j.created;
+    if (j.processed >= j.total) j.phase = j.imgTotal ? 'images' : 'done';
+  } else if (j.phase === 'images') {
+    j.imgDone = Math.min(j.imgTotal, j.imgDone + 18);
+    j.imgFailed = j.imgDone > 400 ? 2 : j.imgDone > 150 ? 1 : 0;
+    if (j.imgDone >= j.imgTotal) { j.phase = 'done'; j.live = false; }
+  }
+  return j;
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'Choose file';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(START[startKey] || {}));
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var toast = function (text) {
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+      return text;
+    };
+    var vals = {};
+    var step = s.step || 'choose';
+    var created = s.created || [];
+    var maps = s.maps || FILE.columns.map(function (c) { return c.auto; });
+
+    // Steps.
+    var at = { choose: 0, map: 1, check: 2, job: 3 }[step];
+    var finished = step === 'job' && s.job && ['done', 'failed', 'cancelled'].indexOf(s.job.phase) !== -1;
+    vals.steps = STEPS.map(function (label, i) {
+      var done = i < at || (finished && i === at);
+      var cur = i === at && !done;
+      return {
+        label: label, num: String(i + 1), done: done, notDone: !done, current: cur ? 'step' : 'false',
+        bg: done || cur ? 'var(--primary)' : 'transparent', fg: done || cur ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+        edge: done || cur ? 'var(--primary)' : 'var(--border)', color: done || cur ? 'var(--foreground)' : 'var(--muted-foreground)',
+        weight: cur ? '600' : '500', notLast: i < STEPS.length - 1, line: i < at ? 'var(--primary)' : 'var(--border)',
+        seg: i <= at ? 'var(--primary)' : 'var(--border)'
+      };
+    });
+    vals.stepText = 'Step ' + (at + 1) + ' of 4 · ' + STEPS[at];
+    vals.isChoose = step === 'choose'; vals.isMap = step === 'map'; vals.isCheck = step === 'check'; vals.isJob = step === 'job';
+    vals.inWizard = step !== 'choose';
+    vals.sample = function () { up({ toast: toast('Sample file downloaded: products-sample.xlsx') }); };
+
+    // 1. Choose a file, and recent imports.
+    vals.err = Boolean(s.err);
+    vals.pickFile = function () { up({ step: 'map', err: false, maps: null, created: [], combo: null, atype: {} }); };
+    vals.recent = JOBS.map(function (j) {
+      var st = STATUS[j.phase];
+      return {
+        file: j.file, when: j.when, status: st.label,
+        meta: j.when + ' · ' + j.created + ' added · ' + j.updated + ' updated · ' + (j.failed ? plural(j.failed, 'problem', 'problems') : 'no problems'),
+        counts: j.created + ' added · ' + j.updated + ' updated · ' + (j.failed ? plural(j.failed, 'problem', 'problems') : 'no problems'),
+        dotBg: st.tone === 'ok' ? 'var(--success)' : st.tone === 'bad' ? 'var(--destructive)' : 'var(--muted-foreground)',
+        open: function () { up({ step: 'job', job: copy(j) }); }
+      };
+    });
+
+    // 2. Match columns: each column of the file maps to one field, or is left out.
+    var newAttrs = created.map(function (k) { return ['attr:' + k, k]; });
+    var groups = GROUPS.map(function (g) { return g.g === 'Attributes' ? { g: g.g, items: g.items.concat(newAttrs) } : g; });
+    var labelOf = function (v) {
+      if (!v) return 'Don’t import';
+      if (v.indexOf('new:') === 0) return v.slice(4) + ' (new attribute)';
+      for (var i = 0; i < groups.length; i++) for (var k = 0; k < groups[i].items.length; k++) if (groups[i].items[k][0] === v) return groups[i].items[k][1];
+      return v;
+    };
+    var colName = function (i) { return FILE.columns[i].h || 'Column ' + (i + 1); };
+    var setMap = function (i, v) {
+      var next = maps.map(function (m, k) { return k !== i && v && m === v ? '' : m; });
+      next[i] = v;
+      up({ maps: next, combo: null });
+    };
+    var allCombos = {};
+    var colCombo = function (i) {
+      var key = 'c' + i, open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var items = [];
+      var opt = function (v, label) {
+        var on = maps[i] === v;
+        var other = v ? maps.indexOf(v) : -1;
+        var usedBy = other !== -1 && other !== i ? 'Now set for “' + colName(other) + '”' : '';
+        return { head: false, isOpt: true, label: label, sub: usedBy, hasSub: Boolean(usedBy), check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { setMap(i, v); } };
+      };
+      if (!ql || 'don’t import skip'.indexOf(ql) !== -1) items.push(opt('', 'Don’t import'));
+      groups.forEach(function (g) {
+        var its = g.items.filter(function (it) { return !ql || it[1].toLowerCase().indexOf(ql) !== -1; });
+        if (!its.length) return;
+        items.push({ head: true, isOpt: false, label: g.g, sub: '', hasSub: false, check: '0', aria: 'false', pick: null });
+        its.forEach(function (it) { items.push(opt(it[0], it[1])); });
+      });
+      var v = maps[i];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: 'What is “' + colName(i) + '”?', ph: 'Search fields', empty: 'No field found.',
+        query: open ? (s.cq || '') : '', none: items.length === 0, items: items, multi: 'false', isMulti: false, doneText: '',
+        display: labelOf(v), color: v ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); }
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    var atype = s.atype || {};
+    var typeCombo = function (i, k) {
+      var key = 'a' + i, open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var cur = atype[k] || '';
+      var items = TYPES.filter(function (t) { return !ql || t.label.toLowerCase().indexOf(ql) !== -1; }).map(function (t) {
+        var on = cur === t.v;
+        return {
+          head: false, isOpt: true, label: t.label, sub: '', hasSub: false, check: on ? '1' : '0', aria: on ? 'true' : 'false',
+          pick: function () { var a = Object.assign({}, atype); a[k] = t.v; up({ atype: a, combo: null }); }
+        };
+      });
+      var curT = TYPES.filter(function (t) { return t.v === cur; })[0];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: 'Type for “' + k + '”', ph: 'Search types', empty: 'No type found.',
+        query: open ? (s.cq || '') : '', none: items.length === 0, items: items, multi: 'false', isMulti: false, doneText: '',
+        display: curT ? curT.label : 'Choose a type', color: curT ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); }
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    vals.cols = FILE.columns.map(function (c, i) {
+      var v = maps[i];
+      var unknown = Boolean(v) && v.indexOf('new:') === 0;
+      var k = unknown ? v.slice(4) : '';
+      var curType = TYPES.filter(function (t) { return t.v === atype[k]; })[0];
+      return {
+        name: colName(i), sample: c.sample || 'Empty', nameColor: c.h ? 'var(--foreground)' : 'var(--muted-foreground)',
+        nameStyle: c.h ? 'normal' : 'italic',
+        combo: colCombo(i), ignored: !v, unknown: unknown, key: k,
+        unknownText: 'There’s no attribute with the key “' + k + '”. Create it as:',
+        type: typeCombo(i, k), cantCreate: !curType,
+        create: function () {
+          if (!curType) return;
+          var next = maps.slice(); next[i] = 'attr:' + k;
+          up({ maps: next, created: created.concat([k]), combo: null, toast: toast('Attribute “' + k + '” created as ' + curType.label.toLowerCase() + '.') });
+        },
+        skip: function () { setMap(i, ''); }
+      };
+    });
+    var importing = maps.filter(function (m) { return m && m.indexOf('new:') !== 0; }).length;
+    var skipped = maps.filter(function (m) { return !m; }).length;
+    var attention = maps.filter(function (m) { return m && m.indexOf('new:') === 0; }).length;
+    vals.fileName = FILE.name;
+    vals.fileMeta = plural(FILE.rows, 'row', 'rows') + ' · ' + plural(FILE.columns.length, 'column', 'columns');
+    vals.sumImport = importing + ' to import';
+    vals.sumSkip = skipped + ' skipped';
+    vals.hasAttention = attention > 0;
+    vals.sumAttention = plural(attention, 'needs', 'need') + ' a choice';
+    var missing = [];
+    if (maps.indexOf('title:bn') === -1) missing.push('a title in বাংলা');
+    if (maps.indexOf('price') === -1) missing.push('a price');
+    vals.missing = missing.length > 0;
+    vals.missingText = 'The file needs ' + missing.join(' and ') + '. Set the columns that hold them.';
+    vals.cantCheck = missing.length > 0 || attention > 0;
+    vals.checkHint = attention > 0 ? 'Choose what to do with the new attribute first.' : '';
+    vals.hasCheckHint = attention > 0 && missing.length === 0;
+    vals.check = function () { up({ step: 'check', combo: null }); };
+    vals.chooseAgain = function () { up({ step: 'choose', maps: null, combo: null }); };
+
+    var active = allCombos[s.combo] || null;
+    vals.comboOpen = Boolean(active) && step === 'map';
+    vals.cbd = active || vals.cols[0].combo;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // 3. Check: the dry run, in the browser, before anything is sent.
+    var where = {};
+    maps.forEach(function (m, i) { if (m) where[m] = i; });
+    var probs = PROBLEMS.filter(function (p) { return p.t in where; }).map(function (p) { return { row: String(p.row), col: colName(where[p.t]), msg: p.msg }; });
+    var badRows = probs.map(function (p) { return p.row; }).filter(function (r, i, a) { return a.indexOf(r) === i; }).length;
+    var ready = FILE.products - badRows;
+    var variants = FILE.rows - badRows * 3;
+    vals.dry = {
+      ready: n(ready), variants: n(variants), left: n(badRows), probsN: n(probs.length), leftColor: badRows ? 'var(--destructive)' : 'var(--foreground)',
+      startShort: 'Import ' + plural(ready, 'product', 'products'),
+      readyText: 'Ready: ' + plural(ready, 'product', 'products') + ' with ' + plural(variants, 'variant', 'variants') + '.',
+      has: probs.length > 0, none: probs.length === 0,
+      summary: plural(probs.length, 'problem', 'problems') + ' in ' + plural(badRows, 'row', 'rows') + '. Those products are left out; fix them in the file and import it again to add them.',
+      problems: probs,
+      startText: probs.length ? 'Import the ' + n(ready) + ' products without problems' : 'Import ' + plural(ready, 'product', 'products')
+    };
+    vals.downloadProblems = function () { up({ toast: toast('Downloaded nakshi-products-problems.csv') }); };
+    vals.back = function () { up({ step: 'map' }); };
+    vals.start = function () {
+      up({ step: 'job', job: job('staging', { live: true, sent: 0, chunks: Math.ceil(ready / 10), total: ready, leftOut: badRows, dryCount: probs.length, dryProblems: probs }) });
+    };
+
+    // 4. The import: progress, then the image step, then the result.
+    var j = s.job || job('running');
+    var st = STATUS[j.phase];
+    var running = ['staging', 'running', 'images'].indexOf(j.phase) !== -1;
+    var pct = j.phase === 'images' || j.phase === 'done' ? 100 : (j.total ? Math.round(j.processed / j.total * 100) : 0);
+    var imgPct = j.imgTotal ? Math.round(j.imgDone / j.imgTotal * 100) : 0;
+    var errs = (j.errors || []).map(function (e) { return { row: String(e.row), col: e.col, msg: e.msg }; });
+    var left = j.dryProblems || [];
+    vals.jb = {
+      file: j.file, when: j.when, status: st.label,
+      badgeBg: st.tone === 'ok' ? 'color-mix(in oklch, var(--success) 14%, transparent)' : st.tone === 'bad' ? 'color-mix(in oklch, var(--destructive) 12%, transparent)' : 'var(--secondary)',
+      badgeFg: st.tone === 'ok' ? 'var(--success)' : st.tone === 'bad' ? 'var(--destructive)' : 'var(--secondary-foreground)',
+      running: running, staging: j.phase === 'staging', isImages: j.phase === 'images', isDone: j.phase === 'done', isFailed: j.phase === 'failed', isCancelled: j.phase === 'cancelled',
+      finished: !running,
+      stagingText: 'Sending the file… ' + j.sent + ' of ' + j.chunks + '. Keep this page open until it’s sent.',
+      pct: pct + '%', progressText: n(j.processed) + ' of ' + n(j.total) + ' products done',
+      added: n(j.created), updated: n(j.updated), failed: n(j.failed),
+      showImages: j.imgTotal > 0 && (j.phase === 'images' || j.phase === 'done'),
+      imgPct: imgPct + '%', imgText: n(j.imgDone) + ' of ' + n(j.imgTotal) + ' images done',
+      imgSummary: 'Images: ' + n(j.imgDone - j.imgFailed) + ' added' + (j.imgFailed ? ', ' + n(j.imgFailed) + ' couldn’t be downloaded. Add those from the product page.' : '.'),
+      imgFailedLine: j.imgFailed ? n(j.imgFailed) + ' couldn’t be downloaded' : '',
+      doneText: plural(j.created, 'product', 'products') + ' added and ' + n(j.updated) + ' updated' + (j.failed ? '. ' + plural(j.failed, 'row', 'rows') + ' had problems.' : '.'),
+      failedText: 'The import stopped: ' + (j.lastError || 'something went wrong') + '. ' + n(j.processed) + ' of ' + n(j.total) + ' products were done before it stopped.',
+      cancelledText: 'Import cancelled. ' + plural(j.created + j.updated, 'product was', 'products were') + ' already done and stay as they are.',
+      hasErrors: errs.length > 0, errors: errs, errorsTitle: plural(errs.length, 'problem', 'problems') + ' while importing',
+      hasLeft: left.length > 0 && !running, leftText: plural(j.leftOut || 0, 'product was', 'products were') + ' left out before importing, with ' + plural(left.length, 'problem', 'problems') + '.',
+      cancel: function () { up({ confirm: true }); },
+      another: function () { up({ step: 'choose', job: null, maps: null, created: [], atype: {}, err: false }); }
+    };
+    vals.canBack = step === 'map' || step === 'check' || (step === 'job' && !running);
+    vals.headerBack = step === 'check' ? vals.back : step === 'job' ? vals.jb.another : vals.chooseAgain;
+    vals.backAria = step === 'check' ? 'Back to columns' : step === 'job' ? 'Back to import' : 'Choose another file';
+    vals.confirmOpen = Boolean(s.confirm);
+    vals.keepGoing = function () { up({ confirm: false }); };
+    vals.doCancel = function () { up({ confirm: false, job: Object.assign({}, j, { phase: 'cancelled', live: false }), toast: toast('Import cancelled.') }); };
+
+    var live = step === 'job' && j.live && running;
+    if (live && !this.tick) {
+      this.tick = setInterval(function () {
+        var cur = self.state;
+        if (!cur || !cur.job) return;
+        self.setState({ job: advance(cur.job) });
+      }, 180);
+    }
+    if (!live && this.tick) { clearInterval(this.tick); this.tick = null; }
+
+    vals.closeAll = function () { up({ combo: null, confirm: false }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ combo: null, confirm: false }); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = ROOT + (dark ? ' dark' : '');
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

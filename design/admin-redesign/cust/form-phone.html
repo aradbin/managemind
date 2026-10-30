@@ -1,0 +1,23 @@
+<sc-if value="{{f.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-f-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-f-title" class="mm-dtitle">{{f.title}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{f.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field"><label class="mm-label" for="mm-f-phone">Phone</label><input id="mm-f-phone" class="mm-input" type="tel" inputMode="tel" autoComplete="off" placeholder="01712-345678" aria-invalid="{{f.hasPhoneErr}}" value="{{f.phone}}" onChange="{{f.onPhone}}"><sc-if value="{{f.hasPhoneErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.phoneErr}}</p></sc-if></div>
+<sc-if value="{{f.conflict}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad" style="margin-top: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{f.conflictText}}<a href="CustomerPhone.dc.html" style="font-weight: 500; text-decoration: underline; text-underline-offset: 3px">{{f.conflictName}}</a></p></div></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-f-name">Name</label><input id="mm-f-name" class="mm-input" maxLength="100" aria-invalid="{{f.hasNameErr}}" value="{{f.name}}" onChange="{{f.onName}}"><sc-if value="{{f.hasNameErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.nameErr}}</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-f-email">Email <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-f-email" class="mm-input" type="email" inputMode="email" maxLength="254" aria-invalid="{{f.hasEmailErr}}" value="{{f.email}}" onChange="{{f.onEmail}}"><sc-if value="{{f.hasEmailErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.emailErr}}</p></sc-if></div>
+<div class="mm-field">
+<label class="mm-label" for="mm-f-tags">Tags <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<div class="mm-chipbox"><sc-for list="{{f.tags}}" as="t" hint-placeholder-count="2"><span class="mm-chip">{{t.label}}<button type="button" aria-label="{{t.removeAria}}" onClick="{{t.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span></sc-for><input id="mm-f-tags" autoComplete="off" enterKeyHint="done" placeholder="Add a tag" value="{{f.tagInput}}" onChange="{{f.onTagInput}}" onKeyDown="{{f.tagKey}}"></div>
+<sc-if value="{{f.hasSugg}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px"><sc-for list="{{f.sugg}}" as="g" hint-placeholder-count="4"><button type="button" class="mm-tagchip" onClick="{{g.add}}" style="height: 32px; padding: 0 12px">+ {{g.label}}</button></sc-for></div></sc-if>
+</div>
+<div class="mm-field"><label class="mm-label" for="mm-f-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><textarea id="mm-f-note" class="mm-textarea" maxLength="2000" placeholder="Only staff see this." value="{{f.note}}" onChange="{{f.onNote}}"></textarea></div>
+<sc-if value="{{f.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{f.askDelete}}" style="align-self: flex-start; margin-left: -12px">Delete customer</button></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeForm}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{f.save}}">{{f.saveText}}</button></div>
+</div>
+</div>
+</sc-if>

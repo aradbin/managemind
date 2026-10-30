@@ -1,0 +1,255 @@
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+<div class="rb">
+
+<header class="rb-head">
+<p class="rb-kicker">managemind admin</p>
+<h1>Design rules</h1>
+<p class="mm-muted" style="max-width: 640px; margin: 8px 0 0; font-size: 15px; line-height: 22px">One way to do each thing, so every page behaves the same. Approved and applied: each rule lists what changed to follow it.</p>
+<div class="rb-legend"><span class="rb-chg">Aligned</span> changed to follow the rule <span class="rb-ok" style="margin-left: 16px">Already follows</span> documented only</div>
+</header>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">1</p>
+<h2>Where a form opens</h2>
+<p>The size of the job decides the container, not which page it’s on.</p>
+<table class="rb-table">
+<thead><tr><th>Container</th><th>Use for</th><th>On phone</th></tr></thead>
+<tbody>
+<tr><td><strong>Full page</strong></td><td>A record with several sections: product, collection, promotion. Has a save bar.</td><td>Full screen, save bar at the bottom, no tab bar</td></tr>
+<tr><td><strong>Side panel</strong></td><td>Creating or editing from a list, up to about eight fields: categories, attributes, customers, addresses, expenses, recurring expenses, expense categories.</td><td>Bottom drawer, 92% tall</td></tr>
+<tr><td><strong>Dialog</strong></td><td>A short task with a few choices, or a confirmation: export, generate codes, delete.</td><td>Bottom drawer; confirmations stay a centered alert</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Customers and customer details: add / edit customer and add / edit address moved from a dialog to a side panel.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Expenses: record / edit expense and recurring expense moved from a dialog to a side panel.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Expense categories: the inline form became a side panel (a drawer on phone), like catalog categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex" aria-hidden="true">
+<div class="rb-wire-row">
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-card"></div><div class="rb-w-card" style="height: 34px"></div><div class="rb-w-save"></div></div></div>
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-list"></div></div><div class="rb-w-panel"><div class="rb-w-line"></div><div class="rb-w-line"></div><div class="rb-w-line" style="width: 60%"></div><div class="rb-w-foot"></div></div></div>
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-list"></div></div><div class="rb-w-dim"></div><div class="rb-w-dialog"><div class="rb-w-line"></div><div class="rb-w-line" style="width: 70%"></div><div class="rb-w-foot"></div></div></div>
+</div>
+<div class="rb-wire-row rb-caps"><span>Full page</span><span>Side panel</span><span>Dialog</span></div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">2</p>
+<h2>Names in two languages</h2>
+<p>One field with <strong>বাংলা | English</strong> tabs. বাংলা comes first. A new record shows <em>Add English</em> until English is added. The same tab switches every translated field in that form: name, description, unit, values.</p>
+<p>When the API needs both languages (expense categories), both tabs show from the start, and an empty one is marked <em>Needed</em>.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expense categories: the two side-by-side name fields became the tabbed field.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Product, categories, collections, attributes, promotions.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-field" style="width: 100%; max-width: 380px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px"><span class="mm-label" style="margin: 0">Name</span><div class="mm-tabs"><span class="mm-tab" aria-selected="true">বাংলা</span><span class="mm-tab" aria-selected="false">English <span class="rb-needed">Needed</span></span></div></div>
+<span class="mm-input" lang="bn" style="display: flex; align-items: center">ভাড়া</span>
+</div>
+<div class="mm-field" style="width: 100%; max-width: 380px; margin-top: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px"><span class="mm-label" style="margin: 0">Title</span><span class="mm-btn mm-ghost" style="height: 28px; padding: 0 8px; margin-right: -8px; color: var(--muted-foreground)">+ Add English</span></div>
+<span class="mm-input mm-muted" style="display: flex; align-items: center">যেমন: ঈদে ১০% ছাড়</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">3</p>
+<h2>Choosing options</h2>
+<table class="rb-table">
+<thead><tr><th>When</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>2–4 short options</td><td><strong>Segmented control</strong> (Every month | Every week)</td></tr>
+<tr><td>5–7 short options picked often</td><td><strong>Choice buttons</strong> that wrap. The same on desktop and phone (Paid by, weekday)</td></tr>
+<tr><td>8 or more options, or names you’d type</td><td><strong>Searchable select</strong>, one or many. Many shows chips with <em>Add</em></td></tr>
+<tr><td>A choice that changes the form, each needing a sentence</td><td><strong>Radio cards</strong> (By hand / By rules, Automatic / Code)</td></tr>
+<tr><td>A setting that’s on or off</td><td><strong>Switch</strong>. Checkboxes only in filters and multi-select lists</td></tr>
+<tr><td>A shortcut that fills a field</td><td><strong>Chip</strong> (Today, Home, a past payee). Never a selection control</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses (desktop): “Paid by” and the weekday became choice buttons, like on phone.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Collections, promotions, attributes, categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex" style="gap: 18px">
+<div><p class="rb-exlabel">Segmented</p><div class="mm-tabs" style="height: 36px"><span class="mm-tab" aria-pressed="true" style="height: 30px">Every month</span><span class="mm-tab" style="height: 30px">Every week</span></div></div>
+<div><p class="rb-exlabel">Choice buttons</p><div class="rb-choices"><span class="rb-choice" aria-checked="true">Cash</span><span class="rb-choice">Bank</span><span class="rb-choice">bKash</span><span class="rb-choice">Nagad</span><span class="rb-choice">Card</span><span class="rb-choice">Other</span></div></div>
+<div><p class="rb-exlabel">Searchable select</p><span class="mm-combo" style="width: 280px"><span style="display: flex; align-items: center; gap: 8px"><span class="mm-sw" style="background: #1baf7a"></span>Facebook ads</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></span></div>
+<div><p class="rb-exlabel">Switch · Chip</p><div style="display: flex; align-items: center; gap: 16px"><span class="mm-switch" style="background: var(--primary)"><span class="mm-knob" style="transform: translateX(14px)"></span></span><span class="mm-tagchip" style="height: 28px; padding: 0 10px">Today</span><span class="mm-tagchip" style="height: 28px; padding: 0 10px">Yesterday</span></div></div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">4</p>
+<h2>Filters</h2>
+<p>The toolbar goes, in order: <strong>search</strong>, <strong>filter buttons</strong>, then <strong>Reset</strong>, with the count on the right. Each filter is a dashed “+ Name” button. Its list always has a search box, counts, and <em>Clear filter</em>. Picking a filter shows its value in the button.</p>
+<p>Where records move through stages, the stage is <strong>tabs with counts</strong> above the toolbar, not a filter.</p>
+<p>On phone: with one filter, the button is named after it and shows the value (“Tag: vip”). With more filters, a single <em>Filters</em> button shows how many are set, and opens one drawer.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses, Attributes and Promotions: their filter lists got a search box.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Products: the Status filter became tabs (All · Active · Draft · Archived), like Promotions.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Customers, Collections, Categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-tabs" style="height: 36px; margin-bottom: 12px"><span class="mm-tab" aria-selected="true" style="height: 30px; gap: 6px">All <span class="mm-tabcount">8</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Live <span class="mm-tabcount">4</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Scheduled <span class="mm-tabcount">1</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Draft <span class="mm-tabcount">1</span></span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span class="mm-input mm-muted" style="width: 200px; height: 32px; display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>Search</span>
+<span class="mm-btn mm-outline" style="border-style: dashed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Type<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><span class="mm-badge-sec">Code</span></span>
+<span class="mm-btn mm-ghost" style="padding: 0 8px">Reset ✕</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">5</p>
+<h2>Lists and row actions</h2>
+<p>Clicking anywhere on a row opens the record, either its page or its side panel. Controls inside a row (checkbox, tag, receipt) sit above that. A <strong>⋯</strong> button ends each row that has more actions. Its menu goes: <em>open or edit</em>, other actions, a separator, then the <em>destructive</em> action in red. On phone the same menu opens as a drawer.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses (phone): rows got ⋯ with Edit, View the receipt and Delete. Expense category rows now open their panel.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Every other list.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-menu" style="position: static; width: 220px">
+<span class="mm-cmd-item">Edit</span>
+<span class="mm-cmd-item">Copy code</span>
+<span class="mm-cmd-item">Pause</span>
+<div class="mm-sep"></div>
+<span class="mm-cmd-item mm-danger">End now</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">6</p>
+<h2>Reordering</h2>
+<p>Records in a list (categories, attributes, expense categories) move with <strong>⋯ › Move up / Move down</strong>.</p>
+<p>Items inside a form (products in a collection, attribute values) move with <strong>↑ ↓ buttons</strong> on desktop. On phone a <strong>Reorder</strong> toggle swaps the remove button for the arrows.</p>
+<ul class="rb-changes">
+<li><span class="rb-ok">Already follows</span><span>All boards. Written down so new pages follow it.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-plist" style="width: 320px">
+<div class="mm-prow" style="gap: 8px; padding: 6px 6px 6px 12px"><span style="flex: 1">1. Cotton Panjabi — Ivory</span><span class="mm-btn mm-ghost mm-xs">↑</span><span class="mm-btn mm-ghost mm-xs">↓</span><span class="mm-btn mm-ghost mm-xs">✕</span></div>
+<div class="mm-prow" style="gap: 8px; padding: 6px 6px 6px 12px; border-bottom: 0"><span style="flex: 1">2. Embroidered Kurti</span><span class="mm-btn mm-ghost mm-xs">↑</span><span class="mm-btn mm-ghost mm-xs">↓</span><span class="mm-btn mm-ghost mm-xs">✕</span></div>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">7</p>
+<h2>Saving and deleting</h2>
+<p><strong>Full pages</strong> show a save bar once something changes: <em>Discard · Save</em>, or <em>Cancel · Create …</em> for a new record. Delete lives in the header ⋯.</p>
+<p><strong>Panels and dialogs</strong> end with <em>Cancel · Save</em>, with Save on the right. On desktop, Delete sits at the left of that footer. On phone, it’s a red text button at the end of the form.</p>
+<p>Every delete asks first in an alert. Typing a word to confirm is only for deletes that reach many records or personal data (an attribute in use, deleting a customer’s data).</p>
+<p>Button words: <em>Save</em> when editing. When creating, the verb and noun from the app’s own text: <em>Create promotion</em>, <em>Add customer</em>, <em>Record expense</em>.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Categories (phone): the bordered “Delete category” block became the plain red button used elsewhere.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Customer, address and expense panels: Delete sits at the footer’s left (Archive for expense categories). New expenses save with “Record expense”.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="width: 360px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden">
+<div style="height: 64px; background: var(--muted)"></div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><span class="mm-btn mm-ghost mm-danger" style="margin-left: -8px; padding: 0 8px">Delete</span><span style="flex: 1"></span><span class="mm-btn mm-outline">Cancel</span><span class="mm-btn mm-primary">Save</span></div>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">8</p>
+<h2>Messages</h2>
+<table class="rb-table">
+<tbody>
+<tr><td><strong>Field error</strong></td><td>Red text under the field once they try to save. With several, a red alert at the top also says how many.</td></tr>
+<tr><td><strong>Note</strong></td><td>Grey box with an icon, for neutral information (“Each one posts itself…”).</td></tr>
+<tr><td><strong>Alert</strong></td><td>Red outlined box, only for problems and blockers.</td></tr>
+<tr><td><strong>Toast</strong></td><td>Bottom right (above the tab bar on phone), for something that’s done.</td></tr>
+<tr><td><strong>Empty</strong></td><td>In a list: centered grey text and at most one button. In a form section: a dashed box with one sentence.</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Every filtered list now offers one button when it comes up empty (Reset filters, Clear search, or Record expense). The phone expenses empty state lost its dashed box.</span></li>
+</ul>
+</div>
+<div class="rb-ex" style="gap: 10px">
+<div class="mm-note" style="width: 360px; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><p style="margin: 0">Each one posts itself early in the morning on its day.</p></div>
+<div class="mm-alert mm-alert-bad" style="width: 360px; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">The file needs a title in বাংলা and a price.</p></div>
+<p class="mm-muted" style="width: 360px; margin: 0; padding: 14px; border: 1px dashed var(--border); border-radius: 10px; text-align: center; box-sizing: border-box">Every cart qualifies. Add a condition to narrow it.</p>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">9</p>
+<h2>Badges and labels</h2>
+<table class="rb-table">
+<tbody>
+<tr><td><strong>Status</strong></td><td>Soft tinted fill, coloured text. For states: Live, Shown, Risky, Paused, Done. Always a word, never colour alone.</td></tr>
+<tr><td><strong>Outline</strong></td><td>Neutral facts about a record: Built in, Default, Recurring.</td></tr>
+<tr><td><strong>Tag</strong></td><td>Grey fill, for tags people add. Clicking one filters by it.</td></tr>
+<tr><td><strong>Count</strong></td><td>Small muted number in tabs and the sidebar.</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Customers: “Flagged / Risky” uses the status badge instead of its own label style.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Products: Active, Draft and Archived became status badges, on the list and the product page. Categories have no status label.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success)">Live</span>
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--destructive) 12%, transparent); color: var(--destructive)">Risky · 33%</span>
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--warn) 16%, transparent); color: var(--warn)">Paused</span>
+<span class="mm-badge">Built in</span><span class="mm-badge">Default</span>
+<span class="mm-tagchip">vip</span><span class="mm-tagchip">eid</span>
+<span class="mm-tab" aria-selected="true" style="height: 28px; gap: 6px; box-shadow: none; border: 1px solid var(--border)">Live <span class="mm-tabcount">4</span></span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">10</p>
+<h2>Sizes</h2>
+<table class="rb-table">
+<thead><tr><th></th><th>Desktop</th><th>Phone</th></tr></thead>
+<tbody>
+<tr><td>Buttons</td><td>32px in headers and toolbars, 36px in panel and dialog footers</td><td>36px</td></tr>
+<tr><td>Inputs and selects</td><td>36px, 14px text</td><td>40px, 16px text (no zoom on focus)</td></tr>
+<tr><td>Corners</td><td>8px controls · 10px inner boxes · 14px cards</td><td>8 · 10 · 12px</td></tr>
+<tr><td>Forms</td><td>Single column, 760px wide, centered</td><td>Full width, 12–16px sides</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-ok">Already follows</span><span>All boards.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="display: flex; align-items: center; gap: 10px"><span class="mm-btn mm-outline">32px</span><span class="mm-btn mm-outline" style="height: 36px; padding: 0 16px">36px</span><span class="mm-input" style="width: 140px; display: flex; align-items: center">36px input</span></div>
+</div>
+</section>
+
+<footer class="rb-foot">
+<p style="margin: 0; font-weight: 600">Applied</p>
+<p class="mm-muted" style="margin: 4px 0 0">Every board follows these rules. New pages start from them.</p>
+</footer>
+
+</div>
+</div>

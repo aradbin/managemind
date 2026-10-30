@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design rules — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:40;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-nav[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);font-weight:500}
+.mm-pgrid{display:grid;grid-template-columns:minmax(0,2fr) 96px 104px 60px 112px 116px 132px 40px;align-items:center;column-gap:12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-codechip{display:inline-flex;flex:none;align-items:center;height:20px;padding:0 6px;border-radius:6px;background:var(--muted);color:var(--foreground);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-ubar{display:block;width:80px;height:4px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-ubar>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-cmd-item:disabled{opacity:.5;pointer-events:none}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:512px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px}
+.mm-alert>svg{flex:none;margin-top:2px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:6px;padding:14px 18px}
+.mm-statrow>div+div{border-left:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-sum{position:sticky;top:-20px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-bx{display:grid;grid-template-columns:110px minmax(0,1fr);gap:12px;align-items:start}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.mm-checkrow{display:inline-flex;align-items:center;gap:8px;min-height:28px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;margin:-4px 0;padding:6px 0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more:hover{color:var(--foreground)}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 2px 0 8px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-addchip{height:26px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-gh{padding:8px 8px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-tagchip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:28px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:28px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:16px;cursor:pointer}
+.mm-stepper button:hover{background:var(--accent)}
+.mm-stepper span{min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-row{position:relative}
+.mm-egrid{display:grid;grid-template-columns:64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px;align-items:center;column-gap:12px}
+.mm-rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) 150px 72px 104px 40px;align-items:center;column-gap:12px}
+.mm-sw{display:inline-block;flex:none;width:8px;height:8px;border-radius:2px}
+.mm-stack{display:flex;gap:2px;height:12px;overflow:hidden;border-radius:4px}
+.mm-seg{display:block;min-width:2px;height:100%;cursor:pointer;transition:opacity .15s}
+.mm-seg:hover{filter:brightness(1.08)}
+.mm-tip{position:absolute;right:0;bottom:calc(100% + 6px);padding:4px 8px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none}
+.mm-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 24px;margin:0;padding:0;list-style:none}
+.mm-lgbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:30px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:opacity .15s}
+.mm-lgbtn:hover,.mm-lgbtn[aria-pressed=true]{background:var(--accent)}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-catform{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:14px;border:1px solid var(--border);border-radius:10px;background:var(--card)}
+.mm-dropbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-dropbtn:hover{background:var(--accent)}
+.mm-filerow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px}
+.mm-rthumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;background:var(--muted);color:var(--muted-foreground)}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:40px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.rb{max-width:1120px;margin:0 auto;padding:48px 40px 56px}
+.rb-head{padding-bottom:28px;border-bottom:1px solid var(--border)}
+.rb-kicker{margin:0 0 6px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-foreground)}
+.rb-head h1{margin:0;font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em}
+.rb-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:16px;font-size:13px;color:var(--muted-foreground)}
+.rb-chg,.rb-ok{display:inline-flex;flex:none;align-items:center;height:20px;padding:0 6px;border-radius:6px;font-size:12px;font-weight:500;line-height:16px;vertical-align:1px}
+.rb-chg{background:color-mix(in oklch,var(--sidebar-primary) 14%,transparent);color:var(--sidebar-primary)}
+.rb-ok{background:color-mix(in oklch,var(--success) 14%,transparent);color:var(--success)}
+.rb-rule{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:40px;padding:32px 0;border-bottom:1px solid var(--border)}
+.rb-text>p{margin:0 0 10px;max-width:560px;line-height:21px}
+.rb-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin:0 0 8px !important;border-radius:9999px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:600}
+.rb-text h2{margin:0 0 8px;font-size:18px;line-height:26px;font-weight:600;letter-spacing:-0.01em}
+.rb-table{width:100%;margin:6px 0 12px;border-collapse:collapse;font-size:13px;line-height:19px}
+.rb-table th{padding:6px 10px 6px 0;border-bottom:1px solid var(--border);text-align:left;font-weight:500;color:var(--muted-foreground)}
+.rb-table td{padding:8px 10px 8px 0;border-bottom:1px solid var(--border);vertical-align:top}
+.rb-table tr:last-child td{border-bottom:0}
+.rb-changes{display:flex;flex-direction:column;gap:8px;margin:8px 0 0;padding:0;list-style:none;font-size:13px;line-height:19px}
+.rb-changes li{display:flex;align-items:flex-start;gap:8px}
+.rb-ex{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px;padding:24px;border-radius:14px;background:var(--sidebar)}
+.rb-exlabel{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.rb-choices{display:grid;grid-template-columns:repeat(3,96px);gap:6px}
+.rb-choice{display:inline-flex;align-items:center;justify-content:center;height:36px;border:1px solid var(--input);border-radius:8px;background:var(--background);font-weight:500}
+.rb-choice[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.rb-needed{margin-left:4px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;line-height:16px}
+.rb-wire-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}
+.rb-caps span{font-size:12px;font-weight:500;text-align:center;color:var(--muted-foreground)}
+.rb-wire{position:relative;display:flex;height:120px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--background)}
+.rb-w-side{width:18%;background:var(--muted)}
+.rb-w-main{flex:1;display:flex;flex-direction:column;gap:6px;padding:8px}
+.rb-w-bar{height:8px;width:50%;border-radius:3px;background:var(--border)}
+.rb-w-card{height:44px;border:1px solid var(--border);border-radius:4px}
+.rb-w-list{flex:1;border:1px solid var(--border);border-radius:4px;background:repeating-linear-gradient(var(--background) 0 12px,var(--border) 12px 13px)}
+.rb-w-save{align-self:center;width:50%;height:10px;border-radius:4px;background:var(--primary)}
+.rb-w-panel{position:absolute;top:0;right:0;bottom:0;width:44%;display:flex;flex-direction:column;gap:6px;padding:10px 8px;border-left:1px solid var(--border);background:var(--background);box-shadow:-4px 0 10px rgb(0 0 0 / .08)}
+.rb-w-line{height:8px;border-radius:3px;background:var(--muted)}
+.rb-w-foot{margin-top:auto;align-self:flex-end;width:40%;height:10px;border-radius:3px;background:var(--primary)}
+.rb-w-dim{position:absolute;inset:0;background:rgb(0 0 0 / .18)}
+.rb-w-dialog{position:absolute;left:22%;right:22%;top:28%;display:flex;flex-direction:column;gap:6px;height:52px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--background)}
+.rb-foot{padding-top:28px}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="min-height: 100vh; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+<div class="rb">
+
+<header class="rb-head">
+<p class="rb-kicker">managemind admin</p>
+<h1>Design rules</h1>
+<p class="mm-muted" style="max-width: 640px; margin: 8px 0 0; font-size: 15px; line-height: 22px">One way to do each thing, so every page behaves the same. Approved and applied: each rule lists what changed to follow it.</p>
+<div class="rb-legend"><span class="rb-chg">Aligned</span> changed to follow the rule <span class="rb-ok" style="margin-left: 16px">Already follows</span> documented only</div>
+</header>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">1</p>
+<h2>Where a form opens</h2>
+<p>The size of the job decides the container, not which page it’s on.</p>
+<table class="rb-table">
+<thead><tr><th>Container</th><th>Use for</th><th>On phone</th></tr></thead>
+<tbody>
+<tr><td><strong>Full page</strong></td><td>A record with several sections: product, collection, promotion. Has a save bar.</td><td>Full screen, save bar at the bottom, no tab bar</td></tr>
+<tr><td><strong>Side panel</strong></td><td>Creating or editing from a list, up to about eight fields: categories, attributes, customers, addresses, expenses, recurring expenses, expense categories.</td><td>Bottom drawer, 92% tall</td></tr>
+<tr><td><strong>Dialog</strong></td><td>A short task with a few choices, or a confirmation: export, generate codes, delete.</td><td>Bottom drawer; confirmations stay a centered alert</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Customers and customer details: add / edit customer and add / edit address moved from a dialog to a side panel.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Expenses: record / edit expense and recurring expense moved from a dialog to a side panel.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Expense categories: the inline form became a side panel (a drawer on phone), like catalog categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex" aria-hidden="true">
+<div class="rb-wire-row">
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-card"></div><div class="rb-w-card" style="height: 34px"></div><div class="rb-w-save"></div></div></div>
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-list"></div></div><div class="rb-w-panel"><div class="rb-w-line"></div><div class="rb-w-line"></div><div class="rb-w-line" style="width: 60%"></div><div class="rb-w-foot"></div></div></div>
+<div class="rb-wire"><div class="rb-w-side"></div><div class="rb-w-main"><div class="rb-w-bar"></div><div class="rb-w-list"></div></div><div class="rb-w-dim"></div><div class="rb-w-dialog"><div class="rb-w-line"></div><div class="rb-w-line" style="width: 70%"></div><div class="rb-w-foot"></div></div></div>
+</div>
+<div class="rb-wire-row rb-caps"><span>Full page</span><span>Side panel</span><span>Dialog</span></div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">2</p>
+<h2>Names in two languages</h2>
+<p>One field with <strong>বাংলা | English</strong> tabs. বাংলা comes first. A new record shows <em>Add English</em> until English is added. The same tab switches every translated field in that form: name, description, unit, values.</p>
+<p>When the API needs both languages (expense categories), both tabs show from the start, and an empty one is marked <em>Needed</em>.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expense categories: the two side-by-side name fields became the tabbed field.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Product, categories, collections, attributes, promotions.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-field" style="width: 100%; max-width: 380px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px"><span class="mm-label" style="margin: 0">Name</span><div class="mm-tabs"><span class="mm-tab" aria-selected="true">বাংলা</span><span class="mm-tab" aria-selected="false">English <span class="rb-needed">Needed</span></span></div></div>
+<span class="mm-input" lang="bn" style="display: flex; align-items: center">ভাড়া</span>
+</div>
+<div class="mm-field" style="width: 100%; max-width: 380px; margin-top: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px"><span class="mm-label" style="margin: 0">Title</span><span class="mm-btn mm-ghost" style="height: 28px; padding: 0 8px; margin-right: -8px; color: var(--muted-foreground)">+ Add English</span></div>
+<span class="mm-input mm-muted" style="display: flex; align-items: center">যেমন: ঈদে ১০% ছাড়</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">3</p>
+<h2>Choosing options</h2>
+<table class="rb-table">
+<thead><tr><th>When</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>2–4 short options</td><td><strong>Segmented control</strong> (Every month | Every week)</td></tr>
+<tr><td>5–7 short options picked often</td><td><strong>Choice buttons</strong> that wrap. The same on desktop and phone (Paid by, weekday)</td></tr>
+<tr><td>8 or more options, or names you’d type</td><td><strong>Searchable select</strong>, one or many. Many shows chips with <em>Add</em></td></tr>
+<tr><td>A choice that changes the form, each needing a sentence</td><td><strong>Radio cards</strong> (By hand / By rules, Automatic / Code)</td></tr>
+<tr><td>A setting that’s on or off</td><td><strong>Switch</strong>. Checkboxes only in filters and multi-select lists</td></tr>
+<tr><td>A shortcut that fills a field</td><td><strong>Chip</strong> (Today, Home, a past payee). Never a selection control</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses (desktop): “Paid by” and the weekday became choice buttons, like on phone.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Collections, promotions, attributes, categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex" style="gap: 18px">
+<div><p class="rb-exlabel">Segmented</p><div class="mm-tabs" style="height: 36px"><span class="mm-tab" aria-pressed="true" style="height: 30px">Every month</span><span class="mm-tab" style="height: 30px">Every week</span></div></div>
+<div><p class="rb-exlabel">Choice buttons</p><div class="rb-choices"><span class="rb-choice" aria-checked="true">Cash</span><span class="rb-choice">Bank</span><span class="rb-choice">bKash</span><span class="rb-choice">Nagad</span><span class="rb-choice">Card</span><span class="rb-choice">Other</span></div></div>
+<div><p class="rb-exlabel">Searchable select</p><span class="mm-combo" style="width: 280px"><span style="display: flex; align-items: center; gap: 8px"><span class="mm-sw" style="background: #1baf7a"></span>Facebook ads</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></span></div>
+<div><p class="rb-exlabel">Switch · Chip</p><div style="display: flex; align-items: center; gap: 16px"><span class="mm-switch" style="background: var(--primary)"><span class="mm-knob" style="transform: translateX(14px)"></span></span><span class="mm-tagchip" style="height: 28px; padding: 0 10px">Today</span><span class="mm-tagchip" style="height: 28px; padding: 0 10px">Yesterday</span></div></div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">4</p>
+<h2>Filters</h2>
+<p>The toolbar goes, in order: <strong>search</strong>, <strong>filter buttons</strong>, then <strong>Reset</strong>, with the count on the right. Each filter is a dashed “+ Name” button. Its list always has a search box, counts, and <em>Clear filter</em>. Picking a filter shows its value in the button.</p>
+<p>Where records move through stages, the stage is <strong>tabs with counts</strong> above the toolbar, not a filter.</p>
+<p>On phone: with one filter, the button is named after it and shows the value (“Tag: vip”). With more filters, a single <em>Filters</em> button shows how many are set, and opens one drawer.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses, Attributes and Promotions: their filter lists got a search box.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Products: the Status filter became tabs (All · Active · Draft · Archived), like Promotions.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Customers, Collections, Categories.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-tabs" style="height: 36px; margin-bottom: 12px"><span class="mm-tab" aria-selected="true" style="height: 30px; gap: 6px">All <span class="mm-tabcount">8</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Live <span class="mm-tabcount">4</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Scheduled <span class="mm-tabcount">1</span></span><span class="mm-tab" style="height: 30px; gap: 6px">Draft <span class="mm-tabcount">1</span></span></div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span class="mm-input mm-muted" style="width: 200px; height: 32px; display: flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>Search</span>
+<span class="mm-btn mm-outline" style="border-style: dashed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Type<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><span class="mm-badge-sec">Code</span></span>
+<span class="mm-btn mm-ghost" style="padding: 0 8px">Reset ✕</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">5</p>
+<h2>Lists and row actions</h2>
+<p>Clicking anywhere on a row opens the record, either its page or its side panel. Controls inside a row (checkbox, tag, receipt) sit above that. A <strong>⋯</strong> button ends each row that has more actions. Its menu goes: <em>open or edit</em>, other actions, a separator, then the <em>destructive</em> action in red. On phone the same menu opens as a drawer.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Expenses (phone): rows got ⋯ with Edit, View the receipt and Delete. Expense category rows now open their panel.</span></li>
+<li><span class="rb-ok">Already follows</span><span>Every other list.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-menu" style="position: static; width: 220px">
+<span class="mm-cmd-item">Edit</span>
+<span class="mm-cmd-item">Copy code</span>
+<span class="mm-cmd-item">Pause</span>
+<div class="mm-sep"></div>
+<span class="mm-cmd-item mm-danger">End now</span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">6</p>
+<h2>Reordering</h2>
+<p>Records in a list (categories, attributes, expense categories) move with <strong>⋯ › Move up / Move down</strong>.</p>
+<p>Items inside a form (products in a collection, attribute values) move with <strong>↑ ↓ buttons</strong> on desktop. On phone a <strong>Reorder</strong> toggle swaps the remove button for the arrows.</p>
+<ul class="rb-changes">
+<li><span class="rb-ok">Already follows</span><span>All boards. Written down so new pages follow it.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div class="mm-plist" style="width: 320px">
+<div class="mm-prow" style="gap: 8px; padding: 6px 6px 6px 12px"><span style="flex: 1">1. Cotton Panjabi — Ivory</span><span class="mm-btn mm-ghost mm-xs">↑</span><span class="mm-btn mm-ghost mm-xs">↓</span><span class="mm-btn mm-ghost mm-xs">✕</span></div>
+<div class="mm-prow" style="gap: 8px; padding: 6px 6px 6px 12px; border-bottom: 0"><span style="flex: 1">2. Embroidered Kurti</span><span class="mm-btn mm-ghost mm-xs">↑</span><span class="mm-btn mm-ghost mm-xs">↓</span><span class="mm-btn mm-ghost mm-xs">✕</span></div>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">7</p>
+<h2>Saving and deleting</h2>
+<p><strong>Full pages</strong> show a save bar once something changes: <em>Discard · Save</em>, or <em>Cancel · Create …</em> for a new record. Delete lives in the header ⋯.</p>
+<p><strong>Panels and dialogs</strong> end with <em>Cancel · Save</em>, with Save on the right. On desktop, Delete sits at the left of that footer. On phone, it’s a red text button at the end of the form.</p>
+<p>Every delete asks first in an alert. Typing a word to confirm is only for deletes that reach many records or personal data (an attribute in use, deleting a customer’s data).</p>
+<p>Button words: <em>Save</em> when editing. When creating, the verb and noun from the app’s own text: <em>Create promotion</em>, <em>Add customer</em>, <em>Record expense</em>.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Categories (phone): the bordered “Delete category” block became the plain red button used elsewhere.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Customer, address and expense panels: Delete sits at the footer’s left (Archive for expense categories). New expenses save with “Record expense”.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="width: 360px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden">
+<div style="height: 64px; background: var(--muted)"></div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><span class="mm-btn mm-ghost mm-danger" style="margin-left: -8px; padding: 0 8px">Delete</span><span style="flex: 1"></span><span class="mm-btn mm-outline">Cancel</span><span class="mm-btn mm-primary">Save</span></div>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">8</p>
+<h2>Messages</h2>
+<table class="rb-table">
+<tbody>
+<tr><td><strong>Field error</strong></td><td>Red text under the field once they try to save. With several, a red alert at the top also says how many.</td></tr>
+<tr><td><strong>Note</strong></td><td>Grey box with an icon, for neutral information (“Each one posts itself…”).</td></tr>
+<tr><td><strong>Alert</strong></td><td>Red outlined box, only for problems and blockers.</td></tr>
+<tr><td><strong>Toast</strong></td><td>Bottom right (above the tab bar on phone), for something that’s done.</td></tr>
+<tr><td><strong>Empty</strong></td><td>In a list: centered grey text and at most one button. In a form section: a dashed box with one sentence.</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Every filtered list now offers one button when it comes up empty (Reset filters, Clear search, or Record expense). The phone expenses empty state lost its dashed box.</span></li>
+</ul>
+</div>
+<div class="rb-ex" style="gap: 10px">
+<div class="mm-note" style="width: 360px; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><p style="margin: 0">Each one posts itself early in the morning on its day.</p></div>
+<div class="mm-alert mm-alert-bad" style="width: 360px; box-sizing: border-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">The file needs a title in বাংলা and a price.</p></div>
+<p class="mm-muted" style="width: 360px; margin: 0; padding: 14px; border: 1px dashed var(--border); border-radius: 10px; text-align: center; box-sizing: border-box">Every cart qualifies. Add a condition to narrow it.</p>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">9</p>
+<h2>Badges and labels</h2>
+<table class="rb-table">
+<tbody>
+<tr><td><strong>Status</strong></td><td>Soft tinted fill, coloured text. For states: Live, Shown, Risky, Paused, Done. Always a word, never colour alone.</td></tr>
+<tr><td><strong>Outline</strong></td><td>Neutral facts about a record: Built in, Default, Recurring.</td></tr>
+<tr><td><strong>Tag</strong></td><td>Grey fill, for tags people add. Clicking one filters by it.</td></tr>
+<tr><td><strong>Count</strong></td><td>Small muted number in tabs and the sidebar.</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Customers: “Flagged / Risky” uses the status badge instead of its own label style.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Products: Active, Draft and Archived became status badges, on the list and the product page. Categories have no status label.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success)">Live</span>
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--destructive) 12%, transparent); color: var(--destructive)">Risky · 33%</span>
+<span class="mm-sbadge" style="background: color-mix(in oklch, var(--warn) 16%, transparent); color: var(--warn)">Paused</span>
+<span class="mm-badge">Built in</span><span class="mm-badge">Default</span>
+<span class="mm-tagchip">vip</span><span class="mm-tagchip">eid</span>
+<span class="mm-tab" aria-selected="true" style="height: 28px; gap: 6px; box-shadow: none; border: 1px solid var(--border)">Live <span class="mm-tabcount">4</span></span>
+</div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">10</p>
+<h2>Sizes</h2>
+<table class="rb-table">
+<thead><tr><th></th><th>Desktop</th><th>Phone</th></tr></thead>
+<tbody>
+<tr><td>Buttons</td><td>32px in headers and toolbars, 36px in panel and dialog footers</td><td>36px</td></tr>
+<tr><td>Inputs and selects</td><td>36px, 14px text</td><td>40px, 16px text (no zoom on focus)</td></tr>
+<tr><td>Corners</td><td>8px controls · 10px inner boxes · 14px cards</td><td>8 · 10 · 12px</td></tr>
+<tr><td>Forms</td><td>Single column, 760px wide, centered</td><td>Full width, 12–16px sides</td></tr>
+</tbody>
+</table>
+<ul class="rb-changes">
+<li><span class="rb-ok">Already follows</span><span>All boards.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="display: flex; align-items: center; gap: 10px"><span class="mm-btn mm-outline">32px</span><span class="mm-btn mm-outline" style="height: 36px; padding: 0 16px">36px</span><span class="mm-input" style="width: 140px; display: flex; align-items: center">36px input</span></div>
+</div>
+</section>
+
+<footer class="rb-foot">
+<p style="margin: 0; font-weight: 600">Applied</p>
+<p class="mm-muted" style="margin: 4px 0 0">Every board follows these rules. New pages start from them.</p>
+</footer>
+
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1280,"height":4340}}'>
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+class Component extends DCLogic {
+  renderVals() {
+    var dark = this.props.dark ?? false;
+    return { themeClass: dark ? 'mm dark' : 'mm', fontStack: FONTS[this.props.font ?? 'Inter'] || FONTS.Inter };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--page); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<header style="display: flex; flex: none; align-items: center; gap: 4px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--border); background: var(--background)">
+<a href="PromotionsPhone.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to promotions"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a>
+<h1 class="mm-trunc" style="flex: 1; margin: 0 4px; font-size: 16px; line-height: 24px; font-weight: 600">{{hd.title}}</h1>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" aria-label="{{hd.stButtonAria}}" onClick="{{hd.toggleSt}}" style="padding: 0 8px 0 10px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 9999px; background: {{hd.sFg}}"></span>{{hd.state}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{hd.isExisting}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="More actions" aria-haspopup="dialog" onClick="{{more.toggle}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></sc-if>
+</header>
+
+<main class="mm-scroll" style="gap: 12px; padding: 12px">
+
+<sc-if value="{{hd.isExisting}}" hint-placeholder-val="{{true}}"><dl class="mm-statrow"><sc-for list="{{stats}}" as="x" hint-placeholder-count="4"><div><dt>{{x.label}}</dt><dd>{{x.value}}</dd></div></sc-for></dl></sc-if>
+
+<div class="mm-sum" role="status" aria-live="polite"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg><p style="margin: 0">{{summary}}</p></div>
+
+<sc-if value="{{showProblems}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{problemsText}}</p></div></sc-if>
+
+<section class="mm-card" aria-labelledby="mm-c-name">
+<h2 id="mm-c-name" class="mm-ctitle">Name and type</h2>
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 32px">
+<label class="mm-label" for="mm-title" style="margin: 0">Title</label>
+<sc-if value="{{nm.single}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" style="height: 32px; margin-right: -8px; padding: 0 8px; color: var(--muted-foreground)" onClick="{{nm.addEn}}">+ English</button></sc-if>
+<sc-if value="{{nm.multi}}" hint-placeholder-val="{{true}}"><div role="tablist" aria-label="Language" class="mm-tabs"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{nm.bnSel}}" onClick="{{nm.pickBn}}">বাংলা</button><button type="button" role="tab" class="mm-tab" aria-selected="{{nm.enSel}}" onClick="{{nm.pickEn}}">English</button></div></sc-if>
+</div>
+<input id="mm-title" class="mm-input" lang="{{nm.lang}}" maxLength="100" aria-invalid="{{pr.hastitle}}" value="{{nm.value}}" onChange="{{nm.onTitle}}" placeholder="{{nm.ph}}">
+<sc-if value="{{pr.hastitle}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.title}}</p></sc-if>
+</div>
+<div class="mm-field">
+<span class="mm-label" id="mm-l-kind">Type</span>
+<div role="radiogroup" aria-labelledby="mm-l-kind" style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" role="radio" class="mm-rcard" aria-checked="{{nm.autoAria}}" disabled="{{nm.kindLocked}}" onClick="{{nm.pickAuto}}"><span class="mm-radio"><sc-if value="{{nm.isAuto}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span><span><span style="display: block; font-weight: 500">Automatic</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">Applies by itself to every cart that qualifies</span></span></button>
+<button type="button" role="radio" class="mm-rcard" aria-checked="{{nm.codeAria}}" disabled="{{nm.kindLocked}}" onClick="{{nm.pickCode}}"><span class="mm-radio"><sc-if value="{{nm.isCode}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></span><span><span style="display: block; font-weight: 500">Code</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">Applies when the shopper enters a code</span></span></button>
+</div>
+<sc-if value="{{nm.kindLocked}}" hint-placeholder-val="{{true}}"><p class="mm-hint">{{nm.kindNote}}</p></sc-if>
+</div>
+<sc-if value="{{nm.isCode}}" hint-placeholder-val="{{true}}">
+<div class="mm-field">
+<label class="mm-label" for="mm-code">Shared code <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<div style="display: flex; gap: 8px"><input id="mm-code" class="mm-input mm-mono" maxLength="32" autoCapitalize="characters" aria-invalid="{{pr.hascode}}" value="{{nm.code}}" onChange="{{nm.onCode}}" placeholder="EID500"><button type="button" class="mm-btn mm-outline" style="height: 40px" onClick="{{nm.makeCode}}">Suggest</button></div>
+<sc-if value="{{pr.hascode}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.code}}</p></sc-if>
+<p class="mm-hint">One code for everyone. Empty uses only generated codes.</p>
+</div>
+</sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-disc">
+<h2 id="mm-c-disc" class="mm-ctitle">Discount</h2>
+<div class="mm-field"><span class="mm-label" id="mm-l-act">What it gives</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{act.aria}}" aria-labelledby="mm-l-act" onClick="{{act.toggle}}"><span class="mm-trunc">{{act.display}}</span>@@CHEV@@</button></div>
+<sc-if value="{{ds.isPercent}}" hint-placeholder-val="{{true}}">
+<div class="mm-field"><label class="mm-label" for="mm-pc">{{ds.percentLabel}}</label><div style="display: flex; align-items: center; gap: 8px"><label class="mm-affix mm-affix-r" style="width: 140px"><input id="mm-pc" class="mm-input" inputMode="decimal" aria-invalid="{{pr.haspercent}}" value="{{ds.percent}}" onChange="{{ds.onPercent}}"><span aria-hidden="true">%</span></label><sc-if value="{{ds.isDelivery}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-tagchip" aria-pressed="{{ds.freeOn}}" onClick="{{ds.makeFree}}" style="height: 40px; padding: 0 12px">Free delivery</button></sc-if></div><sc-if value="{{pr.haspercent}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.percent}}</p></sc-if></div>
+</sc-if>
+<sc-if value="{{ds.isAmount}}" hint-placeholder-val="{{false}}">
+<div class="mm-field"><label class="mm-label" for="mm-am">{{ds.amountLabel}}</label><label class="mm-affix" style="width: 180px"><span aria-hidden="true">৳</span><input id="mm-am" class="mm-input" inputMode="decimal" aria-invalid="{{pr.hasamount}}" value="{{ds.amount}}" onChange="{{ds.onAmount}}"></label><sc-if value="{{pr.hasamount}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.amount}}</p></sc-if></div>
+</sc-if>
+<sc-if value="{{ds.isItems}}" hint-placeholder-val="{{false}}">
+<div class="mm-field"><span class="mm-label">Which items</span>@@PSEL:target@@<sc-if value="{{pr.hastarget}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.target}}</p></sc-if></div>
+</sc-if>
+<sc-if value="{{ds.isBxgy}}" hint-placeholder-val="{{false}}">
+<div class="mm-field"><label class="mm-label" for="mm-buy">Buy how many</label><input id="mm-buy" class="mm-input" inputMode="numeric" value="{{ds.buyQty}}" onChange="{{ds.onBuyQty}}" style="width: 120px"></div>
+<div class="mm-field"><span class="mm-label">Of these items</span>@@PSEL:buyItems@@<sc-if value="{{pr.hasbuy}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.buy}}</p></sc-if></div>
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-get">Get how many</label><input id="mm-get" class="mm-input" inputMode="numeric" value="{{ds.getQty}}" onChange="{{ds.onGetQty}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-gpc">At this much off</label><label class="mm-affix mm-affix-r"><input id="mm-gpc" class="mm-input" inputMode="decimal" aria-invalid="{{pr.haspercent}}" value="{{ds.percent}}" onChange="{{ds.onPercent}}"><span aria-hidden="true">%</span></label></div>
+</div>
+<p class="mm-hint" style="margin-top: -10px">100% makes them free.</p>
+<label class="mm-swrow"><span>From the same items</span><button type="button" role="switch" class="mm-switch" aria-checked="{{ds.getSameAria}}" onClick="{{ds.toggleGetSame}}" style="background: {{ds.getSameBg}}"><span class="mm-knob" style="transform: translateX({{ds.getSameX}})"></span></button></label>
+<sc-if value="{{ds.getOther}}" hint-placeholder-val="{{false}}"><div class="mm-field"><span class="mm-label">Get these items</span>@@PSEL:getItems@@</div></sc-if>
+<sc-if value="{{pr.hasget}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err" style="margin-top: -8px">{{pr.get}}</p></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-maxu">Times per order <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-maxu" class="mm-input" inputMode="numeric" value="{{ds.maxUses}}" onChange="{{ds.onMaxUses}}" placeholder="No limit" style="width: 140px"></div>
+</sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-who">
+<h2 id="mm-c-who" class="mm-ctitle">Who gets it</h2>
+<sc-if value="{{noConds}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 14px; border: 1px dashed var(--border); border-radius: 10px; text-align: center">Every cart qualifies.</p></sc-if>
+<sc-if value="{{hasConds}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{conds}}" as="c" hint-placeholder-count="2">
+<sc-if value="{{c.notFirst}}" hint-placeholder-val="{{false}}"><span class="mm-and" aria-hidden="true">AND</span></sc-if>
+<div class="mm-rule" role="group" aria-label="{{c.label}}" style="flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -4px -2px 0"><span style="font-weight: 500">{{c.label}}</span><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{c.removeAria}}" onClick="{{c.remove}}" style="width: 32px; height: 32px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div>
+<sc-if value="{{c.isMinSub}}" hint-placeholder-val="{{true}}"><label class="mm-affix" style="width: 180px"><span aria-hidden="true">৳</span><input class="mm-input" inputMode="decimal" aria-label="Order at least, in taka" value="{{c.value}}" onChange="{{c.onValue}}"></label></sc-if>
+<sc-if value="{{c.isMinQty}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; gap: 8px"><input class="mm-input" inputMode="numeric" aria-label="At least this many items" value="{{c.value}}" onChange="{{c.onValue}}" style="width: 100px"><span class="mm-muted">items</span></div></sc-if>
+<sc-if value="{{c.isFirst}}" hint-placeholder-val="{{false}}"><span class="mm-muted" style="font-size: 13px">Only shoppers with no earlier orders from their phone.</span></sc-if>
+<sc-if value="{{c.isPhones}}" hint-placeholder-val="{{false}}"><textarea class="mm-textarea" aria-label="Phones, one per line" inputMode="tel" value="{{c.text}}" onChange="{{c.onText}}" placeholder="01712-345678" style="min-height: 72px"></textarea><span class="mm-muted" style="font-size: 13px">{{c.phoneCount}}</span></sc-if>
+<sc-if value="{{c.isPayment}}" hint-placeholder-val="{{false}}"><div role="group" aria-label="Payment methods" style="display: flex; flex-direction: column"><sc-for list="{{c.methods}}" as="m" hint-placeholder-count="3"><label class="mm-checkrow"><button type="button" role="checkbox" class="mm-fbox" aria-checked="{{m.aria}}" onClick="{{m.toggle}}" style="background: {{m.box}}; border-color: {{m.edge}}"><sc-if value="{{m.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button>{{m.label}}</label></sc-for></div></sc-if>
+<sc-if value="{{c.isItems}}" hint-placeholder-val="{{false}}">@@PCSEL@@</sc-if>
+<sc-if value="{{c.isZones}}" hint-placeholder-val="{{false}}">@@PCSEL@@</sc-if>
+<sc-if value="{{c.isTags}}" hint-placeholder-val="{{false}}">@@PCSEL@@</sc-if>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" disabled="{{add.full}}" onClick="{{add.toggle}}" style="width: 100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a condition</button>
+<sc-if value="{{hasConds}}" hint-placeholder-val="{{true}}"><p class="mm-hint" style="margin: -8px 0 0; text-align: center">All of these must be true.</p></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-dates">
+<h2 id="mm-c-dates" class="mm-ctitle">Dates and limits</h2>
+<div class="mm-field"><label class="mm-label" for="mm-start">Starts</label><input id="mm-start" class="mm-input" type="datetime-local" value="{{lm.startsAt}}" onChange="{{lm.onStarts}}"><p class="mm-hint">Empty starts it right away.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-end">Ends</label><input id="mm-end" class="mm-input" type="datetime-local" aria-invalid="{{pr.hasdates}}" value="{{lm.endsAt}}" onChange="{{lm.onEnds}}"><sc-if value="{{pr.hasdates}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{pr.dates}}</p></sc-if><p class="mm-hint">Empty runs until you end it.</p></div>
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-uses">Uses in total</label><input id="mm-uses" class="mm-input" inputMode="numeric" placeholder="No limit" value="{{lm.usageLimit}}" onChange="{{lm.onUsage}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-per">Per customer</label><input id="mm-per" class="mm-input" inputMode="numeric" placeholder="No limit" value="{{lm.perCustomer}}" onChange="{{lm.onPer}}"></div>
+</div>
+<button type="button" class="mm-more" aria-expanded="{{lm.moreAria}}" onClick="{{lm.toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>Cap, priority and combining</button>
+<sc-if value="{{lm.moreOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-cap">Most it takes off</label><label class="mm-affix"><span aria-hidden="true">৳</span><input id="mm-cap" class="mm-input" inputMode="decimal" placeholder="No limit" value="{{lm.maxDiscount}}" onChange="{{lm.onMax}}"></label></div>
+<div class="mm-field"><label class="mm-label" for="mm-prio">Priority</label><input id="mm-prio" class="mm-input" inputMode="numeric" value="{{lm.priority}}" onChange="{{lm.onPriority}}"></div>
+</div>
+<p class="mm-hint" style="margin-top: -10px">Higher priority applies first.</p>
+<label class="mm-swrow"><span><span style="display: block">Doesn’t combine</span><span class="mm-muted" style="display: block; font-size: 13px">Applies alone; the shopper gets whichever is worth more.</span></span><button type="button" role="switch" class="mm-switch" aria-checked="{{lm.exAria}}" onClick="{{lm.toggleEx}}" style="background: {{lm.exBg}}"><span class="mm-knob" style="transform: translateX({{lm.exX}})"></span></button></label>
+</sc-if>
+</section>
+
+<sc-if value="{{codes.show}}" hint-placeholder-val="{{true}}">
+<section class="mm-card" aria-labelledby="mm-c-codes" style="gap: 12px">
+<h2 id="mm-c-codes" class="mm-ctitle">Generated codes</h2>
+<sc-if value="{{codes.existing}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0">{{codes.text}}</p>
+<div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{codes.openGen}}" style="flex: 1">Generate</button><sc-if value="{{codes.canExport}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{codes.exportCodes}}" style="flex: 1">Export (.csv)</button></sc-if></div>
+</sc-if>
+<sc-if value="{{codes.isNew}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; font-size: 13px">After you create it, you can make unique codes in batches.</p></sc-if>
+</section>
+</sc-if>
+
+<section class="mm-card" aria-labelledby="mm-c-test" style="gap: 14px">
+<button type="button" class="mm-collapse" aria-expanded="{{tc.aria}}" onClick="{{tc.toggle}}"><span style="flex: 1; min-width: 0"><span id="mm-c-test" class="mm-ctitle" style="display: block">Test cart</span><span class="mm-muted" style="display: block; margin-top: 2px; font-size: 13px; font-weight: 400">See what a cart gets, with this one tried as if live.</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{tc.open}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{tc.hasLines}}" hint-placeholder-val="{{true}}"><ul class="mm-plist"><sc-for list="{{tc.lines}}" as="l" hint-placeholder-count="2"><li><div class="mm-prow" style="gap: 8px; min-height: 56px; padding: 8px 4px 8px 12px"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{l.name}}</span><span class="mm-muted" style="font-size: 13px">{{l.price}}</span></span><div class="mm-stepper"><button type="button" aria-label="{{l.minusAria}}" onClick="{{l.minus}}">−</button><span>{{l.qty}}</span><button type="button" aria-label="{{l.plusAria}}" onClick="{{l.plus}}">+</button></div><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{l.removeAria}}" onClick="{{l.remove}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div></li></sc-for></ul></sc-if>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{tc.product.toggle}}" style="width: 100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a product</button>
+<div class="mm-field"><span class="mm-label" id="mm-l-area">Delivery area</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{tc.area.aria}}" aria-labelledby="mm-l-area" onClick="{{tc.area.toggle}}"><span class="mm-trunc">{{tc.area.display}}</span>@@CHEV@@</button></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-pay">Payment</span><div role="group" aria-labelledby="mm-l-pay" class="mm-tabs" style="display: flex; height: 40px"><sc-for list="{{tc.pays}}" as="p" hint-placeholder-count="3"><button type="button" class="mm-tab" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="flex: 1; justify-content: center; height: 34px; padding: 0 4px; font-size: 12px">{{p.label}}</button></sc-for></div></div>
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-tcp">Phone</label><input id="mm-tcp" class="mm-input" type="tel" inputMode="tel" placeholder="Optional" value="{{tc.phone}}" onChange="{{tc.onPhone}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-tcc">Code</label><input id="mm-tcc" class="mm-input mm-mono" placeholder="Optional" value="{{tc.code}}" onChange="{{tc.onCode}}"></div>
+</div>
+<sc-if value="{{tc.hasWho}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin-top: -10px">{{tc.who}}</p></sc-if>
+<div class="mm-tcres" aria-live="polite">
+<sc-if value="{{tc.noLines}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">{{tc.emptyText}}</p></sc-if>
+<sc-if value="{{tc.hasLines}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{tc.results}}" as="r" hint-placeholder-count="2"><li style="display: flex; justify-content: space-between; gap: 12px"><span style="min-width: 0"><span style="display: block; font-weight: 500">{{r.name}}</span><sc-if value="{{r.hasReason}}" hint-placeholder-val="{{false}}"><span style="display: block; font-size: 12px; line-height: 16px; color: var(--muted-foreground)">{{r.reason}}</span></sc-if></span><span style="flex: none; font-weight: 500; font-variant-numeric: tabular-nums; color: {{r.color}}">{{r.amount}}</span></li></sc-for>
+</ul>
+<dl class="mm-totals">
+<div><dt>Subtotal</dt><dd>{{tc.subtotal}}</dd></div>
+<div><dt>Discount</dt><dd>{{tc.discount}}</dd></div>
+<div><dt>Delivery</dt><dd>{{tc.delivery}}</dd></div>
+<div class="mm-total"><dt>Total</dt><dd>{{tc.total}}</dd></div>
+</dl>
+</sc-if>
+</div>
+</sc-if>
+</section>
+
+</main>
+
+<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}">
+<div role="region" aria-label="{{bar.label}}" style="display: flex; flex: none; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--background)">
+<button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{discard}}">{{bar.cancel}}</button>
+<button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{save}}">{{bar.save}}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{hd.stOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-st-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-st-title" class="mm-dtitle">Status</h2></div>
+<div role="listbox" aria-labelledby="mm-st-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<sc-for list="{{hd.statuses}}" as="o" hint-placeholder-count="4"><button type="button" role="option" class="mm-optrow" aria-selected="{{o.aria}}" onClick="{{o.pick}}" style="min-height: 60px"><span style="flex: 1"><span style="display: block; font-weight: 500">{{o.label}}</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">{{o.sub}}</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--foreground); opacity: {{o.check}}"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{more.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-more-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-more-title" class="mm-dtitle">{{hd.title}}</h2></div>
+<div role="menu" aria-labelledby="mm-more-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{copyCode}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Copy code</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{endNow}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>End now</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{add.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-add-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-add-title" class="mm-dtitle">Add a condition</h2></div>
+<div role="menu" aria-labelledby="mm-add-title" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 4px 8px 24px">
+<sc-for list="{{add.items}}" as="o" hint-placeholder-count="6"><button type="button" role="menuitem" class="mm-optrow" onClick="{{o.pick}}" style="min-height: 56px"><span style="flex: 1"><span style="display: block">{{o.label}}</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">{{o.sub}}</span></span></button></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{comboOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 60">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cb-title" class="mm-drawer" onKeyDown="{{comboEsc}}" style="height: 75%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cb-title" class="mm-dtitle">{{cbd.title}}</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="{{cbd.ph}}" placeholder="{{cbd.ph}}" autoComplete="off" value="{{cbd.query}}" onChange="{{cbd.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cb-title" aria-multiselectable="{{cbd.multi}}" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 8px">
+<sc-for list="{{cbd.items}}" as="o" hint-placeholder-count="8"><sc-if value="{{o.head}}" hint-placeholder-val="{{false}}"><div class="mm-gh" role="presentation">{{o.label}}</div></sc-if><sc-if value="{{o.isOpt}}" hint-placeholder-val="{{true}}"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{o.sub}}</span></sc-if></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-if></sc-for>
+<sc-if value="{{cbd.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">{{cbd.empty}}</p></sc-if>
+</div>
+<sc-if value="{{cbd.isMulti}}" hint-placeholder-val="{{false}}"><div style="flex: none; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-primary" style="width: 100%" onClick="{{closeCombo}}">{{cbd.doneText}}</button></div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{gen.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{gen.close}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-g-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-g-title" class="mm-dtitle">Generate codes</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">They download as a CSV file.</p></div>
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field"><label class="mm-label" for="mm-gc">How many</label><input id="mm-gc" class="mm-input" inputMode="numeric" value="{{gen.count}}" onChange="{{gen.onCount}}"><p class="mm-hint">Up to 5,000 at a time.</p></div>
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-gp">Start with</label><input id="mm-gp" class="mm-input mm-mono" maxLength="10" placeholder="Optional" value="{{gen.prefix}}" onChange="{{gen.onPrefix}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-gu">Uses each</label><input id="mm-gu" class="mm-input" inputMode="numeric" value="{{gen.uses}}" onChange="{{gen.onUses}}"></div>
+</div>
+<p class="mm-hint mm-mono" style="margin-top: -10px">{{gen.sample}}</p>
+<sc-if value="{{gen.bad}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err" style="margin-top: -10px">Use 1 to 5,000 codes, up to 10 letters or digits to start, and at least 1 use each.</p></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{gen.close}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" disabled="{{gen.bad}}" onClick="{{gen.go}}">Generate and download</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="mm-toast" style="bottom: 76px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span></div>
+</sc-if>
+
+</div>
+</x-dc>

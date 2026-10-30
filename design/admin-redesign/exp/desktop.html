@@ -1,0 +1,223 @@
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px">
+<div style="min-width: 0">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Expenses</h1>
+<p class="mm-muted" style="margin: 2px 0 0">Rent, salaries, ads and everything else the store spends, by category.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-if value="{{isEntries}}" hint-placeholder-val="{{true}}">
+<a href="#" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 12v6"></path><path d="m15 15-3-3-3 3"></path></svg>Import</a>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline" aria-haspopup="menu" aria-expanded="{{ex.aria}}" disabled="{{ex.cant}}" onClick="{{ex.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{ex.open}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="Export" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 200px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{ex.xlsx}}">Excel (.xlsx)</button>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{ex.csv}}">CSV</button>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{primary}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>{{primaryText}}</button>
+</div>
+</div>
+
+<div role="tablist" aria-label="Expenses" class="mm-tabsbar" style="align-self: flex-start">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" class="mm-ptab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}</button></sc-for>
+</div>
+
+<sc-if value="{{isEntries}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{mo.prevAria}}" onClick="{{mo.prev}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+<h2 aria-live="polite" style="min-width: 150px; margin: 0; font-size: 16px; font-weight: 600; text-align: center">{{mo.label}}</h2>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{mo.nextAria}}" disabled="{{mo.isFuture}}" onClick="{{mo.next}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{mo.notCurrent}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" onClick="{{mo.toToday}}">This month</button></sc-if>
+</div>
+
+<sc-if value="{{sum.has}}" hint-placeholder-val="{{true}}">
+<section class="mm-card" aria-label="Spending by category" style="gap: 14px">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px">
+<p style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{sum.total}}</p>
+<p class="mm-muted" style="margin: 0">{{sum.count}}</p>
+<sc-if value="{{sum.hasVs}}" hint-placeholder-val="{{true}}"><p class="mm-muted" style="margin: 0 0 0 auto; font-size: 13px">{{sum.vs}}</p></sc-if>
+</div>
+<div style="position: relative">
+<div class="mm-stack" role="img" aria-label="Share of the month by category; the list below has the amounts.">
+<sc-for list="{{sum.bars}}" as="b" hint-placeholder-count="7"><span class="mm-seg" title="{{b.tip}}" onMouseEnter="{{b.hover}}" onMouseLeave="{{b.leave}}" onClick="{{b.pick}}" style="width: {{b.width}}; background: {{b.color}}; opacity: {{b.dim}}"></span></sc-for>
+</div>
+<sc-if value="{{tip.show}}" hint-placeholder-val="{{false}}"><div class="mm-tip" aria-hidden="true">{{tip.text}}</div></sc-if>
+</div>
+<ul class="mm-legend" aria-label="Categories this month">
+<sc-for list="{{sum.legend}}" as="l" hint-placeholder-count="7"><li><button type="button" class="mm-lgbtn" aria-pressed="{{l.on}}" aria-label="{{l.aria}}" onClick="{{l.pick}}" style="opacity: {{l.dim}}"><span class="mm-sw" aria-hidden="true" style="background: {{l.color}}"></span><span class="mm-trunc" style="flex: 1">{{l.name}}</span><span style="font-variant-numeric: tabular-nums; font-weight: 500">{{l.amount}}</span><span class="mm-muted" style="width: 36px; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums">{{l.pct}}</span></button></li></sc-for>
+</ul>
+</section>
+</sc-if>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="position: relative; width: 260px; max-width: 100%">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 10px; top: 8px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search paid to and notes" placeholder="Search paid to and notes" value="{{q}}" onChange="{{onQ}}" style="height: 32px; padding-left: 32px">
+</div>
+<div style="position: relative">
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" aria-expanded="{{cf.aria}}" onClick="{{cf.toggle}}" style="border-style: dashed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Category<sc-if value="{{cf.has}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><span class="mm-badge-sec">{{cf.label}}</span></sc-if></button>
+<sc-if value="{{cf.open}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close filter" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div class="mm-pop" role="dialog" aria-label="Filter by category" onKeyDown="{{escClose}}" style="top: 36px; width: 250px">
+<div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Find a category" placeholder="Category" autoComplete="off" autoFocus="{{true}}" value="{{cf.query}}" onChange="{{cf.onQuery}}"></div>
+<div role="listbox" aria-label="Category" class="mm-poplist" style="max-height: 280px">
+<sc-if value="{{cf.showAll}}" hint-placeholder-val="{{true}}"><button type="button" role="option" aria-selected="{{cf.allAria}}" class="mm-cmd-item" onClick="{{cf.pickAll}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{cf.allCheck}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg><span style="flex: 1">All categories</span></button><div role="separator" class="mm-sep"></div></sc-if>
+<sc-for list="{{cf.items}}" as="o" hint-placeholder-count="7"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg><span class="mm-sw" aria-hidden="true" style="background: {{o.color}}"></span><span style="flex: 1">{{o.label}}</span><span class="mm-code mm-muted">{{o.count}}</span></button></sc-for>
+<sc-if value="{{cf.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No category found.</p></sc-if>
+</div>
+<sc-if value="{{cf.has}}" hint-placeholder-val="{{false}}"><div role="separator" class="mm-sep" style="margin: 0"></div><div style="padding: 4px"><button type="button" class="mm-cmd-item" style="justify-content: center" onClick="{{cf.clear}}">Clear filter</button></div></sc-if>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" onClick="{{clearAll}}" style="padding: 0 8px">Reset<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-if>
+<sc-if value="{{hasFilterText}}" hint-placeholder-val="{{false}}"><span class="mm-muted" style="margin-left: auto; font-size: 13px">{{filterText}}</span></sc-if>
+</div>
+
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-egrid mm-thead" aria-hidden="true"><span>Date</span><span>Category</span><span>Paid to</span><span>Paid by</span><span>Receipt</span><span class="mm-num">Amount</span><span></span></div>
+<ul class="mm-rows" aria-label="Expenses" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+<li><div class="mm-egrid mm-row" style="min-height: 52px; padding-top: 6px; padding-bottom: 6px">
+<span class="mm-muted" style="font-variant-numeric: tabular-nums">{{r.date}}</span>
+<span style="display: flex; align-items: center; gap: 8px; min-width: 0"><span class="mm-sw" aria-hidden="true" style="background: {{r.color}}"></span><button type="button" class="mm-rowlink" aria-haspopup="dialog" aria-label="{{r.aria}}" onClick="{{r.edit}}">{{r.cat}}</button><sc-if value="{{r.isRec}}" hint-placeholder-val="{{false}}"><span class="mm-badge" title="Posted by a recurring expense"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>Recurring</span></sc-if></span>
+<span style="min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{r.payee}}</span><sc-if value="{{r.hasNote}}" hint-placeholder-val="{{false}}"><span class="mm-trunc mm-muted" style="font-size: 12px; line-height: 16px">{{r.note}}</span></sc-if></span>
+<span class="mm-muted">{{r.method}}</span>
+<span><sc-if value="{{r.hasReceipt}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-xs mm-above" aria-label="{{r.receiptAria}}" title="View the receipt" onClick="{{r.viewReceipt}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"></path></svg></button></sc-if></span>
+<span class="mm-num" style="font-weight: 500">{{r.amount}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" aria-expanded="{{r.menuExpanded}}" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 190px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<sc-if value="{{r.hasReceipt}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.viewReceipt}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"></path></svg>View the receipt</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{r.askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete</button>
+</div>
+</sc-if>
+</div>
+</div></li>
+</sc-for>
+</ul>
+<sc-if value="{{noRows}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><button type="button" class="mm-btn mm-outline" onClick="{{emptyDo}}">{{emptyAction}}</button></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isRecurring}}" hint-placeholder-val="{{false}}">
+<div class="mm-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg><div><p style="margin: 0; font-weight: 500">{{recSummary}}</p><p class="mm-muted" style="margin: 0">Each one posts itself early in the morning on its day. Changes apply from the next one.</p></div></div>
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-rgrid mm-thead" aria-hidden="true"><span>Expense</span><span>How often</span><span>Next</span><span>Paid by</span><span class="mm-num">Amount</span><span></span></div>
+<ul class="mm-rows" aria-label="Recurring expenses" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{recRows}}" as="r" hint-placeholder-count="6">
+<li><div class="mm-rgrid mm-row" style="min-height: 56px; padding-top: 6px; padding-bottom: 6px">
+<span style="display: flex; align-items: center; gap: 10px; min-width: 0"><span class="mm-sw" aria-hidden="true" style="background: {{r.color}}"></span><span style="min-width: 0; display: flex; flex-direction: column"><button type="button" class="mm-rowlink" aria-haspopup="dialog" onClick="{{r.edit}}">{{r.payee}}</button><span class="mm-muted" style="font-size: 12px; line-height: 16px">{{r.cat}}</span></span></span>
+<span>{{r.schedule}}</span>
+<span style="display: flex; align-items: center; gap: 6px; color: {{r.stateColor}}"><sc-if value="{{r.isOff}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg></sc-if>{{r.state}}</span>
+<span class="mm-muted">{{r.method}}</span>
+<span class="mm-num" style="font-weight: 500">{{r.amount}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" aria-expanded="{{r.menuExpanded}}" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 180px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.edit}}">Edit</button>
+<sc-if value="{{r.canPause}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.pause}}">Pause</button></sc-if>
+<sc-if value="{{r.canResume}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.resume}}">Resume</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{r.askDelete}}">Delete</button>
+</div>
+</sc-if>
+</div>
+</div></li>
+</sc-for>
+</ul>
+<sc-if value="{{noRecs}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">No recurring expenses yet.</p><button type="button" class="mm-btn mm-outline" onClick="{{primary}}">New recurring expense</button></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isCategories}}" hint-placeholder-val="{{false}}">
+<div style="width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 12px">
+<ul class="mm-plist" aria-label="Expense categories">
+<sc-for list="{{catRows}}" as="c" hint-placeholder-count="7"><li>
+<div class="mm-prow" style="position: relative; gap: 12px; padding: 8px 8px 8px 14px">
+<span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; background: {{c.color}}"></span>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" aria-label="{{c.aria}}" onClick="{{c.edit}}" style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: stretch; font-weight: 400"><span style="display: flex; align-items: baseline; gap: 8px; min-width: 0"><span class="mm-trunc" style="font-weight: 500">{{c.name}}</span><span class="mm-trunc mm-muted" lang="bn" style="font-size: 13px">{{c.bn}}</span></span><span class="mm-muted" style="font-size: 12px; line-height: 16px">{{c.month}}</span></button>
+<div class="mm-above" style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{c.menuAria}}" aria-haspopup="menu" aria-expanded="{{c.menuExpanded}}" onClick="{{c.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{c.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{c.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 180px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{c.edit}}">Edit</button>
+<button type="button" role="menuitem" class="mm-cmd-item" disabled="{{c.first}}" onClick="{{c.moveUp}}">Move up</button>
+<button type="button" role="menuitem" class="mm-cmd-item" disabled="{{c.last}}" onClick="{{c.moveDown}}">Move down</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{c.archive}}">Archive</button>
+</div>
+</sc-if>
+</div>
+</div>
+</li></sc-for>
+</ul>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Archived categories keep their expenses and reports; they just leave the list when you record one.</p>
+<sc-if value="{{hasArchived}}" hint-placeholder-val="{{true}}">
+<button type="button" class="mm-more" aria-expanded="{{archAria}}" onClick="{{toggleArch}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>{{archText}}</button>
+<sc-if value="{{archOpen}}" hint-placeholder-val="{{false}}"><ul class="mm-plist" aria-label="Archived categories"><sc-for list="{{archRows}}" as="c" hint-placeholder-count="1"><li><div class="mm-prow" style="gap: 12px; padding: 8px 8px 8px 14px"><span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; background: {{c.color}}; opacity: .5"></span><span style="flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px"><span class="mm-trunc mm-muted" style="font-weight: 500">{{c.name}}</span><span class="mm-trunc mm-muted" lang="bn" style="font-size: 13px">{{c.bn}}</span></span><button type="button" class="mm-btn mm-ghost" onClick="{{c.restore}}">Restore</button></div></li></sc-for></ul></sc-if>
+</sc-if>
+</div>
+</sc-if>
+
+</main>
+</div>
+
+@@EXPFORM@@
+
+<sc-if value="{{kf.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeCat}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-kf-title" aria-describedby="mm-kf-sub" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead"><h2 id="mm-kf-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{kf.title}}</h2><p id="mm-kf-sub" class="mm-muted" style="margin: 0">{{kf.sub}}</p></div>
+<div class="mm-pbody">
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 32px"><label class="mm-label" for="mm-kf-name" style="margin: 0">Name</label><div role="tablist" aria-label="Language" class="mm-tabs"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{kf.bnSel}}" onClick="{{kf.pickBn}}">বাংলা<sc-if value="{{kf.bnNeeded}}" hint-placeholder-val="{{false}}"><span class="mm-needed" lang="en">Needed</span></sc-if></button><button type="button" role="tab" class="mm-tab" aria-selected="{{kf.enSel}}" onClick="{{kf.pickEn}}">English<sc-if value="{{kf.enNeeded}}" hint-placeholder-val="{{true}}"><span class="mm-needed">Needed</span></sc-if></button></div></div>
+<input id="mm-kf-name" class="mm-input" maxLength="100" lang="{{kf.lang}}" value="{{kf.value}}" onChange="{{kf.onValue}}" placeholder="{{kf.ph}}" autoFocus="{{true}}">
+<p class="mm-hint">{{kf.hint}}</p>
+</div>
+</div>
+<div class="mm-pfoot">
+<sc-if value="{{kf.canArchive}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{kf.archive}}" style="margin-left: -8px; padding: 0 8px">Archive</button></sc-if>
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeCat}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" disabled="{{kf.cantSave}}" onClick="{{kf.save}}">{{kf.saveText}}</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeCat}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+
+@@RECFORM@@
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-dialog" style="max-width: 448px">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{confirmTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
