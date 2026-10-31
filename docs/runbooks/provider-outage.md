@@ -11,6 +11,9 @@ The stores keep selling through most outages. Find the provider in the table, th
 | **Brevo** | Shopper email from the store domain | Everything else | As Resend |
 | **Neon** | Everything that reads the database: admin, checkout, uncached store pages | Cached store pages | Check neonstatus.com. Nothing to do but wait; check `/health/deep` after |
 | **Cloudflare** | Everything | — | Check cloudflarestatus.com |
+| **WhatsApp Cloud API** (a store's) | Order updates and confirmation buttons by WhatsApp | Each update's SMS goes instead: at once when Meta refuses, or 10 minutes later when Meta says nothing (phase-9-plan §3.2.2); email; the tracking page | Nothing in code. The message log shows the failures. A template Meta paused or disabled shows on Settings → Facebook and Instagram, and its updates go by SMS until it is approved again |
+| **Meta Conversions API** (a store's pixel) | Purchases reported from the server | The browser pixel, for shoppers who accepted cookies | Nothing. A failure Meta may accept later is retried with the event; a refused token shows on Settings → Facebook and Instagram until the owner pastes a new one. Meta accepts events up to 7 days old |
+| **Meta catalog** (Commerce Manager fetching the feed) | New prices and stock in Facebook and Instagram shops and ads | The feed itself keeps building; Meta catches up at its next fetch | Nothing. If a feed build fails, the error shows on the settings page; **Rebuild now** tries again |
 | **A courier** (Steadfast, Pathao, RedX) | Booking with it, and its status updates | Bookings with another connected courier; manual shipments; parcels already booked are picked up as usual | Nothing in code. A booking that got no answer is marked *unsure* on the order: check the courier's panel before booking again. Updates that failed come back with the courier's retries, or the next poll (13:17 and 19:17 in Dhaka); **Ask now** on the order asks at once (phase-7-plan §3.5) |
 
 ## Afterwards

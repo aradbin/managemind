@@ -618,12 +618,17 @@ Each of these starts only when pilot clients need it, in this default order; the
 - [x] Reports: sales by day and product, gross profit per order and product (cost snapshot on order lines), net profit after expenses, stock valuation, supplier dues, COD outstanding; CSV and Excel export. *A sale counts on its delivery day without VAT; the profit statement sits beside the period before it, and every report table and back-office list exports to Excel and CSV (phase-8-plan §3.8).*
 - [x] Reports read from summary tables refreshed by cron to keep queries light. *The same SQL fills them each night and answers for today, so the summary and the live figures can't disagree; days whose courier fees arrive late are redone (phase-8-plan §3.9).*
 
-**Phase 9 — Meta and messaging (about 4 weeks)**
+**Phase 9 — Meta and messaging (about 4 weeks; widened to five stages, about 7)**
 
-- [ ] "New order from chat" shortcuts for Messenger and WhatsApp, built on the Phase 4 manual order screen: start an order from a conversation with the customer's details prefilled, and send payment links by chat.
-- [ ] Per-tenant product feed for Meta Commerce Manager (catalog for Facebook and Instagram shops and ads), cached in R2.
-- [ ] Meta Conversions API (server-side) purchase events, deduplicated against the browser pixel added in Phase 3.
-- [ ] WhatsApp Cloud API order notifications through the same notification provider interface, using approved templates.
+*The owner asked for the highest integration Meta allows. The phase plan splits it into five stages: Link, Notify, Connect (our own Meta app), Converse (chats in the admin) and Automate. Stages 1 and 2 are built (phase-9-report, PR #91); stages 3–5 wait on Meta's business verification, Tech Provider enrolment and app review.*
+
+- [x] "New order from chat" shortcuts for Messenger and WhatsApp, built on the Phase 4 manual order screen: start an order from a conversation with the customer's details prefilled, and send payment links by chat. *Paste a chat (or share one on Android) fills the phone, customer and products; Send by chat writes the summary, payment or tracking link in the order's language. From a conversation itself in stage 4.*
+- [x] Per-tenant product feed for Meta Commerce Manager (catalog for Facebook and Instagram shops and ads), cached in R2. *One row per variant, rebuilt 15 minutes after a change, behind a key; changes reach Meta within minutes through the batch API in stage 3.*
+- [x] Meta Conversions API (server-side) purchase events, deduplicated against the browser pixel added in Phase 3. *With the shopper's consent only; at placement or, as the store chooses, at confirmation; an optional Delivered event.*
+- [x] WhatsApp Cloud API order notifications through the same notification provider interface, using approved templates. *With the store's own Meta app until stage 3; WhatsApp first and SMS only if it fails; Confirm and Cancel buttons for COD.*
+- [ ] Stage 3: one-click connection through our own Meta app (Embedded Signup, Facebook Login for Business), one webhook for every store, catalog changes through the batch API.
+- [ ] Stage 4: WhatsApp, Messenger and Instagram chats in the admin, with the customer's score and orders beside each, and a WhatsApp cart turned into an order.
+- [ ] Stage 5: purchases from click-to-message ads reported to Meta, order status answered in WhatsApp, opt-in reminders, comment replies.
 
 **Phase 10 — Growth (as triggered)**
 
@@ -763,7 +768,9 @@ Kept for the life of the store: orders, payments, refunds, returns, the stock le
 | Delivered outbox events | 7 days |
 | Abandoned carts | 30 days |
 | Incomplete orders (also better for privacy) | 30 days |
-| Email and SMS delivery logs | 90 days |
+| An order's ad attribution (Meta's cookies, the landing's UTM fields), kept only with consent | 30 days |
+| Email, SMS and WhatsApp delivery logs | 90 days |
+| An order's IP address and browser | 90 days |
 
 Archiving is not built now. The audit log and status history are append-only and indexed by time, so they can be moved to compressed files in R2 later; that archiving is built only when database storage passes 60%.
 
