@@ -171,7 +171,8 @@ test('orders, promotions and accounts', async ({
     const results = cart.locator('[aria-live=polite] ul li');
     await expect(results.filter({ hasText: 'ই২ই ৳৫০ ছাড়' })).toContainText('−');
     await expectAccessible(page, 'promotion editor');
-    await page.getByRole('button', { name: m('action.save') }).click();
+    // A new promotion's save bar says what it makes (design rule 7).
+    await page.getByRole('button', { name: m('promo.create') }).click();
     await expect(page.getByRole('heading', { name: 'ই২ই ৳৫০ ছাড়', level: 1 })).toBeVisible();
   });
 

@@ -67,6 +67,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'product.vatCategory': 'ভ্যাট',
   'product.vatStandard': 'সাধারণ হার',
   'product.unsaved': 'পরিবর্তন সেভ হয়নি',
+  'product.discard': 'বাতিল করুন',
   'product.save': 'পণ্য সংরক্ষণ করুন',
   'product.saved': 'পণ্য সংরক্ষিত হয়েছে।',
   'product.archive': 'আর্কাইভ করুন',
@@ -200,6 +201,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
 
   'collections.intro': 'কালেকশন দোকানের পাতার জন্য পণ্য বাছাই করে: হাতে, অথবা নিয়ম দিয়ে।',
   'collections.new': 'নতুন কালেকশন',
+  'collections.create': 'কালেকশন তৈরি করুন',
   'collections.search': 'কালেকশন খুঁজুন',
   'collections.all': 'সব',
   'collections.noMatches': 'মেলে এমন কোনো কালেকশন নেই।',

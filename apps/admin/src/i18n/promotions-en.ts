@@ -3,6 +3,9 @@ export const promotionsEn = {
   'promo.intro':
     'Discounts that apply by themselves, or with a code. One engine prices them everywhere.',
   'promo.new': 'New promotion',
+  'promo.create': 'Create promotion',
+  'promo.unsaved': 'Unsaved changes',
+  'promo.discard': 'Discard',
   'promo.untitled': 'Untitled promotion',
   'promo.search': 'Search by title or code',
   'promo.pause': 'Pause',

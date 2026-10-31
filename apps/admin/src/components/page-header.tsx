@@ -30,7 +30,9 @@ export function PageHeader({
       | '/reports'
       | '/inventory/purchase-orders'
       | '/inventory/suppliers'
-      | '/inventory/counts';
+      | '/inventory/counts'
+      | '/catalog/collections'
+      | '/promotions';
     label: string;
   };
 }) {

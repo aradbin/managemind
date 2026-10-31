@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowDown, ArrowUp, Filter, Hand, Plus, SquarePen, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -17,6 +16,7 @@ import { RowMenu, RowMenuItem, SearchInput, StageTabs } from '../components/list
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -433,6 +433,7 @@ function ConditionRow({
 export function CollectionEditorPage({ id }: { id: string }) {
   const { t } = useLocale();
   const isNew = id === 'new';
+  const [resets, setResets] = useState(0);
   const collection = useQuery({ ...collectionsQuery, enabled: !isNew });
   const store = useQuery(storeSettingsQuery);
   if (store.isPending || (!isNew && collection.isPending))
@@ -441,9 +442,11 @@ export function CollectionEditorPage({ id }: { id: string }) {
   if (!isNew && !found) return <Notice tone="error">{t('collections.notFound')}</Notice>;
   return (
     <CollectionEditor
-      key={id}
+      // Discard starts the editor again from what was saved.
+      key={`${id}-${resets}`}
       collection={found ?? null}
       defaultLang={store.data?.defaultLocale ?? 'bn'}
+      onDiscard={() => setResets((n) => n + 1)}
     />
   );
 }
@@ -451,9 +454,11 @@ export function CollectionEditorPage({ id }: { id: string }) {
 function CollectionEditor({
   collection,
   defaultLang,
+  onDiscard,
 }: {
   collection: Collection | null;
   defaultLang: Lang;
+  onDiscard: () => void;
 }) {
   const { t, locale } = useLocale();
   const toast = useToast();
@@ -473,6 +478,8 @@ function CollectionEditor({
     ((collection?.rules as { conditions?: Condition[] } | null)?.conditions ?? []) as Condition[],
   );
   const [deleting, setDeleting] = useState(false);
+  /** Anything typed, picked or added in the form since it was saved. */
+  const [changed, setChanged] = useState(false);
   const other = otherLang(defaultLang);
   const ready = conditions.length > 0 && conditions.every(complete);
 
@@ -518,6 +525,7 @@ function CollectionEditor({
     },
     onSuccess: async (saved) => {
       await queryClient.invalidateQueries({ queryKey: collectionsQuery.queryKey });
+      setChanged(false);
       toast(t('collections.saved'));
       if (!collection)
         await navigate({ to: '/catalog/collections/$id', params: { id: saved.id }, replace: true });
@@ -538,28 +546,33 @@ function CollectionEditor({
   });
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Breadcrumb to="/catalog/collections" label={t('catalog.collections')} />
-        <PageHeader
-          className="mb-0"
-          title={
-            collection ? (pick(collection.translations, locale)?.name ?? '—') : t('collections.new')
-          }
-          actions={
-            collection &&
-            canWrite && (
-              <Button variant="ghost" onClick={() => setDeleting(true)}>
-                <Trash2 aria-hidden className="size-4" />
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <PageHeader
+        className="mb-0"
+        parent={{ to: '/catalog/collections', label: t('catalog.collections') }}
+        title={
+          collection ? (pick(collection.translations, locale)?.name ?? '—') : t('collections.new')
+        }
+        actions={
+          collection &&
+          canWrite && (
+            <RowMenu label={pick(collection.translations, locale)?.name ?? '—'}>
+              <RowMenuItem danger onSelect={() => setDeleting(true)}>
+                <Trash2 aria-hidden />
                 {t('action.delete')}
-              </Button>
-            )
-          }
-        />
-      </div>
+              </RowMenuItem>
+            </RowMenu>
+          )
+        }
+      />
       <fieldset
         disabled={!canWrite}
-        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        onChangeCapture={() => setChanged(true)}
+        onInputCapture={() => setChanged(true)}
+        onClickCapture={(e) => {
+          if ((e.target as HTMLElement).closest('button')) setChanged(true);
+        }}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:p-5"
       >
         {[defaultLang, other].map((l) => (
           <div key={l} className="flex flex-col gap-3">
@@ -656,16 +669,16 @@ function CollectionEditor({
         )}
       </fieldset>
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-      {canWrite && (
-        <div>
-          <Button
-            disabled={save.isPending || !names[defaultLang].trim() || (kind === 'rule' && !ready)}
-            onClick={() => save.mutate()}
-          >
-            {t('action.save')}
-          </Button>
-        </div>
-      )}
+      <SaveBar
+        show={canWrite && (!collection || changed)}
+        message={collection ? t('product.unsaved') : undefined}
+        discardLabel={collection ? t('product.discard') : t('action.cancel')}
+        onDiscard={() => (collection ? onDiscard() : navigate({ to: '/catalog/collections' }))}
+        saveLabel={collection ? t('action.save') : t('collections.create')}
+        busy={save.isPending}
+        saveDisabled={!names[defaultLang].trim() || (kind === 'rule' && !ready)}
+        onSave={() => save.mutate()}
+      />
       {collection && kind === 'rule' && (
         <RulePreview collectionId={collection.id} conditions={ready ? conditions : null} />
       )}

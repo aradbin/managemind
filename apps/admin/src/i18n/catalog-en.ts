@@ -66,6 +66,7 @@ export const catalogEn = {
   'product.vatCategory': 'VAT',
   'product.vatStandard': 'Standard rate',
   'product.unsaved': 'Unsaved changes',
+  'product.discard': 'Discard',
   'product.save': 'Save product',
   'product.saved': 'Product saved.',
   'product.archive': 'Archive',
@@ -202,6 +203,7 @@ export const catalogEn = {
 
   'collections.intro': 'Collections pick products for the store’s pages: by hand, or by rules.',
   'collections.new': 'New collection',
+  'collections.create': 'Create collection',
   'collections.search': 'Search collections',
   'collections.all': 'All',
   'collections.noMatches': 'No collections match.',

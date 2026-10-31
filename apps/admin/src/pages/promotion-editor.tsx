@@ -6,13 +6,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { X } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { Field } from '../components/field';
 import { ItemSelection, useSelectionNames } from '../components/item-selection';
 import { Notice } from '../components/notice';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker } from '../components/place-picker';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -64,6 +65,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
   const canWrite = usePermission('promotions.write');
   const zones = useQuery(zonesQuery);
   const [d, setD] = useState<Draft>(() => (promotion ? fromPromotion(promotion) : newDraft()));
+  // What was last saved, to tell whether anything changed since.
+  const [saved, setSaved] = useState<Draft>(d);
+  const changed = JSON.stringify(d) !== JSON.stringify(saved);
+  const formId = useId();
   const [showProblems, setShowProblems] = useState(false);
   const set = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }));
   const built = toInput(d);
@@ -84,11 +89,12 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
           )
         : unwrap(await api.POST('/v1/admin/promotions', { body: built.input as never }));
     },
-    onSuccess: async (saved) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      queryClient.setQueryData(['promotion', saved.id], saved);
+      queryClient.setQueryData(['promotion', result.id], result);
+      setSaved(d);
       toast(t('account.saved'));
-      if (!promotion) navigate({ to: '/promotions/$id', params: { id: saved.id } });
+      if (!promotion) navigate({ to: '/promotions/$id', params: { id: result.id } });
     },
   });
   const submit = () => {
@@ -105,9 +111,9 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
 
   return (
     <div className="flex max-w-6xl flex-col gap-4">
-      <Breadcrumb to="/promotions" label={t('nav.promotions')} />
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <BackLink to="/promotions" label={t('nav.promotions')} />
+        <h1 className="text-xl font-semibold tracking-tight">
           {promotion ? pickText(promotion.title, locale) || t('promo.untitled') : t('promo.new')}
         </h1>
         {promotion && <StateChip state={promotion.state} />}
@@ -134,6 +140,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
       </p>
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <form
+          id={formId}
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
@@ -479,13 +486,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
             {save.error && !(save.error instanceof Error && save.error.message === 'invalid') && (
               <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>
             )}
-            {canWrite && (
-              <div>
-                <Button type="submit" disabled={save.isPending}>
-                  {t('action.save')}
-                </Button>
-              </div>
-            )}
           </fieldset>
         </form>
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
@@ -493,6 +493,22 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
           {promotion?.kind === 'code' && <Codes promotion={promotion} />}
         </aside>
       </div>
+      <SaveBar
+        show={canWrite && (!promotion || changed)}
+        message={promotion ? t('promo.unsaved') : undefined}
+        discardLabel={promotion ? t('promo.discard') : t('action.cancel')}
+        onDiscard={() => {
+          if (!promotion) {
+            navigate({ to: '/promotions' });
+            return;
+          }
+          setD(saved);
+          setShowProblems(false);
+        }}
+        saveLabel={promotion ? t('action.save') : t('promo.create')}
+        busy={save.isPending}
+        form={formId}
+      />
     </div>
   );
 }
