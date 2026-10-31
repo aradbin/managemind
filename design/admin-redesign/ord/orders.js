@@ -81,7 +81,7 @@ class Component extends DCLogic {
     var pend = picked.filter(function (o) { return o.status === 'pending'; });
     var ship = picked.filter(canShip);
     vals.bar = {
-      show: picked.length > 0, hide: picked.length === 0, label: plural(picked.length, 'order', 'orders') + ' selected',
+      show: picked.length > 0, label: plural(picked.length, 'order', 'orders') + ' selected',
       canConfirm: pend.length > 0, confirmText: 'Confirm ' + pend.length + ' pending', canShip: ship.length > 0,
       confirm: function () { up({ sel: [], orders: orders.map(function (x) { return pend.indexOf(x) !== -1 ? Object.assign({}, x, { status: 'confirmed', conf: { via: 'staff' } }) : x; }), toast: toast(plural(pend.length, 'order is', 'orders are') + ' confirmed.') }); },
       book: function () { up({ book: true, courier: null }); },

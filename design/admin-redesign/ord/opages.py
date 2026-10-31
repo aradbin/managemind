@@ -65,16 +65,7 @@ def orders():
         datebar,
         '<div style="border: 1px solid var(--border); border-radius: 10px">',
         '<div class="mm-ogrid mm-thead"><span>' + checkbox('all', extra='') .replace('aria-checked="{{all.aria}}"', 'aria-checked="{{all.aria}}" aria-label="Select all"').replace('<sc-if value="{{all.on}}" hint-placeholder-val="{{false}}">' + CHECK + '</sc-if>', '<sc-if value="{{all.on}}" hint-placeholder-val="{{false}}">' + CHECK + '</sc-if><sc-if value="{{all.some}}" hint-placeholder-val="{{false}}">' + svg(ICONS['minus'], 14, 'color: var(--primary-foreground)').replace('stroke-width="2"', 'stroke-width="3"') + '</sc-if>') + '</span>'
-        '<sc-if value="{{bar.hide}}" hint-placeholder-val="{{true}}"><span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></sc-if>',
-        # Selecting rows swaps the headings for what can be done to them, right above the rows.
-        '<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}"><div role="region" aria-label="Selected orders" class="mm-bulk">',
-        '<span role="status" style="font-weight: 500; white-space: nowrap; color: var(--foreground)">{{bar.label}}</span><span aria-hidden="true" class="mm-bulk-sep"></span>',
-        '<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.confirm}}">' + svg(ICONS['check']) + '{{bar.confirmText}}</button></sc-if>',
-        '<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.book}}">' + svg(ICONS['truck']) + 'Book with a courier</button></sc-if>',
-        '<button type="button" class="mm-btn mm-ghost" onClick="{{bar.invoices}}">' + svg(ICONS['printer']) + 'Invoices</button>',
-        '<button type="button" class="mm-btn mm-ghost" onClick="{{bar.slips}}">' + svg(ICONS['file']) + 'Packing slips</button>',
-        '<button type="button" class="mm-btn mm-ghost" style="margin-left: auto" onClick="{{bar.clear}}">Clear</button>',
-        '</div></sc-if></div>',
+        '<span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></div>',
         OUL % 'Orders',
         '<sc-for list="{{rows}}" as="r" hint-placeholder-count="10"><li><div class="mm-ogrid mm-row" style="min-height: 56px">',
         '<span>' + checkbox('r.sel', 'r.selAria', '; position: relative; z-index: 2') + '</span>',
@@ -89,7 +80,15 @@ def orders():
         '</div></li></sc-for>',
         '</ul>',
         '<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">' + empty_block('{{emptyText}}', 'Reset filters') + '</sc-if>',
-        '</div>']) + DEND
+        '</div>',
+        '<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}">\n<div role="region" aria-label="Selected orders" class="mm-bar">',
+        '<span role="status" style="font-weight: 500; white-space: nowrap">{{bar.label}}</span><span aria-hidden="true" class="mm-bar-sep"></span>',
+        '<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.confirm}}">' + svg(ICONS['check']) + '{{bar.confirmText}}</button></sc-if>',
+        '<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.book}}">' + svg(ICONS['truck']) + 'Book with a courier</button></sc-if>',
+        '<button type="button" class="mm-btn mm-inv" onClick="{{bar.invoices}}">' + svg(ICONS['printer']) + 'Invoices</button>',
+        '<button type="button" class="mm-btn mm-inv" onClick="{{bar.slips}}">' + svg(ICONS['file']) + 'Packing slips</button>',
+        '<span aria-hidden="true" class="mm-bar-sep"></span><button type="button" class="mm-btn mm-inv" onClick="{{bar.clear}}">Clear</button>',
+        '</div>\n</sc-if>']) + DEND
     book_body = '\n'.join([
         '<div class="mm-field" style="gap: 0"><p id="mm-bk-c" class="mm-label" style="margin: 0 0 8px">Courier</p>' + radio_list('bk.couriers', 'mm-bk-c', var='cr', count=3) + '</div>',
         '<div class="mm-field" style="gap: 0"><p class="mm-label" style="margin: 0 0 4px">Orders</p><ul class="mm-mlist"><sc-for list="{{bk.lines}}" as="bl" hint-placeholder-count="2"><li style="flex-direction: row; align-items: center; gap: 10px"><span class="mm-mono" style="font-weight: 600">{{bl.n}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{bl.name}}</span><span class="mm-trunc mm-muted" style="font-size: 12px">{{bl.area}}</span></span><span style="font-size: 13px; font-variant-numeric: tabular-nums">{{bl.cod}}</span></li></sc-for></ul></div>',

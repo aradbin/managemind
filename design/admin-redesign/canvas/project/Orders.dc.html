@@ -256,9 +256,6 @@ body{margin:0}
 .mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
 @keyframes mm-pulse{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
-.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
-.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
-.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -424,15 +421,7 @@ body{margin:0}
 <span class="mm-muted" style="margin-left: auto; font-size: 13px; font-variant-numeric: tabular-nums">{{totalText}}</span>
 </div>
 <div style="border: 1px solid var(--border); border-radius: 10px">
-<div class="mm-ogrid mm-thead"><span><button type="button" role="checkbox" class="mm-check" aria-checked="{{all.aria}}" aria-label="Select all" onClick="{{all.toggle}}" style="background: {{all.box}}; border-color: {{all.edge}}"><sc-if value="{{all.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{all.some}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M5 12h14"></path></svg></sc-if></button></span><sc-if value="{{bar.hide}}" hint-placeholder-val="{{true}}"><span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></sc-if>
-<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}"><div role="region" aria-label="Selected orders" class="mm-bulk">
-<span role="status" style="font-weight: 500; white-space: nowrap; color: var(--foreground)">{{bar.label}}</span><span aria-hidden="true" class="mm-bulk-sep"></span>
-<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.confirm}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>{{bar.confirmText}}</button></sc-if>
-<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.book}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>Book with a courier</button></sc-if>
-<button type="button" class="mm-btn mm-ghost" onClick="{{bar.invoices}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>Invoices</button>
-<button type="button" class="mm-btn mm-ghost" onClick="{{bar.slips}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>Packing slips</button>
-<button type="button" class="mm-btn mm-ghost" style="margin-left: auto" onClick="{{bar.clear}}">Clear</button>
-</div></sc-if></div>
+<div class="mm-ogrid mm-thead"><span><button type="button" role="checkbox" class="mm-check" aria-checked="{{all.aria}}" aria-label="Select all" onClick="{{all.toggle}}" style="background: {{all.box}}; border-color: {{all.edge}}"><sc-if value="{{all.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{all.some}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M5 12h14"></path></svg></sc-if></button></span><span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></div>
 <ul aria-label="Orders" style="list-style: none; margin: 0; padding: 0">
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="10"><li><div class="mm-ogrid mm-row" style="min-height: 56px">
 <span><button type="button" role="checkbox" class="mm-check" aria-checked="{{r.sel.aria}}" aria-label="{{r.selAria}}" onClick="{{r.sel.toggle}}" style="background: {{r.sel.box}}; border-color: {{r.sel.edge}}; position: relative; z-index: 2"><sc-if value="{{r.sel.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--primary-foreground)"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></span>
@@ -461,6 +450,16 @@ body{margin:0}
 </ul>
 <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{hasFilters}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{clearAll}}">Reset filters</button></sc-if></div></sc-if>
 </div>
+<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}">
+<div role="region" aria-label="Selected orders" class="mm-bar">
+<span role="status" style="font-weight: 500; white-space: nowrap">{{bar.label}}</span><span aria-hidden="true" class="mm-bar-sep"></span>
+<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.confirm}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>{{bar.confirmText}}</button></sc-if>
+<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.book}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>Book with a courier</button></sc-if>
+<button type="button" class="mm-btn mm-inv" onClick="{{bar.invoices}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>Invoices</button>
+<button type="button" class="mm-btn mm-inv" onClick="{{bar.slips}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>Packing slips</button>
+<span aria-hidden="true" class="mm-bar-sep"></span><button type="button" class="mm-btn mm-inv" onClick="{{bar.clear}}">Clear</button>
+</div>
+</sc-if>
 </main>
 </div>
 <sc-if value="{{bk.open}}" hint-placeholder-val="{{false}}">
@@ -837,7 +836,7 @@ class Component extends DCLogic {
     var pend = picked.filter(function (o) { return o.status === 'pending'; });
     var ship = picked.filter(canShip);
     vals.bar = {
-      show: picked.length > 0, hide: picked.length === 0, label: plural(picked.length, 'order', 'orders') + ' selected',
+      show: picked.length > 0, label: plural(picked.length, 'order', 'orders') + ' selected',
       canConfirm: pend.length > 0, confirmText: 'Confirm ' + pend.length + ' pending', canShip: ship.length > 0,
       confirm: function () { up({ sel: [], orders: orders.map(function (x) { return pend.indexOf(x) !== -1 ? Object.assign({}, x, { status: 'confirmed', conf: { via: 'staff' } }) : x; }), toast: toast(plural(pend.length, 'order is', 'orders are') + ' confirmed.') }); },
       book: function () { up({ book: true, courier: null }); },
