@@ -1,6 +1,6 @@
 # ADR 0033: The admin on shadcn/ui's neutral theme, one sidebar that lists every page, no section tabs
 
-- Status: Accepted (step 1 of the build: the frame and the shared parts)
+- Status: Accepted (step 1: the frame and the shared parts; step 2: the list pattern, on Products and Orders)
 - Date: 2026-10-31
 - Design: the canvas in `design/admin-redesign/` (desktop and phone boards for every admin page, and its "Design rules" board). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/components/nav.tsx`, `apps/admin/src/routes/_shell.tsx`, `apps/admin/src/routes/_shell/more.tsx`
 - Amends: [ADR 0029](0029-admin-redesign.md) §1 (colours), §2 (sizes), §3 (status chips), §5 (the shell)
@@ -47,9 +47,16 @@ The build comes in steps. This first step changes what every page shares, so eve
 
 - The sign-in JavaScript grows by about 2 KiB gzip (137 to 139 KiB of the 150 KiB budget), for the sidebar's areas and the Create menu.
 - Area and page names in the navigation live in the base messages (`nav.*`), because the sidebar and Menu show an area's pages before that area's own messages load.
+- Step 2 built the list pattern once (`components/list-tools.tsx`, `components/data-list.tsx`) and put Products and Orders on it:
+  - stage tabs with counts where Home's numbers know them;
+  - dashed filter buttons whose list has a search box and "Clear filter", and one Filters drawer on phones;
+  - rows that open the record from anywhere, a ⋯ menu per row, and the selection bar at the bottom of the screen;
+  - phone lists as one card of divided rows.
+
+  The API takes one value per filter, so each filter's list picks one (the boards draw several). No API gives a count per choice, so the lists show none. An order stage that no tab shows, such as a link from Home to failed deliveries, reads as a "Status: …" button that removes it.
 - Still to build, page by page, from the boards:
-  - status tabs and dashed "+ Filter" buttons in list toolbars, and searchable selects in place of native ones;
+  - the list pattern on the other lists (customers, promotions, expenses, inventory, returns), and searchable selects in place of native ones in forms;
   - side panels for customers, addresses, expenses and categories;
-  - save bars on full-page forms, and the bulk-action bar in the page row;
+  - save bars on full-page forms;
   - the bilingual name field.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.

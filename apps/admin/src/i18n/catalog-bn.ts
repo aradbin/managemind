@@ -30,6 +30,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'products.empty': 'এখনও কোনো পণ্য নেই। একটি যোগ করুন, অথবা স্প্রেডশিট ইমপোর্ট করুন।',
   'products.noMatches': 'এই ফিল্টারে কোনো পণ্য মেলেনি।',
   'products.select': '{title} বাছাই করুন',
+  'products.editPrices': 'দাম বদলান',
   'products.bulkEdit': 'দাম বদলান ({count})',
   'products.bulkTitle': 'দাম বদলান',
   'products.bulkPercent': 'সব দাম শতাংশ হারে বদলান',

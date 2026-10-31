@@ -1,13 +1,23 @@
-// The product list (phase-2-plan §7, PR 9): search and filters, cards on
-// phones and a table from md, and selection for a bulk price edit.
+// The product list (phase-2-plan §7, PR 9; ADR 0033): status tabs, search
+// and filter buttons, rows on phones and a table from md that open the
+// product, and selection for a bulk price edit in the selection bar.
 
 import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
 import { useInfiniteQuery, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { ImageOff, Plus } from 'lucide-react';
+import { ImageOff, Plus, Search, SquarePen, Tag, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import {
+  barAction,
+  FilterButtons,
+  type FilterDef,
+  RowMenu,
+  RowMenuItem,
+  SelectionBar,
+  StageTabs,
+} from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -36,8 +46,7 @@ import { ExportButton } from './export';
 
 export type ProductSearch = ProductFilters;
 
-const selectClass =
-  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
+const STATUSES = ['active', 'draft', 'archived'] as const;
 
 export function ProductsPage() {
   const { t, locale } = useLocale();
@@ -47,7 +56,8 @@ export function ProductsPage() {
   const canStock = usePermission('inventory.read');
   const [q, setQ] = useState(search.q ?? '');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [bulk, setBulk] = useState(false);
+  /** The products whose prices are being edited: the selection, or one row's. */
+  const [bulk, setBulk] = useState<string[]>();
 
   const setFilter = (patch: Partial<ProductSearch>) =>
     navigate({
@@ -75,6 +85,7 @@ export function ProductsPage() {
   const attributes = useQuery(attributesQuery);
   const brand = attributes.data?.find((a) => a.key === 'brand');
   const items = useMemo(() => products.data?.pages.flatMap((p) => p.items) ?? [], [products.data]);
+  const title = (p: ProductSummary) => pick(p.titles, locale) ?? t('product.untitled');
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -83,44 +94,78 @@ export function ProductsPage() {
       else next.add(id);
       return next;
     });
+  const allSelected = items.length > 0 && items.every((p) => selected.has(p.id));
+
+  const filters: FilterDef[] = [
+    {
+      key: 'category',
+      label: t('catalog.category'),
+      value: search.categoryId,
+      options: categoryOptions(categories.data ?? [], locale).map((c) => ({
+        value: c.id,
+        label: c.label,
+      })),
+      onChange: (v) => setFilter({ categoryId: v }),
+    },
+    ...(brand
+      ? [
+          {
+            key: 'brand',
+            label: pick(brand.name, locale) ?? t('attribute.brand'),
+            value: search.brandValueId,
+            options: brand.values.map((v) => ({ value: v.id, label: pick(v.label, locale) ?? '' })),
+            onChange: (v: string | undefined) => setFilter({ brandValueId: v }),
+          },
+        ]
+      : []),
+  ];
+  const filtered = Boolean(
+    search.q || search.categoryId || search.brandValueId || search.tag || search.lowStock,
+  );
+  const reset = () => {
+    setQ('');
+    setFilter({
+      q: undefined,
+      categoryId: undefined,
+      brandValueId: undefined,
+      tag: undefined,
+      lowStock: undefined,
+    });
+  };
 
   const columns: Column<ProductSummary>[] = [
     {
       header: t('product.title'),
       cell: (p) => (
         <span className="flex items-center gap-3">
-          {canWrite && (
-            <input
-              type="checkbox"
-              className="size-5 shrink-0"
-              aria-label={t('products.select', { title: pick(p.titles, locale) ?? '' })}
-              checked={selected.has(p.id)}
-              onChange={() => toggle(p.id)}
-            />
-          )}
-          <Thumbnail file={p.imageFile} />
+          <Thumbnail file={p.imageFile} size="size-8" />
           <Link
             to="/products/$id"
             params={{ id: p.id }}
-            className="font-medium underline-offset-2 hover:underline"
+            className="truncate font-medium underline-offset-2 hover:underline"
           >
-            {pick(p.titles, locale) ?? t('product.untitled')}
+            {title(p)}
           </Link>
         </span>
       ),
     },
     { header: t('product.status'), cell: (p) => <StatusBadge status={p.status} /> },
-    { header: t('product.price'), cell: (p) => formatRange(p.minPrice, p.maxPrice, locale) },
-    { header: t('product.variants'), cell: (p) => p.variantCount },
+    {
+      header: t('product.price'),
+      numeric: true,
+      cell: (p) => formatRange(p.minPrice, p.maxPrice, locale),
+    },
+    { header: t('product.variants'), numeric: true, cell: (p) => p.variantCount },
     ...(canStock
       ? [
           {
             header: t('product.stock'),
+            numeric: true,
             cell: (p: ProductSummary) =>
               p.available === null || p.available === undefined ? (
                 '—'
               ) : (
-                <span className={p.lowStock ? 'font-semibold text-danger' : undefined}>
+                <span className={p.lowStock ? 'font-medium text-danger' : undefined}>
                   {p.available}
                   {p.lowStock && <span className="sr-only"> ({t('inventory.low')})</span>}
                 </span>
@@ -131,21 +176,17 @@ export function ProductsPage() {
   ];
 
   return (
-    <div className="max-w-6xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('catalog.products')}
         actions={
           <>
             <ExportButton filters={search} />
-            {canWrite && selected.size > 0 && (
-              <Button variant="secondary" onClick={() => setBulk(true)}>
-                {t('products.bulkEdit', { count: selected.size })}
-              </Button>
-            )}
             {canWrite && (
               <Button asChild>
                 <Link to="/products/new">
-                  <Plus aria-hidden className="size-4" />
+                  <Plus aria-hidden />
                   {t('products.new')}
                 </Link>
               </Button>
@@ -153,111 +194,115 @@ export function ProductsPage() {
           </>
         }
       />
-      <div className="mb-4 grid gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
-        <Input
-          type="search"
-          aria-label={t('products.search')}
-          placeholder={t('products.search')}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <select
-          aria-label={t('product.status')}
-          className={selectClass}
-          value={search.status ?? ''}
-          onChange={(e) =>
-            setFilter({ status: (e.target.value || undefined) as ProductSearch['status'] })
-          }
-        >
-          <option value="">{t('products.allStatuses')}</option>
-          <option value="active">{t('status.active')}</option>
-          <option value="draft">{t('status.draft')}</option>
-          <option value="archived">{t('status.archived')}</option>
-        </select>
-        <select
-          aria-label={t('catalog.category')}
-          className={selectClass}
-          value={search.categoryId ?? ''}
-          onChange={(e) => setFilter({ categoryId: e.target.value || undefined })}
-        >
-          <option value="">{t('products.allCategories')}</option>
-          {categoryOptions(categories.data ?? [], locale).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-        {brand && brand.values.length > 0 && (
-          <select
-            aria-label={pick(brand.name, locale) ?? t('attribute.brand')}
-            className={selectClass}
-            value={search.brandValueId ?? ''}
-            onChange={(e) => setFilter({ brandValueId: e.target.value || undefined })}
-          >
-            <option value="">{t('products.allBrands')}</option>
-            {brand.values.map((v) => (
-              <option key={v.id} value={v.id}>
-                {pick(v.label, locale)}
-              </option>
-            ))}
-          </select>
-        )}
-        <div className="flex flex-wrap items-center gap-4 md:col-span-4">
-          {search.tag && (
-            <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
-              {t('products.tagFilter', { tag: search.tag })} ×
-            </Button>
-          )}
-          {canStock && (
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="size-5"
-                checked={Boolean(search.lowStock)}
-                onChange={(e) => setFilter({ lowStock: e.target.checked || undefined })}
-              />
-              {t('products.lowStockOnly')}
-            </label>
-          )}
+      <StageTabs
+        label={t('product.status')}
+        tabs={[
+          { key: 'all', label: t('list.all') },
+          ...STATUSES.map((s) => ({ key: s, label: t(`status.${s}`) })),
+        ]}
+        value={search.status ?? 'all'}
+        onChange={(key) => setFilter({ status: key === 'all' ? undefined : key })}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full md:w-64">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            className="pl-9"
+            aria-label={t('products.search')}
+            placeholder={t('products.search')}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
+        <FilterButtons
+          filters={filters}
+          onReset={filtered ? reset : undefined}
+          extra={
+            <>
+              {search.tag && (
+                <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
+                  {t('products.tagFilter', { tag: search.tag })}
+                  <X aria-hidden />
+                </Button>
+              )}
+              {canStock && (
+                <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    checked={Boolean(search.lowStock)}
+                    onChange={(e) => setFilter({ lowStock: e.target.checked || undefined })}
+                  />
+                  {t('products.lowStockOnly')}
+                </label>
+              )}
+            </>
+          }
+        />
       </div>
       <DataList
         label={t('catalog.products')}
+        summary={t('list.shown', { count: items.length })}
         items={items}
         rowKey={(p) => p.id}
         columns={columns}
         isPending={products.isPending}
         error={products.isError ? errorMessage(products.error, t) : undefined}
         onRetry={() => products.refetch()}
-        empty={
-          search.q || search.status || search.categoryId
-            ? t('products.noMatches')
-            : t('products.empty')
+        empty={filtered || search.status ? t('products.noMatches') : t('products.empty')}
+        emptyAction={
+          filtered ? (
+            <Button variant="secondary" onClick={reset}>
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
         }
         hasMore={products.hasNextPage}
         loadingMore={products.isFetchingNextPage}
+        onLoadMore={() => products.fetchNextPage()}
+        onOpen={(p) => navigate({ to: '/products/$id', params: { id: p.id } })}
+        selection={
+          canWrite
+            ? {
+                isSelected: (p) => selected.has(p.id),
+                toggle: (p) => toggle(p.id),
+                toggleAll: () =>
+                  setSelected(allSelected ? new Set() : new Set(items.map((p) => p.id))),
+                label: (p) => t('products.select', { title: title(p) }),
+              }
+            : undefined
+        }
+        menu={(p) => (
+          <RowMenu label={title(p)}>
+            <RowMenuItem onSelect={() => navigate({ to: '/products/$id', params: { id: p.id } })}>
+              <SquarePen aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            {canWrite && (
+              <RowMenuItem onSelect={() => setBulk([p.id])}>
+                <Tag aria-hidden />
+                {t('products.editPrices')}
+              </RowMenuItem>
+            )}
+          </RowMenu>
+        )}
         card={(p) => (
           <div className="flex items-center gap-3">
-            {canWrite && (
-              <input
-                type="checkbox"
-                className="size-5 shrink-0"
-                aria-label={t('products.select', { title: pick(p.titles, locale) ?? '' })}
-                checked={selected.has(p.id)}
-                onChange={() => toggle(p.id)}
-              />
-            )}
             <Thumbnail file={p.imageFile} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <Link to="/products/$id" params={{ id: p.id }} className="truncate font-semibold">
-                {pick(p.titles, locale) ?? t('product.untitled')}
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/products/$id" params={{ id: p.id }} className="truncate font-medium">
+                {title(p)}
               </Link>
-              <span className="text-sm text-muted-foreground">
+              <span className="truncate text-sm text-muted-foreground">
                 {formatRange(p.minPrice, p.maxPrice, locale)}
                 {canStock && p.available !== null && p.available !== undefined && (
                   <>
                     {' · '}
-                    <span className={p.lowStock ? 'font-semibold text-danger' : undefined}>
+                    <span className={p.lowStock ? 'font-medium text-danger' : undefined}>
                       {t('products.inStock', { count: p.available })}
                     </span>
                   </>
@@ -267,13 +312,18 @@ export function ProductsPage() {
             <StatusBadge status={p.status} />
           </div>
         )}
-        onLoadMore={() => products.fetchNextPage()}
       />
+      <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
+        <button type="button" className={barAction} onClick={() => setBulk([...selected])}>
+          <Tag aria-hidden />
+          {t('products.editPrices')}
+        </button>
+      </SelectionBar>
       {bulk && (
         <BulkPriceDialog
-          productIds={[...selected]}
+          productIds={bulk}
           onClose={(saved) => {
-            setBulk(false);
+            setBulk(undefined);
             if (saved) setSelected(new Set());
           }}
         />
@@ -289,9 +339,11 @@ export function StatusBadge({ status }: { status: 'draft' | 'active' | 'archived
       ? 'bg-success-soft text-success'
       : status === 'draft'
         ? 'bg-muted text-muted-foreground'
-        : 'bg-warning/20 text-warning-foreground';
+        : 'border border-border text-muted-foreground';
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tone}`}>
+    <span
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+    >
       {t(`status.${status}`)}
     </span>
   );
@@ -310,10 +362,10 @@ export function Thumbnail({
       src={`/api/admin/media/files/${file}`}
       alt=""
       loading="lazy"
-      className={`${size} shrink-0 rounded object-cover`}
+      className={`${size} shrink-0 rounded-lg object-cover`}
     />
   ) : (
-    <span className={`${size} flex shrink-0 items-center justify-center rounded bg-muted`}>
+    <span className={`${size} flex shrink-0 items-center justify-center rounded-lg bg-muted`}>
       <ImageOff aria-hidden className="size-4 text-muted-foreground" />
     </span>
   );

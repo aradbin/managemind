@@ -29,6 +29,7 @@ export const catalogEn = {
   'products.empty': 'No products yet. Add one, or import a spreadsheet.',
   'products.noMatches': 'No products match these filters.',
   'products.select': 'Select {title}',
+  'products.editPrices': 'Edit prices',
   'products.bulkEdit': 'Edit prices ({count})',
   'products.bulkTitle': 'Edit prices',
   'products.bulkPercent': 'Change every price by a percentage',
