@@ -1,12 +1,12 @@
 // Switch store (phase-1-plan §7.3): a sheet on phones, a dialog on larger
 // screens, with search once there are more than 5 stores. Stores reached
 // through a support grant show until when. The trigger takes the look of
-// where it sits (ADR 0029): the sidebar's card, the phone header, or a row
-// on the More page.
+// where it sits (ADR 0033): the top of the sidebar, the phone header, or a
+// row on the Menu page.
 import { formatDateTime } from '@managemind/shared/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Check, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
 import type { Me } from '../lib/api';
@@ -35,7 +35,7 @@ export function StoreTile({ name, className }: { name: string; className?: strin
     <span
       aria-hidden
       className={cn(
-        'inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning text-xs font-semibold text-warning-foreground',
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-primary text-xs font-semibold text-primary-foreground',
         className,
       )}
     >
@@ -88,13 +88,13 @@ export function StoreSwitcher({
       {look === 'header' ? (
         <Button
           variant="ghost"
-          className="min-w-0 justify-start gap-2 px-2"
+          className="min-w-0 max-w-full justify-start gap-2 px-1.5"
           aria-label={label}
           onClick={() => setOpen(true)}
         >
           {current && <StoreTile name={current.name} className="size-7" />}
           <span className="truncate font-semibold">{current?.name ?? t('store.switch')}</span>
-          <ChevronDown aria-hidden className="size-4 shrink-0" />
+          <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       ) : (
         <button
@@ -102,10 +102,8 @@ export function StoreSwitcher({
           aria-label={label}
           onClick={() => setOpen(true)}
           className={cn(
-            'flex min-h-14 w-full min-w-0 items-center gap-3 text-left',
-            look === 'sidebar'
-              ? 'rounded-xl border border-border bg-canvas/60 px-2.5 py-2 hover:bg-muted'
-              : 'px-3.5 py-2 hover:bg-muted',
+            'flex w-full min-w-0 items-center text-left hover:bg-muted',
+            look === 'sidebar' ? 'min-h-12 gap-2 rounded-lg p-2' : 'min-h-14 gap-3 px-3.5 py-2',
           )}
         >
           {current && <StoreTile name={current.name} />}

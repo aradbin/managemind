@@ -55,7 +55,7 @@ export function ScoreBadge({ risk, className }: { risk: PhoneRisk; className?: s
     <span
       title={detail || t('risk.newHint')}
       className={cn(
-        'inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-xs font-medium tabular-nums',
+        'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium tabular-nums',
         TONES[tone],
         className,
       )}

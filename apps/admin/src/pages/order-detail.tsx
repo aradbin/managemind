@@ -1439,7 +1439,7 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
           <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value={method}
             onChange={(e) => setMethod(e.target.value as typeof method)}
           >

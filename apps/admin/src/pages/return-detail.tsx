@@ -624,7 +624,7 @@ export function CreateReturnDialog({ orderId, onClose }: { orderId: string; onCl
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t('return.reason')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
               value={reason}
               onChange={(e) => setReason(e.target.value as typeof reason)}
             >

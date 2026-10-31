@@ -153,7 +153,7 @@ export function AttributeFields({
         <select
           aria-label={t('specs.add')}
           disabled={disabled}
-          className="min-h-11 rounded-lg border border-input bg-background px-3 text-base md:max-w-xs md:text-sm"
+          className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:max-w-xs md:text-sm"
           value=""
           onChange={(e) => {
             const attribute = all.find((a) => a.id === e.target.value);
@@ -214,7 +214,7 @@ function AttributeField({
       <select
         id={id}
         disabled={disabled}
-        className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm"
+        className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
         value={draft.valueIds[0] ?? ''}
         onChange={(e) => onChange({ ...draft, valueIds: e.target.value ? [e.target.value] : [] })}
       >
@@ -270,7 +270,7 @@ function AttributeField({
       <select
         id={id}
         disabled={disabled}
-        className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm"
+        className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
         value={draft.value === null ? '' : draft.value ? 'yes' : 'no'}
         onChange={(e) =>
           onChange({ ...draft, value: e.target.value === '' ? null : e.target.value === 'yes' })

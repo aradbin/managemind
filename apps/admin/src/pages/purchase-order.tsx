@@ -274,7 +274,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               {t('po.supplier')}
               <select
-                className="min-h-11 rounded-md border border-input bg-background px-3"
+                className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
                 value={supplierId}
                 required
                 onChange={(e) => setSupplierId(e.target.value)}

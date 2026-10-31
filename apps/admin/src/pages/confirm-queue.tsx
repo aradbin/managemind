@@ -105,7 +105,7 @@ export function ConfirmQueuePage() {
             >
               {t(x.label)}
               {count ? (
-                <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+                <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
                   {count}
                 </span>
               ) : null}
@@ -201,7 +201,7 @@ function QueueCard({
         <span className="flex flex-col items-end gap-1">
           <ScoreBadge risk={item.risk} />
           {item.flags.includes('possible_duplicate') && (
-            <span className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground">
+            <span className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground">
               {t('orders.flag.possible_duplicate')}
             </span>
           )}
@@ -248,7 +248,7 @@ function QueueCard({
         canWrite && (
           <Button
             asChild
-            className="mt-auto min-h-12 text-base"
+            className="mt-auto text-base"
             onClick={() => claim.mutate(item.orderId, { onSuccess: onOpen })}
           >
             <a href={`tel:${item.phone}`}>
@@ -361,7 +361,7 @@ function CallPanelDialog({
       title={t('queue.panelTitle', { number: panel.displayNumber, name: panel.name })}
     >
       <div className="flex flex-col gap-4">
-        <Button asChild variant="secondary" className="min-h-12 text-base">
+        <Button asChild variant="secondary" className="text-base">
           <a href={`tel:${panel.phone}`}>
             <Phone aria-hidden className="size-5" />
             {formatPhone(panel.phone)}

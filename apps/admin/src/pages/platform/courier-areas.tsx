@@ -57,7 +57,7 @@ export function CourierAreasPage() {
           </label>
           <select
             id="areas-courier"
-            className="min-h-11 rounded-md border border-input bg-background px-3"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             value={courier}
             onChange={(e) => setCourier(e.target.value as AreaCourier)}
           >

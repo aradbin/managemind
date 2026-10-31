@@ -3,10 +3,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
-import { InventoryNav } from '../components/inventory-nav';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { Button } from '../components/ui/button';
@@ -120,12 +118,10 @@ export function PurchaseOrdersPage() {
           </>
         }
       />
-      <CatalogNav />
-      <InventoryNav />
       <label className="mb-4 flex max-w-xs flex-col gap-1.5 text-sm font-medium">
         {t('po.status')}
         <select
-          className="min-h-11 rounded-md border border-input bg-background px-3"
+          className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
           value={status}
           onChange={(e) => setStatus(e.target.value as PurchaseOrderStatus | '')}
         >

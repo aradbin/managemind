@@ -7,7 +7,6 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { ReportRange, useRange } from '../components/report-range';
 import { Table } from '../components/report-table';
-import { ReportsNav } from '../components/reports-nav';
 import { useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
@@ -47,7 +46,6 @@ export function SupplierReportPage() {
         title={t('supplierReport.title')}
         description={t('supplierReport.intro')}
       />
-      <ReportsNav />
       {report.isPending && valid && <p role="status">{t('loading')}</p>}
       {report.isError && <Notice tone="error">{errorMessage(report.error, t)}</Notice>}
       {r && (

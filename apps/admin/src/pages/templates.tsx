@@ -57,7 +57,7 @@ export function TemplatesPage() {
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t('templates.message')}
           <select
-            className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value={chosenEvent ?? ''}
             onChange={(e) => setEvent(e.target.value)}
           >
@@ -71,7 +71,7 @@ export function TemplatesPage() {
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t('templates.channel')}
           <select
-            className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value={chosenChannel}
             onChange={(e) => setChannel(e.target.value as Channel)}
           >
@@ -85,7 +85,7 @@ export function TemplatesPage() {
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t('templates.language')}
           <select
-            className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value={locale}
             onChange={(e) => setLocale(e.target.value as Locale)}
           >

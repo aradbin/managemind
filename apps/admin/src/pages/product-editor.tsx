@@ -440,7 +440,7 @@ function Editor({
                 {t('product.vatCategory')}
                 <select
                   disabled={disabled}
-                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                   value={content.vatCategory}
                   onChange={(e) => update({ vatCategory: e.target.value })}
                 >

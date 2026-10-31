@@ -37,7 +37,7 @@ export function InvoicePrintPage() {
         <label className="ml-auto flex items-center gap-2 text-sm">
           {t('print.language')}
           <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             value={lang}
             onChange={(e) => setLang(e.target.value as Locale)}
           >

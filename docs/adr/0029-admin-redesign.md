@@ -1,6 +1,6 @@
 # ADR 0029: The admin's redesign: colour tokens, cards on a canvas, Inter, and a five-tab phone bar
 
-- Status: Accepted
+- Status: Accepted; colours, sizes, status chips and the shell amended by [ADR 0033](0033-admin-shadcn-redesign.md)
 - Date: 2026-10-24
 - Design: the approved canvas "ManageMind Admin Redesign" (18 screens, desktop and phone). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/routes/_shell.tsx`
 - Amends: phase-1-plan §7.3 (the shell and the colour tokens)

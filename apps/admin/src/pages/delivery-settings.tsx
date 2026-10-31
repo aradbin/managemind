@@ -84,12 +84,12 @@ export function DeliverySettingsPage() {
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{pickText(z.name, locale)}</span>
                   {z.isFallback && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                    <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                       {t('delivery.fallbackShort')}
                     </span>
                   )}
                   {!z.active && (
-                    <span className="rounded-full bg-warning px-2 py-0.5 text-xs font-semibold text-warning-foreground">
+                    <span className="rounded-md bg-warning px-2 py-0.5 text-xs font-medium text-warning-foreground">
                       {t('delivery.inactive')}
                     </span>
                   )}
@@ -426,7 +426,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >

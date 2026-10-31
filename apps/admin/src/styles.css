@@ -1,78 +1,85 @@
 @import "tailwindcss";
 
 /*
- * Colour tokens (phase-1-plan §7.3, redesigned in ADR 0029): every text and
- * background pair meets WCAG AA (4.5:1) in both themes. Components use these
- * names, never raw colours. `canvas` is the page behind the cards;
- * `background` is the surface of cards, menus, dialogs and inputs.
+ * Colour tokens (phase-1-plan §7.3; ADR 0029, redrawn on shadcn/ui's neutral
+ * theme in ADR 0033). Components use these names, never raw colours. The
+ * sidebar sits on `sidebar`; pages sit on `canvas`, the white inset panel
+ * beside it; cards are `card`. `background` is the surface of inputs, menus
+ * and dialogs. Each status tone is a soft tint with its own darker text, and
+ * every text and background pair meets WCAG AA (4.5:1) in both themes.
  */
 @theme {
   --font-sans:
     "Inter Variable", "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --color-canvas: #f6f7f5;
-  --color-background: #ffffff;
-  --color-foreground: #16181d;
-  --color-muted: #f0f1ee;
-  --color-muted-foreground: #5b6170;
-  --color-border: #e4e6e1;
-  --color-input: #d5d8d1;
-  --color-primary: #0e7a5a;
-  --color-primary-foreground: #ffffff;
-  --color-primary-soft: #e7f2ed;
-  --color-primary-hover: #0a5c44;
-  --color-danger: #a8261b;
-  --color-danger-foreground: #ffffff;
-  --color-danger-soft: #fce8e6;
-  --color-danger-hover: #8f1f16;
-  --color-warning: #fdf1dc;
-  --color-warning-foreground: #8a4b00;
-  --color-success: #146c43;
-  --color-success-soft: #e3f3ea;
-  --color-info: #e5eefb;
-  --color-info-foreground: #1e4fa3;
-  --color-shipped: #efeafb;
-  --color-shipped-foreground: #5b3ca8;
-  --color-ring: #0e7a5a;
+  --radius-xl: 0.875rem;
+  --color-sidebar: oklch(0.985 0 0);
+  --color-canvas: oklch(1 0 0);
+  --color-card: oklch(1 0 0);
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.52 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-primary-soft: oklch(0.97 0 0);
+  --color-primary-hover: oklch(0.32 0 0);
+  --color-danger: oklch(0.56 0.23 27.325);
+  --color-danger-foreground: oklch(0.985 0 0);
+  --color-danger-soft: oklch(0.975 0.012 20);
+  --color-danger-hover: oklch(0.505 0.213 27.518);
+  --color-warning: oklch(0.967 0.035 75);
+  --color-warning-foreground: oklch(0.5 0.14 48);
+  --color-success: oklch(0.5 0.14 150);
+  --color-success-soft: oklch(0.965 0.035 150);
+  --color-info: oklch(0.96 0.025 260);
+  --color-info-foreground: oklch(0.488 0.243 264.376);
+  --color-shipped: oklch(0.962 0.03 295);
+  --color-shipped-foreground: oklch(0.491 0.27 292.581);
+  --color-ring: oklch(0.708 0 0);
 }
 
 /*
  * Dark (lib/theme.ts sets data-theme from the device or the user's choice).
  * Screens only: printed invoices and packing slips stay light. Until the
- * script runs, a dark device gets the dark canvas, so the first paint matches.
+ * script runs, a dark device gets the dark sidebar, so the first paint matches.
  */
 @media screen {
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --color-canvas: #0f1113;
-    --color-background: #17191c;
-    --color-foreground: #edeef0;
-    --color-muted: #22252a;
-    --color-muted-foreground: #a9aeb8;
-    --color-border: #2e3238;
-    --color-input: #3a3f46;
-    --color-primary: #5fcb9e;
-    --color-primary-foreground: #062018;
-    --color-primary-soft: #163328;
-    --color-primary-hover: #82dab5;
-    --color-danger: #f2938a;
-    --color-danger-foreground: #1a0503;
-    --color-danger-soft: #3a1714;
-    --color-danger-hover: #f6b0a9;
-    --color-warning: #3a2a0e;
-    --color-warning-foreground: #f5c26b;
-    --color-success: #6fd3a0;
-    --color-success-soft: #14301f;
-    --color-info: #162845;
-    --color-info-foreground: #9dbdf5;
-    --color-shipped: #2a2145;
-    --color-shipped-foreground: #c4b2f5;
-    --color-ring: #5fcb9e;
+    --color-sidebar: oklch(0.205 0 0);
+    --color-canvas: oklch(0.145 0 0);
+    --color-card: oklch(0.175 0 0);
+    --color-background: oklch(0.175 0 0);
+    --color-foreground: oklch(0.985 0 0);
+    --color-muted: oklch(0.269 0 0);
+    --color-muted-foreground: oklch(0.708 0 0);
+    --color-border: oklch(1 0 0 / 10%);
+    --color-input: oklch(1 0 0 / 15%);
+    --color-primary: oklch(0.922 0 0);
+    --color-primary-foreground: oklch(0.205 0 0);
+    --color-primary-soft: oklch(0.269 0 0);
+    --color-primary-hover: oklch(0.82 0 0);
+    --color-danger: oklch(0.704 0.191 22.216);
+    --color-danger-foreground: oklch(0.205 0 0);
+    --color-danger-soft: oklch(0.27 0.06 25);
+    --color-danger-hover: oklch(0.78 0.15 22);
+    --color-warning: oklch(0.28 0.05 70);
+    --color-warning-foreground: oklch(0.82 0.15 75);
+    --color-success: oklch(0.792 0.18 151.711);
+    --color-success-soft: oklch(0.27 0.05 150);
+    --color-info: oklch(0.27 0.06 260);
+    --color-info-foreground: oklch(0.8 0.1 260);
+    --color-shipped: oklch(0.27 0.07 295);
+    --color-shipped-foreground: oklch(0.82 0.11 295);
+    --color-ring: oklch(0.556 0 0);
   }
 }
 
 @media screen and (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --color-canvas: #0f1113;
+    --color-sidebar: oklch(0.205 0 0);
   }
 }
 
@@ -82,7 +89,7 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-canvas text-foreground font-sans antialiased;
+    @apply bg-sidebar text-foreground font-sans antialiased;
     font-feature-settings: "cv11" 1;
   }
   /* A fieldset drawn as a card keeps its legend inside, as the card's heading. */
@@ -99,9 +106,10 @@
   input {
     accent-color: var(--color-primary);
   }
-  /* Visible focus for keyboard users everywhere. */
+  /* Visible focus for keyboard users everywhere: shadcn/ui's soft ring. */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-ring;
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
 }
 

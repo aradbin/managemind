@@ -5,11 +5,9 @@ import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
-import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -118,8 +116,6 @@ export function SuppliersPage() {
           </>
         }
       />
-      <CatalogNav />
-      <InventoryNav />
       <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
         <Input
           type="search"

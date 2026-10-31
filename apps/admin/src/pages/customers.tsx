@@ -103,7 +103,7 @@ export function CustomersPage() {
             <button
               key={tag}
               type="button"
-              className="min-h-8 rounded-full bg-muted px-2 text-xs"
+              className="min-h-6 rounded-md bg-muted px-1.5 text-xs"
               onClick={() => setFilter({ tag })}
             >
               {tag}
@@ -175,7 +175,7 @@ export function CustomersPage() {
                   <button
                     key={tag}
                     type="button"
-                    className="min-h-8 rounded-full bg-muted px-2.5 text-xs"
+                    className="min-h-6 rounded-md bg-muted px-1.5 text-xs"
                     onClick={() => setFilter({ tag })}
                   >
                     {tag}

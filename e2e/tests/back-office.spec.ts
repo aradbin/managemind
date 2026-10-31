@@ -346,7 +346,8 @@ test('back office', async ({ page }, info) => {
       '/reports/cod-outstanding',
     ]) {
       await page.goto(`${API}${path}`);
-      await expect(page.getByRole('navigation', { name: m('reports.sections') })).toBeVisible();
+      // The sidebar (or the phone's Menu) lists the reports; each page has its title.
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expectAccessible(page, path);
     }
   });

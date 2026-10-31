@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { type AdminKey, useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import { Button } from './ui/button';
+import { menuContent, menuItem } from './ui/menu';
 
 /** The help links the platform has set, loaded once `enabled` turns true. */
 export function useHelpLinks(enabled: boolean) {
@@ -37,24 +38,21 @@ export function HelpMenu() {
   const [open, setOpen] = useState(false);
   // Loaded the first time the menu opens.
   const { help, links } = useHelpLinks(open);
-  const item =
-    'flex min-h-11 cursor-pointer items-center rounded px-3 outline-none data-[highlighted]:bg-muted';
+  const item = menuItem;
   return (
     <Menu.Root open={open} onOpenChange={setOpen}>
       <Menu.Trigger asChild>
-        <Button variant="ghost" size="icon" aria-label={t('help.menu')}>
-          <CircleHelp aria-hidden className="size-6" />
+        <Button variant="secondary" size="icon" aria-label={t('help.menu')} title={t('help.menu')}>
+          <CircleHelp aria-hidden />
         </Button>
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content
-          align="end"
-          sideOffset={4}
-          className="z-50 min-w-56 rounded-lg border border-border bg-background p-1 shadow-lg"
-        >
-          {help.isPending && <p className="px-3 py-2 text-muted-foreground">{t('loading')}</p>}
+        <Menu.Content align="end" sideOffset={4} className={menuContent}>
+          {help.isPending && (
+            <p className="px-2 py-1.5 text-sm text-muted-foreground">{t('loading')}</p>
+          )}
           {help.isSuccess && links.length === 0 && (
-            <p className="px-3 py-2 text-muted-foreground">{t('help.none')}</p>
+            <p className="px-2 py-1.5 text-sm text-muted-foreground">{t('help.none')}</p>
           )}
           {links.map((l) => (
             <Menu.Item key={l.label} asChild className={item}>

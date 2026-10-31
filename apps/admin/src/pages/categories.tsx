@@ -7,7 +7,6 @@ import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
-import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
@@ -173,7 +172,6 @@ export function CategoriesPage() {
           )
         }
       />
-      <CatalogNav />
       {categories.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : categories.isError ? (
@@ -332,7 +330,7 @@ function CategoryDialog({
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             {t('categories.parent')}
             <select
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
               value={parentId}
               onChange={(e) => setParentId(e.target.value)}
             >

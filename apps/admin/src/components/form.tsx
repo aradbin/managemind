@@ -204,7 +204,7 @@ export function SelectField({
           {...a11y}
           {...register(name)}
           disabled={disabled}
-          className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50"
+          className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value} disabled={o.disabled}>

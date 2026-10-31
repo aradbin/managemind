@@ -41,7 +41,7 @@ import { StateChip } from './promotions';
 
 const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 const selectClass =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
 
 export function NewPromotionPage() {
   return <Editor promotion={undefined} />;

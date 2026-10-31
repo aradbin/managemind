@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { ReportRange, useRange } from '../components/report-range';
-import { ReportsNav } from '../components/reports-nav';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/expenses';
@@ -69,7 +68,6 @@ export function ProfitReportPage() {
   return (
     <div className="flex max-w-5xl flex-col gap-5">
       <PageHeader className="mb-0" title={t('profit.title')} description={t('profit.intro')} />
-      <ReportsNav />
       <ReportRange value={range} onChange={setRange} />
       {report.isPending && valid && <p role="status">{t('loading')}</p>}
       {report.isError && <Notice tone="error">{errorMessage(report.error, t)}</Notice>}

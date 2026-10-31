@@ -3,10 +3,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
-import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -72,8 +70,6 @@ export function StockCountsPage() {
         description={t('counts.intro')}
         actions={canWrite && <Button onClick={() => setStarting(true)}>{t('counts.new')}</Button>}
       />
-      <CatalogNav />
-      <InventoryNav />
       <DataList
         label={t('counts.title')}
         items={items}
@@ -157,7 +153,7 @@ function NewCountDialog({ onClose }: { onClose: () => void }) {
           <label className="flex flex-col gap-1.5 text-sm font-medium">
             {t('counts.category')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
             >

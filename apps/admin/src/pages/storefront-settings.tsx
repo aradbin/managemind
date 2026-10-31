@@ -172,7 +172,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={selectId}
               value={numerals}
               onChange={(e) => setNumerals(e.target.value)}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             >
               {(['auto', 'bengali', 'latin'] as const).map((v) => (
                 <option key={v} value={v}>
@@ -251,7 +251,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={showId}
               value={show}
               onChange={(e) => setShow(e.target.value as typeof show)}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             >
               {CHAT_PLACEMENTS.map((v) => (
                 <option key={v} value={v}>

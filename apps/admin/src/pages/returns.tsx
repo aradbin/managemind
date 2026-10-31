@@ -50,7 +50,7 @@ export function ReturnsPage() {
       <label className="flex max-w-xs flex-col gap-1 text-sm font-medium">
         {t('returns.status')}
         <select
-          className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+          className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
           value={status ?? ''}
           onChange={(e) => setStatus((e.target.value || undefined) as ReturnStatus | undefined)}
         >

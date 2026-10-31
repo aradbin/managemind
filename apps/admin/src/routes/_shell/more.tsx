@@ -1,14 +1,22 @@
-// More (ADR 0029): on phones, everything the five-tab bar leaves out. Who is
-// signed in, the store switch, the pages beyond the tabs, help, and the
-// account with light or dark and sign-out. Desktops reach the same through
-// the sidebar and the header's menus, but the page works there too.
+// Menu (ADR 0029, ADR 0033): on phones, everything the five-tab bar leaves
+// out. Who is signed in, the store switch, every area with its pages (an area
+// opens into them, as in the desktop sidebar), help, and the account with
+// light or dark and sign-out. Desktops reach the same through the sidebar and
+// the header, but the page works there too.
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useRouterState } from '@tanstack/react-router';
 import { ChevronRight, ExternalLink, LogOut, UserRound } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { useSignOut } from '../../components/account-menu';
 import { useHelpLinks } from '../../components/help-menu';
-import { type NavItem, useNav } from '../../components/nav';
+import {
+  Badge,
+  locate,
+  type NavGroup,
+  type NavItem,
+  useNav,
+  useToConfirm,
+} from '../../components/nav';
 import { usePermission } from '../../components/permission-gate';
 import { StoreSwitcher } from '../../components/store-switcher';
 import { ThemeSwitch } from '../../components/theme-choice';
@@ -20,7 +28,7 @@ import { storeSettingsQuery } from '../../lib/catalog';
 
 export const Route = createFileRoute('/_shell/more')({ component: MorePage });
 
-const row = 'flex min-h-14 w-full items-center gap-3.5 px-3.5 text-left hover:bg-muted';
+const row = 'flex min-h-13 w-full items-center gap-3 px-3.5 text-left hover:bg-muted';
 const tile = 'inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted';
 const chevron = <ChevronRight aria-hidden className="size-4 shrink-0 text-muted-foreground" />;
 
@@ -37,13 +45,13 @@ function MorePage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('nav.more')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{t('nav.menu')}</h1>
 
       <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
         <Link to="/account" className={`${row} min-h-[4.5rem]`}>
           <span
             aria-hidden
-            className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
+            className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-muted"
           >
             <UserRound className="size-6" />
           </span>
@@ -51,7 +59,7 @@ function MorePage() {
             <span className="flex items-center gap-2">
               <span className="truncate font-semibold">{me.user.name}</span>
               {store && (
-                <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">
+                <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {t(`role.${store.role}`)}
                 </span>
               )}
@@ -72,9 +80,9 @@ function MorePage() {
         )}
       </div>
 
-      <Group label={t('nav.sell')} items={nav.more.sell} />
-      <Group label={t('nav.store')} items={nav.more.store} />
-      <Group label={t('nav.platform')} items={nav.more.platform} />
+      {nav.groups.map((group) => (
+        <Group key={group.key} group={group} />
+      ))}
 
       {help.length > 0 && (
         <Section label={t('more.help')}>
@@ -121,10 +129,10 @@ function MorePage() {
         description={t('more.signOutBody')}
       >
         <div className="flex flex-col gap-2 md:flex-row-reverse">
-          <Button variant="danger" className="min-h-12" onClick={signOut}>
+          <Button variant="danger" size="lg" onClick={signOut}>
             {t('action.signOut')}
           </Button>
-          <Button variant="secondary" className="min-h-12" onClick={() => setConfirming(false)}>
+          <Button variant="secondary" size="lg" onClick={() => setConfirming(false)}>
             {t('action.cancel')}
           </Button>
         </div>
@@ -137,10 +145,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
     <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2
-        id={id}
-        className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      >
+      <h2 id={id} className="px-1 text-xs font-medium text-muted-foreground">
         {label}
       </h2>
       <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
@@ -150,23 +155,77 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Group({ label, items }: { label: string; items: NavItem[] }) {
+function Group({ group }: { group: NavGroup }) {
   const { t } = useLocale();
-  if (items.length === 0) return null;
+  const nav = useNav();
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const here = locate(nav.groups, path);
   return (
-    <Section label={label}>
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Link key={item.to} to={item.to} className={row}>
+    <Section label={t(group.label)}>
+      {group.items.map((item) =>
+        item.children ? (
+          <Area key={item.key} item={item} open={here?.item.key === item.key} />
+        ) : (
+          <Link key={item.key} to={item.to} className={row}>
             <span aria-hidden className={tile}>
-              <Icon className="size-4" />
+              <item.icon className="size-4" />
             </span>
             <span className="flex-1">{t(item.label)}</span>
             {chevron}
           </Link>
-        );
-      })}
+        ),
+      )}
     </Section>
+  );
+}
+
+/** An area's row opens into its pages. */
+function Area({ item, open: inside }: { item: NavItem; open: boolean }) {
+  const { t, locale } = useLocale();
+  const toConfirm = useToConfirm();
+  const id = useId();
+  const [open, setOpen] = useState(inside);
+  const names = (item.children ?? []).map((c) => t(c.label));
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen(!open)}
+        className={row}
+      >
+        <span aria-hidden className={tile}>
+          <item.icon className="size-4" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span>{t(item.label)}</span>
+          {!open && (
+            <span className="truncate text-xs text-muted-foreground">
+              {new Intl.ListFormat(locale, { type: 'unit' }).format(names)}
+            </span>
+          )}
+        </span>
+        <ChevronRight
+          aria-hidden
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-90' : ''}`}
+        />
+      </button>
+      <ul id={id} hidden={!open} className="pb-2">
+        {item.children?.map((leaf) => (
+          <li key={leaf.to}>
+            <Link
+              to={leaf.to}
+              className="flex min-h-11 items-center gap-2 py-1 pr-3.5 pl-[3.75rem] text-sm hover:bg-muted"
+            >
+              <span className="flex-1">{t(leaf.label)}</span>
+              {leaf.toConfirm && toConfirm > 0 && (
+                <Badge count={toConfirm} className="bg-danger text-danger-foreground" />
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

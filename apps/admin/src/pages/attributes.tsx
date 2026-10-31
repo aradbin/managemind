@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
-import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
@@ -78,7 +77,6 @@ export function AttributesPage() {
           )
         }
       />
-      <CatalogNav />
       <DataList
         label={t('catalog.attributes')}
         items={attributes.data}
@@ -258,7 +256,7 @@ function AttributeDialog({
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               {t('attributes.type')}
               <select
-                className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
+                className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                 value={type}
                 onChange={(e) => {
                   const next = e.target.value as AttrType;

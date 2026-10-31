@@ -44,7 +44,7 @@ import { OrderExportButton } from './order-export';
 export type OrderSearch = OrderFilters;
 
 const selectClass =
-  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
+  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
 
 /** The tabs: each sets the order and delivery statuses and keeps every other filter. */
 const TABS = [
@@ -276,7 +276,7 @@ export function OrdersPage() {
             >
               {t(tab.label)}
               {count ? (
-                <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+                <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
                   {count}
                 </span>
               ) : null}
@@ -289,7 +289,7 @@ export function OrdersPage() {
         >
           {t('queue.tabLabel')}
           {counts?.toCall ? (
-            <span className="rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground tabular-nums">
+            <span className="rounded-md bg-danger px-1.5 text-xs font-medium text-danger-foreground tabular-nums">
               {counts.toCall}
             </span>
           ) : null}
@@ -301,7 +301,7 @@ export function OrdersPage() {
           >
             {t('incomplete.title')}
             {dashboard.incomplete.open ? (
-              <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+              <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
                 {dashboard.incomplete.open}
               </span>
             ) : null}
@@ -313,7 +313,7 @@ export function OrdersPage() {
             className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
           >
             {t('couriers.returns.title')}
-            <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
+            <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
               {dashboard.counts.courierReturns}
             </span>
           </Link>
@@ -615,7 +615,7 @@ function FlagChips({ flags }: { flags: readonly string[] }) {
         .map((f) => (
           <span
             key={f}
-            className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground"
+            className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground"
           >
             {t(`orders.flag.${f}`)}
           </span>

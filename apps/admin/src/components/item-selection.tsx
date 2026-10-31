@@ -109,7 +109,7 @@ export function ItemSelection({
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('promo.addCategory')}
           <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value=""
             onChange={(e) => e.target.value && toggle('categoryIds', e.target.value)}
           >
@@ -126,7 +126,7 @@ export function ItemSelection({
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('promo.addCollection')}
           <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value=""
             onChange={(e) => e.target.value && toggle('collectionIds', e.target.value)}
           >

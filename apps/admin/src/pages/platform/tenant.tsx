@@ -72,12 +72,12 @@ export function TenantPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-tight">{tenant.data.name}</h1>
                 <StatusBadge status={tenant.data.status} />
-                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {t(`kind.${tenant.data.kind}`)}
                 </span>
                 <span
                   lang="en"
-                  className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                  className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
                 >
                   {tenant.data.plan}
                 </span>
@@ -269,7 +269,7 @@ function Lifecycle({ tenant }: { tenant: Tenant }) {
               id="lifecycle-category"
               value={category}
               onChange={(e) => setCategory(e.target.value as typeof category)}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             >
               {/* Overdue suspensions come from billing (phase-5b-plan §3.8). */}
               {(['abuse', 'client_request', 'other'] as const).map((r) => (

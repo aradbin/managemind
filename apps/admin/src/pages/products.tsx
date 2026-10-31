@@ -6,7 +6,6 @@ import { useInfiniteQuery, useQueries, useQuery, useQueryClient } from '@tanstac
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ImageOff, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
@@ -38,7 +37,7 @@ import { ExportButton } from './export';
 export type ProductSearch = ProductFilters;
 
 const selectClass =
-  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
+  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
 
 export function ProductsPage() {
   const { t, locale } = useLocale();
@@ -154,7 +153,6 @@ export function ProductsPage() {
           </>
         }
       />
-      <CatalogNav />
       <div className="mb-4 grid gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
         <Input
           type="search"

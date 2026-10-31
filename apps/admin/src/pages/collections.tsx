@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
-import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
@@ -37,7 +36,7 @@ import {
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 
 const selectClass =
-  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
+  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
@@ -82,7 +81,6 @@ export function CollectionsPage() {
           )
         }
       />
-      <CatalogNav />
       <DataList
         label={t('catalog.collections')}
         items={collections.data}

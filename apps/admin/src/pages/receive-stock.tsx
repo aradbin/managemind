@@ -6,9 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { Field } from '../components/field';
-import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -171,8 +169,6 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
     <div className="flex max-w-5xl flex-col gap-6">
       <div>
         <PageHeader title={t('receive.title')} description={t('receive.intro')} />
-        <CatalogNav />
-        <InventoryNav />
       </div>
       {order ? (
         <p className="font-medium">
@@ -207,7 +203,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('receive.supplier')}
                 <select
-                  className="min-h-11 rounded-md border border-input bg-background px-3"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
                   value={supplierId}
                   onChange={(e) => setSupplierId(e.target.value)}
                 >

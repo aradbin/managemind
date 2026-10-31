@@ -275,7 +275,7 @@ function CategorySelect({ value, onChange }: { value: string; onChange: (id: str
     <label className="flex flex-col gap-1.5 text-sm font-medium">
       {t('expenses.category')}
       <select
-        className="min-h-11 rounded-md border border-input bg-background px-3"
+        className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
         value={value}
         required
         onChange={(e) => onChange(e.target.value)}
@@ -664,7 +664,7 @@ function RecurringDialog({
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {cadence === 'monthly' ? t('recurring.dayOfMonth') : t('recurring.weekday')}
           <select
-            className="min-h-11 rounded-md border border-input bg-background px-3"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             value={day}
             onChange={(e) => setDay(Number(e.target.value))}
           >

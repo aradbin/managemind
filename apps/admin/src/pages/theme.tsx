@@ -42,7 +42,7 @@ import { cn } from '../lib/utils';
 
 const SAVE_DELAY_MS = 1200;
 const select =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 /** The CSS variables the storefront takes from the tokens (its Layout.astro). */
 function cssVars(theme: Theme): Record<string, string> {

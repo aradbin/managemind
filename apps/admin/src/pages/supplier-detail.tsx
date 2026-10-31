@@ -192,7 +192,7 @@ function LedgerTable({ ledger, supplierId }: { ledger: SupplierLedger; supplierI
       <div className="overflow-x-auto rounded-xl border border-border bg-background">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{t('suppliers.ledger')}</caption>
-          <thead className="border-b border-border bg-canvas text-xs text-muted-foreground">
+          <thead className="border-b border-border bg-muted/60 text-sm">
             <tr>
               <th scope="col" className="px-4 py-3 font-medium">
                 {t('payment.date')}
