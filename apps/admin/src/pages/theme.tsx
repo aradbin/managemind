@@ -69,11 +69,7 @@ export function ThemePage() {
   const store = useQuery(storeSettingsQuery);
   return (
     <>
-      <PageHeader
-        parent={{ to: '/online-store', label: t('nav.onlineStore') }}
-        title={t('theme.title')}
-        description={t('theme.description')}
-      />
+      <PageHeader title={t('theme.title')} description={t('theme.description')} />
       {theme.isPending || store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : theme.isError || store.isError ? (

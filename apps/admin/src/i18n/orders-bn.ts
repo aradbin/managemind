@@ -619,6 +619,8 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'confirmation.resend': 'লিংক আবার পাঠান',
   'confirmation.linkResent': 'লিংক পাঠানো হচ্ছে।',
   'incomplete.title': 'অসম্পূর্ণ অর্ডার',
+  'incomplete.items': 'কার্টে',
+  'incomplete.left': 'ছেড়ে গেছেন',
   'incomplete.intro':
     'যে ক্রেতারা চেকআউটে মোবাইল নম্বর লিখে শেষ করেননি। ফোন করুন, তারপর এক ক্লিকে অর্ডার তৈরি করুন।',
   'incomplete.tab.open': 'ফোন করতে হবে',

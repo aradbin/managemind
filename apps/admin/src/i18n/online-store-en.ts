@@ -142,6 +142,8 @@ export const onlineStoreEn = {
   'section.badgeText': 'Text ({language})',
 
   'pages.title': 'Pages',
+  'pages.pageTitle': 'Title',
+  'pages.inStore': 'In the store',
   'pages.description':
     'About, contact, your policies and other pages. They’re listed in the store’s footer.',
   'pages.empty': 'No pages yet. Policy pages start with suggested headings to fill in.',

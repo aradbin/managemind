@@ -633,6 +633,8 @@ export const ordersEn = {
   'confirmation.resend': 'Send the link again',
   'confirmation.linkResent': 'The link is on its way.',
   'incomplete.title': 'Incomplete orders',
+  'incomplete.items': 'In the cart',
+  'incomplete.left': 'Left',
   'incomplete.intro':
     'Shoppers who typed their mobile number at checkout and didn’t finish. Call them, then create the order in one click.',
   'incomplete.tab.open': 'To call',

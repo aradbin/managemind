@@ -4,12 +4,14 @@
 // the manual order screen starts from the record, which becomes converted.
 import { formatPhone } from '@managemind/shared/phone';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useParams, useSearch } from '@tanstack/react-router';
-import { ChevronRight, Phone, ShoppingCart } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { Phone, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
+import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
+import { BackLink, PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { RiskPanel, ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
@@ -54,83 +56,109 @@ const StatusLabel = ({ status }: { status: IncompleteSummary['status'] }) => {
 
 export function IncompleteOrdersPage() {
   const { t, locale } = useLocale();
+  const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: IncompleteTab };
   const tab = search.tab ?? 'open';
   const list = useInfiniteQuery(incompleteQuery(tab));
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
+  const open = (i: IncompleteSummary) =>
+    navigate({ to: '/orders/incomplete/$id', params: { id: i.id } });
+  const what = (i: IncompleteSummary) =>
+    i.items.map((x) => `${pickText(x.title, locale)} × ${x.quantity}`).join(', ');
+  const columns: Column<IncompleteSummary>[] = [
+    {
+      header: t('order.customer'),
+      cell: (i) => (
+        <span className="flex flex-col items-start gap-0.5">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Link
+              to="/orders/incomplete/$id"
+              params={{ id: i.id }}
+              className="font-medium underline-offset-2 hover:underline"
+            >
+              {i.name || t('incomplete.noName')}
+            </Link>
+            {i.risk.risky && <ScoreBadge risk={i.risk} className="h-5 px-1.5" />}
+          </span>
+          <span className="font-mono text-xs text-muted-foreground">{formatPhone(i.phone)}</span>
+        </span>
+      ),
+    },
+    {
+      header: t('incomplete.items'),
+      cell: (i) => <span className="line-clamp-2 text-sm">{what(i)}</span>,
+    },
+    {
+      header: t('incomplete.left'),
+      cell: (i) => (
+        <span className="whitespace-nowrap text-muted-foreground">
+          {dateTime(locale, i.updatedAt)}
+        </span>
+      ),
+    },
+    { header: t('order.status'), cell: (i) => <StatusLabel status={i.status} /> },
+    { header: t('order.total'), numeric: true, cell: (i) => formatPrice(i.subtotal, locale) },
+  ];
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         className="mb-0"
-        parent={{ to: '/orders', label: t('nav.orders') }}
         title={t('incomplete.title')}
         description={t('incomplete.intro')}
       />
-      <nav
-        aria-label={t('incomplete.title')}
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0"
-      >
-        {TABS.map((x) => (
-          <Link
-            key={x}
-            to="/orders/incomplete"
-            search={x === 'open' ? {} : { tab: x }}
-            aria-current={tab === x ? 'page' : undefined}
-            className={cn(
-              'flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground',
-              tab === x && 'border-foreground bg-foreground text-background',
-            )}
-          >
-            {t(`incomplete.tab.${x}`)}
-          </Link>
-        ))}
-      </nav>
-      {list.isPending && <p role="status">{t('loading')}</p>}
-      {list.isError && <Notice tone="error">{errorMessage(list.error, t)}</Notice>}
-      {list.data && items.length === 0 && (
-        <p className="rounded-xl border border-border bg-background p-6 text-center text-muted-foreground">
-          {t(tab === 'open' ? 'incomplete.empty' : 'incomplete.emptyOther')}
-        </p>
-      )}
-      <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
-        {items.map((i) => (
-          <li key={i.id}>
-            <Link
-              to="/orders/incomplete/$id"
-              params={{ id: i.id }}
-              className="flex flex-wrap items-center gap-x-4 gap-y-1.5 p-4 hover:bg-muted"
-            >
-              <span className="flex min-w-0 flex-1 basis-56 flex-col">
-                <span className="truncate font-semibold">{i.name || t('incomplete.noName')}</span>
-                <span className="text-xs text-muted-foreground">
-                  {formatPhone(i.phone)} · {dateTime(locale, i.updatedAt)}
-                </span>
-              </span>
-              <span className="min-w-0 flex-1 basis-56 truncate text-sm">
-                {i.items.map((x) => `${pickText(x.title, locale)} × ${x.quantity}`).join(', ')}
-              </span>
-              <span className="flex items-center gap-2">
-                <ScoreBadge risk={i.risk} />
+      <StageTabs
+        label={t('incomplete.title')}
+        tabs={TABS.map((x) => ({ key: x, label: t(`incomplete.tab.${x}`) }))}
+        value={tab}
+        onChange={(x) =>
+          navigate({ to: '/orders/incomplete', search: x === 'open' ? {} : { tab: x } })
+        }
+      />
+      <DataList
+        label={t('incomplete.title')}
+        items={list.data ? items : undefined}
+        rowKey={(i) => i.id}
+        columns={columns}
+        isPending={list.isPending}
+        error={list.isError ? errorMessage(list.error, t) : undefined}
+        onRetry={() => list.refetch()}
+        empty={t(tab === 'open' ? 'incomplete.empty' : 'incomplete.emptyOther')}
+        hasMore={list.hasNextPage}
+        loadingMore={list.isFetchingNextPage}
+        onLoadMore={() => list.fetchNextPage()}
+        onOpen={open}
+        menu={(i) => (
+          <RowMenu label={i.name || formatPhone(i.phone)}>
+            <RowMenuItem onSelect={() => open(i)}>
+              <ShoppingCart aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            <RowMenuItem onSelect={() => window.open(`tel:${i.phone}`, '_self')}>
+              <Phone aria-hidden />
+              {t('queue.call', { phone: formatPhone(i.phone) })}
+            </RowMenuItem>
+          </RowMenu>
+        )}
+        card={(i) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-2">
+                <Link to="/orders/incomplete/$id" params={{ id: i.id }} className="font-medium">
+                  {i.name || t('incomplete.noName')}
+                </Link>
                 <StatusLabel status={i.status} />
-                <span className="font-semibold tabular-nums">
-                  {formatPrice(i.subtotal, locale)}
-                </span>
-                <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
               </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {list.hasNextPage && (
-        <Button
-          variant="secondary"
-          className="self-center"
-          disabled={list.isFetchingNextPage}
-          onClick={() => list.fetchNextPage()}
-        >
-          {t('list.more')}
-        </Button>
-      )}
+              <span className="truncate text-sm">{what(i)}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatPhone(i.phone)} · {dateTime(locale, i.updatedAt)}
+              </span>
+            </div>
+            <span className="shrink-0 font-medium tabular-nums">
+              {formatPrice(i.subtotal, locale)}
+            </span>
+          </div>
+        )}
+      />
     </div>
   );
 }
@@ -170,27 +198,23 @@ export function IncompleteOrderPage() {
   const orderable = d.lines.filter((l) => l.orderable).length;
   return (
     <div className="flex flex-col gap-5 pb-20 md:pb-0">
-      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/orders/incomplete" className="font-medium text-primary hover:underline">
-          {t('incomplete.title')}
-        </Link>
-        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-        <span className="truncate text-muted-foreground">{d.name || formatPhone(d.phone)}</span>
-      </nav>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {d.name || t('incomplete.noName')}
-            </h1>
-            <StatusLabel status={d.status} />
+        <div className="flex items-start gap-2">
+          <BackLink to="/orders/incomplete" label={t('incomplete.title')} />
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight">
+                {d.name || t('incomplete.noName')}
+              </h1>
+              <StatusLabel status={d.status} />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t('incomplete.savedAt', {
+                created: dateTime(locale, d.createdAt),
+                updated: dateTime(locale, d.updatedAt),
+              })}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {t('incomplete.savedAt', {
-              created: dateTime(locale, d.createdAt),
-              updated: dateTime(locale, d.updatedAt),
-            })}
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" asChild>

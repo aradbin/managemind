@@ -142,6 +142,8 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'section.badgeText': 'লেখা ({language})',
 
   'pages.title': 'পাতা',
+  'pages.pageTitle': 'শিরোনাম',
+  'pages.inStore': 'দোকানে',
   'pages.description': 'আমাদের সম্পর্কে, যোগাযোগ, আপনার নীতিমালা আর অন্যান্য পাতা। দোকানের ফুটারে এগুলোর তালিকা থাকে।',
   'pages.empty': 'এখনো কোনো পাতা নেই। নীতিমালার পাতাগুলো প্রস্তাবিত শিরোনাম দিয়ে শুরু হয়, আপনি লিখে নেবেন।',
   'pages.new': 'নতুন পাতা',

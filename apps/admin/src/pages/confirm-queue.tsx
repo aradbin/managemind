@@ -62,7 +62,6 @@ export function ConfirmQueuePage() {
     <div className="flex flex-col gap-4 pb-20 md:pb-0">
       <PageHeader
         className="mb-0"
-        parent={{ to: '/orders', label: t('nav.orders') }}
         title={t('queue.title')}
         description={t('queue.intro')}
         actions={
@@ -88,35 +87,38 @@ export function ConfirmQueuePage() {
       )}
       <nav
         aria-label={t('queue.title')}
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0"
+        className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] md:mx-0 md:px-0"
       >
-        {TABS.map((x) => {
-          const count = x.count ? queue.data?.counts[x.count] : undefined;
-          return (
-            <Link
-              key={x.key}
-              to="/orders/confirm"
-              search={x.key === 'to_call' ? {} : { tab: x.key }}
-              aria-current={tab === x.key ? 'page' : undefined}
-              className={cn(
-                'flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground',
-                tab === x.key && 'border-foreground bg-foreground text-background',
-              )}
-            >
-              {t(x.label)}
-              {count ? (
-                <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
-                  {count}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+        <div className="inline-flex h-9 items-center rounded-[10px] bg-muted p-[3px]">
+          {TABS.map((x) => {
+            const count = x.count ? queue.data?.counts[x.count] : undefined;
+            return (
+              <Link
+                key={x.key}
+                to="/orders/confirm"
+                search={x.key === 'to_call' ? {} : { tab: x.key }}
+                aria-current={tab === x.key ? 'page' : undefined}
+                className={cn(
+                  'inline-flex h-[30px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground',
+                  tab === x.key &&
+                    'bg-background text-foreground shadow-sm dark:border-input dark:bg-input',
+                )}
+              >
+                {t(x.label)}
+                {count ? (
+                  <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
+                    {count}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
       {queue.isPending && <p role="status">{t('loading')}</p>}
       {queue.isError && <Notice tone="error">{errorMessage(queue.error, t)}</Notice>}
       {queue.data?.enabled && items.length === 0 && (
-        <p className="rounded-xl border border-border bg-background p-6 text-center text-muted-foreground">
+        <p className="rounded-xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
           {t(
             tab === 'later'
               ? 'queue.emptyLater'

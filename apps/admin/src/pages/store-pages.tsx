@@ -6,13 +6,15 @@ import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { MAX_PAGES, PAGE_KINDS, PAGE_TITLES, type PageKind } from '@managemind/shared/storefront';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Plus, SquarePen } from 'lucide-react';
 import { useId, useState } from 'react';
 import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, LanguageTabs } from '../components/catalog/language-tabs';
 import { ConfirmDialog } from '../components/confirm-dialog';
+import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -25,15 +27,51 @@ import { ApiError, api, unwrap } from '../lib/api';
 import { pick, storeSettingsQuery } from '../lib/catalog';
 import { saveErrorMessage } from '../lib/errors';
 import { pageQuery, pagesQuery, type StorePage } from '../lib/online-store';
+import { cn } from '../lib/utils';
 
 export function StorePagesPage() {
   const { t, locale } = useLocale();
+  const navigate = useNavigate();
   const canWrite = usePermission('settings.write');
   const pages = useQuery(pagesQuery);
   const [adding, setAdding] = useState(false);
+  const title = (p: StorePage) => pick(p.translations, locale)?.title ?? '—';
+  const open = (p: StorePage) => navigate({ to: '/online-store/pages/$id', params: { id: p.id } });
+  const shown = (p: StorePage) => (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      <span
+        aria-hidden
+        className={cn(
+          'size-2 rounded-full',
+          p.published ? 'bg-success' : 'border border-muted-foreground',
+        )}
+      />
+      {p.published ? t('pages.published') : t('pages.hidden')}
+    </span>
+  );
+  const columns: Column<StorePage>[] = [
+    {
+      header: t('pages.pageTitle'),
+      cell: (p) => (
+        <Link
+          to="/online-store/pages/$id"
+          params={{ id: p.id }}
+          className="font-medium underline-offset-2 hover:underline"
+        >
+          {title(p)}
+        </Link>
+      ),
+    },
+    {
+      header: t('pages.kind'),
+      cell: (p) => <span className="text-muted-foreground">{t(`pages.kind.${p.kind}`)}</span>,
+    },
+    { header: t('pages.inStore'), cell: shown },
+  ];
   return (
-    <div className="max-w-3xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('pages.title')}
         description={t('pages.description')}
         actions={
@@ -42,39 +80,42 @@ export function StorePagesPage() {
               disabled={(pages.data?.length ?? 0) >= MAX_PAGES}
               onClick={() => setAdding(true)}
             >
-              <Plus aria-hidden className="size-4" />
+              <Plus aria-hidden />
               {t('pages.new')}
             </Button>
           )
         }
       />
-      {pages.isPending ? (
-        <p role="status">{t('loading')}</p>
-      ) : pages.isError ? (
-        <Notice tone="error">{saveErrorMessage(pages.error, t)}</Notice>
-      ) : pages.data.length === 0 ? (
-        <Notice>{t('pages.empty')}</Notice>
-      ) : (
-        <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-          {pages.data.map((p) => (
-            <li key={p.id} className="flex min-h-16 items-center justify-between gap-3 p-4">
-              <span className="flex flex-col">
-                <Link
-                  to="/online-store/pages/$id"
-                  params={{ id: p.id }}
-                  className="font-medium underline-offset-2 hover:underline"
-                >
-                  {pick(p.translations, locale)?.title ?? '—'}
-                </Link>
-                <span className="text-sm text-muted-foreground">{t(`pages.kind.${p.kind}`)}</span>
-              </span>
-              <span className="text-sm">
-                {p.published ? t('pages.published') : t('pages.hidden')}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DataList
+        label={t('pages.title')}
+        items={pages.data}
+        rowKey={(p) => p.id}
+        columns={columns}
+        isPending={pages.isPending}
+        error={pages.isError ? saveErrorMessage(pages.error, t) : undefined}
+        onRetry={() => pages.refetch()}
+        empty={t('pages.empty')}
+        onOpen={open}
+        menu={(p) => (
+          <RowMenu label={title(p)}>
+            <RowMenuItem onSelect={() => open(p)}>
+              <SquarePen aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+          </RowMenu>
+        )}
+        card={(p) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/online-store/pages/$id" params={{ id: p.id }} className="font-medium">
+                {title(p)}
+              </Link>
+              <span className="text-xs text-muted-foreground">{t(`pages.kind.${p.kind}`)}</span>
+            </div>
+            <span className="shrink-0 text-sm">{shown(p)}</span>
+          </div>
+        )}
+      />
       {adding && pages.data && <NewPage existing={pages.data} onClose={() => setAdding(false)} />}
     </div>
   );
@@ -157,11 +198,11 @@ function NewPage({ existing, onClose }: { existing: StorePage[]; onClose: () => 
               : saveErrorMessage(create.error, t)}
           </Notice>
         )}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={needsTitle || create.isPending}>
+          <Button type="submit" size="lg" disabled={needsTitle || create.isPending}>
             {t('pages.new')}
           </Button>
         </div>
