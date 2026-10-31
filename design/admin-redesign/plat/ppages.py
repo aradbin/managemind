@@ -123,7 +123,7 @@ def store_page():
                              dialog('dl.close', 'mm-dc-t', '{{dl.closeTitle}}', clo, 'closeAll', 'closeIt', 'Close store', phone=ph, danger=True),
                              dialog('dl.purge', 'mm-dp-t', '{{dl.purgeTitle}}', pur, 'closeAll', 'purgeIt', 'Purge the store', phone=ph, danger=True),
                              dialog('dl.reset', 'mm-dr-t', '{{dl.resetTitle}}', rst, 'closeAll', 'resetIt', 'Reset the store', phone=ph, danger=True)]))
-    ppage('PlatformStore', 'stores', '{{name}}', '{{sub}}', body, body_p, js=pread('store.js'), extra_d='\n' + ex[0], extra_p='\n' + ex[1], actions=acts, actions_p=acts_p, back=('PlatformStores', 'All stores'),
+    ppage('PlatformStore', 'stores', '{{name}}', '{{sub}}', body, body_p, js=pread('store.js'), extra_d='\n' + ex[0], extra_p='\n' + ex[1], actions=acts, actions_p=acts_p, back=('PlatformStores', 'Back to stores'),
           crumbs=[('Platform', 'PlatformStores.dc.html'), ('Stores', 'PlatformStores.dc.html'), ('{{name}}', '')], title_extra=extra)
 
 ALL['store'] = store_page
@@ -152,7 +152,7 @@ def newstore():
     done = ('<sc-if value="{{done}}" hint-placeholder-val="{{false}}"><section class="mm-card" style="align-items: center; gap: 12px; padding: 40px 24px; text-align: center"><span class="mm-chk" data-done="true" style="width: 40px; height: 40px" aria-hidden="true">' + svg(ICONS['check'], 20).replace('stroke-width="2"', 'stroke-width="3"') + '</span>'
             '<h2 class="mm-ctitle" style="font-size: 18px">{{doneTitle}}</h2><p class="mm-muted" style="margin: 0; max-width: 420px">{{doneText}}</p><div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-top: 4px"><button type="button" class="mm-btn mm-outline" onClick="{{again}}">Create another</button><a href="{{storeHref}}" class="mm-btn mm-primary">Open the store</a></div></section></sc-if>')
     intro = 'Everything a store starts with, in one go. The owner gets an email with the admin’s address.'
-    ppage('NewStore', 'stores', 'New store', intro, form_ + done, js=pread('newstore.js'), back=('PlatformStores', 'All stores'), width=640,
+    ppage('NewStore', 'stores', 'New store', intro, form_ + done, js=pread('newstore.js'), back=('PlatformStores', 'Back to stores'), width=640,
           crumbs=[('Platform', 'PlatformStores.dc.html'), ('Stores', 'PlatformStores.dc.html'), ('New store', '')])
 
 ALL['newstore'] = newstore
@@ -181,7 +181,7 @@ def dashboard():
                 '<span class="mm-meter" aria-hidden="true"><span style="display: block; height: 100%; width: {{fl.pct}}; background: {{fl.color}}"></span></span></li></sc-for></ul>'
                 '<p style="margin: 0; font-size: 13px"><span class="mm-muted">Failed messages waiting:</span> {{dead}}</p></sc-if>'
                 '<sc-if value="{{noUsage}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">The daily usage check hasn’t written its numbers yet.</p></sc-if>',
-                sub='<sc-if value="{{hasUsage}}" hint-placeholder-val="{{true}}">As of the usage check at Oct 29, 6:00 AM. A warning shows at 70%.</sc-if>', gap='14px')
+                sub='<sc-if value="{{hasUsage}}" hint-placeholder-val="{{true}}">As of the usage check at 29 Oct, 6:00 AM. A warning shows at 70%.</sc-if>', gap='14px')
     mfigs = ('<dl class="mm-figs" aria-label="Money" style="margin: 0; grid-template-columns: repeat(3, minmax(0, 1fr))"><sc-for list="{{money}}" as="mn" hint-placeholder-count="3"><div class="mm-fig"><dt>{{mn.label}}</dt><dd>{{mn.value}}</dd><small style="color: {{mn.color}}">{{mn.note}}</small></div></sc-for></dl>')
     cols = 'minmax(0, 1.6fr) repeat(5, minmax(0, 1fr))'
     use_d = table(cols, ['Store', '>Orders this month', '>Products', '>Emails this month', '>Storage', '>Domains'], 'use', 'u',
@@ -264,7 +264,7 @@ def invoice():
     ex = ['\n'.join([panel('pn.pay', 'closeAll', 'mm-py-t', 'Record a payment', '{{title}} · {{store}}', pay, 'record', 'Record payment', phone=ph),
                      dialog('dl.vd', 'mm-vd-t', 'Void this invoice?', vd, 'closeAll', 'voidIt', 'Void', phone=ph, danger=True)]) for ph in (False, True)]
     ppage('PlatformInvoice', 'billing', '{{title}}', '<a href="{{storeHref}}" style="color: inherit; text-decoration: underline; text-underline-offset: 3px">{{store}}</a>', notes + doc, js=pread('invoice.js'), extra_d='\n' + ex[0], extra_p='\n' + ex[1],
-          actions=acts, actions_p=acts_p, back=('PlatformBilling', 'All invoices'), width=860, crumbs=[('Platform', 'PlatformStores.dc.html'), ('Billing', 'PlatformBilling.dc.html'), ('{{title}}', '')])
+          actions=acts, actions_p=acts_p, back=('PlatformBilling', 'Back to invoices'), width=860, crumbs=[('Platform', 'PlatformStores.dc.html'), ('Billing', 'PlatformBilling.dc.html'), ('{{title}}', '')])
 
 ALL['invoice'] = invoice
 

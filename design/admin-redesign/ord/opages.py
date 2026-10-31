@@ -65,7 +65,16 @@ def orders():
         datebar,
         '<div style="border: 1px solid var(--border); border-radius: 10px">',
         '<div class="mm-ogrid mm-thead"><span>' + checkbox('all', extra='') .replace('aria-checked="{{all.aria}}"', 'aria-checked="{{all.aria}}" aria-label="Select all"').replace('<sc-if value="{{all.on}}" hint-placeholder-val="{{false}}">' + CHECK + '</sc-if>', '<sc-if value="{{all.on}}" hint-placeholder-val="{{false}}">' + CHECK + '</sc-if><sc-if value="{{all.some}}" hint-placeholder-val="{{false}}">' + svg(ICONS['minus'], 14, 'color: var(--primary-foreground)').replace('stroke-width="2"', 'stroke-width="3"') + '</sc-if>') + '</span>'
-        '<span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></div>',
+        '<sc-if value="{{bar.hide}}" hint-placeholder-val="{{true}}"><span aria-hidden="true">Order</span><span aria-hidden="true">Customer</span><span aria-hidden="true">Placed</span><span aria-hidden="true">Status</span><span aria-hidden="true">Payment</span><span aria-hidden="true">Delivery</span><span class="mm-num" aria-hidden="true">Total</span><span></span></sc-if>',
+        # Selecting rows swaps the headings for what can be done to them, right above the rows.
+        '<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}"><div role="region" aria-label="Selected orders" class="mm-bulk">',
+        '<span role="status" style="font-weight: 500; white-space: nowrap; color: var(--foreground)">{{bar.label}}</span><span aria-hidden="true" class="mm-bulk-sep"></span>',
+        '<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.confirm}}">' + svg(ICONS['check']) + '{{bar.confirmText}}</button></sc-if>',
+        '<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{bar.book}}">' + svg(ICONS['truck']) + 'Book with a courier</button></sc-if>',
+        '<button type="button" class="mm-btn mm-ghost" onClick="{{bar.invoices}}">' + svg(ICONS['printer']) + 'Invoices</button>',
+        '<button type="button" class="mm-btn mm-ghost" onClick="{{bar.slips}}">' + svg(ICONS['file']) + 'Packing slips</button>',
+        '<button type="button" class="mm-btn mm-ghost" style="margin-left: auto" onClick="{{bar.clear}}">Clear</button>',
+        '</div></sc-if></div>',
         OUL % 'Orders',
         '<sc-for list="{{rows}}" as="r" hint-placeholder-count="10"><li><div class="mm-ogrid mm-row" style="min-height: 56px">',
         '<span>' + checkbox('r.sel', 'r.selAria', '; position: relative; z-index: 2') + '</span>',
@@ -80,15 +89,7 @@ def orders():
         '</div></li></sc-for>',
         '</ul>',
         '<sc-if value="{{empty}}" hint-placeholder-val="{{false}}">' + empty_block('{{emptyText}}', 'Reset filters') + '</sc-if>',
-        '</div>',
-        '<sc-if value="{{bar.show}}" hint-placeholder-val="{{false}}">\n<div role="region" aria-label="Selected orders" class="mm-bar">',
-        '<span role="status" style="font-weight: 500; white-space: nowrap">{{bar.label}}</span><span aria-hidden="true" class="mm-bar-sep"></span>',
-        '<sc-if value="{{bar.canConfirm}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.confirm}}">' + svg(ICONS['check']) + '{{bar.confirmText}}</button></sc-if>',
-        '<sc-if value="{{bar.canShip}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-inv" onClick="{{bar.book}}">' + svg(ICONS['truck']) + 'Book with a courier</button></sc-if>',
-        '<button type="button" class="mm-btn mm-inv" onClick="{{bar.invoices}}">' + svg(ICONS['printer']) + 'Invoices</button>',
-        '<button type="button" class="mm-btn mm-inv" onClick="{{bar.slips}}">' + svg(ICONS['file']) + 'Packing slips</button>',
-        '<span aria-hidden="true" class="mm-bar-sep"></span><button type="button" class="mm-btn mm-inv" onClick="{{bar.clear}}">Clear</button>',
-        '</div>\n</sc-if>']) + DEND
+        '</div>']) + DEND
     book_body = '\n'.join([
         '<div class="mm-field" style="gap: 0"><p id="mm-bk-c" class="mm-label" style="margin: 0 0 8px">Courier</p>' + radio_list('bk.couriers', 'mm-bk-c', var='cr', count=3) + '</div>',
         '<div class="mm-field" style="gap: 0"><p class="mm-label" style="margin: 0 0 4px">Orders</p><ul class="mm-mlist"><sc-for list="{{bk.lines}}" as="bl" hint-placeholder-count="2"><li style="flex-direction: row; align-items: center; gap: 10px"><span class="mm-mono" style="font-weight: 600">{{bl.n}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{bl.name}}</span><span class="mm-trunc mm-muted" style="font-size: 12px">{{bl.area}}</span></span><span style="font-size: 13px; font-variant-numeric: tabular-nums">{{bl.cod}}</span></li></sc-for></ul></div>',
@@ -285,6 +286,7 @@ def order():
             '<button type="button" class="mm-btn mm-outline mm-icon" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{moreAria}}" onClick="{{toggleMore}}">' + svg(ICONS['dots']) + '</button>'
             '<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>'
             '<div role="menu" aria-label="More actions" class="mm-menu" onKeyDown="{{escClose}}" style="top: 40px; right: 0; width: 210px">'
+            '<sc-if value="{{canEdit}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" aria-haspopup="dialog" onClick="{{openEdit}}">' + svg(ICONS['pencil']) + 'Edit order</button></sc-if>'
             '<sc-if value="{{canPay}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{openPay}}">' + svg(ICONS['wallet']) + 'Record a payment</button></sc-if>'
             '<sc-if value="{{canProcess}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{process}}">' + svg(ICONS['package']) + 'Start processing</button></sc-if>'
             '<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{printInvoice}}">' + svg(ICONS['printer']) + 'Print invoice</button>'
@@ -297,8 +299,8 @@ def order():
         '<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">{{od.title}}</h1>',
         '<span style="display: flex; gap: 6px">' + sbadge("od.status") + sbadge("od.pay") + sbadge("od.del") + '</span>',
         '<span style="flex: 1"></span>',
-        '<sc-if value="{{canEdit}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{openEdit}}">' + svg(ICONS['pencil']) + 'Edit</button></sc-if>',
-        '<sc-if value="{{canBook}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-outline" onClick="{{createShipment}}">Create shipment</button><button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{openBook}}">' + svg(ICONS['truck']) + '{{bookText}}</button></sc-if>',
+        # One next step in the header; editing and shipping in other ways live in ⋯ and the cards.
+        '<sc-if value="{{canBook}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{openBook}}">' + svg(ICONS['truck']) + '{{bookText}}</button></sc-if>',
         '<sc-if value="{{canConfirm}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" onClick="{{confirm}}">' + svg(ICONS['check']) + 'Confirm</button></sc-if>',
         more, '</div>',
         '<p class="mm-muted" style="margin: -8px 0 0">{{od.placed}}</p>'])
@@ -346,6 +348,82 @@ def order():
     js = oread('order.js')
     opts = list(js_starts(js))
     owrite('Order', 'orders', [('Orders', 'Orders.dc.html'), ('{{od.title}}', '')], 'Order', d, ph, js, opts, opts[0])
+
+
+def states():
+    """Loading and failed-to-load, drawn once on Orders and one order for every list and record page to follow."""
+    sk = lambda w, h=10: '<span class="mm-skel" style="width: %s; height: %dpx"></span>' % (w, h)
+    def failed(what, phone=False):
+        pad = '40px 20px' if phone else '56px 24px'
+        return ('<div role="alert" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: %s; text-align: center">' % pad
+                + '<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground)">' + svg(ICONS['alert'], 20) + '</span>'
+                + '<p style="margin: 4px 0 0; font-weight: 600">%s didn’t load</p>' % what
+                + '<p class="mm-muted" style="margin: 0; max-width: 360px">We couldn’t reach managemind. Check your connection, then try again. The rest of the admin still works.</p>'
+                + '<button type="button" class="mm-btn mm-outline" style="margin-top: 8px%s" onClick="{{retry}}">' % ('; height: 40px' if phone else '') + svg(ICONS['refresh']) + 'Try again</button></div>')
+    missing = lambda phone: ('<div role="alert" style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: %s; text-align: center">' % ('40px 20px' if phone else '56px 24px')
+               + '<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; background: var(--muted); color: var(--muted-foreground)">' + svg(ICONS['search'], 20) + '</span>'
+               + '<p style="margin: 4px 0 0; font-weight: 600">Order #1099 doesn’t exist</p><p class="mm-muted" style="margin: 0; max-width: 360px">It may have been deleted, or the link is wrong.</p>'
+               + '<a href="Orders%s.dc.html" class="mm-btn mm-primary" style="margin-top: 8px">All orders</a></div>' % ('Phone' if phone else ''))
+    busy = '<p class="mm-sr" role="status">Loading…</p>'
+    # ---- desktop ----
+    list_d = '\n'.join([
+        '<sc-if value="{{isList}}" hint-placeholder-val="{{true}}">',
+        '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px"><h1 style="flex: 1; margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Orders</h1>'
+        '<button type="button" class="mm-btn mm-outline">' + svg(ICONS['download']) + 'Export</button><a href="NewOrder.dc.html" class="mm-btn mm-primary">' + svg(ICONS['plus']) + 'New order</a></div>',
+        '<div role="tablist" aria-label="Status" class="mm-tabs mm-ttabs" style="align-self: flex-start; height: 36px"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}">{{t.label}}</button></sc-for></div>',
+        '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><div style="position: relative; width: 300px; max-width: 100%">' + svg(ICONS['search'], 16, 'position: absolute; left: 10px; top: 10px; color: var(--muted-foreground); pointer-events: none')
+        + '<input type="search" class="mm-input" aria-label="Search by number, phone or name" placeholder="Search by number, phone or name" style="width: 100%; padding-left: 34px"></div>'
+        + ''.join('<button type="button" class="mm-btn mm-outline mm-dashed">' + svg(ICONS['circleplus']) + l + '</button>' for l in ['Payment', 'Source', 'Zone', 'Flag']) + '</div>',
+        '<div style="border: 1px solid var(--border); border-radius: 10px">',
+        '<div class="mm-ogrid mm-thead"><span></span><span>Order</span><span>Customer</span><span>Placed</span><span>Status</span><span>Payment</span><span>Delivery</span><span class="mm-num">Total</span><span></span></div>',
+        '<sc-if value="{{loading}}" hint-placeholder-val="{{true}}">' + busy + '<ul aria-hidden="true" style="list-style: none; margin: 0; padding: 0"><sc-for list="{{skel}}" as="k" hint-placeholder-count="8"><li class="mm-ogrid mm-row" style="min-height: 56px">'
+        + sk('16px', 16) + sk('{{k.b}}') + '<span style="display: flex; flex-direction: column; gap: 6px">' + sk('{{k.a}}') + sk('{{k.b}}', 8) + '</span>' + sk('{{k.c}}') + sk('70%', 18) + sk('62%', 18) + sk('74%', 18)
+        + '<span style="display: flex; justify-content: flex-end">' + sk('{{k.c}}') + '</span><span></span></li></sc-for></ul></sc-if>',
+        '<sc-if value="{{failed}}" hint-placeholder-val="{{false}}">' + failed('Orders') + '</sc-if>',
+        '</div>', '</sc-if>'])
+    rec_d = '\n'.join([
+        '<sc-if value="{{isRec}}" hint-placeholder-val="{{false}}">',
+        '<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px"><a href="Orders.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to orders" style="margin-left: -8px">' + svg(ICONS['back']) + '</a>'
+        '<sc-if value="{{known}}" hint-placeholder-val="{{true}}"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Order #1053</h1></sc-if>'
+        '<sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Order #1099</h1></sc-if>'
+        '<sc-if value="{{loading}}" hint-placeholder-val="{{true}}"><span aria-hidden="true" style="display: flex; gap: 6px">' + sk('76px', 20) + sk('64px', 20) + sk('72px', 20) + '</span></sc-if></div>',
+        '<sc-if value="{{loading}}" hint-placeholder-val="{{true}}">' + busy + '<div class="mm-cols" aria-hidden="true"><div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">'
+        '<section class="mm-card" style="gap: 14px">' + sk('80px', 14) + '<sc-for list="{{lines}}" as="ln" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 12px">' + sk('40px', 40)
+        + '<span style="flex: 1; display: flex; flex-direction: column; gap: 6px">' + sk('{{ln.a}}') + sk('{{ln.b}}', 8) + '</span>' + sk('64px') + '</div></sc-for></section>'
+        '<section class="mm-card" style="gap: 12px">' + sk('96px', 14) + sk('70%') + sk('45%') + '</section></div>'
+        '<div style="display: flex; flex-direction: column; gap: 16px; min-width: 0"><section class="mm-card" style="gap: 12px">' + sk('88px', 14) + sk('60%') + sk('80%') + '<span style="display: flex; gap: 8px">' + sk('50%', 32) + sk('50%', 32) + '</span></section>'
+        '<section class="mm-card" style="gap: 12px">' + sk('64px', 14) + sk('40%', 20) + '</section></div></div></sc-if>',
+        '<sc-if value="{{failed}}" hint-placeholder-val="{{false}}"><section class="mm-card" style="padding: 0">' + failed('This order') + '</section></sc-if>',
+        '<sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><section class="mm-card" style="padding: 0">' + missing(False) + '</section></sc-if>',
+        '</sc-if>'])
+    d = '\n'.join([MAIN, list_d, rec_d]) + DEND + XEND
+    # ---- phone ----
+    pcard = ('<li style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border)"><span style="display: flex; justify-content: space-between; gap: 12px">'
+             + sk('{{k.b}}', 12) + sk('56px', 12) + '</span>' + sk('{{k.a}}') + '<span style="display: flex; gap: 6px">' + sk('64px', 18) + sk('56px', 18) + '</span></li>')
+    list_p = '\n'.join([
+        '<sc-if value="{{isList}}" hint-placeholder-val="{{true}}">', '@@PHEADER@@', '<main class="mm-scroll" style="gap: 12px; padding: 16px">',
+        '<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Orders</h1><a href="NewOrderPhone.dc.html" class="mm-btn mm-primary">' + svg(ICONS['plus']) + 'New</a></div>',
+        '<nav aria-label="Status" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none"><div role="tablist" aria-label="Status" class="mm-tabs mm-ttabs" style="height: 40px"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}">{{t.label}}</button></sc-for></div></nav>',
+        '<div style="border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden">',
+        '<sc-if value="{{loading}}" hint-placeholder-val="{{true}}">' + busy + '<ul aria-hidden="true" style="list-style: none; margin: 0 0 -1px; padding: 0"><sc-for list="{{cards}}" as="k" hint-placeholder-count="5">' + pcard + '</sc-for></ul></sc-if>',
+        '<sc-if value="{{failed}}" hint-placeholder-val="{{false}}">' + failed('Orders', True) + '</sc-if>',
+        '</div>', '</main>', '@@TABBAR@@', '</sc-if>'])
+    rec_p = '\n'.join([
+        '<sc-if value="{{isRec}}" hint-placeholder-val="{{false}}">',
+        '<sc-if value="{{known}}" hint-placeholder-val="{{true}}">' + phone_back('OrdersPhone.dc.html', 'Back to orders', 'Order #1053') + '</sc-if>',
+        '<sc-if value="{{missing}}" hint-placeholder-val="{{false}}">' + phone_back('OrdersPhone.dc.html', 'Back to orders', 'Order #1099') + '</sc-if>',
+        '<main class="mm-scroll" style="gap: 12px; padding: 12px">',
+        '<sc-if value="{{loading}}" hint-placeholder-val="{{true}}">' + busy + '<div aria-hidden="true" style="display: flex; flex-direction: column; gap: 12px">'
+        '<section class="mm-card" style="gap: 10px; padding: 16px"><span style="display: flex; gap: 6px">' + sk('72px', 20) + sk('64px', 20) + '</span>' + sk('40%', 22) + sk('60%') + sk('100%', 40) + '</section>'
+        '<section class="mm-card" style="gap: 10px; padding: 16px">' + sk('88px', 14) + sk('60%') + sk('80%') + '<span style="display: flex; gap: 8px">' + sk('50%', 40) + sk('50%', 40) + '</span></section>'
+        '<section class="mm-card" style="gap: 12px; padding: 16px">' + sk('64px', 14) + '<sc-for list="{{lines}}" as="ln" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 12px">' + sk('40px', 40)
+        + '<span style="flex: 1; display: flex; flex-direction: column; gap: 6px">' + sk('{{ln.a}}') + sk('{{ln.b}}', 8) + '</span></div></sc-for></section></div></sc-if>',
+        '<sc-if value="{{failed}}" hint-placeholder-val="{{false}}"><section class="mm-card" style="padding: 0">' + failed('This order', True) + '</section></sc-if>',
+        '<sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><section class="mm-card" style="padding: 0">' + missing(True) + '</section></sc-if>',
+        '</main>', '</sc-if>'])
+    ph = '\n'.join([PROOT % 'var(--background)', list_p, rec_p]) + '\n@@PTOAST@@\n\n</div>\n</x-dc>\n'
+    js = oread('states.js'); opts = js_starts(js)
+    owrite('States', 'orders', [('Orders', 'Orders.dc.html'), ('Loading and errors', '')], 'Loading and errors', d, ph, js, opts, opts[0])
 
 def js_starts(js):
     """The top-level keys of START, in order."""
@@ -796,4 +874,4 @@ def ret():
     js = oread('return.js'); opts = js_starts(js)
     owrite('Return', 'returns', [('Orders', 'Orders.dc.html'), ('Returns', 'Returns.dc.html'), ('{{rt.title}}', '')], 'Return', d, ph, js, opts, opts[0])
 
-ALL = {'orders': orders, 'order': order, 'neworder': neworder, 'confirm': confirm, 'incomplete': incomplete, 'incorder': incorder, 'creturns': creturns, 'returns': returns, 'ret': ret}
+ALL = {'states': states, 'orders': orders, 'order': order, 'neworder': neworder, 'confirm': confirm, 'incomplete': incomplete, 'incorder': incorder, 'creturns': creturns, 'returns': returns, 'ret': ret}

@@ -79,6 +79,9 @@ button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:
 .mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
 .mm .mm-cmd-item:focus-visible{box-shadow:none}
 .mm-cmd-sep{height:1px;background:var(--border)}
+.mm-bulk{display:flex;align-items:center;gap:2px;min-width:0;font-weight:400}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;max-width:calc(100% - 16px);height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
 .mm-inv{color:var(--primary-foreground);background:transparent}
 .mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
@@ -168,7 +171,6 @@ button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:
 <li><a href="StoreSettings.dc.html" class="mm-subbtn">Store settings</a></li>
 </ul></sc-if></li>
 <li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
-<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
 </ul>
 </div>
 
@@ -246,15 +248,6 @@ button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:
 </div>
 </div>
 
-<nav aria-label="Catalog sections" style="overflow-x: auto">
-<div style="display: inline-flex; align-items: center; height: 36px; padding: 3px; box-sizing: border-box; border-radius: 10px; background: var(--muted)">
-<a href="#" class="mm-tab" aria-current="page">Products</a>
-<a href="Categories.dc.html" class="mm-tab">Categories</a>
-<a href="Collections.dc.html" class="mm-tab">Collections</a>
-<a href="Attributes.dc.html" class="mm-tab">Attributes</a>
-<a href="Import.dc.html" class="mm-tab">Import</a>
-</div>
-</nav>
 
 <div role="tablist" aria-label="Status" class="mm-stabs">
 <sc-for list="{{stTabs}}" as="t" hint-placeholder-count="4"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for>
@@ -305,12 +298,19 @@ button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:
 <thead style="background: var(--muted)">
 <tr style="border-bottom: 1px solid var(--border)">
 <th class="mm-th" style="width: 32px"><button type="button" role="checkbox" class="mm-check" aria-checked="{{allAria}}" aria-label="Select all" onClick="{{toggleAll}}" style="background: {{allBox}}; border-color: {{allEdge}}"><sc-if value="{{all}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{some}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></sc-if></button></th>
-<th class="mm-th" aria-sort="{{sTitle.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sTitle.toggle}}">Product<sc-if value="{{sTitle.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sTitle.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sTitle.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
-<th class="mm-th">Status</th>
-<th class="mm-th mm-num" aria-sort="{{sPrice.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sPrice.toggle}}">Price<sc-if value="{{sPrice.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sPrice.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sPrice.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
-<th class="mm-th mm-num" aria-sort="{{sVariants.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sVariants.toggle}}">Variants<sc-if value="{{sVariants.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sVariants.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sVariants.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
-<th class="mm-th mm-num" aria-sort="{{sStock.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sStock.toggle}}">Stock<sc-if value="{{sStock.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sStock.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sStock.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
-<th class="mm-th" style="width: 40px"><span class="mm-sr">Actions</span></th>
+<th class="mm-th" aria-sort="{{sTitle.aria}}" style="display: {{headCell}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sTitle.toggle}}">Product<sc-if value="{{sTitle.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sTitle.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sTitle.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th" style="display: {{headCell}}">Status</th>
+<th class="mm-th mm-num" aria-sort="{{sPrice.aria}}" style="display: {{headCell}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sPrice.toggle}}">Price<sc-if value="{{sPrice.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sPrice.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sPrice.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th mm-num" aria-sort="{{sVariants.aria}}" style="display: {{headCell}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sVariants.toggle}}">Variants<sc-if value="{{sVariants.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sVariants.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sVariants.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th mm-num" aria-sort="{{sStock.aria}}" style="display: {{headCell}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sStock.toggle}}">Stock<sc-if value="{{sStock.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sStock.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sStock.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th" style="display: {{headCell}}; width: 40px"><span class="mm-sr">Actions</span></th>
+<th class="mm-th" colspan="6" style="display: {{bulkCell}}; padding: 0 8px 0 0"><div role="region" aria-label="Bulk actions" class="mm-bulk"><span role="status" style="font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--foreground)">{{selText}}</span>
+<span aria-hidden="true" class="mm-bulk-sep"></span>
+<button type="button" class="mm-btn mm-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>Edit prices</button>
+<button type="button" class="mm-btn mm-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Change status</button>
+<button type="button" class="mm-btn mm-ghost" aria-haspopup="dialog" onClick="{{openExportSelected}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
+
+<button type="button" class="mm-btn mm-ghost mm-icon" style="margin-left: auto" aria-label="Clear selection" title="Clear selection" onClick="{{clearSel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></div></th>
 </tr>
 </thead>
 <tbody>
@@ -439,17 +439,6 @@ button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:
 </div>
 </div>
 
-<sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
-<div role="region" aria-label="Bulk actions" class="mm-bar">
-<span role="status" style="font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums">{{selText}}</span>
-<span aria-hidden="true" class="mm-bar-sep"></span>
-<button type="button" class="mm-btn mm-inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>Edit prices</button>
-<button type="button" class="mm-btn mm-inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Change status</button>
-<button type="button" class="mm-btn mm-inv" aria-haspopup="dialog" onClick="{{openExportSelected}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
-<span aria-hidden="true" class="mm-bar-sep"></span>
-<button type="button" class="mm-btn mm-inv mm-icon" aria-label="Clear selection" title="Clear selection" onClick="{{clearSel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
-</div>
-</sc-if>
 
 </main>
 </div>
@@ -562,7 +551,7 @@ var FONTS = {
 var CMD_GROUPS = [
   { label: 'Go to', items: [
     { label: 'Home', icon: 'home' }, { label: 'Customers', icon: 'customers' }, { label: 'Promotions', icon: 'promotions' },
-    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }, { label: 'Billing', icon: 'billing' }
+    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }
   ] },
   { label: 'Orders', icon: 'orders', items: [
     { label: 'All orders' }, { label: 'Confirm orders' }, { label: 'Incomplete orders' }, { label: 'Courier returns' }, { label: 'Returns' }
@@ -681,6 +670,9 @@ class Component extends DCLogic {
       setSel(all ? sel.filter(function (id) { return !has(ids, id); }) : sel.concat(ids.filter(function (id) { return !has(sel, id); })));
     };
     vals.hasSel = sel.length > 0;
+    // Selecting rows swaps the column headings for what can be done to them.
+    vals.headCell = vals.hasSel ? 'none' : 'table-cell';
+    vals.bulkCell = vals.hasSel ? 'table-cell' : 'none';
     vals.selText = sel.length + ' selected';
     vals.clearSel = function () { setSel([]); };
 

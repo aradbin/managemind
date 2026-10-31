@@ -1,6 +1,6 @@
 var START = { Checkout: {}, 'Cash on delivery off': { f: { cod: false } }, 'Block a phone': { bp: '01987-121212', br: 'Refused two parcels' }, Edited: { f: { maxQty: '5', prefix: 'NF-' } } };
 var BASE = { email: 'optional', maxQty: '10', prefix: '#', terms: true, accounts: false, cod: true, codMax: '15000', advance: 'flagged', otp: 'flagged', perHour: '3', perDay: '10', perIp: '20' };
-var BLOCKED = [['01911-000111', 'Fake orders, three times', 'Oct 12'], ['01700-554433', 'Refused at the door twice', 'Sep 28']];
+var BLOCKED = [['01911-000111', 'Fake orders, three times', '12 Oct'], ['01700-554433', 'Refused at the door twice', '28 Sep']];
 class Component extends DCLogic {
   renderVals() {
     var b = boot(this, START, 'Checkout');

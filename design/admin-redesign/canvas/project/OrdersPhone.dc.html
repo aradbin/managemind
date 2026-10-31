@@ -240,6 +240,12 @@ li:last-child>.mm-orow{border-bottom:0}
 .mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
 .mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -310,9 +316,6 @@ li:last-child>.mm-orow{border-bottom:0}
 <h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Orders</h1>
 <a href="NewOrderPhone.dc.html" class="mm-btn mm-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New</a>
 </div>
-<nav aria-label="Order sections" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
-<div class="mm-secbar"><a href="OrdersPhone.dc.html" class="mm-tab" aria-current="page">All orders</a><a href="ConfirmPhone.dc.html" class="mm-tab">Confirm orders</a><a href="IncompletePhone.dc.html" class="mm-tab">Incomplete orders</a><a href="CourierReturnsPhone.dc.html" class="mm-tab">Courier returns</a><a href="ReturnsPhone.dc.html" class="mm-tab">Returns</a></div>
-</nav>
 <nav aria-label="Status" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none"><div role="tablist" aria-label="Status" class="mm-tabs mm-ttabs" style="align-self: flex-start; height: 40px"><sc-for list="{{tabs}}" as="t" hint-placeholder-count="6"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for></div></nav>
 <div style="display: flex; gap: 8px"><div style="position: relative; flex: 1; min-width: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="search" class="mm-input" aria-label="Number, phone or name" placeholder="Number, phone or name" value="{{q}}" onChange="{{onQ}}" style="padding-left: 36px"></div><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{openFilters}}" style="height: 40px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5H3"></path><path d="M12 19H3"></path><path d="M14 3v4"></path><path d="M16 17v4"></path><path d="M21 12h-9"></path><path d="M21 19h-5"></path><path d="M21 5h-7"></path><path d="M8 10v4"></path><path d="M8 12H3"></path></svg>Filters<sc-if value="{{hasCount}}" hint-placeholder-val="{{false}}"><span class="mm-badge-sec" style="margin-left: 2px">{{filterCount}}</span></sc-if></button></div>
 <ul class="mm-plist" aria-label="Orders">
@@ -468,8 +471,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -732,7 +735,7 @@ class Component extends DCLogic {
     var pend = picked.filter(function (o) { return o.status === 'pending'; });
     var ship = picked.filter(canShip);
     vals.bar = {
-      show: picked.length > 0, label: plural(picked.length, 'order', 'orders') + ' selected',
+      show: picked.length > 0, hide: picked.length === 0, label: plural(picked.length, 'order', 'orders') + ' selected',
       canConfirm: pend.length > 0, confirmText: 'Confirm ' + pend.length + ' pending', canShip: ship.length > 0,
       confirm: function () { up({ sel: [], orders: orders.map(function (x) { return pend.indexOf(x) !== -1 ? Object.assign({}, x, { status: 'confirmed', conf: { via: 'staff' } }) : x; }), toast: toast(plural(pend.length, 'order is', 'orders are') + ' confirmed.') }); },
       book: function () { up({ book: true, courier: null }); },

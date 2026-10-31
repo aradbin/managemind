@@ -148,11 +148,11 @@ def report(name, sec, title, intro, js, opts, actions_d='', actions_p='', extra_
     head = ('<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px">'
             '<div style="display: flex; align-items: center; gap: 12px; min-width: 0">%s<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">%s</h1><p class="mm-muted" style="margin: 0">%s</p></div></div>'
             '<div style="display: flex; flex-wrap: wrap; gap: 8px">%s</div></div>') % (
-        '<a href="%s.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back" style="margin-left: -8px">' % back + svg(ICONS['back']) + '</a>' if back else '', title, intro, actions_d)
+        '<a href="%s.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to COD outstanding" style="margin-left: -8px">' % back + svg(ICONS['back']) + '</a>' if back else '', title, intro, actions_d)
     d = '\n'.join([MAIN, head, '' if back else '@@RSECTIONS:%s@@' % sec, '<sc-if value="{{hasRange}}" hint-placeholder-val="{{true}}">' + rc + '</sc-if>', controls(False), NOTES, NODATA, stats(False), CHART, blocks(False)]) + DEND + extra_d + XEND
     rcp, fieldsp = range_ctl(True)
     if back:
-        ph_top = '\n'.join([PROOT % 'var(--background)', phone_back(back + 'Phone.dc.html', 'Back', title, actions_p), '<main class="mm-scroll" style="gap: 12px; padding: 16px">', '<p class="mm-muted" style="margin: 0; font-size: 13px">%s</p>' % intro])
+        ph_top = '\n'.join([PROOT % 'var(--background)', phone_back(back + 'Phone.dc.html', 'Back to COD outstanding', title, actions_p), '<main class="mm-scroll" style="gap: 12px; padding: 16px">', '<p class="mm-muted" style="margin: 0; font-size: 13px">%s</p>' % intro])
     else:
         ph_top = optop(title, actions_p, sec).replace('@@OSECTIONS:%s@@' % sec, '@@RSECTIONS:%s@@' % sec)
     ph = ph_top + '\n'.join(['<sc-if value="{{hasRange}}" hint-placeholder-val="{{true}}">' + rcp + '</sc-if>', controls(True), NOTES, NODATA, stats(True), CHART, blocks(True)])

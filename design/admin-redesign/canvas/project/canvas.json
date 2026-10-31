@@ -615,7 +615,7 @@
    "y": 28560
   },
   "Rules.dc.html": {
-   "h": 4340,
+   "h": 4980,
    "title": "Design rules",
    "w": 1280,
    "x": 2000,
@@ -1421,6 +1421,33 @@
    "title": "Import expenses — phone",
    "is_interactive": true,
    "radius": 32
+  },
+  "PrintOrdersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Print — invoices and packing slips — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 65280
+  },
+  "States.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Loading and errors",
+   "w": 1440,
+   "x": 0,
+   "y": 80580
+  },
+  "StatesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Loading and errors — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 80580
   }
  },
  "createdOnFiles": {
@@ -1563,6 +1590,7 @@
   "Account.dc.html",
   "AccountPhone.dc.html",
   "PrintOrders.dc.html",
+  "PrintOrdersPhone.dc.html",
   "PrintPurchaseOrder.dc.html",
   "PrintPurchaseOrderPhone.dc.html",
   "PlatformStores.dc.html",
@@ -1590,7 +1618,9 @@
   "SupplierImport.dc.html",
   "SupplierImportPhone.dc.html",
   "ExpenseImport.dc.html",
-  "ExpenseImportPhone.dc.html"
+  "ExpenseImportPhone.dc.html",
+  "States.dc.html",
+  "StatesPhone.dc.html"
  ],
  "pages": [],
  "title": "Admin Products — shadcn default"

@@ -240,6 +240,12 @@ li:last-child>.mm-orow{border-bottom:0}
 .mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
 .mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -421,7 +427,7 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 
 <section aria-labelledby="mm-h-st" style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-h-st" style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 600">Stores</h2><dl class="mm-figs" aria-label="Stores" style="margin: 0; grid-template-columns: repeat(2,minmax(0,1fr))"><sc-for list="{{stores}}" as="sf2" hint-placeholder-count="4"><div class="mm-fig"><dt>{{sf2.label}}</dt><dd>{{sf2.value}}</dd></div></sc-for></dl></section>
 <section class="mm-card" aria-labelledby="mm-c-sl" style="gap: 14px"><div class="mm-chead"><h2 id="mm-c-sl" class="mm-ctitle">Sales across client stores</h2><button type="button" class="mm-btn mm-ghost" style="height: 28px; margin-right: -8px; padding: 0 8px" onClick="{{trend.toggle}}">{{trend.toggleText}}</button></div><div style="display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px"><sc-for list="{{sales}}" as="sl" hint-placeholder-count="2"><div style="display: flex; flex-direction: column; gap: 2px"><span class="mm-muted" style="font-size: 13px; font-weight: 500">{{sl.label}}</span><span style="font-size: 20px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums">{{sl.value}}</span><span class="mm-muted" style="font-size: 12px">{{sl.note}}</span></div></sc-for></div><p class="mm-muted" style="margin: 0; font-size: 12px; font-weight: 500">Last 30 days</p><sc-if value="{{trend.asChart}}" hint-placeholder-val="{{true}}"><div class="mm-chart" role="group" aria-label="Sales across client stores, last 30 days"><div class="mm-plot" style="height: 150px"><sc-for list="{{trend.ticks}}" as="tk" hint-placeholder-count="3"><div class="mm-tick" style="bottom: {{tk.pos}}"><span>{{tk.label}}</span></div></sc-for><div class="mm-bars" style="gap: 3px"><sc-for list="{{trend.bars}}" as="br" hint-placeholder-count="30"><div class="mm-bcol" tabIndex="0" role="img" aria-label="{{br.tip}}"><i style="height: {{br.h}}"></i><b>{{br.tip}}</b></div></sc-for></div></div><div class="mm-xlab" aria-hidden="true" style="gap: 3px"><sc-for list="{{trend.bars}}" as="bx" hint-placeholder-count="30"><span>{{bx.xl}}</span></sc-for></div></div></sc-if><sc-if value="{{trend.asTable}}" hint-placeholder-val="{{false}}"><div class="mm-rwrap" style="margin: 0 -20px; max-height: 260px; overflow-y: auto"><table class="mm-rtab"><caption class="mm-sr">Sales across client stores, last 30 days</caption><thead><tr><th scope="col" style="text-align: left; padding-left: 20px">Day</th><th scope="col" style="text-align: right">Orders</th><th scope="col" style="text-align: right; padding-right: 20px">Sales</th></tr></thead><tbody><sc-for list="{{trend.rows}}" as="tr2" hint-placeholder-count="30"><tr style="border-top: 1px solid var(--border)"><td style="padding-left: 20px">{{tr2.day}}</td><td style="text-align: right">{{tr2.orders}}</td><td style="text-align: right; font-weight: 500; padding-right: 20px">{{tr2.sales}}</td></tr></sc-for></tbody></table></div></sc-if></section>
-<section class="mm-card" aria-labelledby="mm-c-fr" style="gap: 14px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-fr" class="mm-ctitle">Free plans</h2><p class="mm-muted" style="margin: 0; font-size: 13px"><sc-if value="{{hasUsage}}" hint-placeholder-val="{{true}}">As of the usage check at Oct 29, 6:00 AM. A warning shows at 70%.</sc-if></p></div></div>
+<section class="mm-card" aria-labelledby="mm-c-fr" style="gap: 14px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-fr" class="mm-ctitle">Free plans</h2><p class="mm-muted" style="margin: 0; font-size: 13px"><sc-if value="{{hasUsage}}" hint-placeholder-val="{{true}}">As of the usage check at 29 Oct, 6:00 AM. A warning shows at 70%.</sc-if></p></div></div>
 <sc-if value="{{hasUsage}}" hint-placeholder-val="{{true}}"><ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px"><sc-for list="{{free}}" as="fl" hint-placeholder-count="6"><li style="display: flex; flex-direction: column; gap: 6px"><span style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; font-size: 13px"><span>{{fl.name}}</span><span style="font-variant-numeric: tabular-nums">{{fl.text}}<sc-if value="{{fl.near}}" hint-placeholder-val="{{false}}"><strong style="margin-left: 8px; color: var(--destructive)">Near the limit</strong></sc-if></span></span><span class="mm-meter" aria-hidden="true"><span style="display: block; height: 100%; width: {{fl.pct}}; background: {{fl.color}}"></span></span></li></sc-for></ul><p style="margin: 0; font-size: 13px"><span class="mm-muted">Failed messages waiting:</span> {{dead}}</p></sc-if><sc-if value="{{noUsage}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">The daily usage check hasn’t written its numbers yet.</p></sc-if>
 </section>
 <section aria-labelledby="mm-h-mn" style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-h-mn" style="margin: 0; font-size: 15px; line-height: 20px; font-weight: 600">Money</h2><dl class="mm-figs" aria-label="Money" style="margin: 0; grid-template-columns: repeat(2,minmax(0,1fr))"><sc-for list="{{money}}" as="mn" hint-placeholder-count="3"><div class="mm-fig"><dt>{{mn.label}}</dt><dd>{{mn.value}}</dd><small style="color: {{mn.color}}">{{mn.note}}</small></div></sc-for></dl></section>
@@ -501,8 +507,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -755,7 +761,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -833,18 +839,18 @@ var CHECKLIST = [['terms', 'Platform terms accepted'], ['profile', 'Business nam
   ['payments', 'A way to pay: cash on delivery or SSLCommerz'], ['legal', 'Terms, privacy, returns and delivery pages published'], ['email', 'Email to customers working'], ['sms', 'SMS gateway', true], ['domain', 'Web address chosen', true]];
 // Invoices: number (null for a draft), store, status, issued, due, total, paid, period
 var INVOICES = [
-  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, 'Oct 18 – Nov 17, 2026'],
-  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, 'Nov 1 – Nov 30, 2026'],
-  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, 'Oct 25 – Nov 24, 2026'],
-  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, 'Oct 20 – Nov 19, 2026'],
-  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, 'Oct 2 – Nov 1, 2026'],
-  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, 'Oct 5 – Nov 4, 2026'],
-  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, 'Sep 11 – Oct 10, 2026'],
-  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, 'Oct 1 – Oct 31, 2026'],
-  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, 'Sep 25 – Oct 24, 2026'],
-  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, 'Sep 20 – Oct 19, 2026'],
-  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, 'Sep 3 – Oct 2, 2026'],
-  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, 'Sep 5 – Oct 4, 2026']
+  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, '18 Oct – 17 Nov 2026'],
+  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, '1 Nov – 30 Nov 2026'],
+  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, '25 Oct – 24 Nov 2026'],
+  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, '20 Oct – 19 Nov 2026'],
+  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, '2 Oct – 1 Nov 2026'],
+  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, '5 Oct – 4 Nov 2026'],
+  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, '11 Sep – 10 Oct 2026'],
+  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, '1 Oct – 31 Oct 2026'],
+  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, '25 Sep – 24 Oct 2026'],
+  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, '20 Sep – 19 Oct 2026'],
+  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, '3 Sep – 2 Oct 2026'],
+  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, '5 Sep – 4 Oct 2026']
 ];
 var STAFF = [['Rafiq Ahmed', 'rafiq@managemind.app', 'super_admin', true, true], ['Tanvir Hasan', 'tanvir@managemind.app', 'super_admin', true], ['Sumaiya Rahman', 'sumaiya@managemind.app', 'support', true],
   ['Imran Kabir', 'imran@managemind.app', 'support', false], ['Farhana Yasmin', 'farhana@managemind.app', null, true]];

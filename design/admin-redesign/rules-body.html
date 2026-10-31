@@ -116,8 +116,10 @@
 <p class="rb-num">5</p>
 <h2>Lists and row actions</h2>
 <p>Clicking anywhere on a row opens the record, either its page or its side panel. Controls inside a row (checkbox, tag, receipt) sit above that. A <strong>⋯</strong> button ends each row that has more actions. Its menu goes: <em>open or edit</em>, other actions, a separator, then the <em>destructive</em> action in red. On phone the same menu opens as a drawer.</p>
+<p>Selecting rows swaps the table’s column headings for the selection: how many, its actions, then <em>Clear</em>. Nothing floats over the rows or the pagination. On phone the actions sit in a bar above the tab bar.</p>
 <ul class="rb-changes">
 <li><span class="rb-chg">Aligned</span><span>Expenses (phone): rows got ⋯ with Edit, View the receipt and Delete. Expense category rows now open their panel.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Products and Orders: the floating selection bar moved into the table’s header row.</span></li>
 <li><span class="rb-ok">Already follows</span><span>Every other list.</span></li>
 </ul>
 </div>
@@ -182,10 +184,13 @@
 <tr><td><strong>Alert</strong></td><td>Red outlined box, only for problems and blockers.</td></tr>
 <tr><td><strong>Toast</strong></td><td>Bottom right (above the tab bar on phone), for something that’s done.</td></tr>
 <tr><td><strong>Empty</strong></td><td>In a list: centered grey text and at most one button. In a form section: a dashed box with one sentence.</td></tr>
+<tr><td><strong>Loading</strong></td><td>The page’s own frame (title, toolbar, column headings) right away, with grey placeholder rows or cards where the data goes. No spinner over the page.</td></tr>
+<tr><td><strong>Failed to load</strong></td><td>In place of the rows or cards: what didn’t load, one sentence on why if known, and <em>Try again</em>. The rest of the page keeps working.</td></tr>
 </tbody>
 </table>
 <ul class="rb-changes">
 <li><span class="rb-chg">Aligned</span><span>Every filtered list now offers one button when it comes up empty (Reset filters, Clear search, or Record expense). The phone expenses empty state lost its dashed box.</span></li>
+<li><span class="rb-chg">Added</span><span>Loading and Failed to load, drawn once on the “Loading and errors” boards for every list and record page to follow.</span></li>
 </ul>
 </div>
 <div class="rb-ex" style="gap: 10px">
@@ -243,6 +248,22 @@
 </div>
 <div class="rb-ex">
 <div style="display: flex; align-items: center; gap: 10px"><span class="mm-btn mm-outline">32px</span><span class="mm-btn mm-outline" style="height: 36px; padding: 0 16px">36px</span><span class="mm-input" style="width: 140px; display: flex; align-items: center">36px input</span></div>
+</div>
+</section>
+
+<section class="rb-rule">
+<div class="rb-text">
+<p class="rb-num">11</p>
+<h2>One layout, and dates</h2>
+<p>Every page has the same header (search, Create, View store, বাংলা | English, theme, Help, account) and the same sidebar. There are no section tabs: the sidebar lists each area’s pages, and on phone the Menu tab does. Plan and billing lives in Settings only.</p>
+<p>Dates put the day first: <strong>29 Oct</strong>, <strong>29 Oct 2026</strong> with the year, <strong>29 Oct, 4:05 PM</strong> with a time.</p>
+<ul class="rb-changes">
+<li><span class="rb-chg">Aligned</span><span>Every board took the Products board’s header and sidebar. Orders, Catalog, Inventory and Reports lost their section tabs. Billing left the sidebar.</span></li>
+<li><span class="rb-chg">Aligned</span><span>Dates written month first (Oct 29) now put the day first.</span></li>
+</ul>
+</div>
+<div class="rb-ex">
+<div style="display: flex; flex-direction: column; gap: 6px; font-variant-numeric: tabular-nums"><span>29 Oct</span><span>29 Oct 2026</span><span>29 Oct, 4:05 PM</span></div>
 </div>
 </section>
 

@@ -240,6 +240,12 @@ li:last-child>.mm-orow{border-bottom:0}
 .mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
 .mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -465,8 +471,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -719,7 +725,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -773,7 +779,7 @@ function settingsVals(vals, s, up) {
 }
 var START = { Checkout: {}, 'Cash on delivery off': { f: { cod: false } }, 'Block a phone': { bp: '01987-121212', br: 'Refused two parcels' }, Edited: { f: { maxQty: '5', prefix: 'NF-' } } };
 var BASE = { email: 'optional', maxQty: '10', prefix: '#', terms: true, accounts: false, cod: true, codMax: '15000', advance: 'flagged', otp: 'flagged', perHour: '3', perDay: '10', perIp: '20' };
-var BLOCKED = [['01911-000111', 'Fake orders, three times', 'Oct 12'], ['01700-554433', 'Refused at the door twice', 'Sep 28']];
+var BLOCKED = [['01911-000111', 'Fake orders, three times', '12 Oct'], ['01700-554433', 'Refused at the door twice', '28 Sep']];
 class Component extends DCLogic {
   renderVals() {
     var b = boot(this, START, 'Checkout');

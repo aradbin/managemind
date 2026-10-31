@@ -55,7 +55,7 @@ def icon(m):
     return svg(ICONS[name], size, style)
 
 SECTIONS = [('stock', 'Stock', 'Inventory'), ('po', 'Purchase orders', 'PurchaseOrders'), ('receive', 'Receive stock', 'Receive'),
-            ('suppliers', 'Suppliers', 'Suppliers'), ('counts', 'Counts', 'Counts'), ('adjustments', 'Adjustments', 'Adjustments')]
+            ('suppliers', 'Suppliers', 'Suppliers'), ('counts', 'Stock counts', 'Counts'), ('adjustments', 'Adjustments', 'Adjustments')]
 
 def sections(cur, phone=False):
     out = []

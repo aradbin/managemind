@@ -38,12 +38,12 @@ var PROBLEMS = [
   { row: 203, t: 'images', msg: 'Not a web address: “pj-iv-3.jpg”.' }
 ];
 var JOBS = [
-  { id: 'j3', file: 'winter-stock.xlsx', when: 'Oct 21, 4:12 pm', phase: 'done', total: 96, processed: 96, created: 84, updated: 12, failed: 0, imgTotal: 190, imgDone: 190, imgFailed: 0, errors: [] },
+  { id: 'j3', file: 'winter-stock.xlsx', when: '21 Oct, 4:12 pm', phase: 'done', total: 96, processed: 96, created: 84, updated: 12, failed: 0, imgTotal: 190, imgDone: 190, imgFailed: 0, errors: [] },
   {
-    id: 'j2', file: 'eid-collection.csv', when: 'Oct 2, 11:40 am', phase: 'done', total: 137, processed: 137, created: 120, updated: 14, failed: 3, imgTotal: 410, imgDone: 410, imgFailed: 5,
+    id: 'j2', file: 'eid-collection.csv', when: '2 Oct, 11:40 am', phase: 'done', total: 137, processed: 137, created: 120, updated: 14, failed: 3, imgTotal: 410, imgDone: 410, imgFailed: 5,
     errors: [{ row: 31, col: 'Categories', msg: 'The category was deleted while importing.' }, { row: 77, col: 'SKU', msg: 'EID-KR-L is used by a product added meanwhile.' }, { row: 102, col: 'Image URLs', msg: 'The image is larger than 20 MB.' }]
   },
-  { id: 'j1', file: 'shopify-export.csv', when: 'Sep 14, 9:05 pm', phase: 'failed', total: 180, processed: 42, created: 40, updated: 0, failed: 2, imgTotal: 0, imgDone: 0, imgFailed: 0, lastError: 'the connection to the server dropped', errors: [{ row: 12, col: 'Variant Price', msg: 'Not a number: “Tk 950”.' }, { row: 40, col: 'Handle', msg: 'Two products use the handle “kurti”.' }] }
+  { id: 'j1', file: 'shopify-export.csv', when: '14 Sep, 9:05 pm', phase: 'failed', total: 180, processed: 42, created: 40, updated: 0, failed: 2, imgTotal: 0, imgDone: 0, imgFailed: 0, lastError: 'the connection to the server dropped', errors: [{ row: 12, col: 'Variant Price', msg: 'Not a number: “Tk 950”.' }, { row: 40, col: 'Handle', msg: 'Two products use the handle “kurti”.' }] }
 ];
 var TYPES = [{ v: 'choice', label: 'One choice' }, { v: 'multi_choice', label: 'Several choices' }, { v: 'number', label: 'Number' }, { v: 'text', label: 'Text' }, { v: 'boolean', label: 'Yes or no' }];
 var STEPS = ['Choose a file', 'Match columns', 'Check', 'Import'];

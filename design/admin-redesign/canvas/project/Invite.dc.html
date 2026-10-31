@@ -175,6 +175,8 @@ body{margin:0}
 .mm-rcard:disabled{cursor:not-allowed}
 .mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
 .mm-row{position:relative}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
 .mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
 .mm-radio-row .mm-radio{margin-top:0;padding:0;background:var(--background);cursor:pointer}
 .mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
@@ -251,6 +253,12 @@ body{margin:0}
 .mm-chipq{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
 .mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -436,8 +444,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -690,7 +698,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };

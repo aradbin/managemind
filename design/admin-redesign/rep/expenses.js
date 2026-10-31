@@ -14,7 +14,7 @@ class Component extends DCLogic {
     var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
     reportVals(vals, s, up);
     var R = rangeOf(s, up); vals.rg = R.rg; vals.hasRange = true;
-    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Expenses start on Jul 1, 2026: import older ones to fill the year.' : 'The end date comes before the start.'; return finish(vals); }
+    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Expenses start on 1 Jul 2026: import older ones to fill the year.' : 'The end date comes before the start.'; return finish(vals); }
     var months = [0, 1, 2, 3].filter(function (m) { return EXPENSES.some(function (e) { return monthAmount(e[0], e[1], m, R.from, R.to) > 0; }); });
     var grid = EXPENSES.map(function (e) { return { name: e[0], vals: months.map(function (m) { return monthAmount(e[0], e[1], m, R.from, R.to); }) }; });
     grid.forEach(function (g) { g.total = g.vals.reduce(function (a, v) { return a + v; }, 0); });

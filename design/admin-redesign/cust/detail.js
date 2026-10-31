@@ -12,12 +12,12 @@ var DETAIL = {
   c1: {
     risk: { decided: 10, delivered: 9, returned: 1, fake: 0, wrongNumber: 0, noAnswer: 0, cancelled: 1, open: 1, score: 90, reasons: [] },
     list: [
-      { n: 1048, date: 'Oct 26', status: 'Confirmed', delivery: 'Not shipped', total: 2750 },
-      { n: 1031, date: 'Oct 14', status: 'Completed', delivery: 'Delivered', total: 1850 },
-      { n: 1002, date: 'Sep 28', status: 'Completed', delivery: 'Delivered', total: 4200 },
-      { n: 987, date: 'Sep 9', status: 'Cancelled', delivery: 'Not shipped', total: 1250 },
-      { n: 951, date: 'Aug 21', status: 'Completed', delivery: 'Delivery failed', total: 3400 },
-      { n: 920, date: 'Jul 30', status: 'Completed', delivery: 'Delivered', total: 2100 }
+      { n: 1048, date: '26 Oct', status: 'Confirmed', delivery: 'Not shipped', total: 2750 },
+      { n: 1031, date: '14 Oct', status: 'Completed', delivery: 'Delivered', total: 1850 },
+      { n: 1002, date: '28 Sep', status: 'Completed', delivery: 'Delivered', total: 4200 },
+      { n: 987, date: '9 Sep', status: 'Cancelled', delivery: 'Not shipped', total: 1250 },
+      { n: 951, date: '21 Aug', status: 'Completed', delivery: 'Delivery failed', total: 3400 },
+      { n: 920, date: '30 Jul', status: 'Completed', delivery: 'Delivered', total: 2100 }
     ],
     addresses: [
       { id: 'a1', label: 'Home', name: 'Rahim Ahmed', phone: '01712345678', div: 'Dhaka', dist: 'Dhaka', area: 'Dhanmondi', line: 'House 12, Road 5, near Abahani field', isDefault: true },
@@ -27,9 +27,9 @@ var DETAIL = {
   c3: {
     risk: { decided: 3, delivered: 1, returned: 2, fake: 0, wrongNumber: 0, noAnswer: 0, cancelled: 0, open: 0, score: 33, reasons: ['failed_deliveries', 'low_score'] },
     list: [
-      { n: 1040, date: 'Oct 20', status: 'Completed', delivery: 'Delivery failed', total: 1650 },
-      { n: 1012, date: 'Oct 3', status: 'Completed', delivery: 'Delivery failed', total: 1400 },
-      { n: 966, date: 'Jul 2', status: 'Completed', delivery: 'Delivered', total: 1150 }
+      { n: 1040, date: '20 Oct', status: 'Completed', delivery: 'Delivery failed', total: 1650 },
+      { n: 1012, date: '3 Oct', status: 'Completed', delivery: 'Delivery failed', total: 1400 },
+      { n: 966, date: '2 Jul', status: 'Completed', delivery: 'Delivered', total: 1150 }
     ],
     addresses: [{ id: 'a3', label: '', name: 'Tanvir Hasan', phone: '01911778899', div: 'Chattogram', dist: 'Chattogram', area: 'Halishahar', line: 'Block K, Lane 3, H 22', isDefault: true }]
   },

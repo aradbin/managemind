@@ -71,7 +71,7 @@ function dt(s) { return new Date(s + 'T00:00:00Z'); }
 function iso(d) { return d.toISOString().slice(0, 10); }
 function addDays(s, k) { var d = dt(s); d.setUTCDate(d.getUTCDate() + k); return iso(d); }
 function weekday(s) { var w = dt(s).getUTCDay(); return w === 0 ? 7 : w; }
-function short(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)); }
+function short(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3); }
 function dayLabel(s) { return WEEKDAYS[weekday(s) - 1] + ', ' + short(s); }
 function monthName(m) { return MONTHS[Number(m.slice(5, 7)) - 1] + ' ' + m.slice(0, 4); }
 function shiftMonth(m, by) { var y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) - 1 + by; y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12; return y + '-' + String(mo + 1).padStart(2, '0'); }

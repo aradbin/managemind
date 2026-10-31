@@ -175,6 +175,8 @@ body{margin:0}
 .mm-rcard:disabled{cursor:not-allowed}
 .mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
 .mm-row{position:relative}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
 .mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
 .mm-radio-row .mm-radio{margin-top:0;padding:0;background:var(--background);cursor:pointer}
 .mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
@@ -251,6 +253,12 @@ body{margin:0}
 .mm-chipq{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
 .mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -356,7 +364,13 @@ body{margin:0}
 <ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
 <li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 <li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
-<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 </ul>
 </div>
 </nav>
@@ -374,8 +388,12 @@ body{margin:0}
 </nav>
 <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
 <button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
 <span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
 <a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
 </div>
@@ -383,9 +401,6 @@ body{margin:0}
 
 <main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px"><div style="display: flex; align-items: center; gap: 12px; min-width: 0"><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Expenses</h1><p class="mm-muted" style="margin: 0">What the store spent, by category and month.</p></div></div><div style="display: flex; flex-wrap: wrap; gap: 8px"><a href="Expenses.dc.html" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Open expenses</a></div></div>
-<nav aria-label="Report sections" style="overflow-x: auto">
-<div class="mm-secbar"><a href="Reports.dc.html" class="mm-tab">Overview</a><a href="SalesReport.dc.html" class="mm-tab">Sales</a><a href="ProfitReport.dc.html" class="mm-tab">Profit</a><a href="StockReport.dc.html" class="mm-tab">Stock</a><a href="SupplierReport.dc.html" class="mm-tab">Suppliers</a><a href="ExpenseReport.dc.html" class="mm-tab" aria-current="page">Expenses</a><a href="CodOutstanding.dc.html" class="mm-tab">COD outstanding</a></div>
-</nav>
 <sc-if value="{{hasRange}}" hint-placeholder-val="{{true}}"><div style="position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 12px"><div role="group" aria-label="Dates" class="mm-tabs" style="height: 36px; flex: none"><sc-for list="{{rg.presets}}" as="pr" hint-placeholder-count="4"><button type="button" class="mm-tab" aria-pressed="{{pr.on}}" onClick="{{pr.pick}}" style="height: 30px">{{pr.label}}</button></sc-for></div><span class="mm-muted" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg>{{rg.text}}</span><sc-if value="{{rg.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close dates" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="Custom dates" onKeyDown="{{escClose}}" style="top: 42px; left: 0; width: 320px; display: flex; flex-direction: column; gap: 12px; padding: 12px"><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px"><div class="mm-field"><label class="mm-label" for="mm-rg-from">From</label><input id="mm-rg-from" class="mm-input" type="date" value="{{rg.from}}" onChange="{{rg.onFrom}}"></div><div class="mm-field"><label class="mm-label" for="mm-rg-to">To</label><input id="mm-rg-to" class="mm-input" type="date" aria-invalid="{{rg.badAria}}" value="{{rg.to}}" onChange="{{rg.onTo}}"></div></div><sc-if value="{{rg.bad}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err" style="margin: 0">The end comes before the start.</p></sc-if></div></sc-if></div></sc-if>
 <sc-if value="{{hasControls}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px"><sc-for list="{{controls}}" as="ct" hint-placeholder-count="1"><div style="display: flex; align-items: center; gap: 8px"><span class="mm-label" style="font-size: 13px; white-space: nowrap">{{ct.label}}</span><div role="group" aria-label="{{ct.label}}" class="mm-tabs" style="height: 36px"><sc-for list="{{ct.opts}}" as="co" hint-placeholder-count="3"><button type="button" class="mm-tab" aria-pressed="{{co.on}}" onClick="{{co.pick}}" style="height: 30px">{{co.label}}</button></sc-for></div></div></sc-for></div></sc-if>
 <sc-for list="{{notes}}" as="nt" hint-placeholder-count="1"><sc-if value="{{nt.warn}}" hint-placeholder-val="{{false}}"><div class="mm-banner" role="note" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{nt.text}}</p></div></sc-if><sc-if value="{{nt.info}}" hint-placeholder-val="{{true}}"><p class="mm-muted" style="margin: 0; font-size: 13px; display: flex; gap: 6px; align-items: flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 3px"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg><span>{{nt.text}}</span></p></sc-if></sc-for>
@@ -471,8 +486,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -725,7 +740,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -756,7 +771,7 @@ class Component extends DCLogic {
     var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
     reportVals(vals, s, up);
     var R = rangeOf(s, up); vals.rg = R.rg; vals.hasRange = true;
-    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Expenses start on Jul 1, 2026: import older ones to fill the year.' : 'The end date comes before the start.'; return finish(vals); }
+    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Expenses start on 1 Jul 2026: import older ones to fill the year.' : 'The end date comes before the start.'; return finish(vals); }
     var months = [0, 1, 2, 3].filter(function (m) { return EXPENSES.some(function (e) { return monthAmount(e[0], e[1], m, R.from, R.to) > 0; }); });
     var grid = EXPENSES.map(function (e) { return { name: e[0], vals: months.map(function (m) { return monthAmount(e[0], e[1], m, R.from, R.to); }) }; });
     grid.forEach(function (g) { g.total = g.vals.reduce(function (a, v) { return a + v; }, 0); });

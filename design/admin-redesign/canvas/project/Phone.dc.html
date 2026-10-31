@@ -132,15 +132,6 @@ body{margin:0}
 </div>
 </div>
 
-<nav aria-label="Catalog sections" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
-<div style="display: inline-flex; align-items: center; height: 40px; padding: 3px; box-sizing: border-box; border-radius: 10px; background: var(--muted)">
-<a href="#" class="mm-tab" aria-current="page">Products</a>
-<a href="CategoriesPhone.dc.html" class="mm-tab">Categories</a>
-<a href="CollectionsPhone.dc.html" class="mm-tab">Collections</a>
-<a href="AttributesPhone.dc.html" class="mm-tab">Attributes</a>
-<a href="ImportPhone.dc.html" class="mm-tab">Import</a>
-</div>
-</nav>
 
 <nav aria-label="Status" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
 <div role="tablist" class="mm-stabs">
@@ -262,7 +253,6 @@ body{margin:0}
 <button type="button" class="mm-mrow" aria-expanded="{{nv.store.aria}}" onClick="{{nv.store.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Online store</span><span class="mm-trunc mm-sub2">Theme, pages, store settings</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
 <sc-if value="{{nv.store.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.store.items}}" as="it" hint-placeholder-count="3"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
 <a href="SettingsPhone.dc.html" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span style="flex: 1; font-weight: 500">Settings</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
-<a href="SettingsBillingPhone.dc.html" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg></span><span style="flex: 1; font-weight: 500">Billing</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
 <a href="#" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">View store</span><span class="mm-trunc mm-sub2">Opens your store in a new tab</span></span></a>
 </div>
 </section>
@@ -480,7 +470,7 @@ var SECTIONS = {
 var CMD_GROUPS = [
   { label: 'Go to', items: [
     { label: 'Home', icon: 'home' }, { label: 'Customers', icon: 'customers' }, { label: 'Promotions', icon: 'promotions' },
-    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }, { label: 'Billing', icon: 'billing' }
+    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }
   ] },
   { label: 'Orders', icon: 'orders', items: [
     { label: 'All orders' }, { label: 'Confirm orders' }, { label: 'Incomplete orders' }, { label: 'Courier returns' }, { label: 'Returns' }

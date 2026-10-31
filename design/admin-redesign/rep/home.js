@@ -1,6 +1,8 @@
 var START = { Home: {}, 'All setup steps': { steps: true }, 'Setup done': { setupDone: true }, 'Last 7 days as a table': { asTable: true, setupDone: true }, 'New store': { fresh: true } };
 var SETUP = [['terms', true, 'Settings'], ['profile', true, 'Settings'], ['logo', true, 'Settings'], ['products', true, 'Main'], ['delivery', true, 'Settings'], ['payments', true, 'Settings'], ['legal', true, 'OnlineStore'], ['email', false, 'Settings'], ['sms', false, 'Settings', true], ['domain', false, 'Settings', true]];
 var SETUP_LABEL = { profile: 'Business name, address and phone', logo: 'Logo', products: 'A product on sale with stock', delivery: 'Delivery charges checked', payments: 'A way to pay: cash on delivery or SSLCommerz', legal: 'Terms, privacy, returns and delivery pages published', email: 'Email to customers working', sms: 'SMS gateway', domain: 'Web address chosen', terms: 'Platform terms accepted' };
+// The checklist names what's done; the Next button says what to do.
+var SETUP_NEXT = { profile: 'Add your business details', logo: 'Add your logo', products: 'Put a product on sale', delivery: 'Check delivery charges', payments: 'Choose how customers pay', legal: 'Publish your store’s policy pages', email: 'Set up customer emails', sms: 'Connect an SMS gateway', domain: 'Choose your web address', terms: 'Accept the platform terms' };
 var WEEKDAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 class Component extends DCLogic {
   renderVals() {
@@ -17,7 +19,7 @@ class Component extends DCLogic {
     vals.showSetup = !s.setupDone && done < steps.length;
     vals.setup = {
       intro: done + ' of ' + steps.length + ' done. Your store can take orders once these are done.', ring: 'conic-gradient(var(--primary) ' + Math.round(done / steps.length * 100) + '%, var(--muted) 0)',
-      next: next ? 'Next: ' + SETUP_LABEL[next.item] : '', nextHref: next ? page(next.to) : '#', open: Boolean(s.steps), aria: s.steps ? 'true' : 'false',
+      next: next ? 'Next: ' + SETUP_NEXT[next.item] : '', nextHref: next ? page(next.to) : '#', open: Boolean(s.steps), aria: s.steps ? 'true' : 'false',
       toggle: function () { up({ steps: !s.steps }); }, pct: Math.round(done / steps.length * 100) + '%',
       items: steps.map(function (x) { return { label: SETUP_LABEL[x.item], done: x.done, todo: !x.done, optional: x.optional, href: page(x.to), state: x.done ? 'Done' : 'To do' }; }),
       keep: 'Keep nakshi.managemind.app as my address', keepIt: function () { up({ setupDone: true, toast: toast('Kept nakshi.managemind.app as your address.') }); }

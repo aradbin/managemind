@@ -2,7 +2,7 @@ var START = { Store: { id: 't4' }, 'Suspend dialog': { id: 't4', dlg: 'suspend' 
   'Hold reminders': { id: 't4', panel: 'hold' }, 'Suspended store': { id: 't6' }, 'Closed store': { id: 't8' }, 'Purge counted': { id: 't8', counted: true }, 'Purge confirm': { id: 't8', counted: true, dlg: 'purge' },
   'Demo store': { id: 't11' }, 'Reset dialog': { id: 't11', dlg: 'reset' }, 'Support role': { id: 't4', support: true } };
 var DOMAINS = { t4: [['www.kumkumcrafts.com', true], ['kumkum.managemind.app', false]], t6: [['shaplagadgets.com', true], ['shapla.managemind.app', false]] };
-var JOBS = [['export', 'succeeded', '2026-10-21T14:05', 'The link works until Nov 4, 2026.', true], ['reports_backfill', 'succeeded', '2026-09-02T03:10', '', false], ['export', 'failed', '2026-08-14T11:40', 'Stopped at attempt 3: the file store didn’t answer.', false]];
+var JOBS = [['export', 'succeeded', '2026-10-21T14:05', 'The link works until 4 Nov 2026.', true], ['reports_backfill', 'succeeded', '2026-09-02T03:10', '', false], ['export', 'failed', '2026-08-14T11:40', 'Stopped at attempt 3: the file store didn’t answer.', false]];
 var JOB_KIND = { export: 'Export', purge: 'Purge', reset: 'Reset', reports_backfill: 'Report history' };
 var JOB_ST = { pending: ['Waiting to start', 'ended'], running: ['Running', 'info'], succeeded: ['Done', 'good'], failed: ['Failed', 'bad'] };
 var PURGE = [['Store rows', 48210], ['Files', 1322], ['Edge keys', 14], ['Staff accounts in no other store', 2], ['Custom domains not released', 0], ['Exports kept until their link expires', 1]];
@@ -26,20 +26,20 @@ class Component extends DCLogic {
     vals.askSuspend = function () { up({ menu: null, dlg: 'suspend' }); }; vals.askClose = function () { up({ menu: null, dlg: 'close' }); };
     vals.openSupport = function () { up({ menu: null, panel: 'support' }); };
     vals.isSuspended = suspended; vals.isClosed = closed;
-    vals.statusNote = suspended ? 'Suspended on Oct 2, 2026: ' + whyLabel(t[10]) + '. Shoppers see a maintenance page.' : closed ? 'Closed on Sep 20, 2026 because the client asked. It can be purged from Oct 20, 2026.' : '';
+    vals.statusNote = suspended ? 'Suspended on 2 Oct 2026: ' + whyLabel(t[10]) + '. Shoppers see a maintenance page.' : closed ? 'Closed on 20 Sep 2026 because the client asked. It can be purged from 20 Oct 2026.' : '';
     // Setup checklist.
     var done = t[6] === null ? 0 : t[6], checked = t[6] !== null || Boolean(s.checked);
     if (s.checked && t[6] === null) done = 2;
     var order = ['terms', 'profile', 'logo', 'products', 'delivery', 'payments', 'legal', 'email', 'domain', 'sms'];
-    vals.setup = { checked: checked, never: !checked, progress: done + ' of 10 done', pct: done * 10 + '%', ring: 'conic-gradient(var(--primary) ' + done * 10 + '%, var(--muted) 0)', checkedAt: s.checked ? 'Checked just now' : 'Checked Oct 29, 9:12 AM',
+    vals.setup = { checked: checked, never: !checked, progress: done + ' of 10 done', pct: done * 10 + '%', ring: 'conic-gradient(var(--primary) ' + done * 10 + '%, var(--muted) 0)', checkedAt: s.checked ? 'Checked just now' : 'Checked 29 Oct, 9:12 AM',
       refresh: function () { up({ checked: true, toast: toast('Checked. The list is up to date.') }); },
       items: CHECKLIST.map(function (c) { var d = order.indexOf(c[0]) < done; return { label: c[1], done: d, todo: !d, optional: Boolean(c[2]), state: d ? 'Done' : 'To do' }; }) };
     // Plan.
     var negotiated = t[0] === 't1', trial = t[0] === 't5', overdue = suspended;
     var stt = trial ? ['Free trial', 'info'] : overdue ? ['Payment overdue', 'bad'] : closed ? ['Cancelled', 'ended'] : ['Active', 'good'];
     vals.sub2 = { chip: tone(stt[0], stt[1]), has: t[5] !== 'pilot' || Boolean(s.plan), none: t[5] === 'pilot' && !s.plan,
-      rows: [['Monthly price', negotiated ? '৳1,500 (negotiated)' : money(p[2])], ['Setup fee', money(p[3])], ['Billing day', String(Math.min(28, Number(t[7].slice(8))))], ['Free until', trial ? 'Nov 17, 2026' : '—']].map(function (r) { return { k: r[0], v: r[1] }; }),
-      holding: Boolean(s.held), holdText: 'Reminders held until Nov 10, 2026: ' + (s.heldWhy || 'paying next week, agreed by phone') + '.', endHold: function () { up({ held: false, toast: toast('Reminders are back on.') }); },
+      rows: [['Monthly price', negotiated ? '৳1,500 (negotiated)' : money(p[2])], ['Setup fee', money(p[3])], ['Billing day', String(Math.min(28, Number(t[7].slice(8))))], ['Free until', trial ? '17 Nov 2026' : '—']].map(function (r) { return { k: r[0], v: r[1] }; }),
+      holding: Boolean(s.held), holdText: 'Reminders held until 10 Nov 2026: ' + (s.heldWhy || 'paying next week, agreed by phone') + '.', endHold: function () { up({ held: false, toast: toast('Reminders are back on.') }); },
       invoices: P('PlatformBilling') };
     vals.changePlan = function () { up({ panel: 'plan' }); }; vals.holdIt = function () { up({ panel: 'hold' }); };
     // Jobs.
@@ -60,7 +60,7 @@ class Component extends DCLogic {
     // Details.
     var details = [['Status', T_ST[t[3]][0]], ['Kind', KINDS[t[4]]], ['Store address', t[2] + '.managemind.app'], ['Plan', p[1]], ['Main language', 'Bangla'], ['Created', longDate(t[7])], ['Members', String(t[9])]];
     if (suspended || closed) details.splice(1, 0, ['Why', whyLabel(t[10])]);
-    if (closed) details.splice(2, 0, ['Closed', 'Sep 20, 2026'], ['Can be purged from', 'Oct 20, 2026']);
+    if (closed) details.splice(2, 0, ['Closed', '20 Sep 2026'], ['Can be purged from', '20 Oct 2026']);
     vals.details = details.map(function (r) { return { k: r[0], v: r[1] }; });
     vals.owners = [{ name: t[8][0], email: t[8][1], tile: initials(t[8][0]) }];
     vals.domains = (DOMAINS[t[0]] || [[t[2] + '.managemind.app', true]]).map(function (d) { return { host: d[0], main: d[1] }; });
@@ -92,7 +92,7 @@ class Component extends DCLogic {
     // Hold reminders.
     vals.hd = pform(s, up, 'hd', { until: '2026-11-10', why: '' });
     vals.hdBad = Boolean(s.hdtried) && !vals.hd.cur.why.trim();
-    vals.saveHold = function () { if (!vals.hd.cur.why.trim()) { up({ hdtried: true }); return; } up({ panel: null, hd: null, hdtried: false, held: true, heldWhy: vals.hd.cur.why.trim(), toast: toast('Reminders held until Nov 10, 2026.') }); };
+    vals.saveHold = function () { if (!vals.hd.cur.why.trim()) { up({ hdtried: true }); return; } up({ panel: null, hd: null, hdtried: false, held: true, heldWhy: vals.hd.cur.why.trim(), toast: toast('Reminders held until 10 Nov 2026.') }); };
     vals.pn = { support: s.panel === 'support', plan: s.panel === 'plan', hold: s.panel === 'hold' };
     vals.closePop = function () { up({ menu: null }); };
     vals.closeAll = function () { up({ menu: null, panel: null, dlg: null, lf: null, sp: null, pl: null, hd: null, ltried: false, sptried: false, hdtried: false }); };

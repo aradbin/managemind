@@ -7,7 +7,7 @@ The source of the admin redesign canvas: the default shadcn theme, compact, with
 - `canvas/project/` – the boards (`*.dc.html`) and `canvas.json` (board positions and order). This is what gets published.
 - One folder per area, each with a Python builder and the boards' JavaScript:
   - `inv/` inventory (`build.py` holds the shared shell, icons and helpers every later builder imports)
-  - `ord/` orders, returns
+  - `ord/` orders, returns, and the loading and failed-to-load boards (`States`)
   - `rep/` reports and Home
   - `set/` settings and billing
   - `web/` online store
@@ -16,10 +16,12 @@ The source of the admin redesign canvas: the default shadcn theme, compact, with
   - `imp/` customer, supplier and expense imports
   - `attr/`, `cust/`, `exp/`, `promo/`, `import/` hold the sources of earlier hand-built boards (attributes, customers, expenses, promotions, product import).
 - `wire.py` – links the boards to each other (sidebar, phone menu, tab bar, avatar, Import buttons). Run it after any build.
+- `layout.py` – gives every board the Products board's (`Main`) header and sidebar, takes Billing out of the sidebar (it lives in Settings) and removes section tabs. Run it after `wire.py`.
+- `rebuild.sh` – runs every builder, then `wire.py` and `layout.py`.
 
 ## Rebuilding
 
-Run everything from this folder; the builders write into `canvas/project/`.
+Run everything from this folder; the builders write into `canvas/project/`. `./rebuild.sh` does all of it; one area at a time:
 
 ```sh
 python3 inv/build.py            # inventory
@@ -30,7 +32,8 @@ python3 web/wbuild.py           # online store
 python3 misc/mbuild.py          # sign-in, account, print
 python3 plat/pbuild.py          # platform admin
 python3 imp/ibuild.py           # imports
-python3 wire.py                 # always last
+python3 wire.py                 # then
+python3 layout.py               # always last
 ```
 
 ## Checking

@@ -175,6 +175,8 @@ body{margin:0}
 .mm-rcard:disabled{cursor:not-allowed}
 .mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
 .mm-row{position:relative}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
 .mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
 .mm-radio-row .mm-radio{margin-top:0;padding:0;background:var(--background);cursor:pointer}
 .mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
@@ -251,6 +253,12 @@ body{margin:0}
 .mm-chipq{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
 .mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -417,7 +425,13 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 <ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
 <li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 <li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
-<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 </ul>
 </div>
 
@@ -445,8 +459,12 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 </nav>
 <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
 <button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
 <span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
 <a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
 </div>
@@ -454,7 +472,7 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 
 <main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
 <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1080px">
-<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px"><div style="display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 420px"><a href="PlatformStores.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="All stores" style="margin-left: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a><div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="mm-plat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg>Platform</span><h1 class="mm-trunc" style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">{{name}}</h1><span aria-hidden="true"></span><span class="mm-sbadge" style="background: {{chip.bg}}; color: {{chip.fg}}; box-shadow: inset 0 0 0 1px {{chip.edge}}">{{chip.label}}</span><span class="mm-badge-sec">{{kind}}</span><span class="mm-badge-sec">{{planName}}</span></div><p class="mm-muted" style="margin: 0">{{sub}}</p></div></div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{openSupport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" x2="3" y1="12" y2="12"></line></svg>Support access</button><sc-if value="{{canReactivate}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" onClick="{{reactivate}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>Reactivate</button></sc-if><sc-if value="{{canReopen}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-outline" onClick="{{reopen}}">Reopen store</button></sc-if><sc-if value="{{canSuspend}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline mm-danger" aria-haspopup="dialog" onClick="{{askSuspend}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg>Suspend store</button></sc-if><sc-if value="{{canClose}}" hint-placeholder-val="{{true}}"><div style="position: relative; display: flex; justify-content: flex-end">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px"><div style="display: flex; align-items: flex-start; gap: 12px; min-width: 0; flex: 1 1 420px"><a href="PlatformStores.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to stores" style="margin-left: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a><div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="mm-plat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg>Platform</span><h1 class="mm-trunc" style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">{{name}}</h1><span aria-hidden="true"></span><span class="mm-sbadge" style="background: {{chip.bg}}; color: {{chip.fg}}; box-shadow: inset 0 0 0 1px {{chip.edge}}">{{chip.label}}</span><span class="mm-badge-sec">{{kind}}</span><span class="mm-badge-sec">{{planName}}</span></div><p class="mm-muted" style="margin: 0">{{sub}}</p></div></div><div style="display: flex; flex-wrap: wrap; gap: 8px"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{openSupport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" x2="3" y1="12" y2="12"></line></svg>Support access</button><sc-if value="{{canReactivate}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" onClick="{{reactivate}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>Reactivate</button></sc-if><sc-if value="{{canReopen}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-outline" onClick="{{reopen}}">Reopen store</button></sc-if><sc-if value="{{canSuspend}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline mm-danger" aria-haspopup="dialog" onClick="{{askSuspend}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="14" y="4" width="4" height="16" rx="1"></rect><rect x="6" y="4" width="4" height="16" rx="1"></rect></svg>Suspend store</button></sc-if><sc-if value="{{canClose}}" hint-placeholder-val="{{true}}"><div style="position: relative; display: flex; justify-content: flex-end">
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{menuAria}}" aria-haspopup="menu" onClick="{{toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
 <sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
 <button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
@@ -664,8 +682,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -918,7 +936,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -996,18 +1014,18 @@ var CHECKLIST = [['terms', 'Platform terms accepted'], ['profile', 'Business nam
   ['payments', 'A way to pay: cash on delivery or SSLCommerz'], ['legal', 'Terms, privacy, returns and delivery pages published'], ['email', 'Email to customers working'], ['sms', 'SMS gateway', true], ['domain', 'Web address chosen', true]];
 // Invoices: number (null for a draft), store, status, issued, due, total, paid, period
 var INVOICES = [
-  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, 'Oct 18 – Nov 17, 2026'],
-  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, 'Nov 1 – Nov 30, 2026'],
-  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, 'Oct 25 – Nov 24, 2026'],
-  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, 'Oct 20 – Nov 19, 2026'],
-  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, 'Oct 2 – Nov 1, 2026'],
-  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, 'Oct 5 – Nov 4, 2026'],
-  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, 'Sep 11 – Oct 10, 2026'],
-  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, 'Oct 1 – Oct 31, 2026'],
-  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, 'Sep 25 – Oct 24, 2026'],
-  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, 'Sep 20 – Oct 19, 2026'],
-  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, 'Sep 3 – Oct 2, 2026'],
-  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, 'Sep 5 – Oct 4, 2026']
+  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, '18 Oct – 17 Nov 2026'],
+  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, '1 Nov – 30 Nov 2026'],
+  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, '25 Oct – 24 Nov 2026'],
+  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, '20 Oct – 19 Nov 2026'],
+  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, '2 Oct – 1 Nov 2026'],
+  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, '5 Oct – 4 Nov 2026'],
+  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, '11 Sep – 10 Oct 2026'],
+  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, '1 Oct – 31 Oct 2026'],
+  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, '25 Sep – 24 Oct 2026'],
+  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, '20 Sep – 19 Oct 2026'],
+  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, '3 Sep – 2 Oct 2026'],
+  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, '5 Sep – 4 Oct 2026']
 ];
 var STAFF = [['Rafiq Ahmed', 'rafiq@managemind.app', 'super_admin', true, true], ['Tanvir Hasan', 'tanvir@managemind.app', 'super_admin', true], ['Sumaiya Rahman', 'sumaiya@managemind.app', 'support', true],
   ['Imran Kabir', 'imran@managemind.app', 'support', false], ['Farhana Yasmin', 'farhana@managemind.app', null, true]];
@@ -1039,7 +1057,7 @@ var START = { Store: { id: 't4' }, 'Suspend dialog': { id: 't4', dlg: 'suspend' 
   'Hold reminders': { id: 't4', panel: 'hold' }, 'Suspended store': { id: 't6' }, 'Closed store': { id: 't8' }, 'Purge counted': { id: 't8', counted: true }, 'Purge confirm': { id: 't8', counted: true, dlg: 'purge' },
   'Demo store': { id: 't11' }, 'Reset dialog': { id: 't11', dlg: 'reset' }, 'Support role': { id: 't4', support: true } };
 var DOMAINS = { t4: [['www.kumkumcrafts.com', true], ['kumkum.managemind.app', false]], t6: [['shaplagadgets.com', true], ['shapla.managemind.app', false]] };
-var JOBS = [['export', 'succeeded', '2026-10-21T14:05', 'The link works until Nov 4, 2026.', true], ['reports_backfill', 'succeeded', '2026-09-02T03:10', '', false], ['export', 'failed', '2026-08-14T11:40', 'Stopped at attempt 3: the file store didn’t answer.', false]];
+var JOBS = [['export', 'succeeded', '2026-10-21T14:05', 'The link works until 4 Nov 2026.', true], ['reports_backfill', 'succeeded', '2026-09-02T03:10', '', false], ['export', 'failed', '2026-08-14T11:40', 'Stopped at attempt 3: the file store didn’t answer.', false]];
 var JOB_KIND = { export: 'Export', purge: 'Purge', reset: 'Reset', reports_backfill: 'Report history' };
 var JOB_ST = { pending: ['Waiting to start', 'ended'], running: ['Running', 'info'], succeeded: ['Done', 'good'], failed: ['Failed', 'bad'] };
 var PURGE = [['Store rows', 48210], ['Files', 1322], ['Edge keys', 14], ['Staff accounts in no other store', 2], ['Custom domains not released', 0], ['Exports kept until their link expires', 1]];
@@ -1063,20 +1081,20 @@ class Component extends DCLogic {
     vals.askSuspend = function () { up({ menu: null, dlg: 'suspend' }); }; vals.askClose = function () { up({ menu: null, dlg: 'close' }); };
     vals.openSupport = function () { up({ menu: null, panel: 'support' }); };
     vals.isSuspended = suspended; vals.isClosed = closed;
-    vals.statusNote = suspended ? 'Suspended on Oct 2, 2026: ' + whyLabel(t[10]) + '. Shoppers see a maintenance page.' : closed ? 'Closed on Sep 20, 2026 because the client asked. It can be purged from Oct 20, 2026.' : '';
+    vals.statusNote = suspended ? 'Suspended on 2 Oct 2026: ' + whyLabel(t[10]) + '. Shoppers see a maintenance page.' : closed ? 'Closed on 20 Sep 2026 because the client asked. It can be purged from 20 Oct 2026.' : '';
     // Setup checklist.
     var done = t[6] === null ? 0 : t[6], checked = t[6] !== null || Boolean(s.checked);
     if (s.checked && t[6] === null) done = 2;
     var order = ['terms', 'profile', 'logo', 'products', 'delivery', 'payments', 'legal', 'email', 'domain', 'sms'];
-    vals.setup = { checked: checked, never: !checked, progress: done + ' of 10 done', pct: done * 10 + '%', ring: 'conic-gradient(var(--primary) ' + done * 10 + '%, var(--muted) 0)', checkedAt: s.checked ? 'Checked just now' : 'Checked Oct 29, 9:12 AM',
+    vals.setup = { checked: checked, never: !checked, progress: done + ' of 10 done', pct: done * 10 + '%', ring: 'conic-gradient(var(--primary) ' + done * 10 + '%, var(--muted) 0)', checkedAt: s.checked ? 'Checked just now' : 'Checked 29 Oct, 9:12 AM',
       refresh: function () { up({ checked: true, toast: toast('Checked. The list is up to date.') }); },
       items: CHECKLIST.map(function (c) { var d = order.indexOf(c[0]) < done; return { label: c[1], done: d, todo: !d, optional: Boolean(c[2]), state: d ? 'Done' : 'To do' }; }) };
     // Plan.
     var negotiated = t[0] === 't1', trial = t[0] === 't5', overdue = suspended;
     var stt = trial ? ['Free trial', 'info'] : overdue ? ['Payment overdue', 'bad'] : closed ? ['Cancelled', 'ended'] : ['Active', 'good'];
     vals.sub2 = { chip: tone(stt[0], stt[1]), has: t[5] !== 'pilot' || Boolean(s.plan), none: t[5] === 'pilot' && !s.plan,
-      rows: [['Monthly price', negotiated ? '৳1,500 (negotiated)' : money(p[2])], ['Setup fee', money(p[3])], ['Billing day', String(Math.min(28, Number(t[7].slice(8))))], ['Free until', trial ? 'Nov 17, 2026' : '—']].map(function (r) { return { k: r[0], v: r[1] }; }),
-      holding: Boolean(s.held), holdText: 'Reminders held until Nov 10, 2026: ' + (s.heldWhy || 'paying next week, agreed by phone') + '.', endHold: function () { up({ held: false, toast: toast('Reminders are back on.') }); },
+      rows: [['Monthly price', negotiated ? '৳1,500 (negotiated)' : money(p[2])], ['Setup fee', money(p[3])], ['Billing day', String(Math.min(28, Number(t[7].slice(8))))], ['Free until', trial ? '17 Nov 2026' : '—']].map(function (r) { return { k: r[0], v: r[1] }; }),
+      holding: Boolean(s.held), holdText: 'Reminders held until 10 Nov 2026: ' + (s.heldWhy || 'paying next week, agreed by phone') + '.', endHold: function () { up({ held: false, toast: toast('Reminders are back on.') }); },
       invoices: P('PlatformBilling') };
     vals.changePlan = function () { up({ panel: 'plan' }); }; vals.holdIt = function () { up({ panel: 'hold' }); };
     // Jobs.
@@ -1097,7 +1115,7 @@ class Component extends DCLogic {
     // Details.
     var details = [['Status', T_ST[t[3]][0]], ['Kind', KINDS[t[4]]], ['Store address', t[2] + '.managemind.app'], ['Plan', p[1]], ['Main language', 'Bangla'], ['Created', longDate(t[7])], ['Members', String(t[9])]];
     if (suspended || closed) details.splice(1, 0, ['Why', whyLabel(t[10])]);
-    if (closed) details.splice(2, 0, ['Closed', 'Sep 20, 2026'], ['Can be purged from', 'Oct 20, 2026']);
+    if (closed) details.splice(2, 0, ['Closed', '20 Sep 2026'], ['Can be purged from', '20 Oct 2026']);
     vals.details = details.map(function (r) { return { k: r[0], v: r[1] }; });
     vals.owners = [{ name: t[8][0], email: t[8][1], tile: initials(t[8][0]) }];
     vals.domains = (DOMAINS[t[0]] || [[t[2] + '.managemind.app', true]]).map(function (d) { return { host: d[0], main: d[1] }; });
@@ -1129,7 +1147,7 @@ class Component extends DCLogic {
     // Hold reminders.
     vals.hd = pform(s, up, 'hd', { until: '2026-11-10', why: '' });
     vals.hdBad = Boolean(s.hdtried) && !vals.hd.cur.why.trim();
-    vals.saveHold = function () { if (!vals.hd.cur.why.trim()) { up({ hdtried: true }); return; } up({ panel: null, hd: null, hdtried: false, held: true, heldWhy: vals.hd.cur.why.trim(), toast: toast('Reminders held until Nov 10, 2026.') }); };
+    vals.saveHold = function () { if (!vals.hd.cur.why.trim()) { up({ hdtried: true }); return; } up({ panel: null, hd: null, hdtried: false, held: true, heldWhy: vals.hd.cur.why.trim(), toast: toast('Reminders held until 10 Nov 2026.') }); };
     vals.pn = { support: s.panel === 'support', plan: s.panel === 'plan', hold: s.panel === 'hold' };
     vals.closePop = function () { up({ menu: null }); };
     vals.closeAll = function () { up({ menu: null, panel: null, dlg: null, lf: null, sp: null, pl: null, hd: null, ltried: false, sptried: false, hdtried: false }); };

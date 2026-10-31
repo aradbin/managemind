@@ -240,6 +240,12 @@ li:last-child>.mm-orow{border-bottom:0}
 .mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
 .mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -366,9 +372,9 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 <p class="mm-muted" style="margin: 0; font-size: 13px">Your plan, this period’s use, our invoices and how to pay.</p>
 <sc-if value="{{readOnly}}" hint-placeholder-val="{{false}}"><div class="mm-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><p style="margin: 0">You can see these settings but not change them.</p></div></sc-if>
 <section class="mm-card" aria-labelledby="mm-c-bp" style="gap: 12px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-bp" class="mm-ctitle">Plan</h2></div></div>
-<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px"><div style="display: flex; flex-direction: column; gap: 2px"><span style="display: flex; align-items: center; gap: 8px"><span style="font-size: 18px; font-weight: 600">{{plan.name}}</span><span class="mm-sbadge" style="background: {{plan.chip.bg}}; color: {{plan.chip.fg}}; box-shadow: inset 0 0 0 1px {{plan.chip.edge}}">{{plan.chip.label}}</span></span><span class="mm-muted" style="font-size: 13px">{{plan.price}} · {{plan.day}}</span></div></div><sc-if value="{{overdue}}" hint-placeholder-val="{{false}}"><div class="mm-banner mm-bad" role="alert" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">Invoice INV-2026-0042 is overdue. Pay it to keep taking orders after Nov 4.</p></div></sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px"><div style="display: flex; flex-direction: column; gap: 2px"><span style="display: flex; align-items: center; gap: 8px"><span style="font-size: 18px; font-weight: 600">{{plan.name}}</span><span class="mm-sbadge" style="background: {{plan.chip.bg}}; color: {{plan.chip.fg}}; box-shadow: inset 0 0 0 1px {{plan.chip.edge}}">{{plan.chip.label}}</span></span><span class="mm-muted" style="font-size: 13px">{{plan.price}} · {{plan.day}}</span></div></div><sc-if value="{{overdue}}" hint-placeholder-val="{{false}}"><div class="mm-banner mm-bad" role="alert" style="font-size: 13px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">Invoice INV-2026-0042 is overdue. Pay it to keep taking orders after 4 Nov.</p></div></sc-if>
 </section>
-<section class="mm-card" aria-labelledby="mm-c-bu" style="gap: 16px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-bu" class="mm-ctitle">Use this period</h2><p class="mm-muted" style="margin: 0; font-size: 13px">Oct 5 to Nov 4, counted up to yesterday.</p></div></div>
+<section class="mm-card" aria-labelledby="mm-c-bu" style="gap: 16px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-bu" class="mm-ctitle">Use this period</h2><p class="mm-muted" style="margin: 0; font-size: 13px">5 Oct to 4 Nov, counted up to yesterday.</p></div></div>
 <div style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px"><sc-for list="{{meters}}" as="mt" hint-placeholder-count="6"><div style="display: flex; flex-direction: column; gap: 6px"><div class="mm-kv" style="font-size: 13px"><span>{{mt.label}}</span><span style="font-weight: 500">{{mt.text}}</span></div><span class="mm-meter" role="img" aria-label="{{mt.label}}: {{mt.text}}"><span style="width: {{mt.pct}}; background: {{mt.color}}"></span></span><sc-if value="{{mt.hasNote}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; font-weight: 500; color: {{mt.noteColor}}">{{mt.note}}</span></sc-if></div></sc-for></div>
 </section>
 <section class="mm-card" aria-labelledby="mm-c-bi" style="gap: 8px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-bi" class="mm-ctitle">Invoices</h2></div></div>
@@ -468,8 +474,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -722,7 +728,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -775,7 +781,7 @@ function settingsVals(vals, s, up) {
   vals.readOnly = Boolean(s.viewer); vals.canEdit = !s.viewer;
 }
 var START = { 'Plan and billing': {}, 'Free trial': { trial: true }, Invoice: { inv: 'INV-2026-0042' }, 'Payment overdue': { overdue: true } };
-var INV = [['INV-2026-0042', 'Oct 5 – Nov 4, 2026', 1500, '2026-10-12', 'open'], ['INV-2026-0031', 'Sep 5 – Oct 4, 2026', 1500, '2026-09-12', 'paid'], ['INV-2026-0019', 'Aug 5 – Sep 4, 2026', 1500, '2026-08-12', 'paid'], ['INV-2026-0008', 'Jul 5 – Aug 4, 2026', 900, '2026-07-12', 'paid']];
+var INV = [['INV-2026-0042', '5 Oct – 4 Nov 2026', 1500, '2026-10-12', 'open'], ['INV-2026-0031', '5 Sep – 4 Oct 2026', 1500, '2026-09-12', 'paid'], ['INV-2026-0019', '5 Aug – 4 Sep 2026', 1500, '2026-08-12', 'paid'], ['INV-2026-0008', '5 Jul – 4 Aug 2026', 900, '2026-07-12', 'paid']];
 var METERS = [['Products', 412, 1000], ['Staff', 4, 5], ['Orders', 482, 500], ['Emails', 1210, 3000], ['Image storage (MB)', 820, 2000], ['Custom domains', 2, 2]];
 class Component extends DCLogic {
   renderVals() {
@@ -784,7 +790,7 @@ class Component extends DCLogic {
     settingsVals(vals, s, up);
     var st = s.trial ? 'trialing' : s.overdue ? 'past_due' : 'active';
     var stt = { trialing: ['Free trial', 'info'], active: ['Active', 'good'], past_due: ['Payment overdue', 'bad'] }[st];
-    vals.plan = { name: 'Growth', price: '৳1,500 a month', chip: { label: stt[0], bg: TONE[stt[1]][0], fg: TONE[stt[1]][1], edge: 'transparent' }, day: s.trial ? 'Free until Nov 12, 2026' : 'Invoiced on day 5 of each month' };
+    vals.plan = { name: 'Growth', price: '৳1,500 a month', chip: { label: stt[0], bg: TONE[stt[1]][0], fg: TONE[stt[1]][1], edge: 'transparent' }, day: s.trial ? 'Free until 12 Nov 2026' : 'Invoiced on day 5 of each month' };
     vals.overdue = Boolean(s.overdue);
     vals.meters = METERS.map(function (m) { var r = m[1] / m[2]; return { label: m[0], text: count(m[1]) + ' of ' + count(m[2]), pct: Math.min(100, Math.round(r * 100)) + '%', color: r >= 1 ? 'var(--destructive)' : r >= 0.9 ? 'var(--warn)' : 'var(--primary)', note: r >= 1 ? 'Your plan’s limit is reached.' : r >= 0.9 ? 'Near your plan’s limit.' : '', hasNote: r >= 0.9, noteColor: r >= 1 ? 'var(--destructive)' : 'var(--warn)' }; });
     var paid = s.paid || [];

@@ -1,16 +1,16 @@
 var CUSTOMERS = [
-  { id: 'c1', name: 'Rahim Ahmed', phone: '01712345678', email: 'rahim.ahmed@gmail.com', orders: 12, spent: 28450, last: 'Oct 26', since: 'Mar 4, 2025', tags: ['vip', 'dhaka'], flagged: false, risky: false, failed: 1, note: 'Prefers delivery after 6 pm. On weekdays, send to the office address.' },
-  { id: 'c2', name: 'Nusrat Jahan', phone: '01819224466', email: '', orders: 7, spent: 15890, last: 'Oct 24', since: 'Jan 12, 2026', tags: ['eid'], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c3', name: 'Tanvir Hasan', phone: '01911778899', email: '', orders: 3, spent: 4200, last: 'Oct 20', since: 'Jul 2, 2026', tags: [], flagged: false, risky: true, failed: 2, note: '' },
-  { id: 'c4', name: 'Farzana Akter', phone: '01611305522', email: 'farzana.boutique@gmail.com', orders: 21, spent: 61200, last: 'Oct 27', since: 'Nov 18, 2024', tags: ['vip', 'wholesale'], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c5', name: 'Sabbir Rahman', phone: '01552114477', email: '', orders: 1, spent: 1850, last: 'Oct 22', since: 'Oct 22, 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c6', name: 'Mitu Das', phone: '01716993311', email: '', orders: 5, spent: 9900, last: 'Sep 30', since: 'Apr 9, 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c1', name: 'Rahim Ahmed', phone: '01712345678', email: 'rahim.ahmed@gmail.com', orders: 12, spent: 28450, last: '26 Oct', since: '4 Mar 2025', tags: ['vip', 'dhaka'], flagged: false, risky: false, failed: 1, note: 'Prefers delivery after 6 pm. On weekdays, send to the office address.' },
+  { id: 'c2', name: 'Nusrat Jahan', phone: '01819224466', email: '', orders: 7, spent: 15890, last: '24 Oct', since: '12 Jan 2026', tags: ['eid'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c3', name: 'Tanvir Hasan', phone: '01911778899', email: '', orders: 3, spent: 4200, last: '20 Oct', since: '2 Jul 2026', tags: [], flagged: false, risky: true, failed: 2, note: '' },
+  { id: 'c4', name: 'Farzana Akter', phone: '01611305522', email: 'farzana.boutique@gmail.com', orders: 21, spent: 61200, last: '27 Oct', since: '18 Nov 2024', tags: ['vip', 'wholesale'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c5', name: 'Sabbir Rahman', phone: '01552114477', email: '', orders: 1, spent: 1850, last: '22 Oct', since: '22 Oct 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c6', name: 'Mitu Das', phone: '01716993311', email: '', orders: 5, spent: 9900, last: '30 Sep', since: '9 Apr 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
   { id: 'c7', name: 'Arif Chowdhury', phone: '01313662200', email: 'arif.c@outlook.com', orders: 0, spent: 0, last: '', since: '', tags: [], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c8', name: 'Sharmin Sultana', phone: '01790445566', email: '', orders: 9, spent: 18750, last: 'Oct 12', since: 'Feb 3, 2026', tags: ['eid', 'repeat'], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c9', name: 'Kamal Uddin', phone: '01987121212', email: '', orders: 2, spent: 3100, last: 'Aug 18', since: 'Aug 1, 2026', tags: [], flagged: true, risky: true, failed: 0, note: 'Gave a wrong address twice.' },
-  { id: 'c10', name: 'Joya Roy', phone: '01688454545', email: '', orders: 4, spent: 7600, last: 'Oct 2', since: 'May 20, 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c11', name: 'Imran Hossain', phone: '01722889900', email: '', orders: 6, spent: 12300, last: 'Oct 18', since: 'Mar 30, 2026', tags: ['repeat'], flagged: false, risky: false, failed: 0, note: '' },
-  { id: 'c12', name: 'Rupa Khatun', phone: '01855667788', email: '', orders: 1, spent: 950, last: 'Sep 12', since: 'Sep 12, 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' }
+  { id: 'c8', name: 'Sharmin Sultana', phone: '01790445566', email: '', orders: 9, spent: 18750, last: '12 Oct', since: '3 Feb 2026', tags: ['eid', 'repeat'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c9', name: 'Kamal Uddin', phone: '01987121212', email: '', orders: 2, spent: 3100, last: '18 Aug', since: '1 Aug 2026', tags: [], flagged: true, risky: true, failed: 0, note: 'Gave a wrong address twice.' },
+  { id: 'c10', name: 'Joya Roy', phone: '01688454545', email: '', orders: 4, spent: 7600, last: '2 Oct', since: '20 May 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c11', name: 'Imran Hossain', phone: '01722889900', email: '', orders: 6, spent: 12300, last: '18 Oct', since: '30 Mar 2026', tags: ['repeat'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c12', name: 'Rupa Khatun', phone: '01855667788', email: '', orders: 1, spent: 950, last: '12 Sep', since: '12 Sep 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' }
 ];
 var FONTS = {
   Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",

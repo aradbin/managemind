@@ -4,7 +4,7 @@ P = 'canvas/project/'
 SVG = r'(<svg(?:(?!</svg>).)*</svg>)'
 DESK = [('Home', 'Home.dc.html', SVG + 'Home</a></li>'), ('Orders', 'Orders.dc.html', SVG + r'(<span style="flex: 1">Orders</span>)'),
         ('Reports', 'Reports.dc.html', SVG + r'(<span style="flex: 1">Reports</span>)'), ('Inventory', 'Inventory.dc.html', SVG + r'(<span style="flex: 1">Inventory</span>)'),
-        ('Settings', 'Settings.dc.html', SVG + 'Settings</a></li>'), ('Billing', 'SettingsBilling.dc.html', SVG + 'Billing</a></li>'),
+        ('Settings', 'Settings.dc.html', SVG + 'Settings</a></li>'),
         ('Customers', 'Customers.dc.html', SVG + 'Customers</a></li>'), ('Promotions', 'Promotions.dc.html', SVG + 'Promotions</a></li>'), ('Expenses', 'Expenses.dc.html', SVG + 'Expenses</a></li>'), ('Online store', 'OnlineStore.dc.html', SVG + r'(<span style="flex: 1">Online store</span>)')]
 TABS = [('M15 21', 'HomePhone.dc.html'), ('M6 2', 'OrdersPhone.dc.html')]
 n = 0
@@ -18,7 +18,7 @@ for f in glob.glob(P + '*.dc.html'):
         open(f, 'w', encoding='utf-8').write(t); n += 1
 print('wired', n)
 # The phone Menu's flat rows.
-MROWS = {'Home': 'HomePhone.dc.html', 'Customers': 'CustomersPhone.dc.html', 'Promotions': 'PromotionsPhone.dc.html', 'Expenses': 'ExpensesPhone.dc.html', 'Settings': 'SettingsPhone.dc.html', 'Billing': 'SettingsBillingPhone.dc.html'}
+MROWS = {'Home': 'HomePhone.dc.html', 'Customers': 'CustomersPhone.dc.html', 'Promotions': 'PromotionsPhone.dc.html', 'Expenses': 'ExpensesPhone.dc.html', 'Settings': 'SettingsPhone.dc.html'}
 for f in glob.glob(P + '*Phone.dc.html') + [P + 'Phone.dc.html']:
     t = open(f, encoding='utf-8').read(); o = t
     for lab, href in MROWS.items():

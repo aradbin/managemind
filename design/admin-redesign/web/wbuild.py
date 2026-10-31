@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 from sbuild import *
 import build as B
 
+BACK_LABEL = {'OnlineStore': 'Back to online store', 'StorePages': 'Back to pages'}
 def wread(n): return open('web/' + n, encoding='utf-8').read()
 
 ICONS.update({
@@ -63,7 +64,7 @@ def wpage(name, cur, title, intro, body_d, body_p=None, js='', extra_d='', extra
     if phone_top:
         ph = '\n'.join([PROOT % 'var(--background)', '@@PHEADER@@', '<main class="mm-scroll" style="gap: 12px; padding: 16px">', phone_top, bp, '</main>', '@@TABBAR@@'])
     else:
-        ph = '\n'.join([PROOT % 'var(--page)', phone_back((back or 'OnlineStore') + 'Phone.dc.html', 'Back', title), '<main class="mm-scroll" style="gap: 12px; padding: 12px">',
+        ph = '\n'.join([PROOT % 'var(--page)', phone_back((back or 'OnlineStore') + 'Phone.dc.html', BACK_LABEL[back or 'OnlineStore'], title), '<main class="mm-scroll" style="gap: 12px; padding: 12px">',
                         '<p class="mm-muted" style="margin: 0; font-size: 13px">%s</p>' % intro, READONLY, bp, '</main>', (pbar() if bar else '')])
     ph += extra_p.replace('@@AFFIX@@', '10px') + ('\n@@PTOAST@@\n\n</div>\n</x-dc>\n' if phone_top else '\n@@PTOAST0@@\n\n</div>\n</x-dc>\n')
     jsall = RSHARED + sread('shared.js') + js

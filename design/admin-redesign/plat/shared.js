@@ -24,18 +24,18 @@ var CHECKLIST = [['terms', 'Platform terms accepted'], ['profile', 'Business nam
   ['payments', 'A way to pay: cash on delivery or SSLCommerz'], ['legal', 'Terms, privacy, returns and delivery pages published'], ['email', 'Email to customers working'], ['sms', 'SMS gateway', true], ['domain', 'Web address chosen', true]];
 // Invoices: number (null for a draft), store, status, issued, due, total, paid, period
 var INVOICES = [
-  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, 'Oct 18 – Nov 17, 2026'],
-  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, 'Nov 1 – Nov 30, 2026'],
-  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, 'Oct 25 – Nov 24, 2026'],
-  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, 'Oct 20 – Nov 19, 2026'],
-  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, 'Oct 2 – Nov 1, 2026'],
-  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, 'Oct 5 – Nov 4, 2026'],
-  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, 'Sep 11 – Oct 10, 2026'],
-  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, 'Oct 1 – Oct 31, 2026'],
-  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, 'Sep 25 – Oct 24, 2026'],
-  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, 'Sep 20 – Oct 19, 2026'],
-  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, 'Sep 3 – Oct 2, 2026'],
-  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, 'Sep 5 – Oct 4, 2026']
+  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, '18 Oct – 17 Nov 2026'],
+  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, '1 Nov – 30 Nov 2026'],
+  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, '25 Oct – 24 Nov 2026'],
+  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, '20 Oct – 19 Nov 2026'],
+  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, '2 Oct – 1 Nov 2026'],
+  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, '5 Oct – 4 Nov 2026'],
+  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, '11 Sep – 10 Oct 2026'],
+  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, '1 Oct – 31 Oct 2026'],
+  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, '25 Sep – 24 Oct 2026'],
+  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, '20 Sep – 19 Oct 2026'],
+  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, '3 Sep – 2 Oct 2026'],
+  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, '5 Sep – 4 Oct 2026']
 ];
 var STAFF = [['Rafiq Ahmed', 'rafiq@managemind.app', 'super_admin', true, true], ['Tanvir Hasan', 'tanvir@managemind.app', 'super_admin', true], ['Sumaiya Rahman', 'sumaiya@managemind.app', 'support', true],
   ['Imran Kabir', 'imran@managemind.app', 'support', false], ['Farhana Yasmin', 'farhana@managemind.app', null, true]];

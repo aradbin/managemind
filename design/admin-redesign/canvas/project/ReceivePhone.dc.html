@@ -258,9 +258,6 @@ li:last-child>.mm-orow{border-bottom:0}
 <h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Receive stock</h1>
 
 </div>
-<nav aria-label="Inventory sections" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
-<div class="mm-secbar"><a href="InventoryPhone.dc.html" class="mm-tab">Stock</a><a href="PurchaseOrdersPhone.dc.html" class="mm-tab">Purchase orders</a><a href="ReceivePhone.dc.html" class="mm-tab" aria-current="page">Receive stock</a><a href="SuppliersPhone.dc.html" class="mm-tab">Suppliers</a><a href="CountsPhone.dc.html" class="mm-tab">Counts</a><a href="AdjustmentsPhone.dc.html" class="mm-tab">Adjustments</a></div>
-</nav>
 <sc-if value="{{showProblems}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{problemsText}}</p></div></sc-if>
 <section class="mm-card" aria-label="Where it came from" style="gap: 14px">
 <div role="tablist" aria-label="What arrived" class="mm-tabs" style="display: flex; height: 40px"><sc-for list="{{modes}}" as="m" hint-placeholder-count="2"><button type="button" role="tab" class="mm-tab" aria-selected="{{m.on}}" onClick="{{m.pick}}" style="flex: 1; justify-content: center; height: 34px">{{m.label}}</button></sc-for></div>
@@ -398,8 +395,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }

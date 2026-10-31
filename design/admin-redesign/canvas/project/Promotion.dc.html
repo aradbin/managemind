@@ -175,6 +175,8 @@ body{margin:0}
 .mm-rcard:disabled{cursor:not-allowed}
 .mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
 .mm-row{position:relative}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
 </style>
 </helmet>
 <div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
@@ -207,7 +209,13 @@ body{margin:0}
 <ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
 <li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 <li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
-<li><a href="SettingsBilling.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg>Billing</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
 </ul>
 </div>
 </nav>
@@ -225,8 +233,12 @@ body{margin:0}
 </nav>
 <div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
 <button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
 <button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
 <span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
 <a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
 </div>
@@ -531,7 +543,7 @@ function copy(x) { return JSON.parse(JSON.stringify(x)); }
 function money(n) { return '৳' + Math.round(Number(n) || 0).toLocaleString('en-US'); }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '')); return isNaN(v) ? null : v; }
-function day(dt) { if (!dt) return ''; var m = Number(dt.slice(5, 7)), d = Number(dt.slice(8, 10)), y = dt.slice(0, 4); return MONTHS[m - 1] + ' ' + d + (y !== NOW.slice(0, 4) ? ', ' + y : ''); }
+function day(dt) { if (!dt) return ''; var m = Number(dt.slice(5, 7)), d = Number(dt.slice(8, 10)), y = dt.slice(0, 4); return d + ' ' + MONTHS[m - 1] + (y !== NOW.slice(0, 4) ? ' ' + y : ''); }
 function stateOf(p) {
   if (p.status !== 'active') return p.status;
   if (p.startsAt && p.startsAt > NOW) return 'scheduled';

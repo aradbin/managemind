@@ -5,7 +5,7 @@ class Component extends DCLogic {
     var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
     reportVals(vals, s, up);
     var R = rangeOf(s, up); vals.rg = R.rg; vals.hasRange = true;
-    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Orders start on Jul 1, 2026.' : 'The end date comes before the start.'; return finish(vals); }
+    if (!R.hasData) { vals.noData = true; vals.noDataText = R.valid ? 'Nothing in these dates. Orders start on 1 Jul 2026.' : 'The end date comes before the start.'; return finish(vals); }
     var t = sumDays(R.from, R.to), k = t.orders / 462;
     var n = function (v) { return Math.max(0, Math.round(v * k)); };
     var placed = n(538), delivered = t.orders, returned = n(21), failed = n(29);

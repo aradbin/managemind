@@ -341,7 +341,7 @@ function copy(x) { return JSON.parse(JSON.stringify(x)); }
 function money(n) { return '৳' + Math.round(Number(n) || 0).toLocaleString('en-US'); }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '')); return isNaN(v) ? null : v; }
-function day(dt) { if (!dt) return ''; var m = Number(dt.slice(5, 7)), d = Number(dt.slice(8, 10)), y = dt.slice(0, 4); return MONTHS[m - 1] + ' ' + d + (y !== NOW.slice(0, 4) ? ', ' + y : ''); }
+function day(dt) { if (!dt) return ''; var m = Number(dt.slice(5, 7)), d = Number(dt.slice(8, 10)), y = dt.slice(0, 4); return d + ' ' + MONTHS[m - 1] + (y !== NOW.slice(0, 4) ? ' ' + y : ''); }
 function stateOf(p) {
   if (p.status !== 'active') return p.status;
   if (p.startsAt && p.startsAt > NOW) return 'scheduled';

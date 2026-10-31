@@ -240,6 +240,12 @@ li:last-child>.mm-orow{border-bottom:0}
 .mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
 .mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
 
+.mm-skel{display:block;flex:none;max-width:100%;border-radius:6px;background:color-mix(in oklch,var(--foreground) 8%,transparent);animation:mm-pulse 1.6s ease-in-out infinite}
+@keyframes mm-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.mm-skel{animation:none}}
+.mm-bulk{grid-column:2/-1;display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto}
+.mm-bulk .mm-btn{height:28px;padding:0 8px;font-size:13px}
+.mm-bulk-sep{flex:none;width:1px;height:16px;margin:0 6px;background:var(--border)}
 .mm{--violet:oklch(.541 .281 293.009)}
 .mm.dark{--violet:oklch(.702 .183 293.541)}
 .mm-ogrid{display:grid;grid-template-columns:24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px;align-items:center;column-gap:12px}
@@ -411,7 +417,7 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 </helmet>
 <div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
 <header style="display: flex; flex: none; align-items: center; gap: 4px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--border); background: var(--background)">
-<a href="PlatformStoresPhone.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="All stores"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a>
+<a href="PlatformStoresPhone.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to stores"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a>
 <h1 class="mm-trunc" style="flex: 1; margin: 0 4px; font-size: 16px; line-height: 24px; font-weight: 600">New store</h1>
 <span class="mm-plat" style="margin-right: 8px" title="Platform"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg>Platform</span>
 </header>
@@ -495,8 +501,8 @@ function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
 function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
 function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
 function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
-function short(s) { return s ? MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) : '—'; }
-function longDate(s) { return MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + Number(s.slice(8, 10)) + ', ' + s.slice(0, 4); }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
 function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
 function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
 function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
@@ -749,7 +755,7 @@ function seg(id, label, opts, cur, pick) { return { id: id, label: label, opts: 
 // Everything a report page shows, empty to start.
 function reportVals(vals, s, up) {
   vals.controls = []; vals.hasControls = false; vals.notes = []; vals.stats = []; vals.hasStats = false; vals.blocks = [];
-  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on Jul 1, 2026.';
+  vals.hasChart = false; vals.chart = { title: '', sub: '', bars: [], ticks: [] }; vals.noData = false; vals.noDataText = 'Nothing in these dates. Sales start on 1 Jul 2026.';
   vals.closePop = function () { up({ exp: null, rpop: false }); };
   vals.closeAll = function () { up({ exp: null, rpop: false }); };
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exp: null, rpop: false }); } };
@@ -827,18 +833,18 @@ var CHECKLIST = [['terms', 'Platform terms accepted'], ['profile', 'Business nam
   ['payments', 'A way to pay: cash on delivery or SSLCommerz'], ['legal', 'Terms, privacy, returns and delivery pages published'], ['email', 'Email to customers working'], ['sms', 'SMS gateway', true], ['domain', 'Web address chosen', true]];
 // Invoices: number (null for a draft), store, status, issued, due, total, paid, period
 var INVOICES = [
-  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, 'Oct 18 – Nov 17, 2026'],
-  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, 'Nov 1 – Nov 30, 2026'],
-  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, 'Oct 25 – Nov 24, 2026'],
-  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, 'Oct 20 – Nov 19, 2026'],
-  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, 'Oct 2 – Nov 1, 2026'],
-  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, 'Oct 5 – Nov 4, 2026'],
-  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, 'Sep 11 – Oct 10, 2026'],
-  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, 'Oct 1 – Oct 31, 2026'],
-  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, 'Sep 25 – Oct 24, 2026'],
-  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, 'Sep 20 – Oct 19, 2026'],
-  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, 'Sep 3 – Oct 2, 2026'],
-  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, 'Sep 5 – Oct 4, 2026']
+  [null, 't5', 'draft', null, '2026-11-07', 6500, 0, '18 Oct – 17 Nov 2026'],
+  [null, 't2', 'draft', null, '2026-11-08', 4000, 0, '1 Nov – 30 Nov 2026'],
+  ['INV-2026-0047', 't7', 'issued', '2026-10-26', '2026-11-02', 4870, 0, '25 Oct – 24 Nov 2026'],
+  ['INV-2026-0046', 't4', 'issued', '2026-10-22', '2026-10-29', 1500, 0, '20 Oct – 19 Nov 2026'],
+  ['INV-2026-0045', 't3', 'paid', '2026-10-20', '2026-10-27', 1500, 1500, '2 Oct – 1 Nov 2026'],
+  ['INV-2026-0042', 't1', 'issued', '2026-10-05', '2026-10-12', 1500, 0, '5 Oct – 4 Nov 2026'],
+  ['INV-2026-0040', 't6', 'issued', '2026-09-11', '2026-09-18', 4000, 0, '11 Sep – 10 Oct 2026'],
+  ['INV-2026-0039', 't2', 'paid', '2026-10-01', '2026-10-08', 4000, 4000, '1 Oct – 31 Oct 2026'],
+  ['INV-2026-0036', 't7', 'paid', '2026-09-25', '2026-10-02', 4000, 4000, '25 Sep – 24 Oct 2026'],
+  ['INV-2026-0034', 't4', 'paid', '2026-09-22', '2026-09-29', 1500, 1500, '20 Sep – 19 Oct 2026'],
+  ['INV-2026-0033', 't8', 'void', '2026-09-03', '2026-09-10', 1500, 0, '3 Sep – 2 Oct 2026'],
+  ['INV-2026-0031', 't1', 'paid', '2026-09-05', '2026-09-12', 1500, 1500, '5 Sep – 4 Oct 2026']
 ];
 var STAFF = [['Rafiq Ahmed', 'rafiq@managemind.app', 'super_admin', true, true], ['Tanvir Hasan', 'tanvir@managemind.app', 'super_admin', true], ['Sumaiya Rahman', 'sumaiya@managemind.app', 'support', true],
   ['Imran Kabir', 'imran@managemind.app', 'support', false], ['Farhana Yasmin', 'farhana@managemind.app', null, true]];

@@ -27,8 +27,7 @@ SNAV = [('Store', [('store', 'Store profile', 'SettingsStore'), ('domains', 'Dom
 PAGES_ALL = [x for g in SNAV for x in g[1]]
 
 SET_LI = re.search(r'<li><a href="(?:#|Settings.dc.html)" class="mm-nav">(<svg(?:(?!</svg>).)*</svg>)Settings</a></li>', B.dhead)
-BILL_LI = re.search(r'<li><a href="(?:#|SettingsBilling.dc.html)" class="mm-nav">(<svg(?:(?!</svg>).)*</svg>)Billing</a></li>', B.dhead)
-assert SET_LI and BILL_LI
+assert SET_LI
 
 SCSS = '''
 .mm-sgrid{display:grid;grid-template-columns:200px minmax(0,780px);gap:32px;align-items:start}
@@ -74,12 +73,8 @@ def snav(cur):
 def sdhead(cur, title, crumbs=None):
     h = dhead_for(None, crumbs or [('Settings', 'Settings.dc.html'), (title, '')], title)
     h = h.replace(B.inv_group(None), B.m.group(0).replace('href="#"', 'href="Inventory.dc.html"'), 1)
-    if cur == 'billing':
-        h = h.replace(BILL_LI.group(0), '<li><a href="SettingsBilling.dc.html" class="mm-nav" aria-current="page">' + BILL_LI.group(1) + 'Billing</a></li>', 1)
-        h = h.replace(SET_LI.group(0), '<li><a href="Settings.dc.html" class="mm-nav">' + SET_LI.group(1) + 'Settings</a></li>', 1)
-    else:
-        h = h.replace(SET_LI.group(0), '<li><a href="Settings.dc.html" class="mm-nav" aria-current="page">' + SET_LI.group(1) + 'Settings</a></li>', 1)
-        h = h.replace(BILL_LI.group(0), '<li><a href="SettingsBilling.dc.html" class="mm-nav">' + BILL_LI.group(1) + 'Billing</a></li>', 1)
+    # Plan and billing lives under Settings, so every settings page marks Settings as current.
+    h = h.replace(SET_LI.group(0), '<li><a href="Settings.dc.html" class="mm-nav" aria-current="page">' + SET_LI.group(1) + 'Settings</a></li>', 1)
     k = h.rindex('</style>')
     return h[:k] + OCSS + RCSS + SCSS + h[k:]
 
