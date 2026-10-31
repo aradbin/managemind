@@ -7,6 +7,7 @@ import {
   Bell,
   CreditCard,
   Globe,
+  Megaphone,
   Package,
   Percent,
   PhoneCall,
@@ -39,6 +40,7 @@ const GROUPS = [
       '/settings/payments',
       '/settings/delivery',
       '/settings/couriers',
+      '/settings/meta',
       '/settings/checkout',
       '/settings/confirmation',
       '/settings/vat',
@@ -88,6 +90,12 @@ function Page() {
       icon: Package,
       title: t('couriers.title'),
       description: t('couriers.description'),
+    },
+    usePermission('settings.read') && {
+      to: '/settings/meta' as const,
+      icon: Megaphone,
+      title: t('meta.title'),
+      description: t('meta.description'),
     },
     usePermission('settings.read') && {
       to: '/settings/checkout' as const,

@@ -86,6 +86,8 @@ export const RULES = {
   'ipn:ip': { windows: [{ limit: 600, seconds: HOUR }] },
   /** Courier webhooks (phase-7-plan §3.5): each one costs a lookup at the courier. */
   'courier_webhook:ip': { windows: [{ limit: 1200, seconds: HOUR }] },
+  // Meta delivers from many addresses; this caps forged posts (phase-9-plan §3.2.4).
+  'whatsapp_webhook:ip': { windows: [{ limit: 3600, seconds: HOUR }] },
   /** Sync now on a shipment: at most once a minute. */
   'courier_sync:shipment': { windows: [{ limit: 1, seconds: MINUTE }] },
   /** Cart changes from one IP: generous, only to stop scripts filling the database. */

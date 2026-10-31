@@ -58,6 +58,13 @@ export class FakeR2 {
   async delete(keys: string | string[]) {
     for (const key of Array.isArray(keys) ? keys : [keys]) this.objects.delete(key);
   }
+  async list(options: { prefix?: string } = {}) {
+    const prefix = options.prefix ?? '';
+    const objects = [...this.objects.keys()]
+      .filter((k) => k.startsWith(prefix))
+      .map((key) => ({ key }));
+    return { objects, truncated: false, delimitedPrefixes: [] };
+  }
 }
 
 export function memoryStore(): LockStore & { value: number | undefined; writes: number } {

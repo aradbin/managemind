@@ -21,7 +21,15 @@ export interface StoreUrls {
   preview: (token: string) => string;
   /** A shopper page by path, such as `track` (phase-5a-plan §3.6's message links). */
   page: (path: string) => string;
+  /** Any store path, absolute, with query parameters (phase-9-plan §3.1.4's feed links). */
+  link: (path: string, params?: Record<string, string>) => string;
 }
+
+const withParams = (base: string, path: string, params: Record<string, string>) => {
+  const url = new URL(path, base);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  return url.toString();
+};
 
 export const storeUrls = (c: Context<StaffEnv>, tx: TenantTx): Promise<StoreUrls> =>
   storeUrlsFor(c.var.config, tx);
@@ -50,6 +58,7 @@ export async function storeUrlsFor(
       store: `${origin}/?store=${row.slug}`,
       preview: (value) => `${origin}/__preview?store=${row.slug}&token=${token(value)}`,
       page: (path) => `${origin}/${path}?store=${row.slug}`,
+      link: (path, params = {}) => withParams(origin, path, { ...params, store: row.slug }),
     };
   }
   return {
@@ -58,5 +67,6 @@ export async function storeUrlsFor(
     store: `https://${primaryHost}/`,
     preview: (value) => `https://${primaryHost}/__preview?token=${token(value)}`,
     page: (path) => `https://${primaryHost}/${path}`,
+    link: (path, params = {}) => withParams(`https://${primaryHost}`, path, params),
   };
 }

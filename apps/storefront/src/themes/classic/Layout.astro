@@ -147,6 +147,7 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
           hidden
           data-pixel={tracking.metaPixelId}
           data-ga4={tracking.ga4Id}
+          data-pixel-purchase={ctx.layout.pixelPurchase ? undefined : 'off'}
           data-product={product ? JSON.stringify({ id: product.id, name: product.title, price: product.price }) : undefined}
         ></div>
         <script src="./scripts/consent.ts"></script>

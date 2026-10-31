@@ -5,13 +5,31 @@ import { type Cart, type CartLine, lineImage, lineName, problemText, totals } fr
 import { add, api, config, el, fill, money, pick, ShopError, setCount, t } from './shop';
 
 const root = document.querySelector<HTMLElement>('[data-cart]');
-const { links } = config();
+const { links, whatsapp } = config();
 const prefix = config().prefix;
 let busy = false;
 
 function productHref(l: CartLine): string | null {
   const slug = pick(l.slugs);
   return slug ? `${prefix}/products/${encodeURIComponent(slug)}` : null;
+}
+
+/**
+ * The cart as a WhatsApp message to the store (phase-9-plan §3.1.3): each
+ * line's link names its variant and quantity, which the admin's "Paste a
+ * chat" reads back into a new order.
+ */
+function chatOrder(cart: Cart): string {
+  const lines = cart.lines.map((l) => {
+    const path = productHref(l);
+    const link = path ? ` ${location.origin}${path}?v=${l.variantId}` : '';
+    return `• ${lineName(l)}:${link} × ${l.quantity}`;
+  });
+  return [
+    t('cart.orderWhatsappIntro'),
+    ...lines,
+    `${t('cart.total')}: ${money(cart.totals.total)}`,
+  ].join('\n');
 }
 
 async function change(run: () => Promise<Cart>, status?: HTMLElement) {
@@ -186,13 +204,22 @@ function render(cart: Cart) {
   const checkout = cart.ready
     ? el('a', { class: 'button wide', href: links.checkout, text: t('cart.checkout') })
     : el('p', { class: 'line-problem', role: 'status', text: t('cart.fix') });
+  const chat = whatsapp
+    ? el('a', {
+        class: 'button secondary wide',
+        href: `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(chatOrder(cart))}`,
+        target: '_blank',
+        rel: 'noopener',
+        text: t('cart.orderWhatsapp'),
+      })
+    : null;
   fill(
     root,
     el(
       'div',
       { class: 'shop-grid' },
       el('ul', { class: 'lines', role: 'list' }, ...cart.lines.map(lineView)),
-      el('aside', { class: 'summary' }, codeForm(cart), totals(cart), checkout),
+      el('aside', { class: 'summary' }, codeForm(cart), totals(cart), checkout, chat),
     ),
   );
 }

@@ -11,6 +11,7 @@ import {
   anonymizeCustomer,
   blockPhone,
   cancelOrder,
+  chatMessageInput,
   claimConfirmation,
   confirmOrder,
   createCustomer,
@@ -42,7 +43,10 @@ import {
   loadCredentials,
   markIncompleteContacted,
   mergeDuplicate,
+  orderChatMessage,
   ordersForPrint,
+  parseChat,
+  parseChatInput,
   previewManualOrder,
   quoteDelivery,
   recordOutcome,
@@ -231,6 +235,37 @@ const IncompleteSummary = z
     updatedAt: z.string(),
   })
   .openapi('IncompleteOrderSummary');
+/** What a pasted chat says (phase-9-plan §3.1.2). */
+const ParsedChat = z
+  .object({
+    phone: z.string().nullable(),
+    phones: z.array(z.string()),
+    customer: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+    risk: PhoneRisk.nullable(),
+    lines: z.array(
+      z.object({
+        variantId: z.uuid().nullable(),
+        productId: z.uuid(),
+        quantity: z.number().int(),
+        title: Localized,
+        optionLabels: z.array(Localized),
+        available: z.number().int().nullable(),
+        orderable: z.boolean(),
+      }),
+    ),
+    unknownProducts: z.array(z.string()),
+    orders: z.array(z.object({ id: z.uuid(), displayNumber: z.string(), status: z.string() })),
+  })
+  .openapi('ParsedChat');
+const ChatMessage = z
+  .object({
+    text: z.string(),
+    phone: z.string(),
+    whatsappUrl: z.string(),
+    locale: z.enum(['bn', 'en']),
+  })
+  .openapi('ChatMessage');
+
 const IncompleteDetail = IncompleteSummary.extend({
   email: z.string().nullable(),
   address: IncompleteArea.extend({ line: z.string().optional() }),
@@ -738,6 +773,22 @@ export const ORDER_ROUTES = {
     summary: 'A manual order: Facebook, phone or walk-in (orders.write; accepts Idempotency-Key)',
     request: { headers: IdemHeader, ...body(manualOrderInput) },
     responses: created(PlacedOrder, 'Placed'),
+  }),
+  parseChat: r({
+    method: 'post',
+    path: '/orders/parse-chat',
+    summary:
+      'The phone, customer, products and order numbers in a pasted chat, for a new order (orders.write)',
+    request: body(parseChatInput),
+    responses: json(ParsedChat, 'What the chat says'),
+  }),
+  chatMessage: r({
+    method: 'post',
+    path: '/orders/{id}/chat-message',
+    summary:
+      "The order's summary, payment link or tracking link as a chat message in its language (orders.read; payment also makes the link: payments.read, orders.write)",
+    request: { params: Id, ...body(chatMessageInput) },
+    responses: json(ChatMessage, 'The message'),
   }),
   quoteOrder: r({
     method: 'post',
@@ -1342,7 +1393,8 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     return getOrder(tx, actor(c), id(c));
   });
   command(R.payment, 'payment', (tx, c, input) => recordPayment(tx, actor(c), id(c), input), state);
-  admin.openapi(R.paymentLink, async (c) => {
+  /** A link the shopper pays what's unpaid from, reusing one still waiting (phase-5a-plan §3.3). */
+  const paymentLink = async (c: Context<StaffEnv>) => {
     const tenantId = c.var.staff.actor.tenantId as string;
     const now = new Date();
     const link = await inStore(
@@ -1359,8 +1411,23 @@ export function registerOrders(admin: OpenAPIHono<StaffEnv>): void {
     );
     const token = await signOrderToken('pay', tenantId, id(c), c.var.config.AUTH_SECRET, now);
     const expiresAt = new Date(now.getTime() + ORDER_TOKEN_TTL_SECONDS.pay * 1000).toISOString();
-    return c.json({ url: `${link.track}#${token}`, amount: link.amount, expiresAt }, 200);
+    return { url: `${link.track}#${token}`, amount: link.amount, expiresAt };
+  };
+  admin.openapi(R.paymentLink, async (c) => c.json(await paymentLink(c), 200));
+  admin.openapi(R.chatMessage, async (c) => {
+    const { kind } = c.req.valid('json');
+    const payUrl = kind === 'payment' ? (await paymentLink(c)).url : undefined;
+    const message = await inStore(c, async (tx) =>
+      orderChatMessage(tx, actor(c), id(c), kind, {
+        trackUrl: (await storeUrlsFor(c.var.config, tx)).page('track'),
+        ...(payUrl ? { payUrl } : {}),
+      }),
+    );
+    return c.json(message, 200);
   });
+  admin.openapi(R.parseChat, async (c) =>
+    c.json(await inStore(c, (tx) => parseChat(tx, actor(c), c.req.valid('json'))), 200),
+  );
   command(
     R.createShipment,
     'shipment',

@@ -121,6 +121,7 @@ describe('cleanup_expired', () => {
       shopper_sessions: 0,
       shopper_verifications: 0,
       order_ips: 0,
+      order_attribution: 0,
       messages: 0,
       incomplete_orders: 0,
     });
@@ -234,5 +235,39 @@ describe('cleanup_expired, Phase 6', () => {
       );
       await owner.query(`delete from store.incomplete_orders where phone = '+8801700000009'`);
     }
+  });
+});
+
+describe('cleanup_expired, Phase 9', () => {
+  it("clears an order's ad attribution after 30 days and keeps its IP until 90", async () => {
+    const [recent, old, older] = await inTenant(owner, TENANT_A, async () => {
+      const { rows } = await owner.query<{ id: string }>(
+        `insert into store.orders (number, source, customer_id, phone, contact, subtotal, total, locale,
+                                   ip, user_agent, attribution, placed_at)
+         select n, 'website', c.id, c.phone, '{}', 0, 0, 'en', '10.0.0.1', 'UA',
+                '{"fbp": "fb.1.1.1", "consentedAt": "2026-01-01T00:00:00Z"}', now() - make_interval(days => d)
+           from (select id, phone from store.customers limit 1) c,
+                (values (99101, 29), (99102, 31), (99103, 91)) as v(n, d)
+          order by n
+         returning id`,
+      );
+      return rows.map((r) => r.id);
+    });
+    const { rows } = await app.query<{ name: string; deleted: string }>(
+      'select * from app.cleanup_expired()',
+    );
+    const deleted = Object.fromEntries(rows.map((r) => [r.name, Number(r.deleted)]));
+    expect(deleted).toMatchObject({ order_ips: 1, order_attribution: 1 });
+    const left = await inTenant(owner, TENANT_A, () =>
+      owner.query<{ id: string; attribution: boolean; ip: boolean }>(
+        `select id, attribution is not null as attribution, ip is not null as ip
+           from store.orders where id = any($1::uuid[])`,
+        [[recent, old, older]],
+      ),
+    );
+    const byId = Object.fromEntries(left.rows.map((r) => [r.id, r]));
+    expect(byId[recent as string]).toMatchObject({ attribution: true, ip: true });
+    expect(byId[old as string]).toMatchObject({ attribution: false, ip: true });
+    expect(byId[older as string]).toMatchObject({ attribution: false, ip: false });
   });
 });

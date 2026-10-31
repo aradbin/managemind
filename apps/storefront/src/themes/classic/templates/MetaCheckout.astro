@@ -1,0 +1,21 @@
+---
+// Meta Shops' checkout URL (phase-9-plan §3.1.5): a shell whose script puts
+// the shopper's Facebook or Instagram cart into ours, then opens checkout.
+import type { StoreMessageKey } from '../../../i18n';
+import type { PageContext } from '../../../lib/page';
+import ShopPage from '../ShopPage.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t } = ctx;
+const keys: StoreMessageKey[] = ['metaCheckout.adding', 'cart.error'];
+---
+
+<ShopPage ctx={ctx} kind="metaCheckout" title={t('metaCheckout.title')} keys={keys}>
+  <h1>{t('metaCheckout.title')}</h1>
+  <p class="muted" data-meta-checkout role="status">{t('metaCheckout.adding')}</p>
+  <noscript><p>{t('cart.noscript')}</p></noscript>
+  <script src="../scripts/meta-checkout.ts"></script>
+</ShopPage>

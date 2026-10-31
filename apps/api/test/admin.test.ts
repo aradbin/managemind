@@ -596,6 +596,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/orders/{id}/notes': { id: order.id, body: { body: 'x' } },
       'PATCH /v1/admin/orders/{id}': { id: order.id, body: { tags: ['x'] } },
       'POST /v1/admin/orders/{id}/payment-link': { id: order.id },
+      'POST /v1/admin/orders/{id}/chat-message': { id: order.id, body: { kind: 'summary' } },
       'GET /v1/admin/orders/{id}/returnable': { id: order.id },
       'POST /v1/admin/orders/{id}/refunds/preview': { id: order.id, body: {} },
       'POST /v1/admin/orders/{id}/refunds': { id: order.id, body: { method: 'cash' } },

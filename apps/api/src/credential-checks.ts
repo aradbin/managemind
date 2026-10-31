@@ -2,7 +2,9 @@
 // (phase-5a-plan §3.1): a key that the provider refuses, or an email sender
 // it hasn't verified, never reaches the vault. An SMS key must read its
 // balance; a generic gateway can only be checked by sending, so it isn't.
+
 import type { CredentialCheck } from '@managemind/core';
+import { conversionsApi } from '@managemind/providers/meta';
 import { smsProviderFor } from '@managemind/providers/sms';
 import { createSession } from '@managemind/providers/sslcommerz';
 
@@ -85,9 +87,23 @@ async function checkSslcommerz(
   }
 }
 
-export function credentialCheck(f: Fetch = fetch): CredentialCheck {
+export function credentialCheck(
+  f: Fetch = fetch,
+  options: { allowFake?: boolean } = {},
+): CredentialCheck {
   return async (c) => {
     switch (c.provider) {
+      case 'meta_capi': {
+        // The token `fake` connects the fake Conversions API, outside production.
+        const token = String(c.secrets.accessToken);
+        if (token === 'fake' && options.allowFake) return;
+        try {
+          await conversionsApi(String(c.config.pixelId), token, f).check();
+        } catch (e) {
+          throw new Error(`Meta refused: ${e instanceof Error ? e.message : String(e)}`);
+        }
+        return;
+      }
       case 'sslcommerz':
         return checkSslcommerz(
           String(c.secrets.storeId),

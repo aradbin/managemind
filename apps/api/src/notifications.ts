@@ -6,6 +6,10 @@
 // skips shopper order updates past 70% (§3.8) so sign-in codes keep working.
 
 import {
+  approvedTemplates,
+  contactState,
+  FREE_SERVICE_MESSAGES,
+  freeServiceUsed,
   importKeyring,
   type Keyring,
   loadCredentials,
@@ -18,6 +22,7 @@ import {
   type QueuedMessage,
   recordMessages,
   renderMessage,
+  settleFallback,
   settlePushTargets,
   type TenantTx,
   triggeredBy,
@@ -32,6 +37,7 @@ import {
   sendEmail,
   storeMessageEmail,
 } from '@managemind/providers/email';
+import type { WhatsappApi } from '@managemind/providers/meta';
 import { sendPush, type VapidKeys } from '@managemind/providers/push';
 import { SmsError, type SmsProvider, smsProviderFor } from '@managemind/providers/sms';
 import { tenantSettings } from '@managemind/shared/settings';
@@ -47,6 +53,7 @@ import {
   EMAIL_GUARD_SHARE,
   emailsSentToday,
 } from './rate-limit/email-quota';
+import { scheduleFallback, sendWhatsapp, whatsappFor } from './whatsapp';
 
 /** Whether an event sends anything, so the consumer knows to call notify. */
 export const sendsMessages = (event: OutboxEvent) => triggeredBy(event) !== null;
@@ -67,6 +74,8 @@ interface Prepared {
   body: string;
   /** The staff member's devices, for push. */
   devices: PushTarget[];
+  /** WhatsApp: the approved template, and whether a plain message is free now (phase-9-plan §3.2.2). */
+  whatsapp?: { name: string; variables: string[]; plain: boolean };
 }
 
 interface StoreSender {
@@ -76,6 +85,8 @@ interface StoreSender {
   own: { provider: EmailProvider; from: string } | null;
   /** The store's SMS gateway, when it saved one (phase-5a-plan §3.6). */
   sms: SmsProvider | null;
+  /** The store's WhatsApp, when it connected it (phase-9-plan §3.2). */
+  whatsapp: WhatsappApi | null;
 }
 
 /** Plans, records, sends and logs one event's messages. Throws to have the queue retry. */
@@ -83,25 +94,43 @@ export async function notify(
   env: Env,
   ctx: Pick<ExecutionContext, 'waitUntil'>,
   event: OutboxEvent,
+  /** Once more after WhatsApp couldn't reach the shopper, for the SMS it let go. */
+  again = true,
 ): Promise<void> {
   const config = getConfig(env);
   const keyring = await credentialsKeyring(env);
   const { prepared, store } = await withClient(env, ctx, (client) =>
     withTenant(client, event.tenantId, async (tx) => {
       const sms = await loadCredentials(tx, keyring, 'sms');
+      const whatsapp = await whatsappFor(env, tx);
       const urls = await storeUrlsFor(config, tx);
       const planned = await planMessages(tx, event, {
         trackUrl: urls.page('track'),
         pageUrl: urls.page,
         linkKey: `confirm-link:${config.AUTH_SECRET}`,
         smsGateway: sms !== null,
+        whatsapp: whatsapp !== null,
       });
       const queued = await recordMessages(tx, planned);
       const prepared: Prepared[] = [];
+      const templates = queued.some((m) => m.channel === 'whatsapp')
+        ? await approvedTemplates(tx)
+        : new Map();
+      let freeLeft = templates.size ? FREE_SERVICE_MESSAGES - (await freeServiceUsed(tx)) : 0;
       for (const message of queued) {
         const rendered = await renderMessage(tx, message);
         const devices = message.channel === 'push' ? await pushTargets(tx, message.recipient) : [];
-        if (rendered) prepared.push({ message, ...rendered, devices });
+        if (!rendered) continue;
+        if (message.channel === 'whatsapp') {
+          const template = templates.get(`${message.event}:${message.locale}`);
+          if (!template) continue;
+          // Free inside the shopper's window while the month's allowance lasts (§2.1).
+          const plain = freeLeft > 0 && (await contactState(tx, message.recipient)).windowOpen;
+          if (plain) freeLeft--;
+          prepared.push({ message, ...rendered, devices, whatsapp: { ...template, plain } });
+          continue;
+        }
+        prepared.push({ message, ...rendered, devices });
       }
       const sender = await storeSender(tx, keyring, config.PLATFORM_NAME);
       return {
@@ -109,6 +138,7 @@ export async function notify(
         store: {
           ...sender,
           sms: sms ? smsProviderFor(sms.provider, sms.secrets, sms.config) : null,
+          whatsapp: whatsapp?.api ?? null,
         },
       };
     }),
@@ -120,18 +150,36 @@ export async function notify(
   for (const p of prepared) {
     outcomes.set(p.message.id, await send(env, ctx, p, store, devices));
   }
-  await withClient(env, ctx, (client) =>
+  // A WhatsApp message that can't reach the shopper lets its waiting SMS go now.
+  const released = await withClient(env, ctx, (client) =>
     withTenant(client, event.tenantId, async (tx) => {
+      let released = false;
       for (const [id, outcome] of outcomes) await markMessage(tx, id, outcome);
+      for (const p of prepared) {
+        const outcome = outcomes.get(p.message.id);
+        if (p.message.channel === 'whatsapp' && outcome?.status === 'failed' && !outcome.retry) {
+          if ((await settleFallback(tx, p.message.idempotencyKey, 'send')).resend) released = true;
+        }
+      }
       await settlePushTargets(tx, devices.used, devices.gone);
+      return released;
     }),
   );
+  // The rest wait for Meta's receipts, or ten minutes (Q7).
+  if (
+    prepared.some(
+      (p) => p.message.channel === 'whatsapp' && outcomes.get(p.message.id)?.status === 'sent',
+    )
+  ) {
+    await scheduleFallback(env, event.tenantId, event.id);
+  }
   const retry = [...outcomes.values()].some((o) => o.status === 'failed' && o.retry);
   log(retry ? 'warn' : 'info', 'messages sent', {
     event_id: event.id,
     tenant_id: event.tenantId,
     outcomes: [...outcomes.values()].map((o) => o.status),
   });
+  if (released && again) await notify(env, ctx, event, false);
   // A retryable failure stays queued; the queue's next attempt sends only it.
   if (retry) throw new Error('some messages will be retried');
 }
@@ -140,7 +188,7 @@ async function storeSender(
   tx: TenantTx,
   keyring: Keyring | null,
   platformName: string,
-): Promise<Omit<StoreSender, 'sms'>> {
+): Promise<Omit<StoreSender, 'sms' | 'whatsapp'>> {
   const t = schema.tenants;
   const [row] = await tx.db
     .select({ name: t.name, settings: t.settings })
@@ -181,6 +229,18 @@ async function send(
   const { message } = p;
   if (message.channel === 'email') return sendEmailMessage(env, ctx, p, store);
   if (message.channel === 'push') return sendPushMessage(env, p, devices);
+  if (message.channel === 'whatsapp') {
+    if (!store.whatsapp || !p.whatsapp) return { status: 'skipped', reason: 'no_template' };
+    return sendWhatsapp(store.whatsapp, {
+      to: message.recipient,
+      template: { ...p.whatsapp, locale: message.locale },
+      values: message.values,
+      text: p.body,
+      plain: p.whatsapp.plain,
+      confirmCode:
+        message.event === 'confirm_request' ? message.values.confirm_code || undefined : undefined,
+    });
+  }
   return sendSmsMessage(p, store);
 }
 

@@ -23,7 +23,7 @@ export interface RoutingInput {
 }
 
 /** Paths that work on every host of a store, never redirected. */
-const ANY_HOST = /^\/(api|media)\//;
+const ANY_HOST = /^\/(api|media|feeds)\//;
 
 export function decide(input: RoutingInput): Decision {
   const { url, store } = input;

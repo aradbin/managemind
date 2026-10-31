@@ -9,6 +9,7 @@
     "./push": "./src/push/index.ts",
     "./sms": "./src/sms/index.ts",
     "./couriers": "./src/couriers/index.ts",
+    "./meta": "./src/meta/index.ts",
     "./sslcommerz": "./src/payments/sslcommerz.ts"
   },
   "scripts": {

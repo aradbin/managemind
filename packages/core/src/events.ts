@@ -30,6 +30,7 @@ export const EVENTS = {
         'recovery',
         'couriers',
         'backOffice',
+        'meta',
         'returns',
         'notifications',
         'setup',

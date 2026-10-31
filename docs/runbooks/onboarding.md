@@ -42,7 +42,21 @@ The back office (phase-8-plan) needs a starting point: what each product cost, w
 
 A store that had orders before the back office was turned on gets its report history filled overnight, by itself (the Store jobs workflow). After a fix to the data, or if the history is missing, Platform → the store → **Rebuild reports** fills it again from the first day; it takes a few minutes and shows under Exports and jobs.
 
-## 4. After
+## 4. Facebook, Instagram and WhatsApp (optional, 20 minutes)
+
+For a store that sells on Facebook and Instagram (phase-9-plan stages 1 and 2). Everything is in Settings → Facebook and Instagram. The owner needs their own Meta Business account; nothing here waits on Meta's approval of our platform.
+
+1. **Product feed.** Tick **Publish the product feed** and save. A minute later, copy the feed address into their catalog in Commerce Manager: Data sources → Add items → Data feed → Scheduled feed, hourly. The page lists products left out (no picture, no price): fix those first.
+2. **Sales reported to Meta.** In Events Manager, open their pixel → Settings → Conversions API → **Generate access token**. Paste the token with the pixel ID, and **Check and save**. For a cash-on-delivery store, suggest **When the order is confirmed**, so their ads learn from real orders. To check it works, paste Meta's test event code, place a test order (accept the cookie banner), and look in Events Manager's Test events tab; remove the code afterwards.
+3. **WhatsApp order updates.** The store needs a number on the WhatsApp Cloud API in its own Meta app. Until our platform's own Meta app is approved (stage 3), the number can't also stay on the WhatsApp Business app on the owner's phone: use a second number for updates.
+   - In their Meta app: copy the phone number ID and the WhatsApp Business account ID; create a system user with a permanent token that has `whatsapp_business_messaging` and `whatsapp_business_management`; copy the app secret (App settings → Basic). Add a payment method to their WhatsApp account in WhatsApp Manager: Meta bills them for each update.
+   - Paste the four values and **Check and connect**. The page shows the number, its quality and limit, and submits 16 templates for Meta's review.
+   - Copy the **Callback URL** and **Verify token** into their app (WhatsApp → Configuration → Webhook) and subscribe to `messages` and `message_template_status_update`.
+   - Wait for the templates to show **Approved** (usually minutes; **Submit again and refresh** if not). Until then those updates go by SMS.
+   - In Settings → Notifications, tick the updates that go by WhatsApp. Leave **WhatsApp first, SMS only if needed** on.
+   - Place a test order with the owner's phone and check the WhatsApp arrives and shows delivered in the order's messages.
+
+## 5. After
 
 - Platform → the store page shows the checklist's progress and the store's health.
 - The first invoice drafts itself on the billing day; check it before it issues (Platform → Billing → Drafts).

@@ -24,7 +24,9 @@ import { createMailer } from './auth/email';
 import { type CourierMessage, handleCourierMessages } from './couriers';
 import { queueSink, withClient } from './db';
 import { type ApiConfig, type Env, getConfig } from './env';
+import { type FeedBuildMessage, handleFeedBuilds } from './feeds';
 import { log } from './log';
+import { notify } from './notifications';
 import {
   handlePaymentChecks,
   handleRefundChecks,
@@ -33,6 +35,7 @@ import {
 } from './payments';
 import { handleSaleEdges, type SaleEdgeMessage } from './sales';
 import { handleStockCountMessages, type StockCountMessage } from './stock-counts';
+import { handleFallbacks, type NotifyFallbackMessage } from './whatsapp';
 
 export interface DomainCheckMessage {
   kind: 'domain_check';
@@ -85,8 +88,8 @@ export function dnsInstructions(
 /**
  * The delayed queue: domain re-checks, scheduled sales' window edges
  * (sales.ts), online payments' and refunds' checks (payments.ts), couriers'
- * bookings and polls, and large stock counts' applies (stock-counts.ts),
- * told apart by `kind`.
+ * bookings and polls, large stock counts' applies (stock-counts.ts), and
+ * Meta feed builds (feeds.ts), told apart by `kind`.
  */
 export type DelayedMessage =
   | DomainCheckMessage
@@ -94,7 +97,9 @@ export type DelayedMessage =
   | PaymentCheckMessage
   | RefundCheckMessage
   | CourierMessage
-  | StockCountMessage;
+  | StockCountMessage
+  | FeedBuildMessage
+  | NotifyFallbackMessage;
 
 export async function handleDelayedQueue(
   batch: MessageBatch<DelayedMessage>,
@@ -119,6 +124,14 @@ export async function handleDelayedQueue(
   const counts = batch.messages.filter(
     (m): m is Message<StockCountMessage> => m.body.kind === 'stock_count_apply',
   );
+  // The Meta feed, a chunk a message (phase-9-plan §3.1.4).
+  const feeds = batch.messages.filter(
+    (m): m is Message<FeedBuildMessage> => m.body.kind === 'feed_build',
+  );
+  // SMS that waited for WhatsApp (phase-9-plan §3.2.2).
+  const fallbacks = batch.messages.filter(
+    (m): m is Message<NotifyFallbackMessage> => m.body.kind === 'notify_fallback',
+  );
   const domains = batch.messages.filter(
     (m): m is Message<DomainCheckMessage> =>
       m.body.kind !== 'sale_edge' &&
@@ -126,13 +139,17 @@ export async function handleDelayedQueue(
       m.body.kind !== 'refund_check' &&
       m.body.kind !== 'courier_book' &&
       m.body.kind !== 'courier_poll' &&
-      m.body.kind !== 'stock_count_apply',
+      m.body.kind !== 'stock_count_apply' &&
+      m.body.kind !== 'feed_build' &&
+      m.body.kind !== 'notify_fallback',
   );
   if (sales.length) await handleSaleEdges(sales, env, ctx);
   if (payments.length) await handlePaymentChecks(payments, env, ctx);
   if (refunds.length) await handleRefundChecks(refunds, env, ctx);
   if (couriers.length) await handleCourierMessages(couriers, env, ctx);
   if (counts.length) await handleStockCountMessages(counts, env, ctx);
+  if (feeds.length) await handleFeedBuilds(feeds, env, ctx);
+  if (fallbacks.length) await handleFallbacks(fallbacks, env, ctx, notify);
   if (domains.length) await handleDomainQueue({ ...batch, messages: domains }, env, ctx);
 }
 

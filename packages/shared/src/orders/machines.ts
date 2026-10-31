@@ -452,10 +452,28 @@ export const ORDER_SOURCES = [
   'walk_in',
   'other',
   'exchange',
+  'whatsapp',
+  'messenger',
+  'instagram',
 ] as const;
 
-/** Where staff say a manual order came from; website and exchange orders are made by the system. */
-export const MANUAL_ORDER_SOURCES = ['facebook', 'phone', 'walk_in', 'other'] as const;
+/**
+ * Where staff say a manual order came from; website and exchange orders are
+ * made by the system. `facebook` is a Page's posts and comments; its chats are
+ * `messenger` (phase-9-plan §3.1.1).
+ */
+export const MANUAL_ORDER_SOURCES = [
+  'facebook',
+  'messenger',
+  'whatsapp',
+  'instagram',
+  'phone',
+  'walk_in',
+  'other',
+] as const;
+/** Sources that are a chat, for "New order from chat" and Send by chat. */
+export const CHAT_SOURCES = ['whatsapp', 'messenger', 'instagram'] as const;
+export type ChatSource = (typeof CHAT_SOURCES)[number];
 export type OrderSource = (typeof ORDER_SOURCES)[number];
 
 /** "#" and 1001 by default (Q4): "#1001". */

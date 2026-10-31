@@ -66,6 +66,37 @@ export const cartQuantityInput = z.object({ quantity: z.int().min(0).max(999) })
 export const cartCodeInput = z.object({ code: z.string().trim().min(1).max(32) }).strict();
 export const cartAreaInput = z.object({ areaId: z.int().min(1).nullable() }).strict();
 
+const utmValue = z.string().trim().min(1).max(100);
+/**
+ * Where the shopper came from, sent only when they accepted the cookie
+ * banner (phase-9-plan §3.1.6): Meta's browser and click cookies, the first
+ * landing's UTM fields, and a Meta Shops checkout's origin.
+ */
+export const attributionInput = z
+  .object({
+    fbp: z
+      .string()
+      .regex(/^fb\.\d\.\d{10,13}\.\d{1,20}$/)
+      .optional(),
+    fbc: z
+      .string()
+      .regex(/^fb\.\d\.\d{10,13}\.[\w-]{1,500}$/)
+      .optional(),
+    utm: z
+      .object({
+        source: utmValue.optional(),
+        medium: utmValue.optional(),
+        campaign: utmValue.optional(),
+        content: utmValue.optional(),
+        term: utmValue.optional(),
+      })
+      .strict()
+      .optional(),
+    cartOrigin: z.enum(['facebook', 'instagram', 'meta_shops']).optional(),
+  })
+  .strict();
+export type AttributionInput = z.infer<typeof attributionInput>;
+
 export const checkoutInput = z
   .object({
     contact: contactInput,
@@ -80,6 +111,8 @@ export const checkoutInput = z
     turnstileToken: z.string().max(4096).optional(),
     /** From verifying the phone by SMS, when the store asks for it (phase-5a-plan §3.14). */
     otpToken: z.string().max(100).optional(),
+    /** Only with the shopper's consent to cookies (phase-9-plan §3.1.6). */
+    attribution: attributionInput.optional(),
   })
   .strict();
 export type CheckoutInput = z.infer<typeof checkoutInput>;

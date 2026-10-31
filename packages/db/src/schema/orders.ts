@@ -58,6 +58,9 @@ export const ORDER_SOURCES = [
   'walk_in',
   'other',
   'exchange',
+  'whatsapp',
+  'messenger',
+  'instagram',
 ] as const;
 export const ORDER_FLAGS = [
   'payment_risk',
@@ -348,6 +351,11 @@ export const orders = store.table(
     /** For the blocklist and Phase 6; cleared after 90 days. */
     ip: inet(),
     userAgent: text(),
+    /**
+     * Ad attribution with the shopper's consent (phase-9-plan §3.1.6): { fbp?, fbc?,
+     * utm?, cartOrigin?, consentedAt }. Null without consent; cleared after 30 days.
+     */
+    attribution: jsonb(),
     /** Staff who entered a manual order. */
     createdBy: uuid(),
     placedAt: ts().notNull().defaultNow(),
@@ -406,6 +414,7 @@ export const orders = store.table(
     check('orders_phone_score_range', sql`${t.phoneScore} between 0 and 100`),
     check('orders_duplicate_of_other', sql`${t.duplicateOf} <> ${t.id}`),
     check('orders_number_positive', sql`${t.number} > 0`),
+    check('orders_attribution_size', sql`octet_length(${t.attribution}::text) <= 2000`),
     check('orders_locale_valid', sql`${t.locale} in ('bn', 'en')`),
     check(
       'orders_amounts_non_negative',

@@ -12,6 +12,7 @@ import { smsProviderFor } from '@managemind/providers/sms';
 import { AppError } from '@managemind/shared';
 import { type CREDENTIAL_KINDS, credentialInput } from '@managemind/shared/credentials';
 import { credentialCheck } from '../credential-checks';
+import { getConfig } from '../env';
 import { credentialsKeyring } from '../notifications';
 import { inStore, type StaffEnv } from './context';
 
@@ -24,11 +25,15 @@ const r = <
     tags: string[];
   });
 
-/** Payment, SMS and email; couriers connect through their own routes (phase-7-plan §3.3). */
+/**
+ * Payment, SMS, email and Meta's Conversions API; couriers connect through
+ * their own routes (phase-7-plan §3.3).
+ */
 const MESSAGE_KINDS = [
   'sslcommerz',
   'sms',
   'email',
+  'meta_capi',
 ] as const satisfies readonly (typeof CREDENTIAL_KINDS)[number][];
 const Kind = z.object({ kind: z.enum(MESSAGE_KINDS) });
 const Credential = z
@@ -124,7 +129,7 @@ export function registerCredentials(admin: OpenAPIHono<StaffEnv>): void {
           keyring,
           kind,
           c.req.valid('json'),
-          credentialCheck(),
+          credentialCheck(fetch, { allowFake: getConfig(c.env).ENVIRONMENT !== 'production' }),
         ),
       { write: true },
     );

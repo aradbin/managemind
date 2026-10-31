@@ -32,6 +32,7 @@ import {
 import { invitationEmail } from '@managemind/providers/email';
 import { AppError, PERMISSIONS, STORE_ROLES } from '@managemind/shared';
 import { backOfficeSettings } from '@managemind/shared/back-office';
+import { metaSettings } from '@managemind/shared/channels';
 import { notificationSettings } from '@managemind/shared/notifications';
 import {
   checkoutSettings,
@@ -52,6 +53,7 @@ import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
 import { BILLING_ROUTES, registerBilling } from './billing';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
+import { CHANNEL_ROUTES, registerChannels, registerWhatsapp, WHATSAPP_ROUTES } from './channels';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { COURIER_ROUTES, registerCouriers } from './couriers';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
@@ -126,6 +128,7 @@ const Store = z
     recovery: recoverySettings,
     couriers: courierSettings,
     backOffice: backOfficeSettings,
+    meta: metaSettings,
     returns: returnSettings,
     notifications: notificationSettings,
     setup: tenantSettings.shape.setup,
@@ -176,6 +179,8 @@ export const ADMIN_ROUTES = {
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...COURIER_ROUTES,
+  ...CHANNEL_ROUTES,
+  ...WHATSAPP_ROUTES,
   ...PURCHASING_ROUTES,
   ...STOCK_ROUTES,
   ...EXPENSE_ROUTES,
@@ -246,6 +251,7 @@ export const ADMIN_ROUTES = {
         recovery: recoverySettings.optional(),
         couriers: courierSettings.optional(),
         backOffice: backOfficeSettings.optional(),
+        meta: metaSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
         setup: tenantSettings.shape.setup.optional(),
@@ -635,6 +641,8 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerReports(admin);
   registerCredentials(admin);
   registerCouriers(admin);
+  registerChannels(admin);
+  registerWhatsapp(admin);
   registerPurchasing(admin);
   registerStock(admin);
   registerExpenses(admin);

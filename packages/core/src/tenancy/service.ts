@@ -9,6 +9,7 @@ import {
   type SuspensionReason,
   type TenantKind,
 } from '@managemind/shared/billing';
+import { type MetaSettings, metaSettings } from '@managemind/shared/channels';
 import { type NotificationSettings, notificationSettings } from '@managemind/shared/notifications';
 import {
   type CheckoutSettings,
@@ -260,12 +261,33 @@ export interface Store {
   couriers: CourierSettings;
   /** Count approval and reorder (phase-8-plan §4). */
   backOffice: BackOfficeSettings;
+  /** The Meta feed and Conversions API (phase-9-plan §3.1.4, §3.1.6). */
+  meta: MetaSettings;
   /** The return policy (phase-5a-plan §3.10). */
   returns: ReturnSettings;
   /** Which shopper messages go by SMS and email (phase-5a-plan §3.6). */
   notifications: NotificationSettings;
   /** Onboarding choices (phase-5b-plan §3.2). */
   setup: TenantSettings['setup'];
+}
+
+/**
+ * The Meta section as staff sent it, with the feed's key kept: made the first
+ * time the feed is turned on, and changed only by `rotateFeedKey`, so a
+ * patch can never set a key of its own (phase-9-plan §3.1.4).
+ */
+function withFeedKey(patch: unknown, current: MetaSettings): MetaSettings {
+  const next = parseSection('meta', metaSettings, patch);
+  const key = current.feed.key ?? (next.feed.enabled ? newFeedKey() : undefined);
+  return { ...next, feed: { enabled: next.feed.enabled, ...(key ? { key } : {}) } };
+}
+
+/** 32 random characters, URL-safe. */
+export function newFeedKey(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24));
+  return btoa(String.fromCharCode(...bytes))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_');
 }
 
 async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { settings: unknown }> {
@@ -297,6 +319,7 @@ async function loadStore(tx: TenantTx, forUpdate = false): Promise<Store & { set
     recovery: settings.recovery,
     couriers: settings.couriers,
     backOffice: settings.backOffice,
+    meta: settings.meta,
     returns: settings.returns,
     notifications: settings.notifications,
     setup: settings.setup,
@@ -348,6 +371,8 @@ export interface StoreProfilePatch {
   couriers?: unknown;
   /** Replaces the back office's settings (phase-8-plan §4). */
   backOffice?: unknown;
+  /** Replaces the Meta settings (phase-9-plan §3.1.4, §3.1.6); the feed key is the server's. */
+  meta?: unknown;
   /** Replaces the return policy (phase-5a-plan §3.10). */
   returns?: unknown;
   /** Replaces the shopper message channels (phase-5a-plan §3.6). */
@@ -405,6 +430,7 @@ export async function updateStoreProfile(
       patch.backOffice !== undefined
         ? parseSection('backOffice', backOfficeSettings, patch.backOffice)
         : current.backOffice,
+    meta: patch.meta !== undefined ? withFeedKey(patch.meta, current.meta) : current.meta,
     returns:
       patch.returns !== undefined
         ? parseSection('returns', returnSettings, patch.returns)
@@ -433,6 +459,7 @@ export async function updateStoreProfile(
       'recovery',
       'couriers',
       'backOffice',
+      'meta',
       'returns',
       'notifications',
       'setup',
@@ -463,13 +490,16 @@ export async function updateStoreProfile(
         recovery: next.recovery,
         couriers: next.couriers,
         backOffice: next.backOffice,
+        meta: next.meta,
         returns: next.returns,
         notifications: next.notifications,
         setup: next.setup,
       },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
-  const pick = (s: typeof next) => Object.fromEntries(fields.map((f) => [f, s[f]]));
+  // The feed's key stays out of the audit log, like any credential.
+  const pick = (s: typeof next) =>
+    Object.fromEntries(fields.map((f) => [f, f === 'meta' ? redactFeedKey(s.meta) : s[f]]));
   await recordAudit(tx, {
     ...auditActor(actor, 'staff'),
     action: 'store.profile_updated',
@@ -484,6 +514,42 @@ export async function updateStoreProfile(
     payload: { fields },
   });
   return { ...current, ...next };
+}
+
+const redactFeedKey = (meta: MetaSettings) => ({
+  ...meta,
+  feed: { ...meta.feed, ...(meta.feed.key ? { key: '[set]' } : {}) },
+});
+
+/**
+ * A new key for the Meta feed (phase-9-plan §3.1.4): the next build's
+ * manifest carries it, and the old URL stops working. The owner pastes the
+ * new URL into Commerce Manager.
+ */
+export async function rotateFeedKey(tx: TenantTx, actor: Actor): Promise<Store> {
+  authorize(actor, 'settings.write');
+  const current = await loadStore(tx, true);
+  if (current.status !== 'active') throw new AppError('tenant_suspended');
+  if (!current.meta.feed.enabled) throw new AppError('conflict', { detail: 'The feed is off' });
+  const settings = tenantSettings.parse(current.settings);
+  const meta: MetaSettings = { ...current.meta, feed: { enabled: true, key: newFeedKey() } };
+  await tx.db
+    .update(schema.tenants)
+    .set({ settings: { ...settings, meta } })
+    .where(eq(schema.tenants.id, tx.tenantId));
+  await recordAudit(tx, {
+    ...auditActor(actor, 'staff'),
+    action: 'store.feed_key_changed',
+    entityType: 'tenant',
+    entityId: tx.tenantId,
+  });
+  await emit(tx, 'tenant.updated', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { fields: ['meta'] },
+  });
+  const { settings: _settings, ...store } = current;
+  return { ...store, meta };
 }
 
 /** Suspends or reactivates a store (super admins; a reason is required to suspend). */

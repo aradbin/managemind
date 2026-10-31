@@ -118,6 +118,7 @@ export function MessageLogPage({ orderId }: { orderId?: string | undefined } = {
                 </span>
                 <span className={m.status === 'failed' ? 'text-sm text-destructive' : 'text-sm'}>
                   {t(`log.status.${m.status}`)}
+                  {m.deliveryStatus && ` · ${t(`log.delivery.${m.deliveryStatus}`)}`}
                   {m.reason && ` · ${reasonText(t, m)}`}
                 </span>
               </span>
@@ -156,6 +157,10 @@ const SKIP_REASONS = [
   'no_push_key',
   'quota',
   'no_sender',
+  'no_template',
+  'opted_out',
+  'sent_by_whatsapp',
+  'whatsapp_failed',
 ] as const;
 
 /** A skip reason in words; a provider's own error as it gave it. */

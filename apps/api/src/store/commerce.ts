@@ -679,6 +679,7 @@ export function registerCommerce(app: OpenAPIHono<AppEnv>): void {
           locale,
           ip: ip === 'unknown' ? null : ip,
           userAgent: c.req.header('user-agent') ?? null,
+          attribution: input.attribution,
           acceptTerms: input.acceptTerms,
         }),
       );

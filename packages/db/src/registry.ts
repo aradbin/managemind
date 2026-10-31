@@ -21,6 +21,11 @@ export const STORE_TABLES = [
   // Sales recovery (Phase 6)
   'incomplete_orders',
   'order_confirmations',
+  // Sales channels (Phase 9)
+  'whatsapp_templates',
+  'whatsapp_contacts',
+  'meta_events',
+  'feeds',
   // Couriers (Phase 7)
   'courier_payout_lines',
   'courier_payouts',

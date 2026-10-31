@@ -200,7 +200,7 @@ Parts 1–5 cover Phase 0 only. The full, current list of repository secrets and
 | Phase 3 | Buy the **store domain**, add it to Cloudflare, enable **SSL/TLS → Custom Hostnames** (Cloudflare for SaaS) on it, and add **Zone → SSL and Certificates: Edit** to both tokens; logo, colors, banners; test Meta Pixel and GA4 IDs | Add `yourstores.com` and `*.yourstores.com` to Allowed domains |
 | Phase 5A | SSLCommerz sandbox store ID and password; SMS gateway test credentials | GitHub secrets for CI; the agent stores them per tenant (encrypted) through the admin, never in the repository |
 | Phase 7 | Courier sandbox credentials (Steadfast, Pathao, RedX) | The agent lists their exact API hosts in the Phase 7 plan for you to allow |
-| Phase 9 | Meta app and WhatsApp Cloud API access | Same pattern: GitHub secret + network secret + allowed host |
+| Phase 9 | For testing stages 1 and 2: a pixel's Conversions API token and a WhatsApp test number with a system-user token and app secret. For stage 3: our Meta business verification, Tech Provider enrolment, and our app's ID, secret and configuration IDs | Store credentials go through each store's settings, sealed in the vault, never in GitHub. Allow `graph.facebook.com`, `www.facebook.com` and `connect.facebook.net` for sessions and CI. Stage 3's `META_APP_ID`, `META_APP_SECRET`, `META_VERIFY_TOKEN`, `META_CONFIG_IDS` as GitHub secrets copied to the Worker (phase-9-plan §7) |
 
 As built, page purges and custom domains use a separate token with Cache Purge, and SSL and Certificates, on the store zone: the `CF_STORE_TOKEN` secret ([ADR 0018](../adr/0018-page-tags-and-purges.md), [ADR 0019](../adr/0019-custom-domains.md)). The keys and credentials Phases 4–7 added are in the README's table.
 

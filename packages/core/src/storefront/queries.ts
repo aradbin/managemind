@@ -76,6 +76,11 @@ export interface StoreLayout {
   numerals: 'bengali' | 'latin' | null;
   /** What the shopper pages need to know (phase-4-plan §3.16). */
   shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };
+  /**
+   * Whether the browser pixel reports purchases. Not when the store reports
+   * them to Meta from the server once confirmed (phase-9-plan §3.1.6, Q5).
+   */
+  pixelPurchase: boolean;
 }
 
 async function storeRow(tx: TenantTx) {
@@ -150,6 +155,7 @@ export async function storeLayout(
         termsCheckbox: row.settings.checkout.termsCheckbox,
         email: row.settings.checkout.email,
       },
+      pixelPurchase: row.settings.meta.purchaseAt === 'placed',
     },
     tags: [storeTag(tx.tenantId)],
   };

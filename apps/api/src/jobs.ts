@@ -24,8 +24,10 @@ import { autoBook } from './couriers';
 import { queueSink, withClient } from './db';
 import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
+import { queueFeedBuilds } from './feeds';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
+import { reportsToMeta, reportToMeta } from './meta';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
@@ -64,6 +66,17 @@ export async function handleQueue(
   for (let i = 0; env.DOMAINS && i < edges.length; i += 100) {
     await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
   }
+  // The Meta feed (phase-9-plan §3.1.4): marked stale, built later. Best
+  // effort: the next change, or Rebuild in settings, catches a lost one.
+  try {
+    await queueFeedBuilds(
+      env,
+      ctx,
+      batch.messages.map((m) => m.body),
+    );
+  } catch (e) {
+    log('warn', 'feed builds not queued', { error: String(e) });
+  }
   // Messages to shoppers and staff (phase-5a-plan §3.6). The delivery log
   // keeps a redelivered event from sending twice, so a failure retries the
   // event and only what it left unsent goes out again.
@@ -74,6 +87,21 @@ export async function handleQueue(
       await notify(env, ctx, message.body);
     } catch (e) {
       log('warn', 'notifications will be retried', {
+        event_id: message.body.id,
+        tenant_id: message.body.tenantId,
+        error: String(e),
+      });
+      unsent.add(message.body.id);
+    }
+  }
+  // Purchases and deliveries to Meta's Conversions API (phase-9-plan §3.1.6).
+  // store.meta_events keeps a redelivered event from reporting twice.
+  for (const message of batch.messages) {
+    if (!reportsToMeta(message.body)) continue;
+    try {
+      await reportToMeta(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'meta event will be retried', {
         event_id: message.body.id,
         tenant_id: message.body.tenantId,
         error: String(e),

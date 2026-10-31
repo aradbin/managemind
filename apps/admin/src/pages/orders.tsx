@@ -85,7 +85,17 @@ const PANEL = [
 const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'] as const;
 const PAYMENTS = ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'] as const;
 const DELIVERIES = ['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'] as const;
-const SOURCES = ['website', 'facebook', 'phone', 'walk_in', 'other', 'exchange'] as const;
+const SOURCES = [
+  'website',
+  'facebook',
+  'messenger',
+  'whatsapp',
+  'instagram',
+  'phone',
+  'walk_in',
+  'other',
+  'exchange',
+] as const;
 const FLAGS = ['flagged_phone', 'possible_duplicate', 'unreachable'] as const;
 
 export function OrdersPage() {

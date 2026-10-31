@@ -6,6 +6,12 @@
 export interface TrackerConfig {
   pixelId: string | null;
   ga4Id: string | null;
+  /**
+   * False when the store reports purchases to Meta from the server once
+   * confirmed (phase-9-plan §3.1.6): the pixel then sends no Purchase, so
+   * Meta counts each order once, and only real ones.
+   */
+  pixelPurchase?: boolean;
 }
 
 export interface ProductEvent {
@@ -91,12 +97,14 @@ export function createTracker(config: TrackerConfig) {
     viewItem(product: ProductEvent) {
       const id = eventId();
       const value = product.price / 100;
+      // The product's ID is the feed's item_group_id; its variants are the
+      // feed's items, so the view is a product group (phase-9-plan §3.1.4).
       window.fbq?.(
         'track',
         'ViewContent',
         {
           content_ids: [product.id],
-          content_type: 'product',
+          content_type: 'product_group',
           content_name: product.name,
           value,
           currency: 'BDT',
@@ -151,12 +159,13 @@ export function createTracker(config: TrackerConfig) {
     /** The event ID is the order ID, for Phase 9's server-side de-duplication. */
     purchase(orderId: string, items: readonly CartItem[], total: number) {
       const value = total / 100;
-      window.fbq?.(
-        'track',
-        'Purchase',
-        { content_ids: items.map((i) => i.id), content_type: 'product', value, currency: 'BDT' },
-        { eventID: orderId },
-      );
+      if (config.pixelPurchase !== false)
+        window.fbq?.(
+          'track',
+          'Purchase',
+          { content_ids: items.map((i) => i.id), content_type: 'product', value, currency: 'BDT' },
+          { eventID: orderId },
+        );
       window.gtag?.('event', 'purchase', {
         event_id: orderId,
         transaction_id: orderId,

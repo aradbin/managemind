@@ -48,11 +48,13 @@ const Message = z
   .object({
     id: z.uuid(),
     event: z.string(),
-    channel: z.enum(['email', 'sms', 'push']),
+    channel: z.enum(['email', 'sms', 'push', 'whatsapp']),
     recipientType: z.enum(['shopper', 'staff']),
     recipient: z.string().openapi({ description: 'Masked without customers.read' }),
     orderId: z.uuid().nullable(),
-    status: z.enum(['queued', 'sent', 'failed', 'skipped']),
+    status: z.enum(['queued', 'sent', 'failed', 'skipped', 'waiting']),
+    /** WhatsApp: what Meta last reported (phase-9-plan §3.2.4). */
+    deliveryStatus: z.enum(['sent', 'delivered', 'read', 'failed']).nullable(),
     reason: z.string().nullable(),
     attempts: z.number().int(),
     provider: z.string().nullable(),

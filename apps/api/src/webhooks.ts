@@ -5,13 +5,17 @@
 // retries. No session or Turnstile: the validation call is the check, and
 // a per-IP limit caps forged notifications (429).
 import type { OpenAPIHono } from '@hono/zod-openapi';
+import { outboxEvent, withTenant } from '@managemind/core';
 import { isUuid } from '@managemind/shared';
 import { settleInvoicePayment } from './billing';
 import { courierFromParam, handleCourierWebhook } from './couriers';
+import { withClient } from './db';
 import type { AppEnv } from './env';
 import { log } from './log';
+import { notify } from './notifications';
 import { settleFromGateway } from './payments';
 import { limiterFor, shopperIp } from './store/commerce';
+import { handleWhatsappWebhook, verifyWhatsappWebhook } from './whatsapp';
 
 export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
   app.use('/v1/webhooks/sslcommerz/*', async (c, next) => {
@@ -88,7 +92,57 @@ export function registerWebhooks(app: OpenAPIHono<AppEnv>): void {
     }
     return c.text('ok', 200);
   });
+
+  // The store's own WhatsApp app (phase-9-plan §3.2.4): Meta's handshake with
+  // the verify token we gave the store, then signed deliveries. Stage 3's
+  // platform app replaces this with one webhook for every store.
+  app.use('/v1/webhooks/whatsapp/*', async (c, next) => {
+    await limiterFor(c).check('whatsapp_webhook:ip', shopperIp(c));
+    await next();
+  });
+  app.get('/v1/webhooks/whatsapp/:tenantId', async (c) => {
+    const tenantId = c.req.param('tenantId');
+    if (!isUuid(tenantId)) return c.text('not found', 404);
+    const result = await verifyWhatsappWebhook(c.env, c.executionCtx, tenantId, {
+      mode: c.req.query('hub.mode'),
+      token: c.req.query('hub.verify_token'),
+      challenge: c.req.query('hub.challenge'),
+    });
+    if (result.status === 'challenge') return c.text(result.challenge, 200);
+    return c.text(
+      result.status === 'not_found' ? 'not found' : 'forbidden',
+      result.status === 'not_found' ? 404 : 403,
+    );
+  });
+  app.post('/v1/webhooks/whatsapp/:tenantId', async (c) => {
+    const tenantId = c.req.param('tenantId');
+    if (!isUuid(tenantId)) return c.text('not found', 404);
+    if (Number(c.req.header('content-length') ?? 0) > MAX_META_BYTES)
+      return c.text('too large', 413);
+    const raw = await c.req.text();
+    if (raw.length > MAX_META_BYTES) return c.text('too large', 413);
+    const result = await handleWhatsappWebhook(
+      c.env,
+      c.executionCtx,
+      tenantId,
+      raw,
+      c.req.header('x-hub-signature-256') ?? null,
+      // An SMS let go by a failed WhatsApp message goes through the event's plan.
+      async (eventId) => {
+        const event = await withClient(c.env, c.executionCtx, (client) =>
+          withTenant(client, tenantId, (tx) => outboxEvent(tx, eventId)),
+        );
+        if (event) await notify(c.env, c.executionCtx, event);
+      },
+    );
+    if (result.status === 'not_found') return c.text('not found', 404);
+    if (result.status === 'refused') return c.text('unauthorized', 401);
+    return c.text('ok', 200);
+  });
 }
+
+/** Meta batches events, but a delivery is still small. */
+const MAX_META_BYTES = 256 * 1024;
 
 /** Courier webhooks are small JSON bodies; anything larger isn't one. */
 const MAX_WEBHOOK_BYTES = 16 * 1024;

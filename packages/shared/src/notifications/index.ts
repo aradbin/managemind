@@ -3,9 +3,16 @@
 // rendering a template safely. Default templates and per-store overrides use
 // the same rules, so a template that saves always renders.
 import { z } from 'zod';
+import { DEFAULT_WHATSAPP_EVENTS } from './whatsapp';
 
 export const CHANNELS = ['email', 'sms', 'push'] as const;
 export type Channel = (typeof CHANNELS)[number];
+/**
+ * What a message in the delivery log can go by: the template channels and
+ * WhatsApp, whose wording is Meta's approved templates (phase-9-plan §3.2).
+ */
+export const DELIVERY_CHANNELS = [...CHANNELS, 'whatsapp'] as const;
+export type DeliveryChannel = (typeof DELIVERY_CHANNELS)[number];
 
 /** What a shopper hears about. Every one can go by email; SMS is per store (Q8). */
 export const SHOPPER_EVENTS = [
@@ -71,6 +78,13 @@ export const notificationSettings = z
       .array(z.enum(SHOPPER_EVENTS))
       .max(SHOPPER_EVENTS.length)
       .default(() => [...SHOPPER_EVENTS]),
+    /** Shopper events sent by WhatsApp when the store connected it (phase-9-plan §3.2.2). */
+    whatsapp: z
+      .array(z.enum(SHOPPER_EVENTS))
+      .max(SHOPPER_EVENTS.length)
+      .default(() => [...DEFAULT_WHATSAPP_EVENTS]),
+    /** SMS waits for WhatsApp and goes only if WhatsApp can't deliver (Q7). */
+    whatsappFirst: z.boolean().default(true),
   })
   .strict();
 export type NotificationSettings = z.infer<typeof notificationSettings>;
@@ -168,3 +182,4 @@ export function smsParts(text: string): SmsParts {
   return { encoding: 'unicode', length, parts: length <= 70 ? 1 : Math.ceil(length / 67) };
 }
 export { defaultTemplate, type Template } from './defaults';
+export * from './whatsapp';

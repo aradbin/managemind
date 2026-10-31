@@ -6,7 +6,7 @@
 import { type CancelCode, type Courier, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
+import { ChevronRight, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { BookDialog, CourierPanel } from '../components/courier-booking';
@@ -15,6 +15,7 @@ import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { usePermission } from '../components/permission-gate';
 import { RiskPanel } from '../components/risk';
+import { SendByChat } from '../components/send-by-chat';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -463,9 +464,14 @@ function Lines({ order: o }: { order: OrderDetail }) {
   );
 }
 
+/** Whether a payment link can still be sent for the order. */
+const unpaid = (o: OrderDetail) =>
+  o.status !== 'cancelled' && o.status !== 'completed' && o.totals.paidTotal < o.totals.total;
+
 function CustomerCard({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
   const canCustomers = usePermission('customers.read');
+  const canPay = usePermission('payments.read') && usePermission('orders.write');
   return (
     <section aria-labelledby="customer-title" className={section}>
       <h2 id="customer-title" className="font-semibold">
@@ -505,16 +511,7 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
               {t('order.call')}
             </a>
           </Button>
-          <Button variant="secondary" asChild>
-            <a
-              href={`https://wa.me/${o.contact.phone.replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MessageCircle aria-hidden className="size-4" />
-              {t('order.whatsapp')}
-            </a>
-          </Button>
+          <SendByChat orderId={o.id} canPay={canPay && unpaid(o)} />
         </div>
       )}
       <h3 className="text-sm font-semibold">{t('order.address')}</h3>
@@ -834,16 +831,14 @@ function Payments({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
   const canLink = usePermission('payments.read') && usePermission('orders.write');
   const [linking, setLinking] = useState(false);
-  const unpaid =
-    o.status !== 'cancelled' && o.status !== 'completed' && o.totals.paidTotal < o.totals.total;
-  if (!o.payments.length && !unpaid) return null;
+  if (!o.payments.length && !unpaid(o)) return null;
   return (
     <section aria-labelledby="payments-title" className={section}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="payments-title" className="font-semibold">
           {t('order.payments')}
         </h2>
-        {canLink && unpaid && (
+        {canLink && unpaid(o) && (
           <Button variant="secondary" onClick={() => setLinking(true)}>
             {t('order.paymentLink')}
           </Button>

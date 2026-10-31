@@ -188,6 +188,27 @@ describe('store profile', () => {
     expect(audit?.after).toMatchObject({ name: 'New Name' });
   });
 
+  it("makes the Meta feed's key when the feed is turned on, and never takes one from staff", async () => {
+    const { id } = await newStore();
+    const on = await withTenant(app, id, (tx) =>
+      updateStoreProfile(tx, ownerOf(), {
+        meta: { feed: { enabled: true, key: 'x'.repeat(32) }, purchaseAt: 'confirmed' },
+      }),
+    );
+    const key = on.meta.feed.key;
+    expect(key).toMatch(/^[A-Za-z0-9_-]{32}$/);
+    expect(key).not.toBe('x'.repeat(32));
+    expect(on.meta).toMatchObject({ purchaseAt: 'confirmed', deliveredEvent: false });
+    // Turning it off and on again keeps the same key, so Commerce Manager's URL still works.
+    await withTenant(app, id, (tx) =>
+      updateStoreProfile(tx, ownerOf(), { meta: { feed: { enabled: false } } }),
+    );
+    const again = await withTenant(app, id, (tx) =>
+      updateStoreProfile(tx, ownerOf(), { meta: { feed: { enabled: true } } }),
+    );
+    expect(again.meta.feed).toEqual({ enabled: true, key });
+  });
+
   it('emits nothing when nothing changed', async () => {
     const { id } = await newStore();
     const events: OutboxEvent[] = [];
