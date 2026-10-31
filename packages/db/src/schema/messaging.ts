@@ -49,7 +49,20 @@ export const CREDENTIAL_PROVIDERS = [
 ] as const;
 export const CREDENTIAL_MODES = ['sandbox', 'live'] as const;
 export const CHANNELS = ['email', 'sms', 'push'] as const;
-export const MESSAGE_STATUSES = ['queued', 'sent', 'failed', 'skipped'] as const;
+/** The delivery log also carries WhatsApp (phase-9-plan §3.2.2). */
+export const DELIVERY_CHANNELS = [...CHANNELS, 'whatsapp'] as const;
+/** `waiting`: an SMS held while WhatsApp tries first (phase-9-plan §3.2.2). */
+export const MESSAGE_STATUSES = ['queued', 'sent', 'failed', 'skipped', 'waiting'] as const;
+/** What Meta reported about a sent WhatsApp message. */
+export const WHATSAPP_DELIVERY = ['sent', 'delivered', 'read', 'failed'] as const;
+export const WHATSAPP_TEMPLATE_STATUSES = [
+  'draft',
+  'pending',
+  'approved',
+  'rejected',
+  'paused',
+  'disabled',
+] as const;
 export const RECIPIENT_TYPES = ['shopper', 'staff'] as const;
 export const MESSAGE_EVENTS = [
   'order_placed',
@@ -143,7 +156,7 @@ export const messages = store.table(
     /** event ID + channel + recipient, so a redelivered event never sends twice. */
     idempotencyKey: text().notNull(),
     event: text({ enum: MESSAGE_EVENTS }).notNull(),
-    channel: text({ enum: CHANNELS }).notNull(),
+    channel: text({ enum: DELIVERY_CHANNELS }).notNull(),
     recipientType: text({ enum: RECIPIENT_TYPES }).notNull(),
     /** A phone, an email address, or a staff user's ID for push. */
     recipient: text().notNull(),
@@ -156,6 +169,9 @@ export const messages = store.table(
     provider: text(),
     providerMessageId: text(),
     sentAt: ts(),
+    /** WhatsApp: what Meta last reported, and when (phase-9-plan §3.2.4). */
+    deliveryStatus: text({ enum: WHATSAPP_DELIVERY }),
+    deliveryAt: ts(),
     createdAt: ts().notNull().defaultNow(),
     updatedAt: ts().notNull().defaultNow(),
   },
@@ -171,7 +187,12 @@ export const messages = store.table(
     index('messages_tenant_created_idx').on(t.tenantId, sql`created_at desc`),
     index('messages_order_idx').on(t.tenantId, t.orderId).where(sql`order_id is not null`),
     oneOf('messages_event_valid', t.event, MESSAGE_EVENTS),
-    oneOf('messages_channel_valid', t.channel, CHANNELS),
+    oneOf('messages_channel_valid', t.channel, DELIVERY_CHANNELS),
+    oneOf('messages_delivery_status_valid', t.deliveryStatus, WHATSAPP_DELIVERY),
+    // Meta's receipts find their message by its ID.
+    index('messages_provider_message_idx')
+      .on(t.tenantId, t.providerMessageId)
+      .where(sql`provider_message_id is not null`),
     oneOf('messages_recipient_type_valid', t.recipientType, RECIPIENT_TYPES),
     oneOf('messages_status_valid', t.status, MESSAGE_STATUSES),
     check('messages_locale_valid', sql`${t.locale} in ('bn', 'en')`),
@@ -255,5 +276,67 @@ export const staffAlertPreferences = store.table(
     primaryKey({ columns: [t.tenantId, t.userId, t.event, t.channel] }),
     oneOf('staff_alert_preferences_event_valid', t.event, STAFF_EVENTS),
     oneOf('staff_alert_preferences_channel_valid', t.channel, CHANNELS),
+  ],
+);
+
+/**
+ * A store's WhatsApp templates (phase-9-plan §3.2.3): submitted to its own
+ * WhatsApp account, reviewed by Meta, used once approved. One row per event
+ * and language; an edit is a new version under a new name.
+ */
+export const whatsappTemplates = store.table(
+  'whatsapp_templates',
+  {
+    ...tenantColumns(),
+    event: text({ enum: MESSAGE_EVENTS }).notNull(),
+    locale: text().notNull(),
+    /** Meta's name for it: mm_<event>, with _v<n> after an edit. */
+    name: text().notNull(),
+    version: smallint().notNull().default(1),
+    /** The wording with our {variables}; `variables` numbers them for Meta. */
+    body: text().notNull(),
+    variables: text().array().notNull().default(sql`'{}'::text[]`),
+    status: text({ enum: WHATSAPP_TEMPLATE_STATUSES }).notNull().default('draft'),
+    metaTemplateId: text(),
+    /** Meta's reason for a rejection or pause. */
+    reason: text(),
+    submittedAt: ts(),
+    createdAt: ts().notNull().defaultNow(),
+    updatedAt: ts().notNull().defaultNow(),
+  },
+  (t) => [
+    tenantPolicy(t),
+    primaryKey({ columns: [t.tenantId, t.event, t.locale] }),
+    oneOf('whatsapp_templates_event_valid', t.event, MESSAGE_EVENTS),
+    oneOf('whatsapp_templates_status_valid', t.status, WHATSAPP_TEMPLATE_STATUSES),
+    check('whatsapp_templates_locale_valid', sql`${t.locale} in ('bn', 'en')`),
+    check(
+      'whatsapp_templates_lengths',
+      sql`char_length(${t.name}) <= 100 and char_length(${t.body}) between 1 and 1024
+        and char_length(${t.metaTemplateId}) <= 50 and char_length(${t.reason}) <= 300`,
+    ),
+  ],
+);
+
+/**
+ * What the store knows about a shopper's WhatsApp (phase-9-plan §3.2.4):
+ * when they last wrote, which opens Meta's 24-hour window, and whether they
+ * asked for no more messages. Keyed by phone, so it holds before an order.
+ */
+export const whatsappContacts = store.table(
+  'whatsapp_contacts',
+  {
+    ...tenantColumns(),
+    /** E.164. */
+    phone: text().notNull(),
+    lastInboundAt: ts(),
+    optedOutAt: ts(),
+    createdAt: ts().notNull().defaultNow(),
+    updatedAt: ts().notNull().defaultNow(),
+  },
+  (t) => [
+    tenantPolicy(t),
+    primaryKey({ columns: [t.tenantId, t.phone] }),
+    check('whatsapp_contacts_phone_format', sql`${t.phone} ~ '^\\+[0-9]{8,15}$'`),
   ],
 );

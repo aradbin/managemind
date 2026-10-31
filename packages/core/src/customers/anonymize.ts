@@ -79,6 +79,8 @@ export async function anonymizeCustomer(
   await run(
     sql`delete from store.customer_addresses where tenant_id = ${t} and customer_id = ${id}`,
   );
+  // What the store knew of their WhatsApp (phase-9-plan §3.2.4).
+  await run(sql`delete from store.whatsapp_contacts where tenant_id = ${t} and phone = ${customer.phone}`);
   await run(sql`
     delete from store.messages
      where tenant_id = ${t}

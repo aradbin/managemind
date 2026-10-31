@@ -22,6 +22,8 @@ export const STORE_TABLES = [
   'incomplete_orders',
   'order_confirmations',
   // Sales channels (Phase 9)
+  'whatsapp_templates',
+  'whatsapp_contacts',
   'meta_events',
   'feeds',
   // Couriers (Phase 7)

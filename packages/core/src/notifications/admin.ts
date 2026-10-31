@@ -8,6 +8,8 @@ import {
   CHANNELS,
   type Channel,
   DEFAULT_STAFF_CHANNELS,
+  DELIVERY_CHANNELS,
+  type DeliveryChannel,
   defaultTemplate,
   MESSAGE_EVENTS,
   type MessageEvent,
@@ -30,11 +32,13 @@ const m = schema.messages;
 export interface MessageView {
   id: string;
   event: MessageEvent;
-  channel: Channel;
+  channel: DeliveryChannel;
   recipientType: 'shopper' | 'staff';
   recipient: string;
   orderId: string | null;
-  status: 'queued' | 'sent' | 'failed' | 'skipped';
+  status: 'queued' | 'sent' | 'failed' | 'skipped' | 'waiting';
+  /** WhatsApp: what Meta last reported (phase-9-plan §3.2.4). */
+  deliveryStatus: 'sent' | 'delivered' | 'read' | 'failed' | null;
   reason: string | null;
   attempts: number;
   provider: string | null;
@@ -45,8 +49,8 @@ export interface MessageView {
 export const messageListQuery = z
   .object({
     orderId: z.uuid().optional(),
-    status: z.enum(['queued', 'sent', 'failed', 'skipped']).optional(),
-    channel: z.enum(CHANNELS).optional(),
+    status: z.enum(['queued', 'sent', 'failed', 'skipped', 'waiting']).optional(),
+    channel: z.enum(DELIVERY_CHANNELS).optional(),
     /** The createdAt of the last row seen, for the next page. */
     before: z.iso.datetime().optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -83,11 +87,12 @@ export async function listMessages(
     recipient:
       r.recipientType === 'staff' || personal
         ? r.recipient
-        : r.channel === 'sms'
+        : r.channel === 'sms' || r.channel === 'whatsapp'
           ? maskPhone(r.recipient)
           : maskEmail(r.recipient),
     orderId: r.orderId,
     status: r.status,
+    deliveryStatus: r.deliveryStatus,
     reason: r.reason,
     attempts: r.attempts,
     provider: r.provider,
