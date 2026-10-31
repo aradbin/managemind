@@ -27,7 +27,8 @@
     "./credentials": "./src/credentials.ts",
     "./billing": "./src/billing/index.ts",
     "./back-office": "./src/back-office/index.ts",
-    "./channels": "./src/channels/index.ts"
+    "./channels": "./src/channels/index.ts",
+    "./channels/feed": "./src/channels/feed.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

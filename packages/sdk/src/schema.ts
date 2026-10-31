@@ -11272,6 +11272,114 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/channels/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's Meta settings, its feed's addresses and last build (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Meta */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MetaChannel"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/channels/meta/feed/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Build the Meta feed now (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Queued */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MetaChannel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/channels/meta/feed/key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A new key for the feed's address; the old one stops working (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Changed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MetaChannel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/suppliers": {
         parameters: {
             query?: never;
@@ -19387,6 +19495,27 @@ export interface components {
                 fee: number;
                 net: number;
             };
+        };
+        MetaChannel: {
+            feed: {
+                enabled: boolean;
+                urls: {
+                    default: string;
+                    bn: string;
+                    en: string;
+                } | null;
+                builtAt: string | null;
+                dirtySince: string | null;
+                rows: number;
+                skipped: {
+                    no_image?: number;
+                    no_price?: number;
+                };
+                lastError: string | null;
+            };
+            /** @enum {string} */
+            purchaseAt: "placed" | "confirmed";
+            deliveredEvent: boolean;
         };
         Supplier: {
             /** Format: uuid */

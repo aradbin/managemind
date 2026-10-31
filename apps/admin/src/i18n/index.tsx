@@ -7,6 +7,7 @@ import { createTranslator, type Locale, type Message, type Params } from '@manag
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import type { boReportsEn } from './back-office-reports-en';
 import type { billingEn } from './billing-en';
+import type { channelsEn } from './channels-en';
 import type { couriersEn } from './couriers-en';
 import type { en } from './en';
 import type { expensesEn } from './expenses-en';
@@ -23,6 +24,7 @@ export type AdminKey =
   | keyof typeof en
   | keyof typeof billingEn
   | keyof typeof boReportsEn
+  | keyof typeof channelsEn
   | keyof typeof couriersEn
   | keyof typeof expensesEn
   | keyof typeof launchEn

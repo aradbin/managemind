@@ -24,6 +24,7 @@ import { autoBook } from './couriers';
 import { queueSink, withClient } from './db';
 import { recheckDomains, releaseDomains } from './domains';
 import { type Env, getConfig } from './env';
+import { queueFeedBuilds } from './feeds';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
 import { notify, sendsMessages } from './notifications';
@@ -63,6 +64,17 @@ export async function handleQueue(
   // sendBatch takes at most 100 messages.
   for (let i = 0; env.DOMAINS && i < edges.length; i += 100) {
     await env.DOMAINS.sendBatch(edges.slice(i, i + 100));
+  }
+  // The Meta feed (phase-9-plan §3.1.4): marked stale, built later. Best
+  // effort: the next change, or Rebuild in settings, catches a lost one.
+  try {
+    await queueFeedBuilds(
+      env,
+      ctx,
+      batch.messages.map((m) => m.body),
+    );
+  } catch (e) {
+    log('warn', 'feed builds not queued', { error: String(e) });
   }
   // Messages to shoppers and staff (phase-5a-plan §3.6). The delivery log
   // keeps a redelivered event from sending twice, so a failure retries the

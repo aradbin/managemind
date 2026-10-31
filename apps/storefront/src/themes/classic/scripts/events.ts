@@ -91,12 +91,14 @@ export function createTracker(config: TrackerConfig) {
     viewItem(product: ProductEvent) {
       const id = eventId();
       const value = product.price / 100;
+      // The product's ID is the feed's item_group_id; its variants are the
+      // feed's items, so the view is a product group (phase-9-plan §3.1.4).
       window.fbq?.(
         'track',
         'ViewContent',
         {
           content_ids: [product.id],
-          content_type: 'product',
+          content_type: 'product_group',
           content_name: product.name,
           value,
           currency: 'BDT',

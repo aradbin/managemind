@@ -12,6 +12,8 @@ export const bn: Record<keyof typeof en, string> = {
   'checkoutSettings.title': 'চেকআউট',
   'checkoutSettings.description': 'চেকআউটের ঘর, ক্যাশ অন ডেলিভারি, সীমা আর ব্লক করা ফোন',
   'couriers.title': 'কুরিয়ার',
+  'meta.title': 'ফেসবুক ও ইনস্টাগ্রাম',
+  'meta.description': 'মেটার জন্য পণ্যের ফিড, আর মেটাকে জানানো বিক্রি',
   'couriers.description': 'স্টেডফাস্ট, পাঠাও বা রেডএক্সে পার্সেল বুক করুন, খবর রাখুন',
   'payments.title': 'পেমেন্ট',
   'payments.description': 'আপনার SSLCommerz অ্যাকাউন্টে অনলাইন পেমেন্ট',

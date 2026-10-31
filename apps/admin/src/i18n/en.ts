@@ -13,6 +13,8 @@ export const en = {
   'checkoutSettings.title': 'Checkout',
   'checkoutSettings.description': 'Checkout fields, cash on delivery, limits and blocked phones',
   'couriers.title': 'Couriers',
+  'meta.title': 'Facebook and Instagram',
+  'meta.description': 'Your product feed for Meta, and the sales Meta hears about',
   'couriers.description': 'Book parcels with Steadfast, Pathao or RedX, and follow them',
   'payments.title': 'Payments',
   'payments.description': 'Online payment with your SSLCommerz account',

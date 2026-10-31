@@ -71,6 +71,7 @@ import { Route as ShellSettingsDeliveryRouteImport } from './routes/_shell/setti
 import { Route as ShellSettingsDomainsRouteImport } from './routes/_shell/settings/domains'
 import { Route as ShellSettingsLocationRouteImport } from './routes/_shell/settings/location'
 import { Route as ShellSettingsMessagesRouteImport } from './routes/_shell/settings/messages'
+import { Route as ShellSettingsMetaRouteImport } from './routes/_shell/settings/meta'
 import { Route as ShellSettingsNotificationsRouteImport } from './routes/_shell/settings/notifications'
 import { Route as ShellSettingsPaymentsRouteImport } from './routes/_shell/settings/payments'
 import { Route as ShellSettingsReturnsRouteImport } from './routes/_shell/settings/returns'
@@ -412,6 +413,11 @@ const ShellSettingsMessagesRoute = ShellSettingsMessagesRouteImport.update({
   path: '/settings/messages',
   getParentRoute: () => ShellRoute,
 } as any)
+const ShellSettingsMetaRoute = ShellSettingsMetaRouteImport.update({
+  id: '/settings/meta',
+  path: '/settings/meta',
+  getParentRoute: () => ShellRoute,
+} as any)
 const ShellSettingsNotificationsRoute =
   ShellSettingsNotificationsRouteImport.update({
     id: '/settings/notifications',
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/messages': typeof ShellSettingsMessagesRoute
+  '/settings/meta': typeof ShellSettingsMetaRoute
   '/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/settings/payments': typeof ShellSettingsPaymentsRoute
   '/settings/returns': typeof ShellSettingsReturnsRoute
@@ -691,6 +698,7 @@ export interface FileRoutesByTo {
   '/settings/domains': typeof ShellSettingsDomainsRoute
   '/settings/location': typeof ShellSettingsLocationRoute
   '/settings/messages': typeof ShellSettingsMessagesRoute
+  '/settings/meta': typeof ShellSettingsMetaRoute
   '/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/settings/payments': typeof ShellSettingsPaymentsRoute
   '/settings/returns': typeof ShellSettingsReturnsRoute
@@ -781,6 +789,7 @@ export interface FileRoutesById {
   '/_shell/settings/domains': typeof ShellSettingsDomainsRoute
   '/_shell/settings/location': typeof ShellSettingsLocationRoute
   '/_shell/settings/messages': typeof ShellSettingsMessagesRoute
+  '/_shell/settings/meta': typeof ShellSettingsMetaRoute
   '/_shell/settings/notifications': typeof ShellSettingsNotificationsRoute
   '/_shell/settings/payments': typeof ShellSettingsPaymentsRoute
   '/_shell/settings/returns': typeof ShellSettingsReturnsRoute
@@ -871,6 +880,7 @@ export interface FileRouteTypes {
     | '/settings/domains'
     | '/settings/location'
     | '/settings/messages'
+    | '/settings/meta'
     | '/settings/notifications'
     | '/settings/payments'
     | '/settings/returns'
@@ -958,6 +968,7 @@ export interface FileRouteTypes {
     | '/settings/domains'
     | '/settings/location'
     | '/settings/messages'
+    | '/settings/meta'
     | '/settings/notifications'
     | '/settings/payments'
     | '/settings/returns'
@@ -1047,6 +1058,7 @@ export interface FileRouteTypes {
     | '/_shell/settings/domains'
     | '/_shell/settings/location'
     | '/_shell/settings/messages'
+    | '/_shell/settings/meta'
     | '/_shell/settings/notifications'
     | '/_shell/settings/payments'
     | '/_shell/settings/returns'
@@ -1529,6 +1541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellSettingsMessagesRouteImport
       parentRoute: typeof ShellRoute
     }
+    '/_shell/settings/meta': {
+      id: '/_shell/settings/meta'
+      path: '/settings/meta'
+      fullPath: '/settings/meta'
+      preLoaderRoute: typeof ShellSettingsMetaRouteImport
+      parentRoute: typeof ShellRoute
+    }
     '/_shell/settings/notifications': {
       id: '/_shell/settings/notifications'
       path: '/settings/notifications'
@@ -1779,6 +1798,7 @@ interface ShellRouteChildren {
   ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
   ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
   ShellSettingsMessagesRoute: typeof ShellSettingsMessagesRoute
+  ShellSettingsMetaRoute: typeof ShellSettingsMetaRoute
   ShellSettingsNotificationsRoute: typeof ShellSettingsNotificationsRoute
   ShellSettingsPaymentsRoute: typeof ShellSettingsPaymentsRoute
   ShellSettingsReturnsRoute: typeof ShellSettingsReturnsRoute
@@ -1852,6 +1872,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
   ShellSettingsLocationRoute: ShellSettingsLocationRoute,
   ShellSettingsMessagesRoute: ShellSettingsMessagesRoute,
+  ShellSettingsMetaRoute: ShellSettingsMetaRoute,
   ShellSettingsNotificationsRoute: ShellSettingsNotificationsRoute,
   ShellSettingsPaymentsRoute: ShellSettingsPaymentsRoute,
   ShellSettingsReturnsRoute: ShellSettingsReturnsRoute,

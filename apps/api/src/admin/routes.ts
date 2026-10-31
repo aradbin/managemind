@@ -53,6 +53,7 @@ import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
 import { BILLING_ROUTES, registerBilling } from './billing';
 import { CATALOG_ROUTES, registerCatalog } from './catalog';
+import { CHANNEL_ROUTES, registerChannels } from './channels';
 import { inStore, relayTo, type StaffEnv, staffSession } from './context';
 import { COURIER_ROUTES, registerCouriers } from './couriers';
 import { CREDENTIAL_ROUTES, registerCredentials } from './credentials';
@@ -178,6 +179,7 @@ export const ADMIN_ROUTES = {
   ...REPORT_ROUTES,
   ...CREDENTIAL_ROUTES,
   ...COURIER_ROUTES,
+  ...CHANNEL_ROUTES,
   ...PURCHASING_ROUTES,
   ...STOCK_ROUTES,
   ...EXPENSE_ROUTES,
@@ -638,6 +640,7 @@ export function registerAdmin(app: OpenAPIHono<AppEnv>): void {
   registerReports(admin);
   registerCredentials(admin);
   registerCouriers(admin);
+  registerChannels(admin);
   registerPurchasing(admin);
   registerStock(admin);
   registerExpenses(admin);

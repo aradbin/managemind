@@ -497,7 +497,9 @@ export async function updateStoreProfile(
       },
     })
     .where(eq(schema.tenants.id, tx.tenantId));
-  const pick = (s: typeof next) => Object.fromEntries(fields.map((f) => [f, s[f]]));
+  // The feed's key stays out of the audit log, like any credential.
+  const pick = (s: typeof next) =>
+    Object.fromEntries(fields.map((f) => [f, f === 'meta' ? redactFeedKey(s.meta) : s[f]]));
   await recordAudit(tx, {
     ...auditActor(actor, 'staff'),
     action: 'store.profile_updated',
@@ -512,6 +514,42 @@ export async function updateStoreProfile(
     payload: { fields },
   });
   return { ...current, ...next };
+}
+
+const redactFeedKey = (meta: MetaSettings) => ({
+  ...meta,
+  feed: { ...meta.feed, ...(meta.feed.key ? { key: '[set]' } : {}) },
+});
+
+/**
+ * A new key for the Meta feed (phase-9-plan §3.1.4): the next build's
+ * manifest carries it, and the old URL stops working. The owner pastes the
+ * new URL into Commerce Manager.
+ */
+export async function rotateFeedKey(tx: TenantTx, actor: Actor): Promise<Store> {
+  authorize(actor, 'settings.write');
+  const current = await loadStore(tx, true);
+  if (current.status !== 'active') throw new AppError('tenant_suspended');
+  if (!current.meta.feed.enabled) throw new AppError('conflict', { detail: 'The feed is off' });
+  const settings = tenantSettings.parse(current.settings);
+  const meta: MetaSettings = { ...current.meta, feed: { enabled: true, key: newFeedKey() } };
+  await tx.db
+    .update(schema.tenants)
+    .set({ settings: { ...settings, meta } })
+    .where(eq(schema.tenants.id, tx.tenantId));
+  await recordAudit(tx, {
+    ...auditActor(actor, 'staff'),
+    action: 'store.feed_key_changed',
+    entityType: 'tenant',
+    entityId: tx.tenantId,
+  });
+  await emit(tx, 'tenant.updated', {
+    aggregateType: 'tenant',
+    aggregateId: tx.tenantId,
+    payload: { fields: ['meta'] },
+  });
+  const { settings: _settings, ...store } = current;
+  return { ...store, meta };
 }
 
 /** Suspends or reactivates a store (super admins; a reason is required to suspend). */
