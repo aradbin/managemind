@@ -8,60 +8,60 @@ packages:
 # Packages reference these with "catalog:".
 catalog:
   "@astrojs/check": 0.9.10
-  "@astrojs/cloudflare": 14.3.4
-  "@axe-core/playwright": 4.13.0
-  "@biomejs/biome": 2.5.15
+  "@astrojs/cloudflare": 14.4.2
+  "@axe-core/playwright": 4.14.0
+  "@biomejs/biome": 2.6.3
   "@cloudflare/workers-types": 5.20261009.1
   "@fontsource-variable/inter": 5.3.0
   "@fontsource/noto-sans-bengali": 5.3.0
   "@hono/zod-openapi": 1.6.3
-  "@hookform/resolvers": 5.9.1
-  "@playwright/test": 1.64.0
+  "@hookform/resolvers": 5.9.2
+  "@playwright/test": 1.64.1
   "@radix-ui/react-dialog": 1.3.1
   "@radix-ui/react-dropdown-menu": 2.2.1
   "@radix-ui/react-slot": 1.5.0
-  "@sentry/cli": 3.8.0
-  "@sentry/cloudflare": 11.7.0
-  "@sentry/react": 11.7.0
+  "@sentry/cli": 3.8.2
+  "@sentry/cloudflare": 11.9.0
+  "@sentry/react": 11.9.0
   "@tailwindcss/vite": 4.3.3
-  "@tanstack/react-query": 5.104.2
-  "@tanstack/react-router": 1.170.44
-  "@tanstack/router-plugin": 1.168.45
-  "@tiptap/pm": 3.31.4
-  "@tiptap/react": 3.31.4
-  "@tiptap/starter-kit": 3.31.4
+  "@tanstack/react-query": 5.105.0
+  "@tanstack/react-router": 1.170.46
+  "@tanstack/router-plugin": 1.168.48
+  "@tiptap/pm": 3.32.0
+  "@tiptap/react": 3.32.0
+  "@tiptap/starter-kit": 3.32.0
   "@types/node": 22.20.5
   "@types/papaparse": 5.5.2
   "@types/pg": 8.23.1
   "@types/react": 19.3.0
   "@types/react-dom": 19.3.0
   "@vitejs/plugin-react": 6.1.2
-  astro: 7.3.8
-  better-auth: 1.7.7
+  astro: 7.4.2
+  better-auth: 1.7.14
   class-variance-authority: 0.7.1
   clsx: 2.1.1
   drizzle-kit: 0.31.11
   drizzle-orm: 0.45.4
   fflate: 0.8.3
-  hono: 4.13.13
+  hono: 4.13.14
   lean-qr: 2.7.4
-  lucide-react: 1.56.0
+  lucide-react: 1.63.0
   openapi-fetch: 0.17.0
   openapi-typescript: 7.13.0
   papaparse: 5.7.0
   pg: 8.23.1
-  react-dom: 19.3.0
-  react-hook-form: 7.90.0
-  react: 19.3.0
-  read-excel-file: 9.3.12
+  react-dom: 19.3.1
+  react-hook-form: 7.91.0
+  react: 19.3.1
+  read-excel-file: 9.3.13
   tailwind-merge: 3.7.0
   tailwindcss: 4.3.3
   tsx: 4.23.15
-  turbo: 2.11.7
+  turbo: 2.11.10
   typescript: 6.0.3
   vite-plugin-pwa: 1.3.0
-  vite: 8.3.4
-  vitest: 5.0.4
+  vite: 8.3.5
+  vitest: 5.0.5
   workbox-window: 7.4.1
   write-excel-file: 4.1.1
   wrangler: 4.149.0
@@ -75,4 +75,4 @@ overrides:
   astro>zod: 4.6.7
   undici@6: 6.29.1
   undici@7: 7.30.1
-  undici@8: 8.12.2
+  undici@8: 8.12.3
