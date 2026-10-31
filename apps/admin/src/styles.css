@@ -102,6 +102,22 @@
   fieldset.rounded-xl > legend + * {
     clear: both;
   }
+  /*
+   * Native selects drawn like the design's select (ADR 0033): no browser
+   * arrow, an up-down chevron at the end. They stay native, so phones get
+   * their own picker and keyboards work as usual.
+   */
+  select:not([multiple]):not([size]) {
+    appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+    background-size: 1rem;
+  }
+  select:disabled {
+    cursor: not-allowed;
+  }
   /* Checkboxes, radios and ranges in the accent colour. */
   input {
     accent-color: var(--color-primary);

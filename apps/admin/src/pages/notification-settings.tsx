@@ -145,7 +145,7 @@ function ShopperChannels() {
                       <label className="inline-flex size-11 items-center justify-center">
                         <input
                           type="checkbox"
-                          className="size-5"
+                          className="size-4 accent-primary"
                           aria-label={`${t(`message.event.${event}`)}: ${channel === 'email' ? t('notify.email') : channel === 'sms' ? 'SMS' : 'WhatsApp'}`}
                           checked={value[channel].includes(event)}
                           onChange={() => toggle(channel, event)}
@@ -160,7 +160,7 @@ function ShopperChannels() {
         </table>
       </fieldset>
       <p className="text-sm text-muted-foreground">{t('notify.smsLater')}</p>
-      <label className="flex min-h-11 items-start gap-3">
+      <label className="flex min-h-10 items-start gap-3 md:min-h-9">
         <input
           type="checkbox"
           className="mt-1 size-5"
@@ -294,11 +294,11 @@ function StoreEmail() {
             <fieldset className="flex flex-col gap-1">
               <legend className="mb-1 text-sm font-medium">{t('notify.provider')}</legend>
               {(['resend', 'brevo'] as const).map((p) => (
-                <label key={p} className="flex min-h-11 items-center gap-3">
+                <label key={p} className="flex min-h-10 items-center gap-3 md:min-h-9">
                   <input
                     type="radio"
                     name="email-provider"
-                    className="size-5"
+                    className="size-4 accent-primary"
                     checked={provider === p}
                     onChange={() => setProvider(p)}
                   />
@@ -525,11 +525,11 @@ function SmsGateway() {
             <fieldset className="flex flex-col gap-1">
               <legend className="mb-1 text-sm font-medium">{t('notify.provider')}</legend>
               {(['sms_net_bd', 'bulksmsbd', 'sms_http'] as const).map((p) => (
-                <label key={p} className="flex min-h-11 items-center gap-3">
+                <label key={p} className="flex min-h-10 items-center gap-3 md:min-h-9">
                   <input
                     type="radio"
                     name="sms-provider"
-                    className="size-5"
+                    className="size-4 accent-primary"
                     checked={provider === p}
                     onChange={() => setProvider(p)}
                   />
@@ -583,11 +583,11 @@ function SmsGateway() {
                 <fieldset className="flex gap-4">
                   <legend className="mb-1 text-sm font-medium">{t('sms.method')}</legend>
                   {(['POST', 'GET'] as const).map((m) => (
-                    <label key={m} className="flex min-h-11 items-center gap-2">
+                    <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
                       <input
                         type="radio"
                         name="sms-method"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         checked={http.method === m}
                         onChange={() => setHttp({ ...http, method: m })}
                       />

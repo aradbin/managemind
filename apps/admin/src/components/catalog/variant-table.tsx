@@ -131,7 +131,7 @@ export function VariantTable({ product, disabled }: { product: Product; disabled
   const check = (v: Variant, name: 'track' | 'backorder', text: string) => (
     <input
       type="checkbox"
-      className="size-5"
+      className="size-4 accent-primary"
       aria-label={`${text} — ${label(v)}`}
       checked={drafts[v.id]?.[name] as boolean}
       onChange={(e) => set(v.id, { [name]: e.target.checked })}

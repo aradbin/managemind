@@ -313,11 +313,11 @@ function PaymentDialog({ supplierId, onClose }: { supplierId: string; onClose: (
           <legend className="mb-1 text-sm font-medium">{t('payment.method')}</legend>
           <div className="flex flex-wrap gap-x-4">
             {SPEND_METHODS.map((m) => (
-              <label key={m} className="flex min-h-11 items-center gap-2">
+              <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
                 <input
                   type="radio"
                   name="method"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={method === m}
                   onChange={() => setMethod(m)}
                 />

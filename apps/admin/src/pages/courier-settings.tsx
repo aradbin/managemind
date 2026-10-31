@@ -197,11 +197,11 @@ function CourierCard({
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('couriers.mode')}</legend>
                 {(['sandbox', 'live'] as const).map((m) => (
-                  <label key={m} className="flex min-h-11 items-center gap-3">
+                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name={`${courier}-mode`}
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={mode === m}
                       onChange={() => setMode(m)}
                     />
@@ -424,7 +424,7 @@ function Defaults({ connected }: { connected: Courier[] }) {
   });
   if (!store.data) return null;
   const toggle = (key: 'autoReceive', label: AdminKey, hint?: AdminKey) => (
-    <label className="flex min-h-11 items-start gap-3">
+    <label className="flex min-h-10 items-start gap-3 md:min-h-9">
       <input
         type="checkbox"
         className="mt-1 size-5"
@@ -482,7 +482,7 @@ function Defaults({ connected }: { connected: Courier[] }) {
             maxLength={200}
             onChange={(e) => setValue((v) => ({ ...v, note: e.target.value }))}
           />
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-1 size-5"

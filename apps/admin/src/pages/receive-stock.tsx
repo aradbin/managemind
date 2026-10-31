@@ -297,7 +297,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                             aria-label={t('po.remove', { item: label })}
                             onClick={() => setLines(lines.filter((_, j) => j !== i))}
                           >
-                            <Trash2 aria-hidden className="size-5" />
+                            <Trash2 aria-hidden className="size-4 accent-primary" />
                           </Button>
                         )}
                       </div>
@@ -363,7 +363,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
               <label className="flex min-h-11 items-center gap-3 font-medium">
                 <input
                   type="checkbox"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={pay}
                   onChange={(e) => setPay(e.target.checked)}
                 />
@@ -381,11 +381,11 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                     <legend className="mb-1 text-sm font-medium">{t('payment.method')}</legend>
                     <div className="flex flex-wrap gap-x-4">
                       {SPEND_METHODS.map((m) => (
-                        <label key={m} className="flex min-h-11 items-center gap-2">
+                        <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
                           <input
                             type="radio"
                             name="method"
-                            className="size-5"
+                            className="size-4 accent-primary"
                             checked={method === m}
                             onChange={() => setMethod(m)}
                           />

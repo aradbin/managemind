@@ -45,7 +45,7 @@ function MorePage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{t('nav.menu')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight md:text-xl">{t('nav.menu')}</h1>
 
       <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
         <Link to="/account" className={`${row} min-h-[4.5rem]`}>

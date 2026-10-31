@@ -712,10 +712,10 @@ function Check({
   disabled: boolean;
 }) {
   return (
-    <label className="flex min-h-11 items-center gap-3">
+    <label className="flex min-h-10 items-center gap-3 md:min-h-9">
       <input
         type="checkbox"
-        className="size-5"
+        className="size-4 accent-primary"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}

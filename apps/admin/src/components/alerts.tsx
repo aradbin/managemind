@@ -205,7 +205,7 @@ function Choices() {
                     <td key={channel} className="px-3 py-1">
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         aria-label={`${label}: ${t(`alerts.channel.${channel}`)}`}
                         checked={c[channel]}
                         disabled={save.isPending}

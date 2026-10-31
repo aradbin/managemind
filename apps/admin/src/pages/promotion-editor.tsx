@@ -173,11 +173,11 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <fieldset className="flex flex-col gap-1" disabled={Boolean(promotion)}>
                 <legend className="mb-1 text-sm font-medium">{t('promo.kind')}</legend>
                 {(['automatic', 'code'] as const).map((k) => (
-                  <label key={k} className="flex min-h-11 items-center gap-3">
+                  <label key={k} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name="promo-kind"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.kind === k}
                       onChange={() => set({ kind: k })}
                     />
@@ -280,10 +280,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                       error={problem('percent')}
                     />
                   </div>
-                  <label className="flex min-h-11 items-center gap-3">
+                  <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.getSame}
                       onChange={(e) => set({ getSame: e.target.checked })}
                     />
@@ -336,10 +336,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                 <fieldset className="flex flex-col gap-1">
                   <legend className="mb-1 text-sm font-medium">{t('promo.zones')}</legend>
                   {zones.data.map((z) => (
-                    <label key={z.id} className="flex min-h-11 items-center gap-3">
+                    <label key={z.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         checked={d.zoneIds.includes(z.id)}
                         onChange={(e) =>
                           set({
@@ -354,10 +354,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   ))}
                 </fieldset>
               )}
-              <label className="flex min-h-11 items-center gap-3">
+              <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="checkbox"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={d.firstOrder}
                   onChange={(e) => set({ firstOrder: e.target.checked })}
                 />
@@ -388,10 +388,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('promo.paymentMethods')}</legend>
                 {(['cod', 'manual', 'online'] as const).map((m) => (
-                  <label key={m} className="flex min-h-11 items-center gap-3">
+                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.paymentMethods.includes(m)}
                       onChange={(e) =>
                         set({
@@ -455,7 +455,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                 />
               </div>
               {problem('number') && <p className="text-sm text-danger">{problem('number')}</p>}
-              <label className="flex min-h-11 items-start gap-3">
+              <label className="flex min-h-10 items-start gap-3 md:min-h-9">
                 <input
                   type="checkbox"
                   className="mt-3 size-5"

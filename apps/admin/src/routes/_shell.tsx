@@ -527,7 +527,7 @@ function Tab({
       activeProps={{ 'aria-current': 'page', className: 'text-foreground' }}
     >
       <span className="relative flex h-7 w-12 items-center justify-center rounded-full group-aria-[current=page]:bg-muted">
-        <Icon aria-hidden className="size-5" />
+        <Icon aria-hidden className="size-4 accent-primary" />
         {badge > 0 && (
           <Badge
             count={badge}

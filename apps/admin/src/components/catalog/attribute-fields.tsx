@@ -235,10 +235,10 @@ function AttributeField({
         </legend>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {attribute.values.map((v) => (
-            <label key={v.id} className="flex min-h-11 items-center gap-2 text-sm">
+            <label key={v.id} className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={draft.valueIds.includes(v.id)}
                 onChange={(e) =>
                   onChange({

@@ -1,6 +1,6 @@
 # ADR 0033: The admin on shadcn/ui's neutral theme, one sidebar that lists every page, no section tabs
 
-- Status: Accepted (step 1: the frame and the shared parts; step 2: the list pattern, on Products and Orders; step 3: the other main lists and side panels)
+- Status: Accepted. Built in steps 1–9: the frame, the list pattern, every list page, side panels, save bars and form controls.
 - Date: 2026-10-31
 - Design: the canvas in `design/admin-redesign/` (desktop and phone boards for every admin page, and its "Design rules" board). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/components/nav.tsx`, `apps/admin/src/routes/_shell.tsx`, `apps/admin/src/routes/_shell/more.tsx`
 - Amends: [ADR 0029](0029-admin-redesign.md) §1 (colours), §2 (sizes), §3 (status chips), §5 (the shell)
@@ -67,9 +67,19 @@ The build comes in steps. This first step changes what every page shares, so eve
   - customers' Tag filter lists the tags on the customers loaded so far;
   - expenses are searched and filtered within the month already loaded;
   - returns have a tab per status (the board's "In progress" covers several, and the API takes one), and show units instead of value.
-- Still to build, page by page, from the boards:
-  - the list pattern on the remaining lists (categories, collections, attributes, suppliers, purchase orders, stock counts, adjustments, incomplete orders, courier returns, the platform's lists), and searchable selects in place of native ones in forms;
-  - side panels for catalog categories and attributes;
-  - save bars on full-page forms;
-  - the bilingual name field.
+- Steps 4–9 put the remaining lists on the pattern:
+  - catalog: categories as a tree table with one side panel for names, place, descriptions, specifications and web addresses; attributes with a side panel; collections;
+  - inventory: suppliers (side panel), purchase orders, stock counts (radio cards to start one), adjustments;
+  - orders: incomplete orders and courier returns, and the confirm queue's tabs;
+  - the online store's pages, and the platform's stores and billing.
+
+  The full-page editors (product, promotion, collection) end in a save bar (`components/save-bar.tsx`): Discard · Save once something changes, Cancel · Create … for a new record. Delete and archive sit in the header's ⋯. Date presets are one shared filter (`dateRangeFilter`).
+- Form controls follow design rules 3 and 10:
+  - native selects are drawn like the design's select, with the up-down chevron, and stay native, so phones keep their own picker;
+  - checkboxes and radios are 16 px;
+  - `SwitchField` and `Switch` are drawn as switches; `SwitchField` stays a checkbox to assistive tech, so its forms and the E2E keep working;
+  - the বাংলা | English tabs are a segmented control.
+- Not built:
+  - **Searchable selects** for 8 or more options (design rule 3). The admin keeps native selects: 31 E2E steps choose with them, and a phone's own picker is easier to use. A searchable select is worth it where people type names, such as the place picker and the category and supplier choices; that is a decision for the owner.
+  - **Some board details the API doesn't support:** counts beside each filter choice, page numbers instead of "Load more", a filter that picks several values at once, and comparison with last month on expenses.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.

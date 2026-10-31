@@ -222,10 +222,10 @@ function CountView({ count }: { count: StockCount }) {
       {count.status === 'counting' && canWrite && <Scanner onCode={scanned} />}
 
       <section className="flex flex-col gap-3">
-        <label className="flex min-h-11 items-center gap-2 text-sm">
+        <label className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={onlyLeft}
             onChange={(e) => setOnlyLeft(e.target.checked)}
           />

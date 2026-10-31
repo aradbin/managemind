@@ -330,7 +330,7 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
           disabled={!canWrite || save.isPending}
           className="flex flex-col gap-5 rounded-xl border border-border bg-background p-4 md:p-5"
         >
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-3 size-5"

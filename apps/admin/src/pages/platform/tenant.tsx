@@ -70,7 +70,7 @@ export function TenantPage() {
             <StoreTile name={tenant.data.name} className="size-12 rounded-xl text-base" />
             <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight">{tenant.data.name}</h1>
+                <h1 className="text-xl font-semibold tracking-tight">{tenant.data.name}</h1>
                 <StatusBadge status={tenant.data.status} />
                 <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                   {t(`kind.${tenant.data.kind}`)}

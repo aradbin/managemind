@@ -408,10 +408,10 @@ export function NewOrderPage() {
             {quote.data?.blocked && (
               <div className="flex flex-col gap-2 rounded-md bg-danger-soft p-3 text-sm text-danger">
                 <p role="alert">{t('newOrder.blocked')}</p>
-                <label className="flex min-h-11 items-center gap-2">
+                <label className="flex min-h-10 items-center gap-2 md:min-h-9">
                   <input
                     type="checkbox"
-                    className="size-5"
+                    className="size-4 accent-primary"
                     checked={allowBlocked}
                     onChange={(e) => setAllowBlocked(e.target.checked)}
                   />
@@ -528,10 +528,10 @@ export function NewOrderPage() {
             <h2 id="delivery-h" className="font-semibold">
               {t('order.delivery')}
             </h2>
-            <label className="flex min-h-11 items-center gap-3">
+            <label className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={!delivery}
                 onChange={(e) => setDelivery(!e.target.checked)}
               />
@@ -600,11 +600,11 @@ export function NewOrderPage() {
               <legend className="mb-1 text-sm font-medium">{t('newOrder.manualDiscount')}</legend>
               <div className="flex flex-wrap gap-4">
                 {(['none', 'amount', 'percent'] as const).map((k) => (
-                  <label key={k} className="flex min-h-11 items-center gap-2">
+                  <label key={k} className="flex min-h-10 items-center gap-2 md:min-h-9">
                     <input
                       type="radio"
                       name="discount-kind"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={discountKind === k}
                       onChange={() => setDiscountKind(k)}
                     />
@@ -641,11 +641,11 @@ export function NewOrderPage() {
               {t('order.payment')}
             </h2>
             {[false, true].map((p) => (
-              <label key={String(p)} className="flex min-h-11 items-center gap-3">
+              <label key={String(p)} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="paid"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={paid === p}
                   onChange={() => {
                     setPaid(p);

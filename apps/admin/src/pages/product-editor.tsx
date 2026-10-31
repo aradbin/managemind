@@ -594,10 +594,10 @@ function CheckboxList({
       ) : (
         <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-background p-2">
           {items.map((item) => (
-            <label key={item.id} className="flex min-h-11 items-center gap-3 text-sm">
+            <label key={item.id} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={checked.includes(item.id)}
                 onChange={(e) =>
                   onChange(

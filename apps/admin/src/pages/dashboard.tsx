@@ -68,7 +68,7 @@ export function DashboardView() {
           <p className="text-sm text-muted-foreground">
             {formatDateTime(locale, now, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight">{t(greeting)}</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{t(greeting)}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           {canReports && (

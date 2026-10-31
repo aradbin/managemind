@@ -254,7 +254,7 @@ function QueueCard({
             onClick={() => claim.mutate(item.orderId, { onSuccess: onOpen })}
           >
             <a href={`tel:${item.phone}`}>
-              <Phone aria-hidden className="size-5" />
+              <Phone aria-hidden className="size-4 accent-primary" />
               {t('queue.call', { phone: formatPhone(item.phone) })}
             </a>
           </Button>
@@ -365,7 +365,7 @@ function CallPanelDialog({
       <div className="flex flex-col gap-4">
         <Button asChild variant="secondary" className="text-base">
           <a href={`tel:${panel.phone}`}>
-            <Phone aria-hidden className="size-5" />
+            <Phone aria-hidden className="size-4 accent-primary" />
             {formatPhone(panel.phone)}
           </a>
         </Button>
@@ -396,7 +396,7 @@ function CallPanelDialog({
                 <input
                   type="radio"
                   name="outcome"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={choice === c}
                   onChange={() => setChoice(c)}
                 />
@@ -409,11 +409,11 @@ function CallPanelDialog({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('queue.when')}</legend>
             {times.map((x) => (
-              <label key={x.key} className="flex min-h-11 items-center gap-3 text-sm">
+              <label key={x.key} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
                 <input
                   type="radio"
                   name="due"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={dueAt === x.at.toISOString()}
                   onChange={() => setDueAt(x.at.toISOString())}
                 />
@@ -426,11 +426,11 @@ function CallPanelDialog({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
             {CALL_CODES.map((c) => (
-              <label key={c} className="flex min-h-11 items-center gap-3 text-sm">
+              <label key={c} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
                 <input
                   type="radio"
                   name="call-code"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={code === c}
                   onChange={() => setCode(c)}
                 />
@@ -440,10 +440,10 @@ function CallPanelDialog({
           </fieldset>
         )}
         {choice === 'wrong_number' && canBlock && (
-          <label className="flex min-h-11 items-center gap-3 text-sm">
+          <label className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={block}
               onChange={(e) => setBlock(e.target.checked)}
             />

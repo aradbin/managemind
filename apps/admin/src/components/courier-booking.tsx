@@ -163,11 +163,11 @@ export function BookDialog({
                   <ul className="flex max-h-48 flex-col overflow-y-auto">
                     {places.data?.map((pl) => (
                       <li key={pl.externalId}>
-                        <label className="flex min-h-11 items-center gap-3">
+                        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                           <input
                             type="radio"
                             name="courier-place"
-                            className="size-5"
+                            className="size-4 accent-primary"
                             checked={place?.externalId === pl.externalId}
                             onChange={() => setPlace(pl)}
                           />
@@ -403,10 +403,10 @@ export function CourierPanel({
         <p className="text-sm text-muted-foreground">
           {t('couriers.cancelPanel', { courier: name })}
         </p>
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={inPanel}
             onChange={(e) => setInPanel(e.target.checked)}
           />

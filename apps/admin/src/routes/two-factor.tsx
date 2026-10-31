@@ -49,7 +49,7 @@ function TwoFactor() {
 
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold tracking-tight">{t('twoFactor.title')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{t('twoFactor.title')}</h1>
       {expired ? (
         <>
           <Notice tone="error">{t('twoFactor.expired')}</Notice>
@@ -93,10 +93,10 @@ function TwoFactor() {
               className="text-center text-2xl tracking-[0.5em]"
             />
           )}
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={trust}
               onChange={(e) => setTrust(e.target.checked)}
             />

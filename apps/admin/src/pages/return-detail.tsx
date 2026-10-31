@@ -64,7 +64,7 @@ export function ReturnDetailPage() {
       <Breadcrumb to="/returns" label={t('returns.title')} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight">
             {t('return.title', { number: r.displayNumber })}
           </h1>
           <p className="text-sm text-muted-foreground">

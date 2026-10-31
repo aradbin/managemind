@@ -57,7 +57,7 @@ function Invite() {
   const invalid = accept.error instanceof ApiError && [404, 410, 422].includes(accept.error.status);
   return (
     <AuthLayout>
-      <h1 className="text-2xl font-semibold tracking-tight">{t('invite.title')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{t('invite.title')}</h1>
       {!token ? (
         <Notice tone="error">{t('invite.missing')}</Notice>
       ) : accept.isError ? (

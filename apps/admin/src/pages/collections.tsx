@@ -598,11 +598,11 @@ function CollectionEditor({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('collections.kind')}</legend>
             {(['manual', 'rule'] as const).map((k) => (
-              <label key={k} className="flex min-h-11 items-center gap-3">
+              <label key={k} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="kind"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={kind === k}
                   onChange={() => setKind(k)}
                 />
@@ -629,10 +629,10 @@ function CollectionEditor({
             ))}
           </select>
         </label>
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={published}
             onChange={(e) => setPublished(e.target.checked)}
           />

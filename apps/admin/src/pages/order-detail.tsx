@@ -85,7 +85,7 @@ export function OrderDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-xl font-semibold tracking-tight">
               {t('order.title', { number: o.displayNumber })}
             </h1>
             <div className="flex flex-wrap gap-1.5">
@@ -753,10 +753,10 @@ function ShipmentRow({
         }
       >
         {o.totals.codDue > 0 && (
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={cash}
               onChange={(e) => setCash(e.target.checked)}
             />
@@ -1239,11 +1239,11 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
         {STAFF_CANCEL_CODES.map((c) => (
-          <label key={c} className="flex min-h-11 items-center gap-3">
+          <label key={c} className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="radio"
               name="cancel-code"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={code === c}
               onChange={() => setCode(c)}
             />

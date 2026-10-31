@@ -163,11 +163,11 @@ export function PaymentSettingsPage() {
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('payments.mode')}</legend>
                 {(['sandbox', 'live'] as const).map((m) => (
-                  <label key={m} className="flex min-h-11 items-center gap-3">
+                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name="ssl-mode"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={mode === m}
                       onChange={() => setMode(m)}
                     />

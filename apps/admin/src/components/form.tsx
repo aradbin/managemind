@@ -17,6 +17,7 @@ import { type AdminKey, messages, useLocale } from '../i18n';
 import { ApiError } from '../lib/api';
 import { cn } from '../lib/utils';
 import { Input } from './ui/input';
+import { switchLook } from './ui/switch';
 
 /** A message key for a field's error; zod's own messages are English-only. */
 export function fieldErrorKey(error: FieldError | undefined): AdminKey | undefined {
@@ -231,17 +232,9 @@ export function SwitchField({
   const { register } = useFormContext();
   const id = useId();
   return (
-    <div className="flex items-start gap-3">
-      <input
-        id={id}
-        type="checkbox"
-        disabled={disabled}
-        {...(hint ? { 'aria-describedby': `${id}-hint` } : {})}
-        {...register(name)}
-        className="mt-3 size-5"
-      />
-      <div className="flex min-h-11 flex-col justify-center">
-        <label htmlFor={id} className="font-medium">
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex min-h-9 flex-col justify-center">
+        <label htmlFor={id} className="text-sm font-medium">
           {label}
         </label>
         {hint && (
@@ -250,6 +243,15 @@ export function SwitchField({
           </p>
         )}
       </div>
+      {/* Drawn as a switch (design rule 3); still a checkbox to assistive tech and forms. */}
+      <input
+        id={id}
+        type="checkbox"
+        disabled={disabled}
+        {...(hint ? { 'aria-describedby': `${id}-hint` } : {})}
+        {...register(name)}
+        className={cn(switchLook, 'mt-2')}
+      />
     </div>
   );
 }

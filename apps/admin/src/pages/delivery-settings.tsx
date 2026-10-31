@@ -333,10 +333,10 @@ function ZoneDialog({
           value={fee}
           onChange={(e) => setFee(e.target.value)}
         />
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={weighted}
             onChange={(e) => setWeighted(e.target.checked)}
           />
@@ -375,10 +375,10 @@ function ZoneDialog({
             onChange={(e) => setEstEn(e.target.value)}
           />
         </div>
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={fallback}
             disabled={otherFallback && !fallback}
             onChange={(e) => setFallback(e.target.checked)}
@@ -405,10 +405,13 @@ function ZoneDialog({
                     <p className="text-sm font-medium">{div[locale]}</p>
                     <div className="grid grid-cols-2 gap-x-3 md:grid-cols-3">
                       {idx.districtsOf(div.id).map((d) => (
-                        <label key={d.id} className="flex min-h-11 items-center gap-2 text-sm">
+                        <label
+                          key={d.id}
+                          className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                        >
                           <input
                             type="checkbox"
-                            className="size-5"
+                            className="size-4 accent-primary"
                             disabled={taken.has(`d${d.id}`)}
                             checked={districtIds.includes(d.id)}
                             onChange={() => toggle(districtIds, setDistrictIds, d.id)}
@@ -443,10 +446,13 @@ function ZoneDialog({
               {pickDistrict !== null && (
                 <div className="grid max-h-60 grid-cols-2 gap-x-3 overflow-y-auto md:grid-cols-3">
                   {idx.areasOf(pickDistrict).map((a) => (
-                    <label key={a.id} className="flex min-h-11 items-center gap-2 text-sm">
+                    <label
+                      key={a.id}
+                      className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                    >
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         disabled={taken.has(`a${a.id}`)}
                         checked={areaIds.includes(a.id)}
                         onChange={() => toggle(areaIds, setAreaIds, a.id)}
@@ -467,10 +473,10 @@ function ZoneDialog({
             </div>
           </fieldset>
         )}
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
           />
