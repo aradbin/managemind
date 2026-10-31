@@ -56,7 +56,7 @@ test('catalog flows', async ({ page }, info) => {
       await dialog.getByRole('button', { name: t('options.addValue') }).click();
     }
     await expectAccessible(page, 'new attribute');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('attributes.create') }).click();
     await expect(dialog).toBeHidden();
     await expect(toast(page, t('attributes.saved')).first()).toBeVisible();
     await expectAccessible(page, 'attributes');
@@ -82,32 +82,23 @@ test('catalog flows', async ({ page }, info) => {
     await page.getByRole('button', { name: t('categories.new') }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(category);
+    // Its specifications are picked in the same panel.
+    await dialog.getByLabel('কাপড়').check();
     await expectAccessible(page, 'new category');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('categories.create') }).click();
     await expect(dialog).toBeHidden();
     await expect(toast(page, t('categories.saved'))).toBeVisible();
     await expectAccessible(page, 'categories');
-
-    await page
-      .getByRole('button', { name: t('categories.template', { count: '০' }) })
-      .locator('visible=true')
-      .first()
-      .click();
-    dialog = page.getByRole('dialog');
-    await dialog.getByLabel('কাপড়').check();
-    await expectAccessible(page, 'category specifications');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
-    await expect(dialog).toBeHidden();
-    await expect(toast(page, t('categories.templateSaved'))).toBeVisible();
 
     // A second category, and the first moved under it.
     await page.getByRole('button', { name: t('categories.new') }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(parent);
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('categories.create') }).click();
     await expect(dialog).toBeHidden();
-    await page.getByRole('button', { name: t('categories.edit', { name: category }) }).click();
+    await page.getByRole('button', { name: category, exact: true }).click();
     dialog = page.getByRole('dialog');
+    await expect(dialog.getByLabel('কাপড়')).toBeChecked();
     await dialog.getByLabel(t('categories.parent')).selectOption({ label: parent });
     await expectAccessible(page, 'edit category');
     await dialog.getByRole('button', { name: t('action.save') }).click();

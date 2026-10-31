@@ -39,6 +39,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { control, Textarea } from '../components/ui/input';
 import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
+import { Switch } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/expenses';
 import '../i18n/purchasing';
@@ -1088,7 +1089,7 @@ function RecurringSheet({
               <label htmlFor={activeId} className="text-sm font-medium">
                 {t('recurring.active')}
               </label>
-              <Switch id={activeId} checked={active} onChange={setActive} />
+              <Switch id={activeId} checked={active} onCheckedChange={setActive} />
             </div>
           )}
           {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
@@ -1105,29 +1106,6 @@ function RecurringSheet({
         </SheetFooter>
       </SheetForm>
     </Sheet>
-  );
-}
-
-/** A setting that's on or off (design rule 3): a checkbox drawn as a switch. */
-function Switch({
-  id,
-  checked,
-  onChange,
-}: {
-  id: string;
-  checked: boolean;
-  onChange: (on: boolean) => void;
-}) {
-  return (
-    <input
-      id={id}
-      type="checkbox"
-      role="switch"
-      aria-checked={checked}
-      checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
-      className="relative h-5 w-9 shrink-0 cursor-pointer appearance-none rounded-full bg-input transition-colors before:absolute before:top-0.5 before:left-0.5 before:size-4 before:rounded-full before:bg-background before:shadow-sm before:transition-transform checked:bg-primary checked:before:translate-x-4"
-    />
   );
 }
 

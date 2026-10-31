@@ -38,9 +38,9 @@ interface DataListProps<T> {
   isPending?: boolean;
   error?: string | undefined;
   onRetry?: () => void;
-  empty?: string;
+  empty?: string | undefined;
   /** One way out of an empty filtered list: Reset filters, Clear search. */
-  emptyAction?: ReactNode;
+  emptyAction?: ReactNode | undefined;
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
@@ -52,7 +52,7 @@ interface DataListProps<T> {
   /** The ⋯ menu at the end of each row. */
   menu?: ((item: T) => ReactNode) | undefined;
   /** Above the phone rows, beside select-all: "10 products". */
-  summary?: string;
+  summary?: string | undefined;
 }
 
 /** A press on a control inside the row is that control's, not the row's. */

@@ -5,7 +5,7 @@ import { CATALOG_LIMITS } from '@managemind/shared/catalog';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Filter, Hand, Plus, SquarePen, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
@@ -13,6 +13,7 @@ import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/lang
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, SearchInput, StageTabs } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -34,14 +35,50 @@ import {
   storeSettingsQuery,
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 
 const selectClass =
   'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
+  const navigate = useNavigate();
   const canWrite = usePermission('catalog.write');
   const collections = useQuery(collectionsQuery);
+  const [q, setQ] = useState('');
+  const [kind, setKind] = useState<'all' | 'manual' | 'rule'>('all');
+  const name = (c: Collection) => pick(c.translations, locale)?.name ?? '—';
+  const words = q.trim().toLowerCase();
+  const items = collections.data?.filter(
+    (c) =>
+      (kind === 'all' || c.kind === kind) &&
+      (!words ||
+        [c.translations.bn?.name, c.translations.en?.name].join(' ').toLowerCase().includes(words)),
+  );
+  const open = (c: Collection) =>
+    navigate({ to: '/catalog/collections/$id', params: { id: c.id } });
+  const kindCell = (c: Collection) => (
+    <span className="flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
+      {c.kind === 'manual' ? (
+        <Hand aria-hidden className="size-4" />
+      ) : (
+        <Filter aria-hidden className="size-4" />
+      )}
+      {t(c.kind === 'manual' ? 'collections.manual' : 'collections.rule')}
+    </span>
+  );
+  const shown = (c: Collection) => (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      <span
+        aria-hidden
+        className={cn(
+          'size-2 rounded-full',
+          c.published ? 'bg-success' : 'border border-muted-foreground',
+        )}
+      />
+      {t(c.published ? 'collections.published' : 'collections.hidden')}
+    </span>
+  );
   const columns: Column<Collection>[] = [
     {
       header: t('collections.name'),
@@ -51,45 +88,94 @@ export function CollectionsPage() {
           params={{ id: c.id }}
           className="font-medium underline-offset-2 hover:underline"
         >
-          {pick(c.translations, locale)?.name ?? '—'}
+          {name(c)}
         </Link>
       ),
     },
-    {
-      header: t('collections.kind'),
-      cell: (c) => t(c.kind === 'manual' ? 'collections.manual' : 'collections.rule'),
-    },
-    { header: t('collections.products'), cell: (c) => c.productCount },
-    {
-      header: t('collections.visibility'),
-      cell: (c) => t(c.published ? 'collections.published' : 'collections.hidden'),
-    },
+    { header: t('collections.kind'), cell: kindCell },
+    { header: t('collections.products'), numeric: true, cell: (c) => c.productCount },
+    { header: t('collections.visibility'), cell: shown },
   ];
   return (
-    <div className="max-w-5xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('catalog.collections')}
         description={t('collections.intro')}
         actions={
           canWrite && (
             <Button asChild>
               <Link to="/catalog/collections/$id" params={{ id: 'new' }}>
-                <Plus aria-hidden className="size-4" />
+                <Plus aria-hidden />
                 {t('collections.new')}
               </Link>
             </Button>
           )
         }
       />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          label={t('collections.search')}
+          value={q}
+          onChange={setQ}
+        />
+        <StageTabs
+          label={t('collections.kind')}
+          tabs={[
+            { key: 'all', label: t('collections.all') },
+            { key: 'manual', label: t('collections.manual') },
+            { key: 'rule', label: t('collections.rule') },
+          ]}
+          value={kind}
+          onChange={setKind}
+        />
+      </div>
       <DataList
         label={t('catalog.collections')}
-        items={collections.data}
+        items={items}
         rowKey={(c) => c.id}
         columns={columns}
         isPending={collections.isPending}
         error={collections.isError ? errorMessage(collections.error, t) : undefined}
         onRetry={() => collections.refetch()}
-        empty={t('collections.empty')}
+        empty={words || kind !== 'all' ? t('collections.noMatches') : t('collections.empty')}
+        emptyAction={
+          words || kind !== 'all' ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setQ('');
+                setKind('all');
+              }}
+            >
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
+        onOpen={open}
+        menu={(c) => (
+          <RowMenu label={name(c)}>
+            <RowMenuItem onSelect={() => open(c)}>
+              <SquarePen aria-hidden />
+              {canWrite ? t('collections.edit') : t('list.open')}
+            </RowMenuItem>
+          </RowMenu>
+        )}
+        card={(c) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/catalog/collections/$id" params={{ id: c.id }} className="font-medium">
+                {name(c)}
+              </Link>
+              <span className="flex flex-wrap items-center gap-3 text-xs">
+                {kindCell(c)}
+                {shown(c)}
+              </span>
+            </div>
+            <span className="shrink-0 text-sm tabular-nums">{c.productCount}</span>
+          </div>
+        )}
       />
     </div>
   );
