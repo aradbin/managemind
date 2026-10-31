@@ -20,6 +20,8 @@ export interface ShopConfig {
     terms: string | null;
   };
   shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };
+  /** The store's WhatsApp number (E.164), when its chat buttons are on. */
+  whatsapp?: string | null;
   geo?: string;
 }
 

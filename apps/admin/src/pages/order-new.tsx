@@ -9,6 +9,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
+import { ChatPaste, type ParsedChat } from '../components/chat-paste';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
@@ -61,9 +62,26 @@ export function NewOrderPage() {
   const navigate = useNavigate();
   const canCustomers = usePermission('customers.read');
   const [key, setKey] = useState(idempotencyKey);
-  const [source, setSource] = useState<Source>('facebook');
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  // ?source=, ?phone=, ?name= start an order from a chat; ?text=, ?title= and
+  // ?url= are what Android's share sheet sends (phase-9-plan §3.1.2).
+  const search = useSearch({ strict: false }) as {
+    incomplete?: string;
+    source?: Source;
+    phone?: string;
+    name?: string;
+    text?: string;
+    title?: string;
+    url?: string;
+  };
+  const sharedText = [search.title, search.text, search.url].filter(Boolean).join('\n');
+  const [source, setSource] = useState<Source>(
+    search.source ?? (sharedText ? 'whatsapp' : 'facebook'),
+  );
+  const [phone, setPhone] = useState(() => {
+    const given = search.phone ? normalizePhone(search.phone) : null;
+    return given ? formatPhone(given) : '';
+  });
+  const [name, setName] = useState(search.name ?? '');
   const [email, setEmail] = useState('');
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [delivery, setDelivery] = useState(true);
@@ -84,7 +102,7 @@ export function NewOrderPage() {
 
   // Started from an incomplete checkout (phase-6-plan §3.2): its customer,
   // the lines still orderable, the address typed so far and the cart's code.
-  const { incomplete: incompleteId } = useSearch({ strict: false }) as { incomplete?: string };
+  const incompleteId = search.incomplete;
   const incomplete = useQuery({
     queryKey: ['incomplete-order', incompleteId] as const,
     queryFn: async () =>
@@ -121,6 +139,33 @@ export function NewOrderPage() {
     );
     if (d.cartCode) setCode(d.cartCode);
   }, [incomplete.data, prefilled, locale]);
+
+  // What a pasted chat found: the phone when none is typed yet, its customer,
+  // and its products, added to the lines (phase-9-plan §3.1.2).
+  const readChat = (parsed: ParsedChat): number => {
+    if (parsed.phone && !normalizePhone(phone)) {
+      setPhone(formatPhone(parsed.phone));
+      setCustomerId(parsed.customer?.id ?? null);
+      if (parsed.customer && !name.trim()) setName(parsed.customer.name);
+    }
+    const found = parsed.lines.filter((l) => l.variantId);
+    setLines((current) => {
+      const next = current.map((x) => ({ ...x }));
+      for (const l of found) {
+        const same = next.find((x) => x.variantId === l.variantId);
+        if (same) same.quantity = String(Number(toLatin(same.quantity)) + l.quantity);
+        else
+          next.push({
+            variantId: l.variantId as string,
+            label: lineLabel(l, locale),
+            available: l.available,
+            quantity: String(l.quantity),
+          });
+      }
+      return next;
+    });
+    return found.length;
+  };
 
   const normalized = normalizePhone(phone);
   const zones = useQuery(zonesQuery);
@@ -296,6 +341,7 @@ export function NewOrderPage() {
       )}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex min-w-0 flex-col gap-5">
+          {!incompleteId && <ChatPaste initialText={sharedText} onRead={readChat} />}
           <section aria-labelledby="customer-h" className={section}>
             <h2 id="customer-h" className="font-semibold">
               {t('order.customer')}

@@ -177,6 +177,11 @@ const count = product.media.length;
           </div>
         </div>
       )}
+      <p class="share">
+        {t('share.label')}{' '}
+        <a href={`https://wa.me/?text=${encodeURIComponent(`${product.title} ${url}`)}`} target="_blank" rel="noopener">{t('share.whatsapp')}</a>{' · '}
+        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener">{t('share.facebook')}</a>
+      </p>
       {anySku && <p class="count" data-sku-row hidden={!start?.sku}>{t('product.sku')}: <span data-sku>{start?.sku ?? ''}</span></p>}
       {description && (
         <section class="rich" aria-labelledby="desc">

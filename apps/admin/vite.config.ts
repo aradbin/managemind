@@ -37,6 +37,14 @@ export default defineConfig({
             purpose: 'maskable',
           },
         ],
+        // Share a chat message from WhatsApp or Messenger on Android to the
+        // installed admin: it opens a new order with the text to read
+        // (phase-9-plan §3.1.2).
+        share_target: {
+          action: '/orders/new',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
       },
       workbox: {
         // The app shell only: API responses are never cached.

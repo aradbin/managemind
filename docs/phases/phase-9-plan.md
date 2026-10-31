@@ -147,7 +147,7 @@ The order page already copies a payment link and opens it in `wa.me`. It becomes
 - the payment link, as now;
 - the tracking link alone.
 
-Each is written in the order's language from new templates that staff can edit (event `chat_summary`). WhatsApp opens with the text filled in (`wa.me/<phone>?text=`). For Messenger and Instagram the text is copied, since `m.me` links can't carry text, and the Page's inbox opens.
+Each is written in the order's language, in fixed Bangla and English wording (`shared/channels/chat.ts`); per-store wording can follow if the pilots ask, through ADR 0025's overrides. WhatsApp opens with the text filled in (`wa.me/<phone>?text=`). For Messenger and Instagram the text is copied, since `m.me` links can't carry text, and the Page's inbox opens.
 
 Two shopper-side shortcuts, following the store's existing `chat` settings (from #89's Level 0):
 

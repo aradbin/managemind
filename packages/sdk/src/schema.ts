@@ -7806,6 +7806,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/orders/{id}/chat-message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The order's summary, payment link or tracking link as a chat message in its language (orders.read; payment also makes the link: payments.read, orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind: "summary" | "payment" | "tracking";
+                    };
+                };
+            };
+            responses: {
+                /** @description The message */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChatMessage"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/orders/parse-chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The phone, customer, products and order numbers in a pasted chat, for a new order (orders.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        text: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description What the chat says */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ParsedChat"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/orders/{id}/shipments": {
         parameters: {
             query?: never;
@@ -18498,6 +18585,47 @@ export interface components {
             code: string | null;
             /** @enum {string} */
             locale: "bn" | "en";
+        };
+        ChatMessage: {
+            text: string;
+            phone: string;
+            whatsappUrl: string;
+            /** @enum {string} */
+            locale: "bn" | "en";
+        };
+        ParsedChat: {
+            phone: string | null;
+            phones: string[];
+            customer: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            risk: components["schemas"]["PhoneRisk"] & (Record<string, never> | null);
+            lines: {
+                /** Format: uuid */
+                variantId: string | null;
+                /** Format: uuid */
+                productId: string;
+                quantity: number;
+                title: {
+                    bn?: string;
+                    en?: string;
+                };
+                optionLabels: {
+                    bn?: string;
+                    en?: string;
+                }[];
+                available: number | null;
+                orderable: boolean;
+            }[];
+            unknownProducts: string[];
+            orders: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                status: string;
+            }[];
         };
         Customer: {
             /** Format: uuid */

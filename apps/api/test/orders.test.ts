@@ -142,6 +142,41 @@ describe('a manual order from entry to completed', () => {
   });
 });
 
+describe('orders from chat (phase-9-plan §3.1)', () => {
+  it('reads a pasted chat, places a WhatsApp order and writes its summary for the chat', async () => {
+    const b = await staff(ownerEmail);
+    const first = (await (
+      await b.post('/api/admin/orders', manual({ source: 'whatsapp' }))
+    ).json()) as Json;
+    const placed = (await (await b.get(`/api/admin/orders/${first.id}`)).json()) as Json;
+    expect(placed.source).toBe('whatsapp');
+
+    const chat = [
+      'Assalamu alaikum, ami ei ta nite chai:',
+      `https://shop.example.test/products/kurta?v=${variant} × 3`,
+      'https://shop.example.test/products/no-such-thing',
+      `my number ০১৭১২-০০০১১১, ager order ${first.displayNumber}`,
+    ].join('\n');
+    const res = await b.post('/api/admin/orders/parse-chat', { text: chat });
+    const parsed = (await res.json()) as Json;
+    expect(res.status, JSON.stringify(parsed)).toBe(200);
+    expect(parsed).toMatchObject({
+      phone: '+8801712000111',
+      customer: { name: 'Nasrin' },
+      lines: [{ variantId: variant, quantity: 3, title: { en: 'Kurta' }, orderable: true }],
+      unknownProducts: ['no-such-thing'],
+      orders: [{ id: first.id, displayNumber: first.displayNumber }],
+    });
+
+    const summary = (await (
+      await b.post(`/api/admin/orders/${first.id}/chat-message`, { kind: 'summary' })
+    ).json()) as Json;
+    expect(summary.text).toContain('Hello Nasrin, here is your order');
+    expect(summary.text).toContain('• Kurta × 2');
+    expect(summary.whatsappUrl).toMatch(/^https:\/\/wa\.me\/8801712000111\?text=Hello/);
+  });
+});
+
 describe('settings for selling', () => {
   it('edits delivery zones, the blocklist and the checkout settings', async () => {
     const b = await staff(ownerEmail);

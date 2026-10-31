@@ -426,6 +426,20 @@ describe('payment links', () => {
     expect(gateway.sessions.at(-1)?.get('total_amount')).toBe(`${order.total / 100}.00`);
     // The link shows and pays; only tracking by phone cancels.
     expect((await call(s.host, 'POST', '/v1/store/orders/cancel', { token })).status).toBe(404);
+
+    // The same link, as a chat message in the order's language (phase-9-plan §3.1.3).
+    const chat = await staff.call('POST', `/api/admin/orders/${order.id}/chat-message`, {
+      kind: 'payment',
+    });
+    const message: Json = await chat.json();
+    expect(chat.status, JSON.stringify(message)).toBe(200);
+    expect(message.text).toContain(`https://${s.host}/track#`);
+    expect(message.whatsappUrl).toMatch(/^https:\/\/wa\.me\/8801\d{9}\?text=/);
+    const summary: Json = await (
+      await staff.call('POST', `/api/admin/orders/${order.id}/chat-message`, { kind: 'summary' })
+    ).json();
+    expect(summary.text).toContain(`https://${s.host}/track`);
+    expect(summary.text).not.toContain('/track#');
   });
 });
 

@@ -682,6 +682,15 @@ main {
   opacity: 0.45;
   text-decoration: line-through;
 }
+.share {
+  margin: 16px 0 0;
+  font-size: 0.9375rem;
+}
+.share a {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+}
 .order {
   display: flex;
   flex-wrap: wrap;
