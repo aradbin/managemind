@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Products — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--success:oklch(.723 .219 149.579);--page:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--success:oklch(.792 .209 151.711);--page:oklch(.18 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-sm{height:36px;padding:0 12px}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-input{height:40px;box-sizing:border-box;padding:4px 12px;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input::placeholder{color:var(--muted-foreground)}
+.mm-trunc{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-view{flex:1;min-height:0;flex-direction:column}
+.mm-top{display:flex;flex:none;align-items:center;gap:8px;height:56px;padding:0 12px;border-bottom:1px solid var(--border);background:var(--background)}
+.mm-h1{margin:0;font-size:20px;line-height:28px;font-weight:600;letter-spacing:-0.01em}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-tab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-stabs{display:inline-flex;align-items:center;height:40px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-stabs .mm-tab{gap:6px;padding:0 12px;background:transparent;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-stabs .mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-stabs .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-cbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-hit{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;padding:0;border:0;background:transparent;cursor:pointer}
+.mm-above{position:relative;z-index:1}
+.mm-prow{position:relative;display:flex;align-items:center;gap:8px;min-height:64px;padding:8px 12px 8px 2px;border-bottom:1px solid var(--border);cursor:pointer}
+.mm-prow:last-child{border-bottom:0}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-chip{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 4px 0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;cursor:pointer}
+.mm-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:9999px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500}
+.mm-red{display:inline-flex;flex:none;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-group{overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--background)}
+.mm-ghead{margin:0;padding:0 4px 8px;font-size:13px;font-weight:500;line-height:18px;color:var(--muted-foreground)}
+.mm-mrow{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 12px;box-sizing:border-box;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-mrow:last-child{border-bottom:0}
+.mm-mrow:hover{background:var(--accent)}
+.mm-chev{flex:none;color:var(--muted-foreground);transition:transform .2s}
+.mm-mrow[aria-expanded=true]{border-bottom:0}
+.mm-mrow[aria-expanded=true] .mm-chev{transform:rotate(90deg)}
+.mm-subwrap{display:flex;flex-direction:column;margin-bottom:-1px;padding:0 0 6px;border-bottom:1px solid var(--border)}
+.mm-srow{display:flex;align-items:center;gap:8px;min-height:44px;margin:0 8px;padding:0 8px 0 48px;border-radius:8px;font-size:14px;color:var(--foreground)}
+.mm-srow:hover,.mm-srow[aria-current=page]{background:var(--accent);color:var(--accent-foreground)}
+.mm-srow[aria-current=page]{font-weight:500}
+.mm-tile{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm-sub2{font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-seg{display:inline-flex;flex:none;padding:3px;border-radius:10px;background:var(--muted)}
+.mm-segbtn{height:30px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.mm-segbtn[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-segbtn[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-clear{background:transparent}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none}
+.mm-optrow:hover{background:var(--accent)}
+.mm-fhead{margin:0;padding:12px 8px 4px;font-size:13px;font-weight:500;color:var(--muted-foreground)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-menu{position:absolute;z-index:60;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-input{flex:1;min-width:0;height:44px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:16px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-cmd-group{padding:4px}
+.mm-cmd-heading{padding:6px 8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:0 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm .mm-cmd-item:focus-visible{box-shadow:none}
+.mm-cmd-sep{height:1px;background:var(--border)}
+.mm-bar{position:sticky;bottom:12px;z-index:20;align-self:center;display:flex;align-items:center;gap:2px;width:100%;height:48px;padding:0 4px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-bar-sep{width:1px;height:16px;margin:0 4px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<div class="mm-view" style="display: {{v.products}}">
+<header class="mm-top">
+<button type="button" class="mm-btn mm-ghost" style="flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 8px 0 4px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span class="mm-trunc" style="font-weight: 600">Nakshi Fashion</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search" aria-haspopup="dialog" onClick="{{open.search}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" aria-haspopup="menu" aria-expanded="{{createAria}}" onClick="{{open.create}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</header>
+
+<main class="mm-scroll" style="gap: 12px; padding: 16px">
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<h1 class="mm-h1">Products</h1>
+<div style="display: flex; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Export" aria-haspopup="dialog" onClick="{{openExport}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg></button>
+<a href="ProductPhone.dc.html" class="mm-btn mm-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New product</a>
+</div>
+</div>
+
+
+<nav aria-label="Status" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
+<div role="tablist" class="mm-stabs">
+<sc-for list="{{stTabs}}" as="t" hint-placeholder-count="4"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for>
+</div>
+</nav>
+
+<div style="position: relative">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search titles, SKUs and tags" placeholder="Search titles, SKUs and tags" value="{{search}}" onChange="{{onSearch}}" style="width: 100%; padding-left: 36px">
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-sm" aria-haspopup="dialog" onClick="{{open.filters}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4h-7"></path><path d="M10 4H3"></path><path d="M21 12h-9"></path><path d="M8 12H3"></path><path d="M21 20h-5"></path><path d="M12 20H3"></path><path d="M14 2v4"></path><path d="M8 10v4"></path><path d="M16 18v4"></path></svg>Filters<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><span class="mm-count">{{filterCount}}</span></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-sm" aria-haspopup="dialog" onClick="{{open.sort}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 16-4 4-4-4"></path><path d="M17 20V4"></path><path d="m3 8 4-4 4 4"></path><path d="M7 4v16"></path></svg>{{sortLabel}}</button>
+</div>
+
+<sc-if value="{{hasChips}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="2"><button type="button" class="mm-chip" aria-label="{{c.aria}}" onClick="{{c.remove}}">{{c.label}}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .6"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-for>
+<button type="button" class="mm-btn mm-ghost" style="height: 28px; padding: 0 8px; font-size: 12px" onClick="{{reset}}">Clear all</button>
+</div>
+</sc-if>
+
+<div style="border: 1px solid var(--border); border-radius: 10px; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 2px; border-bottom: 1px solid var(--border); background: var(--muted)">
+<button type="button" role="checkbox" class="mm-hit" aria-checked="{{allAria}}" aria-label="Select all" onClick="{{toggleAll}}"><span class="mm-cbox" style="background: {{allBox}}; border-color: {{allEdge}}"><sc-if value="{{all}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{some}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></sc-if></span></button>
+<span style="font-weight: 500">{{listHead}}</span>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+<li class="mm-prow" style="background: {{r.bg}}">
+<button type="button" role="checkbox" class="mm-hit mm-above" aria-checked="{{r.aria}}" aria-label="{{r.selectLabel}}" onClick="{{r.toggle}}"><span class="mm-cbox" style="background: {{r.box}}; border-color: {{r.edge}}"><sc-if value="{{r.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span></button>
+<span class="mm-thumb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<a href="ProductViewPhone.dc.html" class="mm-rowlink mm-trunc" style="font-weight: 500">{{r.title}}</a>
+<span class="mm-trunc" style="font-size: 13px; line-height: 18px; color: var(--muted-foreground); font-variant-numeric: tabular-nums">{{r.pricePart}}<sc-if value="{{r.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r.stockText}}</span></sc-if><sc-if value="{{r.ok}}" hint-placeholder-val="{{true}}">{{r.stockText}}</sc-if></span>
+</div>
+<span class="mm-sbadge" style="background: {{r.sBg}}; color: {{r.sFg}}; box-shadow: inset 0 0 0 1px {{r.sEdge}}">{{r.statusLabel}}</span>
+</li>
+</sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">No products match.</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Reset filters</button></sc-if></div></sc-if>
+</div>
+
+<nav aria-label="Pagination" style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<button type="button" class="mm-btn mm-outline" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>Previous</button>
+<span style="font-weight: 500">Page 1</span>
+<button type="button" class="mm-btn mm-outline">Next<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+</nav>
+
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
+<div role="region" aria-label="Bulk actions" class="mm-bar">
+<span role="status" style="flex: 1; font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums">{{selText}}</span>
+<button type="button" class="mm-btn mm-inv" style="padding: 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.580-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>Edit prices</button>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-inv mm-icon" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{moreAria}}" onClick="{{open.more}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{is.more}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="More actions" class="mm-menu" style="right: -44px; bottom: 48px; width: 200px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{close}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Change status</button>
+<button type="button" role="menuitem" class="mm-cmd-item" aria-haspopup="dialog" onClick="{{openExportSelected}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export selected</button>
+</div>
+</sc-if>
+</div>
+<span aria-hidden="true" class="mm-bar-sep"></span>
+<button type="button" class="mm-btn mm-inv mm-icon" aria-label="Clear selection" onClick="{{clearSel}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</sc-if>
+
+</main>
+</div>
+
+<div class="mm-view" style="display: {{v.menu}}">
+<header class="mm-top">
+<h1 class="mm-h1" style="flex: 1; padding-left: 4px">Menu</h1>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search" aria-haspopup="dialog" onClick="{{open.search}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+</header>
+
+<main class="mm-scroll" style="gap: 24px; padding: 16px 16px 24px; background: var(--page)">
+
+<div class="mm-group">
+<a href="#" class="mm-mrow" style="min-height: 64px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 9999px; background: var(--muted); font-size: 13px; font-weight: 500">RA</span>
+<span style="display: flex; flex: 1; flex-direction: column; min-width: 0">
+<span class="mm-trunc" style="font-weight: 500">Rahim Ahmed</span>
+<span class="mm-trunc mm-sub2">rahim@example.com</span>
+</span>
+<svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+</a>
+<button type="button" class="mm-mrow">
+<span aria-hidden="true" class="mm-tile" style="background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span style="display: flex; flex: 1; flex-direction: column; min-width: 0">
+<span class="mm-trunc" style="font-weight: 500">Nakshi Fashion</span>
+<span class="mm-trunc mm-sub2">Owner · Switch store</span>
+</span>
+<svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+
+<section aria-labelledby="mm-g-sell">
+<h2 id="mm-g-sell" class="mm-ghead">Sell</h2>
+<div class="mm-group">
+<button type="button" class="mm-mrow" aria-expanded="{{nv.orders.aria}}" onClick="{{nv.orders.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Orders</span><span class="mm-trunc mm-sub2">Confirm, incomplete, returns</span></span><sc-if value="{{nv.orders.closed}}" hint-placeholder-val="{{true}}"><span class="mm-red">5<span class="mm-sr"> to confirm</span></span></sc-if><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.orders.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.orders.items}}" as="it" hint-placeholder-count="5"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+<button type="button" class="mm-mrow" aria-expanded="{{nv.catalog.aria}}" onClick="{{nv.catalog.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Catalog</span><span class="mm-trunc mm-sub2">Products, categories, collections</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.catalog.open}}" hint-placeholder-val="{{true}}"><div class="mm-subwrap"><sc-for list="{{nv.catalog.items}}" as="it" hint-placeholder-count="5"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+<button type="button" class="mm-mrow" aria-expanded="{{nv.inventory.aria}}" onClick="{{nv.inventory.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Inventory</span><span class="mm-trunc mm-sub2">Stock, purchase orders, suppliers</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.inventory.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.inventory.items}}" as="it" hint-placeholder-count="6"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+<a href="PromotionsPhone.dc.html" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg></span><span style="flex: 1; font-weight: 500">Promotions</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="ExpensesPhone.dc.html" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span><span style="flex: 1; font-weight: 500">Expenses</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<button type="button" class="mm-mrow" aria-expanded="{{nv.reports.aria}}" onClick="{{nv.reports.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Reports</span><span class="mm-trunc mm-sub2">Sales, profit, stock, COD</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.reports.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.reports.items}}" as="it" hint-placeholder-count="7"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+</div>
+</section>
+
+<section aria-labelledby="mm-g-store">
+<h2 id="mm-g-store" class="mm-ghead">Store</h2>
+<div class="mm-group">
+<button type="button" class="mm-mrow" aria-expanded="{{nv.store.aria}}" onClick="{{nv.store.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Online store</span><span class="mm-trunc mm-sub2">Theme, pages, store settings</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.store.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.store.items}}" as="it" hint-placeholder-count="3"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+<a href="SettingsPhone.dc.html" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></span><span style="flex: 1; font-weight: 500">Settings</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+<a href="#" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">View store</span><span class="mm-trunc mm-sub2">Opens your store in a new tab</span></span></a>
+</div>
+</section>
+
+<section aria-labelledby="mm-g-platform">
+<h2 id="mm-g-platform" class="mm-ghead">Platform</h2>
+<div class="mm-group">
+<button type="button" class="mm-mrow" aria-expanded="{{nv.platform.aria}}" onClick="{{nv.platform.toggle}}"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg></span><span style="display: flex; flex: 1; flex-direction: column; min-width: 0"><span style="font-weight: 500">Platform</span><span class="mm-trunc mm-sub2">Stores, billing, staff, audit log</span></span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.platform.open}}" hint-placeholder-val="{{false}}"><div class="mm-subwrap"><sc-for list="{{nv.platform.items}}" as="it" hint-placeholder-count="7"><a href="{{it.href}}" class="mm-srow" aria-current="{{it.current}}" onClick="{{it.go}}"><span style="flex: 1">{{it.label}}</span><sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}"><span class="mm-red">{{it.badge}}</span></sc-if></a></sc-for></div></sc-if>
+</div>
+</section>
+
+<section aria-labelledby="mm-g-prefs">
+<h2 id="mm-g-prefs" class="mm-ghead">Preferences</h2>
+<div class="mm-group">
+<label class="mm-mrow"><span class="mm-tile"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if></span><span style="flex: 1; font-weight: 500">Dark mode</span><button type="button" role="switch" class="mm-switch" aria-checked="{{darkAria}}" onClick="{{toggleTheme}}" style="background: {{darkTrack}}"><span class="mm-knob" style="transform: translateX({{darkX}})"></span></button></label>
+<div class="mm-mrow" role="group" aria-labelledby="mm-lang" style="cursor: default"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></span><span id="mm-lang" style="flex: 1; font-weight: 500">Language</span><span class="mm-seg"><button type="button" class="mm-segbtn" lang="bn" aria-pressed="{{lang.bn}}" onClick="{{lang.pickBn}}">বাংলা</button><button type="button" class="mm-segbtn" aria-pressed="{{lang.en}}" onClick="{{lang.pickEn}}">English</button></span></div>
+<a href="#" class="mm-mrow"><span class="mm-tile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></span><span style="flex: 1; font-weight: 500">Help</span><svg class="mm-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</div>
+</section>
+
+<button type="button" class="mm-btn mm-outline" style="width: 100%; color: var(--destructive)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg>Sign out</button>
+
+</main>
+</div>
+
+<nav aria-label="Main" class="mm-tabbar">
+<a href="HomePhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>Home</a>
+<a href="OrdersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span class="mm-tabbadge">5<span class="mm-sr"> to confirm</span></span></span>Orders</a>
+<button type="button" class="mm-tabitem" aria-current="{{tab.products}}" onClick="{{goProducts}}"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span>Products</button>
+<a href="CustomersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Customers</a>
+<button type="button" class="mm-tabitem" aria-current="{{tab.menu}}" onClick="{{goMenu}}"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span>Menu</button>
+</nav>
+
+<sc-if value="{{is.create}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim mm-clear" aria-label="Close menu" onClick="{{close}}"></button>
+<div role="menu" aria-label="Create" class="mm-menu" onKeyDown="{{escClose}}" style="top: 52px; right: 12px; width: 240px">
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>New order</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Add customer</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>New promotion</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Record expense</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>New product</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>New category</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg>New collection</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>New purchase order</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>New supplier</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>New stock count</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>New store page</a>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.filters}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close filters" onClick="{{close}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-f-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div style="flex: none; padding: 12px 16px 8px; text-align: center">
+<h2 id="mm-f-title" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">Filters</h2>
+<p style="margin: 2px 0 0; color: var(--muted-foreground)">{{matchText}}</p>
+</div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px">
+<p class="mm-fhead">Category</p>
+<sc-for list="{{fc.options}}" as="o" hint-placeholder-count="5"><button type="button" role="checkbox" aria-checked="{{o.aria}}" class="mm-optrow" onClick="{{o.toggle}}"><span class="mm-cbox" style="background: {{o.box}}; border-color: {{o.edge}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span><span style="flex: 1">{{o.label}}</span><span style="font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums">{{o.count}}</span></button></sc-for>
+<p class="mm-fhead">Brand</p>
+<sc-for list="{{fb.options}}" as="o" hint-placeholder-count="3"><button type="button" role="checkbox" aria-checked="{{o.aria}}" class="mm-optrow" onClick="{{o.toggle}}"><span class="mm-cbox" style="background: {{o.box}}; border-color: {{o.edge}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span><span style="flex: 1">{{o.label}}</span><span style="font-size: 12px; color: var(--muted-foreground); font-variant-numeric: tabular-nums">{{o.count}}</span></button></sc-for>
+<p class="mm-fhead">Stock</p>
+<label class="mm-optrow" style="justify-content: space-between">Low stock only<button type="button" role="switch" class="mm-switch" aria-checked="{{lowAria}}" onClick="{{toggleLow}}" style="background: {{lowTrack}}"><span class="mm-knob" style="transform: translateX({{lowX}})"></span></button></label>
+</div>
+<div style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-top: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-primary" onClick="{{close}}">{{showText}}</button>
+<button type="button" class="mm-btn mm-outline" onClick="{{reset}}">Reset filters</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.export}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close export" onClick="{{close}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-x-title" aria-describedby="mm-x-desc" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div style="flex: none; padding: 12px 16px 8px; text-align: center">
+<h2 id="mm-x-title" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">Export products</h2>
+<p id="mm-x-desc" style="margin: 2px 0 0; color: var(--muted-foreground)">In the same columns the import reads, so you can edit them and import them back.</p>
+</div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px">
+<p id="mm-x-format" class="mm-fhead">Format</p>
+<div role="radiogroup" aria-labelledby="mm-x-format">
+<button type="button" role="radio" class="mm-optrow" aria-checked="{{ex.xlsxAria}}" onClick="{{ex.pickXlsx}}"><span class="mm-radio"><sc-if value="{{ex.xlsx}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></span>Excel (.xlsx)</button>
+<button type="button" role="radio" class="mm-optrow" aria-checked="{{ex.csvAria}}" onClick="{{ex.pickCsv}}"><span class="mm-radio"><sc-if value="{{ex.csv}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span>CSV</button>
+</div>
+<p id="mm-x-which" class="mm-fhead">Which products</p>
+<div role="radiogroup" aria-labelledby="mm-x-which">
+<button type="button" role="radio" class="mm-optrow" aria-checked="{{ex.filteredAria}}" onClick="{{ex.pickFiltered}}"><span class="mm-radio"><sc-if value="{{ex.filtered}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></span>{{ex.filteredLabel}}</button>
+<button type="button" role="radio" class="mm-optrow" aria-checked="{{ex.selectedAria}}" disabled="{{ex.noSelection}}" onClick="{{ex.pickSelected}}" style="opacity: {{ex.selectedOpacity}}"><span class="mm-radio"><sc-if value="{{ex.selected}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span>{{ex.selectedLabel}}</button>
+</div>
+</div>
+<div style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 16px; border-top: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-primary" onClick="{{runExport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
+<button type="button" class="mm-btn mm-outline" onClick="{{close}}">Cancel</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 76px; z-index: 70; display: flex; align-items: center; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{is.sort}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close sort" onClick="{{close}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-s-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div style="flex: none; padding: 12px 16px 8px; text-align: center">
+<h2 id="mm-s-title" style="margin: 0; font-size: 16px; line-height: 24px; font-weight: 600">Sort by</h2>
+</div>
+<div role="radiogroup" aria-labelledby="mm-s-title" style="padding: 0 8px 24px">
+<sc-for list="{{sorts}}" as="o" hint-placeholder-count="7"><button type="button" role="radio" aria-checked="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span class="mm-radio"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span>{{o.label}}</button></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{is.search}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close search" onClick="{{close}}"></button>
+<div role="dialog" aria-modal="true" aria-label="Search" onKeyDown="{{escClose}}" style="position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; max-height: 70%; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--popover); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex: none; align-items: center; gap: 8px; padding: 0 4px 0 12px; border-bottom: 1px solid var(--border)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="text" class="mm-cmd-input" aria-label="Search" placeholder="Search orders, products…" autoComplete="off" autoFocus="{{true}}" value="{{query}}" onChange="{{onQuery}}">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close search" onClick="{{close}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+<div style="flex: 1; min-height: 0; overflow-y: auto">
+<sc-if value="{{hasQ}}" hint-placeholder-val="{{false}}">
+<div class="mm-cmd-group" role="group" aria-label="Search">
+<div class="mm-cmd-heading">Search</div>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>{{qOrders}}</a>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>{{qProducts}}</a>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>{{qCustomers}}</a>
+</div>
+</sc-if>
+<sc-for list="{{cmdGroups}}" as="g" hint-placeholder-count="3">
+<sc-if value="{{g.sep}}" hint-placeholder-val="{{false}}"><div class="mm-cmd-sep"></div></sc-if>
+<div class="mm-cmd-group" role="group" aria-label="{{g.label}}">
+<div class="mm-cmd-heading">{{g.label}}</div>
+<sc-for list="{{g.items}}" as="it" hint-placeholder-count="4"><a href="#" class="mm-cmd-item"><sc-if value="{{it.home}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></sc-if><sc-if value="{{it.orders}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></sc-if><sc-if value="{{it.catalog}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></sc-if><sc-if value="{{it.inventory}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg></sc-if><sc-if value="{{it.customers}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></sc-if><sc-if value="{{it.promotions}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg></sc-if><sc-if value="{{it.expenses}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></sc-if><sc-if value="{{it.reports}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg></sc-if><sc-if value="{{it.store}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg></sc-if><sc-if value="{{it.settings}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></sc-if><sc-if value="{{it.billing}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg></sc-if><sc-if value="{{it.platform}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg></sc-if>{{it.label}}</a></sc-for>
+</div>
+</sc-for>
+<sc-if value="{{cmdEmpty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 24px 0; text-align: center">No results found.</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["List","Menu","Menu › Orders","Filters","Sort","Export","Search","Create"],"default":"List"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var PRODUCTS = [
+  { id: 'p1', title: 'Cotton Panjabi — Ivory', status: 'active', cat: 'Men', brand: 'Nakshi', min: 1850, max: 2150, variants: 4, stock: 32, low: false },
+  { id: 'p2', title: 'Handloom Tangail Saree', status: 'active', cat: 'Women', brand: 'Heritage', min: 3400, max: 3400, variants: 1, stock: 6, low: true },
+  { id: 'p3', title: 'Embroidered Kurti', status: 'active', cat: 'Women', brand: 'Nakshi', min: 1250, max: 1450, variants: 6, stock: 58, low: false },
+  { id: 'p4', title: 'Leather Kolhapuri Sandal', status: 'active', cat: 'Footwear', brand: 'Urban', min: 1650, max: 1650, variants: 5, stock: 3, low: true },
+  { id: 'p5', title: 'Printed Three-Piece Set', status: 'draft', cat: 'Women', brand: 'Nakshi', min: 2800, max: 2800, variants: 3, stock: 14, low: false },
+  { id: 'p6', title: 'Check Lungi — Pack of 2', status: 'active', cat: 'Men', brand: 'Heritage', min: 950, max: 950, variants: 1, stock: 120, low: false },
+  { id: 'p7', title: 'Jute Tote Bag', status: 'active', cat: 'Accessories', brand: 'Urban', min: 650, max: 780, variants: 2, stock: 41, low: false },
+  { id: 'p8', title: 'Silk Hijab', status: 'draft', cat: 'Accessories', brand: 'Heritage', min: 540, max: 540, variants: 8, stock: 75, low: false },
+  { id: 'p9', title: 'Winter Shawl — Kashmiri', status: 'active', cat: 'Accessories', brand: 'Heritage', min: 2400, max: 2400, variants: 3, stock: 2, low: true },
+  { id: 'p10', title: 'Kids’ Panjabi Set', status: 'archived', cat: 'Kids', brand: 'Nakshi', min: 1100, max: 1100, variants: 4, stock: 0, low: false }
+];
+var STATUS = [{ v: 'active', label: 'Active' }, { v: 'draft', label: 'Draft' }, { v: 'archived', label: 'Archived' }];
+var CATEGORIES = ['Men', 'Women', 'Kids', 'Footwear', 'Accessories'].map(function (c) { return { v: c, label: c }; });
+var BRANDS = ['Nakshi', 'Heritage', 'Urban'].map(function (b) { return { v: b, label: b }; });
+var SORTS = [
+  { key: null, dir: 'asc', label: 'Newest first', short: 'Newest' },
+  { key: 'title', dir: 'asc', label: 'Name: A to Z', short: 'Name A–Z' },
+  { key: 'title', dir: 'desc', label: 'Name: Z to A', short: 'Name Z–A' },
+  { key: 'price', dir: 'asc', label: 'Price: low to high', short: 'Price ↑' },
+  { key: 'price', dir: 'desc', label: 'Price: high to low', short: 'Price ↓' },
+  { key: 'stock', dir: 'asc', label: 'Stock: low to high', short: 'Stock ↑' },
+  { key: 'stock', dir: 'desc', label: 'Stock: high to low', short: 'Stock ↓' }
+];
+// The Menu tab's sections that open a list of their pages.
+var SECTIONS = {
+  orders: { title: 'Orders', items: [
+    { label: 'All orders', href: 'OrdersPhone.dc.html' }, { label: 'Confirm orders', badge: '5', href: 'ConfirmPhone.dc.html' }, { label: 'Incomplete orders', href: 'IncompletePhone.dc.html' },
+    { label: 'Courier returns', href: 'CourierReturnsPhone.dc.html' }, { label: 'Returns', href: 'ReturnsPhone.dc.html' }
+  ] },
+  catalog: { title: 'Catalog', items: [
+    { label: 'Products', products: true }, { label: 'Categories', href: 'CategoriesPhone.dc.html' }, { label: 'Collections', href: 'CollectionsPhone.dc.html' },
+    { label: 'Attributes', href: 'AttributesPhone.dc.html' }, { label: 'Import products', href: 'ImportPhone.dc.html' }
+  ] },
+  inventory: { title: 'Inventory', items: [
+    { label: 'Stock', href: 'InventoryPhone.dc.html' }, { label: 'Purchase orders', href: 'PurchaseOrdersPhone.dc.html' }, { label: 'Receive stock', href: 'ReceivePhone.dc.html' },
+    { label: 'Suppliers', href: 'SuppliersPhone.dc.html' }, { label: 'Stock counts', href: 'CountsPhone.dc.html' }, { label: 'Adjustments', href: 'AdjustmentsPhone.dc.html' }
+  ] },
+  reports: { title: 'Reports', items: [
+    { label: 'Overview', href: 'ReportsPhone.dc.html' }, { label: 'Sales', href: 'SalesReportPhone.dc.html' }, { label: 'Profit', href: 'ProfitReportPhone.dc.html' }, { label: 'Stock', href: 'StockReportPhone.dc.html' }, { label: 'Suppliers', href: 'SupplierReportPhone.dc.html' }, { label: 'Expenses', href: 'ExpenseReportPhone.dc.html' }, { label: 'COD outstanding', href: 'CodOutstandingPhone.dc.html' }
+  ] },
+  store: { title: 'Online store', items: [
+    { label: 'Theme', href: 'ThemePhone.dc.html' }, { label: 'Pages', href: 'StorePagesPhone.dc.html' }, { label: 'Store settings', href: 'StoreSettingsPhone.dc.html' }
+  ] },
+  platform: { title: 'Platform', items: [
+    { label: 'Stores', href: 'PlatformStoresPhone.dc.html' }, { label: 'Dashboard', href: 'PlatformDashboardPhone.dc.html' }, { label: 'Billing', href: 'PlatformBillingPhone.dc.html' }, { label: 'Courier areas', href: 'CourierAreasPhone.dc.html' }, { label: 'Terms', href: 'PlatformTermsPhone.dc.html' }, { label: 'Platform staff', href: 'PlatformStaffPhone.dc.html' }, { label: 'Audit log', href: 'AuditLogPhone.dc.html' }
+  ] }
+};
+var CMD_GROUPS = [
+  { label: 'Go to', items: [
+    { label: 'Home', icon: 'home' }, { label: 'Customers', icon: 'customers' }, { label: 'Promotions', icon: 'promotions' },
+    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }
+  ] },
+  { label: 'Orders', icon: 'orders', items: [
+    { label: 'All orders' }, { label: 'Confirm orders' }, { label: 'Incomplete orders' }, { label: 'Courier returns' }, { label: 'Returns' }
+  ] },
+  { label: 'Catalog', icon: 'catalog', items: [
+    { label: 'Products' }, { label: 'Categories' }, { label: 'Collections' }, { label: 'Attributes' }, { label: 'Import products' }
+  ] },
+  { label: 'Inventory', icon: 'inventory', items: [
+    { label: 'Stock' }, { label: 'Purchase orders' }, { label: 'Receive stock' }, { label: 'Suppliers' }, { label: 'Stock counts' }, { label: 'Adjustments' }
+  ] },
+  { label: 'Reports', icon: 'reports', items: [
+    { label: 'Overview' }, { label: 'Sales report' }, { label: 'Profit report' }, { label: 'Stock report' }, { label: 'Supplier report' }, { label: 'Expense report' }, { label: 'COD outstanding' }
+  ] },
+  { label: 'Online store', icon: 'store', items: [
+    { label: 'Theme' }, { label: 'Pages' }, { label: 'Store settings' }
+  ] },
+  { label: 'Platform', icon: 'platform', items: [
+    { label: 'Stores' }, { label: 'Platform dashboard' }, { label: 'Platform billing' }, { label: 'Courier areas' }, { label: 'Terms' }, { label: 'Platform staff' }, { label: 'Audit log' }
+  ] }
+];
+var START = {
+  List: { view: 'products', overlay: null }, Menu: { view: 'menu', overlay: null }, 'Menu › Orders': { view: 'menu', overlay: null, nav: { catalog: true, orders: true } },
+  Filters: { view: 'products', overlay: 'filters' }, Sort: { view: 'products', overlay: 'sort' },
+  Search: { view: 'products', overlay: 'search' }, Create: { view: 'products', overlay: 'create' },
+  Export: { view: 'products', overlay: 'export' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function money(n) { return '৳' + n.toLocaleString('en-US'); }
+function has(list, v) { return list.indexOf(v) !== -1; }
+function noop() {}
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var s = this.state || {};
+    var up = function (patch) { self.setState(patch); };
+    var start = START[this.props.startOn ?? 'List'] || START.List;
+    var view = 'view' in s ? s.view : start.view;
+    var overlay = 'overlay' in s ? s.overlay : start.overlay;
+    var sel = s.sel || ['p2', 'p4'];
+    var fStatus = s.fStatus || [];
+    var fCat = s.fCat || [];
+    var fBrand = s.fBrand || [];
+    var search = s.search || '';
+    var lowOnly = Boolean(s.low);
+    var sortIndex = s.sortIndex || 0;
+    var sort = SORTS[sortIndex];
+    var vals = {};
+
+    // Screens: the product list or the Menu tab, whose sections open in place.
+    vals.v = { products: view === 'products' ? 'flex' : 'none', menu: view === 'menu' ? 'flex' : 'none' };
+    vals.tab = { products: view === 'products' ? 'page' : null, menu: view === 'menu' ? 'page' : null };
+    vals.goProducts = function () { up({ view: 'products', overlay: null }); };
+    vals.goMenu = function () { up({ view: 'menu', overlay: null }); };
+    var navOpen = s.navOpen || start.nav || { catalog: true };
+    vals.nv = {};
+    Object.keys(SECTIONS).forEach(function (k) {
+      var open = Boolean(navOpen[k]);
+      vals.nv[k] = {
+        open: open,
+        closed: !open,
+        aria: open ? 'true' : 'false',
+        toggle: function () { var next = Object.assign({}, navOpen); next[k] = !open; up({ navOpen: next }); },
+        items: SECTIONS[k].items.map(function (it) {
+          return {
+            label: it.label,
+            badge: it.badge || '',
+            hasBadge: Boolean(it.badge),
+            current: it.products ? 'page' : null,
+            href: it.href || '#',
+            go: it.products ? function (e) { e.preventDefault(); up({ view: 'products', overlay: null }); } : noop
+          };
+        })
+      };
+    });
+
+    // Which drawer, dialog or menu is open over the screen.
+    vals.is = { filters: overlay === 'filters', sort: overlay === 'sort', search: overlay === 'search', create: overlay === 'create', more: overlay === 'more', export: overlay === 'export' };
+    var opener = function (name) { return function () { up({ overlay: overlay === name ? null : name, query: '' }); }; };
+    vals.open = { filters: opener('filters'), sort: opener('sort'), search: opener('search'), create: opener('create'), more: opener('more') };
+    vals.close = function () { up({ overlay: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ overlay: null }); } };
+    vals.createAria = overlay === 'create' ? 'true' : 'false';
+    vals.moreAria = overlay === 'more' ? 'true' : 'false';
+
+    // The list: search, filters, then sort.
+    var sq = search.trim().toLowerCase();
+    var base = PRODUCTS.filter(function (p) {
+      return (!sq || p.title.toLowerCase().indexOf(sq) !== -1) &&
+        (!fCat.length || has(fCat, p.cat)) &&
+        (!fBrand.length || has(fBrand, p.brand)) &&
+        (!lowOnly || p.low);
+    });
+    // Status tabs count what the other filters leave.
+    var st = fStatus.length ? fStatus[0] : 'all';
+    vals.stTabs = [{ v: 'all', label: 'All' }].concat(STATUS).map(function (o) {
+      var n = o.v === 'all' ? base.length : base.filter(function (p) { return p.status === o.v; }).length;
+      return { label: o.label, count: String(n), on: st === o.v ? 'true' : 'false', pick: function () { up({ fStatus: o.v === 'all' ? [] : [o.v] }); } };
+    });
+    var rows = base.filter(function (p) { return st === 'all' || p.status === st; });
+    if (sort.key) {
+      rows = rows.slice().sort(function (a, b) {
+        var x = sort.key === 'title' ? a.title.toLowerCase() : sort.key === 'price' ? a.min : a[sort.key];
+        var y = sort.key === 'title' ? b.title.toLowerCase() : sort.key === 'price' ? b.min : b[sort.key];
+        var c = x < y ? -1 : x > y ? 1 : 0;
+        return sort.dir === 'asc' ? c : -c;
+      });
+    }
+    var setSel = function (next) { up({ sel: next }); };
+    vals.rows = rows.map(function (p) {
+      var on = has(sel, p.id);
+      return {
+        title: p.title,
+        statusLabel: p.status === 'active' ? 'Active' : p.status === 'draft' ? 'Draft' : 'Archived',
+        sBg: p.status === 'active' ? 'color-mix(in oklch, var(--success) 14%, transparent)' : p.status === 'draft' ? 'var(--muted)' : 'transparent',
+        sFg: p.status === 'active' ? 'var(--success)' : 'var(--muted-foreground)',
+        sEdge: p.status === 'archived' ? 'var(--border)' : 'transparent',
+        isActive: p.status === 'active',
+        isDraft: p.status === 'draft',
+        isArchived: p.status === 'archived',
+        pricePart: (p.min === p.max ? money(p.min) : money(p.min) + '–' + money(p.max)) + ' · ',
+        stockText: p.low ? p.stock + ' left' : p.stock === 0 ? 'Out of stock' : p.stock + ' in stock',
+        low: p.low,
+        ok: !p.low,
+        checked: on,
+        aria: on ? 'true' : 'false',
+        box: on ? 'var(--primary)' : 'var(--background)',
+        edge: on ? 'var(--primary)' : 'var(--input)',
+        bg: on ? 'var(--muted)' : 'transparent',
+        toggle: function () { setSel(on ? sel.filter(function (x) { return x !== p.id; }) : sel.concat([p.id])); },
+        selectLabel: 'Select ' + p.title
+      };
+    });
+    vals.empty = rows.length === 0;
+    vals.emptyCanReset = true;
+    vals.emptyReset = function () { up({ search: '', fStatus: [], fCat: [], fBrand: [], low: false }); };
+    vals.listHead = rows.length === 1 ? '1 product' : rows.length + ' products';
+    vals.matchText = rows.length === 1 ? '1 product matches' : rows.length + ' products match';
+    vals.showText = rows.length === 1 ? 'Show 1 product' : 'Show ' + rows.length + ' products';
+
+    var ids = rows.map(function (p) { return p.id; });
+    var onScreen = ids.filter(function (id) { return has(sel, id); }).length;
+    var all = ids.length > 0 && onScreen === ids.length;
+    var some = onScreen > 0 && !all;
+    vals.all = all;
+    vals.some = some;
+    vals.allAria = all ? 'true' : some ? 'mixed' : 'false';
+    vals.allBox = onScreen ? 'var(--primary)' : 'var(--background)';
+    vals.allEdge = onScreen ? 'var(--primary)' : 'var(--input)';
+    vals.toggleAll = function () {
+      setSel(all ? sel.filter(function (id) { return !has(ids, id); }) : sel.concat(ids.filter(function (id) { return !has(sel, id); })));
+    };
+    vals.hasSel = sel.length > 0;
+    vals.selText = sel.length + ' selected';
+    vals.clearSel = function () { up({ sel: [], overlay: null }); };
+
+    // Export drawer: Excel or CSV, the filtered list or the selection.
+    var exFormat = s.exFormat || 'xlsx';
+    var exScope = s.exScope === 'selected' && sel.length ? 'selected' : 'filtered';
+    vals.openExport = function () { up({ overlay: 'export', exScope: 'filtered' }); };
+    vals.openExportSelected = function () { up({ overlay: 'export', exScope: 'selected' }); };
+    vals.ex = {
+      xlsx: exFormat === 'xlsx',
+      csv: exFormat === 'csv',
+      xlsxAria: exFormat === 'xlsx' ? 'true' : 'false',
+      csvAria: exFormat === 'csv' ? 'true' : 'false',
+      pickXlsx: function () { up({ exFormat: 'xlsx' }); },
+      pickCsv: function () { up({ exFormat: 'csv' }); },
+      filtered: exScope === 'filtered',
+      selected: exScope === 'selected',
+      filteredAria: exScope === 'filtered' ? 'true' : 'false',
+      selectedAria: exScope === 'selected' ? 'true' : 'false',
+      pickFiltered: function () { up({ exScope: 'filtered' }); },
+      pickSelected: function () { up({ exScope: 'selected' }); },
+      noSelection: sel.length === 0,
+      selectedOpacity: sel.length ? '1' : '0.5',
+      filteredLabel: 'Everything matching the filters',
+      selectedLabel: sel.length ? 'The ' + sel.length + ' selected' : 'The selected products (none selected)'
+    };
+    var exCount = exScope === 'selected' ? sel.length : rows.length;
+    vals.runExport = function () {
+      up({ overlay: null, toast: 'Exported ' + exCount + ' products.' });
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { up({ toast: null }); }, 4000);
+    };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    // Filters drawer and the chips under the toolbar.
+    var facet = function (key, options, field, current) {
+      var set = function (next) { var patch = {}; patch[key] = next; up(patch); };
+      return {
+        options: options.map(function (o) {
+          var on = has(current, o.v);
+          return {
+            label: o.label,
+            count: String(PRODUCTS.filter(function (p) { return p[field] === o.v; }).length),
+            on: on,
+            aria: on ? 'true' : 'false',
+            box: on ? 'var(--primary)' : 'transparent',
+            edge: on ? 'var(--primary)' : 'var(--input)',
+            toggle: function () { set(on ? current.filter(function (x) { return x !== o.v; }) : current.concat([o.v])); }
+          };
+        }),
+        chips: options.filter(function (o) { return has(current, o.v); }).map(function (o) {
+          return { label: o.label, aria: 'Remove filter ' + o.label, remove: function () { set(current.filter(function (x) { return x !== o.v; })); } };
+        })
+      };
+    };
+    vals.fc = facet('fCat', CATEGORIES, 'cat', fCat);
+    vals.fb = facet('fBrand', BRANDS, 'brand', fBrand);
+    vals.chips = vals.fc.chips.concat(vals.fb.chips, lowOnly ? [{ label: 'Low stock', aria: 'Remove filter Low stock', remove: function () { up({ low: false }); } }] : []);
+    vals.hasChips = vals.chips.length > 0;
+    vals.hasFilters = vals.hasChips;
+    vals.filterCount = String(vals.chips.length);
+    vals.lowAria = lowOnly ? 'true' : 'false';
+    vals.lowTrack = lowOnly ? 'var(--primary)' : 'var(--input)';
+    vals.lowX = lowOnly ? '14px' : '0px';
+    vals.toggleLow = function () { up({ low: !lowOnly }); };
+    vals.reset = function () { up({ fCat: [], fBrand: [], low: false }); };
+    vals.search = search;
+    vals.onSearch = function (e) { up({ search: e.target.value }); };
+
+    // Sort drawer.
+    vals.sortLabel = sort.short;
+    vals.sorts = SORTS.map(function (o, i) {
+      return { label: o.label, on: i === sortIndex, aria: i === sortIndex ? 'true' : 'false', pick: function () { up({ sortIndex: i, overlay: null }); } };
+    });
+
+    // Theme, language and font.
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = dark ? 'mm dark' : 'mm';
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.darkAria = dark ? 'true' : 'false';
+    vals.darkTrack = dark ? 'var(--primary)' : 'var(--input)';
+    vals.darkX = dark ? '14px' : '0px';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    var lang = s.lang || 'en';
+    vals.lang = {
+      bn: lang === 'bn' ? 'true' : 'false',
+      en: lang === 'en' ? 'true' : 'false',
+      pickBn: function () { up({ lang: 'bn' }); },
+      pickEn: function () { up({ lang: 'en' }); }
+    };
+
+    // Search dialog.
+    var query = s.query || '';
+    var ql = query.trim().toLowerCase();
+    var match = function (label) { return !ql || label.toLowerCase().indexOf(ql) !== -1; };
+    vals.query = query;
+    vals.hasQ = ql !== '';
+    vals.qOrders = 'Orders matching “' + query.trim() + '”';
+    vals.qProducts = 'Products matching “' + query.trim() + '”';
+    vals.qCustomers = 'Customers matching “' + query.trim() + '”';
+    vals.onQuery = function (e) { up({ query: e.target.value }); };
+    var shown = 0;
+    vals.cmdGroups = CMD_GROUPS.map(function (g) {
+      var items = g.items.filter(function (it) {
+        return match(it.label) || (g.label !== 'Go to' && match(g.label));
+      }).map(function (it) {
+        var item = { label: it.label };
+        item[it.icon || g.icon] = true;
+        return item;
+      });
+      return { label: g.label, items: items };
+    }).filter(function (g) { return g.items.length > 0; }).map(function (g) {
+      g.sep = vals.hasQ || shown++ > 0;
+      return g;
+    });
+    vals.cmdEmpty = vals.cmdGroups.length === 0 && !vals.hasQ;
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

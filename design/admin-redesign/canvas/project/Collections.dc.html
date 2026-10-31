@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Collections — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:40;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="#" class="mm-nav" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(90deg)"><path d="m9 18 6-6-6-6"></path></svg></a>
+<ul class="mm-sub">
+<li><a href="Main.dc.html" class="mm-subbtn">Products</a></li>
+<li><a href="Categories.dc.html" class="mm-subbtn">Categories</a></li>
+<li><a href="#" class="mm-subbtn" aria-current="page">Collections</a></li>
+<li><a href="Attributes.dc.html" class="mm-subbtn">Attributes</a></li>
+<li><a href="Import.dc.html" class="mm-subbtn">Import</a></li>
+</ul></li>
+<li><a href="Inventory.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb" style="min-width: 0">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); white-space: nowrap">
+<li class="mm-hide-sm"><a href="#">Catalog</a></li>
+<li class="mm-hide-sm" aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<sc-if value="{{v.isList}}" hint-placeholder-val="{{true}}"><li aria-current="page" style="color: var(--foreground)">Collections</li></sc-if>
+<sc-if value="{{v.isEdit}}" hint-placeholder-val="{{false}}"><li><a href="#" onClick="{{goList}}">Collections</a></li><li aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li><li aria-current="page" style="overflow: hidden; text-overflow: ellipsis; color: var(--foreground)">{{ed.title}}</li></sc-if>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: {{v.list}}; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Collections</h1>
+<button type="button" class="mm-btn mm-primary" onClick="{{newCollection}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New collection</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="position: relative; width: 260px; max-width: 100%">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 10px; top: 8px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search collections" placeholder="Search collections" value="{{lq}}" onChange="{{onLq}}" style="height: 32px; padding-left: 32px">
+</div>
+<div role="group" aria-label="Kind" class="mm-tabs">
+<sc-for list="{{kindTabs}}" as="k" hint-placeholder-count="3"><button type="button" class="mm-tab" aria-pressed="{{k.on}}" onClick="{{k.pick}}">{{k.label}}</button></sc-for>
+</div>
+</div>
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-grid mm-thead" aria-hidden="true"><span>Name</span><span class="mm-col-x">Kind</span><span class="mm-num">Products</span><span class="mm-col-x" style="padding-left: 24px">In the store</span><span></span></div>
+<ul class="mm-rows" aria-label="Collections" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+<li><div class="mm-grid mm-row">
+<button type="button" class="mm-rowlink" onClick="{{r.edit}}">{{r.name}}</button>
+<span class="mm-col-x" style="display: flex; align-items: center; gap: 6px; color: var(--muted-foreground)"><sc-if value="{{r.manual}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"></path><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"></path><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"></path><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"></path></svg></sc-if><sc-if value="{{r.rule}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path></svg></sc-if>{{r.kind}}</span>
+<span class="mm-num">{{r.count}}</span>
+<span class="mm-col-x" style="display: flex; align-items: center; gap: 8px; padding-left: 24px"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; border-radius: 9999px; background: {{r.dotBg}}; border: {{r.dotBorder}}"></span>{{r.shownLabel}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" aria-expanded="{{r.menuExpanded}}" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 200px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.toggleShown}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{r.toggleText}}</button>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>View in store</a>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{r.askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete</button>
+</div>
+</sc-if>
+</div>
+</div></li>
+</sc-for>
+</ul>
+<sc-if value="{{listEmpty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">No collections match.</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Reset filters</button></sc-if></div></sc-if>
+</div>
+</div>
+
+<div class="mm-col" style="display: {{v.edit}}">
+
+<div style="display: flex; align-items: center; gap: 12px; padding-bottom: 4px">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Back to collections" onClick="{{goList}}" style="margin-left: -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button>
+<h1 style="flex: 1; min-width: 0; margin: 0; overflow: hidden; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; text-overflow: ellipsis">{{ed.title}}</h1>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline" aria-haspopup="listbox" aria-expanded="{{ed.visAria}}" aria-label="{{ed.visButtonAria}}" onClick="{{ed.toggleVis}}" style="padding: 0 8px 0 10px"><span aria-hidden="true" style="width: 8px; height: 8px; box-sizing: border-box; border-radius: 9999px; background: {{ed.dotBg}}; border: {{ed.dotBorder}}"></span>{{ed.visLabel}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m6 9 6 6 6-6"></path></svg></button>
+<sc-if value="{{ed.visOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="listbox" aria-label="In the store" class="mm-menu" onKeyDown="{{escClose}}" style="top: 40px; right: 0; width: 250px">
+<button type="button" role="option" class="mm-cmd-item" aria-selected="{{ed.shownAria}}" onClick="{{ed.pickShown}}" style="align-items: flex-start"><span aria-hidden="true" style="flex: none; width: 8px; height: 8px; margin: 6px 4px 0; border-radius: 9999px; background: var(--success)"></span><span style="flex: 1"><span style="display: block; font-weight: 500">Shown</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">Shoppers can browse it</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; color: var(--foreground); opacity: {{ed.shownCheck}}"><path d="M20 6 9 17l-5-5"></path></svg></button>
+<button type="button" role="option" class="mm-cmd-item" aria-selected="{{ed.hiddenAria}}" onClick="{{ed.pickHidden}}" style="align-items: flex-start"><span aria-hidden="true" style="flex: none; width: 8px; height: 8px; margin: 6px 4px 0; box-sizing: border-box; border-radius: 9999px; border: 1.5px dashed var(--muted-foreground)"></span><span style="flex: 1"><span style="display: block; font-weight: 500">Hidden</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">Only staff can see it</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 2px; color: var(--foreground); opacity: {{ed.hiddenCheck}}"><path d="M20 6 9 17l-5-5"></path></svg></button>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ed.isExisting}}" hint-placeholder-val="{{true}}">
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{ed.moreAria}}" onClick="{{ed.toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{ed.moreOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="More actions" class="mm-menu" onKeyDown="{{escClose}}" style="top: 40px; right: 0; width: 200px">
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>View in store</a>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{ed.askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete collection</button>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+
+<section class="mm-card" aria-label="Name">
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 32px">
+<label class="mm-label" for="mm-name" style="margin: 0">Name</label>
+<sc-if value="{{ed.single}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" style="height: 28px; margin-right: -8px; padding: 0 8px; color: var(--muted-foreground)" onClick="{{ed.addEn}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add English</button></sc-if>
+<sc-if value="{{ed.multi}}" hint-placeholder-val="{{true}}"><div role="tablist" aria-label="Language" class="mm-tabs"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{ed.bnSel}}" onClick="{{ed.pickBn}}">বাংলা</button><button type="button" role="tab" class="mm-tab" aria-selected="{{ed.enSel}}" onClick="{{ed.pickEn}}">English</button></div></sc-if>
+</div>
+<input id="mm-name" class="mm-input" lang="{{ed.lang}}" value="{{ed.name}}" onChange="{{ed.onName}}" placeholder="{{ed.namePh}}">
+</div>
+<div class="mm-field">
+<label class="mm-label" for="mm-desc">Description <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<textarea id="mm-desc" class="mm-textarea" lang="{{ed.lang}}" value="{{ed.desc}}" onChange="{{ed.onDesc}}" placeholder="Shown at the top of the collection page in the store"></textarea>
+</div>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-products">
+<div class="mm-chead"><h2 id="mm-c-products" class="mm-ctitle">Products</h2><span class="mm-muted" style="font-size: 13px">{{ed.countText}}</span></div>
+<div role="radiogroup" aria-labelledby="mm-c-products" class="mm-rcards">
+<button type="button" role="radio" class="mm-rcard" aria-checked="{{ed.manualAria}}" onClick="{{ed.pickManual}}"><span class="mm-radio"><sc-if value="{{ed.isManual}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></span><span><span style="display: block; font-weight: 500">Chosen by hand</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">You pick the products and their order</span></span></button>
+<button type="button" role="radio" class="mm-rcard" aria-checked="{{ed.ruleAria}}" onClick="{{ed.pickRule}}"><span class="mm-radio"><sc-if value="{{ed.isRule}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></span><span><span style="display: block; font-weight: 500">By rules</span><span style="display: block; font-size: 13px; color: var(--muted-foreground)">Products that match every rule join on their own</span></span></button>
+</div>
+
+<sc-if value="{{ed.isManual}}" hint-placeholder-val="{{true}}">
+<div style="position: relative">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{pick.aria}}" onClick="{{pick.toggle}}" style="justify-content: flex-start; color: var(--muted-foreground)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>Find a product to add</button>
+<sc-if value="{{pick.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="Add products" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search products" placeholder="Search products…" autoComplete="off" autoFocus="{{true}}" value="{{pick.query}}" onChange="{{pick.onQuery}}"></div><div role="listbox" aria-label="Products" aria-multiselectable="true" class="mm-poplist" style="max-height: 300px"><sc-for list="{{pick.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-thumb" style="width: 28px; height: 28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><span class="mm-muted" style="font-size: 12px; line-height: 16px">{{o.sub}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{pick.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No product found.</p></sc-if></div></div></sc-if>
+</div>
+<sc-if value="{{ed.hasItems}}" hint-placeholder-val="{{true}}">
+<ol class="mm-plist" aria-label="Products in this collection">
+<sc-for list="{{ed.items}}" as="it" hint-placeholder-count="5">
+<li><div class="mm-prow">
+<span class="mm-grip" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span>
+<span class="mm-muted" style="width: 20px; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums">{{it.pos}}</span>
+<span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{it.title}}</span><span class="mm-muted" style="font-size: 13px; line-height: 18px">{{it.sub}}</span></span>
+<button type="button" class="mm-btn mm-ghost mm-xs" aria-label="{{it.upAria}}" disabled="{{it.first}}" onClick="{{it.up}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"></path></svg></button>
+<button type="button" class="mm-btn mm-ghost mm-xs" aria-label="{{it.downAria}}" disabled="{{it.last}}" onClick="{{it.down}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<button type="button" class="mm-btn mm-ghost mm-xs" aria-label="{{it.removeAria}}" onClick="{{it.remove}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div></li>
+</sc-for>
+</ol>
+</sc-if>
+<sc-if value="{{ed.noItems}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 28px 16px; border: 1px dashed var(--border); border-radius: 10px; text-align: center">No products yet. Find one above to add it.</p></sc-if>
+</sc-if>
+
+<sc-if value="{{ed.isRule}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="3">
+<sc-if value="{{r.notFirst}}" hint-placeholder-val="{{false}}"><span class="mm-and" aria-hidden="true">AND</span></sc-if>
+<div class="mm-rule" role="group" aria-label="{{r.groupAria}}">
+<div style="flex: none; width: 250px; position: relative">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{r.type.aria}}" aria-label="{{r.type.title}}" onClick="{{r.type.toggle}}"><span class="mm-trunc" style="color: {{r.type.color}}">{{r.type.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{r.type.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{r.type.title}}" onKeyDown="{{comboEsc}}" style="width: 300px"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{r.type.ph}}" placeholder="{{r.type.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{r.type.query}}" onChange="{{r.type.onQuery}}"></div><div role="listbox" aria-label="{{r.type.title}}" class="mm-poplist"><sc-for list="{{r.type.items}}" as="o" hint-placeholder-count="9"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{r.type.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{r.type.empty}}</p></sc-if></div></div></sc-if>
+</div>
+<div style="flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 8px">
+<sc-if value="{{r.showSpec}}" hint-placeholder-val="{{false}}">
+<div style="flex: 1 1 150px; position: relative">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{r.spec.aria}}" aria-label="{{r.spec.title}}" onClick="{{r.spec.toggle}}"><span class="mm-trunc" style="color: {{r.spec.color}}">{{r.spec.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{r.spec.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{r.spec.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{r.spec.ph}}" placeholder="{{r.spec.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{r.spec.query}}" onChange="{{r.spec.onQuery}}"></div><div role="listbox" aria-label="{{r.spec.title}}" class="mm-poplist"><sc-for list="{{r.spec.items}}" as="o" hint-placeholder-count="2"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{r.spec.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{r.spec.empty}}</p></sc-if></div></div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{r.showVal}}" hint-placeholder-val="{{true}}">
+<div style="flex: 1 1 180px; position: relative">
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{r.val.aria}}" aria-label="{{r.val.title}}" onClick="{{r.val.toggle}}"><span class="mm-trunc" style="color: {{r.val.color}}">{{r.val.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{r.val.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{r.val.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{r.val.ph}}" placeholder="{{r.val.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{r.val.query}}" onChange="{{r.val.onQuery}}"></div><div role="listbox" aria-label="{{r.val.title}}" class="mm-poplist"><sc-for list="{{r.val.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{r.val.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{r.val.empty}}</p></sc-if></div></div></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{r.showRange}}" hint-placeholder-val="{{false}}">
+<label class="mm-affix" style="flex: 1 1 110px"><span aria-hidden="true">{{r.unit}}</span><input class="mm-input" inputMode="decimal" aria-label="From" placeholder="From" value="{{r.min}}" onChange="{{r.onMin}}"></label>
+<span class="mm-muted" style="align-self: center">to</span>
+<label class="mm-affix" style="flex: 1 1 110px"><span aria-hidden="true">{{r.unit}}</span><input class="mm-input" inputMode="decimal" aria-label="To" placeholder="To" value="{{r.max}}" onChange="{{r.onMax}}"></label>
+</sc-if>
+<sc-if value="{{r.showText}}" hint-placeholder-val="{{false}}"><input class="mm-input" style="flex: 1 1 180px" aria-label="Word or phrase" placeholder="Word or phrase" value="{{r.value}}" onChange="{{r.onValue}}"></sc-if>
+<sc-if value="{{r.showDays}}" hint-placeholder-val="{{false}}"><div style="flex: 1 1 180px; display: flex; align-items: center; gap: 8px"><input class="mm-input" style="width: 96px" inputMode="numeric" aria-label="Days" value="{{r.value}}" onChange="{{r.onValue}}"><span class="mm-muted">days</span></div></sc-if>
+<sc-if value="{{r.showBool}}" hint-placeholder-val="{{false}}"><div role="group" aria-label="Yes or no" class="mm-tabs" style="height: 36px"><button type="button" class="mm-tab" style="height: 30px; padding: 0 14px" aria-pressed="{{r.yes}}" onClick="{{r.pickYes}}">Yes</button><button type="button" class="mm-tab" style="height: 30px; padding: 0 14px" aria-pressed="{{r.no}}" onClick="{{r.pickNo}}">No</button></div></sc-if>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{r.removeAria}}" onClick="{{r.remove}}" style="height: 36px; width: 36px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</sc-for>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<button type="button" class="mm-btn mm-outline" disabled="{{ed.rulesFull}}" onClick="{{ed.addRule}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a rule</button>
+<span class="mm-muted" style="font-size: 13px">Products join when they match every rule. 5 rules at most.</span>
+</div>
+</div>
+<div style="border: 1px solid var(--border); border-radius: 10px; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 14px; background: var(--muted)">
+<span role="status" style="font-weight: 500">{{pv.title}}</span>
+<span class="mm-muted" style="font-size: 13px">{{pv.note}}</span>
+</div>
+<sc-for list="{{pv.items}}" as="p" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 14px; border-top: 1px solid var(--border)"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{p.title}}</span><span class="mm-muted" style="font-size: 13px; line-height: 18px">{{p.sub}}</span></span><span style="font-variant-numeric: tabular-nums">{{p.price}}</span></div></sc-for>
+</div>
+</sc-if>
+
+<div class="mm-field" style="max-width: 320px"><span class="mm-label" id="mm-l-sort">Order in the store</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{sort.aria}}" aria-labelledby="mm-l-sort" onClick="{{sort.toggle}}"><span class="mm-trunc">{{sort.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{sort.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="Order" onKeyDown="{{comboEsc}}" style="top: auto; bottom: 40px"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search orders" placeholder="Search…" autoComplete="off" autoFocus="{{true}}" value="{{sort.query}}" onChange="{{sort.onQuery}}"></div><div role="listbox" aria-label="Order" class="mm-poplist"><sc-for list="{{sort.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{sort.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">Nothing found.</p></sc-if></div></div></sc-if></div><sc-if value="{{ed.sortNote}}" hint-placeholder-val="{{false}}"><p class="mm-hint">Shoppers see these {{ed.sortLower}}. Choose “As arranged” to use the order above.</p></sc-if></div>
+</section>
+
+<sc-if value="{{ed.showBar}}" hint-placeholder-val="{{false}}">
+<div role="region" aria-label="{{ed.barLabel}}" class="mm-bar">
+<span role="status" style="font-weight: 500; white-space: nowrap">{{ed.barLabel}}</span>
+<span aria-hidden="true" class="mm-bar-sep"></span>
+<button type="button" class="mm-btn mm-inv" onClick="{{ed.discard}}">{{ed.cancelText}}</button>
+<button type="button" class="mm-btn mm-invsolid" disabled="{{ed.cantSave}}" onClick="{{ed.save}}">{{ed.saveText}}</button>
+</div>
+</sc-if>
+</div>
+
+</main>
+</div>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 448px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1; font-weight: 600">Delete this collection?</h2>
+<p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p>
+</div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px">
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeAll}}">Cancel</button>
+<button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["List","By hand","By rules","New collection","Product picker","Rule types"],"default":"List"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+var PRODUCTS = [
+  { id: 'p1', title: 'Cotton Panjabi — Ivory', cat: 'Men › Panjabi', price: 1850, tags: ['cotton', 'eid', 'summer'], brand: 'Nakshi', specs: { Fabric: 'Cotton', 'Weight (g)': 350, Handmade: false }, days: 12, status: 'active' },
+  { id: 'p2', title: 'Handloom Tangail Saree', cat: 'Women › Saree', price: 3400, tags: ['eid', 'handloom'], brand: 'Heritage', specs: { Fabric: 'Cotton', 'Weight (g)': 600, Handmade: true }, days: 40, status: 'active' },
+  { id: 'p3', title: 'Embroidered Kurti', cat: 'Women › Kurti', price: 1250, tags: ['eid', 'summer'], brand: 'Nakshi', specs: { Fabric: 'Cotton', 'Weight (g)': 280, Handmade: true }, days: 8, status: 'active' },
+  { id: 'p4', title: 'Leather Kolhapuri Sandal', cat: 'Footwear', price: 1650, tags: ['leather'], brand: 'Urban', specs: { 'Weight (g)': 500, Handmade: true }, days: 60, status: 'active' },
+  { id: 'p5', title: 'Printed Three-Piece Set', cat: 'Women › Three-piece', price: 2800, tags: ['eid'], brand: 'Nakshi', specs: { Fabric: 'Cotton', 'Weight (g)': 450, Handmade: false }, days: 3, status: 'draft' },
+  { id: 'p6', title: 'Check Lungi — Pack of 2', cat: 'Men › Lungi', price: 950, tags: ['cotton'], brand: 'Heritage', specs: { Fabric: 'Cotton', 'Weight (g)': 400, Handmade: false }, days: 90, status: 'active' },
+  { id: 'p7', title: 'Jute Tote Bag', cat: 'Accessories › Bags', price: 650, tags: ['jute', 'eco'], brand: 'Urban', specs: { Fabric: 'Jute', 'Weight (g)': 220, Handmade: true }, days: 20, status: 'active' },
+  { id: 'p8', title: 'Silk Hijab', cat: 'Accessories › Shawls & hijabs', price: 540, tags: ['eid'], brand: 'Heritage', specs: { Fabric: 'Silk', 'Weight (g)': 90, Handmade: false }, days: 15, status: 'draft' },
+  { id: 'p9', title: 'Winter Shawl — Kashmiri', cat: 'Accessories › Shawls & hijabs', price: 2400, tags: ['winter'], brand: 'Heritage', specs: { Fabric: 'Wool', 'Weight (g)': 300, Handmade: true }, days: 100, status: 'active' },
+  { id: 'p10', title: 'Kids’ Panjabi Set', cat: 'Kids', price: 1100, tags: ['eid'], brand: 'Nakshi', specs: { Fabric: 'Cotton', 'Weight (g)': 250, Handmade: false }, days: 200, status: 'archived' }
+];
+var COLLECTIONS = [
+  { id: 'eid', bn: 'ঈদ কালেকশন', en: 'Eid collection', desc: '', kind: 'manual', items: ['p1', 'p3', 'p2', 'p8', 'p10'], rules: [], shown: true, sort: 'manual' },
+  { id: 'festive', bn: 'উৎসবের পোশাক', en: 'Festive under ৳3,500', desc: '', kind: 'rule', items: [], rules: [{ type: 'category', value: 'Women' }, { type: 'price', min: '1000', max: '3500' }, { type: 'tag', value: 'eid' }], shown: true, sort: 'newest' },
+  { id: 'new', bn: 'নতুন এসেছে', en: 'New arrivals', desc: '', kind: 'rule', items: [], rules: [{ type: 'days', value: '30' }], shown: true, sort: 'newest' },
+  { id: 'best', bn: 'সেরা বিক্রি', en: 'Best sellers', desc: '', kind: 'manual', items: ['p2', 'p1', 'p6', 'p7'], rules: [], shown: true, sort: 'manual' },
+  { id: 'winter', bn: 'শীত', en: 'Winter', desc: '', kind: 'manual', items: ['p9'], rules: [], shown: false, sort: 'manual' }
+];
+var RULE_TYPES = [
+  { v: 'category', label: 'Is in a category' }, { v: 'price', label: 'Price is between' }, { v: 'title', label: 'Title contains' },
+  { v: 'days', label: 'Added in the last days' }, { v: 'tag', label: 'Has a tag' }, { v: 'brand', label: 'Brand is' },
+  { v: 'attr', label: 'Specification is' }, { v: 'attrRange', label: 'Specification number is between' }, { v: 'attrBool', label: 'Specification is yes or no' }
+];
+var CATEGORIES = ['Men', 'Men › Panjabi', 'Men › Lungi', 'Men › Shirts', 'Women', 'Women › Saree', 'Women › Kurti', 'Women › Three-piece', 'Kids', 'Footwear', 'Accessories', 'Accessories › Bags', 'Accessories › Shawls & hijabs'];
+var TAGS = ['cotton', 'eid', 'summer', 'handloom', 'leather', 'jute', 'eco', 'winter'];
+var BRANDS = ['Nakshi', 'Heritage', 'Urban'];
+var SPECS = { attr: { Fabric: ['Cotton', 'Silk', 'Jute', 'Wool'] }, attrRange: { 'Weight (g)': null }, attrBool: { Handmade: null } };
+var SORTS = [{ v: 'manual', label: 'As arranged' }, { v: 'newest', label: 'Newest first' }, { v: 'price_asc', label: 'Price, low to high' }, { v: 'price_desc', label: 'Price, high to low' }, { v: 'title_asc', label: 'Title, A to Z' }];
+var START = {
+  List: { view: 'list' }, 'By hand': { view: 'edit', editId: 'eid' }, 'By rules': { view: 'edit', editId: 'festive' },
+  'New collection': { view: 'edit', editId: 'new' }, 'Product picker': { view: 'edit', editId: 'eid', combo: 'pick' },
+  'Rule types': { view: 'edit', editId: 'festive', combo: 't1' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function money(n) { return '৳' + Math.round(n).toLocaleString('en-US'); }
+function num(x) { var v = parseFloat(x); return isNaN(v) ? null : v; }
+function ruleDone(r) {
+  switch (r.type) {
+    case 'price': return num(r.min) !== null || num(r.max) !== null;
+    case 'attr': return Boolean(r.spec && r.value);
+    case 'attrRange': return Boolean(r.spec) && (num(r.min) !== null || num(r.max) !== null);
+    case 'attrBool': return Boolean(r.spec && r.bool);
+    case 'days': return num(r.value) !== null;
+    default: return Boolean(String(r.value || '').trim());
+  }
+}
+function ruleMatch(p, r) {
+  var lo = num(r.min), hi = num(r.max);
+  switch (r.type) {
+    case 'category': return p.cat === r.value || p.cat.indexOf(r.value + ' › ') === 0;
+    case 'price': return (lo === null || p.price >= lo) && (hi === null || p.price <= hi);
+    case 'title': return p.title.toLowerCase().indexOf(String(r.value).trim().toLowerCase()) !== -1;
+    case 'days': return p.days <= num(r.value);
+    case 'tag': return p.tags.indexOf(r.value) !== -1;
+    case 'brand': return p.brand === r.value;
+    case 'attr': return p.specs[r.spec] === r.value;
+    case 'attrRange': var v = p.specs[r.spec]; return typeof v === 'number' && (lo === null || v >= lo) && (hi === null || v <= hi);
+    case 'attrBool': return p.specs[r.spec] === (r.bool === 'yes');
+  }
+  return false;
+}
+function matching(rules) {
+  var done = rules.filter(ruleDone);
+  if (!done.length || done.length < rules.length) return null;
+  return PRODUCTS.filter(function (p) { return p.status !== 'archived' && done.every(function (r) { return ruleMatch(p, r); }); });
+}
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'List';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, START[startKey] || {});
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var toast = function (text) {
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+      return text;
+    };
+    var vals = {};
+    var cols = s.cols || COLLECTIONS;
+    var byPid = {};
+    PRODUCTS.forEach(function (p) { byPid[p.id] = p; });
+    var name = function (c) { return c.en || c.bn || 'Untitled collection'; };
+    var countOf = function (c) { if (c.kind === 'manual') return c.items.length; var m = matching(c.rules); return m ? m.length : 0; };
+    var view = s.view || 'list';
+    vals.v = { list: view === 'list' ? 'flex' : 'none', edit: view === 'edit' ? 'flex' : 'none', isList: view === 'list', isEdit: view === 'edit' };
+
+    // Comboboxes: built the same way everywhere, one open at a time.
+    var allCombos = {};
+    var combo = function (key, cfg) {
+      var open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var shown = cfg.options.filter(function (o) { return !ql || o.label.toLowerCase().indexOf(ql) !== -1; });
+      var isOn = function (v) { return cfg.multi ? cfg.current.indexOf(v) !== -1 : cfg.current === v; };
+      var cur = cfg.multi ? null : cfg.options.filter(function (o) { return o.v === cfg.current; })[0];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: cfg.title, ph: cfg.ph, empty: cfg.empty || 'Nothing found.',
+        query: open ? (s.cq || '') : '', none: shown.length === 0, multi: cfg.multi ? 'true' : 'false', isMulti: Boolean(cfg.multi),
+        doneText: cfg.multi ? 'Done · ' + cfg.current.length + ' in the collection' : 'Done',
+        display: cur ? cur.label : (cfg.placeholder || ''), color: cur ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: shown.map(function (o) {
+          var on = isOn(o.v);
+          return { label: o.label, sub: o.sub || '', check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { cfg.onPick(o.v, on); } };
+        })
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // List.
+    var lq = (s.lq || '').trim().toLowerCase();
+    var kf = s.kind || 'all';
+    vals.lq = s.lq || '';
+    vals.onLq = function (e) { up({ lq: e.target.value }); };
+    vals.kindTabs = [{ v: 'all', label: 'All' }, { v: 'manual', label: 'By hand' }, { v: 'rule', label: 'By rules' }].map(function (k) {
+      return { label: k.label, on: kf === k.v ? 'true' : 'false', pick: function () { up({ kind: k.v }); } };
+    });
+    var openEditor = function (id) { up({ view: 'edit', editId: id, draft: null, dirty: false, menu: null, combo: null, lang: null }); };
+    vals.rows = cols.filter(function (c) { return (kf === 'all' || c.kind === kf) && (!lq || name(c).toLowerCase().indexOf(lq) !== -1 || c.bn.indexOf(lq) !== -1); }).map(function (c) {
+      var menuOpen = s.menu === c.id;
+      return {
+        name: name(c), manual: c.kind === 'manual', rule: c.kind === 'rule', kind: c.kind === 'manual' ? 'By hand' : 'By rules',
+        count: String(countOf(c)),
+        shownLabel: c.shown ? 'Shown' : 'Hidden',
+        dotBg: c.shown ? 'var(--success)' : 'transparent', dotBorder: c.shown ? '0' : '1.5px dashed var(--muted-foreground)',
+        edit: function () { openEditor(c.id); },
+        menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + name(c),
+        toggleMenu: function () { up({ menu: menuOpen ? null : c.id }); },
+        toggleText: c.shown ? 'Hide from the store' : 'Show in the store',
+        toggleShown: function () {
+          up({ cols: cols.map(function (x) { return x.id === c.id ? Object.assign({}, x, { shown: !x.shown }) : x; }), menu: null, toast: toast(c.shown ? name(c) + ' is hidden.' : name(c) + ' is shown.') });
+        },
+        askDelete: function () { up({ menu: null, confirm: c.id }); }
+      };
+    });
+    vals.listEmpty = vals.rows.length === 0;
+    vals.emptyCanReset = true;
+    vals.emptyReset = function () { up({ lq: '', kind: 'all' }); };
+    vals.newCollection = function () { openEditor('new'); };
+    vals.goList = function (e) { if (e && e.preventDefault) e.preventDefault(); up({ view: 'list', draft: null, dirty: false, combo: null }); };
+
+    // Editor.
+    var isNew = s.editId === 'new';
+    var base = isNew ? { id: 'new', bn: '', en: '', desc: '', kind: 'manual', items: [], rules: [{ type: 'category', value: '' }], shown: false, sort: 'manual' } : (cols.filter(function (c) { return c.id === s.editId; })[0] || cols[0]);
+    var d = s.draft || copy(base);
+    if (!d.rules.length) d.rules = [{ type: 'category', value: '' }];
+    var setD = function (patch, extra) { up(Object.assign({ draft: Object.assign({}, d, patch), dirty: true }, extra || {})); };
+    var multi = Boolean(d.en) || Boolean(s.addedEn) || !isNew;
+    var lang = multi && s.lang === 'en' ? 'en' : (multi && !s.lang && !isNew ? 'en' : 'bn');
+    if (s.lang === 'bn') lang = 'bn';
+    var matched = d.kind === 'rule' ? matching(d.rules) : null;
+    var count = d.kind === 'manual' ? d.items.length : (matched ? matched.length : null);
+    var visOpen = Boolean(s.vis);
+    var moreOpen = Boolean(s.more);
+    vals.ed = {
+      title: isNew ? (d.bn || d.en || 'New collection') : name(d), isExisting: !isNew,
+      single: !multi, multi: multi, lang: lang,
+      bnSel: lang === 'bn' ? 'true' : 'false', enSel: lang === 'en' ? 'true' : 'false',
+      pickBn: function () { up({ lang: 'bn' }); }, pickEn: function () { up({ lang: 'en' }); },
+      addEn: function () { up({ addedEn: true, lang: 'en' }); },
+      name: d[lang], namePh: lang === 'bn' ? 'যেমন: ঈদ কালেকশন' : 'For example: Eid collection',
+      onName: function (e) { var p = {}; p[lang] = e.target.value; setD(p); },
+      desc: d.desc, onDesc: function (e) { setD({ desc: e.target.value }); },
+      countText: count === null ? '' : count + (count === 1 ? ' product' : ' products'),
+      isManual: d.kind === 'manual', isRule: d.kind === 'rule',
+      manualAria: d.kind === 'manual' ? 'true' : 'false', ruleAria: d.kind === 'rule' ? 'true' : 'false',
+      pickManual: function () { setD({ kind: 'manual', sort: 'manual' }); },
+      pickRule: function () { setD({ kind: 'rule', sort: d.sort === 'manual' ? 'newest' : d.sort }); },
+      hasItems: d.items.length > 0, noItems: d.items.length === 0,
+      items: d.items.map(function (id, i) {
+        var p = byPid[id];
+        var move = function (dir) { var n = d.items.slice(); n[i] = d.items[i + dir]; n[i + dir] = id; setD({ items: n }); };
+        return {
+          pos: String(i + 1), title: p.title,
+          sub: money(p.price) + (p.status === 'active' ? '' : p.status === 'draft' ? ' · Draft, not shown' : ' · Archived, not shown'),
+          first: i === 0, last: i === d.items.length - 1,
+          upAria: 'Move ' + p.title + ' up', downAria: 'Move ' + p.title + ' down', removeAria: 'Remove ' + p.title,
+          up: function () { move(-1); }, down: function () { move(1); },
+          remove: function () { setD({ items: d.items.filter(function (x) { return x !== id; }) }); }
+        };
+      }),
+      rulesFull: d.rules.length >= 5,
+      addRule: function () { setD({ rules: d.rules.concat([{ type: 'category', value: '' }]) }, { combo: 't' + d.rules.length, cq: '' }); },
+      sortNote: d.kind === 'manual' && d.sort !== 'manual' && d.items.length > 1,
+      sortLower: (SORTS.filter(function (x) { return x.v === d.sort; })[0] || SORTS[1]).label.toLowerCase(),
+      visLabel: d.shown ? 'Shown' : 'Hidden', visButtonAria: 'In the store: ' + (d.shown ? 'Shown' : 'Hidden'),
+      dotBg: d.shown ? 'var(--success)' : 'transparent', dotBorder: d.shown ? '0' : '1.5px dashed var(--muted-foreground)',
+      visOpen: visOpen, visAria: visOpen ? 'true' : 'false', toggleVis: function () { up({ vis: !visOpen }); },
+      shownAria: d.shown ? 'true' : 'false', hiddenAria: d.shown ? 'false' : 'true', shownCheck: d.shown ? '1' : '0', hiddenCheck: d.shown ? '0' : '1',
+      pickShown: function () { setD({ shown: true }, { vis: false }); }, pickHidden: function () { setD({ shown: false }, { vis: false }); },
+      moreOpen: moreOpen, moreAria: moreOpen ? 'true' : 'false', toggleMore: function () { up({ more: !moreOpen }); },
+      askDelete: function () { up({ more: false, confirm: d.id }); },
+      showBar: isNew || Boolean(s.dirty),
+      barLabel: isNew ? 'New collection' : 'Unsaved changes',
+      cancelText: isNew ? 'Cancel' : 'Discard', saveText: isNew ? 'Create collection' : 'Save collection',
+      cantSave: !(d.bn || '').trim(),
+      discard: function () { if (isNew) up({ view: 'list', draft: null, dirty: false }); else up({ draft: null, dirty: false, combo: null }); },
+      save: function () {
+        var saved = Object.assign({}, d, { rules: d.kind === 'rule' ? d.rules : [] });
+        var next = isNew ? cols.concat([Object.assign(saved, { id: 'c' + cols.length })]) : cols.map(function (c) { return c.id === d.id ? saved : c; });
+        up({ cols: next, draft: null, dirty: false, editId: isNew ? 'c' + cols.length : d.id, combo: null, toast: toast(isNew ? 'Collection created.' : 'Collection saved.') });
+      }
+    };
+
+    // Manual: the product picker adds and removes in place.
+    vals.pick = combo('pick', {
+      title: 'Add products', ph: 'Search products', multi: true, current: d.items,
+      options: PRODUCTS.filter(function (p) { return p.status !== 'archived' || d.items.indexOf(p.id) !== -1; }).map(function (p) { return { v: p.id, label: p.title, sub: money(p.price) + ' · ' + p.cat }; }),
+      onPick: function (v, on) { setD({ items: on ? d.items.filter(function (x) { return x !== v; }) : d.items.concat([v]) }); }
+    });
+
+    // Rules: each row's value field follows its rule type.
+    vals.rules = d.rules.map(function (r, i) {
+      var setR = function (patch, extra) { var n = d.rules.slice(); n[i] = Object.assign({}, r, patch); setD({ rules: n }, extra); };
+      var specMap = SPECS[r.type] || {};
+      var specNames = Object.keys(specMap);
+      var valOptions = r.type === 'category' ? CATEGORIES : r.type === 'tag' ? TAGS : r.type === 'brand' ? BRANDS : r.type === 'attr' && r.spec ? specMap[r.spec] : [];
+      var label = (RULE_TYPES.filter(function (t) { return t.v === r.type; })[0] || {}).label;
+      return {
+        notFirst: i > 0, groupAria: 'Rule ' + (i + 1) + ': ' + label,
+        type: combo('t' + i, {
+          title: 'Rule ' + (i + 1), ph: 'Search rules', current: r.type, options: RULE_TYPES,
+          onPick: function (v) { var n = d.rules.slice(); n[i] = { type: v, value: '' }; setD({ rules: n }, { combo: null }); }
+        }),
+        showSpec: specNames.length > 0,
+        spec: combo('s' + i, {
+          title: 'Specification', ph: 'Search specifications', current: r.spec || '', placeholder: 'Specification',
+          options: specNames.map(function (n) { return { v: n, label: n }; }),
+          onPick: function (v) { setR({ spec: v, value: '' }, { combo: null }); }
+        }),
+        showVal: ['category', 'tag', 'brand', 'attr'].indexOf(r.type) !== -1,
+        val: combo('v' + i, {
+          title: label, ph: r.type === 'category' ? 'Search categories' : r.type === 'tag' ? 'Search tags' : r.type === 'brand' ? 'Search brands' : 'Search values',
+          empty: r.type === 'attr' && !r.spec ? 'Choose a specification first.' : 'Nothing found.',
+          current: r.value || '', placeholder: r.type === 'category' ? 'Choose a category' : r.type === 'tag' ? 'Choose a tag' : r.type === 'brand' ? 'Choose a brand' : 'Choose a value',
+          options: (valOptions || []).map(function (o) { return { v: o, label: o }; }),
+          onPick: function (v) { setR({ value: v }, { combo: null }); }
+        }),
+        showRange: r.type === 'price' || r.type === 'attrRange', unit: r.type === 'price' ? '৳' : '#',
+        min: r.min || '', max: r.max || '',
+        onMin: function (e) { setR({ min: e.target.value }); }, onMax: function (e) { setR({ max: e.target.value }); },
+        showText: r.type === 'title', showDays: r.type === 'days',
+        value: r.value || '', onValue: function (e) { setR({ value: e.target.value }); },
+        showBool: r.type === 'attrBool',
+        yes: r.bool === 'yes' ? 'true' : 'false', no: r.bool === 'no' ? 'true' : 'false',
+        pickYes: function () { setR({ bool: 'yes' }); }, pickNo: function () { setR({ bool: 'no' }); },
+        removeAria: 'Remove rule ' + (i + 1),
+        remove: function () { setD({ rules: d.rules.filter(function (_, j) { return j !== i; }) }); }
+      };
+    });
+    var drafts = matched ? matched.filter(function (p) { return p.status === 'draft'; }).length : 0;
+    vals.pv = matched === null
+      ? { title: 'Matching products', note: 'Finish the rules to see what they match.', items: [] }
+      : {
+        title: matched.length + (matched.length === 1 ? ' product matches' : ' products match'),
+        note: drafts ? drafts + (drafts === 1 ? ' is a draft and won’t show yet' : ' are drafts and won’t show yet') : 'Updates as products change',
+        items: matched.slice(0, 6).map(function (p) { return { title: p.title, sub: p.cat + (p.status === 'draft' ? ' · Draft' : ''), price: money(p.price) }; })
+      };
+
+    vals.sort = combo('sort', {
+      title: 'Order', ph: 'Search', current: d.sort,
+      options: d.kind === 'manual' ? SORTS : SORTS.slice(1),
+      onPick: function (v) { setD({ sort: v }, { combo: null }); }
+    });
+
+    // Delete.
+    var delCol = cols.filter(function (c) { return c.id === s.confirm; })[0];
+    vals.confirmOpen = Boolean(delCol);
+    vals.confirmText = delCol ? name(delCol) + ' goes from the store. Its products stay.' : '';
+    vals.doDelete = function () {
+      up({ cols: cols.filter(function (c) { return c.id !== s.confirm; }), confirm: null, view: 'list', draft: null, dirty: false, toast: toast('Collection deleted.') });
+    };
+
+    vals.closeAll = function () { up({ menu: null, confirm: null, vis: false, more: false, combo: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ menu: null, confirm: null, vis: false, more: false, combo: null }); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = dark ? 'mm mm-root dark' : 'mm mm-root';
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

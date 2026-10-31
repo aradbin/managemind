@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Customer — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-xs{height:28px;width:28px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:72px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block}
+.mm-affix>span{position:absolute;left:10px;top:8px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:24px}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:40;width:100%;min-width:240px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:240px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;background:transparent;font:inherit;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap;cursor:pointer}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page],.mm-ptab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page],.mm.dark .mm-ptab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true],.mm-tab[aria-pressed=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true],.mm.dark .mm-tab[aria-pressed=true]{background:var(--input);border-color:var(--input)}
+.mm-col{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.mm-card{display:flex;flex-direction:column;gap:20px;padding:20px;border:1px solid var(--border);border-radius:14px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-rcards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;margin-top:2px;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-rcard[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-badge{display:inline-flex;flex:none;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px 100px 130px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 16px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;min-height:48px;padding:0 8px 0 16px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-prow{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px 6px 6px;border-bottom:1px solid var(--border)}
+.mm-plist>li:last-child .mm-prow{border-bottom:0}
+.mm-grip{display:inline-flex;flex:none;color:var(--muted-foreground);opacity:.6;cursor:grab}
+.mm-rule{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:flex-start;margin:-6px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-invsolid{background:var(--primary-foreground);color:var(--primary)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-x{display:none !important}.mm-rcards{grid-template-columns:minmax(0,1fr)}}
+.mm-nav[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground);font-weight:500}
+.mm-cgrid{display:grid;grid-template-columns:minmax(0,1.5fr) 124px 60px 104px 92px minmax(0,1fr) 40px;align-items:center;column-gap:12px}
+.mm-av{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9999px;background:var(--muted);color:var(--foreground);font-size:12px;font-weight:600}
+.mm-tagchip{display:inline-flex;align-items:center;height:22px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip:hover{background:color-mix(in oklch,var(--secondary-foreground) 10%,var(--secondary))}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:512px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.mm-radio-row .mm-radio{margin-top:0;padding:0;background:var(--background);cursor:pointer}
+.mm-radio[aria-checked=true]{border-color:var(--primary)}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-chipbox input{flex:1;min-width:120px;height:26px;padding:0 4px;border:0;outline:none;background:transparent;color:var(--foreground);font:inherit;font-size:14px}
+.mm-chipbox input::placeholder{color:var(--muted-foreground)}
+.mm .mm-chipbox input:focus-visible{box-shadow:none}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 2px 0 8px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-err{color:var(--destructive) !important}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px}
+.mm-alert>svg{flex:none;margin-top:2px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-statrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:14px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:6px;padding:16px 20px}
+.mm-statrow>div+div{border-left:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:20px;line-height:28px;font-weight:600;letter-spacing:-0.01em;font-variant-numeric:tabular-nums}
+.mm-cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;align-items:start}
+.mm-orow{display:grid;grid-template-columns:72px 64px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:52px;padding:8px 20px;border-bottom:1px solid var(--border)}
+li:last-child>.mm-orow{border-bottom:0}
+.mm-orow:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-dotlabel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted-foreground);white-space:nowrap}
+.mm-dotlabel>span{width:8px;height:8px;border-radius:9999px}
+.mm-rbar{height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 22%,transparent)}
+.mm-rbar>span{display:block;height:100%;border-radius:9999px;background:var(--success)}
+.mm-addr{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.mm-combo:disabled{opacity:.5;cursor:not-allowed}
+@media (max-width:1100px){.mm-cols{grid-template-columns:minmax(0,1fr)}}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Main.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a>
+</li>
+<li><a href="Inventory.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Customers.dc.html" class="mm-nav" aria-current="page"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb" style="min-width: 0">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); white-space: nowrap">
+<li><a href="Customers.dc.html">Customers</a></li><li aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li><li aria-current="page" style="overflow: hidden; text-overflow: ellipsis; color: var(--foreground)">{{c.name}}</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<span class="mm-av" aria-hidden="true" style="width: 56px; height: 56px; font-size: 18px">{{c.initials}}</span>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0"><h1 class="mm-trunc" style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">{{c.name}}</h1><span class="mm-sbadge" title="Delivery score" style="background: {{c.badge.bg}}; color: {{c.badge.fg}}"><span class="mm-sr">Delivery score: </span>{{c.badge.label}}</span></div>
+<p class="mm-muted" style="margin: 0">{{c.meta}}</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="{{c.tel}}" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>Call</a>
+<a href="{{c.wa}}" target="_blank" rel="noopener noreferrer" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>WhatsApp</a>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{moreOpen}}" onClick="{{toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="More actions" class="mm-menu" onKeyDown="{{escClose}}" style="top: 40px; right: 0; width: 230px">
+<a href="NewOrder.dc.html" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>New order for them</a>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{copyPhone}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Copy phone number</button>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{flagToggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg>{{flag.menuText}}</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete customer</button>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{askAnon}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 21a8 8 0 0 1 10.434-7.62"></path><circle cx="10" cy="8" r="5"></circle><path d="m17 17 5 5"></path><path d="m22 17-5 5"></path></svg>Delete personal data</button>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<sc-if value="{{flag.on}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert mm-alert-bad" style="align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 0"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg><p style="flex: 1; margin: 0">{{flag.text}}</p><sc-if value="{{flag.clearable}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{flag.clear}}">Clear the flag</button></sc-if></div></sc-if>
+
+<dl class="mm-statrow">
+<sc-for list="{{stats}}" as="x" hint-placeholder-count="4"><div><dt>{{x.label}}</dt><dd>{{x.value}}</dd></div></sc-for>
+</dl>
+
+<div class="mm-cols">
+<section class="mm-card" aria-labelledby="mm-c-orders" style="gap: 0; padding: 0">
+<div class="mm-chead" style="padding: 16px 20px"><h2 id="mm-c-orders" class="mm-ctitle">Orders</h2><sc-if value="{{moreOrders}}" hint-placeholder-val="{{true}}"><a href="Orders.dc.html" class="mm-btn mm-ghost" style="margin: -6px -8px">{{allOrdersText}}</a></sc-if></div>
+<sc-if value="{{hasOrders}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border)">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="5"><li><a href="Order.dc.html" class="mm-orow" aria-label="{{o.aria}}">
+<span style="font-weight: 600; font-variant-numeric: tabular-nums">{{o.number}}</span>
+<span class="mm-muted">{{o.date}}</span>
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0"><span class="mm-sbadge" style="background: {{o.sBg}}; color: {{o.sFg}}; box-shadow: inset 0 0 0 1px {{o.sEdge}}">{{o.status}}</span><span class="mm-dotlabel"><span aria-hidden="true" style="background: {{o.dot}}"></span>{{o.delivery}}</span></span>
+<span class="mm-num" style="font-weight: 500">{{o.total}}</span>
+</a></li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; border-top: 1px solid var(--border); text-align: center"><p class="mm-muted" style="margin: 0">No orders yet.</p><a href="NewOrder.dc.html" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New order for them</a></div></sc-if>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+<section class="mm-card" aria-labelledby="mm-c-risk" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-risk" class="mm-ctitle">Delivery record</h2><span class="mm-sbadge" style="background: {{c.badge.bg}}; color: {{c.badge.fg}}">{{c.badge.label}}</span></div>
+<sc-if value="{{risk.known}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-size: 16px; font-weight: 600">{{risk.big}}</p>
+<div class="mm-rbar" aria-hidden="true"><span style="width: {{risk.bar}}"></span></div>
+<sc-if value="{{risk.hasCounts}}" hint-placeholder-val="{{true}}"><p class="mm-muted" style="margin: 0; font-size: 13px">{{risk.counts}}</p></sc-if>
+</sc-if>
+<sc-if value="{{risk.isNew}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">{{risk.newText}}</p></sc-if>
+<sc-if value="{{risk.hasReasons}}" hint-placeholder-val="{{false}}"><ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--destructive)"><sc-for list="{{risk.reasons}}" as="x" hint-placeholder-count="2"><li>{{x.text}}</li></sc-for></ul></sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 12px">From this store’s own orders.</p>
+<sc-if value="{{flag.canFlag}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{flag.set}}" style="align-self: flex-start">Flag this customer</button></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-addr" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-addr" class="mm-ctitle">Addresses</h2><sc-if value="{{canAddAddress}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" aria-haspopup="dialog" onClick="{{addAddress}}" style="margin: -6px -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add</button></sc-if></div>
+<sc-if value="{{hasAddresses}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{addresses}}" as="a" hint-placeholder-count="2"><li class="mm-addr">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 18px">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500">{{a.title}}<sc-if value="{{a.isDefault}}" hint-placeholder-val="{{true}}"><span class="mm-badge">Default</span></sc-if></span>
+<span>{{a.who}}</span><span>{{a.line}}</span><span class="mm-muted">{{a.place}}</span>
+</div>
+<div style="position: relative; display: flex; margin: -4px -4px 0 0">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{a.menuAria}}" aria-haspopup="menu" aria-expanded="{{a.menuExpanded}}" onClick="{{a.toggleMenu}}" style="width: 28px; height: 28px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{a.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{a.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 32px; right: 0; width: 180px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{a.edit}}">Edit</button>
+<sc-if value="{{a.notDefault}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{a.makeDefault}}">Make default</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{a.remove}}">Delete</button>
+</div>
+</sc-if>
+</div>
+</li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{noAddresses}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No saved addresses.</p></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-note" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-note" class="mm-ctitle">Note and tags</h2><button type="button" class="mm-btn mm-ghost" aria-haspopup="dialog" onClick="{{edit}}" style="margin: -6px -8px">Edit</button></div>
+<sc-if value="{{hasNote}}" hint-placeholder-val="{{true}}"><p style="margin: 0; white-space: pre-wrap">{{note}}</p></sc-if>
+<sc-if value="{{hasTags}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{tags}}" as="t" hint-placeholder-count="2"><a href="Customers.dc.html" class="mm-tagchip">{{t.label}}</a></sc-for></div></sc-if>
+<sc-if value="{{noNoteTags}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No note or tags. Only staff see them.</p></sc-if>
+</section>
+</div>
+</div>
+
+</main>
+</div>
+
+<sc-if value="{{f.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-f-title" aria-describedby="mm-f-sub" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead">
+<h2 id="mm-f-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{f.title}}</h2>
+<p id="mm-f-sub" class="mm-muted" style="margin: 0">{{f.sub}}</p>
+</div>
+<div class="mm-pbody">
+<div class="mm-field"><label class="mm-label" for="mm-f-phone">Phone</label><input id="mm-f-phone" class="mm-input" type="tel" inputMode="tel" autoComplete="off" placeholder="01712-345678" aria-invalid="{{f.hasPhoneErr}}" value="{{f.phone}}" onChange="{{f.onPhone}}" autoFocus="{{true}}"><sc-if value="{{f.hasPhoneErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.phoneErr}}</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-f-name">Name</label><input id="mm-f-name" class="mm-input" maxLength="100" aria-invalid="{{f.hasNameErr}}" value="{{f.name}}" onChange="{{f.onName}}"><sc-if value="{{f.hasNameErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.nameErr}}</p></sc-if></div>
+<sc-if value="{{f.conflict}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad" style="margin-top: -12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{f.conflictText}}<a href="Customer.dc.html" style="font-weight: 500; text-decoration: underline; text-underline-offset: 3px">{{f.conflictName}}</a></p></div></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-f-email">Email <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-f-email" class="mm-input" type="email" maxLength="254" aria-invalid="{{f.hasEmailErr}}" value="{{f.email}}" onChange="{{f.onEmail}}"><sc-if value="{{f.hasEmailErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{f.emailErr}}</p></sc-if></div>
+<div class="mm-field">
+<label class="mm-label" for="mm-f-tags">Tags <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<div class="mm-chipbox"><sc-for list="{{f.tags}}" as="t" hint-placeholder-count="2"><span class="mm-chip">{{t.label}}<button type="button" aria-label="{{t.removeAria}}" onClick="{{t.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span></sc-for><input id="mm-f-tags" autoComplete="off" placeholder="Type a tag, then Enter" value="{{f.tagInput}}" onChange="{{f.onTagInput}}" onKeyDown="{{f.tagKey}}"></div>
+<sc-if value="{{f.hasSugg}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px"><span class="mm-muted" style="font-size: 13px">Used before:</span><sc-for list="{{f.sugg}}" as="g" hint-placeholder-count="4"><button type="button" class="mm-tagchip" onClick="{{g.add}}">+ {{g.label}}</button></sc-for></div></sc-if>
+</div>
+<div class="mm-field"><label class="mm-label" for="mm-f-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><textarea id="mm-f-note" class="mm-textarea" maxLength="2000" placeholder="Only staff see this." value="{{f.note}}" onChange="{{f.onNote}}"></textarea></div>
+</div>
+<div class="mm-pfoot">
+<sc-if value="{{f.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{f.askDelete}}" style="margin-left: -8px; padding: 0 8px">Delete</button></sc-if>
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeForm}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" onClick="{{f.save}}">{{f.saveText}}</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeForm}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ad.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAddr}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-a-title" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead"><h2 id="mm-a-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{ad.title}}</h2></div>
+<div class="mm-pbody">
+<div class="mm-field"><label class="mm-label" for="mm-a-name">Name</label><input id="mm-a-name" class="mm-input" maxLength="100" value="{{ad.name}}" onChange="{{ad.onName}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-a-phone">Phone</label><input id="mm-a-phone" class="mm-input" type="tel" inputMode="tel" value="{{ad.phone}}" onChange="{{ad.onPhone}}"></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-div">{{ad.div.title}}</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{ad.div.aria}}" aria-labelledby="mm-l-div" disabled="{{ad.div.disabled}}" onClick="{{ad.div.toggle}}"><span class="mm-trunc" style="color: {{ad.div.color}}">{{ad.div.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{ad.div.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{ad.div.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{ad.div.ph}}" placeholder="{{ad.div.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{ad.div.query}}" onChange="{{ad.div.onQuery}}"></div><div role="listbox" aria-label="{{ad.div.title}}" class="mm-poplist"><sc-for list="{{ad.div.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{ad.div.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{ad.div.empty}}</p></sc-if></div></div></sc-if></div></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-dist">{{ad.dist.title}}</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{ad.dist.aria}}" aria-labelledby="mm-l-dist" disabled="{{ad.dist.disabled}}" onClick="{{ad.dist.toggle}}"><span class="mm-trunc" style="color: {{ad.dist.color}}">{{ad.dist.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{ad.dist.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{ad.dist.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{ad.dist.ph}}" placeholder="{{ad.dist.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{ad.dist.query}}" onChange="{{ad.dist.onQuery}}"></div><div role="listbox" aria-label="{{ad.dist.title}}" class="mm-poplist"><sc-for list="{{ad.dist.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{ad.dist.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{ad.dist.empty}}</p></sc-if></div></div></sc-if></div></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-area">{{ad.area.title}}</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{ad.area.aria}}" aria-labelledby="mm-l-area" disabled="{{ad.area.disabled}}" onClick="{{ad.area.toggle}}"><span class="mm-trunc" style="color: {{ad.area.color}}">{{ad.area.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{ad.area.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 35; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="{{ad.area.title}}" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="{{ad.area.ph}}" placeholder="{{ad.area.ph}}" autoComplete="off" autoFocus="{{true}}" value="{{ad.area.query}}" onChange="{{ad.area.onQuery}}"></div><div role="listbox" aria-label="{{ad.area.title}}" class="mm-poplist"><sc-for list="{{ad.area.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{ad.area.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">{{ad.area.empty}}</p></sc-if></div></div></sc-if></div></div>
+<div class="mm-field"><label class="mm-label" for="mm-a-line">Street address</label><textarea id="mm-a-line" class="mm-textarea" style="min-height: 64px" value="{{ad.line}}" onChange="{{ad.onLine}}"></textarea><p class="mm-hint">House, road and a landmark.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-a-label">Label <span class="mm-muted" style="font-weight: 400">(optional)</span></label><div style="display: flex; flex-wrap: wrap; gap: 8px"><input id="mm-a-label" class="mm-input" maxLength="40" value="{{ad.label}}" onChange="{{ad.onLabel}}" style="flex: 1 1 160px"><div role="group" aria-label="Quick labels" style="display: flex; gap: 6px"><sc-for list="{{ad.quick}}" as="l" hint-placeholder-count="3"><button type="button" class="mm-tagchip" aria-pressed="{{l.on}}" onClick="{{l.pick}}" style="height: 36px; padding: 0 12px">{{l.label}}</button></sc-for></div></div></div>
+<label class="mm-swrow"><span><span style="display: block">Use this address by default</span><span class="mm-muted" style="display: block; font-size: 13px">{{ad.defHint}}</span></span><button type="button" role="switch" class="mm-switch" aria-checked="{{ad.defAria}}" disabled="{{ad.defLocked}}" onClick="{{ad.toggleDef}}" style="background: {{ad.defBg}}"><span class="mm-knob" style="transform: translateX({{ad.defX}})"></span></button></label>
+<sc-if value="{{ad.showMissing}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{ad.missingText}}</p></div></sc-if>
+</div>
+<div class="mm-pfoot">
+<sc-if value="{{ad.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{ad.remove}}" style="margin-left: -8px; padding: 0 8px">Delete</button></sc-if>
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeAddr}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" onClick="{{ad.save}}">Save address</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeAddr}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-dialog" style="max-width: 480px">
+<sc-if value="{{isDelete}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{deleteTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Their saved addresses go too. Past orders keep the name, phone and address they were placed with.</p></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><a href="Customers.dc.html" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete</a></div>
+</sc-if>
+<sc-if value="{{isAnon}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{anonTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Do this when the shopper asks the store to delete their data. Their name, phone, email and street go from the customer and from their orders, with their addresses, account, messages and return photos; unused store credit ends. Order totals stay for your sales and tax records. This can’t be undone.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-typed">{{anonLabel}}</label><input id="mm-typed" class="mm-input" type="tel" inputMode="tel" autoComplete="off" value="{{typed}}" onChange="{{onTyped}}" autoFocus="{{true}}"></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><sc-if value="{{anonNotReady}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn" disabled style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete personal data</button></sc-if><sc-if value="{{anonReady}}" hint-placeholder-val="{{false}}"><a href="Customers.dc.html" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete personal data</a></sc-if></div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Customer","Flagged customer","No orders yet","More menu","Edit customer","Add address","Edit address","Area list","Delete personal data"],"default":"Customer"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+var ROOT = 'mm mm-root';
+var CUSTOMERS = [
+  { id: 'c1', name: 'Rahim Ahmed', phone: '01712345678', email: 'rahim.ahmed@gmail.com', orders: 12, spent: 28450, last: '26 Oct', since: '4 Mar 2025', tags: ['vip', 'dhaka'], flagged: false, risky: false, failed: 1, note: 'Prefers delivery after 6 pm. On weekdays, send to the office address.' },
+  { id: 'c2', name: 'Nusrat Jahan', phone: '01819224466', email: '', orders: 7, spent: 15890, last: '24 Oct', since: '12 Jan 2026', tags: ['eid'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c3', name: 'Tanvir Hasan', phone: '01911778899', email: '', orders: 3, spent: 4200, last: '20 Oct', since: '2 Jul 2026', tags: [], flagged: false, risky: true, failed: 2, note: '' },
+  { id: 'c4', name: 'Farzana Akter', phone: '01611305522', email: 'farzana.boutique@gmail.com', orders: 21, spent: 61200, last: '27 Oct', since: '18 Nov 2024', tags: ['vip', 'wholesale'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c5', name: 'Sabbir Rahman', phone: '01552114477', email: '', orders: 1, spent: 1850, last: '22 Oct', since: '22 Oct 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c6', name: 'Mitu Das', phone: '01716993311', email: '', orders: 5, spent: 9900, last: '30 Sep', since: '9 Apr 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c7', name: 'Arif Chowdhury', phone: '01313662200', email: 'arif.c@outlook.com', orders: 0, spent: 0, last: '', since: '', tags: [], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c8', name: 'Sharmin Sultana', phone: '01790445566', email: '', orders: 9, spent: 18750, last: '12 Oct', since: '3 Feb 2026', tags: ['eid', 'repeat'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c9', name: 'Kamal Uddin', phone: '01987121212', email: '', orders: 2, spent: 3100, last: '18 Aug', since: '1 Aug 2026', tags: [], flagged: true, risky: true, failed: 0, note: 'Gave a wrong address twice.' },
+  { id: 'c10', name: 'Joya Roy', phone: '01688454545', email: '', orders: 4, spent: 7600, last: '2 Oct', since: '20 May 2026', tags: ['ctg'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c11', name: 'Imran Hossain', phone: '01722889900', email: '', orders: 6, spent: 12300, last: '18 Oct', since: '30 Mar 2026', tags: ['repeat'], flagged: false, risky: false, failed: 0, note: '' },
+  { id: 'c12', name: 'Rupa Khatun', phone: '01855667788', email: '', orders: 1, spent: 950, last: '12 Sep', since: '12 Sep 2026', tags: [], flagged: false, risky: false, failed: 0, note: '' }
+];
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(n) { return '৳' + Math.round(n).toLocaleString('en-US'); }
+function plural(x, one, many) { return x.toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function phoneOk(p) {
+  var d = String(p || '').replace(/[^0-9]/g, '');
+  if (d.indexOf('880') === 0) d = d.slice(2);
+  return /^01[3-9][0-9]{8}$/.test(d) ? d : null;
+}
+function fmtPhone(p) { return p ? p.slice(0, 5) + '-' + p.slice(5) : ''; }
+function initials(n) { return String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase(); }
+function allTags(customers) {
+  var out = {};
+  customers.forEach(function (c) { c.tags.forEach(function (t) { out[t] = (out[t] || 0) + 1; }); });
+  return Object.keys(out).sort().map(function (t) { return { label: t, count: out[t] }; });
+}
+function riskBadge(c) {
+  if (c.risky) return { label: 'Risky' + (c.score !== null && c.score !== undefined ? ' · ' + c.score + '%' : ''), bg: 'color-mix(in oklch, var(--destructive) 12%, transparent)', fg: 'var(--destructive)' };
+  if (c.score === null || c.score === undefined) return { label: 'New', bg: 'var(--muted)', fg: 'var(--muted-foreground)' };
+  if (c.score >= 80) return { label: c.score + '%', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' };
+  return { label: c.score + '%', bg: 'var(--muted)', fg: 'var(--foreground)' };
+}
+
+// The add / edit customer form, the same on the list and on one customer.
+function customerForm(s, up, customers, onSave, onDelete) {
+  var form = s.form || null;
+  var editing = form && form.mode === 'edit' ? customers.filter(function (c) { return c.id === form.id; })[0] : null;
+  var key = JSON.stringify(form);
+  var d = s.fd && s.fdFor === key ? s.fd : (editing
+    ? { phone: fmtPhone(editing.phone), name: editing.name, email: editing.email || '', tags: editing.tags.slice(), note: editing.note || '', tagInput: '', tried: false }
+    : { phone: '', name: '', email: '', tags: [], note: '', tagInput: '', tried: false });
+  var setF = function (patch) { up({ fd: Object.assign({}, d, patch), fdFor: key }); };
+  var ph = phoneOk(d.phone);
+  var other = ph ? customers.filter(function (c) { return c.phone === ph && (!editing || c.id !== editing.id); })[0] : null;
+  var digits = d.phone.replace(/[^0-9]/g, '');
+  var phoneErr = !ph && (d.tried || digits.length >= 11) ? (d.phone.trim() ? 'Enter a Bangladeshi mobile number, like 01712-345678.' : 'Enter their phone number.') : '';
+  var nameErr = d.tried && !d.name.trim() ? 'Enter their name.' : '';
+  var emailErr = d.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim()) && d.tried ? 'This doesn’t look like an email address.' : '';
+  var addTag = function (t) {
+    t = String(t || '').trim().toLowerCase().replace(/,/g, '');
+    if (!t || d.tags.indexOf(t) !== -1) { setF({ tagInput: '' }); return; }
+    setF({ tags: d.tags.concat([t]), tagInput: '' });
+  };
+  var known = allTags(customers).map(function (t) { return t.label; });
+  var tq = d.tagInput.trim().toLowerCase();
+  var sugg = known.filter(function (t) { return d.tags.indexOf(t) === -1 && (!tq || t.indexOf(tq) === 0); }).slice(0, 6);
+  return {
+    open: Boolean(form), isEdit: Boolean(editing),
+    title: editing ? 'Edit customer' : 'Add customer',
+    sub: editing ? 'Changes apply to new orders. Past orders keep what they were placed with.' : 'Customers are also added with their first order.',
+    phone: d.phone, onPhone: function (e) { setF({ phone: e.target.value }); },
+    phoneErr: phoneErr, hasPhoneErr: Boolean(phoneErr),
+    conflict: Boolean(other), conflictText: 'A customer with this phone already exists: ', conflictName: other ? other.name : '',
+    name: d.name, onName: function (e) { setF({ name: e.target.value }); },
+    nameErr: nameErr, hasNameErr: Boolean(nameErr),
+    email: d.email, onEmail: function (e) { setF({ email: e.target.value }); },
+    emailErr: emailErr, hasEmailErr: Boolean(emailErr),
+    tags: d.tags.map(function (t) { return { label: t, removeAria: 'Remove tag ' + t, remove: function () { setF({ tags: d.tags.filter(function (x) { return x !== t; }) }); } }; }),
+    tagInput: d.tagInput,
+    onTagInput: function (e) {
+      var v = e.target.value;
+      if (v.indexOf(',') !== -1) addTag(v); else setF({ tagInput: v });
+    },
+    tagKey: function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); addTag(d.tagInput); }
+      else if (e.key === 'Backspace' && !d.tagInput && d.tags.length) setF({ tags: d.tags.slice(0, -1) });
+    },
+    sugg: sugg.map(function (t) { return { label: t, add: function () { addTag(t); } }; }), hasSugg: sugg.length > 0,
+    note: d.note, onNote: function (e) { setF({ note: e.target.value }); },
+    askDelete: function () { if (editing && onDelete) onDelete(editing); },
+    saveText: editing ? 'Save' : 'Add customer',
+    save: function () {
+      if (!ph || !d.name.trim() || other || (d.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email.trim()))) { setF({ tried: true }); return; }
+      var tags = d.tagInput.trim() ? d.tags.concat([d.tagInput.trim().toLowerCase()]) : d.tags;
+      onSave({ phone: ph, name: d.name.trim(), email: d.email.trim(), tags: tags, note: d.note.trim() }, editing);
+    }
+  };
+}
+var GEO = {
+  Dhaka: { Dhaka: ['Badda', 'Banani', 'Dhanmondi', 'Gulshan', 'Mirpur', 'Mohammadpur', 'Motijheel', 'Tejgaon', 'Uttara'], Gazipur: ['Gazipur Sadar', 'Kaliakair', 'Sreepur', 'Tongi'], Narayanganj: ['Narayanganj Sadar', 'Rupganj', 'Sonargaon'], Tangail: ['Delduar', 'Mirzapur', 'Tangail Sadar'] },
+  Chattogram: { Chattogram: ['Double Mooring', 'Halishahar', 'Kotwali', 'Pahartali', 'Panchlaish'], 'Cox’s Bazar': ['Cox’s Bazar Sadar', 'Teknaf', 'Ukhia'], Cumilla: ['Cumilla Sadar', 'Laksam'] },
+  Rajshahi: { Rajshahi: ['Boalia', 'Motihar', 'Paba'], Bogura: ['Bogura Sadar', 'Sherpur'] },
+  Khulna: { Khulna: ['Daulatpur', 'Khulna Sadar', 'Sonadanga'], Jashore: ['Benapole', 'Jashore Sadar'] },
+  Sylhet: { Sylhet: ['Beanibazar', 'Sylhet Sadar'], Moulvibazar: ['Moulvibazar Sadar', 'Sreemangal'] },
+  Barishal: { Barishal: ['Bakerganj', 'Barishal Sadar'] },
+  Rangpur: { Rangpur: ['Pirganj', 'Rangpur Sadar'], Dinajpur: ['Dinajpur Sadar'] },
+  Mymensingh: { Mymensingh: ['Mymensingh Sadar', 'Trishal'] }
+};
+var DETAIL = {
+  c1: {
+    risk: { decided: 10, delivered: 9, returned: 1, fake: 0, wrongNumber: 0, noAnswer: 0, cancelled: 1, open: 1, score: 90, reasons: [] },
+    list: [
+      { n: 1048, date: '26 Oct', status: 'Confirmed', delivery: 'Not shipped', total: 2750 },
+      { n: 1031, date: '14 Oct', status: 'Completed', delivery: 'Delivered', total: 1850 },
+      { n: 1002, date: '28 Sep', status: 'Completed', delivery: 'Delivered', total: 4200 },
+      { n: 987, date: '9 Sep', status: 'Cancelled', delivery: 'Not shipped', total: 1250 },
+      { n: 951, date: '21 Aug', status: 'Completed', delivery: 'Delivery failed', total: 3400 },
+      { n: 920, date: '30 Jul', status: 'Completed', delivery: 'Delivered', total: 2100 }
+    ],
+    addresses: [
+      { id: 'a1', label: 'Home', name: 'Rahim Ahmed', phone: '01712345678', div: 'Dhaka', dist: 'Dhaka', area: 'Dhanmondi', line: 'House 12, Road 5, near Abahani field', isDefault: true },
+      { id: 'a2', label: 'Office', name: 'Rahim Ahmed', phone: '01712345678', div: 'Dhaka', dist: 'Dhaka', area: 'Gulshan', line: 'Level 4, 32 Gulshan Avenue', isDefault: false }
+    ]
+  },
+  c3: {
+    risk: { decided: 3, delivered: 1, returned: 2, fake: 0, wrongNumber: 0, noAnswer: 0, cancelled: 0, open: 0, score: 33, reasons: ['failed_deliveries', 'low_score'] },
+    list: [
+      { n: 1040, date: '20 Oct', status: 'Completed', delivery: 'Delivery failed', total: 1650 },
+      { n: 1012, date: '3 Oct', status: 'Completed', delivery: 'Delivery failed', total: 1400 },
+      { n: 966, date: '2 Jul', status: 'Completed', delivery: 'Delivered', total: 1150 }
+    ],
+    addresses: [{ id: 'a3', label: '', name: 'Tanvir Hasan', phone: '01911778899', div: 'Chattogram', dist: 'Chattogram', area: 'Halishahar', line: 'Block K, Lane 3, H 22', isDefault: true }]
+  },
+  c7: { risk: { decided: 0, delivered: 0, returned: 0, fake: 0, wrongNumber: 0, noAnswer: 0, cancelled: 0, open: 0, score: null, reasons: [] }, list: [], addresses: [] }
+};
+var STATUS_TONE = { Completed: 'ok', Confirmed: 'run', Pending: 'run', Processing: 'run', Cancelled: 'off' };
+var DELIVERY_DOT = { Delivered: 'var(--success)', 'Delivery failed': 'var(--destructive)', Shipped: 'var(--sidebar-primary)', 'Partly shipped': 'var(--sidebar-primary)', 'Not shipped': 'var(--muted-foreground)' };
+var START = {
+  Customer: { cid: 'c1' }, 'Flagged customer': { cid: 'c3' }, 'No orders yet': { cid: 'c7' }, 'More menu': { cid: 'c1', more: true },
+  'Edit customer': { cid: 'c1', form: { mode: 'edit', id: 'c1' } }, 'Add address': { cid: 'c1', addr: { mode: 'new' } }, 'Edit address': { cid: 'c1', addr: { mode: 'edit', id: 'a2' } },
+  'Area list': { cid: 'c1', addr: { mode: 'edit', id: 'a2' }, combo: 'area' }, 'Delete personal data': { cid: 'c1', confirm: 'anon' }
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'Customer';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(START[startKey] || {}));
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var toast = function (text) {
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+      return text;
+    };
+    var vals = {};
+    var cid = s.cid || 'c1';
+    var c = s.cust || Object.assign(copy(CUSTOMERS.filter(function (x) { return x.id === cid; })[0]), copy(DETAIL[cid] || DETAIL.c7));
+    var setC = function (patch, extra) { up(Object.assign({ cust: Object.assign({}, c, patch) }, extra || {})); };
+    var r = c.risk;
+    r.risky = c.flagged || r.reasons.length > 0;
+    c.score = r.score;
+    c.risky = r.risky;
+
+    // Header.
+    vals.c = {
+      name: c.name, initials: initials(c.name),
+      meta: [fmtPhone(c.phone), c.email, c.since ? 'Customer since ' + c.since : 'Added, no orders yet'].filter(Boolean).join(' · '),
+      tel: 'tel:+88' + c.phone, wa: 'https://wa.me/88' + c.phone,
+      badge: riskBadge(c)
+    };
+    var reasonText = c.flagged
+      ? 'Flagged by staff. Orders from this phone ask for the delivery charge in advance or a code, as the store chose.'
+      : r.reasons.indexOf('failed_deliveries') !== -1
+        ? 'Flagged: ' + plural(c.failed || r.returned, 'delivery', 'deliveries') + ' came back. Orders from this phone ask for the delivery charge in advance or a code, as the store chose.'
+        : 'Risky: the delivery score is under the store’s threshold. Orders from this phone ask for the delivery charge in advance or a code, as the store chose.';
+    var clearable = c.flagged || r.reasons.indexOf('failed_deliveries') !== -1;
+    vals.flag = {
+      on: r.risky, text: reasonText, clearable: clearable,
+      clear: function () {
+        var nr = Object.assign({}, r, { reasons: r.reasons.filter(function (x) { return x === 'low_score'; }) });
+        setC({ flagged: false, failed: 0, risk: nr }, { more: false, toast: toast('Flag cleared. Failed deliveries are reset.') });
+      },
+      canFlag: !c.flagged,
+      set: function () { setC({ flagged: true }, { more: false, toast: toast(c.name + ' is flagged.') }); },
+      menuText: c.flagged || clearable ? 'Clear the flag' : 'Flag this customer'
+    };
+    vals.flagToggle = clearable ? vals.flag.clear : vals.flag.set;
+
+    // Numbers.
+    vals.stats = [
+      { label: 'Total spent', value: c.orders ? money(c.spent) : '—' },
+      { label: 'Orders', value: String(c.orders) },
+      { label: 'Average order', value: c.orders ? money(c.spent / c.orders) : '—' },
+      { label: 'Last order', value: c.last || '—' }
+    ];
+
+    // Orders.
+    var list = c.list || [];
+    vals.orders = list.slice(0, 5).map(function (o) {
+      var tone = STATUS_TONE[o.status] || 'run';
+      return {
+        number: '#' + o.n, date: o.date, status: o.status, delivery: o.delivery, total: money(o.total),
+        dot: DELIVERY_DOT[o.delivery] || 'var(--muted-foreground)',
+        sBg: tone === 'ok' ? 'var(--secondary)' : tone === 'off' ? 'transparent' : 'var(--primary)',
+        sFg: tone === 'ok' ? 'var(--secondary-foreground)' : tone === 'off' ? 'var(--muted-foreground)' : 'var(--primary-foreground)',
+        sEdge: tone === 'off' ? 'var(--border)' : 'transparent',
+        aria: 'Order #' + o.n + ', ' + o.date + ', ' + o.status + ', ' + o.delivery + ', ' + money(o.total)
+      };
+    });
+    vals.hasOrders = list.length > 0;
+    vals.noOrders = list.length === 0;
+    vals.moreOrders = c.orders > 5;
+    vals.allOrdersText = 'View all ' + c.orders + ' orders';
+
+    // Delivery record.
+    var counts = [
+      r.returned && plural(r.returned, 'came back', 'came back').replace(/^(\d+) came back$/, '$1 came back'),
+      r.fake && r.fake + ' fake', r.wrongNumber && r.wrongNumber + ' wrong number', r.noAnswer && r.noAnswer + ' no answer',
+      r.cancelled && r.cancelled + ' cancelled for other reasons', r.open && r.open + ' open'
+    ].filter(Boolean);
+    var reasons = [];
+    if (c.flagged) reasons.push('Flagged by staff.');
+    if (r.reasons.indexOf('failed_deliveries') !== -1) reasons.push(plural(c.failed || r.returned, 'delivery', 'deliveries') + ' came back.');
+    if (r.reasons.indexOf('low_score') !== -1) reasons.push('The score is under the store’s threshold.');
+    vals.risk = {
+      isNew: r.decided === 0, known: r.decided > 0,
+      big: r.decided ? r.delivered + ' of ' + r.decided + ' delivered' : 'No history yet',
+      bar: r.decided ? Math.round(r.delivered / r.decided * 100) + '%' : '0%',
+      counts: counts.join(' · '), hasCounts: counts.length > 0,
+      reasons: reasons.map(function (x) { return { text: x }; }), hasReasons: reasons.length > 0,
+      newText: 'No delivered or undelivered orders from this phone yet.'
+    };
+
+    // Addresses.
+    var addrs = c.addresses || [];
+    vals.addresses = addrs.map(function (a) {
+      var menuOpen = s.amenu === a.id;
+      return {
+        title: a.label || a.name, isDefault: a.isDefault, notDefault: !a.isDefault,
+        who: a.name + ' · ' + fmtPhone(a.phone), line: a.line, place: a.area + ', ' + a.dist,
+        menuOpen: menuOpen, menuAria: 'Actions for ' + (a.label || 'address'), menuExpanded: menuOpen ? 'true' : 'false',
+        toggleMenu: function () { up({ amenu: menuOpen ? null : a.id }); },
+        edit: function () { up({ amenu: null, addr: { mode: 'edit', id: a.id }, ad: null }); },
+        makeDefault: function () { setC({ addresses: addrs.map(function (x) { return Object.assign({}, x, { isDefault: x.id === a.id }); }) }, { amenu: null, toast: toast('Default address changed.') }); },
+        remove: function () {
+          var rest = addrs.filter(function (x) { return x.id !== a.id; });
+          if (a.isDefault && rest.length) rest[0] = Object.assign({}, rest[0], { isDefault: true });
+          setC({ addresses: rest }, { amenu: null, toast: toast('Address deleted.') });
+        }
+      };
+    });
+    vals.hasAddresses = addrs.length > 0;
+    vals.noAddresses = addrs.length === 0;
+    vals.canAddAddress = addrs.length < 10;
+    vals.addAddress = function () { up({ addr: { mode: 'new' }, ad: null, more: false }); };
+
+    // Note and tags.
+    vals.note = c.note || '';
+    vals.hasNote = Boolean(c.note);
+    vals.tags = c.tags.map(function (t) { return { label: t }; });
+    vals.hasTags = c.tags.length > 0;
+    vals.noNoteTags = !c.note && !c.tags.length;
+
+    // Edit customer.
+    var asList = CUSTOMERS.map(function (x) { return x.id === c.id ? c : x; });
+    vals.f = customerForm(s, up, asList, function (data) {
+      setC(data, { form: null, fd: null, toast: toast('Customer saved.') });
+    }, function () { up({ form: null, fd: null, confirm: 'delete' }); });
+    vals.edit = function () { up({ form: { mode: 'edit', id: c.id }, fd: null, more: false }); };
+    vals.closeForm = function () { up({ form: null, fd: null }); };
+
+    // Address: division, district and area from the list, then the street.
+    var addr = s.addr || null;
+    var editingA = addr && addr.mode === 'edit' ? addrs.filter(function (a) { return a.id === addr.id; })[0] : null;
+    var akey = JSON.stringify(addr);
+    var ad = s.ad && s.adFor === akey ? s.ad : (editingA
+      ? Object.assign(copy(editingA), { phone: fmtPhone(editingA.phone), tried: false })
+      : { name: c.name, phone: fmtPhone(c.phone), div: '', dist: '', area: '', line: '', label: '', isDefault: addrs.length === 0, tried: false });
+    var setA = function (patch, extra) { up(Object.assign({ ad: Object.assign({}, ad, patch), adFor: akey }, extra || {})); };
+    var combo = function (key, cfg) {
+      var open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var shown = cfg.options.filter(function (o) { return !ql || o.toLowerCase().indexOf(ql) !== -1; });
+      return {
+        open: open, aria: open ? 'true' : 'false', title: cfg.title, ph: cfg.ph, disabled: cfg.disabled,
+        query: open ? (s.cq || '') : '', none: shown.length === 0, empty: cfg.empty,
+        display: cfg.current || 'Choose…', color: cfg.current ? 'var(--foreground)' : 'var(--muted-foreground)',
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: shown.map(function (o) {
+          var on = o === cfg.current;
+          return { label: o, check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { cfg.pick(o); } };
+        })
+      };
+    };
+    var cDiv = combo('div', { title: 'Division', ph: 'Search divisions', empty: 'No division found.', current: ad.div, options: Object.keys(GEO), disabled: false, pick: function (v) { setA({ div: v, dist: v === ad.div ? ad.dist : '', area: v === ad.div ? ad.area : '' }, { combo: null }); } });
+    var cDist = combo('dist', { title: 'District', ph: 'Search districts', empty: 'No district found.', current: ad.dist, options: ad.div ? Object.keys(GEO[ad.div]) : [], disabled: !ad.div, pick: function (v) { setA({ dist: v, area: v === ad.dist ? ad.area : '' }, { combo: null }); } });
+    var cArea = combo('area', { title: 'Area (thana or upazila)', ph: 'Search areas', empty: 'No area found.', current: ad.area, options: ad.div && ad.dist ? GEO[ad.div][ad.dist] : [], disabled: !ad.dist, pick: function (v) { setA({ area: v }, { combo: null }); } });
+    var aph = phoneOk(ad.phone);
+    var ready = ad.name.trim() && aph && ad.area && ad.line.trim();
+    var missing = [];
+    if (!ad.name.trim()) missing.push('name');
+    if (!aph) missing.push('phone');
+    if (!ad.area) missing.push('area');
+    if (!ad.line.trim()) missing.push('street address');
+    var defSw = ad.isDefault;
+    vals.ad = {
+      open: Boolean(addr), title: editingA ? 'Edit address' : 'Add address', isEdit: Boolean(editingA),
+      remove: function () {
+        if (!editingA) return;
+        var rest = addrs.filter(function (x) { return x.id !== editingA.id; });
+        if (editingA.isDefault && rest.length) rest[0] = Object.assign({}, rest[0], { isDefault: true });
+        setC({ addresses: rest }, { addr: null, ad: null, combo: null, toast: toast('Address deleted.') });
+      },
+      name: ad.name, onName: function (e) { setA({ name: e.target.value }); },
+      phone: ad.phone, onPhone: function (e) { setA({ phone: e.target.value }); },
+      div: cDiv, dist: cDist, area: cArea,
+      line: ad.line, onLine: function (e) { setA({ line: e.target.value }); },
+      label: ad.label, onLabel: function (e) { setA({ label: e.target.value }); },
+      quick: ['Home', 'Office', 'Parents'].map(function (l) { return { label: l, on: ad.label === l ? 'true' : 'false', pick: function () { setA({ label: ad.label === l ? '' : l }); } }; }),
+      defAria: defSw ? 'true' : 'false', defBg: defSw ? 'var(--primary)' : 'var(--input)', defX: defSw ? '14px' : '0px',
+      defLocked: addrs.length === 0 || Boolean(editingA && editingA.isDefault),
+      toggleDef: function () { if (!(addrs.length === 0 || (editingA && editingA.isDefault))) setA({ isDefault: !ad.isDefault }); },
+      defHint: addrs.length === 0 ? 'The first address is the default.' : editingA && editingA.isDefault ? 'To change it, make another address the default.' : 'New orders for them start with it.',
+      showMissing: ad.tried && !ready, missingText: 'Add the ' + missing.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.',
+      save: function () {
+        if (!ready) { setA({ tried: true }); return; }
+        var saved = { id: editingA ? editingA.id : 'a' + Date.now(), label: ad.label.trim(), name: ad.name.trim(), phone: aph, div: ad.div, dist: ad.dist, area: ad.area, line: ad.line.trim(), isDefault: ad.isDefault };
+        var next = editingA ? addrs.map(function (x) { return x.id === saved.id ? saved : x; }) : addrs.concat([saved]);
+        if (saved.isDefault) next = next.map(function (x) { return Object.assign({}, x, { isDefault: x.id === saved.id }); });
+        setC({ addresses: next }, { addr: null, ad: null, combo: null, toast: toast(editingA ? 'Address saved.' : 'Address added.') });
+      }
+    };
+    vals.closeAddr = function () { up({ addr: null, ad: null, combo: null }); };
+    var active = s.combo === 'div' ? cDiv : s.combo === 'dist' ? cDist : s.combo === 'area' ? cArea : null;
+    vals.comboOpen = Boolean(active) && Boolean(addr);
+    vals.cbd = active || cDiv;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // More: delete, and deleting their personal data on request.
+    vals.moreOpen = Boolean(s.more);
+    vals.toggleMore = function () { up({ more: !s.more }); };
+    vals.copyPhone = function () { up({ more: false, toast: toast('Phone number copied.') }); };
+    vals.askDelete = function () { up({ more: false, confirm: 'delete' }); };
+    vals.askAnon = function () { up({ more: false, confirm: 'anon', typed: '' }); };
+    vals.isDelete = s.confirm === 'delete';
+    vals.isAnon = s.confirm === 'anon';
+    vals.confirmOpen = Boolean(s.confirm);
+    vals.deleteTitle = 'Delete ' + c.name + '?';
+    vals.anonTitle = 'Delete ' + c.name + '’s personal data?';
+    vals.typed = s.typed || '';
+    vals.onTyped = function (e) { up({ typed: e.target.value }); };
+    vals.anonReady = phoneOk(s.typed) === c.phone;
+    vals.anonNotReady = !vals.anonReady;
+    vals.anonLabel = 'Type ' + fmtPhone(c.phone) + ' to confirm';
+    vals.cancelConfirm = function () { up({ confirm: null, typed: '' }); };
+
+    var reset = { more: false, amenu: null, form: null, fd: null, addr: null, ad: null, combo: null, confirm: null, typed: '' };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ more: false, amenu: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(s.combo ? { combo: null } : reset); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = ROOT + (dark ? ' dark' : '');
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Supplier — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:40px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-ptab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:13px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:28px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;margin:-8px 0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-row{position:relative;display:flex;align-items:center;gap:4px;min-height:56px;padding:6px 4px 6px 8px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:flex;flex:1;flex-direction:column;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev svg{transition:transform .15s}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-dhead{flex:none;padding:12px 16px 8px;text-align:center}
+.mm-dtitle{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none;color:var(--muted-foreground)}
+.mm-optrow:hover{background:var(--accent)}
+.mm-optrow:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px 0;background:var(--border)}
+.mm{--success:oklch(.723 .219 149.579);--page:oklch(.985 0 0)}
+.mm.dark{--success:oklch(.792 .209 151.711);--page:oklch(.145 0 0)}
+.mm-row{gap:12px;min-height:64px;padding:8px 4px 8px 12px}
+.mm-av{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9999px;background:var(--muted);color:var(--foreground);font-size:13px;font-weight:600}
+.mm-tagchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.mm-badge{display:inline-flex;flex:none;align-items:center;padding:1px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-card{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-statrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-statrow>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-statrow>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-orow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:10px 16px;border-bottom:1px solid var(--border)}
+li:last-child>.mm-orow{border-bottom:0}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-dotlabel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted-foreground);white-space:nowrap}
+.mm-dotlabel>span{width:8px;height:8px;border-radius:9999px}
+.mm-rbar{height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 22%,transparent)}
+.mm-rbar>span{display:block;height:100%;border-radius:9999px;background:var(--success)}
+.mm-addr{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:18px}
+.mm-alert>svg{flex:none;margin-top:1px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-chipbox input{flex:1;min-width:100px;height:28px;padding:0 4px;border:0;outline:none;background:transparent;color:var(--foreground);font:inherit;font-size:16px}
+.mm-chipbox input::placeholder{color:var(--muted-foreground)}
+.mm .mm-chipbox input:focus-visible{box-shadow:none}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;cursor:pointer}
+.mm-radio-row{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;background:var(--background);cursor:pointer}
+.mm-radio[aria-checked=true]{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-combo:disabled{opacity:.5;cursor:not-allowed}
+.mm-alertbox{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-toast{position:absolute;left:16px;right:16px;z-index:80;display:flex;align-items:center;gap:8px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);font-size:13px;line-height:20px;box-shadow:0 4px 12px rgb(0 0 0 / .1)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-sum{position:sticky;top:-12px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;line-height:20px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block;min-width:0}
+.mm-affix>span{position:absolute;left:12px;top:10px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:28px}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-rcard .mm-radio{margin-top:1px}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-rule{display:flex;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:center;margin:-4px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-chipbox{min-height:40px}
+.mm-gh{padding:12px 12px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-checkrow{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:32px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:32px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:18px;cursor:pointer}
+.mm-stepper span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-plist>li:last-child>div{border-bottom:0}
+.mm-prow{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.mm-rowlink{gap:2px}
+.mm-statrow dd{font-size:16px}
+.mm-egrid{display:grid;grid-template-columns:64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px;align-items:center;column-gap:12px}
+.mm-rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) 150px 72px 104px 40px;align-items:center;column-gap:12px}
+.mm-sw{display:inline-block;flex:none;width:8px;height:8px;border-radius:2px}
+.mm-stack{display:flex;gap:2px;height:12px;overflow:hidden;border-radius:4px}
+.mm-seg{display:block;min-width:2px;height:100%;cursor:pointer;transition:opacity .15s}
+.mm-seg:hover{filter:brightness(1.08)}
+.mm-tip{position:absolute;right:0;bottom:calc(100% + 6px);padding:4px 8px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none}
+.mm-legend{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 24px;margin:0;padding:0;list-style:none}
+.mm-lgbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:opacity .15s}
+.mm-lgbtn:hover,.mm-lgbtn[aria-pressed=true]{background:var(--accent)}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-needed{margin-left:6px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;line-height:16px}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-dropbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-dropbtn:hover{background:var(--accent)}
+.mm-filerow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px}
+.mm-rthumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;background:var(--muted);color:var(--muted-foreground)}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:40px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.mm-prow{position:relative}
+
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500;line-height:16px;white-space:nowrap}
+.mm-camera{display:flex;align-items:center;justify-content:center;height:200px;border-radius:10px;background:#111;color:#ddd;font-size:13px}
+.mm-step button:disabled{opacity:.4}
+.mm-input[aria-invalid=true],.mm-combo[aria-invalid=true]{border-color:var(--destructive)}
+.mm-warn{color:var(--warn)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-readonly{display:flex;align-items:center;gap:8px;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--muted);color:var(--foreground)}
+.mm{--info:oklch(.546 .245 262.881)}
+.mm.dark{--info:oklch(.707 .165 254.624)}
+.mm-secbar{display:inline-flex;align-items:center;height:40px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-secbar .mm-tab{height:34px;padding:0 12px;font-size:14px}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-ttabs .mm-tab{height:34px;gap:6px;padding:0 12px}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-prog{display:block;height:6px;overflow:hidden;border-radius:9999px;background:var(--muted)}
+.mm-prog>span{display:block;height:100%;border-radius:9999px;background:var(--primary)}
+.mm-prog.mm-done>span{background:var(--success)}
+.mm-bad{color:var(--destructive)}
+.mm-good{color:var(--success)}
+.mm-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mm-mlist>li{display:flex;flex-direction:column;gap:2px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mm-mlist>li:last-child{border-bottom:0}
+.mm-chg{display:flex;justify-content:space-between;gap:8px}
+.mm-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.mm-mode{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;line-height:18px;text-align:left;cursor:pointer}
+.mm-mode[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent);font-weight:500}
+.mm-mode[aria-checked=true] .mm-radio{border-color:var(--primary)}
+.mm-mgroup{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-dl{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px 12px;margin:0;font-size:14px}
+.mm-dl dt{color:var(--muted-foreground)}
+.mm-dl dd{margin:0;white-space:pre-line}
+.mm-big{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.mm-addrow{display:flex;align-items:center;gap:8px;width:100%;height:44px;padding:0 12px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-emptybox{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;border:1px dashed var(--border);border-radius:10px;text-align:center;color:var(--muted-foreground)}
+.mm-qty{width:72px;height:40px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums}
+.mm-step{display:inline-flex;flex:none;align-items:center;height:40px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-step button{width:40px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.mm-step input{width:52px;height:100%;padding:0;border:0;border-left:1px solid var(--input);border-right:1px solid var(--input);background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:500;text-align:center;font-variant-numeric:tabular-nums;outline:none}
+.mm-chipq{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.mm-chipq[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-stats2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-stats2>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-stats2>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-stats2>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-stats2 dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-stats2 dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--page); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+<header style="display: flex; flex: none; align-items: center; gap: 4px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--border); background: var(--background)">
+<a href="SuppliersPhone.dc.html" class="mm-btn mm-ghost mm-icon" aria-label="Back to suppliers"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></a>
+<h1 class="mm-trunc" style="flex: 1; margin: 0 4px; font-size: 16px; line-height: 24px; font-weight: 600">Supplier</h1>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="More actions" aria-haspopup="dialog" onClick="{{toggleMore}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</header>
+<main class="mm-scroll" style="gap: 12px; padding: 12px">
+<section class="mm-card" style="gap: 12px"><div style="display: flex; flex-direction: column; gap: 2px"><div style="display: flex; align-items: center; gap: 8px"><h1 class="mm-trunc" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">{{sp.name}}</h1><sc-if value="{{sp.archived}}" hint-placeholder-val="{{false}}"><span class="mm-sbadge" style="background: {{archBadge.bg}}; color: {{archBadge.fg}}; box-shadow: inset 0 0 0 1px {{archBadge.edge}}">{{archBadge.label}}</span></sc-if></div><p class="mm-muted" style="margin: 0; font-size: 13px">{{sp.sub}}</p></div>
+<p class="mm-big" style="margin: 0">{{sp.balance}}</p>
+<sc-if value="{{sp.notArchived}}" hint-placeholder-val="{{true}}"><div style="display: flex; gap: 8px"><a href="{{sp.tel}}" class="mm-btn mm-outline" style="flex: 1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>Call</a><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{openPay}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Record payment</button></div></sc-if></section>
+<dl class="mm-stats2"><sc-for list="{{pstats}}" as="x" hint-placeholder-count="2"><div><dt>{{x.label}}</dt><dd style="font-size: 16px">{{x.value}}</dd></div></sc-for></dl>
+<section class="mm-card" aria-labelledby="mm-c-led" style="gap: 4px"><h2 id="mm-c-led" class="mm-ctitle" style="margin-bottom: 4px">Ledger</h2>
+<sc-if value="{{hasLedger}}" hint-placeholder-val="{{true}}"><ul class="mm-mlist"><sc-for list="{{ledger}}" as="e" hint-placeholder-count="6"><li style="flex-direction: row; align-items: center; gap: 8px"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{e.text}}</span><span class="mm-muted" style="font-size: 12px">{{e.date}} · balance {{e.after}}</span></span><span style="font-weight: 500; font-variant-numeric: tabular-nums; color: {{e.amtColor}}">{{e.amount}}</span><sc-if value="{{e.isPay}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{e.menuAria}}" aria-haspopup="dialog" onClick="{{e.toggleMenu}}" style="margin-right: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></sc-if></li></sc-for></ul></sc-if>
+<sc-if value="{{noLedger}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No receipts or payments yet.</p></sc-if></section>
+<section class="mm-card" aria-labelledby="mm-c-pos" style="gap: 4px"><h2 id="mm-c-pos" class="mm-ctitle" style="margin-bottom: 4px">Purchase orders</h2>
+<sc-if value="{{hasOrders}}" hint-placeholder-val="{{true}}"><ul class="mm-mlist"><sc-for list="{{orders}}" as="o" hint-placeholder-count="2"><li style="position: relative; flex-direction: row; align-items: center; gap: 8px"><a href="PurchaseOrderPhone.dc.html" class="mm-rowlink" style="gap: 2px"><span style="display: flex; align-items: center; gap: 8px"><span class="mm-mono" style="font-weight: 600">{{o.ref}}</span><span class="mm-sbadge" style="background: {{o.badge.bg}}; color: {{o.badge.fg}}; box-shadow: inset 0 0 0 1px {{o.badge.edge}}">{{o.badge.label}}</span></span><span class="mm-muted" style="font-size: 12px">{{o.progress}}</span></a><span style="font-weight: 500; font-variant-numeric: tabular-nums">{{o.total}}</span></li></sc-for></ul></sc-if>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No purchase orders yet.</p></sc-if>
+<sc-if value="{{sp.notArchived}}" hint-placeholder-val="{{true}}"><a href="PurchaseOrderPhone.dc.html" class="mm-btn mm-outline" style="margin-top: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New purchase order</a></sc-if></section>
+<section class="mm-card" aria-labelledby="mm-c-sd" style="gap: 12px"><h2 id="mm-c-sd" class="mm-ctitle">Details</h2><dl class="mm-dl"><sc-for list="{{details}}" as="x" hint-placeholder-count="3"><dt>{{x.label}}</dt><dd>{{x.value}}</dd></sc-for></dl></section>
+</main>
+<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-more-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-more-title" class="mm-dtitle">{{sp.name}}</h2></div>
+<div role="menu" aria-labelledby="mm-more-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{edit}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<div role="separator" class="mm-sep"></div>
+<sc-if value="{{sp.notArchived}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{toggleArchive}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="5" x="2" y="3" rx="1"></rect><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"></path><path d="M10 12h4"></path></svg>Archive</button></sc-if>
+<sc-if value="{{sp.archived}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{toggleArchive}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Restore</button></sc-if>
+</div>
+
+</div>
+</div>
+</sc-if>
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-lm-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-lm-title" class="mm-dtitle">{{lm.text}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{lm.date}}</p></div>
+<div role="menu" aria-labelledby="mm-lm-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px"><button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{lm.askDelete}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete payment</button></div>
+
+</div>
+</div>
+</sc-if>
+<sc-if value="{{pf.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closePay}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-pf-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-pf-title" class="mm-dtitle">Record a payment</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{pf.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field"><label class="mm-label" for="mm-pf-date">Date</label><div style="display: flex; gap: 8px"><input id="mm-pf-date" class="mm-input" type="date" value="{{pf.date}}" onChange="{{pf.onDate}}" style="flex: 1; min-width: 0"><button type="button" class="mm-chipq" aria-pressed="{{pf.todayOn}}" onClick="{{pf.pickToday}}" style="height: 40px">Today</button></div></div>
+<div class="mm-field"><label class="mm-label" for="mm-pf-amt">Amount</label><div style="display: flex; gap: 8px"><label class="mm-affix" style="flex: 1"><span aria-hidden="true" style="top: 10px">৳</span><input id="mm-pf-amt" class="mm-input" inputMode="decimal" aria-invalid="{{pf.amtAria}}" value="{{pf.amount}}" onChange="{{pf.onAmount}}" style="font-variant-numeric: tabular-nums"></label><sc-if value="{{pf.canAll}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-chipq" onClick="{{pf.payAll}}" style="height: 40px">{{pf.allText}}</button></sc-if></div><sc-if value="{{pf.amtBad}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">Enter the amount paid.</p></sc-if><sc-if value="{{pf.over}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-warn">{{pf.overText}}</p></sc-if></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-pfm">Paid by</span><div role="radiogroup" aria-labelledby="mm-l-pfm" class="mm-paygrid"><sc-for list="{{pf.methods}}" as="m" hint-placeholder-count="6"><button type="button" role="radio" class="mm-paybtn" aria-checked="{{m.on}}" onClick="{{m.pick}}">{{m.label}}</button></sc-for></div></div>
+<div class="mm-field"><label class="mm-label" for="mm-pf-ref">Reference <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-pf-ref" class="mm-input" maxLength="100" value="{{pf.ref}}" onChange="{{pf.onRef}}"><p class="mm-hint">A bKash transaction ID or cheque number.</p></div>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closePay}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{pf.save}}">Record payment</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{sf.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-sf-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-sf-title" class="mm-dtitle">{{sf.title}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{sf.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field"><label class="mm-label" for="mm-sf-name">Name</label><input id="mm-sf-name" class="mm-input" maxLength="200" aria-invalid="{{sf.nameErrAria}}" value="{{sf.name}}" onChange="{{sf.onName}}" placeholder="The shop or company"><sc-if value="{{sf.nameErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">Enter the supplier’s name.</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-contact">Contact person <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-sf-contact" class="mm-input" maxLength="200" value="{{sf.contact}}" onChange="{{sf.onContact}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-phone">Phone <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-sf-phone" class="mm-input" type="tel" inputMode="tel" value="{{sf.phones}}" onChange="{{sf.onPhones}}" placeholder="01712-345678"><p class="mm-hint">More than one? Separate them with commas.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-email">Email <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-sf-email" class="mm-input" type="email" value="{{sf.email}}" onChange="{{sf.onEmail}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-addr">Address <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-sf-addr" class="mm-input" maxLength="200" value="{{sf.address}}" onChange="{{sf.onAddress}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><textarea id="mm-sf-note" class="mm-textarea" maxLength="1000" value="{{sf.note}}" onChange="{{sf.onNote}}" placeholder="Only staff see this."></textarea></div>
+<div class="mm-field"><label class="mm-label" for="mm-sf-ob">Opening balance <span class="mm-muted" style="font-weight: 400">(optional)</span></label><label class="mm-affix"><span aria-hidden="true" style="top: 10px">৳</span><input id="mm-sf-ob" class="mm-input" inputMode="decimal" aria-invalid="{{sf.obErrAria}}" value="{{sf.opening}}" onChange="{{sf.onOpening}}"></label><sc-if value="{{sf.obErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">Enter an amount in taka.</p></sc-if><p class="mm-hint">What you already owed them on the day you started here. Leave empty for nothing.</p></div>
+<sc-if value="{{sf.canArchive}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{sf.archive}}" style="align-self: flex-start; margin-left: -12px">Archive supplier</button></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeForm}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{sf.save}}">{{sf.saveText}}</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-alertbox">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Delete payment?</h2><div id="mm-al-desc" style="display: flex; flex-direction: column; gap: 6px; color: var(--muted-foreground)"><p style="margin: 0">{{confirmBody}}</p></div></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button><button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="mm-toast" style="bottom: 84px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span></div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Supplier","With an advance","Record payment","Paying more than owed","Edit supplier","Delete payment","More menu","Archived"],"default":"Supplier"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var ROOT = 'mm';
+var TODAY = '2026-10-29';
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var METHODS = [['cash', 'Cash'], ['bank', 'Bank'], ['bkash', 'bKash'], ['nagad', 'Nagad'], ['card', 'Card'], ['other', 'Other']];
+var VARIANTS = [
+  { id: 'v1', t: 'Cotton Panjabi', o: 'Ivory / M', sku: 'PNJ-IV-M', bc: '8941100100011', oh: 18, rs: 3, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v2', t: 'Cotton Panjabi', o: 'Ivory / L', sku: 'PNJ-IV-L', bc: '8941100100028', oh: 4, rs: 2, low: 5, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v3', t: 'Cotton Panjabi', o: 'Ivory / XL', sku: 'PNJ-IV-XL', bc: '8941100100035', oh: 0, rs: 0, low: 3, track: true, cost: 655, sup: 's3', cat: 'Panjabi', tags: ['eid'] },
+  { id: 'v4', t: 'Silk Panjabi', o: 'Navy / L', sku: 'PNJ-SK-NV-L', bc: '8941100100042', oh: 9, rs: 1, low: 2, track: true, cost: 1450, sup: 's2', cat: 'Panjabi', tags: ['eid', 'premium'] },
+  { id: 'v5', t: 'Kids Panjabi', o: 'Mint / 4 years', sku: 'PNJ-KD-MN-4', bc: '8941100100059', oh: 14, rs: 0, low: 4, track: true, cost: 380, sup: 's3', cat: 'Panjabi', tags: ['kids'] },
+  { id: 'v6', t: 'Embroidered Kurti', o: 'Maroon / S', sku: 'KRT-EM-MR-S', bc: '8941100100066', oh: 11, rs: 2, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v7', t: 'Embroidered Kurti', o: 'Maroon / M', sku: 'KRT-EM-MR-M', bc: '8941100100073', oh: 3, rs: 1, low: 3, track: true, cost: 890, sup: 's2', cat: 'Kurti', tags: ['eid'] },
+  { id: 'v8', t: 'Jamdani Saree', o: 'Red', sku: 'SAR-JM-RD', bc: '8941100100080', oh: 6, rs: 0, low: 2, track: true, cost: 4200, sup: 's1', cat: 'Saree', tags: ['premium'] },
+  { id: 'v9', t: 'Tangail Cotton Saree', o: 'Green', sku: 'SAR-TG-GR', bc: '8941100100097', oh: 15, rs: 2, low: 4, track: true, cost: 1350, sup: 's1', cat: 'Saree', tags: [] },
+  { id: 'v10', t: 'Cotton Three-piece', o: 'Green / M', sku: '3PC-GR-M', bc: '8941100100103', oh: 22, rs: 4, low: 5, track: true, cost: 1100, sup: 's3', cat: 'Three-piece', tags: ['eid'] },
+  { id: 'v11', t: 'Batik Fatua', o: 'Indigo / L', sku: 'FTU-BT-IN-L', bc: '8941100100110', oh: 7, rs: 0, low: 2, track: true, cost: 520, sup: 's2', cat: 'Fatua', tags: [] },
+  { id: 'v16', t: 'Batik Fatua', o: 'Indigo / XL', sku: 'FTU-BT-IN-XL', bc: '8941100100127', oh: 3, rs: 0, low: 1, track: true, cost: null, sup: '', cat: 'Fatua', tags: [] },
+  { id: 'v12', t: 'Leather Sandal', o: 'Brown / 41', sku: 'SND-BR-41', bc: '8941100100134', oh: 2, rs: 0, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v13', t: 'Leather Sandal', o: 'Brown / 42', sku: 'SND-BR-42', bc: '8941100100141', oh: 5, rs: 1, low: 3, track: true, cost: 950, sup: 's4', cat: 'Footwear', tags: [] },
+  { id: 'v14', t: 'Prayer Cap', o: 'White', sku: 'CAP-WH', bc: '8941100100158', oh: 40, rs: 0, low: 10, track: true, cost: 60, sup: 's3', cat: 'Accessories', tags: ['eid'] },
+  { id: 'v15', t: 'Gift wrap', o: '', sku: 'GFT-WRAP', bc: '', oh: 0, rs: 0, low: 0, track: false, cost: 20, sup: '', cat: 'Accessories', tags: [] }
+];
+var SUPPLIERS = [
+  { id: 's1', name: 'Tangail Tant Ghar', contact: 'Rafiq Mia', phones: ['01711-234567'], email: 'tantghar@gmail.com', address: 'Pathrail, Delduar, Tangail', note: 'Sends by Sundarban Courier. Ask for a photo of the receipt.', opening: 20000, balance: 48500, archived: false, since: '2025-03-10' },
+  { id: 's2', name: 'Rupkotha Embroidery', contact: 'Shahana Begum', phones: ['01819-445566', '01556-778899'], email: '', address: 'Mirpur 10, Dhaka', note: '', opening: 0, balance: -5000, archived: false, since: '2025-06-02' },
+  { id: 's3', name: 'Islampur Fabrics', contact: 'Abdul Karim', phones: ['01912-334455'], email: '', address: 'Islampur Road, Old Dhaka', note: 'Closed on Fridays.', opening: 0, balance: 26000, archived: false, since: '2025-01-15' },
+  { id: 's4', name: 'Chittagong Leather Works', contact: 'Mohammad Hasan', phones: ['01811-998877'], email: 'clw.hasan@yahoo.com', address: 'Hazari Lane, Chattogram', note: '', opening: 0, balance: 12800, archived: false, since: '2025-09-20' },
+  { id: 's5', name: 'Narayanganj Knit', contact: '', phones: ['01611-223344'], email: '', address: '', note: '', opening: 0, balance: 0, archived: true, since: '2025-02-01' }
+];
+var POS = [
+  { id: 'po18', ref: 'PO-0018', sup: 's2', status: 'draft', created: '2026-10-28', expected: '', supRef: '', note: '', lines: [['v6', 10, 890, 0], ['v7', 12, 890, 0], ['v4', 6, 1450, 0]], costs: [], receipts: [] },
+  { id: 'po17', ref: 'PO-0017', sup: 's1', status: 'ordered', created: '2026-10-24', expected: '2026-11-03', supRef: 'TTG-2210', note: '', lines: [['v8', 4, 4200, 0], ['v9', 10, 1350, 0]], costs: [['Courier', 1200]], receipts: [] },
+  { id: 'po16', ref: 'PO-0016', sup: 's3', status: 'partially_received', created: '2026-10-12', expected: '2026-10-25', supRef: 'IF-7781', note: 'XL comes with the next bale.', lines: [['v1', 20, 655, 20], ['v2', 20, 655, 12], ['v3', 10, 655, 0], ['v10', 10, 1100, 8]], costs: [['Transport from Islampur', 1500]], receipts: [['GRN-0029', '2026-10-18', 30, 21410], ['GRN-0031', '2026-10-22', 10, 7350]] },
+  { id: 'po15', ref: 'PO-0015', sup: 's4', status: 'received', created: '2026-10-02', expected: '2026-10-09', supRef: '', note: '', lines: [['v12', 12, 950, 12], ['v13', 12, 950, 12]], costs: [], receipts: [['GRN-0027', '2026-10-09', 24, 22800]] },
+  { id: 'po14', ref: 'PO-0014', sup: 's3', status: 'closed', created: '2026-09-20', expected: '2026-09-28', supRef: '', note: '', lines: [['v5', 30, 380, 25], ['v14', 100, 60, 100]], costs: [], receipts: [['GRN-0024', '2026-09-28', 125, 15500]] },
+  { id: 'po13', ref: 'PO-0013', sup: 's2', status: 'cancelled', created: '2026-09-15', expected: '', supRef: '', note: '', lines: [['v11', 15, 520, 0]], costs: [], receipts: [] }
+];
+var PO_STATUS = {
+  draft: { label: 'Draft', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  ordered: { label: 'Ordered', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  partially_received: { label: 'Partly received', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  received: { label: 'Received', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  closed: { label: 'Closed', bg: 'var(--muted)', fg: 'var(--muted-foreground)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var COUNT_STATUS = {
+  counting: { label: 'Counting', bg: 'color-mix(in oklch, var(--info) 12%, transparent)', fg: 'var(--info)' },
+  review: { label: 'In review', bg: 'color-mix(in oklch, var(--warn) 16%, transparent)', fg: 'var(--warn)' },
+  applied: { label: 'Applied', bg: 'color-mix(in oklch, var(--success) 14%, transparent)', fg: 'var(--success)' },
+  cancelled: { label: 'Cancelled', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' }
+};
+var REASONS = [
+  ['received', 'Received'], ['count', 'Count'], ['damaged', 'Damaged'], ['lost', 'Lost'], ['expired', 'Expired'], ['sample', 'Sample'],
+  ['returned', 'Returned'], ['correction', 'Correction'], ['import', 'Import'], ['other', 'Other']
+];
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(v) { return v < 0 ? '−৳' + Math.round(-v).toLocaleString('en-US') : '৳' + Math.round(Number(v) || 0).toLocaleString('en-US'); }
+function signedMoney(v) { return v > 0 ? '+' + money(v) : money(v); }
+function signed(n) { return n > 0 ? '+' + n : n < 0 ? '−' + Math.abs(n) : '0'; }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '').replace(/[০-৯]/g, function (d) { return '০১২৩৪৫৬৭৮৯'.indexOf(d); })); return isNaN(v) ? null : v; }
+function short(s) { return s ? Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) : '—'; }
+function longDate(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3) + ' ' + s.slice(0, 4); }
+function clock(hm) { var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5); return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM'); }
+function vById(id) { return VARIANTS.filter(function (v) { return v.id === id; })[0]; }
+function sById(id) { return SUPPLIERS.filter(function (s) { return s.id === id; })[0]; }
+function label(v) { return v.o ? v.t + ' — ' + v.o : v.t; }
+function available(v) { return v.oh - v.rs; }
+function isLow(v) { return v.track && available(v) <= v.low; }
+function methodLabel(m) { return (METHODS.filter(function (x) { return x[0] === m; })[0] || METHODS[5])[1]; }
+function balanceOf(b) {
+  if (b > 0) return { text: 'You owe ' + money(b), owed: true, fg: 'var(--foreground)', weight: '600' };
+  if (b < 0) return { text: 'Advance ' + money(-b), owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+  return { text: 'Settled', owed: false, fg: 'var(--muted-foreground)', weight: '400' };
+}
+function poTotals(lines, costs) {
+  var goods = lines.reduce(function (a, l) { return a + (num(l[1]) || 0) * (num(l[2]) || 0); }, 0);
+  var other = costs.reduce(function (a, c) { return a + (num(c[1]) || 0); }, 0);
+  return { goods: goods, other: other, total: goods + other };
+}
+function poProgress(po) {
+  var o = po.lines.reduce(function (a, l) { return a + Number(l[1]); }, 0), r = po.lines.reduce(function (a, l) { return a + Number(l[3]); }, 0);
+  return { ordered: o, received: r, text: r + ' of ' + o + ' received', pct: o ? Math.round(r / o * 100) + '%' : '0%' };
+}
+function badgeOf(map, key) { var b = map[key]; return { label: b.label, bg: b.bg, fg: b.fg, edge: b.edge || 'transparent' }; }
+function boot(self, start, fallback) {
+  var startKey = self.props.startOn ?? fallback;
+  var s = self.state || {};
+  if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(start[startKey] || {}));
+  var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+  var toast = function (text) {
+    clearTimeout(self.toastTimer);
+    self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+    return text;
+  };
+  var dark = typeof s.dark === 'boolean' ? s.dark : (self.props.dark ?? false);
+  var vals = {
+    themeClass: ROOT + (dark ? ' dark' : ''), fontStack: FONTS[self.props.font ?? 'Inter'] || FONTS.Inter,
+    isDark: dark, isLight: !dark, themeLabel: dark ? 'Switch to light theme' : 'Switch to dark theme',
+    toggleTheme: function () { up({ dark: !dark }); },
+    hasToast: Boolean(s.toast), toastText: s.toast || ''
+  };
+  return { s: s, up: up, toast: toast, vals: vals };
+}
+// Shared with the supplier page: add or edit one, in a panel.
+function supplierForm(s, up, sups, onSave, onArchive) {
+  var form = s.form || null;
+  var editing = form && form !== 'new' ? sups.filter(function (x) { return x.id === form; })[0] : null;
+  var f = s.f && s.fFor === form ? s.f : (editing
+    ? { name: editing.name, contact: editing.contact, phones: editing.phones.join(', '), email: editing.email, address: editing.address, note: editing.note, opening: editing.opening ? String(editing.opening) : '' }
+    : { name: '', contact: '', phones: '', email: '', address: '', note: '', opening: '' });
+  var setF = function (k) { return function (e) { var n = Object.assign({}, f); n[k] = e.target.value; up({ f: n, fFor: form }); }; };
+  var ob = f.opening.trim() ? num(f.opening) : 0;
+  var nameErr = Boolean(s.tried) && !f.name.trim();
+  var obErr = ob === null;
+  return {
+    open: Boolean(form), isEdit: Boolean(editing), canArchive: Boolean(editing && !editing.archived),
+    title: editing ? 'Edit supplier' : 'New supplier', saveText: editing ? 'Save' : 'Add supplier',
+    sub: editing ? editing.name : 'Who you buy from. Add their opening balance if you already owe them.',
+    name: f.name, contact: f.contact, phones: f.phones, email: f.email, address: f.address, note: f.note, opening: f.opening,
+    onName: setF('name'), onContact: setF('contact'), onPhones: setF('phones'), onEmail: setF('email'), onAddress: setF('address'), onNote: setF('note'), onOpening: setF('opening'),
+    nameErr: nameErr, nameErrAria: nameErr ? 'true' : 'false', obErr: obErr, obErrAria: obErr ? 'true' : 'false',
+    save: function () {
+      if (!f.name.trim() || obErr) { up({ tried: true }); return; }
+      var data = { name: f.name.trim(), contact: f.contact.trim(), phones: f.phones.split(',').map(function (p) { return p.trim(); }).filter(Boolean), email: f.email.trim(), address: f.address.trim(), note: f.note.trim(), opening: ob || 0 };
+      onSave(data, editing);
+    },
+    archive: function () { if (editing && onArchive) onArchive(editing); }
+  };
+}
+
+var START = {
+  Supplier: { sid: 's1' }, 'With an advance': { sid: 's2' }, 'Record payment': { sid: 's1', pay: true }, 'Paying more than owed': { sid: 's1', pay: true, pd: { date: TODAY, amount: '50000', method: 'bank', ref: '' } },
+  'Edit supplier': { sid: 's1', form: 's1' }, 'Delete payment': { sid: 's1', confirm: 'l7' }, 'More menu': { sid: 's1', more: true }, Archived: { sid: 's5' }
+};
+var LEDGERS = {
+  s1: [['l1', 'opening', '2025-03-10', '', 20000], ['l2', 'receipt', '2026-06-14', 'GRN-0012', 36000], ['l3', 'payment', '2026-06-20', 'bKash 9F3K2L7Q', -25000], ['l4', 'receipt', '2026-08-28', 'GRN-0021', 27500], ['l5', 'payment', '2026-09-05', 'Cheque 004521', -20000], ['l6', 'receipt', '2026-10-06', 'GRN-0026', 18000], ['l7', 'payment', '2026-10-15', 'Cash', -8000]],
+  s2: [['l1', 'receipt', '2026-08-02', 'GRN-0019', 30000], ['l2', 'payment', '2026-08-03', 'Bank transfer', -35000]],
+  s3: [['l1', 'receipt', '2026-09-28', 'GRN-0024', 15500], ['l2', 'payment', '2026-10-01', 'bKash 7Q2M1X0D', -18260], ['l3', 'receipt', '2026-10-18', 'GRN-0029', 21410], ['l4', 'receipt', '2026-10-22', 'GRN-0031', 7350]],
+  s4: [['l1', 'receipt', '2026-10-09', 'GRN-0027', 22800], ['l2', 'payment', '2026-10-10', 'Nagad', -10000]],
+  s5: [['l1', 'receipt', '2025-04-02', 'GRN-0003', 9000], ['l2', 'payment', '2025-04-10', 'Cash', -9000]]
+};
+function entryText(e) { return e[1] === 'opening' ? 'Opening balance' : e[1] === 'receipt' ? 'Goods received ' + e[3] : 'Payment · ' + e[3]; }
+
+class Component extends DCLogic {
+  renderVals() {
+    var b = boot(this, START, 'Supplier');
+    var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
+    var sups = s.sups || SUPPLIERS;
+    var sp = sups.filter(function (x) { return x.id === (s.sid || 's1'); })[0];
+    var ledger = s.ledger || LEDGERS[sp.id] || [];
+    var balance = ledger.reduce(function (a, e) { return a + e[4]; }, 0);
+    var bal = balanceOf(balance);
+    vals.sp = {
+      name: sp.name, archived: sp.archived, notArchived: !sp.archived,
+      sub: [sp.contact].concat(sp.phones).filter(Boolean).join(' · '), tel: sp.phones[0] ? 'tel:' + sp.phones[0].replace(/-/g, '') : '#',
+      balance: bal.text, owed: bal.owed
+    };
+    vals.archBadge = { label: 'Archived', bg: 'transparent', fg: 'var(--muted-foreground)', edge: 'var(--border)' };
+    var year = ledger.filter(function (e) { return e[2] >= '2026-01-01'; });
+    var mine = POS.filter(function (p) { return p.sup === sp.id; });
+    vals.stats = [
+      { label: 'Balance', value: bal.text },
+      { label: 'Received this year', value: money(year.filter(function (e) { return e[1] === 'receipt'; }).reduce(function (a, e) { return a + e[4]; }, 0)) },
+      { label: 'Paid this year', value: money(-year.filter(function (e) { return e[1] === 'payment'; }).reduce(function (a, e) { return a + e[4]; }, 0)) },
+      { label: 'Orders to receive', value: String(mine.filter(function (p) { return p.status === 'ordered' || p.status === 'partially_received'; }).length) }
+    ];
+    vals.pstats = vals.stats.slice(1, 3);
+    // The ledger: newest first, each with the balance after it.
+    var run = 0;
+    var rows = ledger.map(function (e) { run += e[4]; return { e: e, after: run }; }).reverse();
+    vals.ledger = rows.map(function (r) {
+      var e = r.e, menuOpen = s.menu === e[0];
+      return {
+        date: short(e[2]) + (e[2].slice(0, 4) !== '2026' ? ', ' + e[2].slice(0, 4) : ''), text: entryText(e), isPay: e[1] === 'payment',
+        amount: e[4] < 0 ? '−' + money(-e[4]) : money(e[4]), amtColor: e[4] < 0 ? 'var(--success)' : 'var(--foreground)',
+        after: money(r.after), menuOpen: menuOpen, menuAria: 'Actions for ' + entryText(e), toggleMenu: function () { up({ menu: menuOpen ? null : e[0] }); },
+        askDelete: function () { up({ menu: null, confirm: e[0] }); }
+      };
+    });
+    var lmRow = s.menu ? vals.ledger[rows.map(function (r) { return r.e[0]; }).indexOf(s.menu)] : null;
+    vals.menuOpen = Boolean(lmRow);
+    vals.lm = lmRow || { text: '', date: '', askDelete: function () {} };
+    vals.hasLedger = ledger.length > 0;
+    vals.noLedger = ledger.length === 0;
+    vals.orders = mine.map(function (p) {
+      var pr = poProgress(p);
+      return { ref: p.ref, badge: badgeOf(PO_STATUS, p.status), progress: p.status === 'draft' ? 'Created ' + short(p.created) : pr.text, total: money(poTotals(p.lines, p.costs).total) };
+    });
+    vals.hasOrders = mine.length > 0; vals.noOrders = mine.length === 0;
+    vals.details = [['Email', sp.email], ['Address', sp.address], ['Note', sp.note], ['Supplier since', longDate(sp.since)]].filter(function (x) { return x[1]; }).map(function (x) { return { label: x[0], value: x[1] }; });
+
+    // Record a payment.
+    var pd = s.pd || { date: TODAY, amount: '', method: 'cash', ref: '' };
+    var setP = function (k, v) { var n = Object.assign({}, pd); n[k] = v; up({ pd: n }); };
+    var amt = num(pd.amount);
+    var amtBad = Boolean(s.ptried) && !(amt > 0);
+    vals.pf = {
+      open: Boolean(s.pay), sub: sp.name + ' · ' + bal.text,
+      date: pd.date, onDate: function (e) { setP('date', e.target.value); }, todayOn: pd.date === TODAY ? 'true' : 'false', pickToday: function () { setP('date', TODAY); },
+      amount: pd.amount, onAmount: function (e) { setP('amount', e.target.value); }, amtBad: amtBad, amtAria: amtBad ? 'true' : 'false',
+      canAll: balance > 0, allText: 'All ' + money(balance), payAll: function () { setP('amount', String(balance)); },
+      over: amt > 0 && balance >= 0 && amt > balance, overText: amt > balance ? 'That’s ' + money(amt - balance) + ' more than you owe: it becomes an advance.' : '',
+      methods: METHODS.map(function (m) { return { label: m[1], on: pd.method === m[0] ? 'true' : 'false', pick: function () { setP('method', m[0]); } }; }),
+      ref: pd.ref, onRef: function (e) { setP('ref', e.target.value); },
+      save: function () {
+        if (!(amt > 0)) { up({ ptried: true }); return; }
+        var e = ['n' + ledger.length, 'payment', pd.date, [methodLabel(pd.method), pd.ref.trim()].filter(Boolean).join(' '), -amt];
+        up({ ledger: ledger.concat([e]), pay: false, pd: null, ptried: false, toast: toast('Payment recorded.') });
+      }
+    };
+    vals.openPay = function () { up({ pay: true, pd: null, ptried: false, more: false }); };
+    vals.closePay = function () { up({ pay: false, pd: null, ptried: false }); };
+
+    // Edit, archive.
+    vals.sf = supplierForm(s, up, sups, function (data, editing) {
+      up({ sups: sups.map(function (x) { return x.id === editing.id ? Object.assign({}, x, data) : x; }), form: null, f: null, tried: false, toast: toast('Supplier saved.') });
+    }, function (x) { up({ sups: sups.map(function (y) { return y.id === x.id ? Object.assign({}, y, { archived: true }) : y; }), form: null, f: null, toast: toast(x.name + ' is archived. Their orders and ledger stay.') }); });
+    vals.edit = function () { up({ form: sp.id, f: null, tried: false, more: false }); };
+    vals.closeForm = function () { up({ form: null, f: null, tried: false }); };
+    vals.toggleArchive = function () { up({ more: false, sups: sups.map(function (y) { return y.id === sp.id ? Object.assign({}, y, { archived: !sp.archived }) : y; }), toast: toast(sp.archived ? sp.name + ' is back in the list.' : sp.name + ' is archived. Their orders and ledger stay.') }); };
+    vals.moreOpen = Boolean(s.more); vals.moreAria = s.more ? 'true' : 'false';
+    vals.toggleMore = function () { up({ more: !s.more }); };
+    var del = s.confirm ? ledger.filter(function (e) { return e[0] === s.confirm; })[0] : null;
+    vals.confirmOpen = Boolean(del);
+    vals.confirmBody = del ? 'The supplier’s balance goes back up by ' + money(-del[4]) + '.' : '';
+    vals.doDelete = function () { up({ ledger: ledger.filter(function (e) { return e[0] !== del[0]; }), confirm: null, toast: toast('Payment deleted.') }); };
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+    var reset = { more: false, menu: null, pay: false, form: null, confirm: null };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ more: false, menu: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(reset); } };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

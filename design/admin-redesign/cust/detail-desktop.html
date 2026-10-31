@@ -1,0 +1,159 @@
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px">
+<span class="mm-av" aria-hidden="true" style="width: 56px; height: 56px; font-size: 18px">{{c.initials}}</span>
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px; min-width: 0"><h1 class="mm-trunc" style="margin: 0; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">{{c.name}}</h1><span class="mm-sbadge" title="Delivery score" style="background: {{c.badge.bg}}; color: {{c.badge.fg}}"><span class="mm-sr">Delivery score: </span>{{c.badge.label}}</span></div>
+<p class="mm-muted" style="margin: 0">{{c.meta}}</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<a href="{{c.tel}}" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"></path></svg>Call</a>
+<a href="{{c.wa}}" target="_blank" rel="noopener noreferrer" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>WhatsApp</a>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="More actions" aria-haspopup="menu" aria-expanded="{{moreOpen}}" onClick="{{toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{moreOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="More actions" class="mm-menu" onKeyDown="{{escClose}}" style="top: 40px; right: 0; width: 230px">
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>New order for them</a>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{copyPhone}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>Copy phone number</button>
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{flagToggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg>{{flag.menuText}}</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete customer</button>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{askAnon}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 21a8 8 0 0 1 10.434-7.62"></path><circle cx="10" cy="8" r="5"></circle><path d="m17 17 5 5"></path><path d="m22 17-5 5"></path></svg>Delete personal data</button>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+
+<sc-if value="{{flag.on}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert mm-alert-bad" style="align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 0"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"></path></svg><p style="flex: 1; margin: 0">{{flag.text}}</p><sc-if value="{{flag.clearable}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{flag.clear}}">Clear the flag</button></sc-if></div></sc-if>
+
+<dl class="mm-statrow">
+<sc-for list="{{stats}}" as="x" hint-placeholder-count="4"><div><dt>{{x.label}}</dt><dd>{{x.value}}</dd></div></sc-for>
+</dl>
+
+<div class="mm-cols">
+<section class="mm-card" aria-labelledby="mm-c-orders" style="gap: 0; padding: 0">
+<div class="mm-chead" style="padding: 16px 20px"><h2 id="mm-c-orders" class="mm-ctitle">Orders</h2><sc-if value="{{moreOrders}}" hint-placeholder-val="{{true}}"><a href="#" class="mm-btn mm-ghost" style="margin: -6px -8px">{{allOrdersText}}</a></sc-if></div>
+<sc-if value="{{hasOrders}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border)">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="5"><li><a href="#" class="mm-orow" aria-label="{{o.aria}}">
+<span style="font-weight: 600; font-variant-numeric: tabular-nums">{{o.number}}</span>
+<span class="mm-muted">{{o.date}}</span>
+<span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0"><span class="mm-sbadge" style="background: {{o.sBg}}; color: {{o.sFg}}; box-shadow: inset 0 0 0 1px {{o.sEdge}}">{{o.status}}</span><span class="mm-dotlabel"><span aria-hidden="true" style="background: {{o.dot}}"></span>{{o.delivery}}</span></span>
+<span class="mm-num" style="font-weight: 500">{{o.total}}</span>
+</a></li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; border-top: 1px solid var(--border); text-align: center"><p class="mm-muted" style="margin: 0">No orders yet.</p><a href="#" class="mm-btn mm-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New order for them</a></div></sc-if>
+</section>
+
+<div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+<section class="mm-card" aria-labelledby="mm-c-risk" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-risk" class="mm-ctitle">Delivery record</h2><span class="mm-sbadge" style="background: {{c.badge.bg}}; color: {{c.badge.fg}}">{{c.badge.label}}</span></div>
+<sc-if value="{{risk.known}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-size: 16px; font-weight: 600">{{risk.big}}</p>
+<div class="mm-rbar" aria-hidden="true"><span style="width: {{risk.bar}}"></span></div>
+<sc-if value="{{risk.hasCounts}}" hint-placeholder-val="{{true}}"><p class="mm-muted" style="margin: 0; font-size: 13px">{{risk.counts}}</p></sc-if>
+</sc-if>
+<sc-if value="{{risk.isNew}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">{{risk.newText}}</p></sc-if>
+<sc-if value="{{risk.hasReasons}}" hint-placeholder-val="{{false}}"><ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--destructive)"><sc-for list="{{risk.reasons}}" as="x" hint-placeholder-count="2"><li>{{x.text}}</li></sc-for></ul></sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 12px">From this store’s own orders.</p>
+<sc-if value="{{flag.canFlag}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{flag.set}}" style="align-self: flex-start">Flag this customer</button></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-addr" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-addr" class="mm-ctitle">Addresses</h2><sc-if value="{{canAddAddress}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" aria-haspopup="dialog" onClick="{{addAddress}}" style="margin: -6px -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add</button></sc-if></div>
+<sc-if value="{{hasAddresses}}" hint-placeholder-val="{{true}}">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{addresses}}" as="a" hint-placeholder-count="2"><li class="mm-addr">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 18px">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500">{{a.title}}<sc-if value="{{a.isDefault}}" hint-placeholder-val="{{true}}"><span class="mm-badge">Default</span></sc-if></span>
+<span>{{a.who}}</span><span>{{a.line}}</span><span class="mm-muted">{{a.place}}</span>
+</div>
+<div style="position: relative; display: flex; margin: -4px -4px 0 0">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{a.menuAria}}" aria-haspopup="menu" aria-expanded="{{a.menuExpanded}}" onClick="{{a.toggleMenu}}" style="width: 28px; height: 28px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{a.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closePop}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{a.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 32px; right: 0; width: 180px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{a.edit}}">Edit</button>
+<sc-if value="{{a.notDefault}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-cmd-item" onClick="{{a.makeDefault}}">Make default</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" onClick="{{a.remove}}">Delete</button>
+</div>
+</sc-if>
+</div>
+</li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{noAddresses}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No saved addresses.</p></sc-if>
+</section>
+
+<section class="mm-card" aria-labelledby="mm-c-note" style="gap: 12px">
+<div class="mm-chead"><h2 id="mm-c-note" class="mm-ctitle">Note and tags</h2><button type="button" class="mm-btn mm-ghost" aria-haspopup="dialog" onClick="{{edit}}" style="margin: -6px -8px">Edit</button></div>
+<sc-if value="{{hasNote}}" hint-placeholder-val="{{true}}"><p style="margin: 0; white-space: pre-wrap">{{note}}</p></sc-if>
+<sc-if value="{{hasTags}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; gap: 6px"><sc-for list="{{tags}}" as="t" hint-placeholder-count="2"><a href="Customers.dc.html" class="mm-tagchip">{{t.label}}</a></sc-for></div></sc-if>
+<sc-if value="{{noNoteTags}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">No note or tags. Only staff see them.</p></sc-if>
+</section>
+</div>
+</div>
+
+</main>
+</div>
+
+@@FORM@@
+
+<sc-if value="{{ad.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAddr}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-a-title" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead"><h2 id="mm-a-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{ad.title}}</h2></div>
+<div class="mm-pbody">
+<div class="mm-field"><label class="mm-label" for="mm-a-name">Name</label><input id="mm-a-name" class="mm-input" maxLength="100" value="{{ad.name}}" onChange="{{ad.onName}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-a-phone">Phone</label><input id="mm-a-phone" class="mm-input" type="tel" inputMode="tel" value="{{ad.phone}}" onChange="{{ad.onPhone}}"></div>
+@@COMBO:div@@
+@@COMBO:dist@@
+@@COMBO:area@@
+<div class="mm-field"><label class="mm-label" for="mm-a-line">Street address</label><textarea id="mm-a-line" class="mm-textarea" style="min-height: 64px" value="{{ad.line}}" onChange="{{ad.onLine}}"></textarea><p class="mm-hint">House, road and a landmark.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-a-label">Label <span class="mm-muted" style="font-weight: 400">(optional)</span></label><div style="display: flex; flex-wrap: wrap; gap: 8px"><input id="mm-a-label" class="mm-input" maxLength="40" value="{{ad.label}}" onChange="{{ad.onLabel}}" style="flex: 1 1 160px"><div role="group" aria-label="Quick labels" style="display: flex; gap: 6px"><sc-for list="{{ad.quick}}" as="l" hint-placeholder-count="3"><button type="button" class="mm-tagchip" aria-pressed="{{l.on}}" onClick="{{l.pick}}" style="height: 36px; padding: 0 12px">{{l.label}}</button></sc-for></div></div></div>
+<label class="mm-swrow"><span><span style="display: block">Use this address by default</span><span class="mm-muted" style="display: block; font-size: 13px">{{ad.defHint}}</span></span><button type="button" role="switch" class="mm-switch" aria-checked="{{ad.defAria}}" disabled="{{ad.defLocked}}" onClick="{{ad.toggleDef}}" style="background: {{ad.defBg}}"><span class="mm-knob" style="transform: translateX({{ad.defX}})"></span></button></label>
+<sc-if value="{{ad.showMissing}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{ad.missingText}}</p></div></sc-if>
+</div>
+<div class="mm-pfoot">
+<sc-if value="{{ad.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{ad.remove}}" style="margin-left: -8px; padding: 0 8px">Delete</button></sc-if>
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeAddr}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" onClick="{{ad.save}}">Save address</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeAddr}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-dialog" style="max-width: 480px">
+<sc-if value="{{isDelete}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{deleteTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Their saved addresses go too. Past orders keep the name, phone and address they were placed with.</p></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><a href="Customers.dc.html" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete</a></div>
+</sc-if>
+<sc-if value="{{isAnon}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1.3; font-weight: 600">{{anonTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Do this when the shopper asks the store to delete their data. Their name, phone, email and street go from the customer and from their orders, with their addresses, account, messages and return photos; unused store credit ends. Order totals stay for your sales and tax records. This can’t be undone.</p></div>
+<div class="mm-field"><label class="mm-label" for="mm-typed">{{anonLabel}}</label><input id="mm-typed" class="mm-input" type="tel" inputMode="tel" autoComplete="off" value="{{typed}}" onChange="{{onTyped}}" autoFocus="{{true}}"></div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px"><button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button><sc-if value="{{anonNotReady}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn" disabled style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete personal data</button></sc-if><sc-if value="{{anonReady}}" hint-placeholder-val="{{false}}"><a href="Customers.dc.html" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff">Delete personal data</a></sc-if></div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>

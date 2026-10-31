@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Categories — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:40px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-ptab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:13px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:28px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;margin:-8px 0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-row{position:relative;display:flex;align-items:center;gap:4px;min-height:56px;padding:6px 4px 6px 8px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:flex;flex:1;flex-direction:column;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev svg{transition:transform .15s}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-dhead{flex:none;padding:12px 16px 8px;text-align:center}
+.mm-dtitle{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none;color:var(--muted-foreground)}
+.mm-optrow:hover{background:var(--accent)}
+.mm-optrow:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px 0;background:var(--border)}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<header style="display: flex; flex: none; align-items: center; gap: 8px; height: 56px; padding: 0 12px; border-bottom: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-ghost" style="flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 8px 0 4px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span class="mm-trunc" style="font-weight: 600">Nakshi Fashion</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</header>
+
+<main class="mm-scroll" style="gap: 12px; padding: 16px">
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Categories</h1>
+<button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{newTop}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New category</button>
+</div>
+
+
+<div style="position: relative">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search categories" placeholder="Search categories" value="{{q}}" onChange="{{onQ}}" style="padding-left: 36px">
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px 0">
+<span class="mm-muted" style="font-size: 13px">{{summary}}</span>
+<button type="button" class="mm-btn mm-ghost" style="margin-right: -12px" onClick="{{toggleAll}}">{{toggleAllText}}</button>
+</div>
+
+<div style="border: 1px solid var(--border); border-radius: 10px; overflow: hidden">
+<ul class="mm-rows" aria-label="Categories" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+<li>
+<div class="mm-row" data-current="{{r.current}}" style="padding-left: {{r.indent}}">
+<sc-if value="{{r.hasKids}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-chev mm-above" aria-expanded="{{r.aria}}" aria-label="{{r.toggleAria}}" onClick="{{r.toggle}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{r.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button></sc-if>
+<sc-if value="{{r.leaf}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="flex: none; width: 36px"></span></sc-if>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" onClick="{{r.edit}}"><span class="mm-trunc" style="font-weight: 500">{{r.name}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.meta}}</span></button>
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="dialog" onClick="{{r.openActions}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</div>
+</li>
+</sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Clear search</button></sc-if></div></sc-if>
+</div>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Up to 3 levels deep. Use ⋯ to move a category up or down.</p>
+
+</main>
+
+<nav aria-label="Main" class="mm-tabbar">
+<a href="HomePhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>Home</a>
+<a href="OrdersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span class="mm-tabbadge">5<span class="mm-sr"> to confirm</span></span></span>Orders</a>
+<a href="#" class="mm-tabitem" aria-current="page"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span>Products</a>
+<a href="CustomersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Customers</a>
+<a href="#" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span>Menu</a>
+</nav>
+
+<sc-if value="{{actionsOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-ac-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-ac-title" class="mm-dtitle">{{ac.name}}</h2><p class="mm-muted" style="margin: 2px 0 0">{{ac.path}}</p></div>
+<div role="menu" aria-labelledby="mm-ac-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{ac.edit}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<button type="button" role="menuitem" class="mm-optrow" disabled="{{ac.noChild}}" onClick="{{ac.addChild}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>{{ac.addChildText}}</button>
+<a href="#" role="menuitem" class="mm-optrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path></svg>View products</a>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow" disabled="{{ac.first}}" onClick="{{ac.up}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg>Move up</button>
+<button type="button" role="menuitem" class="mm-optrow" disabled="{{ac.last}}" onClick="{{ac.down}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>Move down</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow mm-danger" disabled="{{ac.cantDelete}}" onClick="{{ac.askDelete}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete</button>
+<sc-if value="{{ac.cantDelete}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: -4px 0 0; padding: 0 12px 0 42px; font-size: 13px">Only an empty category can be deleted.</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{sheetOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-sh-title" class="mm-drawer" onKeyDown="{{escClose}}" style="max-height: 92%; height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-sh-title" class="mm-dtitle">{{sh.title}}</h2><p class="mm-muted" style="margin: 2px 0 0">{{sh.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 8px 16px 16px">
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 32px">
+<label class="mm-label" for="mm-name" style="margin: 0">Name</label>
+<sc-if value="{{sh.single}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" style="height: 32px; margin-right: -8px; padding: 0 8px; color: var(--muted-foreground)" onClick="{{sh.addEn}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add English</button></sc-if>
+<sc-if value="{{sh.multi}}" hint-placeholder-val="{{false}}"><div role="tablist" aria-label="Language" class="mm-tabs"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{sh.bnSel}}" onClick="{{sh.pickBn}}">বাংলা</button><button type="button" role="tab" class="mm-tab" aria-selected="{{sh.enSel}}" onClick="{{sh.pickEn}}">English</button></div></sc-if>
+</div>
+<input id="mm-name" class="mm-input" lang="{{sh.lang}}" value="{{sh.name}}" onChange="{{sh.onName}}" placeholder="{{sh.namePh}}">
+</div>
+<div class="mm-field"><span class="mm-label" id="mm-l-parent">Under</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{cb.parent.aria}}" aria-labelledby="mm-l-parent" onClick="{{cb.parent.toggle}}"><span class="mm-trunc">{{cb.parent.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button></div>
+<div class="mm-field">
+<label class="mm-label" for="mm-desc">Description <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<textarea id="mm-desc" class="mm-textarea" lang="{{sh.lang}}" value="{{sh.desc}}" onChange="{{sh.onDesc}}" placeholder="Shown at the top of the category page in the store"></textarea>
+</div>
+<div class="mm-field">
+<span class="mm-label" id="mm-l-specs">Specifications</span>
+<div class="mm-chipbox" role="group" aria-labelledby="mm-l-specs"><sc-for list="{{sh.specs}}" as="c" hint-placeholder-count="2"><span class="mm-chip">{{c.label}}<button type="button" aria-label="{{c.removeAria}}" onClick="{{c.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span></sc-for><button type="button" class="mm-btn mm-ghost mm-addchip" aria-haspopup="dialog" onClick="{{cb.specs.toggle}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add</button></div>
+<p class="mm-hint">The product editor shows these first for products here and in the categories under it.</p>
+</div>
+<button type="button" class="mm-more" aria-expanded="{{sh.moreAria}}" onClick="{{sh.toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>Web address</button>
+<sc-if value="{{sh.moreOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-field" style="margin-top: -8px">
+<input class="mm-input" aria-label="Web address" value="{{sh.slug}}" onChange="{{sh.onSlug}}" placeholder="made-from-the-name">
+<p class="mm-hint">nakshi.com/c/… · Made from the name when left empty.</p>
+</div>
+</sc-if>
+<sc-if value="{{sh.isEdit}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; align-items: flex-start">
+<button type="button" class="mm-btn mm-ghost mm-danger" disabled="{{sh.cantDelete}}" onClick="{{sh.askDelete}}" style="margin-left: -12px">Delete category</button>
+<sc-if value="{{sh.cantDelete}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin-top: 0">Only an empty category can be deleted.</p></sc-if>
+</div>
+</sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeAll}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="flex: 2" disabled="{{sh.cantSave}}" onClick="{{sh.save}}">{{sh.saveText}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{comboOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 60">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cb-title" class="mm-drawer" onKeyDown="{{comboEsc}}" style="height: 70%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cb-title" class="mm-dtitle">{{cbd.title}}</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="{{cbd.ph}}" placeholder="{{cbd.ph}}" autoComplete="off" value="{{cbd.query}}" onChange="{{cbd.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cb-title" aria-multiselectable="{{cbd.multi}}" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 8px">
+<sc-for list="{{cbd.items}}" as="o" hint-placeholder-count="6"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for>
+<sc-if value="{{cbd.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">{{cbd.empty}}</p></sc-if>
+</div>
+<sc-if value="{{cbd.isMulti}}" hint-placeholder-val="{{false}}"><div style="flex: none; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-primary" style="width: 100%" onClick="{{closeCombo}}">{{cbd.doneText}}</button></div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" style="position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Delete this category?</h2>
+<p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button>
+<button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 76px; z-index: 80; display: flex; align-items: center; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["List","Actions","Edit","New category","Under list"],"default":"List"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var CATS = [
+  { id: 'men', parent: null, bn: 'পুরুষ', en: 'Men', count: 0, specs: ['Brand', 'Fabric', 'Fit'] },
+  { id: 'panjabi', parent: 'men', bn: 'পাঞ্জাবি', en: 'Panjabi', count: 18, specs: ['Collar'] },
+  { id: 'lungi', parent: 'men', bn: 'লুঙ্গি', en: 'Lungi', count: 9, specs: [] },
+  { id: 'shirts', parent: 'men', bn: 'শার্ট', en: 'Shirts', count: 0, specs: ['Sleeve'] },
+  { id: 'casual', parent: 'shirts', bn: 'ক্যাজুয়াল', en: 'Casual', count: 9, specs: [] },
+  { id: 'formal', parent: 'shirts', bn: 'ফরমাল', en: 'Formal', count: 6, specs: [] },
+  { id: 'women', parent: null, bn: 'নারী', en: 'Women', count: 0, specs: ['Brand', 'Fabric'] },
+  { id: 'saree', parent: 'women', bn: 'শাড়ি', en: 'Saree', count: 21, specs: ['Origin'] },
+  { id: 'kurti', parent: 'women', bn: 'কুর্তি', en: 'Kurti', count: 17, specs: [] },
+  { id: 'threepiece', parent: 'women', bn: 'থ্রি-পিস', en: 'Three-piece', count: 25, specs: [] },
+  { id: 'kids', parent: null, bn: 'শিশু', en: 'Kids', count: 12, specs: ['Age group'] },
+  { id: 'footwear', parent: null, bn: 'জুতা', en: 'Footwear', count: 14, specs: ['Brand'] },
+  { id: 'acc', parent: null, bn: 'এক্সেসরিজ', en: 'Accessories', count: 0, specs: [] },
+  { id: 'bags', parent: 'acc', bn: 'ব্যাগ', en: 'Bags', count: 8, specs: [] },
+  { id: 'shawls', parent: 'acc', bn: 'শাল ও হিজাব', en: 'Shawls & hijabs', count: 11, specs: ['Fabric'] },
+  { id: 'gift', parent: null, bn: 'উপহার', en: '', count: 0, specs: [] }
+];
+var ATTRS = ['Brand', 'Fabric', 'Fit', 'Sleeve', 'Collar', 'Care', 'Origin', 'Age group'];
+var START = {
+  List: {}, Actions: { actions: 'women' }, Edit: { sheet: { mode: 'edit', id: 'shirts' } },
+  'New category': { sheet: { mode: 'create', parent: 'women' } }, 'Under list': { sheet: { mode: 'edit', id: 'shirts' }, combo: 'parent' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'List';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark, open: { men: true } }, START[startKey] || {});
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var cats = s.cats || CATS;
+    var open = s.open || {};
+    var q = (s.q || '').trim().toLowerCase();
+    var vals = {};
+    var byId = {};
+    cats.forEach(function (c) { byId[c.id] = c; });
+    var kids = function (id) { return cats.filter(function (c) { return c.parent === id; }); };
+    var level = function (c) { var n = 1; while (c.parent) { c = byId[c.parent]; n++; } return n; };
+    var label = function (c) { return c.en || c.bn; };
+    var path = function (c) { var parts = []; while (c) { parts.unshift(label(c)); c = c.parent ? byId[c.parent] : null; } return parts.join(' › '); };
+    var below = function (id) { var out = []; kids(id).forEach(function (k) { out.push(k.id); out = out.concat(below(k.id)); }); return out; };
+    var total = function (c) { return c.count + kids(c.id).reduce(function (a, k) { return a + total(k); }, 0); };
+    var matches = function (c) { return !q || label(c).toLowerCase().indexOf(q) !== -1 || c.bn.indexOf(q) !== -1 || kids(c.id).some(matches); };
+    var isEmpty = function (c) { return c.count === 0 && kids(c.id).length === 0; };
+    var move = function (c, dir) {
+      var sibs = kids(c.parent);
+      var other = sibs[sibs.indexOf(c) + dir];
+      if (!other) return;
+      var a = cats.indexOf(c), b = cats.indexOf(other);
+      var next = cats.slice(); next[a] = other; next[b] = c;
+      up({ cats: next, actions: null, toast: label(c) + ' moved ' + (dir < 0 ? 'up.' : 'down.') });
+      self.flash();
+    };
+
+    // The list: indented rows, products and specifications on a second line.
+    var rows = [];
+    var walk = function (parentId) {
+      kids(parentId).forEach(function (c) {
+        if (!matches(c)) return;
+        var lv = level(c);
+        var ks = kids(c.id);
+        var isOpen = q ? true : Boolean(open[c.id]);
+        var n = total(c);
+        var bits = [n + (n === 1 ? ' product' : ' products')];
+        if (ks.length && !isOpen) bits.push(ks.length + (ks.length === 1 ? ' subcategory' : ' subcategories'));
+        if (c.specs.length) bits.push(c.specs.join(', '));
+        rows.push({
+          name: label(c), meta: bits.join(' · '), indent: (4 + (lv - 1) * 20) + 'px',
+          hasKids: ks.length > 0, leaf: ks.length === 0, aria: isOpen ? 'true' : 'false', rot: isOpen ? '90deg' : '0deg',
+          toggleAria: (isOpen ? 'Hide' : 'Show') + ' categories under ' + label(c),
+          toggle: function () { var o = Object.assign({}, open); o[c.id] = !isOpen; up({ open: o }); },
+          current: (s.actions === c.id || (s.sheet && s.sheet.mode === 'edit' && s.sheet.id === c.id)) ? 'true' : 'false',
+          edit: function () { up({ sheet: { mode: 'edit', id: c.id } }); },
+          menuAria: 'Actions for ' + label(c),
+          openActions: function () { up({ actions: c.id }); }
+        });
+        if (isOpen) walk(c.id);
+      });
+    };
+    walk(null);
+    vals.rows = rows;
+    vals.empty = rows.length === 0;
+    vals.emptyCanReset = true;
+    vals.emptyReset = function () { up({ q: '' }); };
+    vals.emptyText = 'No categories match “' + (s.q || '').trim() + '”.';
+    vals.q = s.q || '';
+    vals.onQ = function (e) { up({ q: e.target.value }); };
+    var parents = cats.filter(function (c) { return kids(c.id).length > 0; });
+    var allOpen = parents.every(function (c) { return open[c.id]; });
+    vals.toggleAllText = allOpen ? 'Collapse all' : 'Expand all';
+    vals.toggleAll = function () { var o = {}; if (!allOpen) parents.forEach(function (c) { o[c.id] = true; }); up({ open: o }); };
+    vals.summary = cats.length + ' categories';
+    vals.newTop = function () { up({ sheet: { mode: 'create', parent: null } }); };
+
+    // Actions drawer for one category.
+    var ac = s.actions ? byId[s.actions] : null;
+    vals.actionsOpen = Boolean(ac);
+    if (ac) {
+      var sibs = kids(ac.parent);
+      var lv = level(ac);
+      vals.ac = {
+        name: label(ac), path: ac.parent ? 'Under ' + path(byId[ac.parent]) : 'Top level',
+        edit: function () { up({ actions: null, sheet: { mode: 'edit', id: ac.id } }); },
+        noChild: lv >= 3, addChildText: lv >= 3 ? 'Add a category under (3 levels max)' : 'Add a category under',
+        addChild: function () { up({ actions: null, sheet: { mode: 'create', parent: ac.id } }); },
+        first: sibs.indexOf(ac) === 0, last: sibs.indexOf(ac) === sibs.length - 1,
+        up: function () { move(ac, -1); }, down: function () { move(ac, 1); },
+        cantDelete: !isEmpty(ac), askDelete: function () { up({ actions: null, confirm: ac.id }); }
+      };
+    } else {
+      vals.ac = { name: '', path: '', edit: null, noChild: true, addChildText: '', addChild: null, first: true, last: true, up: null, down: null, cantDelete: true, askDelete: null };
+    }
+
+    // Create / edit drawer.
+    var sheet = s.sheet || null;
+    vals.sheetOpen = Boolean(sheet);
+    var editing = sheet && sheet.mode === 'edit' ? byId[sheet.id] : null;
+    var key = JSON.stringify(sheet);
+    var draft = s.draft && s.draftFor === key ? s.draft : (editing
+      ? { bn: editing.bn, en: editing.en, langs: editing.en ? ['bn', 'en'] : ['bn'], desc: '', slug: '', parent: editing.parent, specs: editing.specs.slice() }
+      : { bn: '', en: '', langs: ['bn'], desc: '', slug: '', parent: sheet ? sheet.parent : null, specs: [] });
+    var setDraft = function (patch) { up({ draft: Object.assign({}, draft, patch), draftFor: key }); };
+    var multi = draft.langs.indexOf('en') !== -1;
+    var lang = multi && s.lang === 'en' ? 'en' : 'bn';
+    var parentCat = draft.parent ? byId[draft.parent] : null;
+    vals.sh = {
+      title: editing ? 'Edit category' : 'New category',
+      sub: editing ? path(editing) + ' · ' + total(editing) + ' products' : (parentCat ? 'Under ' + path(parentCat) : 'At the top level'),
+      isEdit: Boolean(editing), single: !multi, multi: multi, lang: lang,
+      bnSel: lang === 'bn' ? 'true' : 'false', enSel: lang === 'en' ? 'true' : 'false',
+      pickBn: function () { up({ lang: 'bn' }); }, pickEn: function () { up({ lang: 'en' }); },
+      addEn: function () { up({ draft: Object.assign({}, draft, { langs: ['bn', 'en'] }), draftFor: key, lang: 'en' }); },
+      name: draft[lang], namePh: lang === 'bn' ? 'যেমন: পাঞ্জাবি' : 'For example: Panjabi',
+      onName: function (e) { var p = {}; p[lang] = e.target.value; setDraft(p); },
+      desc: draft.desc, onDesc: function (e) { setDraft({ desc: e.target.value }); },
+      slug: draft.slug, onSlug: function (e) { setDraft({ slug: e.target.value }); },
+      moreOpen: Boolean(s.shMore), moreAria: s.shMore ? 'true' : 'false', toggleMore: function () { up({ shMore: !s.shMore }); },
+      specs: draft.specs.map(function (x) { return { label: x, removeAria: 'Remove ' + x, remove: function () { setDraft({ specs: draft.specs.filter(function (y) { return y !== x; }) }); } }; }),
+      cantDelete: editing ? !isEmpty(editing) : true,
+      askDelete: function () { if (editing) up({ confirm: editing.id }); },
+      cantSave: !draft.bn.trim(),
+      saveText: editing ? 'Save' : 'Create category',
+      save: function () {
+        var next;
+        if (editing) {
+          next = cats.map(function (c) { return c.id === editing.id ? Object.assign({}, c, { bn: draft.bn, en: multi ? draft.en : '', parent: draft.parent, specs: draft.specs }) : c; });
+          if (draft.parent !== editing.parent) {
+            var moved = next.filter(function (c) { return c.id === editing.id; })[0];
+            next = next.filter(function (c) { return c.id !== editing.id; }).concat([moved]);
+          }
+        } else {
+          next = cats.concat([{ id: 'new' + cats.length, parent: draft.parent, bn: draft.bn, en: multi ? draft.en : '', count: 0, specs: draft.specs }]);
+        }
+        var o = Object.assign({}, open); if (draft.parent) o[draft.parent] = true;
+        up({ cats: next, open: o, sheet: null, draft: null, combo: null, toast: editing ? 'Category saved.' : 'Category created.' });
+        self.flash();
+      }
+    };
+
+    // Combobox drawers: where the category sits, and its specifications.
+    var comboKey = s.combo || null;
+    var cq = s.cq || '';
+    var cql = cq.trim().toLowerCase();
+    var maxDepthBelow = function (id) { var ks = kids(id); return ks.length ? 1 + Math.max.apply(null, ks.map(function (k) { return maxDepthBelow(k.id); })) : 0; };
+    var blocked = editing ? [editing.id].concat(below(editing.id)) : [];
+    var depthOk = function (c) { return level(c) + (editing ? 1 + maxDepthBelow(editing.id) : 1) <= 3; };
+    var parentOptions = [{ id: null, label: 'Top level' }].concat(cats.filter(function (c) { return blocked.indexOf(c.id) === -1 && depthOk(c); }).map(function (c) { return { id: c.id, label: path(c) }; }));
+    var pOpen = comboKey === 'parent';
+    var sOpen = comboKey === 'specs';
+    var pShown = parentOptions.filter(function (o) { return !pOpen || !cql || o.label.toLowerCase().indexOf(cql) !== -1; });
+    var sShown = ATTRS.filter(function (o) { return !sOpen || !cql || o.toLowerCase().indexOf(cql) !== -1; });
+    vals.cb = {
+      parent: {
+        title: 'Under', ph: 'Search categories', empty: 'No category found.', multi: 'false', isMulti: false, doneText: 'Done',
+        open: pOpen, aria: pOpen ? 'true' : 'false', query: pOpen ? cq : '', none: pShown.length === 0,
+        display: parentCat ? path(parentCat) : 'Top level',
+        toggle: function () { up({ combo: pOpen ? null : 'parent', cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: pShown.map(function (o) {
+          var on = o.id === draft.parent;
+          return { label: o.label, aria: on ? 'true' : 'false', check: on ? '1' : '0', pick: function () { up({ draft: Object.assign({}, draft, { parent: o.id }), draftFor: key, combo: null }); } };
+        })
+      },
+      specs: {
+        title: 'Specifications', ph: 'Search specifications', empty: 'No specification found.', multi: 'true', isMulti: true,
+        doneText: 'Done · ' + draft.specs.length + ' selected',
+        open: sOpen, aria: sOpen ? 'true' : 'false', query: sOpen ? cq : '', none: sShown.length === 0,
+        toggle: function () { up({ combo: sOpen ? null : 'specs', cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: sShown.map(function (o) {
+          var on = draft.specs.indexOf(o) !== -1;
+          return { label: o, aria: on ? 'true' : 'false', check: on ? '1' : '0', pick: function () { setDraft({ specs: on ? draft.specs.filter(function (y) { return y !== o; }) : draft.specs.concat([o]) }); } };
+        })
+      }
+    };
+    vals.comboOpen = Boolean(comboKey) && Boolean(sheet);
+    vals.cbd = comboKey === 'specs' ? vals.cb.specs : vals.cb.parent;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // Delete.
+    var confirmCat = s.confirm ? byId[s.confirm] : null;
+    vals.confirmOpen = Boolean(confirmCat);
+    vals.confirmText = confirmCat ? label(confirmCat) + ' has no products and nothing under it. It’s removed from the store’s menus.' : '';
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+    vals.doDelete = function () {
+      up({ cats: cats.filter(function (c) { return c.id !== s.confirm; }), confirm: null, sheet: null, toast: 'Category deleted.' });
+      self.flash();
+    };
+
+    vals.closeAll = function () { up({ actions: null, sheet: null, draft: null, combo: null, confirm: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ actions: null, sheet: null, draft: null, combo: null, confirm: null }); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = dark ? 'mm dark' : 'mm';
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    return vals;
+  }
+
+  flash() {
+    var self = this;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+  }
+}
+</script>
+</body>
+</html>

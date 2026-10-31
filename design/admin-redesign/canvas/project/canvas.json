@@ -1,0 +1,1627 @@
+{
+ "v": 3,
+ "attachments": {},
+ "boards": {
+  "Adjustments.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Stock adjustments",
+   "w": 1440,
+   "x": 0,
+   "y": 20400
+  },
+  "AdjustmentsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Stock adjustments — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 20400
+  },
+  "Attributes.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Attributes",
+   "w": 1440,
+   "x": 0,
+   "y": 5072
+  },
+  "AttributesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Attributes — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 5100
+  },
+  "Categories.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Categories",
+   "w": 1440,
+   "x": 0,
+   "y": 3060
+  },
+  "CategoriesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Categories — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 3060
+  },
+  "CodOutstanding.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "COD outstanding",
+   "w": 1440,
+   "x": 0,
+   "y": 36720
+  },
+  "CodOutstandingPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "COD outstanding — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 36720
+  },
+  "CodReconciliation.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "COD reconciliation",
+   "w": 1440,
+   "x": 0,
+   "y": 37740
+  },
+  "CodReconciliationPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "COD reconciliation — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 37740
+  },
+  "Collections.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Collections",
+   "w": 1440,
+   "x": 0,
+   "y": 4080
+  },
+  "CollectionsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Collections — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 4080
+  },
+  "Confirm.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Confirm orders",
+   "w": 1440,
+   "x": 0,
+   "y": 24480
+  },
+  "ConfirmPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Confirm orders — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 24480
+  },
+  "Count.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Stock count",
+   "w": 1440,
+   "x": 0,
+   "y": 19380
+  },
+  "CountPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Stock count — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 19380
+  },
+  "Counts.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Stock counts",
+   "w": 1440,
+   "x": 0,
+   "y": 18360
+  },
+  "CountsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Stock counts — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 18360
+  },
+  "CourierReturns.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Courier returns",
+   "w": 1440,
+   "x": 0,
+   "y": 27540
+  },
+  "CourierReturnsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Courier returns — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 27540
+  },
+  "Customer.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Customer — details",
+   "w": 1440,
+   "x": 0,
+   "y": 8160
+  },
+  "CustomerPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Customer details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 8160
+  },
+  "Customers.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Customers",
+   "w": 1440,
+   "x": 0,
+   "y": 7140
+  },
+  "CustomersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Customers — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 7140
+  },
+  "ExpenseReport.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Expense report",
+   "w": 1440,
+   "x": 0,
+   "y": 35700
+  },
+  "ExpenseReportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Expense report — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 35700
+  },
+  "Expenses.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Expenses",
+   "w": 1440,
+   "x": 0,
+   "y": 11220
+  },
+  "ExpensesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Expenses — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 11220
+  },
+  "Home.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Home",
+   "w": 1440,
+   "x": 0,
+   "y": 38760
+  },
+  "HomePhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Home — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 38760
+  },
+  "Import.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Import",
+   "w": 1440,
+   "x": 0,
+   "y": 6120
+  },
+  "ImportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Import — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 6120
+  },
+  "Incomplete.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Incomplete orders",
+   "w": 1440,
+   "x": 0,
+   "y": 25500
+  },
+  "IncompleteOrder.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Incomplete order — details",
+   "w": 1440,
+   "x": 0,
+   "y": 26520
+  },
+  "IncompleteOrderPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Incomplete order — details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 26520
+  },
+  "IncompletePhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Incomplete orders — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 25500
+  },
+  "Inventory.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Inventory — stock",
+   "w": 1440,
+   "x": 0,
+   "y": 12240
+  },
+  "InventoryPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Inventory — stock — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 12240
+  },
+  "Main.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Products",
+   "w": 1440,
+   "x": -10,
+   "y": 0
+  },
+  "NewOrder.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "New order",
+   "w": 1440,
+   "x": 0,
+   "y": 23460
+  },
+  "NewOrderPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "New order — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 23460
+  },
+  "Order.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Order — details",
+   "w": 1440,
+   "x": 0,
+   "y": 22440
+  },
+  "OrderPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Order — details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 22440
+  },
+  "Orders.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Orders",
+   "w": 1440,
+   "x": 0,
+   "y": 21420
+  },
+  "OrdersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Orders — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 21420
+  },
+  "Phone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Products — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 0
+  },
+  "Product.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Product — create / edit",
+   "w": 1440,
+   "x": 0,
+   "y": 2040
+  },
+  "ProductPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Product — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 2040
+  },
+  "ProductView.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Product — details",
+   "w": 1440,
+   "x": 0,
+   "y": 1020
+  },
+  "ProductViewPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Product details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 1020
+  },
+  "ProfitReport.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Profit report",
+   "w": 1440,
+   "x": 0,
+   "y": 32640
+  },
+  "ProfitReportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Profit report — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 32640
+  },
+  "Promotion.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Promotion — create / edit",
+   "w": 1440,
+   "x": 0,
+   "y": 10200
+  },
+  "PromotionPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Promotion — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 10200
+  },
+  "Promotions.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Promotions",
+   "w": 1440,
+   "x": 0,
+   "y": 9180
+  },
+  "PromotionsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Promotions — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 9180
+  },
+  "PurchaseOrder.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Purchase order",
+   "w": 1440,
+   "x": 0,
+   "y": 14280
+  },
+  "PurchaseOrderPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Purchase order — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 14280
+  },
+  "PurchaseOrders.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Purchase orders",
+   "w": 1440,
+   "x": 0,
+   "y": 13260
+  },
+  "PurchaseOrdersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Purchase orders — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 13260
+  },
+  "Receive.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Receive stock",
+   "w": 1440,
+   "x": 0,
+   "y": 15300
+  },
+  "ReceivePhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Receive stock — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 15300
+  },
+  "Reports.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Reports — overview",
+   "w": 1440,
+   "x": 0,
+   "y": 30600
+  },
+  "ReportsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Reports — overview — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 30600
+  },
+  "Return.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Return — details",
+   "w": 1440,
+   "x": 0,
+   "y": 29580
+  },
+  "ReturnPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Return — details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 29580
+  },
+  "Returns.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Returns",
+   "w": 1440,
+   "x": 0,
+   "y": 28560
+  },
+  "ReturnsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Returns — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 28560
+  },
+  "Rules.dc.html": {
+   "h": 4980,
+   "title": "Design rules",
+   "w": 1280,
+   "x": 2000,
+   "y": 0
+  },
+  "SalesReport.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Sales report",
+   "w": 1440,
+   "x": 0,
+   "y": 31620
+  },
+  "SalesReportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Sales report — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 31620
+  },
+  "Settings.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings",
+   "w": 1440,
+   "x": 0,
+   "y": 39780
+  },
+  "SettingsBilling.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Plan and billing",
+   "w": 1440,
+   "x": 0,
+   "y": 55080
+  },
+  "SettingsBillingPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Plan and billing — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 55080
+  },
+  "SettingsCheckout.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — checkout",
+   "w": 1440,
+   "x": 0,
+   "y": 47940
+  },
+  "SettingsCheckoutPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — checkout — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 47940
+  },
+  "SettingsConfirmation.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — order confirmation",
+   "w": 1440,
+   "x": 0,
+   "y": 48960
+  },
+  "SettingsConfirmationPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — order confirmation — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 48960
+  },
+  "SettingsCouriers.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — couriers",
+   "w": 1440,
+   "x": 0,
+   "y": 46920
+  },
+  "SettingsCouriersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — couriers — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 46920
+  },
+  "SettingsDelivery.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — delivery",
+   "w": 1440,
+   "x": 0,
+   "y": 45900
+  },
+  "SettingsDeliveryPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — delivery — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 45900
+  },
+  "SettingsDomains.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — domains",
+   "w": 1440,
+   "x": 0,
+   "y": 41820
+  },
+  "SettingsDomainsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — domains — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 41820
+  },
+  "SettingsLocation.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — stock location",
+   "w": 1440,
+   "x": 0,
+   "y": 43860
+  },
+  "SettingsLocationPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — stock location — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 43860
+  },
+  "SettingsLog.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — delivery log",
+   "w": 1440,
+   "x": 0,
+   "y": 54060
+  },
+  "SettingsLogPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — delivery log — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 54060
+  },
+  "SettingsNotifications.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — notifications",
+   "w": 1440,
+   "x": 0,
+   "y": 52020
+  },
+  "SettingsNotificationsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — notifications — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 52020
+  },
+  "SettingsPayments.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — payments",
+   "w": 1440,
+   "x": 0,
+   "y": 44880
+  },
+  "SettingsPaymentsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — payments — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 44880
+  },
+  "SettingsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 39780
+  },
+  "SettingsReturns.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — returns",
+   "w": 1440,
+   "x": 0,
+   "y": 51000
+  },
+  "SettingsReturnsPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — returns — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 51000
+  },
+  "SettingsStaff.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — staff",
+   "w": 1440,
+   "x": 0,
+   "y": 42840
+  },
+  "SettingsStaffPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — staff — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 42840
+  },
+  "SettingsStore.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — store profile",
+   "w": 1440,
+   "x": 0,
+   "y": 40800
+  },
+  "SettingsStorePhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — store profile — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 40800
+  },
+  "SettingsTemplates.dc.html": {
+   "expand": "fill",
+   "h": 844,
+   "is_interactive": true,
+   "title": "Settings — message wording",
+   "w": 1430,
+   "x": 0,
+   "y": 53040
+  },
+  "SettingsTemplatesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — message wording — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 53040
+  },
+  "SettingsVat.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Settings — VAT",
+   "w": 1440,
+   "x": 0,
+   "y": 49980
+  },
+  "SettingsVatPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Settings — VAT — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 49980
+  },
+  "StockReport.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Stock report",
+   "w": 1440,
+   "x": 0,
+   "y": 33660
+  },
+  "StockReportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Stock report — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 33660
+  },
+  "Supplier.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Supplier — details",
+   "w": 1440,
+   "x": 0,
+   "y": 17340
+  },
+  "SupplierPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Supplier — details — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 17340
+  },
+  "SupplierReport.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Supplier report",
+   "w": 1440,
+   "x": 0,
+   "y": 34680
+  },
+  "SupplierReportPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Supplier report — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 34680
+  },
+  "Suppliers.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Suppliers",
+   "w": 1440,
+   "x": 0,
+   "y": 16320
+  },
+  "SuppliersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Suppliers — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 16320
+  },
+  "OnlineStore.dc.html": {
+   "x": 0,
+   "y": 56100,
+   "w": 1440,
+   "h": 900,
+   "title": "Online store",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "OnlineStorePhone.dc.html": {
+   "x": 1520,
+   "y": 56100,
+   "w": 390,
+   "h": 844,
+   "title": "Online store — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "Theme.dc.html": {
+   "x": 0,
+   "y": 57120,
+   "w": 1440,
+   "h": 900,
+   "title": "Online store — theme",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ThemePhone.dc.html": {
+   "x": 1520,
+   "y": 57120,
+   "w": 390,
+   "h": 844,
+   "title": "Online store — theme — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "StorePages.dc.html": {
+   "x": 0,
+   "y": 58140,
+   "w": 1440,
+   "h": 900,
+   "title": "Online store — pages",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "StorePagesPhone.dc.html": {
+   "x": 1520,
+   "y": 58140,
+   "w": 390,
+   "h": 844,
+   "title": "Online store — pages — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "StorePage.dc.html": {
+   "x": 0,
+   "y": 59160,
+   "w": 1440,
+   "h": 900,
+   "title": "Online store — page",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "StorePagePhone.dc.html": {
+   "x": 1520,
+   "y": 59160,
+   "w": 390,
+   "h": 844,
+   "title": "Online store — page — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "StoreSettings.dc.html": {
+   "x": 0,
+   "y": 60180,
+   "w": 1440,
+   "h": 900,
+   "title": "Online store — settings",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "StoreSettingsPhone.dc.html": {
+   "x": 1520,
+   "y": 60180,
+   "w": 390,
+   "h": 844,
+   "title": "Online store — settings — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "SignIn.dc.html": {
+   "x": 0,
+   "y": 61200,
+   "w": 1440,
+   "h": 900,
+   "title": "Sign in",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "SignInPhone.dc.html": {
+   "x": 1520,
+   "y": 61200,
+   "w": 390,
+   "h": 844,
+   "title": "Sign in — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "TwoFactor.dc.html": {
+   "x": 0,
+   "y": 62220,
+   "w": 1440,
+   "h": 900,
+   "title": "Two-factor login",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "TwoFactorPhone.dc.html": {
+   "x": 1520,
+   "y": 62220,
+   "w": 390,
+   "h": 844,
+   "title": "Two-factor login — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "Invite.dc.html": {
+   "x": 0,
+   "y": 63240,
+   "w": 1440,
+   "h": 900,
+   "title": "Invitation",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "InvitePhone.dc.html": {
+   "x": 1520,
+   "y": 63240,
+   "w": 390,
+   "h": 844,
+   "title": "Invitation — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "Account.dc.html": {
+   "x": 0,
+   "y": 64260,
+   "w": 1440,
+   "h": 900,
+   "title": "Account",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AccountPhone.dc.html": {
+   "x": 1520,
+   "y": 64260,
+   "w": 390,
+   "h": 844,
+   "title": "Account — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PrintOrders.dc.html": {
+   "x": 0,
+   "y": 65280,
+   "w": 1440,
+   "h": 900,
+   "title": "Print — invoices and packing slips",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PrintPurchaseOrder.dc.html": {
+   "x": 0,
+   "y": 66300,
+   "w": 1440,
+   "h": 900,
+   "title": "Print — purchase order",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PrintPurchaseOrderPhone.dc.html": {
+   "x": 1520,
+   "y": 66300,
+   "w": 390,
+   "h": 844,
+   "title": "Print — purchase order — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformStores.dc.html": {
+   "x": 0,
+   "y": 67320,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — stores",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformStoresPhone.dc.html": {
+   "x": 1520,
+   "y": 67320,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — stores — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformStore.dc.html": {
+   "x": 0,
+   "y": 68340,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — store",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformStorePhone.dc.html": {
+   "x": 1520,
+   "y": 68340,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — store — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "NewStore.dc.html": {
+   "x": 0,
+   "y": 69360,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — new store",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "NewStorePhone.dc.html": {
+   "x": 1520,
+   "y": 69360,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — new store — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformDashboard.dc.html": {
+   "x": 0,
+   "y": 70380,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — dashboard",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformDashboardPhone.dc.html": {
+   "x": 1520,
+   "y": 70380,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — dashboard — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformBilling.dc.html": {
+   "x": 0,
+   "y": 71400,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — billing",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformBillingPhone.dc.html": {
+   "x": 1520,
+   "y": 71400,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — billing — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformInvoice.dc.html": {
+   "x": 0,
+   "y": 72420,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — invoice",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformInvoicePhone.dc.html": {
+   "x": 1520,
+   "y": 72420,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — invoice — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "CourierAreas.dc.html": {
+   "x": 0,
+   "y": 73440,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — courier areas",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "CourierAreasPhone.dc.html": {
+   "x": 1520,
+   "y": 73440,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — courier areas — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformTerms.dc.html": {
+   "x": 0,
+   "y": 74460,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — terms",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformTermsPhone.dc.html": {
+   "x": 1520,
+   "y": 74460,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — terms — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PlatformStaff.dc.html": {
+   "x": 0,
+   "y": 75480,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — staff",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "PlatformStaffPhone.dc.html": {
+   "x": 1520,
+   "y": 75480,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — staff — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "AuditLog.dc.html": {
+   "x": 0,
+   "y": 76500,
+   "w": 1440,
+   "h": 900,
+   "title": "Platform — audit log",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "AuditLogPhone.dc.html": {
+   "x": 1520,
+   "y": 76500,
+   "w": 390,
+   "h": 844,
+   "title": "Platform — audit log — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "CustomerImport.dc.html": {
+   "x": 0,
+   "y": 77520,
+   "w": 1440,
+   "h": 900,
+   "title": "Import customers",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "CustomerImportPhone.dc.html": {
+   "x": 1520,
+   "y": 77520,
+   "w": 390,
+   "h": 844,
+   "title": "Import customers — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "SupplierImport.dc.html": {
+   "x": 0,
+   "y": 78540,
+   "w": 1440,
+   "h": 900,
+   "title": "Import suppliers",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "SupplierImportPhone.dc.html": {
+   "x": 1520,
+   "y": 78540,
+   "w": 390,
+   "h": 844,
+   "title": "Import suppliers — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "ExpenseImport.dc.html": {
+   "x": 0,
+   "y": 79560,
+   "w": 1440,
+   "h": 900,
+   "title": "Import expenses",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "ExpenseImportPhone.dc.html": {
+   "x": 1520,
+   "y": 79560,
+   "w": 390,
+   "h": 844,
+   "title": "Import expenses — phone",
+   "is_interactive": true,
+   "radius": 32
+  },
+  "PrintOrdersPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Print — invoices and packing slips — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 65280
+  },
+  "States.dc.html": {
+   "expand": "fill",
+   "h": 900,
+   "is_interactive": true,
+   "title": "Loading and errors",
+   "w": 1440,
+   "x": 0,
+   "y": 80580
+  },
+  "StatesPhone.dc.html": {
+   "h": 844,
+   "is_interactive": true,
+   "radius": 32,
+   "title": "Loading and errors — phone",
+   "w": 390,
+   "x": 1520,
+   "y": 80580
+  }
+ },
+ "createdOnFiles": {
+  "at": "2026-10-27T12:00:00Z",
+  "v": 1
+ },
+ "designSystems": [],
+ "launch": {
+  "view": "canvas"
+ },
+ "notes": {},
+ "order": [
+  "Rules.dc.html",
+  "Main.dc.html",
+  "Phone.dc.html",
+  "ProductView.dc.html",
+  "ProductViewPhone.dc.html",
+  "Product.dc.html",
+  "ProductPhone.dc.html",
+  "Categories.dc.html",
+  "CategoriesPhone.dc.html",
+  "Collections.dc.html",
+  "CollectionsPhone.dc.html",
+  "Attributes.dc.html",
+  "AttributesPhone.dc.html",
+  "Import.dc.html",
+  "ImportPhone.dc.html",
+  "Customers.dc.html",
+  "CustomersPhone.dc.html",
+  "Customer.dc.html",
+  "CustomerPhone.dc.html",
+  "Promotions.dc.html",
+  "PromotionsPhone.dc.html",
+  "Promotion.dc.html",
+  "PromotionPhone.dc.html",
+  "Expenses.dc.html",
+  "ExpensesPhone.dc.html",
+  "Inventory.dc.html",
+  "InventoryPhone.dc.html",
+  "PurchaseOrders.dc.html",
+  "PurchaseOrdersPhone.dc.html",
+  "PurchaseOrder.dc.html",
+  "PurchaseOrderPhone.dc.html",
+  "Receive.dc.html",
+  "ReceivePhone.dc.html",
+  "Suppliers.dc.html",
+  "SuppliersPhone.dc.html",
+  "Supplier.dc.html",
+  "SupplierPhone.dc.html",
+  "Counts.dc.html",
+  "CountsPhone.dc.html",
+  "Count.dc.html",
+  "CountPhone.dc.html",
+  "Adjustments.dc.html",
+  "AdjustmentsPhone.dc.html",
+  "Orders.dc.html",
+  "OrdersPhone.dc.html",
+  "Order.dc.html",
+  "OrderPhone.dc.html",
+  "NewOrder.dc.html",
+  "NewOrderPhone.dc.html",
+  "Confirm.dc.html",
+  "ConfirmPhone.dc.html",
+  "Incomplete.dc.html",
+  "IncompletePhone.dc.html",
+  "IncompleteOrder.dc.html",
+  "IncompleteOrderPhone.dc.html",
+  "CourierReturns.dc.html",
+  "CourierReturnsPhone.dc.html",
+  "Returns.dc.html",
+  "ReturnsPhone.dc.html",
+  "Return.dc.html",
+  "ReturnPhone.dc.html",
+  "Reports.dc.html",
+  "ReportsPhone.dc.html",
+  "SalesReport.dc.html",
+  "SalesReportPhone.dc.html",
+  "ProfitReport.dc.html",
+  "ProfitReportPhone.dc.html",
+  "StockReport.dc.html",
+  "StockReportPhone.dc.html",
+  "SupplierReport.dc.html",
+  "SupplierReportPhone.dc.html",
+  "ExpenseReport.dc.html",
+  "ExpenseReportPhone.dc.html",
+  "CodOutstanding.dc.html",
+  "CodOutstandingPhone.dc.html",
+  "CodReconciliation.dc.html",
+  "CodReconciliationPhone.dc.html",
+  "Home.dc.html",
+  "HomePhone.dc.html",
+  "Settings.dc.html",
+  "SettingsPhone.dc.html",
+  "SettingsStore.dc.html",
+  "SettingsStorePhone.dc.html",
+  "SettingsDomains.dc.html",
+  "SettingsDomainsPhone.dc.html",
+  "SettingsStaff.dc.html",
+  "SettingsStaffPhone.dc.html",
+  "SettingsLocation.dc.html",
+  "SettingsLocationPhone.dc.html",
+  "SettingsPayments.dc.html",
+  "SettingsPaymentsPhone.dc.html",
+  "SettingsDelivery.dc.html",
+  "SettingsDeliveryPhone.dc.html",
+  "SettingsCouriers.dc.html",
+  "SettingsCouriersPhone.dc.html",
+  "SettingsCheckout.dc.html",
+  "SettingsCheckoutPhone.dc.html",
+  "SettingsConfirmation.dc.html",
+  "SettingsConfirmationPhone.dc.html",
+  "SettingsVat.dc.html",
+  "SettingsVatPhone.dc.html",
+  "SettingsReturns.dc.html",
+  "SettingsReturnsPhone.dc.html",
+  "SettingsNotifications.dc.html",
+  "SettingsNotificationsPhone.dc.html",
+  "SettingsTemplates.dc.html",
+  "SettingsTemplatesPhone.dc.html",
+  "SettingsLog.dc.html",
+  "SettingsLogPhone.dc.html",
+  "SettingsBilling.dc.html",
+  "SettingsBillingPhone.dc.html",
+  "OnlineStore.dc.html",
+  "OnlineStorePhone.dc.html",
+  "Theme.dc.html",
+  "ThemePhone.dc.html",
+  "StorePages.dc.html",
+  "StorePagesPhone.dc.html",
+  "StorePage.dc.html",
+  "StorePagePhone.dc.html",
+  "StoreSettings.dc.html",
+  "StoreSettingsPhone.dc.html",
+  "SignIn.dc.html",
+  "SignInPhone.dc.html",
+  "TwoFactor.dc.html",
+  "TwoFactorPhone.dc.html",
+  "Invite.dc.html",
+  "InvitePhone.dc.html",
+  "Account.dc.html",
+  "AccountPhone.dc.html",
+  "PrintOrders.dc.html",
+  "PrintOrdersPhone.dc.html",
+  "PrintPurchaseOrder.dc.html",
+  "PrintPurchaseOrderPhone.dc.html",
+  "PlatformStores.dc.html",
+  "PlatformStoresPhone.dc.html",
+  "PlatformStore.dc.html",
+  "PlatformStorePhone.dc.html",
+  "NewStore.dc.html",
+  "NewStorePhone.dc.html",
+  "PlatformDashboard.dc.html",
+  "PlatformDashboardPhone.dc.html",
+  "PlatformBilling.dc.html",
+  "PlatformBillingPhone.dc.html",
+  "PlatformInvoice.dc.html",
+  "PlatformInvoicePhone.dc.html",
+  "CourierAreas.dc.html",
+  "CourierAreasPhone.dc.html",
+  "PlatformTerms.dc.html",
+  "PlatformTermsPhone.dc.html",
+  "PlatformStaff.dc.html",
+  "PlatformStaffPhone.dc.html",
+  "AuditLog.dc.html",
+  "AuditLogPhone.dc.html",
+  "CustomerImport.dc.html",
+  "CustomerImportPhone.dc.html",
+  "SupplierImport.dc.html",
+  "SupplierImportPhone.dc.html",
+  "ExpenseImport.dc.html",
+  "ExpenseImportPhone.dc.html",
+  "States.dc.html",
+  "StatesPhone.dc.html"
+ ],
+ "pages": [],
+ "title": "Admin Products — shadcn default"
+}

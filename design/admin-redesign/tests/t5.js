@@ -1,0 +1,2 @@
+let v=V(); v.receive(); v=V(); console.log(v.rt.chip.label, v.isReceived); v.openInspect(); v=V(); v.ip.lines[0].inc(); v=V(); console.log(v.ip.lines[0].status); v.ip.save(); v=V();
+console.log(v.toastText, v.rt.chip.label, v.lines[0].inspText, v.stockNote); v.openRefund(); v=V(); console.log(v.rf.amount); v.rf.onTrx(ev('TrxID AB12')); V().rf.save(); v=V(); console.log(v.toastText, v.rt.outcome, v.flow.map(f=>f.s).join(','));

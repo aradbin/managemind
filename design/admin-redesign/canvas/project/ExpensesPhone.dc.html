@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Expenses — phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 16px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:has(>svg){padding:0 12px}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-icon,.mm-btn.mm-icon{width:36px;padding:0}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:40px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:16px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-ptab{display:inline-flex;align-items:center;height:34px;padding:0 10px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
+.mm-scroll>*{flex-shrink:0}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:13px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:40px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:28px;padding:0 8px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;min-height:40px;margin:-8px 0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-row{position:relative;display:flex;align-items:center;gap:4px;min-height:56px;padding:6px 4px 6px 8px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:flex;flex:1;flex-direction:column;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev svg{transition:transform .15s}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-tabbar{display:flex;flex:none;height:64px;padding:0 4px;border-top:1px solid var(--border);background:var(--background)}
+.mm-tabitem{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:11px;font-weight:500;line-height:14px;cursor:pointer}
+.mm-tabitem[aria-current=page]{color:var(--foreground);font-weight:600}
+.mm-pill{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:28px;border-radius:9999px}
+.mm-tabitem[aria-current=page] .mm-pill{background:var(--muted)}
+.mm-tabbadge{position:absolute;top:-4px;right:6px;display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:9999px;background:var(--destructive);color:#fff;font-size:10px;font-weight:600}
+.mm-layer{position:absolute;inset:0;z-index:50}
+.mm-scrim{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;background:rgb(0 0 0 / .5);cursor:default}
+.mm-drawer{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;max-height:85%;border-top:1px solid var(--border);border-radius:10px 10px 0 0;background:var(--background);color:var(--foreground)}
+.mm-handle{flex:none;width:100px;height:8px;margin:16px auto 0;border-radius:9999px;background:var(--muted)}
+.mm-dhead{flex:none;padding:12px 16px 8px;text-align:center}
+.mm-dtitle{margin:0;font-size:16px;line-height:24px;font-weight:600}
+.mm-optrow{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:15px;text-align:left;cursor:pointer}
+.mm-optrow svg{flex:none;color:var(--muted-foreground)}
+.mm-optrow:hover{background:var(--accent)}
+.mm-optrow:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px 0;background:var(--border)}
+.mm{--success:oklch(.723 .219 149.579);--page:oklch(.985 0 0)}
+.mm.dark{--success:oklch(.792 .209 151.711);--page:oklch(.145 0 0)}
+.mm-row{gap:12px;min-height:64px;padding:8px 4px 8px 12px}
+.mm-av{display:inline-flex;flex:none;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9999px;background:var(--muted);color:var(--foreground);font-size:13px;font-weight:600}
+.mm-tagchip{display:inline-flex;align-items:center;height:24px;padding:0 8px;border:0;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tagchip[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground)}
+.mm-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.mm-badge{display:inline-flex;flex:none;align-items:center;padding:1px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+.mm-sbad{background:color-mix(in oklch,var(--destructive) 12%,transparent);color:var(--destructive)}
+.mm-card{display:flex;flex-direction:column;gap:16px;padding:16px;border:1px solid var(--border);border-radius:12px;background:var(--card)}
+.mm-chead{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.mm-ctitle{margin:0;font-size:16px;font-weight:600;line-height:20px}
+.mm-statrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
+.mm-statrow>div{display:flex;flex-direction:column;gap:4px;padding:12px 16px}
+.mm-statrow>div:nth-child(even){border-left:1px solid var(--border)}
+.mm-statrow>div:nth-child(n+3){border-top:1px solid var(--border)}
+.mm-statrow dt{font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-statrow dd{margin:0;font-size:18px;line-height:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.mm-orow{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:10px 16px;border-bottom:1px solid var(--border)}
+li:last-child>.mm-orow{border-bottom:0}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-dotlabel{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted-foreground);white-space:nowrap}
+.mm-dotlabel>span{width:8px;height:8px;border-radius:9999px}
+.mm-rbar{height:8px;overflow:hidden;border-radius:9999px;background:color-mix(in oklch,var(--destructive) 22%,transparent)}
+.mm-rbar>span{display:block;height:100%;border-radius:9999px;background:var(--success)}
+.mm-addr{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px}
+.mm-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:18px}
+.mm-alert>svg{flex:none;margin-top:1px}
+.mm-alert-bad{color:var(--destructive);border-color:color-mix(in oklch,var(--destructive) 30%,transparent);background:color-mix(in oklch,var(--destructive) 5%,transparent)}
+.mm-err{color:var(--destructive) !important}
+.mm-chipbox input{flex:1;min-width:100px;height:28px;padding:0 4px;border:0;outline:none;background:transparent;color:var(--foreground);font:inherit;font-size:16px}
+.mm-chipbox input::placeholder{color:var(--muted-foreground)}
+.mm .mm-chipbox input:focus-visible{box-shadow:none}
+.mm-switch{display:inline-flex;flex:none;align-items:center;width:32px;height:18px;padding:0 1px;box-sizing:border-box;border:0;border-radius:9999px;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05);transition:background .15s}
+.mm-switch:disabled{opacity:.5;cursor:not-allowed}
+.mm-knob{display:block;width:16px;height:16px;border-radius:9999px;background:var(--background);transition:transform .15s}
+.mm-swrow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;cursor:pointer}
+.mm-radio-row{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;background:var(--background);cursor:pointer}
+.mm-radio[aria-checked=true]{border-color:var(--primary)}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-combo:disabled{opacity:.5;cursor:not-allowed}
+.mm-alertbox{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:16px;padding:24px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-toast{position:absolute;left:16px;right:16px;z-index:80;display:flex;align-items:center;gap:8px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);font-size:13px;line-height:20px;box-shadow:0 4px 12px rgb(0 0 0 / .1)}
+.mm{--warn:oklch(.666 .179 58.318)}
+.mm.dark{--warn:oklch(.769 .188 70.08)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.mm-sum{position:sticky;top:-12px;z-index:15;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted);font-weight:500;line-height:20px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-sum>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-affix{position:relative;display:block;min-width:0}
+.mm-affix>span{position:absolute;left:12px;top:10px;color:var(--muted-foreground);pointer-events:none}
+.mm-affix>.mm-input{padding-left:28px}
+.mm-affix-r>span{left:auto;right:12px}
+.mm-affix-r>.mm-input{padding-left:12px;padding-right:28px}
+.mm-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mm-rcard{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-rcard[aria-checked=true]{border-color:var(--primary);background:color-mix(in oklch,var(--muted) 60%,transparent)}
+.mm-rcard .mm-radio{margin-top:1px}
+.mm-rcard:disabled{cursor:not-allowed}
+.mm-rcard:disabled:not([aria-checked=true]){opacity:.5}
+.mm-rule{display:flex;padding:12px;border:1px solid var(--border);border-radius:10px}
+.mm-and{align-self:center;margin:-4px 0;padding:0 8px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-size:12px;font-weight:600;line-height:20px;letter-spacing:.04em}
+.mm-chipbox{min-height:40px}
+.mm-gh{padding:12px 12px 4px;font-size:12px;font-weight:500;color:var(--muted-foreground)}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:18px;height:18px;padding:0;box-sizing:border-box;border:1px solid;border-radius:4px;color:var(--primary-foreground)}
+.mm-checkrow{display:flex;align-items:center;gap:12px;min-height:44px;font-size:15px;cursor:pointer}
+.mm-checkrow .mm-fbox{cursor:pointer}
+.mm-collapse{display:flex;align-items:flex-start;gap:12px;width:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mm-collapse>svg{flex:none;margin-top:2px;color:var(--muted-foreground);transition:transform .2s}
+.mm-collapse[aria-expanded=true]>svg{transform:rotate(180deg)}
+.mm-tcres{display:flex;flex-direction:column;gap:12px;padding:14px;border-radius:10px;background:var(--muted)}
+.mm-totals{display:flex;flex-direction:column;gap:4px;margin:0;padding-top:10px;border-top:1px solid var(--border)}
+.mm-totals>div{display:flex;justify-content:space-between;gap:12px}
+.mm-totals dt{color:var(--muted-foreground)}
+.mm-totals dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.mm-totals .mm-total{margin-top:4px;padding-top:8px;border-top:1px solid var(--border);font-weight:600}
+.mm-totals .mm-total dt{color:var(--foreground)}
+.mm-stepper{display:inline-flex;flex:none;align-items:center;height:32px;border:1px solid var(--input);border-radius:8px;overflow:hidden}
+.mm-stepper button{width:32px;height:100%;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:18px;cursor:pointer}
+.mm-stepper span{min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.mm-plist{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:10px}
+.mm-plist>li:last-child>div{border-bottom:0}
+.mm-prow{display:flex;align-items:center;border-bottom:1px solid var(--border)}
+.mm-rowlink{gap:2px}
+.mm-statrow dd{font-size:16px}
+.mm-egrid{display:grid;grid-template-columns:64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px;align-items:center;column-gap:12px}
+.mm-rgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) 150px 72px 104px 40px;align-items:center;column-gap:12px}
+.mm-sw{display:inline-block;flex:none;width:8px;height:8px;border-radius:2px}
+.mm-stack{display:flex;gap:2px;height:12px;overflow:hidden;border-radius:4px}
+.mm-seg{display:block;min-width:2px;height:100%;cursor:pointer;transition:opacity .15s}
+.mm-seg:hover{filter:brightness(1.08)}
+.mm-tip{position:absolute;right:0;bottom:calc(100% + 6px);padding:4px 8px;border-radius:6px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none}
+.mm-legend{display:grid;grid-template-columns:minmax(0,1fr);gap:2px 24px;margin:0;padding:0;list-style:none}
+.mm-lgbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:0 6px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;text-align:left;cursor:pointer;transition:opacity .15s}
+.mm-lgbtn:hover,.mm-lgbtn[aria-pressed=true]{background:var(--accent)}
+.mm-note{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;background:var(--muted)}
+.mm-note>svg{flex:none;margin-top:2px;color:var(--muted-foreground)}
+.mm-needed{margin-left:6px;padding:0 4px;border-radius:4px;background:color-mix(in oklch,var(--warn) 16%,transparent);color:var(--warn);font-size:11px;font-weight:500;line-height:16px}
+.mm-panel{position:absolute;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:440px;max-width:90%;border-left:1px solid var(--border);background:var(--background);color:var(--foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-phead{flex:none;display:flex;flex-direction:column;gap:6px;padding:16px 48px 16px 16px}
+.mm-pbody{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:4px 16px 16px}
+.mm-pfoot{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border)}
+.mm-dropbtn{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;box-sizing:border-box;border:1px dashed var(--input);border-radius:10px;background:transparent;color:var(--muted-foreground);font:inherit;text-align:left;cursor:pointer}
+.mm-dropbtn:hover{background:var(--accent)}
+.mm-filerow{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);border-radius:10px}
+.mm-rthumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:36px;height:36px;border-radius:6px;background:var(--muted);color:var(--muted-foreground)}
+.mm-paygrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mm-paybtn{height:40px;padding:0 8px;border:1px solid var(--input);border-radius:8px;background:var(--background);color:var(--foreground);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.mm-paybtn[aria-checked=true]{border-color:var(--primary);background:var(--primary);color:var(--primary-foreground)}
+.mm-prow{position:relative}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<header style="display: flex; flex: none; align-items: center; gap: 8px; height: 56px; padding: 0 12px; border-bottom: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-ghost" style="flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 8px 0 4px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span class="mm-trunc" style="font-weight: 600">Nakshi Fashion</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</header>
+
+<main class="mm-scroll" style="gap: 12px; padding: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Expenses</h1>
+<button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{primary}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>{{primaryShort}}</button>
+</div>
+<div role="tablist" aria-label="Expenses" class="mm-tabs" style="display: flex; height: 40px">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="flex: 1; justify-content: center; height: 34px">{{t.label}}</button></sc-for>
+</div>
+
+<sc-if value="{{isEntries}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; justify-content: center; gap: 8px">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{mo.prevAria}}" onClick="{{mo.prev}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+<h2 aria-live="polite" style="flex: 1; margin: 0; font-size: 16px; font-weight: 600; text-align: center">{{mo.label}}</h2>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{mo.nextAria}}" disabled="{{mo.isFuture}}" onClick="{{mo.next}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+</div>
+<sc-if value="{{mo.notCurrent}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" onClick="{{mo.toToday}}" style="align-self: center; height: 32px; margin: -8px 0 -4px">Back to this month</button></sc-if>
+
+<sc-if value="{{sum.has}}" hint-placeholder-val="{{true}}">
+<section class="mm-card" aria-label="Spending by category" style="gap: 12px">
+<div><p style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums">{{sum.total}}</p><p class="mm-muted" style="margin: 0; font-size: 13px">{{sum.count}}<sc-if value="{{sum.hasVs}}" hint-placeholder-val="{{true}}"><span> · {{sum.vs}}</span></sc-if></p></div>
+<div class="mm-stack" role="img" aria-label="Share of the month by category; the list below has the amounts."><sc-for list="{{sum.bars}}" as="b" hint-placeholder-count="7"><span class="mm-seg" onClick="{{b.pick}}" style="width: {{b.width}}; background: {{b.color}}; opacity: {{b.dim}}"></span></sc-for></div>
+<ul class="mm-legend" aria-label="Categories this month" style="grid-template-columns: minmax(0, 1fr)">
+<sc-for list="{{sum.legend}}" as="l" hint-placeholder-count="7"><li><button type="button" class="mm-lgbtn" aria-pressed="{{l.on}}" aria-label="{{l.aria}}" onClick="{{l.pick}}" style="opacity: {{l.dim}}"><span class="mm-sw" aria-hidden="true" style="background: {{l.color}}"></span><span class="mm-trunc" style="flex: 1">{{l.name}}</span><span style="font-variant-numeric: tabular-nums; font-weight: 500">{{l.amount}}</span><span class="mm-muted" style="width: 36px; text-align: right; font-size: 12px; font-variant-numeric: tabular-nums">{{l.pct}}</span></button></li></sc-for>
+</ul>
+</section>
+</sc-if>
+
+<div style="display: flex; gap: 8px">
+<div style="position: relative; flex: 1; min-width: 0">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 12px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search paid to and notes" placeholder="Search" value="{{q}}" onChange="{{onQ}}" style="padding-left: 36px">
+</div>
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{cf.toggle}}" style="height: 40px; max-width: 150px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg><span class="mm-trunc">{{cf.buttonText}}</span></button>
+</div>
+<sc-if value="{{hasFilters}}" hint-placeholder-val="{{false}}"><div style="display: flex; align-items: center; justify-content: space-between; margin: -4px 0"><span class="mm-muted" style="font-size: 13px">{{filterText}}</span><button type="button" class="mm-btn mm-ghost" style="height: 32px; margin-right: -12px" onClick="{{clearAll}}">Reset</button></div></sc-if>
+
+<sc-for list="{{days}}" as="g" hint-placeholder-count="4">
+<section aria-label="{{g.label}}" style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 0 2px; font-size: 13px"><span style="font-weight: 600">{{g.label}}</span><span class="mm-muted" style="font-variant-numeric: tabular-nums">{{g.total}}</span></div>
+<ul class="mm-plist">
+<sc-for list="{{g.rows}}" as="r" hint-placeholder-count="2"><li><div class="mm-prow" style="position: relative; gap: 12px; min-height: 60px; padding: 8px 4px 8px 12px">
+<span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; background: {{r.color}}"></span>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" aria-label="{{r.aria}}" onClick="{{r.edit}}"><span style="display: flex; align-items: center; gap: 6px; min-width: 0"><span class="mm-trunc" style="font-weight: 500">{{r.cat}}</span><sc-if value="{{r.isRec}}" hint-placeholder-val="{{false}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Recurring" style="flex: none; color: var(--muted-foreground)"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg></sc-if></span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.meta}}</span></button>
+<span style="display: flex; align-items: center; gap: 6px; flex: none"><sc-if value="{{r.hasReceipt}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Has a receipt" style="color: var(--muted-foreground)"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"></path></svg></sc-if><span style="font-weight: 500; font-variant-numeric: tabular-nums">{{r.amount}}</span></span>
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="dialog" onClick="{{r.toggleMenu}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</div></li></sc-for>
+</ul>
+</section>
+</sc-for>
+<sc-if value="{{noRows}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><button type="button" class="mm-btn mm-outline" onClick="{{emptyDo}}">{{emptyAction}}</button></div></sc-if>
+</sc-if>
+
+<sc-if value="{{isRecurring}}" hint-placeholder-val="{{false}}">
+<div class="mm-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg><div><p style="margin: 0; font-weight: 500">{{recSummary}}</p><p class="mm-muted" style="margin: 0; font-size: 13px; line-height: 18px">Each one posts itself early in the morning on its day.</p></div></div>
+<ul class="mm-plist" aria-label="Recurring expenses">
+<sc-for list="{{recRows}}" as="r" hint-placeholder-count="6"><li><div class="mm-prow" style="position: relative; align-items: flex-start; gap: 12px; padding: 12px 4px 12px 12px">
+<span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; margin-top: 5px; background: {{r.color}}"></span>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" onClick="{{r.edit}}"><span class="mm-trunc" style="font-weight: 500">{{r.payee}}</span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.meta}}</span><span style="font-size: 13px; line-height: 18px; color: {{r.stateColor}}">{{r.state}}</span></button>
+<span style="flex: none; font-weight: 500; font-variant-numeric: tabular-nums">{{r.amount}}</span>
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="dialog" onClick="{{r.toggleMenu}}" style="margin-top: -8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</div></li></sc-for>
+</ul>
+</sc-if>
+
+<sc-if value="{{isCategories}}" hint-placeholder-val="{{false}}">
+<ul class="mm-plist" aria-label="Expense categories">
+<sc-for list="{{catRows}}" as="c" hint-placeholder-count="7"><li>
+<div class="mm-prow" style="position: relative; gap: 12px; min-height: 60px; padding: 8px 4px 8px 12px">
+<span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; background: {{c.color}}"></span>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" aria-label="{{c.aria}}" onClick="{{c.edit}}"><span style="display: flex; align-items: baseline; gap: 8px; min-width: 0"><span class="mm-trunc" style="font-weight: 500">{{c.name}}</span><span class="mm-trunc mm-muted" lang="bn" style="font-size: 13px">{{c.bn}}</span></span><span class="mm-muted" style="font-size: 12px; line-height: 16px">{{c.month}}</span></button>
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{c.menuAria}}" aria-haspopup="dialog" onClick="{{c.toggleMenu}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+</div>
+</li></sc-for>
+</ul>
+<sc-if value="{{hasArchived}}" hint-placeholder-val="{{true}}">
+<button type="button" class="mm-more" aria-expanded="{{archAria}}" onClick="{{toggleArch}}" style="margin: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>{{archText}}</button>
+<sc-if value="{{archOpen}}" hint-placeholder-val="{{false}}"><ul class="mm-plist" aria-label="Archived categories"><sc-for list="{{archRows}}" as="c" hint-placeholder-count="1"><li><div class="mm-prow" style="gap: 12px; min-height: 52px; padding: 6px 4px 6px 12px"><span class="mm-sw" aria-hidden="true" style="width: 10px; height: 10px; background: {{c.color}}; opacity: .5"></span><span class="mm-trunc mm-muted" style="flex: 1; font-weight: 500">{{c.name}}</span><button type="button" class="mm-btn mm-ghost" onClick="{{c.restore}}">Restore</button></div></li></sc-for></ul></sc-if>
+</sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Archived categories keep their expenses and reports.</p>
+</sc-if>
+</main>
+
+<nav aria-label="Main" class="mm-tabbar">
+<a href="HomePhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>Home</a>
+<a href="OrdersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span class="mm-tabbadge">5<span class="mm-sr"> to confirm</span></span></span>Orders</a>
+<a href="Phone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span>Products</a>
+<a href="CustomersPhone.dc.html" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Customers</a>
+<a href="#" class="mm-tabitem" aria-current="page"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span>Menu</a>
+</nav>
+
+<sc-if value="{{cf.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cf-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cf-title" class="mm-dtitle">Show category</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Find a category" placeholder="Category" autoComplete="off" value="{{cf.query}}" onChange="{{cf.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cf-title" style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 4px 8px 24px">
+<sc-if value="{{cf.showAll}}" hint-placeholder-val="{{true}}"><button type="button" role="option" aria-selected="{{cf.allAria}}" class="mm-optrow" onClick="{{cf.pickAll}}"><span style="flex: 1">All categories</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{cf.allCheck}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-if>
+<sc-for list="{{cf.items}}" as="o" hint-placeholder-count="7"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span class="mm-sw" aria-hidden="true" style="background: {{o.color}}"></span><span style="flex: 1">{{o.label}}</span><span class="mm-muted" style="font-size: 13px; font-variant-numeric: tabular-nums">{{o.count}}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for>
+<sc-if value="{{cf.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">No category found.</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-mx-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-mx-title" class="mm-dtitle">{{mx.title}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{mx.meta}}</p></div>
+<div role="menu" aria-labelledby="mm-mx-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{mx.edit}}">Edit</button>
+<sc-if value="{{mx.hasReceipt}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{mx.viewReceipt}}">View the receipt</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{mx.askDelete}}">Delete</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{kf.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeCat}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-kf-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-kf-title" class="mm-dtitle">{{kf.title}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{kf.sub}}</p></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px"><label class="mm-label" for="mm-kf-name" style="margin: 0">Name</label><div role="tablist" aria-label="Language" class="mm-tabs" style="height: 36px"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{kf.bnSel}}" onClick="{{kf.pickBn}}" style="height: 30px">বাংলা<sc-if value="{{kf.bnNeeded}}" hint-placeholder-val="{{false}}"><span class="mm-needed" lang="en">Needed</span></sc-if></button><button type="button" role="tab" class="mm-tab" aria-selected="{{kf.enSel}}" onClick="{{kf.pickEn}}" style="height: 30px">English<sc-if value="{{kf.enNeeded}}" hint-placeholder-val="{{true}}"><span class="mm-needed">Needed</span></sc-if></button></div></div>
+<input id="mm-kf-name" class="mm-input" maxLength="100" lang="{{kf.lang}}" value="{{kf.value}}" onChange="{{kf.onValue}}" placeholder="{{kf.ph}}">
+<p class="mm-hint">{{kf.hint}}</p>
+</div>
+<sc-if value="{{kf.canArchive}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{kf.archive}}" style="align-self: flex-start; margin-left: -12px">Archive category</button></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeCat}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" disabled="{{kf.cantSave}}" onClick="{{kf.save}}">{{kf.saveText}}</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{recMenuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-mr-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-mr-title" class="mm-dtitle">{{mr.payee}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{mr.meta}}</p></div>
+<div role="menu" aria-labelledby="mm-mr-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{mr.edit}}">Edit</button>
+<sc-if value="{{mr.canPause}}" hint-placeholder-val="{{true}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{mr.pause}}">Pause</button></sc-if>
+<sc-if value="{{mr.canResume}}" hint-placeholder-val="{{false}}"><button type="button" role="menuitem" class="mm-optrow" onClick="{{mr.resume}}">Resume</button></sc-if>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow mm-danger" onClick="{{mr.askDelete}}">Delete</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{catMenuOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-mc-title" class="mm-drawer" onKeyDown="{{escClose}}">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-mc-title" class="mm-dtitle">{{mc.name}}</h2><p class="mm-muted" style="margin: 2px 0 0; font-size: 13px">{{mc.month}}</p></div>
+<div role="menu" aria-labelledby="mm-mc-title" style="display: flex; flex-direction: column; padding: 4px 8px 24px">
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{mc.edit}}">Edit</button>
+<button type="button" role="menuitem" class="mm-optrow" disabled="{{mc.first}}" onClick="{{mc.moveUp}}">Move up</button>
+<button type="button" role="menuitem" class="mm-optrow" disabled="{{mc.last}}" onClick="{{mc.moveDown}}">Move down</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-optrow" onClick="{{mc.archive}}">Archive</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ef.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-ef-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-ef-title" class="mm-dtitle">{{ef.title}}</h2></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<sc-if value="{{ef.fromRec}}" hint-placeholder-val="{{false}}"><div class="mm-note" style="font-size: 13px; line-height: 18px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg><p style="margin: 0">{{ef.recText}}</p></div></sc-if>
+<div class="mm-field"><label class="mm-label" for="mm-ef-amount">Amount</label><label class="mm-affix"><span aria-hidden="true" style="top: 12px; font-size: 18px">৳</span><input id="mm-ef-amount" class="mm-input" inputMode="decimal" aria-invalid="{{ef.hasAmountErr}}" value="{{ef.amount}}" onChange="{{ef.onAmount}}" style="height: 48px; padding-left: 32px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums"></label><sc-if value="{{ef.hasAmountErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{ef.amountErr}}</p></sc-if><p class="mm-hint">In taka. Ads paid in dollars: the taka on the card statement.</p></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-cat">Category</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{ef.cat.aria}}" aria-labelledby="mm-l-cat" aria-invalid="{{ef.hasCatErr}}" onClick="{{ef.cat.toggle}}"><span style="display: flex; align-items: center; gap: 8px; min-width: 0"><sc-if value="{{ef.cat.hasDot}}" hint-placeholder-val="{{false}}"><span class="mm-sw" aria-hidden="true" style="background: {{ef.cat.dot}}"></span></sc-if><span class="mm-trunc" style="color: {{ef.cat.color}}">{{ef.cat.display}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{ef.hasCatErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{ef.catErr}}</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-ef-date">Date</label><div style="display: flex; gap: 8px"><input id="mm-ef-date" class="mm-input" type="date" value="{{ef.date}}" onChange="{{ef.onDate}}" style="flex: 1; min-width: 0"><button type="button" class="mm-tagchip" aria-pressed="{{ef.todayOn}}" onClick="{{ef.pickToday}}" style="height: 40px; padding: 0 12px">Today</button><button type="button" class="mm-tagchip" aria-pressed="{{ef.yesterdayOn}}" onClick="{{ef.pickYesterday}}" style="height: 40px; padding: 0 10px">Yesterday</button></div></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-paid">Paid by</span><div role="radiogroup" aria-labelledby="mm-l-paid" class="mm-paygrid"><sc-for list="{{ef.methods}}" as="m" hint-placeholder-count="6"><button type="button" role="radio" class="mm-paybtn" aria-checked="{{m.on}}" onClick="{{m.pick}}">{{m.label}}</button></sc-for></div></div>
+<div class="mm-field"><label class="mm-label" for="mm-ef-payee">Paid to <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-ef-payee" class="mm-input" maxLength="200" value="{{ef.payee}}" onChange="{{ef.onPayee}}" placeholder="Who got the money"><sc-if value="{{ef.hasPayees}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px"><sc-for list="{{ef.payees}}" as="p" hint-placeholder-count="2"><button type="button" class="mm-tagchip" onClick="{{p.pick}}" style="height: 32px; padding: 0 12px">{{p.label}}</button></sc-for></div></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-ef-note">Note <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-ef-note" class="mm-input" maxLength="1000" value="{{ef.note}}" onChange="{{ef.onNote}}"></div>
+<div class="mm-field"><span class="mm-label">Receipt photo <span class="mm-muted" style="font-weight: 400">(optional)</span></span>
+<sc-if value="{{ef.noReceipt}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-dropbtn" onClick="{{ef.addReceipt}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg><span><span style="display: block; font-weight: 500; color: var(--foreground)">Take a photo</span><span style="display: block; font-size: 12px">Or choose one from the phone</span></span></button></sc-if>
+<sc-if value="{{ef.hasReceipt}}" hint-placeholder-val="{{false}}"><div class="mm-filerow"><span class="mm-rthumb" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg></span><span class="mm-trunc" style="flex: 1; font-size: 13px">{{ef.receipt}}</span><button type="button" class="mm-btn mm-ghost" style="height: 32px; padding: 0 8px" onClick="{{ef.addReceipt}}">Replace</button><button type="button" class="mm-btn mm-ghost mm-danger" style="height: 32px; padding: 0 8px" onClick="{{ef.removeReceipt}}">Remove</button></div></sc-if>
+</div>
+<sc-if value="{{ef.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{ef.askDelete}}" style="align-self: flex-start; margin-left: -12px">Delete expense</button></sc-if>
+<sc-if value="{{ef.isNew}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" onClick="{{ef.saveAgain}}" style="align-self: flex-start; margin-left: -12px">Save and add another</button></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeForm}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{ef.save}}">{{ef.saveText}}</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{rf.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeForm}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-rf-title" class="mm-drawer" onKeyDown="{{escClose}}" style="height: 92%; max-height: 92%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-rf-title" class="mm-dtitle">{{rf.title}}</h2></div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 16px">
+<div class="mm-field"><span class="mm-label" id="mm-l-rcat">Category</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{rf.cat.aria}}" aria-labelledby="mm-l-rcat" aria-invalid="{{rf.hasCatErr}}" onClick="{{rf.cat.toggle}}"><span style="display: flex; align-items: center; gap: 8px; min-width: 0"><sc-if value="{{rf.cat.hasDot}}" hint-placeholder-val="{{false}}"><span class="mm-sw" aria-hidden="true" style="background: {{rf.cat.dot}}"></span></sc-if><span class="mm-trunc" style="color: {{rf.cat.color}}">{{rf.cat.display}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{rf.hasCatErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{rf.catErr}}</p></sc-if></div>
+<div class="mm-field"><label class="mm-label" for="mm-rf-amount">Amount</label><label class="mm-affix"><span aria-hidden="true">৳</span><input id="mm-rf-amount" class="mm-input" inputMode="decimal" aria-invalid="{{rf.hasAmountErr}}" value="{{rf.amount}}" onChange="{{rf.onAmount}}" style="font-weight: 500"></label><sc-if value="{{rf.hasAmountErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err">{{rf.amountErr}}</p></sc-if></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-rpaid">Paid by</span><div role="radiogroup" aria-labelledby="mm-l-rpaid" class="mm-paygrid"><sc-for list="{{rf.methods}}" as="m" hint-placeholder-count="6"><button type="button" role="radio" class="mm-paybtn" aria-checked="{{m.on}}" onClick="{{m.pick}}">{{m.label}}</button></sc-for></div></div>
+<div class="mm-field"><label class="mm-label" for="mm-rf-payee">Paid to <span class="mm-muted" style="font-weight: 400">(optional)</span></label><input id="mm-rf-payee" class="mm-input" maxLength="200" value="{{rf.payee}}" onChange="{{rf.onPayee}}"></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-often">How often</span><div role="radiogroup" aria-labelledby="mm-l-often" class="mm-tabs" style="display: flex; height: 40px"><button type="button" role="radio" class="mm-tab" aria-checked="{{rf.monthlyOn}}" aria-pressed="{{rf.monthlyOn}}" onClick="{{rf.pickMonthly}}" style="flex: 1; justify-content: center; height: 34px">Every month</button><button type="button" role="radio" class="mm-tab" aria-checked="{{rf.weeklyOn}}" aria-pressed="{{rf.weeklyOn}}" onClick="{{rf.pickWeekly}}" style="flex: 1; justify-content: center; height: 34px">Every week</button></div></div>
+<sc-if value="{{rf.isMonthly}}" hint-placeholder-val="{{true}}"><div class="mm-field"><span class="mm-label" id="mm-l-day">On</span><button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{rf.day.aria}}" aria-labelledby="mm-l-day" onClick="{{rf.day.toggle}}"><span class="mm-trunc">{{rf.day.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button></div></sc-if>
+<sc-if value="{{rf.isWeekly}}" hint-placeholder-val="{{false}}"><div class="mm-field"><span class="mm-label" id="mm-l-wd">On</span><div role="radiogroup" aria-labelledby="mm-l-wd" class="mm-paygrid" style="grid-template-columns: repeat(7, minmax(0, 1fr))"><sc-for list="{{rf.weekdays}}" as="w" hint-placeholder-count="7"><button type="button" role="radio" class="mm-paybtn" aria-checked="{{w.on}}" aria-label="{{w.full}}" onClick="{{w.pick}}" style="padding: 0">{{w.label}}</button></sc-for></div></div></sc-if>
+<div class="mm-grid2">
+<div class="mm-field"><label class="mm-label" for="mm-rf-from">From</label><input id="mm-rf-from" class="mm-input" type="date" value="{{rf.startsOn}}" onChange="{{rf.onStarts}}"></div>
+<div class="mm-field"><label class="mm-label" for="mm-rf-until">Until</label><input id="mm-rf-until" class="mm-input" type="date" aria-invalid="{{rf.hasDatesErr}}" value="{{rf.endsOn}}" onChange="{{rf.onEnds}}"></div>
+</div>
+<sc-if value="{{rf.hasDatesErr}}" hint-placeholder-val="{{false}}"><p class="mm-hint mm-err" style="margin-top: -10px">{{rf.datesErr}}</p></sc-if>
+<sc-if value="{{rf.isEdit}}" hint-placeholder-val="{{false}}"><label class="mm-swrow"><span>Active</span><button type="button" role="switch" class="mm-switch" aria-checked="{{rf.activeAria}}" onClick="{{rf.toggleActive}}" style="background: {{rf.activeBg}}"><span class="mm-knob" style="transform: translateX({{rf.activeX}})"></span></button></label></sc-if>
+<div class="mm-note" role="status" style="font-size: 13px; line-height: 18px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path></svg><p style="margin: 0">{{rf.preview}}</p></div>
+<sc-if value="{{rf.isEdit}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{rf.askDelete}}" style="align-self: flex-start; margin-left: -12px">Delete recurring expense</button></sc-if>
+</div>
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{closeForm}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{rf.save}}">{{rf.saveText}}</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{comboOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 60">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cb-title" class="mm-drawer" onKeyDown="{{comboEsc}}" style="height: 70%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cb-title" class="mm-dtitle">{{cbd.title}}</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="{{cbd.ph}}" placeholder="{{cbd.ph}}" autoComplete="off" value="{{cbd.query}}" onChange="{{cbd.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cb-title" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 24px">
+<sc-for list="{{cbd.items}}" as="o" hint-placeholder-count="7"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><sc-if value="{{o.hasColor}}" hint-placeholder-val="{{true}}"><span class="mm-sw" aria-hidden="true" style="background: {{o.color}}"></span></sc-if><span style="flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc mm-muted" lang="bn" style="font-size: 13px">{{o.sub}}</span></sc-if></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for>
+<sc-if value="{{cbd.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">{{cbd.empty}}</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" class="mm-alertbox">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center"><h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">{{confirmTitle}}</h2><p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button><button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{cancelConfirm}}">Cancel</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" class="mm-toast" style="bottom: 76px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span style="font-weight: 500">{{toastText}}</span></div>
+</sc-if>
+
+</div>
+</x-dc>
+
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["Expenses","Filtered by category","Record expense","Edit expense","Category list","Delete expense","Previous month","Recurring","New recurring","Edit recurring","Categories","Edit category","Add category","Row actions"],"default":"Expenses"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":390,"height":844}}'>
+var ROOT = 'mm';
+var TODAY = '2026-10-29';
+var SERIES = {
+  light: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'],
+  dark: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#008300', '#9085e9', '#e66767']
+};
+var METHODS = [['cash', 'Cash'], ['bank', 'Bank'], ['bkash', 'bKash'], ['nagad', 'Nagad'], ['card', 'Card'], ['other', 'Other']];
+var WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var WEEKDAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+var CATS = [
+  { id: 'rent', en: 'Rent', bn: 'ভাড়া', slot: 0, archived: false },
+  { id: 'salaries', en: 'Salaries', bn: 'বেতন', slot: 1, archived: false },
+  { id: 'ads', en: 'Facebook ads', bn: 'ফেসবুক বিজ্ঞাপন', slot: 2, archived: false },
+  { id: 'courier', en: 'Courier', bn: 'কুরিয়ার', slot: 3, archived: false },
+  { id: 'packaging', en: 'Packaging', bn: 'প্যাকেজিং', slot: 4, archived: false },
+  { id: 'utilities', en: 'Utilities', bn: 'বিল', slot: 5, archived: false },
+  { id: 'other', en: 'Other', bn: 'অন্যান্য', slot: 6, archived: false },
+  { id: 'photo', en: 'Photography', bn: 'ফটোগ্রাফি', slot: 7, archived: true }
+];
+var n = 0;
+function E(date, cat, payee, method, amount, o) { n++; return Object.assign({ id: 'e' + n, date: date, cat: cat, payee: payee, method: method, amount: amount, note: '', receipt: '', rec: '' }, o || {}); }
+var EXPENSES = [
+  E('2026-10-28', 'utilities', 'Water bill — WASA', 'bkash', 900, { receipt: 'wasa-oct.jpg' }),
+  E('2026-10-27', 'other', 'Stationery', 'cash', 680, { note: 'Invoice paper and pens' }),
+  E('2026-10-25', 'ads', 'Meta', 'card', 12400, { note: 'Winter launch boost. $103 on the card statement.', receipt: 'meta-1025.png' }),
+  E('2026-10-22', 'courier', 'Pathao', 'nagad', 8920),
+  E('2026-10-20', 'packaging', 'Poly bags', 'cash', 2300, { receipt: 'polybags.jpg' }),
+  E('2026-10-18', 'other', 'Tea and snacks', 'cash', 1240),
+  E('2026-10-15', 'utilities', 'Internet — Link3', 'bkash', 1500, { rec: 'r3' }),
+  E('2026-10-12', 'ads', 'Meta', 'card', 9800, { receipt: 'meta-1012.png' }),
+  E('2026-10-09', 'courier', 'Steadfast', 'bank', 12640, { note: 'September COD charges' }),
+  E('2026-10-07', 'utilities', 'Electricity — DESCO', 'bkash', 3850, { receipt: 'desco-oct.jpg' }),
+  E('2026-10-05', 'packaging', 'Dhaka Packaging House', 'cash', 6200, { receipt: 'dph-1005.jpg' }),
+  E('2026-10-03', 'ads', 'Meta', 'card', 18500, { note: 'Eid campaign boost. $155 on the card statement.', receipt: 'meta-1003.png' }),
+  E('2026-10-01', 'salaries', 'Staff salaries (3)', 'bank', 54000, { rec: 'r2' }),
+  E('2026-10-01', 'rent', 'Landlord — Mr. Karim', 'bank', 45000, { rec: 'r1', receipt: 'rent-oct.jpg' }),
+  E('2026-09-27', 'ads', 'Meta', 'card', 15200),
+  E('2026-09-21', 'courier', 'Steadfast', 'bank', 10980),
+  E('2026-09-15', 'utilities', 'Internet — Link3', 'bkash', 1500, { rec: 'r3' }),
+  E('2026-09-12', 'packaging', 'Dhaka Packaging House', 'cash', 5400),
+  E('2026-09-08', 'utilities', 'Electricity — DESCO', 'bkash', 4120),
+  E('2026-09-05', 'ads', 'Meta', 'card', 21300),
+  E('2026-09-01', 'salaries', 'Staff salaries (3)', 'bank', 54000, { rec: 'r2' }),
+  E('2026-09-01', 'rent', 'Landlord — Mr. Karim', 'bank', 45000, { rec: 'r1' }),
+  E('2026-09-14', 'photo', 'Studio Aloha', 'bkash', 7500)
+];
+var RECURRING = [
+  { id: 'r1', cat: 'rent', payee: 'Landlord — Mr. Karim', method: 'bank', amount: 45000, cadence: 'monthly', day: 1, startsOn: '2025-01-01', endsOn: '', active: true },
+  { id: 'r2', cat: 'salaries', payee: 'Staff salaries (3)', method: 'bank', amount: 54000, cadence: 'monthly', day: 1, startsOn: '2025-06-01', endsOn: '', active: true },
+  { id: 'r3', cat: 'utilities', payee: 'Internet — Link3', method: 'bkash', amount: 1500, cadence: 'monthly', day: 15, startsOn: '2025-03-15', endsOn: '', active: true },
+  { id: 'r4', cat: 'other', payee: 'Cleaner', method: 'cash', amount: 500, cadence: 'weekly', day: 6, startsOn: '2026-02-07', endsOn: '', active: true },
+  { id: 'r5', cat: 'ads', payee: 'Meta — always-on boost', method: 'card', amount: 5000, cadence: 'weekly', day: 1, startsOn: '2026-05-04', endsOn: '', active: false },
+  { id: 'r6', cat: 'utilities', payee: 'Generator rent', method: 'cash', amount: 3000, cadence: 'monthly', day: 5, startsOn: '2026-04-05', endsOn: '2026-09-30', active: true }
+];
+var START = {
+  Expenses: {}, 'Filtered by category': { fcat: 'ads' }, 'Record expense': { form: { kind: 'exp', id: 'new' } },
+  'Edit expense': { form: { kind: 'exp', id: 'e14' } }, 'Category list': { form: { kind: 'exp', id: 'new' }, combo: 'cat' },
+  'Delete expense': { confirm: { kind: 'exp', id: 'e3' } }, 'Previous month': { month: '2026-09' },
+  Recurring: { tab: 'recurring' }, 'New recurring': { tab: 'recurring', form: { kind: 'rec', id: 'new' } }, 'Edit recurring': { tab: 'recurring', form: { kind: 'rec', id: 'r4' } },
+  Categories: { tab: 'categories' }, 'Edit category': { tab: 'categories', catForm: 'ads' }, 'Add category': { tab: 'categories', catForm: 'new' }, 'Row actions': { menu: 'e3' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+function copy(x) { return JSON.parse(JSON.stringify(x)); }
+function money(v) { return '৳' + Math.round(Number(v) || 0).toLocaleString('en-US'); }
+function plural(x, one, many) { return Number(x).toLocaleString('en-US') + ' ' + (x === 1 ? one : many); }
+function num(x) { var v = parseFloat(String(x).replace(/,/g, '')); return isNaN(v) ? null : v; }
+function dt(s) { return new Date(s + 'T00:00:00Z'); }
+function iso(d) { return d.toISOString().slice(0, 10); }
+function addDays(s, k) { var d = dt(s); d.setUTCDate(d.getUTCDate() + k); return iso(d); }
+function weekday(s) { var w = dt(s).getUTCDay(); return w === 0 ? 7 : w; }
+function short(s) { return Number(s.slice(8, 10)) + ' ' + MONTHS[Number(s.slice(5, 7)) - 1].slice(0, 3); }
+function dayLabel(s) { return WEEKDAYS[weekday(s) - 1] + ', ' + short(s); }
+function monthName(m) { return MONTHS[Number(m.slice(5, 7)) - 1] + ' ' + m.slice(0, 4); }
+function shiftMonth(m, by) { var y = Number(m.slice(0, 4)), mo = Number(m.slice(5, 7)) - 1 + by; y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12; return y + '-' + String(mo + 1).padStart(2, '0'); }
+function lastDay(m) { var d = dt(shiftMonth(m, 1) + '-01'); d.setUTCDate(0); return iso(d); }
+function methodLabel(v) { return (METHODS.filter(function (m) { return m[0] === v; })[0] || METHODS[5])[1]; }
+function nextOn(r) {
+  if (!r.active) return null;
+  var next;
+  if (r.cadence === 'weekly') {
+    var k = (r.day - weekday(TODAY) + 7) % 7 || 7;
+    next = addDays(TODAY, k);
+  } else {
+    var m = TODAY.slice(0, 7);
+    var inMonth = function (mm) { return r.day === 0 ? lastDay(mm) : mm + '-' + String(r.day).padStart(2, '0'); };
+    next = inMonth(m) > TODAY ? inMonth(m) : inMonth(shiftMonth(m, 1));
+  }
+  if (r.startsOn && next < r.startsOn) next = r.startsOn;
+  if (r.endsOn && next > r.endsOn) return null;
+  return next;
+}
+function schedule(r) {
+  if (r.cadence === 'weekly') return 'Every ' + WEEKDAYS_LONG[r.day - 1];
+  return r.day === 0 ? 'Monthly on the last day' : 'Monthly, on day ' + r.day;
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'Expenses';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark }, copy(START[startKey] || {}));
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var toast = function (text) {
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+      return text;
+    };
+    var vals = {};
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    var series = SERIES[dark ? 'dark' : 'light'];
+    var cats = s.cats || CATS;
+    var exps = s.exps || EXPENSES;
+    var recs = s.recs || RECURRING;
+    var catById = function (id) { return cats.filter(function (c) { return c.id === id; })[0] || cats[cats.length - 1]; };
+    var colorOf = function (id) { return series[catById(id).slot % series.length]; };
+    var tab = s.tab || 'entries';
+    vals.tabs = [['entries', 'Expenses'], ['recurring', 'Recurring'], ['categories', 'Categories']].map(function (t) {
+      return { label: t[1], on: tab === t[0] ? 'true' : 'false', pick: function () { up({ tab: t[0], menu: null, pop: null }); } };
+    });
+    vals.isEntries = tab === 'entries'; vals.isRecurring = tab === 'recurring'; vals.isCategories = tab === 'categories';
+    vals.primaryText = tab === 'recurring' ? 'New recurring expense' : tab === 'categories' ? 'New category' : 'Record expense';
+    vals.primaryShort = tab === 'recurring' ? 'New' : tab === 'categories' ? 'New' : 'Record';
+    vals.primary = function () {
+      if (tab === 'recurring') up({ form: { kind: 'rec', id: 'new' }, fd: null });
+      else if (tab === 'categories') up({ catForm: 'new', cn: null, clang: 'bn' });
+      else up({ form: { kind: 'exp', id: 'new' }, fd: null });
+    };
+
+    // A month of expenses, with the category totals.
+    var month = s.month || TODAY.slice(0, 7);
+    var inMonth = exps.filter(function (e) { return e.date.slice(0, 7) === month; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    var total = inMonth.reduce(function (a, e) { return a + e.amount; }, 0);
+    var prevTotal = exps.filter(function (e) { return e.date.slice(0, 7) === shiftMonth(month, -1); }).reduce(function (a, e) { return a + e.amount; }, 0);
+    var byCat = {};
+    inMonth.forEach(function (e) { byCat[e.cat] = (byCat[e.cat] || 0) + e.amount; });
+    var catOrder = Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; });
+    var fcat = s.fcat || '';
+    var q = (s.q || '').trim().toLowerCase();
+    vals.mo = {
+      label: monthName(month), prev: function () { up({ month: shiftMonth(month, -1), fcat: '', hover: null }); },
+      next: function () { up({ month: shiftMonth(month, 1), fcat: '', hover: null }); },
+      isFuture: month >= TODAY.slice(0, 7), notCurrent: month !== TODAY.slice(0, 7), toToday: function () { up({ month: TODAY.slice(0, 7), fcat: '' }); },
+      prevAria: 'Previous month, ' + monthName(shiftMonth(month, -1)), nextAria: 'Next month, ' + monthName(shiftMonth(month, 1))
+    };
+    var diff = total - prevTotal;
+    vals.sum = {
+      has: total > 0, none: total === 0, total: money(total), count: plural(inMonth.length, 'expense', 'expenses'),
+      vs: prevTotal ? money(Math.abs(diff)) + (diff > 0 ? ' more than ' : diff < 0 ? ' less than ' : ' same as ') + MONTHS[Number(shiftMonth(month, -1).slice(5, 7)) - 1] : '',
+      hasVs: prevTotal > 0,
+      bars: catOrder.map(function (id) {
+        var c = catById(id), pct = byCat[id] / total * 100;
+        return {
+          id: id, color: colorOf(id), width: pct.toFixed(2) + '%', tip: c.en + ': ' + money(byCat[id]) + ' (' + Math.round(pct) + '%)',
+          hover: function () { up({ hover: id }); }, leave: function () { if (s.hover === id) up({ hover: null }); },
+          pick: function () { up({ fcat: fcat === id ? '' : id }); },
+          dim: fcat && fcat !== id ? '.35' : '1'
+        };
+      }),
+      legend: catOrder.map(function (id) {
+        var c = catById(id), pct = byCat[id] / total * 100, on = fcat === id;
+        return {
+          name: c.en, amount: money(byCat[id]), pct: Math.round(pct) + '%', color: colorOf(id), on: on ? 'true' : 'false',
+          aria: (on ? 'Show all categories' : 'Show only ' + c.en) + ', ' + money(byCat[id]),
+          pick: function () { up({ fcat: on ? '' : id }); }, dim: fcat && !on ? '.5' : '1'
+        };
+      })
+    };
+    var hov = s.hover && byCat[s.hover] ? s.hover : '';
+    vals.tip = { show: Boolean(hov), text: hov ? catById(hov).en + ' · ' + money(byCat[hov]) + ' · ' + Math.round(byCat[hov] / total * 100) + '% of the month' : '' };
+    var shown = inMonth.filter(function (e) {
+      return (!fcat || e.cat === fcat) && (!q || e.payee.toLowerCase().indexOf(q) !== -1 || e.note.toLowerCase().indexOf(q) !== -1 || catById(e.cat).en.toLowerCase().indexOf(q) !== -1);
+    });
+    var rowOf = function (e) {
+      var c = catById(e.cat), menuOpen = s.menu === e.id;
+      return {
+        date: short(e.date), cat: c.en, color: colorOf(e.cat), isRec: Boolean(e.rec), payee: e.payee || '—', note: e.note, hasNote: Boolean(e.note),
+        method: methodLabel(e.method), hasReceipt: Boolean(e.receipt), receiptAria: 'View the receipt for ' + c.en + ', ' + short(e.date),
+        amount: money(e.amount), title: c.en + ' · ' + money(e.amount), meta: (e.payee || c.en) + ' · ' + methodLabel(e.method),
+        aria: 'Edit ' + c.en + ', ' + (e.payee ? e.payee + ', ' : '') + money(e.amount) + ', ' + short(e.date),
+        edit: function () { up({ form: { kind: 'exp', id: e.id }, fd: null, menu: null }); },
+        viewReceipt: function () { up({ menu: null, toast: toast('Opened ' + e.receipt + ' in a new tab.') }); },
+        menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + c.en + ', ' + short(e.date),
+        toggleMenu: function () { up({ menu: menuOpen ? null : e.id }); },
+        askDelete: function () { up({ menu: null, confirm: { kind: 'exp', id: e.id } }); }
+      };
+    };
+    vals.rows = shown.map(rowOf);
+    var days = [];
+    shown.forEach(function (e) {
+      var g = days.filter(function (d) { return d.date === e.date; })[0];
+      if (!g) { g = { date: e.date, items: [] }; days.push(g); }
+      g.items.push(e);
+    });
+    vals.days = days.map(function (g) {
+      return { label: (g.date === TODAY ? 'Today · ' : g.date === addDays(TODAY, -1) ? 'Yesterday · ' : '') + dayLabel(g.date), total: money(g.items.reduce(function (a, e) { return a + e.amount; }, 0)), rows: g.items.map(rowOf) };
+    });
+    vals.noRows = shown.length === 0;
+    vals.hasRows = shown.length > 0;
+    vals.emptyText = inMonth.length ? 'No expenses match.' : 'No expenses in ' + monthName(month) + '.';
+    vals.emptyAction = inMonth.length ? 'Reset filters' : 'Record expense';
+    vals.emptyDo = function () { if (inMonth.length) up({ fcat: '', q: '' }); else vals.primary(); };
+    vals.q = s.q || '';
+    vals.onQ = function (e) { up({ q: e.target.value }); };
+    var catPop = s.pop === 'cat';
+    var fcq = catPop ? (s.fcq || '') : '';
+    var fcl = fcq.trim().toLowerCase();
+    var fcItems = cats.filter(function (c) { return (!c.archived || byCat[c.id]) && (!fcl || c.en.toLowerCase().indexOf(fcl) !== -1 || c.bn.indexOf(fcq.trim()) !== -1); });
+    vals.cf = {
+      open: catPop, aria: catPop ? 'true' : 'false', toggle: function () { up({ pop: catPop ? null : 'cat', fcq: '' }); },
+      query: fcq, onQuery: function (e) { up({ fcq: e.target.value }); }, none: fcItems.length === 0, showAll: !fcl,
+      has: Boolean(fcat), label: fcat ? catById(fcat).en : '', buttonText: fcat ? catById(fcat).en : 'Category',
+      allCheck: fcat ? '0' : '1', allAria: fcat ? 'false' : 'true', pickAll: function () { up({ fcat: '', pop: null }); },
+      items: fcItems.map(function (c) {
+        var on = fcat === c.id;
+        return { label: c.en, color: colorOf(c.id), count: byCat[c.id] ? money(byCat[c.id]) : '—', check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { up({ fcat: on ? '' : c.id, pop: null }); } };
+      }),
+      clear: function () { up({ fcat: '', pop: null }); }
+    };
+    vals.hasFilters = Boolean(fcat || q);
+    vals.clearAll = function () { up({ fcat: '', q: '' }); };
+    vals.filterText = shown.length === inMonth.length ? '' : plural(shown.length, 'expense', 'expenses') + ' · ' + money(shown.reduce(function (a, e) { return a + e.amount; }, 0));
+    vals.hasFilterText = shown.length !== inMonth.length;
+    var exOpen = s.pop === 'export';
+    vals.ex = {
+      open: exOpen, aria: exOpen ? 'true' : 'false', toggle: function () { up({ pop: exOpen ? null : 'export' }); }, can: inMonth.length > 0, cant: inMonth.length === 0,
+      xlsx: function () { up({ pop: null, toast: toast('Exported ' + monthName(month) + ' to Excel.') }); },
+      csv: function () { up({ pop: null, toast: toast('Exported ' + monthName(month) + ' to CSV.') }); }
+    };
+    var mOpen = s.menu ? exps.filter(function (e) { return e.id === s.menu; })[0] : null;
+    vals.menuOpen = Boolean(mOpen) && tab === 'entries';
+    vals.mx = rowOf(mOpen || exps[0]);
+
+    // Comboboxes, a popover on desktop and a drawer on phone.
+    var allCombos = {};
+    var combo = function (key, cfg) {
+      var open = s.combo === key;
+      var ql = open ? (s.cq || '').trim().toLowerCase() : '';
+      var opts = cfg.options.filter(function (o) { return !ql || o.label.toLowerCase().indexOf(ql) !== -1; });
+      var cur = cfg.options.filter(function (o) { return o.v === cfg.current; })[0];
+      var obj = {
+        open: open, aria: open ? 'true' : 'false', title: cfg.title, ph: cfg.ph, empty: 'Nothing found.', query: open ? (s.cq || '') : '', none: opts.length === 0,
+        display: cur ? cur.label : cfg.placeholder, color: cur ? 'var(--foreground)' : 'var(--muted-foreground)',
+        dot: cur && cur.color ? cur.color : 'transparent', hasDot: Boolean(cur && cur.color),
+        toggle: function () { up({ combo: open ? null : key, cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: opts.map(function (o) {
+          var on = o.v === cfg.current;
+          return { label: o.label, sub: o.sub || '', hasSub: Boolean(o.sub), color: o.color || 'transparent', hasColor: Boolean(o.color), check: on ? '1' : '0', aria: on ? 'true' : 'false', pick: function () { cfg.onPick(o.v); } };
+        })
+      };
+      allCombos[key] = obj;
+      return obj;
+    };
+    var methodsFor = function (cur, set) {
+      return METHODS.map(function (m) { return { label: m[1], on: cur === m[0] ? 'true' : 'false', pick: function () { set(m[0]); } }; });
+    };
+    var catOptions = function (cur) {
+      return cats.filter(function (c) { return !c.archived || c.id === cur; }).map(function (c) { return { v: c.id, label: c.en, sub: c.bn, color: colorOf(c.id) }; });
+    };
+
+    // Record or edit an expense.
+    var form = s.form || null;
+    var fkey = JSON.stringify(form);
+    var isExp = form && form.kind === 'exp';
+    var editingE = isExp && form.id !== 'new' ? exps.filter(function (e) { return e.id === form.id; })[0] : null;
+    var fd = isExp ? (s.fd && s.fdFor === fkey ? s.fd : (editingE
+      ? Object.assign(copy(editingE), { amount: String(editingE.amount), tried: false })
+      : { amount: '', cat: '', date: month === TODAY.slice(0, 7) ? TODAY : lastDay(month), method: 'cash', payee: '', note: '', receipt: '', tried: false })) : null;
+    if (isExp) {
+      var setF = function (patch, extra) { up(Object.assign({ fd: Object.assign({}, fd, patch), fdFor: fkey }, extra || {})); };
+      var amt = num(fd.amount);
+      var errs = { amount: !(amt > 0) ? 'Enter an amount in taka.' : '', cat: !fd.cat ? 'Choose a category.' : '', date: !fd.date ? 'Choose the date.' : '' };
+      var ok = !errs.amount && !errs.cat && !errs.date;
+      var recOf = editingE && editingE.rec ? recs.filter(function (r) { return r.id === editingE.rec; })[0] : null;
+      var payees = [];
+      exps.forEach(function (e) { if (fd.cat && e.cat === fd.cat && e.payee && payees.indexOf(e.payee) === -1 && e.payee !== fd.payee) payees.push(e.payee); });
+      var saveExp = function (again) {
+        if (!ok) { setF({ tried: true }); return; }
+        var rec = { id: editingE ? editingE.id : 'n' + exps.length, date: fd.date, cat: fd.cat, payee: fd.payee.trim(), method: fd.method, amount: amt, note: fd.note.trim(), receipt: fd.receipt, rec: editingE ? editingE.rec : '' };
+        var next = editingE ? exps.map(function (e) { return e.id === rec.id ? rec : e; }) : [rec].concat(exps);
+        if (again) up({ exps: next, fd: Object.assign({}, fd, { amount: '', payee: '', note: '', receipt: '', tried: false }), fdFor: fkey, combo: null, toast: toast('Expense saved. Record the next one.') });
+        else up({ exps: next, form: null, fd: null, combo: null, toast: toast('Expense saved.') });
+      };
+      vals.ef = {
+        open: true, title: editingE ? 'Edit expense' : 'Record expense', isEdit: Boolean(editingE), isNew: !editingE,
+        amount: fd.amount, onAmount: function (e) { setF({ amount: e.target.value }); },
+        amountErr: fd.tried ? errs.amount : '', hasAmountErr: Boolean(fd.tried && errs.amount),
+        cat: combo('cat', { title: 'Category', ph: 'Search categories', current: fd.cat, placeholder: 'Choose a category', options: catOptions(fd.cat), onPick: function (v) { setF({ cat: v }, { combo: null }); } }),
+        catErr: fd.tried ? errs.cat : '', hasCatErr: Boolean(fd.tried && errs.cat),
+        date: fd.date, onDate: function (e) { setF({ date: e.target.value }); },
+        todayOn: fd.date === TODAY ? 'true' : 'false', yesterdayOn: fd.date === addDays(TODAY, -1) ? 'true' : 'false',
+        pickToday: function () { setF({ date: TODAY }); }, pickYesterday: function () { setF({ date: addDays(TODAY, -1) }); },
+        methods: methodsFor(fd.method, function (v) { setF({ method: v }); }),
+        payee: fd.payee, onPayee: function (e) { setF({ payee: e.target.value }); },
+        payees: payees.slice(0, 4).map(function (p) { return { label: p, pick: function () { setF({ payee: p }); } }; }), hasPayees: payees.length > 0,
+        note: fd.note, onNote: function (e) { setF({ note: e.target.value }); },
+        hasReceipt: Boolean(fd.receipt), noReceipt: !fd.receipt, receipt: fd.receipt,
+        addReceipt: function () { setF({ receipt: 'receipt-' + fd.date + '.jpg' }); },
+        removeReceipt: function () { setF({ receipt: '' }); },
+        fromRec: Boolean(recOf), recText: recOf ? 'Posted by the recurring ' + catById(recOf.cat).en.toLowerCase() + ' expense (' + schedule(recOf).toLowerCase() + '). Changing this one doesn’t change the others.' : '',
+        saveText: editingE ? 'Save' : 'Record expense',
+        save: function () { saveExp(false); }, saveAgain: function () { saveExp(true); },
+        askDelete: function () { up({ confirm: { kind: 'exp', id: editingE.id } }); }
+      };
+    } else {
+      vals.ef = { open: false, cat: combo('cat', { title: 'Category', ph: 'Search', current: '', placeholder: '', options: [], onPick: function () {} }), methods: [], payees: [] };
+    }
+
+    // Recurring expenses.
+    var monthly = 0;
+    vals.recRows = recs.map(function (r) {
+      var nx = nextOn(r), c = catById(r.cat), menuOpen = s.menu === r.id;
+      if (nx) monthly += r.cadence === 'weekly' ? r.amount * 52 / 12 : r.amount;
+      var state = !r.active ? 'Paused' : nx ? 'Next on ' + dayLabel(nx) : 'Ended';
+      return {
+        cat: c.en, color: colorOf(r.cat), payee: r.payee || c.en, schedule: schedule(r), state: state,
+        stateColor: !r.active || !nx ? 'var(--muted-foreground)' : 'var(--foreground)', isLive: Boolean(nx), isOff: !nx,
+        amount: money(r.amount), method: methodLabel(r.method), meta: schedule(r) + ' · ' + methodLabel(r.method),
+        edit: function () { up({ form: { kind: 'rec', id: r.id }, fd: null, menu: null }); },
+        menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + (r.payee || c.en),
+        toggleMenu: function () { up({ menu: menuOpen ? null : r.id }); },
+        canPause: r.active && Boolean(nx), canResume: !r.active,
+        pause: function () { up({ recs: recs.map(function (x) { return x.id === r.id ? Object.assign({}, x, { active: false }) : x; }), menu: null, toast: toast((r.payee || c.en) + ' is paused.') }); },
+        resume: function () { up({ recs: recs.map(function (x) { return x.id === r.id ? Object.assign({}, x, { active: true }) : x; }), menu: null, toast: toast((r.payee || c.en) + ' is active again.') }); },
+        askDelete: function () { up({ menu: null, confirm: { kind: 'rec', id: r.id } }); }
+      };
+    });
+    vals.recSummary = 'About ' + money(Math.round(monthly / 100) * 100) + ' a month from the ' + plural(recs.filter(function (r) { return nextOn(r); }).length, 'active one', 'active ones') + '.';
+    vals.noRecs = recs.length === 0;
+    var rOpen = s.menu ? recs.filter(function (r) { return r.id === s.menu; })[0] : null;
+    vals.recMenuOpen = Boolean(rOpen) && tab === 'recurring';
+    vals.mr = rOpen ? vals.recRows[recs.indexOf(rOpen)] : vals.recRows[0];
+
+    var isRec = form && form.kind === 'rec';
+    var editingR = isRec && form.id !== 'new' ? recs.filter(function (r) { return r.id === form.id; })[0] : null;
+    var rd = isRec ? (s.fd && s.fdFor === fkey ? s.fd : (editingR
+      ? Object.assign(copy(editingR), { amount: String(editingR.amount), tried: false })
+      : { cat: '', amount: '', method: 'bank', payee: '', cadence: 'monthly', day: 1, startsOn: TODAY, endsOn: '', active: true, tried: false })) : null;
+    if (isRec) {
+      var setR = function (patch, extra) { up(Object.assign({ fd: Object.assign({}, rd, patch), fdFor: fkey }, extra || {})); };
+      var ramt = num(rd.amount);
+      var rerr = { amount: !(ramt > 0) ? 'Enter an amount in taka.' : '', cat: !rd.cat ? 'Choose a category.' : '', dates: rd.endsOn && rd.endsOn < rd.startsOn ? 'It must end after it starts.' : '' };
+      var rok = !rerr.amount && !rerr.cat && !rerr.dates;
+      var preview = Object.assign({}, rd, { amount: ramt || 0 });
+      var pn = nextOn(preview);
+      var dayOptions = [];
+      for (var d = 1; d <= 28; d++) dayOptions.push({ v: d, label: 'Day ' + d });
+      dayOptions.push({ v: 0, label: 'The last day' });
+      vals.rf = {
+        open: true, title: editingR ? 'Edit recurring expense' : 'New recurring expense', isEdit: Boolean(editingR), saveText: editingR ? 'Save' : 'Add recurring expense',
+        cat: combo('rcat', { title: 'Category', ph: 'Search categories', current: rd.cat, placeholder: 'Choose a category', options: catOptions(rd.cat), onPick: function (v) { setR({ cat: v }, { combo: null }); } }),
+        catErr: rd.tried ? rerr.cat : '', hasCatErr: Boolean(rd.tried && rerr.cat),
+        amount: rd.amount, onAmount: function (e) { setR({ amount: e.target.value }); },
+        amountErr: rd.tried ? rerr.amount : '', hasAmountErr: Boolean(rd.tried && rerr.amount),
+        methods: methodsFor(rd.method, function (v) { setR({ method: v }); }),
+        payee: rd.payee, onPayee: function (e) { setR({ payee: e.target.value }); },
+        monthlyOn: rd.cadence === 'monthly' ? 'true' : 'false', weeklyOn: rd.cadence === 'weekly' ? 'true' : 'false',
+        isMonthly: rd.cadence === 'monthly', isWeekly: rd.cadence === 'weekly',
+        pickMonthly: function () { setR({ cadence: 'monthly', day: 1 }); }, pickWeekly: function () { setR({ cadence: 'weekly', day: weekday(TODAY) }); },
+        day: combo('day', { title: 'Day of the month', ph: 'Search days', current: rd.day, placeholder: 'Choose a day', options: dayOptions, onPick: function (v) { setR({ day: v }, { combo: null }); } }),
+        weekdays: WEEKDAYS.map(function (w, i) { return { label: w, full: WEEKDAYS_LONG[i], on: rd.day === i + 1 ? 'true' : 'false', pick: function () { setR({ day: i + 1 }); } }; }),
+        startsOn: rd.startsOn, onStarts: function (e) { setR({ startsOn: e.target.value }); },
+        endsOn: rd.endsOn, onEnds: function (e) { setR({ endsOn: e.target.value }); },
+        datesErr: rd.tried ? rerr.dates : '', hasDatesErr: Boolean(rd.tried && rerr.dates),
+        activeAria: rd.active ? 'true' : 'false', activeBg: rd.active ? 'var(--primary)' : 'var(--input)', activeX: rd.active ? '14px' : '0px',
+        toggleActive: function () { setR({ active: !rd.active }); },
+        preview: !rd.active ? 'Paused: nothing is posted until you turn it back on.' : pn ? 'Next one: ' + dayLabel(pn) + (ramt ? ' · ' + money(ramt) : '') + '. It posts itself early that morning.' : 'It has ended: nothing more is posted.',
+        save: function () {
+          if (!rok) { setR({ tried: true }); return; }
+          var rec = Object.assign({}, rd, { id: editingR ? editingR.id : 'rn' + recs.length, amount: ramt, payee: rd.payee.trim() });
+          delete rec.tried;
+          up({ recs: editingR ? recs.map(function (r) { return r.id === rec.id ? rec : r; }) : recs.concat([rec]), form: null, fd: null, combo: null, toast: toast('Recurring expense saved.') });
+        },
+        askDelete: function () { up({ confirm: { kind: 'rec', id: editingR.id } }); }
+      };
+    } else {
+      vals.rf = { open: false, cat: combo('rcat', { title: '', ph: '', current: '', placeholder: '', options: [], onPick: function () {} }), day: combo('day', { title: '', ph: '', current: '', placeholder: '', options: [], onPick: function () {} }), methods: [], weekdays: [] };
+    }
+    vals.closeForm = function () { up({ form: null, fd: null, combo: null }); };
+    var active = allCombos[s.combo] && form ? allCombos[s.combo] : null;
+    vals.comboOpen = Boolean(active);
+    vals.cbd = active || vals.ef.cat;
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // Categories.
+    var activeCats = cats.filter(function (c) { return !c.archived; });
+    var monthCount = function (id) { return inMonth.filter(function (e) { return e.cat === id; }).length; };
+    var moveCat = function (c, dir) {
+      var list = activeCats.slice(), i = list.indexOf(c), j = i + dir;
+      if (j < 0 || j >= list.length) return;
+      list[i] = list[j]; list[j] = c;
+      up({ cats: list.concat(cats.filter(function (x) { return x.archived; })), menu: null, toast: toast(c.en + ' moved ' + (dir < 0 ? 'up.' : 'down.')) });
+    };
+    var catRow = function (c, i, list) {
+      var menuOpen = s.menu === c.id;
+      return {
+        name: c.en, bn: c.bn, color: colorOf(c.id),
+        month: byCat[c.id] ? money(byCat[c.id]) + ' in ' + MONTHS[Number(month.slice(5, 7)) - 1] + ' · ' + plural(monthCount(c.id), 'expense', 'expenses') : 'Nothing in ' + MONTHS[Number(month.slice(5, 7)) - 1],
+        aria: 'Edit ' + c.en,
+        menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + c.en,
+        toggleMenu: function () { up({ menu: menuOpen ? null : c.id }); },
+        edit: function () { up({ catForm: c.id, cn: null, clang: 'bn', menu: null }); },
+        first: i === 0, last: i === list.length - 1, moveUp: function () { moveCat(c, -1); }, moveDown: function () { moveCat(c, 1); },
+        archive: function () { up({ cats: cats.map(function (x) { return x.id === c.id ? Object.assign({}, x, { archived: true }) : x; }), menu: null, catForm: null, cn: null, toast: toast(c.en + ' is archived. Its expenses stay.') }); },
+        restore: function () { up({ cats: cats.map(function (x) { return x.id === c.id ? Object.assign({}, x, { archived: false }) : x; }), toast: toast(c.en + ' is back in the list.') }); }
+      };
+    };
+    vals.catRows = activeCats.map(catRow);
+    var archived = cats.filter(function (c) { return c.archived; });
+    vals.archRows = archived.map(catRow);
+    vals.hasArchived = archived.length > 0;
+    vals.archOpen = Boolean(s.showArchived);
+    vals.archAria = s.showArchived ? 'true' : 'false';
+    vals.archText = 'Archived (' + archived.length + ')';
+    vals.toggleArch = function () { up({ showArchived: !s.showArchived }); };
+
+    // Add or edit a category: one name field with বাংলা | English tabs. Both are needed.
+    var kfor = s.catForm || null;
+    var editingC = kfor && kfor !== 'new' ? cats.filter(function (c) { return c.id === kfor; })[0] : null;
+    var cn = s.cn && s.cnFor === kfor ? s.cn : (editingC ? { bn: editingC.bn, en: editingC.en } : { bn: '', en: '' });
+    var clang = s.clang || 'bn';
+    var setN = function (patch) { up({ cn: Object.assign({}, cn, patch), cnFor: kfor }); };
+    vals.kf = {
+      open: Boolean(kfor), isEdit: Boolean(editingC), canArchive: Boolean(editingC && !editingC.archived),
+      title: editingC ? 'Edit category' : 'New category',
+      sub: editingC ? 'Expenses already in it move with the new name.' : 'Groups expenses in the month’s totals and reports.',
+      bnSel: clang === 'bn' ? 'true' : 'false', enSel: clang === 'en' ? 'true' : 'false',
+      pickBn: function () { up({ clang: 'bn' }); }, pickEn: function () { up({ clang: 'en' }); },
+      bnNeeded: !cn.bn.trim(), enNeeded: !cn.en.trim(),
+      lang: clang, value: clang === 'bn' ? cn.bn : cn.en, ph: clang === 'bn' ? 'যেমন: অফিস খরচ' : 'For example: Office',
+      onValue: function (e) { var patch = {}; patch[clang] = e.target.value; setN(patch); },
+      hint: 'Shown in বাংলা and English, so both are needed.',
+      cantSave: !cn.en.trim() || !cn.bn.trim(), saveText: editingC ? 'Save' : 'Add category',
+      save: function () {
+        if (!cn.en.trim() || !cn.bn.trim()) return;
+        if (editingC) up({ cats: cats.map(function (x) { return x.id === editingC.id ? Object.assign({}, x, { en: cn.en.trim(), bn: cn.bn.trim() }) : x; }), catForm: null, cn: null, toast: toast('Category saved.') });
+        else up({ cats: activeCats.concat([{ id: 'c' + cats.length, en: cn.en.trim(), bn: cn.bn.trim(), slot: cats.length, archived: false }]).concat(archived), catForm: null, cn: null, toast: toast('Category saved.') });
+      },
+      archive: function () { if (editingC) catRow(editingC, 0, activeCats).archive(); }
+    };
+    vals.closeCat = function () { up({ catForm: null, cn: null }); };
+    var cOpen = s.menu ? cats.filter(function (c) { return c.id === s.menu; })[0] : null;
+    vals.catMenuOpen = Boolean(cOpen) && tab === 'categories';
+    vals.mc = cOpen ? catRow(cOpen, activeCats.indexOf(cOpen), activeCats) : vals.catRows[0];
+
+    // Delete.
+    var cf = s.confirm || null;
+    vals.confirmOpen = Boolean(cf);
+    var delE = cf && cf.kind === 'exp' ? exps.filter(function (e) { return e.id === cf.id; })[0] : null;
+    var delR = cf && cf.kind === 'rec' ? recs.filter(function (r) { return r.id === cf.id; })[0] : null;
+    vals.confirmTitle = delE ? 'Delete this expense?' : 'Delete this recurring expense?';
+    vals.confirmText = delE ? catById(delE.cat).en + ', ' + money(delE.amount) + ' on ' + short(delE.date) + '. Its receipt photo goes too.' : 'No more expenses are posted. Those already posted stay.';
+    vals.doDelete = function () {
+      if (delE) up({ exps: exps.filter(function (e) { return e.id !== delE.id; }), confirm: null, form: null, fd: null, toast: toast('Expense deleted.') });
+      else if (delR) up({ recs: recs.filter(function (r) { return r.id !== delR.id; }), confirm: null, form: null, fd: null, toast: toast('Recurring expense deleted.') });
+    };
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+
+    var reset = { menu: null, pop: null, form: null, fd: null, combo: null, confirm: null, catForm: null, cn: null };
+    vals.closeAll = function () { up(reset); };
+    vals.closePop = function () { up({ menu: null, pop: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up(s.combo ? { combo: null } : s.confirm ? { confirm: null } : reset); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    vals.themeClass = ROOT + (dark ? ' dark' : '');
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

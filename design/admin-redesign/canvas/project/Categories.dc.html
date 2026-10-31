@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Categories — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-btn{display:inline-flex;flex:none;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input,.mm.dark .mm-combo{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-icon{width:32px;padding:0}
+.mm-muted{color:var(--muted-foreground)}
+.mm-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-input,.mm-textarea{width:100%;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input{height:36px;padding:4px 12px}
+.mm-textarea{min-height:88px;padding:8px 12px;line-height:22px;resize:vertical}
+.mm-input::placeholder,.mm-textarea::placeholder{color:var(--muted-foreground)}
+.mm-combo{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px 0 12px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-combo:hover{background:var(--accent)}
+.mm-pop{position:absolute;top:40px;left:0;z-index:70;width:100%;min-width:220px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-popsearch{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-bottom:1px solid var(--border)}
+.mm-cmd-input{flex:1;min-width:0;height:34px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-poplist{max-height:220px;overflow-y:auto;padding:4px}
+.mm-popempty{margin:0;padding:20px 8px;text-align:center;font-size:14px;color:var(--muted-foreground)}
+.mm-label{display:block;margin:0 0 8px;font-size:14px;font-weight:500;line-height:1}
+.mm-hint{margin:6px 0 0;font-size:13px;line-height:18px;color:var(--muted-foreground)}
+.mm-field{display:flex;flex-direction:column;min-width:0}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;box-sizing:border-box;border:0;border-radius:8px;background:transparent;color:var(--sidebar-foreground);font:inherit;font-size:14px;text-align:left}
+.mm-nav:hover{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tabsbar{display:inline-flex;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-ptab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-ptab:hover{color:var(--foreground)}
+.mm-ptab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-ptab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-tabs{display:inline-flex;align-items:center;height:32px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-tab{display:inline-flex;align-items:center;height:26px;padding:0 10px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--muted-foreground);font:inherit;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-chip{display:inline-flex;align-items:center;gap:2px;height:24px;padding:0 2px 0 8px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:500}
+.mm-chip button{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;opacity:.6;cursor:pointer}
+.mm-chip button:hover{opacity:1}
+.mm-chipbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:5px 6px;box-sizing:border-box;border:1px solid var(--input);border-radius:8px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-addchip{height:24px;padding:0 6px;font-size:13px;color:var(--muted-foreground)}
+.mm-more{display:flex;align-items:center;gap:6px;width:100%;margin:-4px 0;padding:6px 0;border:0;background:transparent;color:var(--muted-foreground);font:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer}
+.mm-more:hover{color:var(--foreground)}
+.mm-more svg{transition:transform .2s}
+.mm-more[aria-expanded=true] svg{transform:rotate(90deg)}
+.mm-grid{display:grid;grid-template-columns:minmax(0,1fr) 110px 220px 48px;align-items:center}
+.mm-thead{height:40px;padding:0 8px 0 12px;border-bottom:1px solid var(--border);background:var(--muted);border-radius:10px 10px 0 0;font-weight:500}
+.mm-row{position:relative;height:44px;padding:0 8px 0 12px;border-bottom:1px solid var(--border)}
+.mm-rows>li:last-child .mm-row{border-bottom:0}
+.mm-row:hover{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-row[data-current=true]{background:var(--muted)}
+.mm-rowlink{display:block;min-width:0;padding:0;border:0;background:transparent;color:var(--foreground);font:inherit;font-weight:500;text-align:left;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring);border-radius:2px}
+.mm-above{position:relative;z-index:1}
+.mm-grip{display:inline-flex;flex:none;width:16px;color:var(--muted-foreground);opacity:0;cursor:grab}
+.mm-row:hover .mm-grip{opacity:.6}
+.mm-chev{display:inline-flex;flex:none;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;color:var(--muted-foreground);cursor:pointer}
+.mm-chev:hover{background:var(--accent);color:var(--foreground)}
+.mm-chev svg{transition:transform .15s}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-menu{position:absolute;z-index:40;padding:4px;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm-cmd-item:disabled{opacity:.5;pointer-events:none}
+.mm-danger,.mm-danger svg{color:var(--destructive) !important}
+.mm-sep{height:1px;margin:4px -4px;background:var(--border)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible;margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}.mm-grid{grid-template-columns:minmax(0,1fr) 72px 48px}.mm-col-specs{display:none !important}}
+.mm-show-sm{display:none !important}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><a href="Orders.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="#" class="mm-nav" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate(90deg)"><path d="m9 18 6-6-6-6"></path></svg></a>
+<ul class="mm-sub">
+<li><a href="#" class="mm-subbtn">Products</a></li>
+<li><a href="#" class="mm-subbtn" aria-current="page">Categories</a></li>
+<li><a href="Collections.dc.html" class="mm-subbtn">Collections</a></li>
+<li><a href="Attributes.dc.html" class="mm-subbtn">Attributes</a></li>
+<li><a href="Import.dc.html" class="mm-subbtn">Import</a></li>
+</ul></li>
+<li><a href="Inventory.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><a href="Reports.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="OnlineStore.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="PlatformStores.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground)">
+<li><a href="#">Catalog</a></li>
+<li aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li aria-current="page" style="color: var(--foreground)">Categories</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Categories</h1>
+<button type="button" class="mm-btn mm-primary" aria-haspopup="dialog" onClick="{{newTop}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New category</button>
+</div>
+
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<div style="position: relative; width: 260px; max-width: 100%">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 10px; top: 8px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="Search categories" placeholder="Search categories" value="{{q}}" onChange="{{onQ}}" style="height: 32px; padding-left: 32px">
+</div>
+<button type="button" class="mm-btn mm-ghost" onClick="{{toggleAll}}"><sc-if value="{{allOpen}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>Collapse all</sc-if><sc-if value="{{allClosed}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>Expand all</sc-if></button>
+<span class="mm-muted" style="margin-left: auto; font-size: 13px">{{summary}}</span>
+</div>
+
+<div style="border: 1px solid var(--border); border-radius: 10px">
+<div class="mm-grid mm-thead" aria-hidden="true">
+<span>Name</span>
+<span class="mm-num">Products</span>
+<span class="mm-col-specs" style="padding-left: 24px">Specifications</span>
+<span></span>
+</div>
+<ul class="mm-rows" aria-label="Categories" style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
+<li>
+<div class="mm-grid mm-row" data-current="{{r.current}}">
+<div style="display: flex; align-items: center; gap: 4px; min-width: 0; padding-left: {{r.indent}}">
+<span class="mm-grip" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span>
+<sc-if value="{{r.hasKids}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-chev mm-above" aria-expanded="{{r.aria}}" aria-label="{{r.toggleAria}}" onClick="{{r.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{r.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button></sc-if>
+<sc-if value="{{r.leaf}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="flex: none; width: 24px"></span></sc-if>
+<button type="button" class="mm-rowlink" aria-haspopup="dialog" onClick="{{r.edit}}">{{r.name}}</button>
+<sc-if value="{{r.hasKidCount}}" hint-placeholder-val="{{false}}"><span class="mm-muted" style="flex: none; font-size: 13px">{{r.kidText}}</span></sc-if>
+</div>
+<span class="mm-num">{{r.count}}<span class="mm-sr"> products</span></span>
+<span class="mm-col-specs mm-trunc" style="padding-left: 24px; color: {{r.specColor}}">{{r.specs}}</span>
+<div style="position: relative; display: flex; justify-content: flex-end">
+<button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r.menuAria}}" aria-haspopup="menu" aria-expanded="{{r.menuExpanded}}" onClick="{{r.toggleMenu}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>
+<sc-if value="{{r.menuOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closeAll}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="{{r.menuAria}}" class="mm-menu" onKeyDown="{{escClose}}" style="top: 36px; right: 0; width: 220px">
+<button type="button" role="menuitem" class="mm-cmd-item" onClick="{{r.edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg>Edit</button>
+<button type="button" role="menuitem" class="mm-cmd-item" disabled="{{r.noChild}}" onClick="{{r.addChild}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>{{r.addChildText}}</button>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path></svg>View products</a>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item" disabled="{{r.first}}" onClick="{{r.up}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg>Move up</button>
+<button type="button" role="menuitem" class="mm-cmd-item" disabled="{{r.last}}" onClick="{{r.down}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg>Move down</button>
+<div role="separator" class="mm-sep"></div>
+<button type="button" role="menuitem" class="mm-cmd-item mm-danger" disabled="{{r.cantDelete}}" onClick="{{r.askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>Delete</button>
+<sc-if value="{{r.cantDelete}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 0 8px 6px 32px; font-size: 12px; line-height: 16px; color: var(--muted-foreground)">Only an empty category can be deleted.</p></sc-if>
+</div>
+</sc-if>
+</div>
+</div>
+</li>
+</sc-for>
+</ul>
+<sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 16px; text-align: center"><p class="mm-muted" style="margin: 0">{{emptyText}}</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Clear search</button></sc-if></div></sc-if>
+</div>
+<p class="mm-muted" style="margin: 0; font-size: 13px">Up to 3 levels deep. To change the order shoppers see, use Move up and Move down in a row’s ⋯ menu.</p>
+
+</main>
+</div>
+
+<sc-if value="{{sheetOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-sh-title" onKeyDown="{{escClose}}" style="position: absolute; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; width: 440px; max-width: 90%; border-left: 1px solid var(--border); background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="flex: none; display: flex; flex-direction: column; gap: 6px; padding: 16px 48px 16px 16px">
+<h2 id="mm-sh-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{sh.title}}</h2>
+<p class="mm-muted" style="margin: 0">{{sh.sub}}</p>
+</div>
+<div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 4px 16px 16px">
+<div class="mm-field">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 32px">
+<label class="mm-label" for="mm-name" style="margin: 0">Name</label>
+<sc-if value="{{sh.single}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost" style="height: 28px; margin-right: -8px; padding: 0 8px; color: var(--muted-foreground)" onClick="{{sh.addEn}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add English</button></sc-if>
+<sc-if value="{{sh.multi}}" hint-placeholder-val="{{false}}"><div role="tablist" aria-label="Language" class="mm-tabs"><button type="button" role="tab" class="mm-tab" lang="bn" aria-selected="{{sh.bnSel}}" onClick="{{sh.pickBn}}">বাংলা</button><button type="button" role="tab" class="mm-tab" aria-selected="{{sh.enSel}}" onClick="{{sh.pickEn}}">English</button></div></sc-if>
+</div>
+<input id="mm-name" class="mm-input" lang="{{sh.lang}}" value="{{sh.name}}" onChange="{{sh.onName}}" placeholder="{{sh.namePh}}" autoFocus="{{true}}">
+</div>
+
+<div class="mm-field"><span class="mm-label" id="mm-l-parent">Under</span><div style="position: relative"><button type="button" class="mm-combo" role="combobox" aria-haspopup="listbox" aria-expanded="{{cb.parent.aria}}" aria-labelledby="mm-l-parent" onClick="{{cb.parent.toggle}}"><span class="mm-trunc">{{cb.parent.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button><sc-if value="{{cb.parent.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 65; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="Under" onKeyDown="{{comboEsc}}"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search categories" placeholder="Search categories…" autoComplete="off" autoFocus="{{true}}" value="{{cb.parent.query}}" onChange="{{cb.parent.onQuery}}"></div><div role="listbox" aria-label="Under" class="mm-poplist"><sc-for list="{{cb.parent.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{cb.parent.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No category found.</p></sc-if></div></div></sc-if></div><p class="mm-hint">Categories go 3 levels deep, so a third-level category can’t have any under it.</p></div>
+
+<div class="mm-field">
+<label class="mm-label" for="mm-desc">Description <span class="mm-muted" style="font-weight: 400">(optional)</span></label>
+<textarea id="mm-desc" class="mm-textarea" lang="{{sh.lang}}" value="{{sh.desc}}" onChange="{{sh.onDesc}}" placeholder="Shown at the top of the category page in the store"></textarea>
+</div>
+
+<div class="mm-field">
+<span class="mm-label" id="mm-l-specs">Specifications</span>
+<div style="position: relative"><div class="mm-chipbox" role="group" aria-labelledby="mm-l-specs"><sc-for list="{{sh.specs}}" as="c" hint-placeholder-count="2"><span class="mm-chip">{{c.label}}<button type="button" aria-label="{{c.removeAria}}" onClick="{{c.remove}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span></sc-for><button type="button" class="mm-btn mm-ghost mm-addchip" aria-haspopup="listbox" aria-expanded="{{cb.specs.aria}}" onClick="{{cb.specs.toggle}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add</button></div><sc-if value="{{cb.specs.open}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}" style="z-index: 65; background: transparent"></button><div class="mm-pop" role="dialog" aria-label="Specifications" onKeyDown="{{comboEsc}}" style="top: calc(100% + 4px)"><div class="mm-popsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="mm-cmd-input" aria-label="Search specifications" placeholder="Search specifications…" autoComplete="off" autoFocus="{{true}}" value="{{cb.specs.query}}" onChange="{{cb.specs.onQuery}}"></div><div role="listbox" aria-label="Specifications" aria-multiselectable="true" class="mm-poplist"><sc-for list="{{cb.specs.items}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.pick}}"><span class="mm-trunc" style="flex: 1">{{o.label}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{cb.specs.none}}" hint-placeholder-val="{{false}}"><p class="mm-popempty">No specification found.</p></sc-if></div></div></sc-if></div>
+<p class="mm-hint">The product editor shows these first for products here and in the categories under this one.</p>
+</div>
+
+<button type="button" class="mm-more" aria-expanded="{{sh.moreAria}}" onClick="{{sh.toggleMore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>Web address</button>
+<sc-if value="{{sh.moreOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-field" style="margin-top: -8px">
+<div style="display: flex; align-items: stretch">
+<span style="display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid var(--input); border-right: 0; border-radius: 8px 0 0 8px; background: var(--muted); color: var(--muted-foreground); font-size: 13px; white-space: nowrap">nakshi.com/c/</span>
+<input class="mm-input" aria-label="Web address" value="{{sh.slug}}" onChange="{{sh.onSlug}}" placeholder="made-from-the-name" style="border-radius: 0 8px 8px 0">
+</div>
+<p class="mm-hint">Made from the name when left empty. Old addresses keep working.</p>
+</div>
+</sc-if>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border)">
+<sc-if value="{{sh.isEdit}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-danger" disabled="{{sh.cantDelete}}" title="{{sh.deleteTitle}}" onClick="{{sh.askDelete}}" style="margin-left: -8px; padding: 0 8px">Delete</button></sc-if>
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeAll}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" disabled="{{sh.cantSave}}" onClick="{{sh.save}}">{{sh.saveText}}</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeAll}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 80">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 448px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 1; font-weight: 600">Delete this category?</h2>
+<p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">{{confirmText}}</p>
+</div>
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px">
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{cancelConfirm}}">Cancel</button>
+<button type="button" class="mm-btn" style="height: 36px; padding: 0 16px; background: var(--destructive); color: #fff" onClick="{{doDelete}}">Delete</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startOn":{"editor":"enum","options":["List","Edit panel","New category","Row menu"],"default":"List"},"dark":{"editor":"boolean","default":false},"font":{"editor":"enum","options":["Inter","Geist"],"default":"Inter"},"$preview":{"width":1440,"height":900}}'>
+// Sample tree, in shopper order. "bn" is the store language; English is optional.
+var CATS = [
+  { id: 'men', parent: null, bn: 'পুরুষ', en: 'Men', count: 0, specs: ['Brand', 'Fabric', 'Fit'] },
+  { id: 'panjabi', parent: 'men', bn: 'পাঞ্জাবি', en: 'Panjabi', count: 18, specs: ['Collar'] },
+  { id: 'lungi', parent: 'men', bn: 'লুঙ্গি', en: 'Lungi', count: 9, specs: [] },
+  { id: 'shirts', parent: 'men', bn: 'শার্ট', en: 'Shirts', count: 0, specs: ['Sleeve'] },
+  { id: 'casual', parent: 'shirts', bn: 'ক্যাজুয়াল', en: 'Casual', count: 9, specs: [] },
+  { id: 'formal', parent: 'shirts', bn: 'ফরমাল', en: 'Formal', count: 6, specs: [] },
+  { id: 'women', parent: null, bn: 'নারী', en: 'Women', count: 0, specs: ['Brand', 'Fabric'] },
+  { id: 'saree', parent: 'women', bn: 'শাড়ি', en: 'Saree', count: 21, specs: ['Origin'] },
+  { id: 'kurti', parent: 'women', bn: 'কুর্তি', en: 'Kurti', count: 17, specs: [] },
+  { id: 'threepiece', parent: 'women', bn: 'থ্রি-পিস', en: 'Three-piece', count: 25, specs: [] },
+  { id: 'kids', parent: null, bn: 'শিশু', en: 'Kids', count: 12, specs: ['Age group'] },
+  { id: 'footwear', parent: null, bn: 'জুতা', en: 'Footwear', count: 14, specs: ['Brand'] },
+  { id: 'acc', parent: null, bn: 'এক্সেসরিজ', en: 'Accessories', count: 0, specs: [] },
+  { id: 'bags', parent: 'acc', bn: 'ব্যাগ', en: 'Bags', count: 8, specs: [] },
+  { id: 'shawls', parent: 'acc', bn: 'শাল ও হিজাব', en: 'Shawls & hijabs', count: 11, specs: ['Fabric'] },
+  { id: 'gift', parent: null, bn: 'উপহার', en: '', count: 0, specs: [] }
+];
+var ATTRS = ['Brand', 'Fabric', 'Fit', 'Sleeve', 'Collar', 'Care', 'Origin', 'Age group'];
+var START = {
+  List: {}, 'Edit panel': { sheet: { mode: 'edit', id: 'shirts' } },
+  'New category': { sheet: { mode: 'create', parent: 'women' } }, 'Row menu': { menu: 'women' }
+};
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var startKey = this.props.startOn ?? 'List';
+    var s = this.state || {};
+    if (s.started !== startKey) s = Object.assign({ started: startKey, dark: s.dark, open: { men: true, women: true } }, START[startKey] || {});
+    var up = function (patch) { self.setState(Object.assign({}, s, patch, { started: startKey })); };
+    var cats = s.cats || CATS;
+    var open = s.open || {};
+    var q = (s.q || '').trim().toLowerCase();
+    var vals = {};
+    var byId = {};
+    cats.forEach(function (c) { byId[c.id] = c; });
+    var kids = function (id) { return cats.filter(function (c) { return c.parent === id; }); };
+    var level = function (c) { var n = 1; while (c.parent) { c = byId[c.parent]; n++; } return n; };
+    var label = function (c) { return c.en || c.bn; };
+    var path = function (c) { var parts = []; while (c) { parts.unshift(label(c)); c = c.parent ? byId[c.parent] : null; } return parts.join(' › '); };
+    var below = function (id) { var out = []; kids(id).forEach(function (k) { out.push(k.id); out = out.concat(below(k.id)); }); return out; };
+    // A category's count includes the products in the categories under it.
+    var total = function (c) { return c.count + kids(c.id).reduce(function (a, k) { return a + total(k); }, 0); };
+    var matches = function (c) { return !q || label(c).toLowerCase().indexOf(q) !== -1 || c.bn.indexOf(q) !== -1 || kids(c.id).some(matches); };
+
+    // Visible rows: open branches, or every branch holding a match while searching.
+    var rows = [];
+    var walk = function (parentId) {
+      var list = kids(parentId);
+      list.forEach(function (c, i) {
+        if (!matches(c)) return;
+        var lv = level(c);
+        var ks = kids(c.id);
+        var isOpen = q ? true : Boolean(open[c.id]);
+        var empty = c.count === 0 && ks.length === 0;
+        var menuOpen = s.menu === c.id;
+        rows.push({
+          name: label(c), indent: ((lv - 1) * 24) + 'px', count: String(total(c)),
+          specs: c.specs.length ? c.specs.join(', ') : '—', specColor: c.specs.length ? 'var(--foreground)' : 'var(--muted-foreground)',
+          hasKids: ks.length > 0, leaf: ks.length === 0, aria: isOpen ? 'true' : 'false', rot: isOpen ? '90deg' : '0deg',
+          hasKidCount: ks.length > 0 && !isOpen, kidText: ks.length + (ks.length === 1 ? ' subcategory' : ' subcategories'),
+          toggleAria: (isOpen ? 'Hide' : 'Show') + ' categories under ' + label(c),
+          toggle: function () { var n = Object.assign({}, open); n[c.id] = !isOpen; up({ open: n }); },
+          current: s.sheet && s.sheet.mode === 'edit' && s.sheet.id === c.id ? 'true' : 'false',
+          edit: function () { up({ menu: null, sheet: { mode: 'edit', id: c.id } }); },
+          menuOpen: menuOpen, menuExpanded: menuOpen ? 'true' : 'false', menuAria: 'Actions for ' + label(c),
+          toggleMenu: function () { up({ menu: menuOpen ? null : c.id }); },
+          noChild: lv >= 3, addChildText: lv >= 3 ? 'Add a category under (3 levels max)' : 'Add a category under',
+          addChild: function () { up({ menu: null, sheet: { mode: 'create', parent: c.id } }); },
+          first: i === 0, last: i === list.length - 1,
+          up: function () { move(c, -1); }, down: function () { move(c, 1); },
+          cantDelete: !empty, askDelete: function () { up({ menu: null, confirm: c.id }); }
+        });
+        if (isOpen) walk(c.id);
+      });
+    };
+    var move = function (c, dir) {
+      var sibs = kids(c.parent);
+      var i = sibs.indexOf(c);
+      var other = sibs[i + dir];
+      if (!other) return;
+      var a = cats.indexOf(c), b = cats.indexOf(other);
+      var next = cats.slice(); next[a] = other; next[b] = c;
+      up({ cats: next, menu: null, toast: label(c) + ' moved ' + (dir < 0 ? 'up.' : 'down.') });
+      self.flash();
+    };
+    walk(null);
+    vals.rows = rows;
+    vals.empty = rows.length === 0;
+    vals.emptyText = 'No categories match “' + (s.q || '').trim() + '”.';
+    vals.emptyCanReset = true;
+    vals.emptyReset = function () { up({ q: '' }); };
+    vals.q = s.q || '';
+    vals.onQ = function (e) { up({ q: e.target.value }); };
+    var parents = cats.filter(function (c) { return kids(c.id).length > 0; });
+    var allOpen = parents.every(function (c) { return open[c.id]; });
+    vals.allOpen = allOpen;
+    vals.allClosed = !allOpen;
+    vals.toggleAll = function () { var n = {}; if (!allOpen) parents.forEach(function (c) { n[c.id] = true; }); up({ open: n }); };
+    var tops = kids(null).length;
+    vals.summary = cats.length + ' categories · ' + tops + ' at the top level';
+    vals.newTop = function () { up({ sheet: { mode: 'create', parent: null } }); };
+
+    // The side panel: create or edit, with specifications in the same place.
+    var sheet = s.sheet || null;
+    vals.sheetOpen = Boolean(sheet);
+    var editing = sheet && sheet.mode === 'edit' ? byId[sheet.id] : null;
+    var draft = s.draft && s.draftFor === JSON.stringify(sheet) ? s.draft : (editing
+      ? { bn: editing.bn, en: editing.en, langs: editing.en ? ['bn', 'en'] : ['bn'], desc: '', slug: '', parent: editing.parent, specs: editing.specs.slice() }
+      : { bn: '', en: '', langs: ['bn'], desc: '', slug: '', parent: sheet ? sheet.parent : null, specs: [] });
+    var setDraft = function (patch) { up({ draft: Object.assign({}, draft, patch), draftFor: JSON.stringify(sheet) }); };
+    var multi = draft.langs.indexOf('en') !== -1;
+    var lang = multi && s.lang === 'en' ? 'en' : 'bn';
+    var parentCat = draft.parent ? byId[draft.parent] : null;
+    vals.sh = {
+      title: editing ? 'Edit category' : 'New category',
+      sub: editing ? path(editing) + ' · ' + editing.count + ' products' : (parentCat ? 'Under ' + path(parentCat) : 'At the top level'),
+      isEdit: Boolean(editing), single: !multi, multi: multi, lang: lang,
+      bnSel: lang === 'bn' ? 'true' : 'false', enSel: lang === 'en' ? 'true' : 'false',
+      pickBn: function () { up({ lang: 'bn' }); }, pickEn: function () { up({ lang: 'en' }); },
+      addEn: function () { up({ draft: Object.assign({}, draft, { langs: ['bn', 'en'] }), draftFor: JSON.stringify(sheet), lang: 'en' }); },
+      name: draft[lang], namePh: lang === 'bn' ? 'যেমন: পাঞ্জাবি' : 'For example: Panjabi',
+      onName: function (e) { var p = {}; p[lang] = e.target.value; setDraft(p); },
+      desc: draft.desc, onDesc: function (e) { setDraft({ desc: e.target.value }); },
+      slug: draft.slug, onSlug: function (e) { setDraft({ slug: e.target.value }); },
+      moreOpen: Boolean(s.shMore), moreAria: s.shMore ? 'true' : 'false', toggleMore: function () { up({ shMore: !s.shMore }); },
+      specs: draft.specs.map(function (x) { return { label: x, removeAria: 'Remove ' + x, remove: function () { setDraft({ specs: draft.specs.filter(function (y) { return y !== x; }) }); } }; }),
+      cantDelete: editing ? (editing.count > 0 || kids(editing.id).length > 0) : true,
+      deleteTitle: editing && (editing.count > 0 || kids(editing.id).length > 0) ? 'Only an empty category can be deleted' : 'Delete this category',
+      askDelete: function () { if (editing) up({ confirm: editing.id }); },
+      cantSave: !draft.bn.trim(),
+      saveText: editing ? 'Save' : 'Create category',
+      save: function () {
+        var next;
+        if (editing) {
+          next = cats.map(function (c) { return c.id === editing.id ? Object.assign({}, c, { bn: draft.bn, en: multi ? draft.en : '', parent: draft.parent, specs: draft.specs }) : c; });
+          if (draft.parent !== editing.parent) {
+            var moved = next.filter(function (c) { return c.id === editing.id; })[0];
+            next = next.filter(function (c) { return c.id !== editing.id; }).concat([moved]);
+          }
+        } else {
+          next = cats.concat([{ id: 'new' + cats.length, parent: draft.parent, bn: draft.bn, en: multi ? draft.en : '', count: 0, specs: draft.specs }]);
+        }
+        var n = Object.assign({}, open); if (draft.parent) n[draft.parent] = true;
+        up({ cats: next, open: n, sheet: null, draft: null, combo: null, toast: editing ? 'Category saved.' : 'Category created.' });
+        self.flash();
+      }
+    };
+
+    // Comboboxes in the panel: where it sits, and its specifications.
+    var comboKey = s.combo || null;
+    var cq = (s.cq || '');
+    var cql = cq.trim().toLowerCase();
+    var blocked = editing ? [editing.id].concat(below(editing.id)) : [];
+    var depthOk = function (c) { return level(c) + (editing ? 1 + maxDepthBelow(editing.id) : 1) <= 3; };
+    var maxDepthBelow = function (id) { var ks = kids(id); return ks.length ? 1 + Math.max.apply(null, ks.map(function (k) { return maxDepthBelow(k.id); })) : 0; };
+    var parentOptions = [{ id: null, label: 'Top level' }].concat(cats.filter(function (c) { return blocked.indexOf(c.id) === -1 && depthOk(c); }).map(function (c) { return { id: c.id, label: path(c) }; }));
+    var pOpen = comboKey === 'parent';
+    var pShown = parentOptions.filter(function (o) { return !pOpen || !cql || o.label.toLowerCase().indexOf(cql) !== -1; });
+    var sOpen = comboKey === 'specs';
+    var sShown = ATTRS.filter(function (o) { return !sOpen || !cql || o.toLowerCase().indexOf(cql) !== -1; });
+    vals.cb = {
+      parent: {
+        open: pOpen, aria: pOpen ? 'true' : 'false', query: pOpen ? cq : '', none: pShown.length === 0,
+        display: parentCat ? path(parentCat) : 'Top level',
+        toggle: function () { up({ combo: pOpen ? null : 'parent', cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: pShown.map(function (o) {
+          var on = o.id === draft.parent;
+          return { label: o.label, aria: on ? 'true' : 'false', check: on ? '1' : '0', pick: function () { up({ draft: Object.assign({}, draft, { parent: o.id }), draftFor: JSON.stringify(sheet), combo: null }); } };
+        })
+      },
+      specs: {
+        open: sOpen, aria: sOpen ? 'true' : 'false', query: sOpen ? cq : '', none: sShown.length === 0,
+        toggle: function () { up({ combo: sOpen ? null : 'specs', cq: '' }); },
+        onQuery: function (e) { up({ cq: e.target.value }); },
+        items: sShown.map(function (o) {
+          var on = draft.specs.indexOf(o) !== -1;
+          return { label: o, aria: on ? 'true' : 'false', check: on ? '1' : '0', pick: function () { setDraft({ specs: on ? draft.specs.filter(function (y) { return y !== o; }) : draft.specs.concat([o]) }); } };
+        })
+      }
+    };
+    vals.closeCombo = function () { up({ combo: null }); };
+    vals.comboEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); up({ combo: null }); } };
+
+    // Delete.
+    var confirmCat = s.confirm ? byId[s.confirm] : null;
+    vals.confirmOpen = Boolean(confirmCat);
+    vals.confirmText = confirmCat ? label(confirmCat) + ' has no products and nothing under it. It’s removed from the store’s menus.' : '';
+    vals.cancelConfirm = function () { up({ confirm: null }); };
+    vals.doDelete = function () {
+      up({ cats: cats.filter(function (c) { return c.id !== s.confirm; }), confirm: null, sheet: null, toast: 'Category deleted.' });
+      self.flash();
+    };
+
+    vals.closeAll = function () { up({ menu: null, sheet: null, draft: null, combo: null, confirm: null }); };
+    vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ menu: null, sheet: null, draft: null, combo: null, confirm: null }); } };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = dark ? 'mm mm-root dark' : 'mm mm-root';
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+    return vals;
+  }
+
+  // Notices go away on their own.
+  flash() {
+    var self = this;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(function () { self.setState({ toast: null }); }, 4000);
+  }
+}
+</script>
+</body>
+</html>

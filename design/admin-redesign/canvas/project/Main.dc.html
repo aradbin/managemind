@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Products — managemind admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist:wght@400;500;600&amp;family=Noto+Sans+Bengali:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+.mm{--radius:.625rem;--background:oklch(1 0 0);--foreground:oklch(.145 0 0);--card:oklch(1 0 0);--popover:oklch(1 0 0);--primary:oklch(.205 0 0);--primary-foreground:oklch(.985 0 0);--secondary:oklch(.97 0 0);--secondary-foreground:oklch(.205 0 0);--muted:oklch(.97 0 0);--muted-foreground:oklch(.556 0 0);--accent:oklch(.97 0 0);--accent-foreground:oklch(.205 0 0);--destructive:oklch(.577 .245 27.325);--border:oklch(.922 0 0);--input:oklch(.922 0 0);--ring:oklch(.708 0 0);--sidebar:oklch(.985 0 0);--sidebar-foreground:oklch(.145 0 0);--sidebar-primary:oklch(.205 0 0);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.97 0 0);--sidebar-accent-foreground:oklch(.205 0 0);--sidebar-border:oklch(.922 0 0);--success:oklch(.723 .219 149.579);-webkit-font-smoothing:antialiased}
+.mm.dark{color-scheme:dark;--background:oklch(.145 0 0);--foreground:oklch(.985 0 0);--card:oklch(.205 0 0);--popover:oklch(.205 0 0);--primary:oklch(.922 0 0);--primary-foreground:oklch(.205 0 0);--secondary:oklch(.269 0 0);--secondary-foreground:oklch(.985 0 0);--muted:oklch(.269 0 0);--muted-foreground:oklch(.708 0 0);--accent:oklch(.269 0 0);--accent-foreground:oklch(.985 0 0);--destructive:oklch(.704 .191 22.216);--border:oklch(1 0 0 / 10%);--input:oklch(1 0 0 / 15%);--ring:oklch(.556 0 0);--sidebar:oklch(.205 0 0);--sidebar-foreground:oklch(.985 0 0);--sidebar-primary:oklch(.488 .243 264.376);--sidebar-primary-foreground:oklch(.985 0 0);--sidebar-accent:oklch(.269 0 0);--sidebar-accent-foreground:oklch(.985 0 0);--sidebar-border:oklch(1 0 0 / 10%);--success:oklch(.792 .209 151.711)}
+:where(.mm) a{color:inherit;text-decoration:none}
+.mm :focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}
+.mm-link:hover{text-decoration:underline;text-underline-offset:4px}
+.mm-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;box-sizing:border-box;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;font-weight:500;line-height:20px;white-space:nowrap;cursor:pointer}
+.mm-btn:disabled{opacity:.5;pointer-events:none}
+.mm-primary{background:var(--primary);color:var(--primary-foreground);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-primary:hover{background:color-mix(in oklch,var(--primary) 90%,transparent)}
+.mm-outline{background:var(--background);border-color:var(--border);box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-outline,.mm.dark .mm-input{background:oklch(1 0 0 / 4.5%);border-color:var(--input)}
+.mm-outline:hover,.mm-ghost:hover{background:var(--accent);color:var(--accent-foreground)}
+.mm-dashed{border-style:dashed}
+.mm-icon{width:32px;padding:0}
+.mm-input{height:32px;box-sizing:border-box;padding:4px 12px;border:1px solid var(--input);border-radius:8px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-input::placeholder{color:var(--muted-foreground)}
+.mm-kbd{display:inline-flex;align-items:center;height:20px;padding:0 4px;border-radius:6px;background:var(--muted);color:var(--muted-foreground);font-family:inherit;font-size:12px;font-weight:500}
+.mm-avatar{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:9999px;background:var(--muted);color:var(--foreground);font:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.mm-nav{position:relative;display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-nav:hover,.mm-nav[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-nav[aria-current=page]{font-weight:500}
+button.mm-nav{width:100%;border:0;background:transparent;font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.mm-navbadge{display:inline-flex;align-items:center;justify-content:center;height:20px;min-width:20px;padding:0 4px;box-sizing:border-box;border-radius:6px;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.mm-navlabel{display:flex;align-items:center;height:32px;margin:0;padding:0 8px;font-size:12px;font-weight:500;color:color-mix(in oklch,var(--sidebar-foreground) 70%,transparent)}
+.mm-sub{display:flex;flex-direction:column;gap:4px;margin:0 14px;padding:2px 0 2px 10px;list-style:none;border-left:1px solid var(--sidebar-border)}
+.mm-subbtn{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:8px;font-size:14px;color:var(--sidebar-foreground)}
+.mm-subbtn:hover,.mm-subbtn[aria-current=page]{background:var(--sidebar-accent);color:var(--sidebar-accent-foreground)}
+.mm-subbtn[aria-current=page]{font-weight:500}
+.mm-tab{display:inline-flex;align-items:center;height:28px;padding:0 8px;border:1px solid transparent;border-radius:8px;font-size:14px;font-weight:500;color:var(--muted-foreground);white-space:nowrap}
+.mm-tab:hover{color:var(--foreground)}
+.mm-tab[aria-current=page]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-tab[aria-current=page]{background:var(--input);border-color:var(--input)}
+.mm-stabs{display:inline-flex;align-self:flex-start;align-items:center;height:36px;padding:3px;box-sizing:border-box;border-radius:10px;background:var(--muted)}
+.mm-stabs .mm-tab{height:30px;gap:6px;padding:0 10px;background:transparent;font:inherit;font-size:13px;font-weight:500;cursor:pointer}
+.mm-stabs .mm-tab[aria-selected=true]{background:var(--background);color:var(--foreground);box-shadow:0 1px 3px 0 rgb(0 0 0 / .1),0 1px 2px -1px rgb(0 0 0 / .1)}
+.mm.dark .mm-stabs .mm-tab[aria-selected=true]{background:var(--input);border-color:var(--input)}
+.mm-tabcount{font-size:12px;font-weight:500;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.mm-check{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;padding:0;border:1px solid;border-radius:4px;color:var(--primary-foreground);cursor:pointer;vertical-align:middle;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm-fbox{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;box-sizing:border-box;border:1px solid;border-radius:4px}
+.mm-th{height:40px;padding:0 8px;text-align:left;font-weight:500;color:var(--foreground);white-space:nowrap}
+.mm-sort{height:32px;padding:0 8px;margin-left:-8px;gap:6px}
+.mm-num .mm-sort{margin-left:0;margin-right:-8px}
+.mm-td{padding:8px;white-space:nowrap;vertical-align:middle}
+.mm-tr{position:relative;border-bottom:1px solid var(--border);cursor:pointer}
+.mm-tr:last-child{border-bottom:0}
+.mm-tr:hover td{background:color-mix(in oklch,var(--muted) 50%,transparent)}
+.mm-rowlink::after{content:"";position:absolute;inset:0}
+.mm .mm-rowlink:focus-visible{box-shadow:none}
+.mm-rowlink:focus-visible::after{box-shadow:inset 0 0 0 2px var(--ring)}
+.mm-above{position:relative;z-index:1}
+.mm-num{text-align:right;font-variant-numeric:tabular-nums}
+.mm-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground);white-space:nowrap}
+.mm-badge-sec{display:inline-flex;align-items:center;padding:2px 4px;border-radius:6px;background:var(--secondary);color:var(--secondary-foreground);font-size:12px;font-weight:400;line-height:16px;white-space:nowrap}
+.mm-thumb{display:inline-flex;flex:none;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--muted);color:var(--muted-foreground)}
+.mm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.mm-pop{position:absolute;top:36px;left:0;z-index:30;width:208px;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--foreground);box-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1)}
+.mm-scrim{position:fixed;inset:0;width:100%;height:100%;padding:0;border:0;cursor:default}
+.mm-cmd-input{flex:1;min-width:0;height:40px;padding:0;border:0;outline:none;background:transparent;color:inherit;font:inherit;font-size:14px}
+.mm-cmd-input::placeholder{color:var(--muted-foreground)}
+.mm .mm-cmd-input:focus-visible{box-shadow:none}
+.mm-cmd-group{padding:4px}
+.mm-cmd-heading{padding:6px 8px;font-size:12px;font-weight:500;line-height:16px;color:var(--muted-foreground)}
+.mm-cmd-item{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;box-sizing:border-box;border:0;border-radius:6px;background:transparent;color:var(--foreground);font:inherit;font-size:14px;line-height:20px;text-align:left;cursor:pointer}
+.mm-cmd-item svg{flex:none;color:var(--muted-foreground)}
+.mm-cmd-item .mm-fbox svg{color:var(--primary-foreground)}
+.mm-cmd-item:hover,.mm-cmd-item:focus-visible{background:var(--accent);color:var(--accent-foreground);outline:none}
+.mm .mm-cmd-item:focus-visible{box-shadow:none}
+.mm-cmd-sep{height:1px;background:var(--border)}
+.mm-tfoot-sel{position:sticky;bottom:-24px;z-index:20;margin:0 -24px -24px;padding:12px 24px 36px;background:var(--background);box-shadow:0 -1px 0 var(--border)}
+.mm-tfoot .mm-bar{position:static}
+.mm-bar{position:sticky;bottom:16px;z-index:20;align-self:center;display:flex;align-items:center;gap:4px;max-width:calc(100% - 16px);height:44px;padding:0 6px 0 14px;box-sizing:border-box;border-radius:12px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 10px 15px -3px rgb(0 0 0 / .1),0 4px 6px -4px rgb(0 0 0 / .1)}
+.mm-inv{color:var(--primary-foreground);background:transparent}
+.mm-inv:hover{background:color-mix(in oklch,var(--primary-foreground) 14%,transparent);color:var(--primary-foreground)}
+.mm-bar-sep{width:1px;height:16px;margin:0 6px;background:color-mix(in oklch,var(--primary-foreground) 25%,transparent)}
+.mm-show-sm{display:none !important}
+.mm-root{height:100vh;overflow:hidden}
+.mm-side{height:100%;min-height:0}
+.mm-main{height:calc(100% - 16px);overflow:hidden}
+.mm-scroll>*{flex-shrink:0}
+.mm-navscroll{scrollbar-width:thin}
+@media (max-width:767px){.mm-root{height:auto;overflow:visible}.mm-side{height:auto}.mm-main{height:auto;overflow:visible}}
+.mm-radio{display:inline-flex;flex:none;align-items:center;justify-content:center;width:16px;height:16px;padding:0;box-sizing:border-box;border:1px solid var(--input);border-radius:9999px;background:var(--background);cursor:pointer;box-shadow:0 1px 2px 0 rgb(0 0 0 / .05)}
+.mm.dark .mm-radio{background:oklch(1 0 0 / 4.5%)}
+.mm-radio:disabled{opacity:.5;cursor:not-allowed}
+.mm-dot{width:8px;height:8px;border-radius:9999px;background:var(--primary)}
+.mm-radio-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+.mm-close{position:absolute;top:16px;right:16px;display:inline-flex;padding:0;border:0;border-radius:4px;background:transparent;color:var(--foreground);opacity:.7;cursor:pointer}
+.mm-close:hover{opacity:1}
+@media (max-width:767px){.mm-show-sm{display:inline-flex !important}.mm-main{margin:0 8px 8px 8px !important}.mm-hide-sm{display:none !important}}
+.mm-sbadge{display:inline-flex;flex:none;align-items:center;height:22px;padding:0 8px;border-radius:8px;font-size:12px;font-weight:500;white-space:nowrap}
+</style>
+</helmet>
+<div class="{{themeClass}}" style="display: flex; flex-wrap: wrap; background: var(--sidebar); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<aside aria-label="Sidebar" class="mm-side" style="flex: 1 1 240px; display: flex; flex-direction: column; gap: 8px; padding: 8px; box-sizing: border-box; color: var(--sidebar-foreground)">
+<div style="padding: 8px 0 0 0">
+<button type="button" class="mm-btn mm-ghost" style="width: 100%; height: 48px; padding: 8px; justify-content: flex-start; gap: 8px; text-align: left">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600; flex: none">m</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 16px">
+<span style="font-size: 14px; font-weight: 600; line-height: 20px">Nakshi Fashion</span>
+<span style="font-size: 12px; font-weight: 400; color: var(--muted-foreground)">Owner</span>
+</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+
+<nav aria-label="Main" class="mm-navscroll" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><a href="Home.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Home</a></li>
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.orders.aria}}" onClick="{{nv.orders.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span style="flex: 1">Orders</span><sc-if value="{{nv.orders.closed}}" hint-placeholder-val="{{true}}"><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span></sc-if><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.orders.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.orders.open}}" hint-placeholder-val="{{false}}"><ul class="mm-sub">
+<li><a href="Orders.dc.html" class="mm-subbtn">All orders</a></li>
+<li><a href="Confirm.dc.html" class="mm-subbtn"><span style="flex: 1">Confirm orders</span><span class="mm-navbadge">5<span class="mm-sr"> to confirm</span></span></a></li>
+<li><a href="Incomplete.dc.html" class="mm-subbtn">Incomplete orders</a></li>
+<li><a href="CourierReturns.dc.html" class="mm-subbtn">Courier returns</a></li>
+<li><a href="Returns.dc.html" class="mm-subbtn">Returns</a></li>
+</ul></sc-if></li>
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.catalog.aria}}" onClick="{{nv.catalog.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg><span style="flex: 1">Catalog</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.catalog.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.catalog.open}}" hint-placeholder-val="{{true}}"><ul class="mm-sub">
+<li><a href="#" class="mm-subbtn" aria-current="page">Products</a></li>
+<li><a href="#" class="mm-subbtn">Categories</a></li>
+<li><a href="Collections.dc.html" class="mm-subbtn">Collections</a></li>
+<li><a href="Attributes.dc.html" class="mm-subbtn">Attributes</a></li>
+<li><a href="Import.dc.html" class="mm-subbtn">Import</a></li>
+</ul></sc-if></li>
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.inventory.aria}}" onClick="{{nv.inventory.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg><span style="flex: 1">Inventory</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.inventory.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.inventory.open}}" hint-placeholder-val="{{false}}"><ul class="mm-sub">
+<li><a href="Inventory.dc.html" class="mm-subbtn">Stock</a></li>
+<li><a href="PurchaseOrders.dc.html" class="mm-subbtn">Purchase orders</a></li>
+<li><a href="Receive.dc.html" class="mm-subbtn">Receive stock</a></li>
+<li><a href="Suppliers.dc.html" class="mm-subbtn">Suppliers</a></li>
+<li><a href="Counts.dc.html" class="mm-subbtn">Stock counts</a></li>
+<li><a href="Adjustments.dc.html" class="mm-subbtn">Adjustments</a></li>
+</ul></sc-if></li>
+<li><a href="Customers.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers</a></li>
+<li><a href="Promotions.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>Promotions</a></li>
+<li><a href="Expenses.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Expenses</a></li>
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.reports.aria}}" onClick="{{nv.reports.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg><span style="flex: 1">Reports</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.reports.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.reports.open}}" hint-placeholder-val="{{false}}"><ul class="mm-sub">
+<li><a href="Reports.dc.html" class="mm-subbtn">Overview</a></li>
+<li><a href="SalesReport.dc.html" class="mm-subbtn">Sales</a></li>
+<li><a href="ProfitReport.dc.html" class="mm-subbtn">Profit</a></li>
+<li><a href="StockReport.dc.html" class="mm-subbtn">Stock</a></li>
+<li><a href="SupplierReport.dc.html" class="mm-subbtn">Suppliers</a></li>
+<li><a href="ExpenseReport.dc.html" class="mm-subbtn">Expenses</a></li>
+<li><a href="CodOutstanding.dc.html" class="mm-subbtn">COD outstanding</a></li>
+</ul></sc-if></li>
+</ul>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-store-label" class="mm-navlabel">Store</h2>
+<ul aria-labelledby="mm-store-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.store.aria}}" onClick="{{nv.store.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"></path></svg><span style="flex: 1">Online store</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.store.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.store.open}}" hint-placeholder-val="{{false}}"><ul class="mm-sub">
+<li><a href="Theme.dc.html" class="mm-subbtn">Theme</a></li>
+<li><a href="StorePages.dc.html" class="mm-subbtn">Pages</a></li>
+<li><a href="StoreSettings.dc.html" class="mm-subbtn">Store settings</a></li>
+</ul></sc-if></li>
+<li><a href="Settings.dc.html" class="mm-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg>Settings</a></li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; padding-top: 16px">
+<h2 id="mm-platform-label" class="mm-navlabel">Platform</h2>
+<ul aria-labelledby="mm-platform-label" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px">
+<li><button type="button" class="mm-nav" aria-expanded="{{nv.platform.aria}}" onClick="{{nv.platform.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg><span style="flex: 1">Platform</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition: transform .2s; transform: rotate({{nv.platform.rot}})"><path d="m9 18 6-6-6-6"></path></svg></button>
+<sc-if value="{{nv.platform.open}}" hint-placeholder-val="{{false}}"><ul class="mm-sub">
+<li><a href="PlatformStores.dc.html" class="mm-subbtn">Stores</a></li>
+<li><a href="PlatformDashboard.dc.html" class="mm-subbtn">Dashboard</a></li>
+<li><a href="PlatformBilling.dc.html" class="mm-subbtn">Billing</a></li>
+<li><a href="CourierAreas.dc.html" class="mm-subbtn">Courier areas</a></li>
+<li><a href="PlatformTerms.dc.html" class="mm-subbtn">Terms</a></li>
+<li><a href="PlatformStaff.dc.html" class="mm-subbtn">Platform staff</a></li>
+<li><a href="AuditLog.dc.html" class="mm-subbtn">Audit log</a></li>
+</ul></sc-if></li>
+</ul>
+</div>
+</nav>
+</aside>
+
+<div class="mm-main" style="flex: 999 1 560px; min-width: 0; margin: 8px 8px 8px 0; display: flex; flex-direction: column; background: var(--background); border-radius: 14px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / .1), 0 1px 2px -1px rgb(0 0 0 / .1)">
+
+<header style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; border-bottom: 1px solid var(--border); flex: none">
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Toggle sidebar" style="width: 28px; height: 28px; margin-left: -4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M9 3v18"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 8px; background: var(--border)"></span>
+<nav aria-label="Breadcrumb">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 6px; color: var(--muted-foreground)">
+<li><a href="#" class="mm-link" style="color: var(--muted-foreground)">Catalog</a></li>
+<li aria-hidden="true" style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li aria-current="page" style="color: var(--foreground)">Products</li>
+</ol>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-hide-sm" aria-haspopup="dialog" onClick="{{openSearch}}" style="width: 256px; justify-content: flex-start; font-weight: 400; color: var(--muted-foreground); padding: 0 6px 0 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span style="flex: 1; text-align: left">Search orders, products…</span><kbd class="mm-kbd">⌘K</kbd></button>
+<button type="button" class="mm-btn mm-outline mm-icon mm-show-sm" aria-label="Search" title="Search" aria-haspopup="dialog" onClick="{{openSearch}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<div style="position: relative; display: flex">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create" title="Create" aria-haspopup="menu" aria-expanded="{{createAria}}" onClick="{{toggleCreate}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+<sc-if value="{{createOpen}}" hint-placeholder-val="{{false}}">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close menu" onClick="{{closeCreate}}" style="z-index: 35; background: transparent"></button>
+<div role="menu" aria-label="Create" onKeyDown="{{createKey}}" style="position: absolute; top: 40px; right: 0; z-index: 40; width: 224px; padding: 4px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); box-shadow: 0 4px 6px -1px rgb(0 0 0 / .1), 0 2px 4px -2px rgb(0 0 0 / .1)">
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>New order</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Add customer</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg>New promotion</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg>Record expense</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>New product</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>New category</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect></svg>New collection</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>New purchase order</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"></path><path d="M15 18H9"></path><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"></path><circle cx="17" cy="18" r="2"></circle><circle cx="7" cy="18" r="2"></circle></svg>New supplier</a>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="m9 14 2 2 4-4"></path></svg>New stock count</a>
+<div role="separator" class="mm-cmd-sep" style="margin: 4px -4px"></div>
+<a href="#" role="menuitem" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>New store page</a>
+</div>
+</sc-if>
+</div>
+<a href="#" class="mm-btn mm-outline mm-icon" aria-label="View store" title="View store"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg></a>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="বাংলায় দেখুন (Switch to Bangla)" title="বাংলা"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"></path><path d="m4 14 6-6 2-3"></path><path d="M2 5h12"></path><path d="M7 2h1"></path><path d="m22 22-5-10-5 10"></path><path d="M14 18h6"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="{{themeLabel}}" title="{{themeLabel}}" onClick="{{toggleTheme}}"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Help" title="Help"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button>
+<span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 4px; background: var(--border)"></span>
+<a href="Account.dc.html" class="mm-avatar" aria-label="Your account: Rafiq Ahmed" title="Rafiq Ahmed" style="text-decoration: none">RA</a>
+</div>
+</header>
+
+<main class="mm-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 16px; min-width: 0">
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Products</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{openExport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
+<a href="Product.dc.html" class="mm-btn mm-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>New product</a>
+</div>
+</div>
+
+
+<div role="tablist" aria-label="Status" class="mm-stabs">
+<sc-for list="{{stTabs}}" as="t" hint-placeholder-count="4"><button type="button" role="tab" class="mm-tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<span class="mm-tabcount">{{t.count}}</span></button></sc-for>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<sc-if value="{{anyOpen}}" hint-placeholder-val="{{false}}"><button type="button" tabindex="-1" class="mm-scrim" aria-label="Close filter" onClick="{{closeF}}" style="z-index: 25; background: transparent"></button></sc-if>
+<div style="position: relative; width: 260px; max-width: 100%">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 10px; top: 8px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="mm-q" type="search" class="mm-input" aria-label="Search titles, SKUs and tags" placeholder="Search titles, SKUs and tags" value="{{search}}" onChange="{{onSearch}}" style="width: 100%; padding-left: 32px">
+</div>
+
+<div style="position: relative">
+<button type="button" class="mm-btn mm-outline mm-dashed" aria-haspopup="dialog" aria-expanded="{{fc.expanded}}" onClick="{{fc.toggleOpen}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Category<sc-if value="{{fc.has}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><sc-if value="{{fc.many}}" hint-placeholder-val="{{false}}"><span class="mm-badge-sec">{{fc.countText}}</span></sc-if><sc-if value="{{fc.few}}" hint-placeholder-val="{{true}}"><sc-for list="{{fc.selLabels}}" as="l" hint-placeholder-count="1"><span class="mm-badge-sec">{{l}}</span></sc-for></sc-if></sc-if></button>
+<sc-if value="{{fc.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-pop" role="dialog" aria-label="Filter by category" onKeyDown="{{closeOnEsc}}">
+<div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--border)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" class="mm-cmd-input" style="height: 34px" aria-label="Find a category" placeholder="Category" autoComplete="off" autoFocus="{{true}}" value="{{fq}}" onChange="{{onFq}}"></div>
+<div class="mm-cmd-group" role="listbox" aria-multiselectable="true" aria-label="Category">
+<sc-for list="{{fc.options}}" as="o" hint-placeholder-count="5"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.toggle}}"><span class="mm-fbox" style="background: {{o.box}}; border-color: {{o.edge}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span><span style="flex: 1">{{o.label}}</span><span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted-foreground)">{{o.count}}</span></button></sc-for>
+<sc-if value="{{fc.none}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 20px 0; text-align: center">No results found.</p></sc-if>
+</div>
+<sc-if value="{{fc.has}}" hint-placeholder-val="{{false}}"><div class="mm-cmd-sep"></div><div class="mm-cmd-group"><button type="button" class="mm-cmd-item" style="justify-content: center" onClick="{{fc.clear}}">Clear filters</button></div></sc-if>
+</div>
+</sc-if>
+</div>
+
+<div style="position: relative">
+<button type="button" class="mm-btn mm-outline mm-dashed" aria-haspopup="dialog" aria-expanded="{{fb.expanded}}" onClick="{{fb.toggleOpen}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>Brand<sc-if value="{{fb.has}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="width: 1px; height: 16px; margin: 0 2px; background: var(--border)"></span><sc-if value="{{fb.many}}" hint-placeholder-val="{{false}}"><span class="mm-badge-sec">{{fb.countText}}</span></sc-if><sc-if value="{{fb.few}}" hint-placeholder-val="{{true}}"><sc-for list="{{fb.selLabels}}" as="l" hint-placeholder-count="1"><span class="mm-badge-sec">{{l}}</span></sc-for></sc-if></sc-if></button>
+<sc-if value="{{fb.open}}" hint-placeholder-val="{{false}}">
+<div class="mm-pop" role="dialog" aria-label="Filter by brand" onKeyDown="{{closeOnEsc}}">
+<div style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--border)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" class="mm-cmd-input" style="height: 34px" aria-label="Find a brand" placeholder="Brand" autoComplete="off" autoFocus="{{true}}" value="{{fq}}" onChange="{{onFq}}"></div>
+<div class="mm-cmd-group" role="listbox" aria-multiselectable="true" aria-label="Brand">
+<sc-for list="{{fb.options}}" as="o" hint-placeholder-count="3"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-cmd-item" onClick="{{o.toggle}}"><span class="mm-fbox" style="background: {{o.box}}; border-color: {{o.edge}}"><sc-if value="{{o.on}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></span><span style="flex: 1">{{o.label}}</span><span style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--muted-foreground)">{{o.count}}</span></button></sc-for>
+<sc-if value="{{fb.none}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 20px 0; text-align: center">No results found.</p></sc-if>
+</div>
+<sc-if value="{{fb.has}}" hint-placeholder-val="{{false}}"><div class="mm-cmd-sep"></div><div class="mm-cmd-group"><button type="button" class="mm-cmd-item" style="justify-content: center" onClick="{{fb.clear}}">Clear filters</button></div></sc-if>
+</div>
+</sc-if>
+</div>
+
+<label style="display: inline-flex; align-items: center; gap: 8px; margin-left: 8px; font-weight: 500; cursor: pointer"><button type="button" role="checkbox" class="mm-check" aria-checked="{{lowAria}}" onClick="{{toggleLow}}" style="background: {{lowBox}}; border-color: {{lowEdge}}"><sc-if value="{{lowOnly}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button>Low stock only</label>
+
+<sc-if value="{{filtered}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-ghost" onClick="{{reset}}">Reset<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></sc-if>
+</div>
+
+<div style="border: 1px solid var(--border); border-radius: 10px; overflow-x: auto">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead style="background: var(--muted)">
+<tr style="border-bottom: 1px solid var(--border)">
+<th class="mm-th" style="width: 32px"><button type="button" role="checkbox" class="mm-check" aria-checked="{{allAria}}" aria-label="Select all" onClick="{{toggleAll}}" style="background: {{allBox}}; border-color: {{allEdge}}"><sc-if value="{{all}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><sc-if value="{{some}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></sc-if></button></th>
+<th class="mm-th" aria-sort="{{sTitle.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sTitle.toggle}}">Product<sc-if value="{{sTitle.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sTitle.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sTitle.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th">Status</th>
+<th class="mm-th mm-num" aria-sort="{{sPrice.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sPrice.toggle}}">Price<sc-if value="{{sPrice.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sPrice.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sPrice.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th mm-num" aria-sort="{{sVariants.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sVariants.toggle}}">Variants<sc-if value="{{sVariants.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sVariants.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sVariants.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th mm-num" aria-sort="{{sStock.aria}}"><button type="button" class="mm-btn mm-ghost mm-sort" onClick="{{sStock.toggle}}">Stock<sc-if value="{{sStock.none}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></sc-if><sc-if value="{{sStock.asc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"></path><path d="M12 19V5"></path></svg></sc-if><sc-if value="{{sStock.desc}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="m19 12-7 7-7-7"></path></svg></sc-if></button></th>
+<th class="mm-th" style="width: 40px"><span class="mm-sr">Actions</span></th>
+</tr>
+</thead>
+<tbody>
+
+<tr class="mm-tr" style="display: {{r1.display}}; background: {{r1.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r1.aria}}" aria-label="{{r1.selectLabel}}" onClick="{{r1.toggle}}" style="background: {{r1.box}}; border-color: {{r1.edge}}"><sc-if value="{{r1.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r1.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r1.sBg}}; color: {{r1.sFg}}; box-shadow: inset 0 0 0 1px {{r1.sEdge}}">{{r1.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r1.price}}</td>
+<td class="mm-td mm-num">{{r1.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r1.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r1.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r1.ok}}" hint-placeholder-val="{{true}}">{{r1.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r1.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r2.display}}; background: {{r2.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r2.aria}}" aria-label="{{r2.selectLabel}}" onClick="{{r2.toggle}}" style="background: {{r2.box}}; border-color: {{r2.edge}}"><sc-if value="{{r2.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r2.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r2.sBg}}; color: {{r2.sFg}}; box-shadow: inset 0 0 0 1px {{r2.sEdge}}">{{r2.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r2.price}}</td>
+<td class="mm-td mm-num">{{r2.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r2.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r2.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r2.ok}}" hint-placeholder-val="{{true}}">{{r2.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r2.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r3.display}}; background: {{r3.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r3.aria}}" aria-label="{{r3.selectLabel}}" onClick="{{r3.toggle}}" style="background: {{r3.box}}; border-color: {{r3.edge}}"><sc-if value="{{r3.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r3.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r3.sBg}}; color: {{r3.sFg}}; box-shadow: inset 0 0 0 1px {{r3.sEdge}}">{{r3.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r3.price}}</td>
+<td class="mm-td mm-num">{{r3.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r3.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r3.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r3.ok}}" hint-placeholder-val="{{true}}">{{r3.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r3.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r4.display}}; background: {{r4.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r4.aria}}" aria-label="{{r4.selectLabel}}" onClick="{{r4.toggle}}" style="background: {{r4.box}}; border-color: {{r4.edge}}"><sc-if value="{{r4.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r4.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r4.sBg}}; color: {{r4.sFg}}; box-shadow: inset 0 0 0 1px {{r4.sEdge}}">{{r4.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r4.price}}</td>
+<td class="mm-td mm-num">{{r4.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r4.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r4.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r4.ok}}" hint-placeholder-val="{{true}}">{{r4.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r4.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r5.display}}; background: {{r5.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r5.aria}}" aria-label="{{r5.selectLabel}}" onClick="{{r5.toggle}}" style="background: {{r5.box}}; border-color: {{r5.edge}}"><sc-if value="{{r5.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r5.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r5.sBg}}; color: {{r5.sFg}}; box-shadow: inset 0 0 0 1px {{r5.sEdge}}">{{r5.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r5.price}}</td>
+<td class="mm-td mm-num">{{r5.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r5.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r5.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r5.ok}}" hint-placeholder-val="{{true}}">{{r5.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r5.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r6.display}}; background: {{r6.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r6.aria}}" aria-label="{{r6.selectLabel}}" onClick="{{r6.toggle}}" style="background: {{r6.box}}; border-color: {{r6.edge}}"><sc-if value="{{r6.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r6.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r6.sBg}}; color: {{r6.sFg}}; box-shadow: inset 0 0 0 1px {{r6.sEdge}}">{{r6.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r6.price}}</td>
+<td class="mm-td mm-num">{{r6.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r6.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r6.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r6.ok}}" hint-placeholder-val="{{true}}">{{r6.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r6.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r7.display}}; background: {{r7.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r7.aria}}" aria-label="{{r7.selectLabel}}" onClick="{{r7.toggle}}" style="background: {{r7.box}}; border-color: {{r7.edge}}"><sc-if value="{{r7.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r7.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r7.sBg}}; color: {{r7.sFg}}; box-shadow: inset 0 0 0 1px {{r7.sEdge}}">{{r7.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r7.price}}</td>
+<td class="mm-td mm-num">{{r7.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r7.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r7.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r7.ok}}" hint-placeholder-val="{{true}}">{{r7.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r7.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r8.display}}; background: {{r8.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r8.aria}}" aria-label="{{r8.selectLabel}}" onClick="{{r8.toggle}}" style="background: {{r8.box}}; border-color: {{r8.edge}}"><sc-if value="{{r8.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r8.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r8.sBg}}; color: {{r8.sFg}}; box-shadow: inset 0 0 0 1px {{r8.sEdge}}">{{r8.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r8.price}}</td>
+<td class="mm-td mm-num">{{r8.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r8.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r8.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r8.ok}}" hint-placeholder-val="{{true}}">{{r8.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r8.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r9.display}}; background: {{r9.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r9.aria}}" aria-label="{{r9.selectLabel}}" onClick="{{r9.toggle}}" style="background: {{r9.box}}; border-color: {{r9.edge}}"><sc-if value="{{r9.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r9.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r9.sBg}}; color: {{r9.sFg}}; box-shadow: inset 0 0 0 1px {{r9.sEdge}}">{{r9.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r9.price}}</td>
+<td class="mm-td mm-num">{{r9.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r9.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r9.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r9.ok}}" hint-placeholder-val="{{true}}">{{r9.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r9.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr class="mm-tr" style="display: {{r10.display}}; background: {{r10.bg}}">
+<td class="mm-td"><button type="button" role="checkbox" class="mm-check mm-above" aria-checked="{{r10.aria}}" aria-label="{{r10.selectLabel}}" onClick="{{r10.toggle}}" style="background: {{r10.box}}; border-color: {{r10.edge}}"><sc-if value="{{r10.checked}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></sc-if></button></td>
+<td class="mm-td"><div style="display: flex; align-items: center; gap: 12px"><span class="mm-thumb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"></path><path d="M13.5 13.5 6 21"></path><path d="M18 12l3 3"></path><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"></path><path d="M21 15V5a2 2 0 0 0-2-2H9"></path></svg></span><a href="ProductView.dc.html" class="mm-rowlink" style="font-weight: 500">{{r10.title}}</a></div></td>
+<td class="mm-td"><span class="mm-sbadge" style="background: {{r10.sBg}}; color: {{r10.sFg}}; box-shadow: inset 0 0 0 1px {{r10.sEdge}}">{{r10.statusLabel}}</span></td>
+<td class="mm-td mm-num">{{r10.price}}</td>
+<td class="mm-td mm-num">{{r10.variants}}</td>
+<td class="mm-td mm-num"><sc-if value="{{r10.low}}" hint-placeholder-val="{{false}}"><span style="color: var(--destructive); font-weight: 500">{{r10.stock}}<span class="mm-sr"> (low)</span></span></sc-if><sc-if value="{{r10.ok}}" hint-placeholder-val="{{true}}">{{r10.stock}}</sc-if></td>
+<td class="mm-td" style="text-align: right"><button type="button" class="mm-btn mm-ghost mm-icon mm-above" aria-label="{{r10.menuLabel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button></td>
+</tr>
+
+<tr style="display: {{emptyDisplay}}">
+<td colspan="7" style="padding: 0"><div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 16px; text-align: center"><p class="mm-muted" style="margin: 0">No products match.</p><sc-if value="{{emptyCanReset}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-outline" onClick="{{emptyReset}}">Reset filters</button></sc-if></div></td>
+</tr>
+
+</tbody>
+</table>
+</div>
+
+<div class="mm-tfoot {{footSel}}" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+<p style="margin: 0; color: var(--muted-foreground); font-variant-numeric: tabular-nums">{{showText}}</p>
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
+<div role="region" aria-label="Bulk actions" class="mm-bar">
+<span role="status" style="font-weight: 500; white-space: nowrap; font-variant-numeric: tabular-nums">{{selText}}</span>
+<span aria-hidden="true" class="mm-bar-sep"></span>
+<button type="button" class="mm-btn mm-inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"></path><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>Edit prices</button>
+<button type="button" class="mm-btn mm-inv"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Change status</button>
+<button type="button" class="mm-btn mm-inv" aria-haspopup="dialog" onClick="{{openExportSelected}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
+<span aria-hidden="true" class="mm-bar-sep"></span>
+<button type="button" class="mm-btn mm-inv mm-icon" aria-label="Clear selection" title="Clear selection" onClick="{{clearSel}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span id="mm-rpp" style="font-weight: 500">Rows per page</span>
+<button type="button" class="mm-btn mm-outline" aria-labelledby="mm-rpp" aria-haspopup="listbox" style="width: 70px; justify-content: space-between; padding: 0 8px 0 12px; font-weight: 400">10<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: .5"><path d="m6 9 6 6 6-6"></path></svg></button>
+</div>
+<span style="font-weight: 500; font-variant-numeric: tabular-nums">Page 1</span>
+<nav aria-label="Pagination" style="display: flex; align-items: center; gap: 8px">
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="First page" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 17-5-5 5-5"></path><path d="m18 17-5-5 5-5"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Previous page" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Next page"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
+</nav>
+</div>
+</div>
+
+
+</main>
+</div>
+
+<sc-if value="{{exportOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeExport}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-ex-title" aria-describedby="mm-ex-desc" onKeyDown="{{exportKey}}" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 512px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px; padding-right: 24px">
+<h2 id="mm-ex-title" style="margin: 0; font-size: 18px; line-height: 1; font-weight: 600">Export products</h2>
+<p id="mm-ex-desc" style="margin: 0; color: var(--muted-foreground)">In the same columns the import reads, so you can edit them and import them back.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p id="mm-ex-format" style="margin: 0; font-weight: 500">Format</p>
+<div role="radiogroup" aria-labelledby="mm-ex-format" style="display: flex; flex-direction: column; gap: 12px">
+<label class="mm-radio-row"><button type="button" role="radio" class="mm-radio" aria-checked="{{ex.xlsxAria}}" onClick="{{ex.pickXlsx}}"><sc-if value="{{ex.xlsx}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></button>Excel (.xlsx)</label>
+<label class="mm-radio-row"><button type="button" role="radio" class="mm-radio" aria-checked="{{ex.csvAria}}" onClick="{{ex.pickCsv}}"><sc-if value="{{ex.csv}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></button>CSV</label>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px">
+<p id="mm-ex-which" style="margin: 0; font-weight: 500">Which products</p>
+<div role="radiogroup" aria-labelledby="mm-ex-which" style="display: flex; flex-direction: column; gap: 12px">
+<label class="mm-radio-row"><button type="button" role="radio" class="mm-radio" aria-checked="{{ex.filteredAria}}" onClick="{{ex.pickFiltered}}"><sc-if value="{{ex.filtered}}" hint-placeholder-val="{{true}}"><span class="mm-dot"></span></sc-if></button>Everything matching the filters</label>
+<label class="mm-radio-row" style="opacity: {{ex.selectedOpacity}}"><button type="button" role="radio" class="mm-radio" aria-checked="{{ex.selectedAria}}" disabled="{{ex.noSelection}}" onClick="{{ex.pickSelected}}"><sc-if value="{{ex.selected}}" hint-placeholder-val="{{false}}"><span class="mm-dot"></span></sc-if></button>{{ex.selectedLabel}}</label>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap-reverse; justify-content: flex-end; gap: 8px; padding-top: 8px">
+<button type="button" class="mm-btn mm-outline" onClick="{{closeExport}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" onClick="{{runExport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Export</button>
+</div>
+
+<button type="button" class="mm-close" aria-label="Close" onClick="{{closeExport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: fixed; right: 24px; bottom: 24px; z-index: 60; display: flex; align-items: center; gap: 8px; width: 356px; max-width: calc(100% - 48px); box-sizing: border-box; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+<sc-if value="{{searchOpen}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close search" onClick="{{closeSearch}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-label="Search" onKeyDown="{{onDialogKey}}" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: calc(100% - 32px); max-width: 512px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--popover); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+
+<div style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 12px; border-bottom: 1px solid var(--border)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="text" class="mm-cmd-input" aria-label="Search" placeholder="Search orders, products, customers…" autoComplete="off" autoFocus="{{true}}" value="{{query}}" onChange="{{onQuery}}">
+</div>
+
+<div style="max-height: 300px; overflow-y: auto">
+
+<sc-if value="{{hasQ}}" hint-placeholder-val="{{false}}">
+<div class="mm-cmd-group" role="group" aria-label="Search">
+<div class="mm-cmd-heading">Search</div>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>Orders matching “{{q}}”</a>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>Products matching “{{q}}”</a>
+<a href="#" class="mm-cmd-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Customers matching “{{q}}”</a>
+</div>
+</sc-if>
+
+<sc-for list="{{cmdGroups}}" as="g" hint-placeholder-count="3">
+<sc-if value="{{g.sep}}" hint-placeholder-val="{{false}}"><div class="mm-cmd-sep"></div></sc-if>
+<div class="mm-cmd-group" role="group" aria-label="{{g.label}}">
+<div class="mm-cmd-heading">{{g.label}}</div>
+<sc-for list="{{g.items}}" as="it" hint-placeholder-count="4"><a href="#" class="mm-cmd-item"><sc-if value="{{it.home}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></sc-if><sc-if value="{{it.orders}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></sc-if><sc-if value="{{it.catalog}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></sc-if><sc-if value="{{it.inventory}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"></path><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35a2 2 0 0 1 1.26-1.86l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35z"></path><path d="M6 13h12"></path><path d="M6 17h12"></path></svg></sc-if><sc-if value="{{it.customers}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></sc-if><sc-if value="{{it.promotions}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m15 9-6 6"></path><path d="M9 9h.01"></path><path d="M15 15h.01"></path></svg></sc-if><sc-if value="{{it.expenses}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></sc-if><sc-if value="{{it.reports}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="m19 9-5 5-4-4-3 3"></path></svg></sc-if><sc-if value="{{it.store}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"></path><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"></path><path d="M2 7h20"></path><path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"></path></svg></sc-if><sc-if value="{{it.settings}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7h-9"></path><path d="M14 17H5"></path><circle cx="17" cy="17" r="3"></circle><circle cx="7" cy="7" r="3"></circle></svg></sc-if><sc-if value="{{it.billing}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M14 8H8"></path><path d="M16 12H8"></path><path d="M13 16H8"></path></svg></sc-if><sc-if value="{{it.platform}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path></svg></sc-if>{{it.label}}</a></sc-for>
+</div>
+</sc-for>
+<sc-if value="{{cmdEmpty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 24px 0; text-align: center">No results found.</p></sc-if>
+
+</div>
+
+<div style="display: flex; align-items: center; gap: 16px; height: 40px; padding: 0 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted-foreground)">
+<span style="display: inline-flex; align-items: center; gap: 6px"><kbd class="mm-kbd">↑</kbd><kbd class="mm-kbd">↓</kbd>Navigate</span>
+<span style="display: inline-flex; align-items: center; gap: 6px"><kbd class="mm-kbd">↵</kbd>Open</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; margin-left: auto"><kbd class="mm-kbd">esc</kbd>Close</span>
+</div>
+
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false},&quot;font&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Inter&quot;,&quot;Geist&quot;],&quot;default&quot;:&quot;Inter&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+var PRODUCTS = [
+  { id: 'p1', title: 'Cotton Panjabi — Ivory', status: 'active', cat: 'Men', brand: 'Nakshi', min: 1850, max: 2150, variants: 4, stock: 32, low: false },
+  { id: 'p2', title: 'Handloom Tangail Saree', status: 'active', cat: 'Women', brand: 'Heritage', min: 3400, max: 3400, variants: 1, stock: 6, low: true },
+  { id: 'p3', title: 'Embroidered Kurti', status: 'active', cat: 'Women', brand: 'Nakshi', min: 1250, max: 1450, variants: 6, stock: 58, low: false },
+  { id: 'p4', title: 'Leather Kolhapuri Sandal', status: 'active', cat: 'Footwear', brand: 'Urban', min: 1650, max: 1650, variants: 5, stock: 3, low: true },
+  { id: 'p5', title: 'Printed Three-Piece Set', status: 'draft', cat: 'Women', brand: 'Nakshi', min: 2800, max: 2800, variants: 3, stock: 14, low: false },
+  { id: 'p6', title: 'Check Lungi — Pack of 2', status: 'active', cat: 'Men', brand: 'Heritage', min: 950, max: 950, variants: 1, stock: 120, low: false },
+  { id: 'p7', title: 'Jute Tote Bag', status: 'active', cat: 'Accessories', brand: 'Urban', min: 650, max: 780, variants: 2, stock: 41, low: false },
+  { id: 'p8', title: 'Silk Hijab', status: 'draft', cat: 'Accessories', brand: 'Heritage', min: 540, max: 540, variants: 8, stock: 75, low: false },
+  { id: 'p9', title: 'Winter Shawl — Kashmiri', status: 'active', cat: 'Accessories', brand: 'Heritage', min: 2400, max: 2400, variants: 3, stock: 2, low: true },
+  { id: 'p10', title: 'Kids’ Panjabi Set', status: 'archived', cat: 'Kids', brand: 'Nakshi', min: 1100, max: 1100, variants: 4, stock: 0, low: false }
+];
+var STATUS = [{ v: 'active', label: 'Active' }, { v: 'draft', label: 'Draft' }, { v: 'archived', label: 'Archived' }];
+var CATEGORIES = ['Men', 'Women', 'Kids', 'Footwear', 'Accessories'].map(function (c) { return { v: c, label: c }; });
+var BRANDS = ['Nakshi', 'Heritage', 'Urban'].map(function (b) { return { v: b, label: b }; });
+var FONTS = {
+  Inter: "'Inter', 'Noto Sans Bengali', system-ui, sans-serif",
+  Geist: "'Geist', 'Noto Sans Bengali', system-ui, sans-serif"
+};
+var CMD_GROUPS = [
+  { label: 'Go to', items: [
+    { label: 'Home', icon: 'home' }, { label: 'Customers', icon: 'customers' }, { label: 'Promotions', icon: 'promotions' },
+    { label: 'Expenses', icon: 'expenses' }, { label: 'Settings', icon: 'settings' }
+  ] },
+  { label: 'Orders', icon: 'orders', items: [
+    { label: 'All orders' }, { label: 'Confirm orders' }, { label: 'Incomplete orders' }, { label: 'Courier returns' }, { label: 'Returns' }
+  ] },
+  { label: 'Catalog', icon: 'catalog', items: [
+    { label: 'Products' }, { label: 'Categories' }, { label: 'Collections' }, { label: 'Attributes' }, { label: 'Import products' }
+  ] },
+  { label: 'Inventory', icon: 'inventory', items: [
+    { label: 'Stock' }, { label: 'Purchase orders' }, { label: 'Receive stock' }, { label: 'Suppliers' }, { label: 'Stock counts' }, { label: 'Adjustments' }
+  ] },
+  { label: 'Reports', icon: 'reports', items: [
+    { label: 'Overview' }, { label: 'Sales report' }, { label: 'Profit report' }, { label: 'Stock report' }, { label: 'Supplier report' }, { label: 'Expense report' }, { label: 'COD outstanding' }
+  ] },
+  { label: 'Online store', icon: 'store', items: [
+    { label: 'Theme' }, { label: 'Pages' }, { label: 'Store settings' }
+  ] },
+  { label: 'Platform', icon: 'platform', items: [
+    { label: 'Stores' }, { label: 'Platform dashboard' }, { label: 'Platform billing' }, { label: 'Courier areas' }, { label: 'Terms' }, { label: 'Platform staff' }, { label: 'Audit log' }
+  ] }
+];
+function money(n) { return '৳' + n.toLocaleString('en-US'); }
+function has(list, v) { return list.indexOf(v) !== -1; }
+function noop() {}
+
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var s = this.state || {};
+    var up = function (patch) { self.setState(patch); };
+    var sel = s.sel || ['p2', 'p4'];
+    var fStatus = s.fStatus || [];
+    var fCat = s.fCat || [];
+    var fBrand = s.fBrand || [];
+    var search = s.search || '';
+    var lowOnly = Boolean(s.low);
+    var sortKey = s.sortKey || null;
+    var sortDir = s.sortDir || 'asc';
+    var openF = s.openF || null;
+    var fq = s.fq || '';
+    var vals = {};
+
+    // Rows: search, facets and low stock filter; a header sorts.
+    var sq = search.trim().toLowerCase();
+    var base = PRODUCTS.filter(function (p) {
+      return (!sq || p.title.toLowerCase().indexOf(sq) !== -1) &&
+        (!fCat.length || has(fCat, p.cat)) &&
+        (!fBrand.length || has(fBrand, p.brand)) &&
+        (!lowOnly || p.low);
+    });
+    // Status tabs count what the other filters leave.
+    var st = fStatus.length ? fStatus[0] : 'all';
+    vals.stTabs = [{ v: 'all', label: 'All' }].concat(STATUS).map(function (o) {
+      var n = o.v === 'all' ? base.length : base.filter(function (p) { return p.status === o.v; }).length;
+      return { label: o.label, count: String(n), on: st === o.v ? 'true' : 'false', pick: function () { up({ fStatus: o.v === 'all' ? [] : [o.v] }); } };
+    });
+    var rows = base.filter(function (p) { return st === 'all' || p.status === st; });
+    if (sortKey) {
+      rows = rows.slice().sort(function (a, b) {
+        var x = sortKey === 'title' ? a.title.toLowerCase() : sortKey === 'price' ? a.min : a[sortKey];
+        var y = sortKey === 'title' ? b.title.toLowerCase() : sortKey === 'price' ? b.min : b[sortKey];
+        var c = x < y ? -1 : x > y ? 1 : 0;
+        return sortDir === 'asc' ? c : -c;
+      });
+    }
+    var setSel = function (next) { up({ sel: next }); };
+    for (var i = 0; i < 10; i++) {
+      var p = rows[i];
+      if (!p) {
+        vals['r' + (i + 1)] = { display: 'none', title: '', statusLabel: '', sBg: 'transparent', sFg: 'inherit', sEdge: 'transparent', price: '', variants: '', stock: '', isActive: false, isDraft: false, isArchived: false, low: false, ok: false, checked: false, aria: 'false', box: 'transparent', edge: 'transparent', bg: 'transparent', toggle: noop, selectLabel: '', menuLabel: '' };
+        continue;
+      }
+      (function (p, key) {
+        var on = has(sel, p.id);
+        vals[key] = {
+          display: 'table-row',
+          title: p.title,
+          statusLabel: p.status === 'active' ? 'Active' : p.status === 'draft' ? 'Draft' : 'Archived',
+          sBg: p.status === 'active' ? 'color-mix(in oklch, var(--success) 14%, transparent)' : p.status === 'draft' ? 'var(--muted)' : 'transparent',
+          sFg: p.status === 'active' ? 'var(--success)' : 'var(--muted-foreground)',
+          sEdge: p.status === 'archived' ? 'var(--border)' : 'transparent',
+          isActive: p.status === 'active',
+          isDraft: p.status === 'draft',
+          isArchived: p.status === 'archived',
+          price: p.min === p.max ? money(p.min) : money(p.min) + ' – ' + money(p.max),
+          variants: String(p.variants),
+          stock: String(p.stock),
+          low: p.low,
+          ok: !p.low,
+          checked: on,
+          aria: on ? 'true' : 'false',
+          box: on ? 'var(--primary)' : 'var(--background)',
+          edge: on ? 'var(--primary)' : 'var(--input)',
+          bg: on ? 'var(--muted)' : 'transparent',
+          toggle: function () { setSel(on ? sel.filter(function (x) { return x !== p.id; }) : sel.concat([p.id])); },
+          selectLabel: 'Select ' + p.title,
+          menuLabel: 'Actions for ' + p.title
+        };
+      })(p, 'r' + (i + 1));
+    }
+    vals.emptyDisplay = rows.length ? 'none' : 'table-row';
+    vals.emptyCanReset = true;
+    vals.emptyReset = function () { up({ search: '', fStatus: [], fCat: [], fBrand: [], low: false }); };
+    vals.showText = rows.length ? 'Showing 1–' + Math.min(10, rows.length) : 'Showing 0';
+
+    // Select all covers the rows on screen.
+    var ids = rows.map(function (p) { return p.id; });
+    var onScreen = ids.filter(function (id) { return has(sel, id); }).length;
+    var all = ids.length > 0 && onScreen === ids.length;
+    var some = onScreen > 0 && !all;
+    vals.all = all;
+    vals.some = some;
+    vals.allAria = all ? 'true' : some ? 'mixed' : 'false';
+    vals.allBox = onScreen ? 'var(--primary)' : 'var(--background)';
+    vals.allEdge = onScreen ? 'var(--primary)' : 'var(--input)';
+    vals.toggleAll = function () {
+      setSel(all ? sel.filter(function (id) { return !has(ids, id); }) : sel.concat(ids.filter(function (id) { return !has(sel, id); })));
+    };
+    vals.hasSel = sel.length > 0;
+    // With rows selected, the page row sticks to the bottom and holds the action bar between the count and the page buttons.
+    vals.footSel = vals.hasSel ? 'mm-tfoot-sel' : '';
+    vals.selText = sel.length + ' selected';
+    vals.clearSel = function () { setSel([]); };
+
+    // Faceted filters (shadcn's data-table toolbar).
+    var fql = fq.trim().toLowerCase();
+    var facet = function (name, key, options, field, current) {
+      var shown = options.filter(function (o) { return !fql || o.label.toLowerCase().indexOf(fql) !== -1; });
+      var set = function (next) { var patch = {}; patch[key] = next; up(patch); };
+      return {
+        open: openF === name,
+        expanded: openF === name ? 'true' : 'false',
+        toggleOpen: function () { up({ openF: openF === name ? null : name, fq: '' }); },
+        has: current.length > 0,
+        many: current.length > 2,
+        few: current.length > 0 && current.length <= 2,
+        countText: current.length + ' selected',
+        selLabels: options.filter(function (o) { return has(current, o.v); }).map(function (o) { return o.label; }),
+        none: shown.length === 0,
+        clear: function () { set([]); },
+        options: shown.map(function (o) {
+          var on = has(current, o.v);
+          return {
+            label: o.label,
+            count: String(PRODUCTS.filter(function (p) { return p[field] === o.v; }).length),
+            on: on,
+            aria: on ? 'true' : 'false',
+            box: on ? 'var(--primary)' : 'transparent',
+            edge: on ? 'var(--primary)' : 'var(--input)',
+            iActive: o.v === 'active',
+            iDraft: o.v === 'draft',
+            iArchived: o.v === 'archived',
+            toggle: function () { set(on ? current.filter(function (x) { return x !== o.v; }) : current.concat([o.v])); }
+          };
+        })
+      };
+    };
+    vals.fc = facet('category', 'fCat', CATEGORIES, 'cat', fCat);
+    vals.fb = facet('brand', 'fBrand', BRANDS, 'brand', fBrand);
+    vals.fq = fq;
+    vals.onFq = function (e) { up({ fq: e.target.value }); };
+    vals.anyOpen = openF !== null;
+    vals.closeF = function () { up({ openF: null }); };
+    vals.closeOnEsc = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ openF: null }); } };
+    vals.search = search;
+    vals.onSearch = function (e) { up({ search: e.target.value }); };
+    vals.lowOnly = lowOnly;
+    vals.lowAria = lowOnly ? 'true' : 'false';
+    vals.lowBox = lowOnly ? 'var(--primary)' : 'var(--background)';
+    vals.lowEdge = lowOnly ? 'var(--primary)' : 'var(--input)';
+    vals.toggleLow = function () { up({ low: !lowOnly }); };
+    vals.filtered = sq !== '' || fCat.length > 0 || fBrand.length > 0 || lowOnly;
+    vals.reset = function () { up({ search: '', fCat: [], fBrand: [], low: false }); };
+
+    // Sortable headers: ascending, descending, then back to newest first.
+    var sorter = function (k) {
+      var active = sortKey === k;
+      return {
+        none: !active,
+        asc: active && sortDir === 'asc',
+        desc: active && sortDir === 'desc',
+        aria: !active ? 'none' : sortDir === 'asc' ? 'ascending' : 'descending',
+        toggle: function () {
+          if (!active) up({ sortKey: k, sortDir: 'asc' });
+          else if (sortDir === 'asc') up({ sortDir: 'desc' });
+          else up({ sortKey: null, sortDir: 'asc' });
+        }
+      };
+    };
+    vals.sTitle = sorter('title');
+    vals.sPrice = sorter('price');
+    vals.sVariants = sorter('variants');
+    vals.sStock = sorter('stock');
+
+    // Export dialog: Excel or CSV, the filtered list or the selection.
+    var exFormat = s.exFormat || 'xlsx';
+    var exScope = s.exScope === 'selected' && sel.length ? 'selected' : 'filtered';
+    vals.exportOpen = Boolean(s.exportOpen);
+    vals.openExport = function () { up({ exportOpen: true, exScope: 'filtered' }); };
+    vals.openExportSelected = function () { up({ exportOpen: true, exScope: 'selected' }); };
+    vals.closeExport = function () { up({ exportOpen: false }); };
+    vals.exportKey = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ exportOpen: false }); } };
+    vals.ex = {
+      xlsx: exFormat === 'xlsx',
+      csv: exFormat === 'csv',
+      xlsxAria: exFormat === 'xlsx' ? 'true' : 'false',
+      csvAria: exFormat === 'csv' ? 'true' : 'false',
+      pickXlsx: function () { up({ exFormat: 'xlsx' }); },
+      pickCsv: function () { up({ exFormat: 'csv' }); },
+      filtered: exScope === 'filtered',
+      selected: exScope === 'selected',
+      filteredAria: exScope === 'filtered' ? 'true' : 'false',
+      selectedAria: exScope === 'selected' ? 'true' : 'false',
+      pickFiltered: function () { up({ exScope: 'filtered' }); },
+      pickSelected: function () { up({ exScope: 'selected' }); },
+      noSelection: sel.length === 0,
+      selectedOpacity: sel.length ? '1' : '0.5',
+      selectedLabel: sel.length ? 'The ' + sel.length + ' selected' : 'The selected products (none selected)'
+    };
+    var exCount = exScope === 'selected' ? sel.length : rows.length;
+    vals.runExport = function () {
+      up({ exportOpen: false, toast: 'Exported ' + exCount + ' products.' });
+      clearTimeout(self.toastTimer);
+      self.toastTimer = setTimeout(function () { up({ toast: null }); }, 4000);
+    };
+    vals.hasToast = Boolean(s.toast);
+    vals.toastText = s.toast || '';
+
+    // Sidebar sections that open and close; Catalog starts open (this page is in it).
+    var navOpen = s.navOpen || { catalog: true };
+    vals.nv = {};
+    ['orders', 'catalog', 'inventory', 'reports', 'store', 'platform'].forEach(function (k) {
+      var open = Boolean(navOpen[k]);
+      vals.nv[k] = {
+        open: open,
+        closed: !open,
+        aria: open ? 'true' : 'false',
+        rot: open ? '90deg' : '0deg',
+        toggle: function () {
+          var next = Object.assign({}, navOpen);
+          next[k] = !open;
+          up({ navOpen: next });
+        }
+      };
+    });
+
+    // Theme and font.
+    var dark = typeof s.dark === 'boolean' ? s.dark : (this.props.dark ?? false);
+    vals.themeClass = dark ? 'mm mm-root dark' : 'mm mm-root';
+    vals.fontStack = FONTS[this.props.font ?? 'Inter'] || FONTS.Inter;
+    vals.isDark = dark;
+    vals.isLight = !dark;
+    vals.themeLabel = dark ? 'Switch to light theme' : 'Switch to dark theme';
+    vals.toggleTheme = function () { up({ dark: !dark }); };
+
+    // The + menu: everything that can be created.
+    vals.createOpen = Boolean(s.createOpen);
+    vals.createAria = s.createOpen ? 'true' : 'false';
+    vals.toggleCreate = function () { up({ createOpen: !s.createOpen }); };
+    vals.closeCreate = function () { up({ createOpen: false }); };
+    vals.createKey = function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); up({ createOpen: false }); return; }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      var items = Array.prototype.slice.call(e.currentTarget.querySelectorAll('.mm-cmd-item'));
+      var at = items.indexOf(document.activeElement);
+      var next = e.key === 'ArrowDown' ? Math.min(at + 1, items.length - 1) : Math.max(at - 1, 0);
+      if (items[next]) items[next].focus();
+    };
+
+    // Command dialog.
+    var query = s.query || '';
+    var ql = query.trim().toLowerCase();
+    var match = function (label) { return !ql || label.toLowerCase().indexOf(ql) !== -1; };
+    vals.searchOpen = Boolean(s.searchOpen);
+    vals.query = query;
+    vals.q = query.trim();
+    vals.hasQ = vals.q !== '';
+    // Every page the sidebar reaches, grouped as it groups them; a group's name matches its pages.
+    var shown = 0;
+    vals.cmdGroups = CMD_GROUPS.map(function (g) {
+      var items = g.items.filter(function (it) {
+        return match(it.label) || (g.label !== 'Go to' && match(g.label));
+      }).map(function (it) {
+        var item = { label: it.label };
+        item[it.icon || g.icon] = true;
+        return item;
+      });
+      return { label: g.label, items: items };
+    }).filter(function (g) { return g.items.length > 0; }).map(function (g) {
+      g.sep = vals.hasQ || shown++ > 0;
+      return g;
+    });
+    vals.cmdEmpty = vals.cmdGroups.length === 0 && !vals.hasQ;
+    vals.openSearch = function () { up({ searchOpen: true, query: '' }); };
+    vals.closeSearch = function () { up({ searchOpen: false }); };
+    vals.onQuery = function (e) { up({ query: e.target.value }); };
+    vals.onDialogKey = function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); up({ searchOpen: false }); return; }
+      var box = e.currentTarget;
+      var items = Array.prototype.slice.call(box.querySelectorAll('.mm-cmd-item'));
+      var input = box.querySelector('.mm-cmd-input');
+      var at = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        var next = e.key === 'ArrowDown' ? Math.min(at + 1, items.length - 1) : at - 1;
+        if (next < 0) { if (input) input.focus(); } else if (items[next]) { items[next].focus(); }
+      } else if (e.key === 'Enter' && document.activeElement === input && items[0]) {
+        e.preventDefault();
+        items[0].click();
+      }
+    };
+    return vals;
+  }
+}
+</script>
+</body>
+</html>

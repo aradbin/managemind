@@ -1,0 +1,203 @@
+<div class="{{themeClass}}" style="position: relative; display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: var(--background); color: var(--foreground); font-family: {{fontStack}}; font-size: 14px; line-height: 20px">
+
+<sc-if value="{{isChoose}}" hint-placeholder-val="{{true}}">
+<header style="display: flex; flex: none; align-items: center; gap: 8px; height: 56px; padding: 0 12px; border-bottom: 1px solid var(--border)">
+<button type="button" class="mm-btn mm-ghost" style="flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; padding: 0 8px 0 4px">
+<span aria-hidden="true" style="display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: var(--sidebar-primary); color: var(--sidebar-primary-foreground); font-weight: 600">m</span>
+<span class="mm-trunc" style="font-weight: 600">Nakshi Fashion</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg></button>
+<button type="button" class="mm-btn mm-outline mm-icon" aria-label="Create"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></button>
+</header>
+</sc-if>
+<sc-if value="{{inWizard}}" hint-placeholder-val="{{false}}">
+<header style="display: flex; flex: none; align-items: center; gap: 4px; height: 56px; padding: 0 8px; border-bottom: 1px solid var(--border)">
+<sc-if value="{{canBack}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-ghost mm-icon" aria-label="{{backAria}}" onClick="{{headerBack}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg></button></sc-if>
+<div style="flex: 1; min-width: 0; margin: 0 4px; padding-left: 4px"><h1 class="mm-trunc" style="margin: 0; font-size: 16px; line-height: 20px; font-weight: 600">Import products</h1><p class="mm-trunc mm-muted" style="margin: 0; font-size: 12px; line-height: 16px">{{stepText}}</p></div>
+</header>
+<div aria-hidden="true" style="flex: none; display: flex; gap: 4px; padding: 0 16px; margin-top: 10px"><sc-for list="{{steps}}" as="p" hint-placeholder-count="4"><span style="flex: 1; height: 4px; border-radius: 9999px; background: {{p.seg}}"></span></sc-for></div>
+</sc-if>
+
+<main class="mm-scroll" style="gap: 12px; padding: 16px">
+
+<sc-if value="{{isChoose}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Import products</h1>
+<button type="button" class="mm-btn mm-outline" onClick="{{sample}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Sample file</button>
+</div>
+<p class="mm-muted" style="margin: -6px 0 0; font-size: 13px; line-height: 18px">Add or update many products at once from an Excel or CSV file.</p>
+<nav aria-label="Catalog sections" style="margin: 0 -16px; padding: 0 16px; overflow-x: auto; scrollbar-width: none">
+<div style="display: inline-flex; align-items: center; height: 40px; padding: 3px; box-sizing: border-box; border-radius: 10px; background: var(--muted)">
+<a href="Phone.dc.html" class="mm-ptab">Products</a>
+<a href="CategoriesPhone.dc.html" class="mm-ptab">Categories</a>
+<a href="CollectionsPhone.dc.html" class="mm-ptab">Collections</a>
+<a href="AttributesPhone.dc.html" class="mm-ptab">Attributes</a>
+<a href="#" class="mm-ptab" aria-current="page">Import</a>
+</div>
+</nav>
+<div class="mm-drop">
+<span class="mm-dropicon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 12v6"></path><path d="m15 15-3-3-3 3"></path></svg></span>
+<p style="margin: 0; font-weight: 500">Choose a spreadsheet</p>
+<p class="mm-muted" style="margin: 0; font-size: 13px; line-height: 18px">One row per variant, with a header row. Excel (.xlsx) or CSV. Our product export works as it is, in Bangla or English.</p>
+<button type="button" class="mm-btn mm-primary" onClick="{{pickFile}}" style="width: 100%; margin-top: 4px">Choose a file</button>
+</div>
+<sc-if value="{{err}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><div><p style="margin: 0; font-weight: 500">This file couldn’t be read</p><p style="margin: 0">Save it as .xlsx or .csv and try again.</p></div></div></sc-if>
+<h2 id="mm-c-recent" style="margin: 8px 0 -4px; font-size: 16px; line-height: 24px; font-weight: 600">Recent imports</h2>
+<ul class="mm-plist" aria-labelledby="mm-c-recent">
+<sc-for list="{{recent}}" as="r" hint-placeholder-count="3"><li><div class="mm-prow" style="position: relative">
+<span class="mm-thumb" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<button type="button" class="mm-rowlink" onClick="{{r.open}}"><span style="display: flex; align-items: center; gap: 6px; min-width: 0"><span aria-hidden="true" style="flex: none; width: 8px; height: 8px; border-radius: 9999px; background: {{r.dotBg}}"></span><span class="mm-trunc" style="font-weight: 500">{{r.file}}</span></span><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{r.meta}}</span></button>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-right: 4px; color: var(--muted-foreground)"><path d="m9 18 6-6-6-6"></path></svg>
+</div></li></sc-for>
+</ul>
+</sc-if>
+
+<sc-if value="{{isMap}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px">
+<span class="mm-thumb" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<div style="flex: 1; min-width: 0"><h2 class="mm-trunc" style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 600">{{fileName}}</h2><p class="mm-muted" style="margin: 0; font-size: 13px">{{fileMeta}}</p></div>
+</div>
+<p class="mm-muted" style="margin: 0; font-size: 13px; line-height: 18px">Check what each column is. Columns we recognised are already set.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><span class="mm-badge">{{sumImport}}</span><span class="mm-badge">{{sumSkip}}</span><sc-if value="{{hasAttention}}" hint-placeholder-val="{{true}}"><span class="mm-badge" style="color: var(--warn); border-color: color-mix(in oklch, var(--warn) 40%, transparent)">{{sumAttention}}</span></sc-if></div>
+<ul class="mm-plist" aria-label="Columns">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="16"><li><div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border)">
+<div style="min-width: 0; display: flex; align-items: baseline; gap: 8px"><span class="mm-trunc" style="flex: none; max-width: 55%; font-weight: 500; color: {{c.nameColor}}; font-style: {{c.nameStyle}}">{{c.name}}</span><span class="mm-trunc mm-muted" style="font-size: 13px">{{c.sample}}</span></div>
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{c.combo.aria}}" aria-label="{{c.combo.title}}" onClick="{{c.combo.toggle}}"><span style="display: flex; align-items: center; gap: 8px; min-width: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; color: var(--muted-foreground)"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg><span class="mm-trunc" style="color: {{c.combo.color}}">{{c.combo.display}}</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<sc-if value="{{c.unknown}}" hint-placeholder-val="{{false}}">
+<div class="mm-fix" role="group" aria-label="{{c.unknownText}}">
+<p style="margin: 0; display: flex; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--warn)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><span>{{c.unknownText}}</span></p>
+<button type="button" class="mm-combo" role="combobox" aria-haspopup="dialog" aria-expanded="{{c.type.aria}}" aria-label="{{c.type.title}}" onClick="{{c.type.toggle}}" style="background: var(--background)"><span class="mm-trunc" style="color: {{c.type.color}}">{{c.type.display}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; opacity: .5"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg></button>
+<div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{c.skip}}">Don’t import</button><button type="button" class="mm-btn mm-primary" style="flex: 1" disabled="{{c.cantCreate}}" onClick="{{c.create}}">Create attribute</button></div>
+</div>
+</sc-if>
+</div></li></sc-for>
+</ul>
+<sc-if value="{{missing}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{missingText}}</p></div></sc-if>
+</sc-if>
+
+<sc-if value="{{isCheck}}" hint-placeholder-val="{{false}}">
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Before importing</h2>
+<div class="mm-stats">
+<div class="mm-stat"><span class="mm-muted">Ready</span><strong>{{dry.ready}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Variants</span><strong>{{dry.variants}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Left out</span><strong style="color: {{dry.leftColor}}">{{dry.left}}</strong></div>
+</div>
+<sc-if value="{{dry.has}}" hint-placeholder-val="{{true}}">
+<div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{dry.summary}}</p></div>
+<ul class="mm-plist" aria-label="Problems">
+<sc-for list="{{dry.problems}}" as="p" hint-placeholder-count="9"><li><div class="mm-probrow"><span class="mm-rowtag">{{p.row}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{p.col}}</span><span style="font-size: 13px; line-height: 18px; color: var(--muted-foreground)">{{p.msg}}</span></span></div></li></sc-for>
+</ul>
+<button type="button" class="mm-btn mm-outline" onClick="{{downloadProblems}}" style="width: 100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Download the problems (.csv)</button>
+</sc-if>
+<sc-if value="{{dry.none}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert mm-alert-ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><p style="margin: 0">Every row looks right.</p></div></sc-if>
+<p class="mm-muted" style="margin: 0; font-size: 13px; line-height: 18px">Nothing changes until you start. Rows that match a product already in the store update it; the rest are added.</p>
+</sc-if>
+
+<sc-if value="{{isJob}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; gap: 12px">
+<span class="mm-thumb" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg></span>
+<div style="flex: 1; min-width: 0"><h2 class="mm-trunc" style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 600">{{jb.file}}</h2><p class="mm-muted" style="margin: 0; font-size: 13px">{{jb.when}}</p></div>
+<span class="mm-sbadge" style="background: {{jb.badgeBg}}; color: {{jb.badgeFg}}">{{jb.status}}</span>
+</div>
+<div class="mm-field" style="gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-weight: 500">Products</span><span class="mm-muted" role="status" style="font-size: 13px">{{jb.progressText}}</span></div>
+<div class="mm-progress" role="progressbar" aria-label="Import progress" aria-valuetext="{{jb.progressText}}"><div class="mm-ind" style="width: {{jb.pct}}"></div></div>
+<sc-if value="{{jb.staging}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin: 0">{{jb.stagingText}}</p></sc-if>
+</div>
+<div class="mm-stats">
+<div class="mm-stat"><span class="mm-muted">Added</span><strong>{{jb.added}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Updated</span><strong>{{jb.updated}}</strong></div>
+<div class="mm-stat"><span class="mm-muted">Problems</span><strong>{{jb.failed}}</strong></div>
+</div>
+<sc-if value="{{jb.showImages}}" hint-placeholder-val="{{true}}">
+<div class="mm-field" style="gap: 8px; padding-top: 12px; border-top: 1px solid var(--border)">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="display: inline-flex; align-items: center; gap: 8px; font-weight: 500"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--muted-foreground)"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>Images</span><span class="mm-muted" role="status" style="font-size: 13px">{{jb.imgText}}</span></div>
+<div class="mm-progress" role="progressbar" aria-label="Image progress" aria-valuetext="{{jb.imgText}}"><div class="mm-ind" style="width: {{jb.imgPct}}"></div></div>
+<sc-if value="{{jb.isImages}}" hint-placeholder-val="{{false}}"><p class="mm-hint" style="margin: 0">Images are downloaded and resized on this phone. Keep this page open; if you close it, open the import again to continue.</p></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{jb.isDone}}" hint-placeholder-val="{{true}}"><div role="status" class="mm-alert mm-alert-ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div><p style="margin: 0; font-weight: 500">Import finished</p><p style="margin: 0">{{jb.doneText}}</p><sc-if value="{{jb.showImages}}" hint-placeholder-val="{{true}}"><p style="margin: 0">{{jb.imgSummary}}</p></sc-if></div></div></sc-if>
+<sc-if value="{{jb.isFailed}}" hint-placeholder-val="{{false}}"><div role="alert" class="mm-alert mm-alert-bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{jb.failedText}}</p></div></sc-if>
+<sc-if value="{{jb.isCancelled}}" hint-placeholder-val="{{false}}"><div role="status" class="mm-alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg><p style="margin: 0">{{jb.cancelledText}}</p></div></sc-if>
+<sc-if value="{{jb.hasErrors}}" hint-placeholder-val="{{false}}">
+<h3 style="margin: 4px 0 -4px; font-size: 14px; font-weight: 600">{{jb.errorsTitle}}</h3>
+<ul class="mm-plist" aria-label="Problems">
+<sc-for list="{{jb.errors}}" as="p" hint-placeholder-count="3"><li><div class="mm-probrow"><span class="mm-rowtag">{{p.row}}</span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc" style="font-weight: 500">{{p.col}}</span><span style="font-size: 13px; line-height: 18px; color: var(--muted-foreground)">{{p.msg}}</span></span></div></li></sc-for>
+</ul>
+<button type="button" class="mm-btn mm-outline" onClick="{{downloadProblems}}" style="width: 100%"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></svg>Download the problems (.csv)</button>
+</sc-if>
+<sc-if value="{{jb.hasLeft}}" hint-placeholder-val="{{true}}"><div style="display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--border)"><span class="mm-muted" style="font-size: 13px; line-height: 18px">{{jb.leftText}}</span><button type="button" class="mm-btn mm-ghost" onClick="{{downloadProblems}}" style="align-self: flex-start; margin-left: -12px">Download them (.csv)</button></div></sc-if>
+</sc-if>
+
+</main>
+
+<sc-if value="{{isMap}}" hint-placeholder-val="{{false}}">
+<div style="flex: none; display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--background)">
+<sc-if value="{{hasCheckHint}}" hint-placeholder-val="{{true}}"><p class="mm-muted" style="margin: 0; font-size: 13px; text-align: center">{{checkHint}}</p></sc-if>
+<div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{chooseAgain}}">Cancel</button><button type="button" class="mm-btn mm-primary" style="flex: 2" disabled="{{cantCheck}}" onClick="{{check}}">Check the file</button></div>
+</div>
+</sc-if>
+<sc-if value="{{isCheck}}" hint-placeholder-val="{{false}}">
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--background)"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{back}}">Back</button><button type="button" class="mm-btn mm-primary" style="flex: 2" onClick="{{start}}">{{dry.startShort}}</button></div>
+</sc-if>
+<sc-if value="{{isJob}}" hint-placeholder-val="{{false}}">
+<div style="flex: none; display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--background)">
+<sc-if value="{{jb.running}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-outline" style="flex: 1" onClick="{{jb.cancel}}">Cancel the import</button></sc-if>
+<sc-if value="{{jb.finished}}" hint-placeholder-val="{{true}}"><a href="Phone.dc.html" class="mm-btn mm-outline" style="flex: 1">See products</a><button type="button" class="mm-btn mm-primary" style="flex: 1" onClick="{{jb.another}}">Import another</button></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isChoose}}" hint-placeholder-val="{{true}}">
+<nav aria-label="Main" class="mm-tabbar">
+<a href="#" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></span>Home</a>
+<a href="#" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg><span class="mm-tabbadge">4<span class="mm-sr"> to confirm</span></span></span>Orders</a>
+<a href="Phone.dc.html" class="mm-tabitem" aria-current="page"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg></span>Products</a>
+<a href="#" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>Customers</a>
+<a href="#" class="mm-tabitem"><span class="mm-pill"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg></span>Menu</a>
+</nav>
+</sc-if>
+
+<sc-if value="{{comboOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 60">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close list" onClick="{{closeCombo}}"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-cb-title" class="mm-drawer" onKeyDown="{{comboEsc}}" style="height: 80%">
+<div class="mm-handle" aria-hidden="true"></div>
+<div class="mm-dhead"><h2 id="mm-cb-title" class="mm-dtitle mm-trunc">{{cbd.title}}</h2></div>
+<div style="flex: none; position: relative; padding: 0 16px 8px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 28px; top: 12px; color: var(--muted-foreground); pointer-events: none"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input type="search" class="mm-input" aria-label="{{cbd.ph}}" placeholder="{{cbd.ph}}" autoComplete="off" value="{{cbd.query}}" onChange="{{cbd.onQuery}}" style="padding-left: 36px">
+</div>
+<div role="listbox" aria-labelledby="mm-cb-title" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 24px">
+<sc-for list="{{cbd.items}}" as="o" hint-placeholder-count="8"><sc-if value="{{o.head}}" hint-placeholder-val="{{false}}"><div class="mm-gh" role="presentation">{{o.label}}</div></sc-if><sc-if value="{{o.isOpt}}" hint-placeholder-val="{{true}}"><button type="button" role="option" aria-selected="{{o.aria}}" class="mm-optrow" onClick="{{o.pick}}"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="mm-trunc">{{o.label}}</span><sc-if value="{{o.hasSub}}" hint-placeholder-val="{{false}}"><span class="mm-trunc mm-muted" style="font-size: 13px; line-height: 18px">{{o.sub}}</span></sc-if></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="opacity: {{o.check}}; color: var(--foreground)"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-if></sc-for>
+<sc-if value="{{cbd.none}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0; padding: 24px 0; text-align: center">{{cbd.empty}}</p></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{confirmOpen}}" hint-placeholder-val="{{false}}">
+<div class="mm-layer" style="z-index: 70">
+<div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
+<div role="alertdialog" aria-modal="true" aria-labelledby="mm-al-title" aria-describedby="mm-al-desc" onKeyDown="{{escClose}}" style="position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); color: var(--foreground); box-shadow: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1)">
+<div style="display: flex; flex-direction: column; gap: 8px; text-align: center">
+<h2 id="mm-al-title" style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 600">Cancel this import?</h2>
+<p id="mm-al-desc" style="margin: 0; color: var(--muted-foreground)">Products already done stay as they are. The rest aren’t imported.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button type="button" class="mm-btn" style="width: 100%; background: var(--destructive); color: #fff" onClick="{{doCancel}}">Cancel the import</button>
+<button type="button" class="mm-btn mm-outline" style="width: 100%" onClick="{{keepGoing}}">Keep importing</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+<div role="status" style="position: absolute; left: 16px; right: 16px; bottom: 76px; z-index: 80; display: flex; align-items: center; gap: 8px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--foreground); font-size: 13px; line-height: 20px; box-shadow: 0 4px 12px rgb(0 0 0 / .1)">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+<span style="font-weight: 500">{{toastText}}</span>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
