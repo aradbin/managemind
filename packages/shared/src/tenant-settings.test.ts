@@ -38,6 +38,7 @@ describe('tenantSettings', () => {
       },
       recovery: { incomplete: true, showAfterMinutes: 30, keepDays: 30 },
       backOffice: { countApprovalThreshold: 500000, reorderMultiple: 2 },
+      meta: { feed: { enabled: false }, purchaseAt: 'placed', deliveredEvent: false },
       couriers: {
         default: null,
         defaultWeightGrams: 500,

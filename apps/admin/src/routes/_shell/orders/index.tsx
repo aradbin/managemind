@@ -34,6 +34,9 @@ export const Route = createFileRoute('/_shell/orders/')({
       source: searchOneOf(search.source, [
         'website',
         'facebook',
+        'messenger',
+        'whatsapp',
+        'instagram',
         'phone',
         'walk_in',
         'other',

@@ -4,6 +4,7 @@
 // default locale are columns, not settings.
 import { z } from 'zod';
 import { backOfficeSettings } from './back-office/settings';
+import { metaSettings } from './channels/settings';
 import { notificationSettings } from './notifications';
 import { courierSettings } from './orders/couriers';
 import {
@@ -126,6 +127,8 @@ export const tenantSettings = z
     couriers: courierSettings.default(() => courierSettings.parse({})),
     /** Count approval and reorder (phase-8-plan §4). */
     backOffice: backOfficeSettings.default(() => backOfficeSettings.parse({})),
+    /** The Meta feed and Conversions API (phase-9-plan §3.1.4, §3.1.6). */
+    meta: metaSettings.default(() => metaSettings.parse({})),
     /** The return policy (phase-5a-plan §3.10). */
     returns: returnSettings.default(() => returnSettings.parse({})),
     /** Which shopper messages go by which channel (phase-5a-plan §3.6, Q8). */

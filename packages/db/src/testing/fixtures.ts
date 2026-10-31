@@ -197,6 +197,12 @@ export const FIXTURES: Record<string, (tenant: string) => string> = {
   payments: (tenant) =>
     `insert into store.payments (tenant_id, order_id, provider, method, amount)
      values (${tenant}, ${first('orders')}, 'cod', 'cod', 100000)`,
+  // Phase 9: the Meta feed's state and the Conversions API log.
+  feeds: (tenant) =>
+    `insert into store.feeds (tenant_id, kind) values (${tenant}, 'meta') on conflict do nothing`,
+  meta_events: (tenant) =>
+    `insert into store.meta_events (tenant_id, order_id, name)
+     values (${tenant}, ${first('orders')}, 'Purchase') on conflict do nothing`,
   // Phase 6: incomplete orders and the confirmation queue.
   incomplete_orders: (tenant) =>
     `insert into store.incomplete_orders (tenant_id, cart_id, phone, lines, subtotal, locale)

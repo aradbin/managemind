@@ -12,6 +12,8 @@ export const CREDENTIAL_KINDS = [
   'pathao',
   'redx',
   'fake',
+  'meta_capi',
+  'whatsapp',
 ] as const;
 export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
 
@@ -23,6 +25,8 @@ export const CREDENTIAL_PROVIDERS = {
   pathao: ['pathao'],
   redx: ['redx'],
   fake: ['fake'],
+  meta_capi: ['meta_capi'],
+  whatsapp: ['whatsapp'],
 } as const satisfies Record<CredentialKind, readonly string[]>;
 export type CredentialProvider = (typeof CREDENTIAL_PROVIDERS)[CredentialKind][number];
 
@@ -68,6 +72,22 @@ export const credentialSecrets = {
     .strict(),
   redx: z.object({ token: secret(2000), webhookSecret: webhookSecret.optional() }).strict(),
   fake: z.object({ apiKey: secret(), webhookSecret: webhookSecret.optional() }).strict(),
+  /** A Conversions API token from the store's Events Manager (phase-9-plan §3.1.6). */
+  meta_capi: z.object({ accessToken: secret(1000) }).strict(),
+  /**
+   * The store's own Meta app (phase-9-plan §3.2.1): a system user's permanent
+   * token, the app secret that signs its webhooks, and the verify token we made.
+   */
+  whatsapp: z
+    .object({
+      accessToken: secret(1000),
+      appSecret: z
+        .string()
+        .trim()
+        .regex(/^[a-f0-9]{32}$/, 'the app secret: 32 letters and digits'),
+      verifyToken: webhookSecret.optional(),
+    })
+    .strict(),
 } as const satisfies Record<CredentialProvider, z.ZodType>;
 
 /** The secret fields staff type; the rest the server keeps (the webhook secret, tokens). */
@@ -122,6 +142,33 @@ export const credentialConfigs = {
   /** The pickup store, chosen from RedX's list on saving. */
   redx: z.object({ pickupStoreId: z.int().positive().optional() }).strict(),
   fake: z.object({}).strict(),
+  /** Meta's test event code, while the owner checks events in Events Manager. */
+  meta_capi: z
+    .object({
+      testEventCode: z
+        .string()
+        .trim()
+        .regex(/^TEST\w{1,20}$/)
+        .optional(),
+    })
+    .strict(),
+  /** The number and its account, and what Meta said about it on the last check. */
+  whatsapp: z
+    .object({
+      phoneNumberId: z
+        .string()
+        .trim()
+        .regex(/^\d{5,20}$/),
+      wabaId: z
+        .string()
+        .trim()
+        .regex(/^\d{5,20}$/),
+      displayPhone: z.string().max(30).optional(),
+      verifiedName: z.string().max(200).optional(),
+      qualityRating: z.string().max(20).optional(),
+      messagingLimit: z.string().max(40).optional(),
+    })
+    .strict(),
 } as const satisfies Record<CredentialProvider, z.ZodType>;
 
 export type CredentialSecrets<P extends CredentialProvider> = z.infer<
@@ -151,6 +198,7 @@ export function credentialHint(secrets: Record<string, unknown>): string {
       secrets.apiKey ??
       secrets.clientId ??
       secrets.token ??
+      secrets.accessToken ??
       secrets.authValue ??
       '',
   );

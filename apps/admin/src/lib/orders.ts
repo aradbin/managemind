@@ -96,7 +96,17 @@ export interface OrderFilters {
     | 'delivered'
     | 'failed'
     | undefined;
-  source?: 'website' | 'facebook' | 'phone' | 'walk_in' | 'other' | 'exchange' | undefined;
+  source?:
+    | 'website'
+    | 'facebook'
+    | 'messenger'
+    | 'whatsapp'
+    | 'instagram'
+    | 'phone'
+    | 'walk_in'
+    | 'other'
+    | 'exchange'
+    | undefined;
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;

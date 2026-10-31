@@ -74,7 +74,7 @@ export async function anonymizeCustomer(
        set phone = ${ANONYMIZED_PHONE},
            contact = jsonb_build_object('name', ${ANONYMIZED_NAME}::text, 'phone', ${ANONYMIZED_PHONE}::text),
            address = case when address is null then null else address || '{"line": "—"}'::jsonb end,
-           ip = null, user_agent = null
+           ip = null, user_agent = null, attribution = null
      where tenant_id = ${t} and customer_id = ${id}`);
   await run(
     sql`delete from store.customer_addresses where tenant_id = ${t} and customer_id = ${id}`,

@@ -32,6 +32,7 @@ import {
 import { invitationEmail } from '@managemind/providers/email';
 import { AppError, PERMISSIONS, STORE_ROLES } from '@managemind/shared';
 import { backOfficeSettings } from '@managemind/shared/back-office';
+import { metaSettings } from '@managemind/shared/channels';
 import { notificationSettings } from '@managemind/shared/notifications';
 import {
   checkoutSettings,
@@ -126,6 +127,7 @@ const Store = z
     recovery: recoverySettings,
     couriers: courierSettings,
     backOffice: backOfficeSettings,
+    meta: metaSettings,
     returns: returnSettings,
     notifications: notificationSettings,
     setup: tenantSettings.shape.setup,
@@ -246,6 +248,7 @@ export const ADMIN_ROUTES = {
         recovery: recoverySettings.optional(),
         couriers: courierSettings.optional(),
         backOffice: backOfficeSettings.optional(),
+        meta: metaSettings.optional(),
         returns: returnSettings.optional(),
         notifications: notificationSettings.optional(),
         setup: tenantSettings.shape.setup.optional(),

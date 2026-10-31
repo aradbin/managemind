@@ -2917,6 +2917,25 @@ export interface paths {
                             /** @default 2 */
                             reorderMultiple?: number;
                         };
+                        meta?: {
+                            /**
+                             * @default {
+                             *       "enabled": false
+                             *     }
+                             */
+                            feed?: {
+                                /** @default false */
+                                enabled?: boolean;
+                                key?: string;
+                            };
+                            /**
+                             * @default placed
+                             * @enum {string}
+                             */
+                            purchaseAt?: "placed" | "confirmed";
+                            /** @default false */
+                            deliveredEvent?: boolean;
+                        };
                         returns?: {
                             /** @default true */
                             shopperRequests?: boolean;
@@ -6727,7 +6746,7 @@ export interface paths {
                     returnStatus?: "none" | "requested" | "partially_returned" | "returned";
                     deliveryStatus?: "not_shipped" | "partially_shipped" | "shipped" | "delivered" | "failed";
                     zoneId?: string;
-                    source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange";
+                    source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange" | "whatsapp" | "messenger" | "instagram";
                     tag?: string;
                     cancelledByShopper?: boolean | null;
                     flag?: "flagged_phone" | "possible_duplicate" | "unreachable";
@@ -6772,7 +6791,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "messenger" | "whatsapp" | "instagram" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -6860,7 +6879,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        source: "facebook" | "phone" | "walk_in" | "other";
+                        source: "facebook" | "messenger" | "whatsapp" | "instagram" | "phone" | "walk_in" | "other";
                         lines: {
                             /** Format: uuid */
                             variantId: string;
@@ -16237,6 +16256,25 @@ export interface components {
                 countApprovalThreshold: number;
                 /** @default 2 */
                 reorderMultiple: number;
+            };
+            meta: {
+                /**
+                 * @default {
+                 *       "enabled": false
+                 *     }
+                 */
+                feed: {
+                    /** @default false */
+                    enabled: boolean;
+                    key?: string;
+                };
+                /**
+                 * @default placed
+                 * @enum {string}
+                 */
+                purchaseAt: "placed" | "confirmed";
+                /** @default false */
+                deliveredEvent: boolean;
             };
             returns: {
                 /** @default true */

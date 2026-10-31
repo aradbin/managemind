@@ -1,5 +1,6 @@
 export * from './back-office';
 export * from './catalog';
+export * from './channels';
 export * from './content';
 export * from './couriers';
 export * from './customers';

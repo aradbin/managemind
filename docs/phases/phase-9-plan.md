@@ -195,7 +195,7 @@ Meta sends a shopper who taps "Checkout" in a Shop to the URL the store register
   - `value` and `currency: BDT`, and `contents` with variant IDs and quantities;
   - `user_data`: the phone in E.164 digits and the email, SHA-256 hashed after normalizing; `external_id`, the customer ID, hashed; `country: bd`, hashed; the IP and user agent unhashed, as Meta requires; `fbp` and `fbc`.
 - **No consent, no server event** (Q4). A shopper who declined cookies never had the browser event either, so nothing is lost to de-duplication.
-- **One delivery log.** The send goes through `store.messages` like a notification (channel `meta_event`), so a redelivered outbox event never sends twice, and the log shows each event's outcome.
+- **One log.** Each send has a row in `store.meta_events`, unique per order and event name, so a redelivered outbox event never sends twice, and the settings page shows each event's outcome.
 - **When to report a purchase (Q5).** `meta.purchaseAt` is `placed` (the default, as the pixel does now) or `confirmed`.
   - `confirmed` stops the browser's `Purchase` and sends the server's when staff or the shopper confirm a COD order. Meta's ads then learn from real orders, not fake ones, which matters for COD stores.
   - A cancelled order isn't retracted: Meta has no retraction. That is the reason for `confirmed`.
@@ -429,10 +429,12 @@ Marketing templates are charged on every send and need the shopper's opt-in (Met
 | Change | Stage | Notes |
 | --- | --- | --- |
 | `ORDER_SOURCES`, `MANUAL_ORDER_SOURCES` | 1 | Gain `whatsapp`, `messenger`, `instagram` |
-| `store.orders` | 1, 4 | `attribution` (jsonb), `checkout_ip`, `checkout_ua` (cleared after 30 days), `conversation_id` (stage 4) |
+| `store.orders` | 1, 4 | `attribution` (jsonb, cleared after 30 days), `conversation_id` (stage 4). The shopper's IP and browser are the existing `ip` and `user_agent`, kept 90 days |
 | `store.feeds` (new) | 1 | `tenant_id`, `kind` (`meta`, `meta_<lang>`), `dirty_since`, `built_at`, `chunks`, `rows`, `etag`, `last_error`. One row per store and kind |
 | `store.provider_credentials` | 1–3 | Kinds `meta_capi`, `whatsapp`, `meta_page`, `meta_business` (a checked list) |
-| `store.messages` | 1, 2 | Channels `whatsapp` and `meta_event`; `external_id` (Meta's message ID, unique per store) with its status and time; state `waiting` for the SMS fallback |
+| `store.meta_events` (new) | 1 | `tenant_id`, `id`, `order_id`, `name` (`Purchase`, `Delivered`), `status`, `reason`, `attempts`, `sent_at`. Unique on (`tenant_id`, `order_id`, `name`): the Conversions API's log, so an event is sent once |
+| Settings `meta` | 1 | In the store's settings JSON: `feed` (`enabled`, `key`, the key made by the server), `purchaseAt`, `deliveredEvent`. The pixel ID stays in `storefront.tracking` |
+| `store.messages` | 2 | Channel `whatsapp`; `external_id` (Meta's message ID, unique per store) with its status and time; state `waiting` for the SMS fallback |
 | `store.whatsapp_templates` (new) | 2 | `tenant_id`, `event`, `locale`, `name`, Meta's `template_id`, `status`, `category`, `reason`, `body`, `submitted_at`, `updated_at`. Unique on (`tenant_id`, `event`, `locale`) |
 | `store.customers` | 2, 5 | `whatsapp_opt_out_at`, `whatsapp_marketing_opt_in_at`, with its source |
 | `store.conversations` (new) | 4 | `tenant_id`, `id`, `channel`, `external_id` (unique per store and channel), `customer_id`, `name`, `phone` (WhatsApp only), `last_inbound_at`, `last_message_at`, `unread`, `assigned_to`, `state` (`open`, `done`), `referral` (jsonb: ad ID, headline, `ctwa_clid`, when), `created_at`, `updated_at`. Index (`tenant_id`, `state`, `last_message_at`) |

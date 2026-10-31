@@ -30,6 +30,8 @@ export const CREDENTIAL_KINDS = [
   'pathao',
   'redx',
   'fake',
+  'meta_capi',
+  'whatsapp',
 ] as const;
 export const CREDENTIAL_PROVIDERS = [
   'sslcommerz',
@@ -42,6 +44,8 @@ export const CREDENTIAL_PROVIDERS = [
   'pathao',
   'redx',
   'fake',
+  'meta_capi',
+  'whatsapp',
 ] as const;
 export const CREDENTIAL_MODES = ['sandbox', 'live'] as const;
 export const CHANNELS = ['email', 'sms', 'push'] as const;
