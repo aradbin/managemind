@@ -328,6 +328,7 @@ export const en = {
   'list.open': 'Open',
   'list.stages': 'Stage',
   'list.all': 'All',
+  'list.language': 'Language',
   'list.shown': '{count} shown',
   'list.resetFilters': 'Reset filters',
   'nav.menu': 'Menu',

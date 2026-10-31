@@ -20,13 +20,20 @@ export type RefundMethod = Json<'/v1/admin/orders/{id}/refunds', 'post'>['method
 
 export const RETURN_STEPS = ['requested', 'approved', 'received', 'inspected', 'resolved'] as const;
 
-export const returnsQuery = (status?: ReturnStatus, before?: string) => ({
-  queryKey: ['returns', status ?? null, before ?? null] as const,
+export type ReturnReason = ReturnSummary['reason'];
+
+export const returnsQuery = (status?: ReturnStatus, before?: string, reason?: ReturnReason) => ({
+  queryKey: ['returns', status ?? null, before ?? null, reason ?? null] as const,
   queryFn: async () =>
     unwrap(
       await api.GET('/v1/admin/returns', {
         params: {
-          query: { ...(status ? { status } : {}), ...(before ? { before } : {}), limit: 50 },
+          query: {
+            ...(status ? { status } : {}),
+            ...(reason ? { reason } : {}),
+            ...(before ? { before } : {}),
+            limit: 50,
+          },
         },
       }),
     ),

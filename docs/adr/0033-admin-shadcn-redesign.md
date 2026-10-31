@@ -1,6 +1,6 @@
 # ADR 0033: The admin on shadcn/ui's neutral theme, one sidebar that lists every page, no section tabs
 
-- Status: Accepted (step 1: the frame and the shared parts; step 2: the list pattern, on Products and Orders)
+- Status: Accepted (step 1: the frame and the shared parts; step 2: the list pattern, on Products and Orders; step 3: the other main lists and side panels)
 - Date: 2026-10-31
 - Design: the canvas in `design/admin-redesign/` (desktop and phone boards for every admin page, and its "Design rules" board). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/components/nav.tsx`, `apps/admin/src/routes/_shell.tsx`, `apps/admin/src/routes/_shell/more.tsx`
 - Amends: [ADR 0029](0029-admin-redesign.md) §1 (colours), §2 (sizes), §3 (status chips), §5 (the shell)
@@ -54,9 +54,22 @@ The build comes in steps. This first step changes what every page shares, so eve
   - phone lists as one card of divided rows.
 
   The API takes one value per filter, so each filter's list picks one (the boards draw several). No API gives a count per choice, so the lists show none. An order stage that no tab shows, such as a link from Home to failed deliveries, reads as a "Status: …" button that removes it.
+- Step 3 put Customers, Promotions, Expenses, Inventory and Returns on the list pattern, and moved their forms into side panels (`components/ui/sheet.tsx`: from the right on desktops, 92% tall from the bottom on phones, Delete at the footer's left):
+  - customers and addresses;
+  - expenses, recurring expenses and expense categories (a category's two names share one field with বাংলা | English tabs);
+  - stock adjustments and stock history.
+
+  Promotions pause, resume and end from a row's menu. Recurring expenses pause and resume there too. Forms follow design rule 3: choice buttons for how an expense was paid and for the weekday, a segmented control for how often, a switch for on and off, chips for Today and Yesterday.
+
+  Dates are now day first everywhere the admin's `dateOnly` and `dateTime` format them, with the year only when it isn't this one.
+
+  Where the API falls short of the boards:
+  - customers' Tag filter lists the tags on the customers loaded so far;
+  - expenses are searched and filtered within the month already loaded;
+  - returns have a tab per status (the board's "In progress" covers several, and the API takes one), and show units instead of value.
 - Still to build, page by page, from the boards:
-  - the list pattern on the other lists (customers, promotions, expenses, inventory, returns), and searchable selects in place of native ones in forms;
-  - side panels for customers, addresses, expenses and categories;
+  - the list pattern on the remaining lists (categories, collections, attributes, suppliers, purchase orders, stock counts, adjustments, incomplete orders, courier returns, the platform's lists), and searchable selects in place of native ones in forms;
+  - side panels for catalog categories and attributes;
   - save bars on full-page forms;
   - the bilingual name field.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.

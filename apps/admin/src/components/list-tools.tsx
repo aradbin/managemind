@@ -10,6 +10,7 @@ import { useLocale } from '../i18n';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
+import { Input } from './ui/input';
 import { menuContent, menuItem, menuSeparator } from './ui/menu';
 
 export interface StageTab<K extends string> {
@@ -419,3 +420,33 @@ export function SelectionBar({
 /** An action in the selection bar. */
 export const barAction =
   'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 font-medium hover:bg-primary-foreground/15 disabled:opacity-50 [&_svg]:size-4';
+
+/** A list's search box, with its magnifier. */
+export function SearchInput({
+  label,
+  value,
+  onChange,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn('relative', className)}>
+      <Search
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+      />
+      <Input
+        type="search"
+        className="pl-9"
+        aria-label={label}
+        placeholder={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}

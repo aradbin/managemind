@@ -1,7 +1,7 @@
 // Orders, customers and delivery for the admin screens (phase-4-plan §7):
 // the API's types, queries, and the small helpers the screens share.
 import type { paths } from '@managemind/sdk';
-import { formatDateTime, type Locale } from '@managemind/shared/i18n';
+import type { Locale } from '@managemind/shared/i18n';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AdminKey } from '../i18n';
 import { ApiError, api, unwrap } from './api';
@@ -74,9 +74,23 @@ export const pickText = (v: Localized | null | undefined, locale: Locale) =>
 export const idempotencyKey = () => crypto.randomUUID();
 export const withKey = (key: string) => ({ params: { header: { 'idempotency-key': key } } });
 
-export const dateTime = (locale: Locale, iso: string) => formatDateTime(locale, new Date(iso));
-export const dateOnly = (locale: Locale, iso: string) =>
-  formatDateTime(locale, new Date(iso), { dateStyle: 'medium' });
+/**
+ * Dates put the day first, and the year only when it isn't this one (ADR 0033,
+ * design rule 11): "29 Oct", "29 Oct 2025", "29 Oct, 4:05 PM". English uses
+ * British order; Bangla is day first already.
+ */
+const dayFirst = (locale: Locale, at: Date, time: boolean) =>
+  new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    ...(at.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }),
+    ...(time ? { hour: 'numeric', minute: '2-digit', hour12: true } : {}),
+  })
+    .formatToParts(at)
+    .map((p) => (p.type === 'dayPeriod' ? p.value.toUpperCase() : p.value))
+    .join('');
+export const dateTime = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), true);
+export const dateOnly = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), false);
 
 // ---- Queries ---------------------------------------------------------------------------
 

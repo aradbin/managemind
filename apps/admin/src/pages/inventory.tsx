@@ -1,20 +1,24 @@
-// Inventory (phase-2-plan §3.8, §7): stock per variant with a low-stock
-// filter, an adjust dialog (receive, count, damage, …, always with a reason)
-// and each variant's movement history. Every change is a ledger entry.
-import { formatDateTime } from '@managemind/shared/i18n';
+// Inventory (phase-2-plan §3.8, §7; ADR 0033): stock per variant with a
+// low-stock filter, an adjust panel (receive, count, damage, …, always with a
+// reason) and each variant's history in a panel. Every change is a ledger
+// entry.
+import { formatDateTime, formatNumber } from '@managemind/shared/i18n';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect, useMemo, useState } from 'react';
+import { History, Package, SlidersHorizontal, Truck, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
+// The receive hint and the cost history live with the purchasing screens' messages.
+import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { compact, type InventoryRow, pick } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
@@ -56,12 +60,22 @@ const reasonLabel = (reason: string, t: ReturnType<typeof useLocale>['t']) =>
 
 const rowLabel = (row: InventoryRow, locale: 'bn' | 'en') => {
   const title = pick(row.titles, locale) ?? '—';
-  const options = row.optionLabels
+  const options = optionsOf(row, locale);
+  return options ? `${title} — ${options}` : title;
+};
+
+const optionsOf = (row: InventoryRow, locale: 'bn' | 'en') =>
+  row.optionLabels
     .map((l) => pick(l, locale))
     .filter(Boolean)
     .join(' / ');
-  return options ? `${title} — ${options}` : title;
-};
+
+/** The adjust panel's choices, in the groups the design shows. */
+const GROUPS = [
+  ['add', ['received', 'returned', 'correction']],
+  ['out', ['damaged', 'lost', 'expired', 'sample']],
+  ['set', ['count']],
+] as const satisfies readonly (readonly ['add' | 'out' | 'set', readonly Mode[]])[];
 
 export function InventoryPage() {
   const { t, locale } = useLocale();
@@ -102,64 +116,93 @@ export function InventoryPage() {
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
   const items = useMemo(() => levels.data?.pages.flatMap((p) => p.items) ?? [], [levels.data]);
+  const filtered = Boolean(search.q || search.lowStock);
+  const reset = () => {
+    setQ('');
+    navigate({ to: '/inventory', search: {}, replace: true });
+  };
+  const available = (r: InventoryRow) =>
+    r.trackInventory ? (
+      <span className="inline-flex items-center justify-end gap-2">
+        {r.lowStock && (
+          <span className="inline-flex h-5 items-center rounded-md bg-danger-soft px-1.5 text-xs font-medium text-danger">
+            {t('inventory.low')}
+          </span>
+        )}
+        <span className={r.lowStock ? 'font-medium text-danger' : 'font-medium'}>
+          {formatNumber(locale, r.available)}
+        </span>
+      </span>
+    ) : (
+      <span className="text-muted-foreground">{t('inventory.untracked')}</span>
+    );
+  const adjust = (r: InventoryRow) =>
+    canWrite && (
+      <Button variant="secondary" onClick={() => setAdjusting(r)}>
+        {t('inventory.adjust')}
+      </Button>
+    );
   const columns: Column<InventoryRow>[] = [
     {
       header: t('inventory.item'),
       cell: (r) => (
-        <Link
-          to="/products/$id"
-          params={{ id: r.productId }}
-          className="font-medium underline-offset-2 hover:underline"
-        >
-          {rowLabel(r, locale)}
-        </Link>
-      ),
-    },
-    { header: t('variant.sku'), cell: (r) => r.sku ?? '—' },
-    { header: t('inventory.onHand'), cell: (r) => r.onHand },
-    { header: t('inventory.reserved'), cell: (r) => r.reserved },
-    {
-      header: t('inventory.available'),
-      cell: (r) => (
-        <span className={r.lowStock ? 'font-semibold text-danger' : undefined}>
-          {r.trackInventory ? r.available : t('inventory.untracked')}
-          {r.lowStock && <span className="sr-only"> ({t('inventory.low')})</span>}
-        </span>
-      ),
-    },
-    {
-      header: t('inventory.actions'),
-      actions: true,
-      cell: (r) => (
-        <span className="flex gap-2">
-          {canWrite && (
-            <Button variant="secondary" onClick={() => setAdjusting(r)}>
-              {t('inventory.adjust')}
-            </Button>
+        <span className="flex flex-col">
+          <Link
+            to="/products/$id"
+            params={{ id: r.productId }}
+            className="font-medium underline-offset-2 hover:underline"
+          >
+            {pick(r.titles, locale) ?? '—'}
+          </Link>
+          {optionsOf(r, locale) && (
+            <span className="text-xs text-muted-foreground">{optionsOf(r, locale)}</span>
           )}
-          <Button variant="ghost" onClick={() => setHistory(r)}>
-            {t('inventory.history')}
-          </Button>
         </span>
       ),
     },
+    {
+      header: t('variant.sku'),
+      cell: (r) => <span className="font-mono text-xs text-muted-foreground">{r.sku ?? '—'}</span>,
+    },
+    { header: t('inventory.onHand'), numeric: true, cell: (r) => formatNumber(locale, r.onHand) },
+    {
+      header: t('inventory.reserved'),
+      numeric: true,
+      cell: (r) => (
+        <span className="text-muted-foreground">{formatNumber(locale, r.reserved)}</span>
+      ),
+    },
+    { header: t('inventory.available'), numeric: true, cell: available },
+    { header: t('inventory.actions'), actions: true, cell: (r) => adjust(r) },
   ];
   return (
-    <div className="max-w-6xl">
-      <PageHeader title={t('catalog.inventory')} description={t('inventory.intro')} />
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
-        <Input
-          type="search"
-          aria-label={t('inventory.search')}
-          placeholder={t('inventory.search')}
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        className="mb-0"
+        title={t('catalog.inventory')}
+        description={t('inventory.intro')}
+        actions={
+          canWrite && (
+            <Button asChild>
+              <Link to="/inventory/receive">
+                <Truck aria-hidden />
+                {t('nav.receiveStock')}
+              </Link>
+            </Button>
+          )
+        }
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          label={t('inventory.search')}
           value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="md:max-w-sm"
+          onChange={setQ}
         />
-        <label className="flex min-h-11 items-center gap-2 text-sm">
+        <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={Boolean(search.lowStock)}
             onChange={(e) =>
               navigate({
@@ -171,6 +214,12 @@ export function InventoryPage() {
           />
           {t('products.lowStockOnly')}
         </label>
+        {filtered && (
+          <Button variant="ghost" onClick={reset}>
+            {t('list.reset')}
+            <X aria-hidden />
+          </Button>
+        )}
       </div>
       <DataList
         label={t('catalog.inventory')}
@@ -181,17 +230,78 @@ export function InventoryPage() {
         error={levels.isError ? errorMessage(levels.error, t) : undefined}
         onRetry={() => levels.refetch()}
         empty={t('inventory.empty')}
+        emptyAction={
+          filtered ? (
+            <Button variant="secondary" onClick={reset}>
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
         hasMore={levels.hasNextPage}
         loadingMore={levels.isFetchingNextPage}
         onLoadMore={() => levels.fetchNextPage()}
+        onOpen={setHistory}
+        menu={(r) => (
+          <RowMenu label={rowLabel(r, locale)}>
+            {canWrite && (
+              <RowMenuItem onSelect={() => setAdjusting(r)}>
+                <SlidersHorizontal aria-hidden />
+                {t('inventory.adjustTitle')}
+              </RowMenuItem>
+            )}
+            <RowMenuItem onSelect={() => setHistory(r)}>
+              <History aria-hidden />
+              {t('inventory.historyTitle')}
+            </RowMenuItem>
+            <RowMenuItem
+              onSelect={() => navigate({ to: '/products/$id', params: { id: r.productId } })}
+            >
+              <Package aria-hidden />
+              {t('inventory.openProduct')}
+            </RowMenuItem>
+          </RowMenu>
+        )}
+        card={(r) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/products/$id" params={{ id: r.productId }} className="font-medium">
+                {pick(r.titles, locale) ?? '—'}
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                {[optionsOf(r, locale), r.sku].filter(Boolean).join(' · ')}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {t('inventory.onHand')} {formatNumber(locale, r.onHand)} · {t('inventory.reserved')}{' '}
+                {formatNumber(locale, r.reserved)}
+              </span>
+            </div>
+            <span className="flex shrink-0 flex-col items-end gap-1.5">
+              {available(r)}
+              {adjust(r)}
+            </span>
+          </div>
+        )}
       />
-      {adjusting && <AdjustDialog row={adjusting} onClose={() => setAdjusting(null)} />}
-      {history && <HistoryDialog row={history} onClose={() => setHistory(null)} />}
+      {adjusting && <AdjustSheet row={adjusting} onClose={() => setAdjusting(null)} />}
+      {history && (
+        <HistorySheet
+          row={history}
+          onClose={() => setHistory(null)}
+          onAdjust={
+            canWrite
+              ? () => {
+                  setAdjusting(history);
+                  setHistory(null);
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 }
 
-function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void }) {
+function AdjustSheet({ row, onClose }: { row: InventoryRow; onClose: () => void }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -201,6 +311,7 @@ function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void
   const [quantity, setQuantity] = useState('');
   const [note, setNote] = useState('');
   const [key] = useState(() => crypto.randomUUID());
+  const name = useId();
   const amount = Number(quantity.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim());
   const valid =
     quantity.trim() !== '' &&
@@ -240,75 +351,90 @@ function AdjustDialog({ row, onClose }: { row: InventoryRow; onClose: () => void
     },
   });
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(open) => !open && onClose()}
       title={t('inventory.adjustTitle')}
       description={rowLabel(row, locale)}
     >
-      <form
-        className="flex flex-col gap-4"
+      <SheetForm
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) save.mutate();
         }}
       >
-        <p className="text-sm">
-          {t('inventory.current', { onHand: row.onHand, reserved: row.reserved })}
-        </p>
-        <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 text-sm font-medium">{t('inventory.reason')}</legend>
-          {MODES.map((m) => (
-            <label key={m} className="flex min-h-11 items-center gap-3">
-              <input
-                type="radio"
-                name="mode"
-                className="size-5"
-                checked={mode === m}
-                onChange={() => setMode(m)}
-              />
-              {t(`inventory.mode.${m}`)}
-            </label>
-          ))}
-        </fieldset>
-        {mode === 'received' && canReceive && (
-          <Notice tone="info">
-            <Link
-              to="/inventory/receive"
-              className="font-medium text-primary hover:underline"
-              onClick={onClose}
-            >
-              {t('inventory.receiveHint')}
-            </Link>
-          </Notice>
-        )}
-        <Field
-          label={mode === 'count' ? t('inventory.countedQuantity') : t('inventory.quantity')}
-          inputMode="numeric"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-        />
-        <Field
-          label={`${t('inventory.note')} (${t('form.optional')})`}
-          value={note}
-          maxLength={500}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={onClose}>
+        <SheetBody>
+          <Notice>{t('inventory.current', { onHand: row.onHand, reserved: row.reserved })}</Notice>
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-1 font-medium">{t('inventory.reason')}</legend>
+            {GROUPS.map(([group, modes]) => (
+              <div key={group} className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  {t(`inventory.group.${group}`)}
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {modes.map((m) => (
+                    <label
+                      key={m}
+                      className="flex min-h-10 cursor-pointer items-center gap-2.5 rounded-[10px] border border-border px-3 text-sm has-checked:border-primary has-checked:bg-muted/60"
+                    >
+                      <input
+                        type="radio"
+                        name={name}
+                        className="size-4 shrink-0 accent-primary"
+                        checked={mode === m}
+                        onChange={() => setMode(m)}
+                      />
+                      {t(`inventory.mode.${m}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </fieldset>
+          {mode === 'received' && canReceive && (
+            <Notice tone="info">
+              <Link to="/inventory/receive" className="font-medium underline" onClick={onClose}>
+                {t('inventory.receiveHint')}
+              </Link>
+            </Notice>
+          )}
+          <Field
+            label={mode === 'count' ? t('inventory.countedQuantity') : t('inventory.quantity')}
+            inputMode="numeric"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+          />
+          <Field
+            label={`${t('inventory.note')} (${t('form.optional')})`}
+            value={note}
+            maxLength={500}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={!valid || save.isPending}>
+          <Button type="submit" size="lg" disabled={!valid || save.isPending}>
             {t('action.save')}
           </Button>
-        </div>
-      </form>
-    </Dialog>
+        </SheetFooter>
+      </SheetForm>
+    </Sheet>
   );
 }
 
-function HistoryDialog({ row, onClose }: { row: InventoryRow; onClose: () => void }) {
+function HistorySheet({
+  row,
+  onClose,
+  onAdjust,
+}: {
+  row: InventoryRow;
+  onClose: () => void;
+  onAdjust?: (() => void) | undefined;
+}) {
   const { t, locale } = useLocale();
   const movements = useInfiniteQuery({
     queryKey: ['movements', row.variantId],
@@ -330,74 +456,96 @@ function HistoryDialog({ row, onClose }: { row: InventoryRow; onClose: () => voi
   const seesCost = usePermission('catalog.cost');
   const costs = useQuery({ ...costHistoryQuery(row.variantId), enabled: seesCost });
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(open) => !open && onClose()}
       title={t('inventory.historyTitle')}
-      description={rowLabel(row, locale)}
+      description={`${rowLabel(row, locale)} · ${t('inventory.onHandNow', { count: row.onHand })}`}
     >
-      {seesCost && costs.data && (
+      <SheetBody className="gap-6">
+        {seesCost && costs.data && (
+          <section className="flex flex-col gap-1">
+            <h3 className="font-medium">{t('cost.history')}</h3>
+            {costs.data.items.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('cost.empty')}</p>
+            ) : (
+              <ol className="flex flex-col divide-y divide-border">
+                {costs.data.items.slice(0, 10).map((c) => (
+                  <li key={c.id} className="flex flex-col gap-0.5 py-2 text-sm">
+                    <span className="flex justify-between gap-2">
+                      <span className="font-medium">{t(`cost.source.${c.source}`)}</span>
+                      <span className="tabular-nums">
+                        {t('cost.change', {
+                          old: priceOrDash(c.oldCost, locale),
+                          new: priceOrDash(c.newCost, locale),
+                        })}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {formatDateTime(locale, new Date(c.createdAt))} ·{' '}
+                      {t('cost.onHand', { n: c.onHand })}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        )}
         <section className="flex flex-col gap-1">
-          <h3 className="font-medium">{t('cost.history')}</h3>
-          {costs.data.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('cost.empty')}</p>
+          <h3 className="font-medium">{t('inventory.changes')}</h3>
+          {movements.isPending ? (
+            <p role="status">{t('loading')}</p>
+          ) : movements.isError ? (
+            <Notice tone="error">{errorMessage(movements.error, t)}</Notice>
+          ) : items.length === 0 ? (
+            <p className="text-muted-foreground">{t('inventory.noMovements')}</p>
           ) : (
             <ol className="flex flex-col divide-y divide-border">
-              {costs.data.items.slice(0, 10).map((c) => (
-                <li key={c.id} className="flex flex-col gap-0.5 py-2 text-sm">
+              {items.map((m) => (
+                <li key={m.id} className="flex flex-col gap-0.5 py-2 text-sm">
                   <span className="flex justify-between gap-2">
-                    <span className="font-medium">{t(`cost.source.${c.source}`)}</span>
-                    <span className="tabular-nums">
-                      {t('cost.change', {
-                        old: priceOrDash(c.oldCost, locale),
-                        new: priceOrDash(c.newCost, locale),
-                      })}
+                    <span className="font-medium">{t(`movement.${m.type}`)}</span>
+                    <span
+                      className={
+                        m.quantity < 0
+                          ? 'font-medium text-danger tabular-nums'
+                          : 'font-medium tabular-nums'
+                      }
+                    >
+                      {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
                     </span>
                   </span>
                   <span className="text-muted-foreground">
-                    {formatDateTime(locale, new Date(c.createdAt))} ·{' '}
-                    {t('cost.onHand', { n: c.onHand })}
+                    {formatDateTime(locale, new Date(m.createdAt))} · {reasonLabel(m.reason, t)}
+                    {many && ` · ${locations.data?.find((l) => l.id === m.locationId)?.name ?? ''}`}
                   </span>
+                  {m.note && <span>{m.note}</span>}
                 </li>
               ))}
             </ol>
           )}
+          {movements.hasNextPage && (
+            <Button
+              variant="secondary"
+              disabled={movements.isFetchingNextPage}
+              onClick={() => movements.fetchNextPage()}
+            >
+              {t('list.more')}
+            </Button>
+          )}
         </section>
-      )}
-      {movements.isPending ? (
-        <p role="status">{t('loading')}</p>
-      ) : movements.isError ? (
-        <Notice tone="error">{errorMessage(movements.error, t)}</Notice>
-      ) : items.length === 0 ? (
-        <p className="text-muted-foreground">{t('inventory.noMovements')}</p>
-      ) : (
-        <ol className="flex flex-col divide-y divide-border">
-          {items.map((m) => (
-            <li key={m.id} className="flex flex-col gap-0.5 py-2 text-sm">
-              <span className="flex justify-between gap-2">
-                <span className="font-medium">{t(`movement.${m.type}`)}</span>
-                <span className={m.quantity < 0 ? 'text-danger' : undefined}>
-                  {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
-                </span>
-              </span>
-              <span className="text-muted-foreground">
-                {formatDateTime(locale, new Date(m.createdAt))} · {reasonLabel(m.reason, t)}
-                {many && ` · ${locations.data?.find((l) => l.id === m.locationId)?.name ?? ''}`}
-              </span>
-              {m.note && <span>{m.note}</span>}
-            </li>
-          ))}
-        </ol>
-      )}
-      {movements.hasNextPage && (
-        <Button
-          variant="secondary"
-          disabled={movements.isFetchingNextPage}
-          onClick={() => movements.fetchNextPage()}
-        >
-          {t('list.more')}
+      </SheetBody>
+      <SheetFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          {t('action.close')}
         </Button>
-      )}
-    </Dialog>
+        {onAdjust && (
+          <Button size="lg" onClick={onAdjust}>
+            <SlidersHorizontal aria-hidden />
+            {t('inventory.adjustTitle')}
+          </Button>
+        )}
+      </SheetFooter>
+    </Sheet>
   );
 }

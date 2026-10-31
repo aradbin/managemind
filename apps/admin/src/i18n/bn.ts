@@ -314,6 +314,7 @@ export const bn: Record<keyof typeof en, string> = {
   'list.open': 'খুলুন',
   'list.stages': 'ধাপ',
   'list.all': 'সব',
+  'list.language': 'ভাষা',
   'list.shown': '{count}টি দেখানো হচ্ছে',
   'list.resetFilters': 'ফিল্টার রিসেট করুন',
   'nav.menu': 'মেনু',

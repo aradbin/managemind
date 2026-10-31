@@ -48,9 +48,9 @@ interface DataListProps<T> {
   card?: (item: T) => ReactNode;
   selection?: Selection<T> | undefined;
   /** Opens the record; keyboards use the link in the row. */
-  onOpen?: (item: T) => void;
+  onOpen?: ((item: T) => void) | undefined;
   /** The ⋯ menu at the end of each row. */
-  menu?: (item: T) => ReactNode;
+  menu?: ((item: T) => ReactNode) | undefined;
   /** Above the phone rows, beside select-all: "10 products". */
   summary?: string;
 }

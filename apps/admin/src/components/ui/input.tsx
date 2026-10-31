@@ -10,3 +10,8 @@ export const control =
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(control, 'min-h-10 md:min-h-9', className)} {...props} />;
 }
+
+/** Several lines of text, with the same look. */
+export function Textarea({ className, ...props }: ComponentProps<'textarea'>) {
+  return <textarea className={cn(control, 'min-h-20 py-2', className)} {...props} />;
+}

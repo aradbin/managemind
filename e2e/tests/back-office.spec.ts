@@ -102,7 +102,8 @@ test('back office', async ({ page }, info) => {
     await dialog.getByLabel(m('suppliers.name'), { exact: true }).fill(supplierName);
     await dialog.getByLabel(pattern(m('suppliers.openingBalance'))).fill('500');
     await expectAccessible(page, 'new supplier');
-    await dialog.getByRole('button', { name: m('action.save') }).click();
+    // A new record's button says what it makes (design rule 7).
+    await dialog.getByRole('button', { name: m('expenses.new') }).click();
     await expect(toast(page, m('suppliers.saved'))).toBeVisible();
     const found = await adminCall<{ items: { id: string; name: string }[] }>(
       page.request,
@@ -293,7 +294,8 @@ test('back office', async ({ page }, info) => {
       buffer: pngImage(64, 64, [200, 120, 40]),
     });
     await expectAccessible(page, 'expense form');
-    await dialog.getByRole('button', { name: m('action.save') }).click();
+    // A new record's button says what it makes (design rule 7).
+    await dialog.getByRole('button', { name: m('expenses.new') }).click();
     await expect(toast(page, m('expenses.saved'))).toBeVisible();
     await expect(page.getByRole('link', { name: m('expenses.receiptView') }).first()).toBeVisible();
 
@@ -304,7 +306,7 @@ test('back office', async ({ page }, info) => {
     await rent.getByLabel(m('expenses.amount')).fill('25000');
     await rent.getByLabel(m('recurring.dayOfMonth')).selectOption('5');
     await expectAccessible(page, 'recurring expense form');
-    await rent.getByRole('button', { name: m('action.save') }).click();
+    await rent.getByRole('button', { name: m('recurring.new') }).click();
     await expect(toast(page, m('recurring.saved'))).toBeVisible();
     await expectAccessible(page, 'recurring expenses');
   });

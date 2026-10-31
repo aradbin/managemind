@@ -1,26 +1,28 @@
-// Customers (phase-4-plan §3.10, §7): the list, searched by phone or name and
-// filtered by tag; one customer with their orders, addresses, tags and note;
-// import through the import screen; export.
+// Customers (phase-4-plan §3.10, §7; ADR 0033): the list, searched by phone or
+// name and filtered by tag; one customer with their orders, addresses, tags
+// and note; customers and addresses edited in side panels; import through the
+// import screen; export.
 import { formatNumber } from '@managemind/shared/i18n';
 import { normalizePhone } from '@managemind/shared/phone';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { ChevronRight, FileUp, MessageCircle, Phone, Plus } from 'lucide-react';
+import { FileUp, MessageCircle, Phone, Plus, SquarePen, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { FilterButtons, RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
-import { PageHeader } from '../components/page-header';
+import { BackLink, PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
 import { RiskPanel } from '../components/risk';
 import { initials } from '../components/store-switcher';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/input';
+import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
@@ -37,6 +39,7 @@ import {
   geoQuery,
   orderErrorMessage,
 } from '../lib/orders';
+import { cn } from '../lib/utils';
 import { CustomerExportButton } from './order-export';
 
 export type CustomerSearch = CustomerFilters;
@@ -53,7 +56,8 @@ export function CustomersPage() {
   const navigate = useNavigate();
   const canWrite = usePermission('customers.write');
   const [q, setQ] = useState(search.q ?? '');
-  const [adding, setAdding] = useState(false);
+  /** The panel: a new customer, or one being edited. */
+  const [panel, setPanel] = useState<{ customer?: CustomerSummary } | null>(null);
   const setFilter = (patch: Partial<CustomerSearch>) =>
     navigate({
       from: '/customers/',
@@ -75,47 +79,78 @@ export function CustomersPage() {
     () => customers.data?.pages.flatMap((p) => p.items) ?? [],
     [customers.data],
   );
+  // The tags on the customers loaded so far, and the one filtered by.
+  const tags = useMemo(
+    () =>
+      [...new Set([...items.flatMap((c) => c.tags), ...(search.tag ? [search.tag] : [])])].sort(),
+    [items, search.tag],
+  );
+  const filtered = Boolean(search.q || search.tag);
+  const reset = () => {
+    setQ('');
+    setFilter({ q: undefined, tag: undefined });
+  };
+  const open = (c: CustomerSummary) => navigate({ to: '/customers/$id', params: { id: c.id } });
+  const tagChips = (c: CustomerSummary) =>
+    c.tags.length > 0 && (
+      <span className="flex flex-wrap gap-1">
+        {c.tags.map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            className="h-[22px] rounded-md bg-muted px-1.5 text-xs font-medium hover:bg-border"
+            onClick={() => setFilter({ tag })}
+          >
+            {tag}
+          </button>
+        ))}
+      </span>
+    );
   const columns: Column<CustomerSummary>[] = [
     {
-      header: t('customer.name'),
+      header: t('order.customer'),
       cell: (c) => (
-        <Link
-          to="/customers/$id"
-          params={{ id: c.id }}
-          className="font-medium underline-offset-2 hover:underline"
-        >
-          {c.name}
-        </Link>
-      ),
-    },
-    { header: t('customer.phone'), cell: (c) => c.phone },
-    { header: t('customer.orders'), cell: (c) => c.orderCount },
-    { header: t('customer.totalSpent'), cell: (c) => formatPrice(c.totalSpent, locale) },
-    {
-      header: t('customer.lastOrder'),
-      cell: (c) => (c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—'),
-    },
-    {
-      header: t('customer.tags'),
-      cell: (c) => (
-        <span className="flex flex-wrap gap-1">
-          {c.tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className="min-h-6 rounded-md bg-muted px-1.5 text-xs"
-              onClick={() => setFilter({ tag })}
-            >
-              {tag}
-            </button>
-          ))}
+        <span className="flex items-center gap-3">
+          <Avatar name={c.name} />
+          <Link
+            to="/customers/$id"
+            params={{ id: c.id }}
+            className="truncate font-medium underline-offset-2 hover:underline"
+          >
+            {c.name}
+          </Link>
+          {c.flagged && <FlaggedBadge />}
         </span>
       ),
     },
+    {
+      header: t('customer.phone'),
+      cell: (c) => <span className="font-mono text-muted-foreground">{c.phone}</span>,
+    },
+    {
+      header: t('customer.orders'),
+      numeric: true,
+      cell: (c) => formatNumber(locale, c.orderCount),
+    },
+    {
+      header: t('customer.totalSpent'),
+      numeric: true,
+      cell: (c) => (c.orderCount ? formatPrice(c.totalSpent, locale) : '—'),
+    },
+    {
+      header: t('customer.lastOrder'),
+      cell: (c) => (
+        <span className="whitespace-nowrap text-muted-foreground">
+          {c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—'}
+        </span>
+      ),
+    },
+    { header: t('customer.tags'), wide: true, cell: (c) => tagChips(c) },
   ];
   return (
-    <div className="max-w-6xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('nav.customers')}
         actions={
           <>
@@ -123,64 +158,78 @@ export function CustomersPage() {
             {canWrite && (
               <Button variant="secondary" asChild>
                 <Link to="/customers/import">
-                  <FileUp aria-hidden className="size-4" />
+                  <FileUp aria-hidden />
                   {t('customers.import')}
                 </Link>
               </Button>
             )}
             {canWrite && (
-              <Button onClick={() => setAdding(true)}>
-                <Plus aria-hidden className="size-4" />
+              <Button onClick={() => setPanel({})}>
+                <Plus aria-hidden />
                 {t('customers.new')}
               </Button>
             )}
           </>
         }
       />
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
-        <Input
-          type="search"
-          aria-label={t('customers.search')}
-          placeholder={t('customers.search')}
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          label={t('customers.search')}
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={setQ}
         />
-        {search.tag && (
-          <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
-            {t('orders.tagFilter', { tag: search.tag })} ×
-          </Button>
-        )}
+        <FilterButtons
+          filters={[
+            {
+              key: 'tag',
+              label: t('customers.tagFilter'),
+              value: search.tag,
+              options: tags.map((tag) => ({ value: tag, label: tag })),
+              onChange: (tag) => setFilter({ tag }),
+            },
+          ]}
+          onReset={filtered ? reset : undefined}
+        />
       </div>
       <DataList
         label={t('nav.customers')}
         items={items}
         rowKey={(c) => c.id}
+        onOpen={open}
+        menu={(c) => (
+          <RowMenu label={c.name}>
+            <RowMenuItem onSelect={() => open(c)}>
+              <UserRound aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            {canWrite && (
+              <RowMenuItem onSelect={() => setPanel({ customer: c })}>
+                <SquarePen aria-hidden />
+                {t('customers.edit')}
+              </RowMenuItem>
+            )}
+          </RowMenu>
+        )}
         card={(c) => (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-start justify-between gap-3">
-              <Link to="/customers/$id" params={{ id: c.id }} className="font-semibold">
-                {c.name}
-              </Link>
-              <span className="font-semibold tabular-nums">
-                {formatPrice(c.totalSpent, locale)}
+          <div className="flex items-start gap-3">
+            <Avatar name={c.name} />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="flex items-center gap-2">
+                <Link to="/customers/$id" params={{ id: c.id }} className="truncate font-medium">
+                  {c.name}
+                </Link>
+                {c.flagged && <FlaggedBadge />}
               </span>
+              <span className="text-sm text-muted-foreground">
+                {c.phone} · {t('dashboard.orders', { count: c.orderCount })}
+                {c.lastOrderAt ? ` · ${dateOnly(locale, c.lastOrderAt)}` : ''}
+              </span>
+              {tagChips(c)}
             </div>
-            <span className="text-sm text-muted-foreground">
-              {c.phone} · {t('dashboard.orders', { count: c.orderCount })}
-              {c.lastOrderAt ? ` · ${dateOnly(locale, c.lastOrderAt)}` : ''}
-            </span>
-            {c.tags.length > 0 && (
-              <span className="flex flex-wrap gap-1">
-                {c.tags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className="min-h-6 rounded-md bg-muted px-1.5 text-xs"
-                    onClick={() => setFilter({ tag })}
-                  >
-                    {tag}
-                  </button>
-                ))}
+            {c.orderCount > 0 && (
+              <span className="shrink-0 font-medium tabular-nums">
+                {formatPrice(c.totalSpent, locale)}
               </span>
             )}
           </div>
@@ -189,18 +238,61 @@ export function CustomersPage() {
         isPending={customers.isPending}
         error={customers.isError ? errorMessage(customers.error, t) : undefined}
         onRetry={() => customers.refetch()}
-        empty={search.q || search.tag ? t('customers.noMatches') : t('customers.empty')}
+        empty={filtered ? t('customers.noMatches') : t('customers.empty')}
+        emptyAction={
+          filtered ? (
+            <Button variant="secondary" onClick={reset}>
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
         hasMore={customers.hasNextPage}
         loadingMore={customers.isFetchingNextPage}
         onLoadMore={() => customers.fetchNextPage()}
       />
-      {adding && <CustomerDialog onClose={() => setAdding(false)} />}
+      {panel && <CustomerSheet customer={panel.customer} onClose={() => setPanel(null)} />}
     </div>
   );
 }
 
-/** A new customer, or edits to one. */
-function CustomerDialog({ customer, onClose }: { customer?: Customer; onClose: () => void }) {
+/** The customer's initials in a grey circle. */
+function Avatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium',
+        className,
+      )}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function FlaggedBadge() {
+  const { t } = useLocale();
+  return (
+    <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-danger-soft px-2 text-xs font-medium text-danger">
+      {t('customers.flagged')}
+    </span>
+  );
+}
+
+/** What the customer panel edits; a list row has it all. */
+type CustomerFields = Pick<Customer, 'id' | 'phone' | 'name' | 'email' | 'tags' | 'note'>;
+
+/** A new customer, or edits to one, in a side panel (design rule 1). */
+function CustomerSheet({
+  customer,
+  onClose,
+  onDelete,
+}: {
+  customer?: CustomerFields | undefined;
+  onClose: () => void;
+  /** Delete, at the footer's left, when the page can delete. */
+  onDelete?: (() => void) | undefined;
+}) {
   const { t } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -238,13 +330,13 @@ function CustomerDialog({ customer, onClose }: { customer?: Customer; onClose: (
     },
   });
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(v) => !v && onClose()}
       title={t(customer ? 'customers.edit' : 'customers.new')}
+      description={t(customer ? 'customers.editHint' : 'customers.newHint')}
     >
-      <form
-        className="flex flex-col gap-4"
+      <SheetForm
         onSubmit={(e) => {
           e.preventDefault();
           if (!normalizePhone(phone) || !name.trim()) {
@@ -254,58 +346,61 @@ function CustomerDialog({ customer, onClose }: { customer?: Customer; onClose: (
           save.mutate();
         }}
       >
-        <Field
-          label={t('customer.phone')}
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          error={invalid && !normalizePhone(phone) ? t('form.invalidPhone') : undefined}
-        />
-        <Field
-          label={t('customer.name')}
-          value={name}
-          maxLength={100}
-          onChange={(e) => setName(e.target.value)}
-          error={invalid && !name.trim() ? t('form.required') : undefined}
-        />
-        <Field
-          label={t('customer.email')}
-          type="email"
-          value={email}
-          maxLength={254}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Field
-          label={t('customer.tags')}
-          hint={t('order.tagsHint')}
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-        />
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="customer-note" className="text-sm font-medium">
-            {t('customer.note')}
-          </label>
-          <textarea
-            id="customer-note"
-            rows={3}
-            maxLength={2000}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="rounded-lg border border-border bg-background p-3 text-base"
+        <SheetBody>
+          <Field
+            label={t('customer.phone')}
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            error={invalid && !normalizePhone(phone) ? t('form.invalidPhone') : undefined}
           />
-        </div>
-        {save.error && <Notice tone="error">{customerError(save.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={onClose}>
+          <Field
+            label={t('customer.name')}
+            value={name}
+            maxLength={100}
+            onChange={(e) => setName(e.target.value)}
+            error={invalid && !name.trim() ? t('form.required') : undefined}
+          />
+          <Field
+            label={t('customer.email')}
+            type="email"
+            value={email}
+            maxLength={254}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Field
+            label={t('customer.tags')}
+            hint={t('order.tagsHint')}
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+          />
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="customer-note" className="text-sm font-medium">
+              {t('customer.note')}
+            </label>
+            <Textarea
+              id="customer-note"
+              rows={3}
+              maxLength={2000}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+          {save.error && <Notice tone="error">{customerError(save.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter
+          start={onDelete && <SheetDelete onClick={onDelete}>{t('action.delete')}</SheetDelete>}
+        >
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={save.isPending}>
-            {t('action.save')}
+          <Button type="submit" size="lg" disabled={save.isPending}>
+            {t(customer ? 'action.save' : 'customers.new')}
           </Button>
-        </div>
-      </form>
-    </Dialog>
+        </SheetFooter>
+      </SheetForm>
+    </Sheet>
   );
 }
 
@@ -361,25 +456,14 @@ export function CustomerDetailPage() {
   const average = c.orderCount ? Math.round(c.totalSpent / c.orderCount) : 0;
   // Staff's flag and failed deliveries can be cleared; a low score can't (phase-6-plan §3.3).
   const clearable = c.risk.reasons.some((r) => r === 'flagged' || r === 'failed_deliveries');
-  const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
+  const card = 'flex flex-col gap-3 rounded-xl border border-border bg-card p-4 md:p-5';
   return (
     <div className="flex flex-col gap-5">
-      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/customers" className="font-medium text-primary hover:underline">
-          {t('nav.customers')}
-        </Link>
-        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-        <span className="truncate text-muted-foreground">{c.name}</span>
-      </nav>
       <div className="flex flex-wrap items-center gap-4">
-        <span
-          aria-hidden
-          className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-warning text-lg font-semibold text-warning-foreground"
-        >
-          {initials(c.name)}
-        </span>
+        <BackLink to="/customers" label={t('nav.customers')} />
+        <Avatar name={c.name} className="size-12 text-base" />
         <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{c.name}</h1>
+          <h1 className="truncate text-xl font-semibold tracking-tight">{c.name}</h1>
           <p className="text-sm text-muted-foreground">
             {[
               c.phone,
@@ -412,14 +496,10 @@ export function CustomerDetailPage() {
             </>
           )}
           {canWrite && (
-            <>
-              <Button variant="secondary" onClick={() => setDialog('edit')}>
-                {t('customers.edit')}
-              </Button>
-              <Button variant="quiet" onClick={() => setDialog('delete')}>
-                {t('action.delete')}
-              </Button>
-            </>
+            <Button variant="secondary" onClick={() => setDialog('edit')}>
+              <SquarePen aria-hidden />
+              {t('customers.edit')}
+            </Button>
           )}
         </div>
       </div>
@@ -446,7 +526,7 @@ export function CustomerDetailPage() {
         </Notice>
       )}
       {flag.error && <Notice tone="error">{saveErrorMessage(flag.error, t)}</Notice>}
-      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-background md:grid-cols-4">
+      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-4">
         {[
           [t('customer.totalSpent'), formatPrice(c.totalSpent, locale)],
           [t('customer.orders'), formatNumber(locale, c.orderCount)],
@@ -467,7 +547,7 @@ export function CustomerDetailPage() {
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section
           aria-labelledby="orders-h"
-          className="overflow-hidden rounded-xl border border-border bg-background"
+          className="overflow-hidden rounded-xl border border-border bg-card"
         >
           <h2 id="orders-h" className="px-4 py-4 font-semibold md:px-5">
             {t('customer.orders')}
@@ -483,7 +563,7 @@ export function CustomerDetailPage() {
                     params={{ id: o.id }}
                     className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-muted md:px-5"
                   >
-                    <span className="font-semibold text-primary">#{o.number}</span>
+                    <span className="font-mono font-medium">#{o.number}</span>
                     <span className="text-sm text-muted-foreground">
                       {dateOnly(locale, o.placedAt)}
                     </span>
@@ -520,13 +600,13 @@ export function CustomerDetailPage() {
               {canWrite && c.addresses.length < 10 && (
                 <Button
                   variant="ghost"
-                  className="text-primary"
+                  className="-mr-2"
                   onClick={() => {
                     setAddress(undefined);
                     setDialog('address');
                   }}
                 >
-                  <Plus aria-hidden className="size-4" />
+                  <Plus aria-hidden />
                   {t('customer.addAddress')}
                 </Button>
               )}
@@ -567,9 +647,15 @@ export function CustomerDetailPage() {
           )}
         </div>
       </div>
-      {dialog === 'edit' && <CustomerDialog customer={c} onClose={() => setDialog(null)} />}
+      {dialog === 'edit' && (
+        <CustomerSheet
+          customer={c}
+          onClose={() => setDialog(null)}
+          onDelete={() => setDialog('delete')}
+        />
+      )}
       {dialog === 'address' && (
-        <AddressDialog customer={c} address={address} onClose={() => setDialog(null)} />
+        <AddressSheet customer={c} address={address} onClose={() => setDialog(null)} />
       )}
       <ConfirmDialog
         open={dialog === 'delete'}
@@ -607,55 +693,50 @@ function AddressList({
 }) {
   const { t, locale } = useLocale();
   const canWrite = usePermission('customers.write');
-  const queryClient = useQueryClient();
   const geo = useQuery(geoQuery);
-  const remove = useMutation({
-    mutationFn: async (addressId: string) =>
-      unwrap(
-        await api.DELETE('/v1/admin/customers/{id}/addresses/{addressId}', {
-          params: { path: { id: c.id, addressId } },
-        }),
-      ),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', c.id] }),
-  });
   if (!c.addresses.length)
-    return <p className="text-muted-foreground">{t('customer.noAddresses')}</p>;
+    return (
+      <p className="rounded-[10px] border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
+        {t('customer.noAddresses')}
+      </p>
+    );
   const g = geo.data?.geoIndex();
   return (
-    <ul className="grid gap-2 md:grid-cols-2">
+    <ul className="flex flex-col gap-2">
       {c.addresses.map((a) => (
         <li
           key={a.id}
-          className="flex flex-col gap-1 rounded-lg border border-border bg-background p-3 text-sm"
+          className="flex items-start gap-2 rounded-[10px] border border-border p-3 text-sm"
         >
-          <span className="font-medium">
-            {a.label ?? a.name}
-            {a.isDefault && (
-              <span className="ml-2 text-xs text-muted-foreground">({t('customer.default')})</span>
-            )}
-          </span>
-          <span>
-            {a.name} · {a.phone}
-          </span>
-          <span>{a.line}</span>
-          <span>
-            {[g?.area(a.areaId)?.[locale], g?.district(a.districtId)?.[locale]]
-              .filter(Boolean)
-              .join(', ')}
-          </span>
-          {canWrite && (
-            <span className="mt-1 flex gap-2">
-              <Button variant="secondary" onClick={() => onEdit(a)}>
-                {t('action.edit')}
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={remove.isPending}
-                onClick={() => remove.mutate(a.id)}
-              >
-                {t('action.delete')}
-              </Button>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="flex items-center gap-2 font-medium">
+              {a.label ?? a.name}
+              {a.isDefault && (
+                <span className="rounded-md border border-border px-1.5 text-xs font-medium text-muted-foreground">
+                  {t('customer.default')}
+                </span>
+              )}
             </span>
+            <span className="text-muted-foreground">
+              {a.name} · {a.phone}
+            </span>
+            <span>{a.line}</span>
+            <span className="text-muted-foreground">
+              {[g?.area(a.areaId)?.[locale], g?.district(a.districtId)?.[locale]]
+                .filter(Boolean)
+                .join(', ')}
+            </span>
+          </div>
+          {canWrite && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-mt-1 -mr-1 size-8"
+              aria-label={`${t('customer.editAddress')}: ${a.label ?? a.name}`}
+              onClick={() => onEdit(a)}
+            >
+              <SquarePen aria-hidden />
+            </Button>
           )}
         </li>
       ))}
@@ -663,7 +744,8 @@ function AddressList({
   );
 }
 
-function AddressDialog({
+/** An address, in a side panel; Delete sits at the footer's left. */
+function AddressSheet({
   customer: c,
   address,
   onClose,
@@ -678,6 +760,7 @@ function AddressDialog({
   const [phone, setPhone] = useState(address?.phone ?? c.phone);
   const [label, setLabel] = useState(address?.label ?? '');
   const [isDefault, setDefault] = useState(address?.isDefault ?? c.addresses.length === 0);
+  const [deleting, setDeleting] = useState(false);
   const [place, setPlace] = useState<PlaceDraft>(
     address
       ? {
@@ -720,64 +803,100 @@ function AddressDialog({
       onClose();
     },
   });
+  const remove = useMutation({
+    mutationFn: async (addressId: string) =>
+      unwrap(
+        await api.DELETE('/v1/admin/customers/{id}/addresses/{addressId}', {
+          params: { path: { id: c.id, addressId } },
+        }),
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customer', c.id] });
+      onClose();
+    },
+  });
   return (
-    <Dialog
-      open
-      onOpenChange={(v) => !v && onClose()}
-      title={t(address ? 'customer.editAddress' : 'customer.addAddress')}
-    >
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!name.trim() || !normalizePhone(phone) || !placeReady(place)) {
-            setInvalid(true);
-            return;
-          }
-          save.mutate();
-        }}
+    <>
+      <Sheet
+        open={!deleting}
+        onOpenChange={(v) => !v && onClose()}
+        title={t(address ? 'customer.editAddress' : 'customer.addAddress')}
       >
-        <Field
-          label={t('customer.name')}
-          value={name}
-          maxLength={100}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Field
-          label={t('customer.phone')}
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        <PlacePicker value={place} onChange={setPlace} />
-        <Field
-          label={t('customer.addressLabel')}
-          hint={t('customer.addressLabelHint')}
-          value={label}
-          maxLength={40}
-          onChange={(e) => setLabel(e.target.value)}
-        />
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            className="size-5"
-            checked={isDefault}
-            onChange={(e) => setDefault(e.target.checked)}
-          />
-          {t('customer.makeDefault')}
-        </label>
-        {invalid && <Notice tone="error">{t('newOrder.incomplete')}</Notice>}
-        {save.error && <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={onClose}>
-            {t('action.cancel')}
-          </Button>
-          <Button type="submit" disabled={save.isPending}>
-            {t('action.save')}
-          </Button>
-        </div>
-      </form>
-    </Dialog>
+        <SheetForm
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!name.trim() || !normalizePhone(phone) || !placeReady(place)) {
+              setInvalid(true);
+              return;
+            }
+            save.mutate();
+          }}
+        >
+          <SheetBody>
+            <Field
+              label={t('customer.name')}
+              value={name}
+              maxLength={100}
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Field
+              label={t('customer.phone')}
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <PlacePicker value={place} onChange={setPlace} />
+            <Field
+              label={t('customer.addressLabel')}
+              hint={t('customer.addressLabelHint')}
+              value={label}
+              maxLength={40}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+            <label className="flex min-h-9 items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="size-4 accent-primary"
+                checked={isDefault}
+                onChange={(e) => setDefault(e.target.checked)}
+              />
+              {t('customer.makeDefault')}
+            </label>
+            {invalid && <Notice tone="error">{t('newOrder.incomplete')}</Notice>}
+            {save.error && <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>}
+          </SheetBody>
+          <SheetFooter
+            start={
+              address && (
+                <SheetDelete onClick={() => setDeleting(true)}>{t('action.delete')}</SheetDelete>
+              )
+            }
+          >
+            <Button variant="secondary" size="lg" onClick={onClose}>
+              {t('action.cancel')}
+            </Button>
+            <Button type="submit" size="lg" disabled={save.isPending}>
+              {t(address ? 'action.save' : 'customer.addAddress')}
+            </Button>
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
+      {address && (
+        <ConfirmDialog
+          open={deleting}
+          onOpenChange={(open) => !open && setDeleting(false)}
+          title={t('customer.deleteAddressTitle')}
+          confirmLabel={t('action.delete')}
+          busy={remove.isPending}
+          error={remove.error ? orderErrorMessage(remove.error, t) : undefined}
+          onConfirm={() => remove.mutate(address.id)}
+        >
+          <p>
+            {address.label ?? address.name} · {address.line}
+          </p>
+        </ConfirmDialog>
+      )}
+    </>
   );
 }
