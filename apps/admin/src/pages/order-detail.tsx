@@ -6,7 +6,7 @@
 import { type CancelCode, type Courier, MANUAL_METHODS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ChevronRight, MessageCircle, Phone } from 'lucide-react';
+import { ChevronRight, Phone } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { BookDialog, CourierPanel } from '../components/courier-booking';
