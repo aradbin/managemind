@@ -103,7 +103,7 @@ test('back office', async ({ page }, info) => {
     await dialog.getByLabel(pattern(m('suppliers.openingBalance'))).fill('500');
     await expectAccessible(page, 'new supplier');
     // A new record's button says what it makes (design rule 7).
-    await dialog.getByRole('button', { name: m('expenses.new') }).click();
+    await dialog.getByRole('button', { name: m('suppliers.new') }).click();
     await expect(toast(page, m('suppliers.saved'))).toBeVisible();
     const found = await adminCall<{ items: { id: string; name: string }[] }>(
       page.request,

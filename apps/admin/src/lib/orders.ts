@@ -3,6 +3,7 @@
 import type { paths } from '@managemind/sdk';
 import type { Locale } from '@managemind/shared/i18n';
 import type { QueryClient } from '@tanstack/react-query';
+import type { FilterDef } from '../components/list-tools';
 import type { AdminKey } from '../i18n';
 import { ApiError, api, unwrap } from './api';
 import { compact } from './catalog';
@@ -91,6 +92,68 @@ const dayFirst = (locale: Locale, at: Date, time: boolean) =>
     .join('');
 export const dateTime = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), true);
 export const dateOnly = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), false);
+
+// The server reads dates as Dhaka dates, so today is Dhaka's today.
+const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
+const dhakaDay = (daysAgo: number) => DHAKA_DAY.format(new Date(Date.now() - daysAgo * 86_400_000));
+
+/** A date filter's choices, as from and to Dhaka dates. */
+export function dateRanges() {
+  const today = dhakaDay(0);
+  return {
+    today: { from: today, to: today },
+    week: { from: dhakaDay(6), to: today },
+    month: { from: dhakaDay(29), to: today },
+    thisMonth: { from: `${today.slice(0, 8)}01`, to: today },
+  } as const;
+}
+
+/**
+ * A filter button for a date range (design rule 4): Today, the last 7 or 30
+ * days, this month, or the range a link brought, which no choice matches.
+ * Its words live with the orders' messages.
+ */
+export function dateRangeFilter({
+  key,
+  label,
+  from,
+  to,
+  onChange,
+  t,
+}: {
+  key: string;
+  label: string;
+  from: string | undefined;
+  to: string | undefined;
+  onChange: (range: { from?: string | undefined; to?: string | undefined }) => void;
+  t: (key: AdminKey, params?: Record<string, string | number>) => string;
+}): FilterDef {
+  const preset = dateRanges();
+  const keys = Object.keys(preset) as (keyof typeof preset)[];
+  const match = keys.find((k) => preset[k].from === from && preset[k].to === to);
+  const custom = (from || to) && !match;
+  return {
+    key,
+    label,
+    value: from || to ? (match ?? 'custom') : undefined,
+    options: [
+      ...keys.map((k) => ({ value: k, label: t(`orders.range.${k}`) })),
+      ...(custom
+        ? [
+            {
+              value: 'custom',
+              label: t('orders.range.custom', { from: from ?? '…', to: to ?? '…' }),
+            },
+          ]
+        : []),
+    ],
+    onChange: (v) => {
+      if (v === 'custom') return;
+      const range = v ? preset[v as keyof typeof preset] : undefined;
+      onChange({ from: range?.from, to: range?.to });
+    },
+  };
+}
 
 // ---- Queries ---------------------------------------------------------------------------
 

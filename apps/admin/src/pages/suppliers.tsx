@@ -1,20 +1,21 @@
-// Inventory → Suppliers (phase-8-plan §3.1, §3.12): the list with what is
-// owed to each, and the form to add or edit one. Balances show only to
+// Inventory → Suppliers (phase-8-plan §3.1, §3.12; ADR 0033): the list with
+// what is owed to each, and the side panel to add or edit one. Balances show only to
 // those who record payments (purchasing.pay).
 import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
+import { ClipboardList, FileText, FileUp, Plus, SquarePen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, SearchInput, StageTabs } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
@@ -35,16 +36,40 @@ export function balanceText(
 
 export function SuppliersPage() {
   const { t, locale } = useLocale();
+  const navigate = useNavigate();
   const canWrite = usePermission('purchasing.write');
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [archived, setArchived] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [panel, setPanel] = useState<{ supplier?: Supplier } | null>(null);
   useEffect(() => {
     const timer = setTimeout(() => setQ(text.trim()), 300);
     return () => clearTimeout(timer);
   }, [text]);
   const list = useQuery(suppliersQuery({ q, archived }));
+  const owes = list.data?.some((s) => s.balance !== undefined);
+  const open = (s: Supplier) => navigate({ to: '/inventory/suppliers/$id', params: { id: s.id } });
+  const phones = (s: Supplier) =>
+    s.phones.length ? (
+      <span className="flex items-center gap-1.5 whitespace-nowrap">
+        <span className="font-mono text-muted-foreground">{s.phones[0]}</span>
+        {s.phones.length > 1 && (
+          <span className="rounded-md bg-muted px-1 text-xs font-medium">
+            +{s.phones.length - 1}
+          </span>
+        )}
+      </span>
+    ) : (
+      '—'
+    );
+  const balance = (s: Supplier) =>
+    s.balance === undefined ? (
+      '—'
+    ) : (
+      <span className={s.balance > 0 ? 'font-medium' : 'text-muted-foreground'}>
+        {balanceText(s.balance, t, locale)}
+      </span>
+    );
   const columns: Column<Supplier>[] = [
     {
       header: t('suppliers.name'),
@@ -58,27 +83,14 @@ export function SuppliersPage() {
         </Link>
       ),
     },
-    { header: t('suppliers.phone'), cell: (s) => s.phones.join(', ') || '—' },
-    { header: t('suppliers.contactName'), cell: (s) => s.contactName ?? '—' },
-    ...(list.data?.some((s) => s.balance !== undefined)
-      ? [
-          {
-            header: t('suppliers.balance'),
-            cell: (s: Supplier) =>
-              s.balance === undefined ? (
-                '—'
-              ) : (
-                <span className={s.balance > 0 ? 'font-semibold' : undefined}>
-                  {balanceText(s.balance, t, locale)}
-                </span>
-              ),
-          },
-        ]
-      : []),
+    { header: t('suppliers.phone'), cell: phones },
+    { header: t('suppliers.contactName'), wide: true, cell: (s) => s.contactName ?? '—' },
+    ...(owes ? [{ header: t('suppliers.balance'), numeric: true, cell: balance }] : []),
   ];
   return (
-    <div className="max-w-6xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('suppliers.title')}
         description={t('suppliers.intro')}
         actions={
@@ -91,50 +103,50 @@ export function SuppliersPage() {
                   t('suppliers.name'),
                   t('suppliers.phone'),
                   t('suppliers.contactName'),
-                  ...(list.data.some((s) => s.balance !== undefined)
-                    ? [t('suppliers.balance')]
-                    : []),
+                  ...(owes ? [t('suppliers.balance')] : []),
                 ]}
                 rows={() =>
                   (list.data ?? []).map((s) => [
                     s.name,
                     s.phones.join(', '),
                     s.contactName ?? '',
-                    ...(list.data?.some((x) => x.balance !== undefined)
-                      ? [s.balance === undefined ? null : { money: s.balance }]
-                      : []),
+                    ...(owes ? [s.balance === undefined ? null : { money: s.balance }] : []),
                   ])
                 }
               />
             )}
             {canWrite && (
               <Button variant="secondary" asChild>
-                <Link to="/inventory/suppliers/import">{t('boImport.import')}</Link>
+                <Link to="/inventory/suppliers/import">
+                  <FileUp aria-hidden />
+                  {t('boImport.import')}
+                </Link>
               </Button>
             )}
-            {canWrite && <Button onClick={() => setCreating(true)}>{t('suppliers.new')}</Button>}
+            {canWrite && (
+              <Button onClick={() => setPanel({})}>
+                <Plus aria-hidden />
+                {t('suppliers.new')}
+              </Button>
+            )}
           </>
         }
       />
-      <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center">
-        <Input
-          type="search"
-          aria-label={t('suppliers.search')}
-          placeholder={t('suppliers.search')}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          className="md:max-w-sm"
-        />
-        <label className="flex min-h-11 items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="size-5"
-            checked={archived}
-            onChange={(e) => setArchived(e.target.checked)}
-          />
-          {t('suppliers.showArchived')}
-        </label>
-      </div>
+      <StageTabs
+        label={t('suppliers.title')}
+        tabs={[
+          { key: 'active', label: t('suppliers.active') },
+          { key: 'archived', label: t('suppliers.archived') },
+        ]}
+        value={archived ? 'archived' : 'active'}
+        onChange={(key) => setArchived(key === 'archived')}
+      />
+      <SearchInput
+        className="w-full md:w-64"
+        label={t('suppliers.search')}
+        value={text}
+        onChange={setText}
+      />
       <DataList
         label={t('suppliers.title')}
         items={list.data}
@@ -143,9 +155,54 @@ export function SuppliersPage() {
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
-        empty={t('suppliers.empty')}
+        empty={q ? t('suppliers.noMatches') : t('suppliers.empty')}
+        emptyAction={
+          q ? (
+            <Button variant="secondary" onClick={() => setText('')}>
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
+        onOpen={open}
+        menu={(s) => (
+          <RowMenu label={s.name}>
+            <RowMenuItem onSelect={() => open(s)}>
+              <FileText aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            {canWrite && (
+              <RowMenuItem onSelect={() => setPanel({ supplier: s })}>
+                <SquarePen aria-hidden />
+                {t('suppliers.edit')}
+              </RowMenuItem>
+            )}
+            {canWrite && !s.archived && (
+              <RowMenuItem
+                onSelect={() =>
+                  navigate({ to: '/inventory/purchase-orders/new', search: { supplierId: s.id } })
+                }
+              >
+                <ClipboardList aria-hidden />
+                {t('suppliers.newPurchaseOrder')}
+              </RowMenuItem>
+            )}
+          </RowMenu>
+        )}
+        card={(s) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/inventory/suppliers/$id" params={{ id: s.id }} className="font-medium">
+                {s.name}
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                {[s.phones[0], s.contactName].filter(Boolean).join(' · ') || '—'}
+              </span>
+            </div>
+            {owes && <span className="shrink-0 text-sm">{balance(s)}</span>}
+          </div>
+        )}
       />
-      {creating && <SupplierDialog onClose={() => setCreating(false)} />}
+      {panel && <SupplierDialog supplier={panel.supplier} onClose={() => setPanel(null)} />}
     </div>
   );
 }
@@ -155,7 +212,7 @@ export function SupplierDialog({
   supplier,
   onClose,
 }: {
-  supplier?: Supplier;
+  supplier?: Supplier | undefined;
   onClose: () => void;
 }) {
   const { t } = useLocale();
@@ -203,76 +260,78 @@ export function SupplierDialog({
     },
   });
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(open) => !open && onClose()}
-      title={supplier ? supplier.name : t('suppliers.new')}
+      title={supplier ? t('suppliers.edit') : t('suppliers.new')}
+      description={supplier?.name}
     >
-      <form
-        className="flex flex-col gap-4"
+      <SheetForm
         onSubmit={(e) => {
           e.preventDefault();
           if (valid) save.mutate();
         }}
       >
-        <Field
-          label={t('suppliers.name')}
-          value={name}
-          maxLength={200}
-          required
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Field
-          label={`${t('suppliers.contactName')} (${t('form.optional')})`}
-          value={contactName}
-          maxLength={200}
-          onChange={(e) => setContactName(e.target.value)}
-        />
-        <Field
-          label={`${t('suppliers.phone')} (${t('form.optional')})`}
-          type="tel"
-          inputMode="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        <Field
-          label={`${t('suppliers.email')} (${t('form.optional')})`}
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Field
-          label={`${t('suppliers.address')} (${t('form.optional')})`}
-          value={address}
-          maxLength={200}
-          onChange={(e) => setAddress(e.target.value)}
-        />
-        <Field
-          label={`${t('suppliers.note')} (${t('form.optional')})`}
-          value={note}
-          maxLength={1000}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        {canPay && (
+        <SheetBody>
           <Field
-            label={`${t('suppliers.openingBalance')} (${t('form.optional')})`}
-            hint={t('suppliers.openingBalanceHint')}
-            inputMode="decimal"
-            value={opening}
-            error={openingValue === undefined ? t('form.invalid') : undefined}
-            onChange={(e) => setOpening(e.target.value)}
+            label={t('suppliers.name')}
+            value={name}
+            maxLength={200}
+            required
+            onChange={(e) => setName(e.target.value)}
           />
-        )}
-        {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={onClose}>
+          <Field
+            label={`${t('suppliers.contactName')} (${t('form.optional')})`}
+            value={contactName}
+            maxLength={200}
+            onChange={(e) => setContactName(e.target.value)}
+          />
+          <Field
+            label={`${t('suppliers.phone')} (${t('form.optional')})`}
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          <Field
+            label={`${t('suppliers.email')} (${t('form.optional')})`}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Field
+            label={`${t('suppliers.address')} (${t('form.optional')})`}
+            value={address}
+            maxLength={200}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <Field
+            label={`${t('suppliers.note')} (${t('form.optional')})`}
+            value={note}
+            maxLength={1000}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          {canPay && (
+            <Field
+              label={`${t('suppliers.openingBalance')} (${t('form.optional')})`}
+              hint={t('suppliers.openingBalanceHint')}
+              inputMode="decimal"
+              value={opening}
+              error={openingValue === undefined ? t('form.invalid') : undefined}
+              onChange={(e) => setOpening(e.target.value)}
+            />
+          )}
+          {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={!valid || save.isPending}>
-            {t('action.save')}
+          <Button type="submit" size="lg" disabled={!valid || save.isPending}>
+            {supplier ? t('action.save') : t('suppliers.new')}
           </Button>
-        </div>
-      </form>
-    </Dialog>
+        </SheetFooter>
+      </SheetForm>
+    </Sheet>
   );
 }

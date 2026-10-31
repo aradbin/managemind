@@ -39,6 +39,7 @@ import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
   dashboardQuery,
+  dateRangeFilter,
   idempotencyKey,
   type OrderFilters,
   type OrderSummary,
@@ -89,21 +90,6 @@ const SOURCES = [
   'exchange',
 ] as const;
 const FLAGS = ['flagged_phone', 'possible_duplicate', 'unreachable'] as const;
-
-// The server reads dates as Dhaka dates, so today is Dhaka's today.
-const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
-const dhakaDay = (daysAgo: number) => DHAKA_DAY.format(new Date(Date.now() - daysAgo * 86_400_000));
-
-/** The Placed filter's choices, as from and to dates. */
-function ranges() {
-  const today = dhakaDay(0);
-  return {
-    today: { from: today, to: today },
-    week: { from: dhakaDay(6), to: today },
-    month: { from: dhakaDay(29), to: today },
-    thisMonth: { from: `${today.slice(0, 8)}01`, to: today },
-  } as const;
-}
 
 export function OrdersPage() {
   const { t, locale } = useLocale();
@@ -184,10 +170,6 @@ export function OrdersPage() {
     });
   };
 
-  const preset = ranges();
-  const rangeKey = (Object.keys(preset) as (keyof typeof preset)[]).find(
-    (k) => preset[k].from === search.from && preset[k].to === search.to,
-  );
   const filters: FilterDef[] = [
     {
       key: 'payment',
@@ -217,31 +199,14 @@ export function OrdersPage() {
       options: FLAGS.map((f) => ({ value: f, label: t(`orders.flag.${f}`) })),
       onChange: (v) => setFilter({ flag: v as OrderSearch['flag'] }),
     },
-    {
+    dateRangeFilter({
       key: 'placed',
       label: t('order.placedAt'),
-      value: search.from || search.to ? (rangeKey ?? 'custom') : undefined,
-      options: [
-        ...(Object.keys(preset) as (keyof typeof preset)[]).map((k) => ({
-          value: k,
-          label: t(`orders.range.${k}`),
-        })),
-        // A range from a link or a report, which no choice matches.
-        ...((search.from || search.to) && !rangeKey
-          ? [
-              {
-                value: 'custom',
-                label: t('orders.range.custom', { from: search.from ?? '…', to: search.to ?? '…' }),
-              },
-            ]
-          : []),
-      ],
-      onChange: (v) => {
-        if (v === 'custom') return;
-        const range = v ? preset[v as keyof typeof preset] : undefined;
-        setFilter({ from: range?.from, to: range?.to });
-      },
-    },
+      from: search.from,
+      to: search.to,
+      onChange: setFilter,
+      t,
+    }),
   ];
 
   const toggle = (id: string) =>
