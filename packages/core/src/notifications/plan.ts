@@ -8,8 +8,8 @@ import { schema } from '@managemind/db';
 import { permissionsOf } from '@managemind/shared';
 import { format, type Locale, money } from '@managemind/shared/money';
 import {
-  type Channel,
   DEFAULT_STAFF_CHANNELS,
+  type DeliveryChannel,
   type MessageEvent,
   type ShopperEvent,
   type StaffEvent,
@@ -17,17 +17,24 @@ import {
 import { formatOrderNumber } from '@managemind/shared/orders';
 import { tenantSettings } from '@managemind/shared/settings';
 import { eq, sql } from 'drizzle-orm';
+import { approvedTemplates, contactState } from '../channels/whatsapp';
 import { issueLink } from '../orders/confirm-link';
 import type { OutboxEvent } from '../outbox';
 import type { TenantTx } from '../tenant';
 
-export type SkipReason = 'no_gateway' | 'no_address' | 'no_device';
+export type SkipReason =
+  | 'no_gateway'
+  | 'no_address'
+  | 'no_device'
+  /** WhatsApp (phase-9-plan §3.2.2): no approved template yet, or the shopper said stop. */
+  | 'no_template'
+  | 'opted_out';
 
 export interface PlannedMessage {
   /** event ID, message event, channel and recipient: one row per message, ever. */
   idempotencyKey: string;
   event: MessageEvent;
-  channel: Channel;
+  channel: DeliveryChannel;
   recipientType: 'shopper' | 'staff';
   /** A phone, an email address, or a staff user's ID for push. */
   recipient: string;
@@ -35,6 +42,8 @@ export interface PlannedMessage {
   locale: Locale;
   values: Record<string, string>;
   skip: SkipReason | null;
+  /** An SMS held while WhatsApp tries first (phase-9-plan §3.2.2, Q7). */
+  wait?: boolean;
 }
 
 export interface PlanOptions {
@@ -46,6 +55,8 @@ export interface PlanOptions {
   linkKey?: string;
   /** Whether the store has a working SMS gateway. */
   smsGateway: boolean;
+  /** Whether the store connected WhatsApp (phase-9-plan §3.2). */
+  whatsapp?: boolean;
 }
 
 interface Triggered {
@@ -312,9 +323,21 @@ export async function planMessages(
   });
 
   const planned: PlannedMessage[] = [];
-  const key = (e: MessageEvent, channel: Channel, recipient: string) =>
+  const key = (e: MessageEvent, channel: DeliveryChannel, recipient: string) =>
     `${event.id}:${e}:${channel}:${recipient}`.slice(0, 200);
   const shopperLocale = order.locale as Locale;
+  // WhatsApp first, when the store connected it (phase-9-plan §3.2.2): a
+  // shopper who said stop, or an event whose template Meta hasn't approved
+  // in the order's language, is skipped with the reason, and SMS goes as before.
+  const templates = options.whatsapp ? await approvedTemplates(tx) : null;
+  const waContact = options.whatsapp ? await contactState(tx, order.phone) : null;
+  const whatsappSkip = (e: MessageEvent): SkipReason | null =>
+    waContact?.optedOut
+      ? 'opted_out'
+      : templates?.has(`${e}:${shopperLocale}`)
+        ? null
+        : 'no_template';
+  const whatsappFirst = settings.notifications.whatsappFirst;
   for (const e of triggered.shopper) {
     if (settings.notifications.email.includes(e)) {
       const email = contact.email ?? '';
@@ -330,6 +353,21 @@ export async function planMessages(
         skip: email ? null : 'no_address',
       });
     }
+    const whatsapp = options.whatsapp && settings.notifications.whatsapp.includes(e);
+    const waSkip = whatsapp ? whatsappSkip(e) : null;
+    if (whatsapp) {
+      planned.push({
+        idempotencyKey: key(e, 'whatsapp', order.phone),
+        event: e,
+        channel: 'whatsapp',
+        recipientType: 'shopper',
+        recipient: order.phone,
+        orderId: order.id,
+        locale: shopperLocale,
+        values: valuesFor(shopperLocale),
+        skip: waSkip,
+      });
+    }
     if (settings.notifications.sms.includes(e)) {
       planned.push({
         idempotencyKey: key(e, 'sms', order.phone),
@@ -341,18 +379,46 @@ export async function planMessages(
         locale: shopperLocale,
         values: valuesFor(shopperLocale),
         skip: options.smsGateway ? null : 'no_gateway',
+        wait: Boolean(whatsapp && !waSkip && whatsappFirst && options.smsGateway),
       });
     }
   }
 
-  // The link to confirm or cancel, by SMS only, when the store turned it on.
+  // The request to confirm or cancel a COD order, when the store turned it
+  // on: by SMS with a link, and by WhatsApp with Confirm and Cancel buttons
+  // carrying the same code (phase-9-plan §3.2.5).
   const c = settings.confirmation;
   if (triggered.link && c.queue && c.smsLink && options.linkKey && options.pageUrl) {
     const e = 'confirm_request' as const;
-    const code = options.smsGateway
-      ? await issueLink(tx, options.linkKey, order.id, triggered.link)
-      : null;
+    const waSkip = options.whatsapp ? whatsappSkip(e) : 'no_template';
+    const byWhatsapp = options.whatsapp && !waSkip;
+    const code =
+      options.smsGateway || byWhatsapp
+        ? await issueLink(tx, options.linkKey, order.id, triggered.link)
+        : null;
     if (code || !options.smsGateway) {
+      const confirmValues = {
+        ...valuesFor(shopperLocale),
+        // The code is the fragment, after any query: it never reaches a server.
+        // The page in the order's language: a prefix when it isn't the store's default.
+        confirm_url: code
+          ? `${options.pageUrl(shopperLocale === tenant?.defaultLocale ? 'c' : `${shopperLocale}/c`)}#${code}`
+          : '',
+        confirm_code: code ?? '',
+      };
+      if (options.whatsapp) {
+        planned.push({
+          idempotencyKey: key(e, 'whatsapp', order.phone),
+          event: e,
+          channel: 'whatsapp',
+          recipientType: 'shopper',
+          recipient: order.phone,
+          orderId: order.id,
+          locale: shopperLocale,
+          values: confirmValues,
+          skip: waSkip,
+        });
+      }
       planned.push({
         idempotencyKey: key(e, 'sms', order.phone),
         event: e,
@@ -361,15 +427,9 @@ export async function planMessages(
         recipient: order.phone,
         orderId: order.id,
         locale: shopperLocale,
-        values: {
-          ...valuesFor(shopperLocale),
-          // The code is the fragment, after any query: it never reaches a server.
-          // The page in the order's language: a prefix when it isn't the store's default.
-          confirm_url: code
-            ? `${options.pageUrl(shopperLocale === tenant?.defaultLocale ? 'c' : `${shopperLocale}/c`)}#${code}`
-            : '',
-        },
+        values: confirmValues,
         skip: options.smsGateway ? null : 'no_gateway',
+        wait: Boolean(byWhatsapp && whatsappFirst && options.smsGateway),
       });
     }
   }

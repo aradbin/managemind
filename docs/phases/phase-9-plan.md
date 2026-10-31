@@ -263,7 +263,7 @@ Meta can re-categorize a template it judges marketing. The editor warns against 
 Phase 6 confirms COD orders by staff calls, and optionally by an SMS link (phase-6-plan §3.7). WhatsApp does it in the chat:
 
 - **A `confirm_request` template** with two quick-reply buttons, **Confirm order** and **Cancel**. It's sent when the confirmation queue would send the SMS link, by WhatsApp first (§3.2.2).
-- **Each button's payload** is the order's signed `confirm` token, the same one the SMS link carries. The webhook checks the token and applies the same command as the link does: the shopper confirms, or cancels with the reason "cancelled by shopper". The confirmation queue records the outcome with the channel `whatsapp`.
+- **Each button's payload** is the order's confirmation code, the same one the SMS link carries (phase-6-plan §3.7). The webhook checks the code and applies the same command as the link does: the shopper confirms, or cancels. As built, the queue records the answer as the link's (`link_confirmed`, `link_cancelled`), since the code is the same; a separate `whatsapp` value can follow if the reports need it.
 - **A payload that fails its check changes nothing.** A replayed button on an order that's already confirmed or cancelled is answered with the order's state, never a second change.
 - **The shopper gets a reply** in the window that the button opened (free inside it): "Thanks, your order #1042 is confirmed" or "Your order is cancelled".
 
@@ -435,8 +435,9 @@ Marketing templates are charged on every send and need the shopper's opt-in (Met
 | `store.meta_events` (new) | 1 | `tenant_id`, `id`, `order_id`, `name` (`Purchase`, `Delivered`), `status`, `reason`, `attempts`, `sent_at`. Unique on (`tenant_id`, `order_id`, `name`): the Conversions API's log, so an event is sent once |
 | Settings `meta` | 1 | In the store's settings JSON: `feed` (`enabled`, `key`, the key made by the server), `purchaseAt`, `deliveredEvent`. The pixel ID stays in `storefront.tracking` |
 | `store.messages` | 2 | Channel `whatsapp`; `external_id` (Meta's message ID, unique per store) with its status and time; state `waiting` for the SMS fallback |
-| `store.whatsapp_templates` (new) | 2 | `tenant_id`, `event`, `locale`, `name`, Meta's `template_id`, `status`, `category`, `reason`, `body`, `submitted_at`, `updated_at`. Unique on (`tenant_id`, `event`, `locale`) |
-| `store.customers` | 2, 5 | `whatsapp_opt_out_at`, `whatsapp_marketing_opt_in_at`, with its source |
+| `store.whatsapp_templates` (new) | 2 | `tenant_id`, `event`, `locale`, `name`, `version`, `body` (our wording), `variables` (their {{n}} order), `status`, `meta_template_id`, `reason`, `submitted_at`. Primary key (`tenant_id`, `event`, `locale`). Every template is a utility one |
+| `store.whatsapp_contacts` (new) | 2 | `tenant_id`, `phone`, `last_inbound_at` (the 24-hour window), `opted_out_at`. Primary key (`tenant_id`, `phone`), so it holds before any order; deleted at anonymization |
+| `store.customers` | 5 | `whatsapp_marketing_opt_in_at`, with its source. As built in stage 2, the opt-out lives in `store.whatsapp_contacts` instead, keyed by phone |
 | `store.conversations` (new) | 4 | `tenant_id`, `id`, `channel`, `external_id` (unique per store and channel), `customer_id`, `name`, `phone` (WhatsApp only), `last_inbound_at`, `last_message_at`, `unread`, `assigned_to`, `state` (`open`, `done`), `referral` (jsonb: ad ID, headline, `ctwa_clid`, when), `created_at`, `updated_at`. Index (`tenant_id`, `state`, `last_message_at`) |
 | `store.conversation_messages` (new) | 4 | `tenant_id`, `id`, `conversation_id`, `direction`, `kind`, `body` (jsonb: text, cart lines, location, product), `media_key` (R2), `external_id` (unique per store, so a repeated webhook adds nothing), `status`, `sent_by` (staff, `assistant`, or `echo`), `created_at`. **Kept 90 days** (Q3), then deleted by the daily cleanup |
 | `store.quick_replies` (new) | 4 | `tenant_id`, `id`, `title`, `body` (`bn`, `en`), `position` |

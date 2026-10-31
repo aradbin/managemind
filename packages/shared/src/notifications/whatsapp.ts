@@ -43,31 +43,31 @@ export const WHATSAPP_DEFAULTS: Record<WhatsappEvent, Record<Locale, string>> = 
   },
   order_confirmed: {
     en: 'Your order {order_number} from {store_name} is confirmed. To pay on delivery: {amount_due}.',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number} নিশ্চিত হয়েছে। ডেলিভারিতে পরিশোধ: {amount_due}।',
+    bn: 'আপনার অর্ডার {order_number} ({store_name}) নিশ্চিত হয়েছে। ডেলিভারিতে পরিশোধ: {amount_due}।',
   },
   order_shipped: {
     en: 'Your order {order_number} from {store_name} is on its way with {carrier}, tracking {tracking_number}. To pay on delivery: {amount_due}.',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number} {carrier} দিয়ে রওনা হয়েছে, ট্র্যাকিং {tracking_number}। ডেলিভারিতে পরিশোধ: {amount_due}।',
+    bn: 'আপনার অর্ডার {order_number} ({store_name}) রওনা হয়েছে: কুরিয়ার {carrier}, ট্র্যাকিং {tracking_number}। ডেলিভারিতে পরিশোধ: {amount_due}।',
   },
   order_delivered: {
     en: 'Your order {order_number} from {store_name} was delivered. Thank you for shopping with us!',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number} পৌঁছে গেছে। আমাদের সাথে কেনাকাটার জন্য ধন্যবাদ!',
+    bn: 'আপনার অর্ডার {order_number} ({store_name}) পৌঁছে গেছে। আমাদের সাথে কেনাকাটার জন্য ধন্যবাদ!',
   },
   order_cancelled: {
     en: 'Your order {order_number} from {store_name} was cancelled. Reply here if you have a question.',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number} বাতিল হয়েছে। প্রশ্ন থাকলে এখানে লিখুন।',
+    bn: 'আপনার অর্ডার {order_number} ({store_name}) বাতিল হয়েছে। প্রশ্ন থাকলে এখানে লিখুন।',
   },
   payment_received: {
     en: 'We received {amount} for your order {order_number} from {store_name}. Thank you!',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number}-এর জন্য {amount} পেয়েছি। ধন্যবাদ!',
+    bn: 'আপনার অর্ডার {order_number}-এর জন্য {amount} পেয়েছি ({store_name})। ধন্যবাদ!',
   },
   refund_issued: {
     en: 'We refunded {refund_amount} for your order {order_number} from {store_name}, by {refund_method}.',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number}-এর {refund_amount} ফেরত দেওয়া হয়েছে, {refund_method} মাধ্যমে।',
+    bn: 'আপনার অর্ডার {order_number}-এর {refund_amount} ফেরত দেওয়া হয়েছে ({store_name}), {refund_method} মাধ্যমে।',
   },
   confirm_request: {
     en: 'Please confirm your order {order_number} from {store_name}. You will pay {amount_due} on delivery. Tap a button below.',
-    bn: '{store_name} থেকে আপনার অর্ডার {order_number} নিশ্চিত করুন। ডেলিভারিতে {amount_due} পরিশোধ করবেন। নিচের একটি বোতাম চাপুন।',
+    bn: 'অনুগ্রহ করে আপনার অর্ডার {order_number} ({store_name}) নিশ্চিত করুন। ডেলিভারিতে {amount_due} পরিশোধ করবেন। নিচের একটি বোতাম চাপুন।',
   },
 };
 

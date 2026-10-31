@@ -3005,6 +3005,20 @@ export interface paths {
                              *     ]
                              */
                             email?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                            /**
+                             * @default [
+                             *       "order_placed",
+                             *       "order_confirmed",
+                             *       "order_shipped",
+                             *       "order_delivered",
+                             *       "order_cancelled",
+                             *       "payment_received",
+                             *       "refund_issued"
+                             *     ]
+                             */
+                            whatsapp?: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                            /** @default true */
+                            whatsappFirst?: boolean;
                         };
                         /**
                          * @default {
@@ -11393,6 +11407,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/channels/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The store's WhatsApp number, its webhook and its templates (settings.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description WhatsApp */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WhatsappChannel"];
+                    };
+                };
+            };
+        };
+        /** Check the number with Meta, save it sealed, and submit the store's templates (settings.credentials) */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        phoneNumberId: string;
+                        wabaId: string;
+                        accessToken: string;
+                        appSecret: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Connected */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WhatsappChannel"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /** Forget the number and its token (settings.credentials) */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Disconnected */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/channels/whatsapp/templates/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit templates not yet approved, and read Meta’s decisions (settings.write) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Submitted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WhatsappChannel"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/suppliers": {
         parameters: {
             query?: never;
@@ -13228,8 +13361,8 @@ export interface paths {
             parameters: {
                 query?: {
                     orderId?: string;
-                    status?: "queued" | "sent" | "failed" | "skipped";
-                    channel?: "email" | "sms" | "push";
+                    status?: "queued" | "sent" | "failed" | "skipped" | "waiting";
+                    channel?: "email" | "sms" | "push" | "whatsapp";
                     before?: string;
                     limit?: number;
                 };
@@ -16540,6 +16673,20 @@ export interface components {
                  *     ]
                  */
                 email: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                /**
+                 * @default [
+                 *       "order_placed",
+                 *       "order_confirmed",
+                 *       "order_shipped",
+                 *       "order_delivered",
+                 *       "order_cancelled",
+                 *       "payment_received",
+                 *       "refund_issued"
+                 *     ]
+                 */
+                whatsapp: ("order_placed" | "order_confirmed" | "order_shipped" | "order_delivered" | "order_cancelled" | "payment_received" | "payment_expired" | "return_approved" | "return_rejected" | "return_received" | "refund_issued" | "store_credit_issued")[];
+                /** @default true */
+                whatsappFirst: boolean;
             };
             /**
              * @default {
@@ -19551,6 +19698,30 @@ export interface components {
                 sentAt: string | null;
             }[];
         };
+        WhatsappChannel: {
+            connected: boolean;
+            phoneNumberId: string | null;
+            wabaId: string | null;
+            displayPhone: string | null;
+            verifiedName: string | null;
+            qualityRating: string | null;
+            messagingLimit: string | null;
+            hint: string | null;
+            checkError: string | null;
+            webhook: {
+                url: string;
+                verifyToken: string;
+            } | null;
+            templates: {
+                event: string;
+                /** @enum {string} */
+                locale: "bn" | "en";
+                name: string;
+                status: string;
+                reason: string | null;
+                submittedAt: string | null;
+            }[];
+        };
         Supplier: {
             /** Format: uuid */
             id: string;
@@ -19975,7 +20146,7 @@ export interface components {
             id: string;
             event: string;
             /** @enum {string} */
-            channel: "email" | "sms" | "push";
+            channel: "email" | "sms" | "push" | "whatsapp";
             /** @enum {string} */
             recipientType: "shopper" | "staff";
             /** @description Masked without customers.read */
@@ -19983,7 +20154,9 @@ export interface components {
             /** Format: uuid */
             orderId: string | null;
             /** @enum {string} */
-            status: "queued" | "sent" | "failed" | "skipped";
+            status: "queued" | "sent" | "failed" | "skipped" | "waiting";
+            /** @enum {string|null} */
+            deliveryStatus: "sent" | "delivered" | "read" | "failed" | null;
             reason: string | null;
             attempts: number;
             provider: string | null;

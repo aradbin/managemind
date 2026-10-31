@@ -3,7 +3,7 @@
 // one fetch per call. The token travels in the Authorization header, never
 // in a URL (ADR 0013: Workers Logs record URLs).
 
-import { GRAPH_VERSION, graph, MetaError } from './graph';
+import { graph, MetaError } from './graph';
 
 export { GRAPH_ORIGIN, GRAPH_VERSION, graph, MetaError } from './graph';
 

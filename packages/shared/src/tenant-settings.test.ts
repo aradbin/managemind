@@ -70,6 +70,16 @@ describe('tenantSettings', () => {
           'refund_issued',
           'store_credit_issued',
         ],
+        whatsapp: [
+          'order_placed',
+          'order_confirmed',
+          'order_shipped',
+          'order_delivered',
+          'order_cancelled',
+          'payment_received',
+          'refund_issued',
+        ],
+        whatsappFirst: true,
       },
       setup: { subdomainFinal: false },
     });

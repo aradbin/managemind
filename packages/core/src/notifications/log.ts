@@ -38,7 +38,7 @@ export async function recordMessages(
         recipient: p.recipient,
         orderId: p.orderId,
         locale: p.locale,
-        status: p.skip ? ('skipped' as const) : ('queued' as const),
+        status: p.skip ? ('skipped' as const) : p.wait ? ('waiting' as const) : ('queued' as const),
         reason: p.skip,
       })),
     )
@@ -109,6 +109,14 @@ export async function renderMessage(
   message: Pick<PlannedMessage, 'event' | 'channel' | 'locale' | 'values'>,
   mode: 'html' | 'plain' = 'plain',
 ): Promise<RenderedMessage | null> {
+  // WhatsApp's wording is the store's template, as Meta approved it (phase-9-plan §3.2.3).
+  if (message.channel === 'whatsapp') {
+    const { rows } = await tx.db.execute<{ body: string }>(sql`
+      select body from store.whatsapp_templates
+       where event = ${message.event} and locale = ${message.locale} and status = 'approved'`);
+    const body = rows[0]?.body;
+    return body ? { subject: '', body: renderTemplate(body, message.values, 'plain') } : null;
+  }
   const template = await templateFor(tx, message.event, message.channel, message.locale);
   if (!template) return null;
   return {

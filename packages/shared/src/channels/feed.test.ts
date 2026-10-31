@@ -34,7 +34,7 @@ describe('the Meta feed CSV', () => {
   it('writes a row in the header’s order, with the title standing in for an empty description', () => {
     expect(metaFeedHeader().split(',')).toHaveLength(16);
     expect(metaFeedRow(item)).toBe(
-      [
+      `${[
         'v1',
         'p1',
         '"Kurta, ""white"""',
@@ -51,7 +51,7 @@ describe('the Meta feed CSV', () => {
         'L',
         '',
         '',
-      ].join(',') + '\n',
+      ].join(',')}\n`,
     );
   });
 

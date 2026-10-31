@@ -323,3 +323,25 @@ export function newVerifyToken(): string {
 export function assertOwnNumber(expected: string, got: string | undefined): void {
   if (got !== expected) throw new AppError('not_found');
 }
+
+export interface WhatsappConnection {
+  config: Record<string, string>;
+  /** The token's last four characters. */
+  hint: string;
+  checkError: string | null;
+}
+
+/** The store's WhatsApp connection without its secrets, or null (settings.read). */
+export async function whatsappConnection(
+  tx: TenantTx,
+  actor: Actor,
+): Promise<WhatsappConnection | null> {
+  authorize(actor, 'settings.read');
+  const { rows } = await tx.db.execute<{
+    config: Record<string, string>;
+    hint: string;
+    check_error: string | null;
+  }>(sql`select config, hint, check_error from store.provider_credentials where kind = 'whatsapp'`);
+  const r = rows[0];
+  return r ? { config: r.config, hint: r.hint, checkError: r.check_error } : null;
+}

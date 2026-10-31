@@ -14,6 +14,7 @@ import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { WhatsappCard } from '../components/whatsapp-card';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/channels';
 import { api, unwrap } from '../lib/api';
@@ -40,6 +41,7 @@ export function MetaSettingsPage() {
       <MetaForm />
       <ConversionsCard />
       <RecentEvents />
+      <WhatsappCard />
     </div>
   );
 }

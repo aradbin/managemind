@@ -1,7 +1,11 @@
 // Settings → Notifications (phase-5a-plan §3.6–§3.8, §7): which updates
 // shoppers get by SMS and by email, and the store's own email sender. Without
 // one, email goes from the platform's sender, within its daily share.
-import { type NotificationSettings, SHOPPER_EVENTS } from '@managemind/shared/notifications';
+import {
+  type NotificationSettings,
+  SHOPPER_EVENTS,
+  WHATSAPP_EVENTS,
+} from '@managemind/shared/notifications';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
@@ -86,7 +90,10 @@ function ShopperChannels() {
   });
   if (store.isPending || !value) return <p role="status">{t('loading')}</p>;
   if (store.isError) return <Notice tone="error">{errorMessage(store.error, t)}</Notice>;
-  const toggle = (channel: 'sms' | 'email', event: (typeof SHOPPER_EVENTS)[number]) => {
+  const toggle = (
+    channel: 'sms' | 'email' | 'whatsapp',
+    event: (typeof SHOPPER_EVENTS)[number],
+  ) => {
     const list = value[channel].includes(event)
       ? value[channel].filter((e) => e !== event)
       : SHOPPER_EVENTS.filter((e) => e === event || value[channel].includes(e));
@@ -114,6 +121,9 @@ function ShopperChannels() {
                 {t('notify.event')}
               </th>
               <th scope="col" className="w-20 py-2 text-center font-medium">
+                WhatsApp
+              </th>
+              <th scope="col" className="w-20 py-2 text-center font-medium">
                 SMS
               </th>
               <th scope="col" className="w-20 py-2 text-center font-medium">
@@ -127,17 +137,21 @@ function ShopperChannels() {
                 <th scope="row" className="py-1 font-normal">
                   {t(`message.event.${event}`)}
                 </th>
-                {(['sms', 'email'] as const).map((channel) => (
+                {(['whatsapp', 'sms', 'email'] as const).map((channel) => (
                   <td key={channel} className="text-center">
-                    <label className="inline-flex size-11 items-center justify-center">
-                      <input
-                        type="checkbox"
-                        className="size-5"
-                        aria-label={`${t(`message.event.${event}`)}: ${channel === 'sms' ? 'SMS' : t('notify.email')}`}
-                        checked={value[channel].includes(event)}
-                        onChange={() => toggle(channel, event)}
-                      />
-                    </label>
+                    {/* WhatsApp carries only the updates it has a template for (phase-9-plan §3.2.3). */}
+                    {channel === 'whatsapp' &&
+                    !(WHATSAPP_EVENTS as readonly string[]).includes(event) ? null : (
+                      <label className="inline-flex size-11 items-center justify-center">
+                        <input
+                          type="checkbox"
+                          className="size-5"
+                          aria-label={`${t(`message.event.${event}`)}: ${channel === 'email' ? t('notify.email') : channel === 'sms' ? 'SMS' : 'WhatsApp'}`}
+                          checked={value[channel].includes(event)}
+                          onChange={() => toggle(channel, event)}
+                        />
+                      </label>
+                    )}
                   </td>
                 ))}
               </tr>
@@ -146,6 +160,19 @@ function ShopperChannels() {
         </table>
       </fieldset>
       <p className="text-sm text-muted-foreground">{t('notify.smsLater')}</p>
+      <label className="flex min-h-11 items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-1 size-5"
+          disabled={!canEdit || save.isPending}
+          checked={value.whatsappFirst}
+          onChange={(e) => setValue({ ...value, whatsappFirst: e.target.checked })}
+        />
+        <span className="flex flex-col">
+          {t('notify.whatsappFirst')}
+          <span className="text-sm text-muted-foreground">{t('notify.whatsappFirstHint')}</span>
+        </span>
+      </label>
       {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
       {canEdit && (
         <div>
