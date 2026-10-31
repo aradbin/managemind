@@ -1,7 +1,8 @@
 # Phase 9 plan: Meta and messaging
 
-- Status: **Draft for approval.** The owner asked for the highest integration Meta allows, built step by step from minimal to robust. This plan splits the phase into five stages. Each stage ships on its own and leaves the stores better off, so the build can pause after any of them
-- Date: 2026-10-27
+- Status: **Approved (Oct 31).** The owner approved all five stages and every recommendation in §14, and asked to build stages 1 and 2 now against a fake Meta (Q1). Stages 3–5 wait for Meta's approvals. The owner asked for the highest integration Meta allows, built step by step from minimal to robust. This plan splits the phase into five stages. Each stage ships on its own and leaves the stores better off, so the build can pause after any of them
+- Date: 2026-10-27, approved 2026-10-31. It merges the "six levels" research of #89 (Oct 29) into the five stages: §2.1 maps the levels to stages and carries #89's newer findings on Meta's prices and rules
+- Still needed from the owner: Meta business verification and the platform's Meta app (stage 3), a test pixel's Conversions API token and a WhatsApp test number with a system-user token (to switch stages 1 and 2 from the fake Meta to the real one), the owner-approved WhatsApp template wording (stage 2)
 - Scope: PLAN.md "Phase 9 — Meta and messaging", widened at the owner's request. PLAN.md asks for four things: chat-to-order shortcuts, a Meta product feed, server-side purchase events, and WhatsApp order notifications. This plan adds what full integration needs on top: a one-click connection through our own Meta app, Messenger, Instagram and WhatsApp conversations inside the admin, orders taken straight from a WhatsApp cart, attribution for click-to-message ads, and self-service order status in chat.
 - Builds on:
   - Phase 3's pixel, consent banner and chat buttons (phase-3-plan §3.10);
@@ -78,7 +79,7 @@ PLAN.md: "Never start a phase until its prerequisites have been provided." Phase
 | Approved WhatsApp templates | Stage 2 | **We draft them; Meta approves them.** The owner approves the Bangla and English wording first, as with Phase 5A's messages (§3.2.3). Meta reviews each store's copy when it's submitted, usually within minutes to a day |
 | Hosts to allow in the cloud environment's network list | Stages 1–5 | **For the owner:** `graph.facebook.com` and `www.facebook.com` (Graph API and the Embedded Signup popup). In production, Workers reach any host |
 | Legal review | Stages 1, 4, 5 | **Joins Phase 5B's.** The store privacy template gains three things: purchase events go to Meta when the shopper consents; chats with the store are kept in the admin for a set time; WhatsApp messages are sent through Meta. The platform's data processing agreement names Meta as a processor the store chooses |
-| Workers Paid, Neon paid | Stage 4 | **The owner's decision.** Stage 4 keeps the database awake whenever shoppers write, including at night. That likely passes Neon's free compute (§9). Stages 1–3 fit the Free plans |
+| Workers Paid, Neon paid | Stage 4 | **Workers Paid is already triggered** (issue #46's CPU stops, ADR 0013) and comes before stage 4 goes live. **Neon paid is the owner's decision at stage 4:** it keeps the database awake whenever shoppers write, including at night, which likely passes Neon's free compute (§9). Stages 1–3 fit the Free plans |
 | Carried from Phase 5A | All | **`CREDENTIALS_KEY` in production is blocking for production use.** Every Meta token goes in the same vault |
 
 ## 2. Research: what is borrowed
@@ -91,6 +92,32 @@ PLAN.md: "Never start a phase until its prerequisites have been provided." Phase
 | Medusa, Saleor, Vendure | None ships a Meta integration in core. Each has notification providers behind one interface, which ours already is (ADR 0025): WhatsApp becomes a fourth channel, not a new system |
 | Meta's own model | **A webhook is signed** (`X-Hub-Signature-256`, HMAC-SHA-256 of the raw body with the app secret), unlike most couriers'. We still treat a webhook as data from Meta about Meta's objects, never about our orders. A button reply is checked against a signed token we put in the button (§3.2.5). WhatsApp has a **24-hour customer service window**: free-form messages only within 24 hours of the shopper's last message, templates outside it. Messenger and Instagram have the same window and no templates |
 | What we simplify | One WhatsApp number, one Page and one Instagram account per store. Text, images, locations, products and carts in chats, not voice notes (shown as a link to listen). No chatbot builder: the only automatic reply is order status (§3.5.2). No ad management |
+
+### 2.1 Merged from #89's research
+
+#89 (merged Oct 29) researched the same question as six levels. The levels map onto this plan's stages; nothing in either is dropped:
+
+| #89 level | This plan |
+| --- | --- |
+| 0 — Chat shortcuts | Stage 1 (§3.1.1–§3.1.3), with #89's share buttons and "Order on WhatsApp" from the cart (§3.1.3) |
+| 1 — Catalog and Conversions API | Stage 1 (§3.1.4–§3.1.6), with #89's feed key and delivered event |
+| 2 — Connect with Facebook | Stage 3 |
+| 3 — Messenger and Instagram inbox | Stage 4 |
+| 4 — WhatsApp Business Platform | Stage 2 (notifications with the store's own token) and stage 3 (Embedded Signup, coexistence) |
+| 5 — Conversational commerce | Stages 4 and 5 |
+
+**#89's findings that change this plan:**
+
+- **WhatsApp prices from October 1, 2026** (Meta's rate card, as vendors summarize it): in Bangladesh about **$0.0037 for a utility or authentication template** and **$0.0732 for a marketing template**. **Service replies** inside the 24-hour window are free for the first **1,000 a month per number**, then charged at the utility rate. **A utility template sent inside an open window is now charged too.** So §3.2.2 sends a free-form message instead of a template when the window is open and the month's free service messages remain. A chat from a click-to-WhatsApp ad opens a free window of 7 days.
+- **Messenger's message tags are gone** except `HUMAN_AGENT` (a person's reply up to 7 days later): `POST_PURCHASE_UPDATE` and the others stopped on April 27, 2026. Messenger can't carry order updates; WhatsApp and SMS do (Q11).
+- **Embedded Signup v2 and v3 retired on October 15, 2026.** Stage 3 uses v4 or later. Coexistence needs the WhatsApp Business app 2.24.17 or later, syncs 6 months of chats, and allows 20 messages a second.
+- **With coexistence, the API can't use the app's catalog and cart tools.** Stage 4's "WhatsApp cart to an order" needs a number that is **not** on coexistence. Every other stage 4 feature works with it.
+- **Tech Provider limits:** until Access Verification, the app onboards 10 businesses per rolling 7 days; after it, 200.
+- **Graph API v25.0** (February 2026) is pinned in one constant, moved on yearly.
+- **Workers Paid is already triggered** by the production CPU stops of Oct 26 (issue #46, ADR 0013). Stage 4 should not go live without it (§9).
+- **Whether Facebook and Instagram Shops are offered in Bangladesh is unconfirmed.** Catalogs and catalog ads don't depend on Shops, so the feed is useful either way; the checkout URL (§3.1.5) matters only where Shops are.
+
+#89's sources are listed at the end, beside this plan's.
 
 ## 3. Design decisions to approve
 
@@ -122,6 +149,11 @@ The order page already copies a payment link and opens it in `wa.me`. It becomes
 
 Each is written in the order's language from new templates that staff can edit (event `chat_summary`). WhatsApp opens with the text filled in (`wa.me/<phone>?text=`). For Messenger and Instagram the text is copied, since `m.me` links can't carry text, and the Page's inbox opens.
 
+Two shopper-side shortcuts, following the store's existing `chat` settings (from #89's Level 0):
+
+- **Share buttons** on the product page: WhatsApp, Messenger, and copy link, using the Open Graph tags Phase 3 already writes.
+- **"Order on WhatsApp"** on the cart page, when the store has a WhatsApp number: the cart's lines, with their links, and the total, as a message to the store's number. Staff then paste it into the new order screen (§3.1.2), which reads those links back as lines.
+
 #### 3.1.4 Product feed
 
 - **One feed per store**, CSV in Meta's format, at `https://<store host>/feeds/meta.csv`, served from R2:
@@ -132,7 +164,8 @@ Each is written in the order's language from new templates that staff can edit (
 - **Built on change, not on fetch.** A product, variant, price, promotion or stock event marks the feed dirty. A delayed message on `managemind-domains` (`feed_build`, 15 minutes after the first change, so a busy hour builds once) rebuilds it.
   - The build writes chunks of 250 variants as separate R2 objects. The GET streams the header and the chunks in order, so no invocation renders the whole catalog.
   - On the Free plan's 10 ms of CPU a chunk is the unit. The CPU step measures it (§10).
-  - The feed URL is public, like the storefront it describes, and returns `304` to Meta's conditional fetches.
+  - The feed URL carries an unguessable key, `/feeds/meta.csv?key=…`, which the store can change in settings (from #89). The feed only holds what the storefront shows, but the key stops others from scraping a whole catalog in one request. It returns `304` to Meta's conditional fetches.
+  - Only published, priced variants with a picture. Sold-out ones stay as `out of stock`, so ads stop and start by themselves. The settings page lists items left out and why.
 - **Settings → Sales channels → Meta** shows the feed URL with the steps to add it in Commerce Manager as a scheduled feed (hourly), and when it was last built.
 - **The pixel's product view** sends `content_type: product_group` with the product ID, which Meta matches to the variants' `item_group_id`. Add to cart and purchase already send variant IDs.
 
@@ -167,6 +200,9 @@ Meta sends a shopper who taps "Checkout" in a Shop to the URL the store register
   - `confirmed` stops the browser's `Purchase` and sends the server's when staff or the shopper confirm a COD order. Meta's ads then learn from real orders, not fake ones, which matters for COD stores.
   - A cancelled order isn't retracted: Meta has no retraction. That is the reason for `confirmed`.
   - Meta accepts events up to 7 days old, so a confirmation days later still counts.
+- **Delivered, optionally** (from #89). A store can also send a custom `Delivered` event when a shipment is delivered, with the delivered value, so ads can optimize for sales that were paid for. The order's `attribution` is kept until then, or 30 days. Off by default.
+- **Staff orders send nothing in stage 1.** The shopper never saw an ad on our site. Stage 5 reports chat orders, with the ad that started the chat.
+- **A refused token stops.** A 4xx from Meta (a revoked token) marks the connection failed in settings and alerts the owner, instead of retrying.
 - **Test mode.** The store can set Meta's test event code, so events show in Events Manager's test tab, and turn it off again.
 
 ### 3.2 Stage 2 — Notify (WhatsApp Cloud API with the store's own token)
@@ -199,6 +235,7 @@ Until stage 3 a store connects WhatsApp with values from its own Meta app. We on
   - a waiting SMS still undecided after 10 minutes is sent. A delayed `notify_fallback` message checks it.
 
   So the shopper hears once, and the store pays for an SMS only when WhatsApp can't deliver.
+- **Inside an open window, free-form is cheaper.** Since October 2026 a utility template sent inside the shopper's 24-hour window is charged, while the first 1,000 service messages a month per number are free (§2.1). When the shopper wrote within 24 hours and the store's count for the month is under 1,000, the update goes as a plain message with the same text. The count is kept per store and month.
 - **Staff alerts don't use WhatsApp.** Staff have push and email (ADR 0025), and a store's number messaging its own staff would cost a template each time.
 
 #### 3.2.3 Templates
@@ -579,10 +616,49 @@ Steps 8–14 wait for Meta's approvals. If they haven't arrived when stage 2 end
 | Q5 | Report purchases when placed or when confirmed | **A store setting, default "placed",** as the pixel does now. Recommend "confirmed" to COD-heavy stores: Meta's ads then learn from real orders, not fake ones |
 | Q6 | The pilot's WhatsApp number: Cloud API in stage 2, or wait for coexistence in stage 3 | **A second number for stage 2's notifications, then coexistence for the main number in stage 3**, once confirmed for Bangladesh. Moving the main number in stage 2 would take it off staff's WhatsApp Business app |
 | Q7 | WhatsApp and SMS for the same event | **WhatsApp first, SMS only if WhatsApp fails or says nothing within 10 minutes.** Never both. Stores that want both can turn `whatsappFirst` off |
-| Q8 | Who pays Meta for WhatsApp messages | **Each store, directly to Meta**, through its own WABA's payment method (the Tech Provider model). This keeps the platform at $0 and outside Meta's billing. The settings page shows Meta's current rates for Bangladesh, from Meta's pricing page, at build time |
+| Q8 | Who pays Meta for WhatsApp messages | **Each store, directly to Meta**, through its own WABA's payment method (the Tech Provider model). This keeps the platform at $0 and outside Meta's billing. The settings page shows Meta's rates for Bangladesh as of the build (about $0.0037 a utility template and $0.0732 a marketing one, from October 2026) and links to Meta's pricing page |
 | Q9 | Report phone and walk-in orders to Meta | **Off by default, a store option.** Useful for stores that advertise and take calls; it needs the shopper's phone sent hashed, which the privacy template must say |
 | Q10 | Who sees Chats | **Owner, manager, staff; not viewers.** Conversations are personal data, and viewers are for reports |
-| Q11 | Replies after Messenger's 24-hour window | **Request the human-agent permission in app review** (up to 7 days, for a person's reply). Without it, the composer explains the window. Meta's message tags have changed often, so we rely on nothing else |
+| Q11 | Replies after Messenger's 24-hour window | **Request the human-agent permission in app review** (up to 7 days, for a person's reply). Without it, the composer explains the window. Meta ended the other message tags on April 27, 2026 (§2.1), so order updates never go by Messenger |
 | Q12 | Comment-to-DM replies | **Yes, as stage 5's last item, if app review grants `pages_manage_engagement`.** It's what Bangladeshi shoppers do on posts. Skippable without affecting the rest |
-| Q13 | Stage 4's database cost | **Option (a), Neon's paid plan when stage 4 goes live,** after a month's measurement on the pilot (§9). Workers Paid, already planned at the first pilot client, gives stage 4's webhooks CPU headroom too |
+| Q13 | Stage 4's database cost | **Option (a), Neon's paid plan when stage 4 goes live,** after a month's measurement on the pilot (§9). Workers Paid, already triggered by issue #46, comes before stage 4 goes live and gives its webhooks CPU headroom |
 | Q14 | New permissions `chats.read` and `chats.write` | **Yes,** for owners, managers and staff. Conversations need their own permission, separate from orders |
+
+## Sources
+
+From #89's research (Oct 29):
+
+- [WhatsApp pricing (Meta)](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing)
+- [WhatsApp pricing change 2026 (respond.io)](https://respond.io/blog/whatsapp-pricing-change-2026)
+- [WhatsApp API pricing update, October 1, 2026 (YCloud)](https://www.ycloud.com/blog/whatsapp-api-message-pricing-update-effective-october-1-2026)
+- [Best WhatsApp API providers in Bangladesh (chatmitra)](https://chatmitra.com/blog/best-whatsapp-api-provider-bangladesh/)
+- [Embedded Signup overview (Meta)](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/overview/)
+- [Onboard WhatsApp Business app users, coexistence (Meta)](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users/)
+- [Embedded Signup v4 migration (360dialog)](https://360dialog.com/blog/embedded-signup-versions-migration/)
+- [WhatsApp catalogs overview (Meta)](https://developers.facebook.com/documentation/business-messaging/whatsapp/catalogs/catalogs-overview/)
+- [Share products on WhatsApp (Meta)](https://developers.facebook.com/docs/whatsapp/cloud-api/guides/sell-products-and-services/share-products)
+- [Click-to-WhatsApp and the free window (SleekFlow)](https://help.sleekflow.io/es_/understanding-click-to-whatsapp-ads-ctwa-and-the-72-hour-free-window)
+- [Messenger Send API (Meta)](https://developers.facebook.com/docs/messenger-platform/reference/send-api/)
+- [Messenger message tags deprecation (Manychat)](https://community.manychat.com/product-updates/meta-s-deprecation-of-the-message-tags-feature-on-messenger-9010)
+- [Private replies (Meta)](https://developers.facebook.com/docs/messenger-platform/discovery/private-replies)
+- [Instagram Messaging changelog (Meta)](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/changelog)
+- [Instagram Messaging App Review for other businesses (Meta)](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/app-review/apps-for-other-businesses)
+- [Facebook Login for Business (Meta)](https://developers.facebook.com/docs/facebook-login/facebook-login-for-business/)
+- [Messenger Platform overview (Meta)](https://developers.facebook.com/docs/messenger-platform/overview)
+- [Catalog Feed API (Meta)](https://developers.facebook.com/documentation/ads-commerce/commerce-platform/catalog/feed)
+- [Catalog Batch API (Meta)](https://developers.facebook.com/documentation/ads-commerce/commerce-platform/catalog/batch-api)
+- [Conversions API: deduplicating pixel and server events (Meta)](https://developers.facebook.com/docs/marketing-api/conversions-api/deduplicate-pixel-and-server-events)
+- [Conversions API best practices (Meta)](https://developers.facebook.com/documentation/ads-commerce/conversions-api/best-practices)
+- [Meta phases out Shops checkout (PPC Land)](https://ppc.land/meta-phases-out-facebook-and-instagram-shops-checkout-by-august-2025/)
+- [Updates to Meta Shops checkout (BigCommerce)](https://www.bigcommerce.com/blog/updates-to-meta-shops-checkout-for-bigcommerce/)
+- [Instagram shopping availability by country (mbial)](https://mbial.com/instagram-shopping-availability-by-country/)
+- [Introducing Graph API v25 (Meta)](https://developers.facebook.com/blog/post/2026/02/18/introducing-graph-api-v25-and-marketing-api-v25)
+
+Added for this plan (Oct 27):
+
+- [Embedded Signup, coexistence (Meta)](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/version-4-public-preview/)
+- [Conversions API for Business Messaging (Meta)](https://developers.facebook.com/docs/marketing-api/conversions-api/business-messaging)
+- [Instagram API with Instagram Login (Meta)](https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login)
+- [Checkout methods for Facebook and Instagram (Shopify)](https://help.shopify.com/en/manual/online-sales-channels/facebook-instagram-by-meta/checkout-methods)
+- [WhatsApp coexistence (Chatarmin)](https://chatarmin.com/en/blog/whatsapp-coexistence)
+- [WhatsApp Conversions API (Stape)](https://stape.io/news/whatsapp-conversion-api)
