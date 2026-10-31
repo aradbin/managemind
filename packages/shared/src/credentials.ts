@@ -142,9 +142,16 @@ export const credentialConfigs = {
   /** The pickup store, chosen from RedX's list on saving. */
   redx: z.object({ pickupStoreId: z.int().positive().optional() }).strict(),
   fake: z.object({}).strict(),
-  /** Meta's test event code, while the owner checks events in Events Manager. */
+  /**
+   * The pixel (dataset) the token sends to, and Meta's test event code while
+   * the owner checks events in Events Manager (phase-9-plan §3.1.6).
+   */
   meta_capi: z
     .object({
+      pixelId: z
+        .string()
+        .trim()
+        .regex(/^\d{15,16}$/, '15 or 16 digits'),
       testEventCode: z
         .string()
         .trim()

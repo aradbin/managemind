@@ -2,7 +2,13 @@
 // settings with its feed's URLs and last build, a rebuild on asking, and a
 // new feed key. The settings themselves save through PATCH /store (`meta`).
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
-import { metaChannel, requestFeedBuild, rotateFeedKey } from '@managemind/core';
+import {
+  capiConnection,
+  listMetaEvents,
+  metaChannel,
+  requestFeedBuild,
+  rotateFeedKey,
+} from '@managemind/core';
 import { FEED_SKIP_REASONS, META_PURCHASE_AT } from '@managemind/shared/channels';
 import type { Context } from 'hono';
 import type { FeedBuildMessage } from '../feeds';
@@ -35,6 +41,27 @@ const MetaChannel = z
     }),
     purchaseAt: z.enum(META_PURCHASE_AT),
     deliveredEvent: z.boolean(),
+    /** The Conversions API's connection, without its token (phase-9-plan §3.1.6). */
+    capi: z.object({
+      connected: z.boolean(),
+      pixelId: z.string().nullable(),
+      testEventCode: z.string().nullable(),
+      hint: z.string().nullable(),
+      checkError: z.string().nullable(),
+    }),
+    /** The latest events sent, skipped or failed. */
+    events: z.array(
+      z.object({
+        id: z.uuid(),
+        orderId: z.uuid(),
+        orderNumber: z.number().int(),
+        name: z.enum(['Purchase', 'Delivered']),
+        status: z.enum(['queued', 'sent', 'failed', 'skipped']),
+        reason: z.string().nullable(),
+        createdAt: z.string(),
+        sentAt: z.string().nullable(),
+      }),
+    ),
   })
   .openapi('MetaChannel');
 
@@ -65,11 +92,15 @@ export function registerChannels(admin: OpenAPIHono<StaffEnv>): void {
   const view = (c: Context<StaffEnv>) =>
     inStore(c, async (tx) => {
       const meta = await metaChannel(tx, actor(c));
+      const capi = await capiConnection(tx, actor(c));
+      const events = await listMetaEvents(tx, actor(c));
       const urls = await storeUrls(c, tx);
       const { key, ...feed } = meta.feed;
       const at = (file: string) => urls.link(`/feeds/${file}`, { key: key ?? '' });
       return {
         ...meta,
+        capi,
+        events,
         feed: {
           ...feed,
           urls:

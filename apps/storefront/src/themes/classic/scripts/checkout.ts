@@ -4,6 +4,7 @@
 // idempotency key kept in sessionStorage, so a double tap, a lost response
 // or a reload sends the same key and never makes two orders. Online payment
 // (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
+import { attributionForCheckout } from './attribution';
 import { type Cart, lineName, problemText, totals } from './cart-view';
 import {
   api,
@@ -307,6 +308,7 @@ function collect(): Record<string, unknown> | null {
     form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
     return null;
   }
+  const attribution = attributionForCheckout();
   return {
     contact: { name: value('name'), phone, ...(email ? { email } : {}) },
     address: { divisionId, districtId, areaId, line },
@@ -315,6 +317,8 @@ function collect(): Record<string, unknown> | null {
     expectedTotal: cart?.totals.total ?? 0,
     ...(data.get('acceptTerms') ? { acceptTerms: true } : {}),
     ...(data.get('saveDetails') ? { saveDetails: true } : {}),
+    // Only with the shopper's consent to cookies (phase-9-plan §3.1.6).
+    ...(attribution && Object.keys(attribution).length ? { attribution } : {}),
   };
 }
 

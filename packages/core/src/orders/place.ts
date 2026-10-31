@@ -8,6 +8,7 @@
 import { schema } from '@managemind/db';
 import { AppError, uuidv7 } from '@managemind/shared';
 import {
+  type AttributionInput,
   CART_LIMITS,
   FIRST_ORDER_NUMBER,
   formatOrderNumber,
@@ -80,6 +81,8 @@ export interface PlaceOrderInput {
   locale: Locale;
   ip?: string | null | undefined;
   userAgent?: string | null | undefined;
+  /** Storefront, with the shopper's consent: where they came from (phase-9-plan §3.1.6). */
+  attribution?: AttributionInput | undefined;
   shopperUserId?: string | null | undefined;
   /** Admin: "Save and confirm". */
   confirm?: boolean | undefined;
@@ -424,6 +427,10 @@ export async function placeOrder(
       },
       ip: input.ip ?? null,
       userAgent: input.userAgent?.slice(0, 500) ?? null,
+      attribution:
+        storefront && input.attribution
+          ? { ...input.attribution, consentedAt: new Date().toISOString() }
+          : null,
       createdBy: storefront ? null : actor.userId,
       phoneScore: risk.score,
       // A risky phone shows on the order, for staff (phase-5a-plan §3.11).

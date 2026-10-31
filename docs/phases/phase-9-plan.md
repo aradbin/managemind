@@ -472,7 +472,7 @@ Migrations from 0048, two per stage that changes the schema (the schema, then gr
 - **Stage 1:**
   - `POST /orders/{id}/chat-message`: `{ kind: summary | payment | tracking }`, which returns the text and the `wa.me` link;
   - `POST /orders/parse-chat`: `{ text }`, which returns the phone, the customer, the lines and the order number found;
-  - `GET`, `PUT /channels/meta` (feed state, `purchaseAt`, test code), `PUT`, `DELETE /channels/meta/capi`, `POST /channels/meta/feed/rebuild`.
+  - `GET /channels/meta` (the feed's addresses and last build, `purchaseAt`, `deliveredEvent`, the Conversions API's connection and the latest events), `POST /channels/meta/feed/rebuild`, `POST /channels/meta/feed/key`. As built, the settings save through `PATCH /store` (`meta`), and the token through the existing `PUT`, `DELETE /credentials/meta_capi`, with the pixel ID and the test code in its plain config.
 - **Stage 2:**
   - `PUT`, `DELETE /channels/whatsapp` (paste-in connection, checked);
   - `GET /channels/whatsapp/templates`, `POST /channels/whatsapp/templates/{event}/{locale}/submit`.

@@ -4,8 +4,10 @@
 // through PATCH /store; the feed's state comes from /channels/meta.
 import { defaultMetaSettings, type MetaSettings } from '@managemind/shared/channels';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
+import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -36,7 +38,182 @@ export function MetaSettingsPage() {
         description={t('meta.intro')}
       />
       <MetaForm />
+      <ConversionsCard />
+      <RecentEvents />
     </div>
+  );
+}
+
+/**
+ * The Conversions API's token (phase-9-plan §3.1.6): checked with Meta by
+ * reading the pixel before it is saved, sealed, and never shown again.
+ */
+function ConversionsCard() {
+  const { t } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const canConnect = usePermission('settings.credentials');
+  const meta = useQuery(metaQuery);
+  const store = useQuery(storeSettingsQuery);
+  const capi = meta.data?.capi;
+  const [pixelId, setPixelId] = useState('');
+  const [token, setToken] = useState('');
+  const [testCode, setTestCode] = useState('');
+  useEffect(() => {
+    if (!capi) return;
+    setPixelId(capi.pixelId ?? store.data?.storefront.tracking.metaPixelId ?? '');
+    setTestCode(capi.testEventCode ?? '');
+  }, [capi, store.data]);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: metaQuery.queryKey });
+  const save = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.PUT('/v1/admin/credentials/{kind}', {
+          params: { path: { kind: 'meta_capi' } },
+          body: {
+            provider: 'meta_capi',
+            secrets: { accessToken: token.trim() },
+            config: {
+              pixelId: pixelId.trim(),
+              ...(testCode.trim() ? { testEventCode: testCode.trim() } : {}),
+            },
+          },
+        }),
+      ),
+    onSuccess: () => {
+      setToken('');
+      void refresh();
+      toast(t('meta.capi.saved'));
+    },
+  });
+  const remove = useMutation({
+    mutationFn: async () =>
+      unwrap(
+        await api.DELETE('/v1/admin/credentials/{kind}', {
+          params: { path: { kind: 'meta_capi' } },
+        }),
+      ),
+    onSuccess: () => {
+      void refresh();
+      toast(t('meta.capi.removed'));
+    },
+  });
+  if (!capi) return null;
+  return (
+    <section aria-labelledby="meta-capi" className={card}>
+      <h2 id="meta-capi" className="font-semibold">
+        {t('meta.capi')}
+      </h2>
+      <p className="text-sm text-muted-foreground">{t('meta.capi.intro')}</p>
+      <p role="status" className="text-sm">
+        {capi.connected
+          ? t('meta.capi.connected', { pixel: capi.pixelId ?? '', hint: capi.hint ?? '' })
+          : t('meta.capi.notConnected')}
+      </p>
+      {capi.checkError && (
+        <Notice tone="error">{t('meta.capi.failing', { error: capi.checkError })}</Notice>
+      )}
+      {!canConnect ? (
+        <Notice>{t('meta.capi.ownersOnly')}</Notice>
+      ) : (
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save.mutate();
+          }}
+        >
+          <p className="text-sm text-muted-foreground">{t('meta.capi.steps')}</p>
+          <Field
+            label={t('meta.capi.pixel')}
+            inputMode="numeric"
+            value={pixelId}
+            onChange={(e) => setPixelId(e.target.value.replace(/\D/g, ''))}
+          />
+          <Field
+            label={t('meta.capi.token')}
+            type="password"
+            autoComplete="off"
+            value={token}
+            hint={capi.connected ? t('meta.capi.tokenKeep') : undefined}
+            onChange={(e) => setToken(e.target.value)}
+          />
+          <Field
+            label={t('meta.capi.testCode')}
+            hint={t('meta.capi.testCodeHint')}
+            value={testCode}
+            onChange={(e) => setTestCode(e.target.value)}
+          />
+          {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={!token.trim() || !pixelId || save.isPending}>
+              {t('meta.capi.connect')}
+            </Button>
+            {capi.connected && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate()}
+              >
+                {t('meta.capi.remove')}
+              </Button>
+            )}
+          </div>
+        </form>
+      )}
+    </section>
+  );
+}
+
+/** The latest events sent to Meta, skipped or failed, and why. */
+function RecentEvents() {
+  const { t, locale } = useLocale();
+  const meta = useQuery(metaQuery);
+  const events = meta.data?.events;
+  if (!events) return null;
+  return (
+    <section aria-labelledby="meta-recent" className={card}>
+      <h2 id="meta-recent" className="font-semibold">
+        {t('meta.events.recent')}
+      </h2>
+      {events.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('meta.events.none')}</p>
+      ) : (
+        <table className="w-full text-left text-sm">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th className="py-1 font-medium">{t('meta.events.order')}</th>
+              <th className="py-1 font-medium">{t('meta.events.event')}</th>
+              <th className="py-1 font-medium">{t('meta.events.status')}</th>
+              <th className="py-1 font-medium">{t('meta.events.when')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {events.map((e) => (
+              <tr key={e.id}>
+                <td className="py-1.5">
+                  <Link to="/orders/$id" params={{ id: e.orderId }} className="underline">
+                    {e.orderNumber}
+                  </Link>
+                </td>
+                <td className="py-1.5">{e.name}</td>
+                <td className="py-1.5">
+                  {t(`meta.events.status.${e.status}` as AdminKey)}
+                  {e.reason &&
+                    ` (${
+                      e.reason === 'no_consent' || e.reason === 'no_token'
+                        ? t(`meta.events.reason.${e.reason}` as AdminKey)
+                        : e.reason
+                    })`}
+                </td>
+                <td className="py-1.5">{dateTime(locale, e.sentAt ?? e.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 

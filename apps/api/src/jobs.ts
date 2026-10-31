@@ -27,6 +27,7 @@ import { type Env, getConfig } from './env';
 import { queueFeedBuilds } from './feeds';
 import { syncTenantHosts, touchesHosts } from './kv-sync';
 import { log } from './log';
+import { reportsToMeta, reportToMeta } from './meta';
 import { notify, sendsMessages } from './notifications';
 import { purgeMessages } from './purge/consumer';
 import { catchUpSaleEdges, saleEdgeMessages } from './sales';
@@ -86,6 +87,21 @@ export async function handleQueue(
       await notify(env, ctx, message.body);
     } catch (e) {
       log('warn', 'notifications will be retried', {
+        event_id: message.body.id,
+        tenant_id: message.body.tenantId,
+        error: String(e),
+      });
+      unsent.add(message.body.id);
+    }
+  }
+  // Purchases and deliveries to Meta's Conversions API (phase-9-plan §3.1.6).
+  // store.meta_events keeps a redelivered event from reporting twice.
+  for (const message of batch.messages) {
+    if (!reportsToMeta(message.body)) continue;
+    try {
+      await reportToMeta(env, ctx, message.body);
+    } catch (e) {
+      log('warn', 'meta event will be retried', {
         event_id: message.body.id,
         tenant_id: message.body.tenantId,
         error: String(e),

@@ -117,6 +117,7 @@ const page = body?.page;
   if (route?.kind === 'thanks') return <theme.Thanks ctx={ctx} />;
   if (route?.kind === 'track') return <theme.Track ctx={ctx} />;
   if (route?.kind === 'confirm') return <theme.Confirm ctx={ctx} />;
+  if (route?.kind === 'metaCheckout') return <theme.MetaCheckout ctx={ctx} />;
   if (route?.kind === 'account') return accountOff ? <theme.NotFound ctx={ctx} /> : <theme.Account ctx={ctx} />;
   if (!route || ok?.status === 404 || page === null || page === undefined) {
     if (route?.kind === 'search') {

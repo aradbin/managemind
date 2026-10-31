@@ -3,6 +3,7 @@
 // equally easy. The choice is a first-party cookie read only here, kept six
 // months. After consent, the tags load once the page has loaded, so they
 // never compete with the page's own content.
+import { captureAttribution, forgetAttribution } from './attribution';
 import { createTracker } from './events';
 
 const COOKIE = 'mm_consent';
@@ -22,9 +23,11 @@ function remember(value: 'granted' | 'denied') {
 
 function start() {
   if (!config) return;
+  captureAttribution();
   const tracker = createTracker({
     pixelId: config.dataset.pixel || null,
     ga4Id: config.dataset.ga4 || null,
+    pixelPurchase: config.dataset.pixelPurchase !== 'off',
   });
   const load = () => {
     tracker.load();
@@ -48,6 +51,7 @@ if (banner && config) {
     remember(value);
     banner.hidden = true;
     if (value === 'granted') start();
+    else forgetAttribution();
   });
   for (const opener of document.querySelectorAll<HTMLElement>('[data-consent-open]')) {
     opener.addEventListener('click', () => {

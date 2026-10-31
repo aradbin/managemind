@@ -983,6 +983,19 @@ export interface paths {
                         acceptTerms?: boolean;
                         turnstileToken?: string;
                         otpToken?: string;
+                        attribution?: {
+                            fbp?: string;
+                            fbc?: string;
+                            utm?: {
+                                source?: string;
+                                medium?: string;
+                                campaign?: string;
+                                content?: string;
+                                term?: string;
+                            };
+                            /** @enum {string} */
+                            cartOrigin?: "facebook" | "instagram" | "meta_shops";
+                        };
                     };
                 };
             };
@@ -10307,7 +10320,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    kind: "sslcommerz" | "sms" | "email";
+                    kind: "sslcommerz" | "sms" | "email" | "meta_capi";
                 };
                 cookie?: never;
             };
@@ -10346,7 +10359,7 @@ export interface paths {
                 query?: never;
                 header?: never;
                 path: {
-                    kind: "sslcommerz" | "sms" | "email";
+                    kind: "sslcommerz" | "sms" | "email" | "meta_capi";
                 };
                 cookie?: never;
             };
@@ -19366,7 +19379,7 @@ export interface components {
         };
         Credential: {
             /** @enum {string} */
-            kind: "sslcommerz" | "sms" | "email";
+            kind: "sslcommerz" | "sms" | "email" | "meta_capi";
             provider: string;
             /** @enum {string|null} */
             mode: "sandbox" | "live" | null;
@@ -19516,6 +19529,27 @@ export interface components {
             /** @enum {string} */
             purchaseAt: "placed" | "confirmed";
             deliveredEvent: boolean;
+            capi: {
+                connected: boolean;
+                pixelId: string | null;
+                testEventCode: string | null;
+                hint: string | null;
+                checkError: string | null;
+            };
+            events: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                orderId: string;
+                orderNumber: number;
+                /** @enum {string} */
+                name: "Purchase" | "Delivered";
+                /** @enum {string} */
+                status: "queued" | "sent" | "failed" | "skipped";
+                reason: string | null;
+                createdAt: string;
+                sentAt: string | null;
+            }[];
         };
         Supplier: {
             /** Format: uuid */

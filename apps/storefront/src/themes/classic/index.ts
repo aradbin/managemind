@@ -6,6 +6,7 @@ export { default as Checkout } from './templates/Checkout.astro';
 export { default as Confirm } from './templates/Confirm.astro';
 export { default as Home } from './templates/Home.astro';
 export { default as Listing } from './templates/Listing.astro';
+export { default as MetaCheckout } from './templates/MetaCheckout.astro';
 export { default as NotFound } from './templates/NotFound.astro';
 export { default as Product } from './templates/Product.astro';
 export { default as StaticPage } from './templates/StaticPage.astro';
