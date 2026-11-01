@@ -113,7 +113,7 @@ export function SetupCard() {
                 <span className="sr-only">{t(i.done ? 'checklist.done' : 'checklist.todo')}: </span>
                 <span className="min-w-0 flex-1">
                   {!i.done && to ? (
-                    <Link to={to} className="text-primary underline-offset-2 hover:underline">
+                    <Link to={to} className="text-primary underline underline-offset-2">
                       {label}
                     </Link>
                   ) : (

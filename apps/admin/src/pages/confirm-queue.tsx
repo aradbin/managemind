@@ -192,7 +192,7 @@ function QueueCard({
             <Link
               to="/orders/$id"
               params={{ id: item.orderId }}
-              className="font-medium text-primary underline-offset-2 hover:underline"
+              className="font-medium text-primary underline underline-offset-2"
             >
               {item.displayNumber}
             </Link>{' '}
@@ -467,7 +467,7 @@ function CallPanelDialog({
           <Link
             to="/orders/$id"
             params={{ id: panel.orderId }}
-            className="text-sm text-primary underline-offset-2 hover:underline"
+            className="text-sm text-primary underline underline-offset-2"
           >
             {t('queue.editOrder')}
           </Link>

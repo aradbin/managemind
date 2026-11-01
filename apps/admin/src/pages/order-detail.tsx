@@ -76,7 +76,7 @@ export function OrderDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-20 md:pb-0">
       <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/orders" className="font-medium text-primary hover:underline">
+        <Link to="/orders" className="font-medium text-primary underline underline-offset-2">
           {t('nav.orders')}
         </Link>
         <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
@@ -137,7 +137,7 @@ export function OrderDetailPage() {
                       <Link
                         to="/orders/$id"
                         params={{ id: other.id }}
-                        className="font-medium text-primary underline-offset-2 hover:underline"
+                        className="font-medium text-primary underline underline-offset-2"
                       >
                         {other.displayNumber}
                       </Link>

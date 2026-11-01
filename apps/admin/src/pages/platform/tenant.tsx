@@ -50,7 +50,7 @@ export function TenantPage() {
   return (
     <div className="flex flex-col gap-5">
       <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/platform" className="font-medium text-primary hover:underline">
+        <Link to="/platform" className="font-medium text-primary underline underline-offset-2">
           {t('tenant.back')}
         </Link>
         {tenant.data && (

@@ -297,7 +297,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                 <Link
                   to="/inventory/suppliers/$id"
                   params={{ id: order.supplier.id }}
-                  className="text-primary hover:underline"
+                  className="text-primary underline underline-offset-2"
                 >
                   {supplierName}
                 </Link>

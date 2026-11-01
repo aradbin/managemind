@@ -476,8 +476,20 @@ function Entries({ month, top }: { month: string; top: Top }) {
                 {dateOnly(locale, e.spentOn)} · {t(`purchasing.method.${e.method}`)}
               </span>
             </div>
-            <span className="shrink-0 font-medium tabular-nums">
-              {priceOrDash(e.amount, locale)}
+            <span className="flex shrink-0 flex-col items-end gap-1">
+              <span className="font-medium tabular-nums">{priceOrDash(e.amount, locale)}</span>
+              {e.hasReceipt && (
+                <a
+                  href={`/api/admin/expenses/${e.id}/receipt`}
+                  target="_blank"
+                  rel="noopener"
+                  aria-label={t('expenses.receiptView')}
+                  title={t('expenses.receiptView')}
+                  className="-mr-2 inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                >
+                  <Paperclip aria-hidden className="size-4" />
+                </a>
+              )}
             </span>
           </div>
         )}

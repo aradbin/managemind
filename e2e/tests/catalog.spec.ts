@@ -79,7 +79,11 @@ test('catalog flows', async ({ page }, info) => {
     await expect(
       page.getByRole('heading', { name: t('catalog.categories'), level: 1 }),
     ).toBeVisible();
-    await page.getByRole('button', { name: t('categories.new') }).click();
+    // The header's button; the empty list offers a second one.
+    await page
+      .getByRole('button', { name: t('categories.new') })
+      .first()
+      .click();
     let dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(category);
     // Its specifications are picked in the same panel.
@@ -91,7 +95,10 @@ test('catalog flows', async ({ page }, info) => {
     await expectAccessible(page, 'categories');
 
     // A second category, and the first moved under it.
-    await page.getByRole('button', { name: t('categories.new') }).click();
+    await page
+      .getByRole('button', { name: t('categories.new') })
+      .first()
+      .click();
     dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(parent);
     await dialog.getByRole('button', { name: t('categories.create') }).click();

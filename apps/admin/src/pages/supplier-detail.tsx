@@ -140,7 +140,7 @@ export function SupplierDetailPage() {
                 <Link
                   to="/inventory/purchase-orders/$id"
                   params={{ id: o.id }}
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-primary underline underline-offset-2"
                 >
                   {o.reference}
                 </Link>

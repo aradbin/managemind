@@ -221,7 +221,17 @@ export function AttributesPage() {
           <div className="flex items-start gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex items-center gap-2">
-                <span className="font-medium">{name(a)}</span>
+                {canWrite ? (
+                  <button
+                    type="button"
+                    className="text-left font-medium"
+                    onClick={() => setEditing(a)}
+                  >
+                    {name(a)}
+                  </button>
+                ) : (
+                  <span className="font-medium">{name(a)}</span>
+                )}
                 {a.isSystem && (
                   <span className="rounded-md border border-border px-1.5 text-xs font-medium text-muted-foreground">
                     {t('attributes.builtIn')}

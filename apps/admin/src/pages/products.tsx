@@ -196,7 +196,7 @@ export function ProductsPage() {
         title={t('catalog.products')}
         actions={
           <>
-            <ExportButton filters={search} />
+            <ExportButton filters={listFilters} />
             {canWrite && (
               <Button asChild>
                 <Link to="/products/new">

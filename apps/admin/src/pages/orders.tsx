@@ -346,9 +346,7 @@ export function OrdersPage() {
         title={t('nav.orders')}
         actions={
           <>
-            <div className="hidden md:flex">
-              <OrderExportButton filters={search} selected={ids} />
-            </div>
+            <OrderExportButton filters={listFilters} selected={ids} />
             {canWrite && (
               <Button asChild>
                 <Link to="/orders/new">

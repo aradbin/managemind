@@ -163,7 +163,7 @@ export function CustomersPage() {
         title={t('nav.customers')}
         actions={
           <>
-            <CustomerExportButton filters={search} />
+            <CustomerExportButton filters={filters} />
             {canWrite && (
               <Button variant="secondary" asChild>
                 <Link to="/customers/import">

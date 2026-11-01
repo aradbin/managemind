@@ -176,7 +176,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
           <Link
             to="/inventory/purchase-orders/$id"
             params={{ id: order.id }}
-            className="text-primary hover:underline"
+            className="text-primary underline underline-offset-2"
           >
             {order.reference}
           </Link>
@@ -184,7 +184,10 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
       ) : (
         !canDirect && (
           <Notice tone="info">
-            <Link to="/inventory/purchase-orders" className="text-primary hover:underline">
+            <Link
+              to="/inventory/purchase-orders"
+              className="text-primary underline underline-offset-2"
+            >
               {t('po.title')}
             </Link>
           </Notice>

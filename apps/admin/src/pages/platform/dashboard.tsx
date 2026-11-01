@@ -213,7 +213,7 @@ export function PlatformDashboardPage() {
                     <Link
                       to="/platform/tenants/$id"
                       params={{ id: s.tenantId }}
-                      className="text-primary underline-offset-2 hover:underline"
+                      className="text-primary underline underline-offset-2"
                     >
                       {s.name}
                     </Link>

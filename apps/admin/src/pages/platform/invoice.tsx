@@ -70,10 +70,7 @@ export function PlatformInvoicePage() {
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <div>
-        <Link
-          to="/platform/billing"
-          className="text-sm text-primary underline-offset-2 hover:underline"
-        >
+        <Link to="/platform/billing" className="text-sm text-primary underline underline-offset-2">
           {t('pbilling.back')}
         </Link>
       </div>
@@ -88,7 +85,7 @@ export function PlatformInvoicePage() {
             <Link
               to="/platform/tenants/$id"
               params={{ id: inv.tenantId }}
-              className="text-primary underline-offset-2 hover:underline"
+              className="text-primary underline underline-offset-2"
             >
               {inv.storeName}
             </Link>
