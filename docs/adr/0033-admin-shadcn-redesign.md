@@ -99,5 +99,5 @@ The build comes in steps. This first step changes what every page shares, so eve
   - orders, products, customers and inventory keep the page in the address (`?page=3`), Back returns to it, and a new filter starts at page 1.
 
   The list endpoints answer with `total` and take `offset` for this; the cursor still works for the exports.
-- Not built, because the API doesn't give what the boards draw: a count beside each filter choice.
+- Filter choices have no count beside them, as the boards draw: the owner decided they aren't needed.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.

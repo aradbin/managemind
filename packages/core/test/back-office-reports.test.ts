@@ -4,6 +4,7 @@
 // return; a refund without one; a loss; an expense), the summary tables
 // equal to the live figures, month-end stock values, and who may see profit.
 import { permissionsOf, type StoreRole } from '@managemind/shared';
+import { dhakaDate } from '@managemind/shared/billing';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
@@ -44,6 +45,7 @@ import {
   writeMonthEndValues,
 } from '../src';
 import { adjust } from '../src/inventory/service';
+import { monthEnd } from '../src/reports/summaries';
 import { connectApp, connectOwner } from './setup';
 
 let app: pg.Client;
@@ -417,10 +419,14 @@ describe('the summary tables (§3.9)', () => {
     };
     // All of it on hand then; b had no cost, so no value.
     expect(await values('2026-08-31')).toEqual({ [a]: [20, 300_00, 6_000_00], [b]: [5, null, 0] });
-    // This month: 20 − 3 delivered − 1 damaged (the failed one came back, the
-    // return isn't inspected), at the cost now.
-    expect(await run((tx) => writeMonthEndValues(tx, '2026-10-01'))).toBe(2);
-    expect(await values('2026-10-31')).toEqual({ [a]: [16, 320_00, 5_120_00], [b]: [4, null, 0] });
+    // This month (whichever month the test runs in): 20 − 3 delivered − 1
+    // damaged (the failed one came back, the return isn't inspected), at the cost now.
+    const thisMonth = `${dhakaDate(new Date()).slice(0, 7)}-01`;
+    expect(await run((tx) => writeMonthEndValues(tx, thisMonth))).toBe(2);
+    expect(await values(monthEnd(thisMonth))).toEqual({
+      [a]: [16, 320_00, 5_120_00],
+      [b]: [4, null, 0],
+    });
     // Rewriting a month replaces it.
     expect(await run((tx) => writeMonthEndValues(tx, '2026-08-20'))).toBe(2);
   });

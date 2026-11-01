@@ -183,7 +183,7 @@ The owner had the whole admin redrawn on a second canvas (`design/admin-redesign
 | 10 | `c92dde4`, `86b44d7` | Several values per filter: the API and the admin |
 | 11 | `f600f49` | Searchable selects |
 | 12 | `ca4a992` | Expenses compared with last month; these docs |
-| 13 | `6953d99`, this commit | Totals and page offsets in the API; numbered pages on desktops, Load more on phones |
+| 13 | `6953d99`, `03e0b15` | Totals and page offsets in the API; numbered pages on desktops, Load more on phones |
 
 **API changes.** Most of this changes only the admin. The first API change: list filters take several values, comma-separated ("paid,partially_paid"), matching any of them. One value works as before. This covers:
 - orders: payment, source, zone and flag;
@@ -196,7 +196,7 @@ The second API change: every paged list the admin shows answers with `total`, ho
 
 **Where the build differs from the boards:**
 
-- **Filter choices have no counts beside them.** No endpoint counts per choice.
+- **Filter choices have no counts beside them.** The owner decided they aren't needed.
 - **Short fixed lists stay native selects** (statuses, kinds, the day of the month). Phones show them with their own picker.
 - **Returns have a tab per status.** The board's "In progress" spans several statuses, and the API takes one. The list shows units rather than value, since the list endpoint has no value and no search.
 - **Expense categories don't move up or down.** Their position field's meaning wasn't checked.
