@@ -251,7 +251,7 @@ describe('the score threshold', () => {
       const order = await run((tx) => getOrder(tx, owner, three.id));
       expect(order.flags).toContain('flagged_phone');
       expect(order.phoneScoreAtPlacement).toBe(0);
-      const flagged = await run((tx) => listOrders(tx, owner, { flag: 'flagged_phone' }));
+      const flagged = await run((tx) => listOrders(tx, owner, { flag: ['flagged_phone'] }));
       expect(flagged.items.map((o) => o.id)).toContain(three.id);
     } finally {
       await setFraud({});
@@ -351,7 +351,7 @@ describe('duplicate orders', () => {
         'possible_duplicate',
       );
     }
-    const flagged = await run((tx) => listOrders(tx, owner, { flag: 'possible_duplicate' }));
+    const flagged = await run((tx) => listOrders(tx, owner, { flag: ['possible_duplicate'] }));
     expect(flagged.items.map((o) => o.id)).toContain(second.id);
     // The manual order screen warns before saving.
     const preview = await run((tx) =>

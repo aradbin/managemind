@@ -1,8 +1,10 @@
 // Inventory → Adjustments (phase-8-plan §3.4): every adjustment and every
 // receipt typed by hand, with its reason, location, who made it and its value
 // at the cost it was made at, filtered, with totals. Values need catalog.cost.
+
 import { AppError } from '@managemind/shared';
 import { ADJUSTMENT_REASONS } from '@managemind/shared/catalog';
+import { asList } from '@managemind/shared/query';
 import { type SQL, sql } from 'drizzle-orm';
 import { type Actor, authorize } from '../access';
 import { money, requireBackOffice, seesCost } from '../purchasing/common';
@@ -30,7 +32,8 @@ export interface AdjustmentRow {
 }
 
 export interface AdjustmentQuery {
-  reason?: string | undefined;
+  /** One reason or several. */
+  reason?: string | readonly string[] | undefined;
   locationId?: string | undefined;
   actorId?: string | undefined;
   /** Dhaka dates, inclusive. */
@@ -45,13 +48,14 @@ const isAdjustment = sql`(m.type = 'adjustment' or (m.type = 'receive' and m.ref
 
 function filters(q: AdjustmentQuery): SQL {
   const parts: SQL[] = [isAdjustment];
-  if (q.reason) {
-    if (!(ADJUSTMENT_REASONS as readonly string[]).includes(q.reason)) {
+  const reasons = asList(q.reason);
+  if (reasons.length) {
+    if (!reasons.every((x) => (ADJUSTMENT_REASONS as readonly string[]).includes(x))) {
       throw new AppError('validation_failed', {
         fields: [{ path: 'reason', code: 'invalid', message: 'not a reason' }],
       });
     }
-    parts.push(sql`m.reason = ${q.reason}`);
+    parts.push(sql`m.reason = any(${sql.param(reasons)}::text[])`);
   }
   if (q.locationId) parts.push(sql`m.location_id = ${q.locationId}`);
   if (q.actorId) parts.push(sql`m.actor_id = ${q.actorId}`);

@@ -22,7 +22,7 @@ import {
   returnStatusOf,
   shopperReturnInput,
 } from '@managemind/shared/orders';
-import { and, desc, eq, lt, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, type SQL, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
@@ -696,7 +696,7 @@ export async function listReturns(
   const q = parseInput(returnListQuery, query);
   const where: SQL[] = [];
   if (q.status) where.push(eq(r.status, q.status));
-  if (q.reason) where.push(eq(r.reason, q.reason));
+  if (q.reason?.length) where.push(inArray(r.reason, q.reason));
   if (q.orderId) where.push(eq(r.orderId, q.orderId));
   if (q.before) where.push(lt(r.createdAt, new Date(q.before)));
   const o = schema.orders;

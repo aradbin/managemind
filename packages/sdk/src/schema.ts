@@ -3477,9 +3477,9 @@ export interface paths {
                 query?: {
                     q?: string;
                     status?: "draft" | "active" | "archived";
-                    categoryId?: string;
+                    categoryId?: string[] | string;
                     collectionId?: string;
-                    brandValueId?: string;
+                    brandValueId?: string[] | string;
                     tag?: string;
                     attributeValueId?: string;
                     lowStock?: "true" | "false";
@@ -3624,9 +3624,9 @@ export interface paths {
                 query?: {
                     q?: string;
                     status?: "draft" | "active" | "archived";
-                    categoryId?: string;
+                    categoryId?: string[] | string;
                     collectionId?: string;
-                    brandValueId?: string;
+                    brandValueId?: string[] | string;
                     tag?: string;
                     lowStock?: "true" | "false";
                     after?: string;
@@ -5163,7 +5163,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    reason?: "received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other";
+                    reason?: ("received" | "count" | "damaged" | "lost" | "returned" | "correction" | "import" | "expired" | "sample" | "other")[] | string;
                     locationId?: string;
                     actorId?: string;
                     from?: string;
@@ -6769,14 +6769,14 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "pending" | "confirmed" | "processing" | "completed" | "cancelled";
-                    paymentStatus?: "unpaid" | "partially_paid" | "paid" | "partially_refunded" | "refunded";
+                    paymentStatus?: ("unpaid" | "partially_paid" | "paid" | "partially_refunded" | "refunded")[] | string;
                     returnStatus?: "none" | "requested" | "partially_returned" | "returned";
                     deliveryStatus?: "not_shipped" | "partially_shipped" | "shipped" | "delivered" | "failed";
-                    zoneId?: string;
-                    source?: "website" | "facebook" | "phone" | "walk_in" | "other" | "exchange" | "whatsapp" | "messenger" | "instagram";
+                    zoneId?: string[] | string;
+                    source?: ("website" | "facebook" | "phone" | "walk_in" | "other" | "exchange" | "whatsapp" | "messenger" | "instagram")[] | string;
                     tag?: string;
                     cancelledByShopper?: boolean | null;
-                    flag?: "flagged_phone" | "possible_duplicate" | "unreachable";
+                    flag?: ("flagged_phone" | "possible_duplicate" | "unreachable")[] | string;
                     from?: string;
                     to?: string;
                     q?: string;
@@ -8321,7 +8321,7 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    tag?: string;
+                    tag?: string[] | string;
                     after?: string;
                     limit?: number;
                 };
@@ -9089,7 +9089,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
-                    reason?: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
+                    reason?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[] | string;
                     orderId?: string;
                     before?: string;
                     limit?: number;
@@ -11791,7 +11791,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
-                    supplierId?: string;
+                    supplierId?: string[] | string;
                     before?: string;
                     limit?: number;
                 };

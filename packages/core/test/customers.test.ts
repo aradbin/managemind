@@ -102,6 +102,12 @@ describe('customers', () => {
     expect(
       (await run((tx) => listCustomers(tx, owner, { tag: 'vip' }))).items.map((x) => x.id),
     ).toEqual([c.id]);
+    // Several tags match a customer with any of them.
+    expect(
+      (await run((tx) => listCustomers(tx, owner, { tag: ['nobody-has-this', 'vip'] }))).items.map(
+        (x) => x.id,
+      ),
+    ).toEqual([c.id]);
     await run((tx) => deleteCustomer(tx, owner, c.id));
     expect((await run((tx) => listCustomers(tx, owner, { q: 'karim' }))).items).toEqual([]);
   });

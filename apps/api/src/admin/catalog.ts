@@ -2,6 +2,7 @@
 // bodies use the shared schemas the services validate again; each service
 // checks its own permission. Another store's IDs answer 404 (RLS hides the
 // rows), and every route with an ID is in the isolation suite.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   adjustInventory,
@@ -58,6 +59,7 @@ import {
   productPatch,
   variantPatch,
 } from '@managemind/shared/catalog';
+import { oneOrMany } from '@managemind/shared/query';
 import type { Context } from 'hono';
 import { inStore, type StaffEnv } from './context';
 
@@ -306,9 +308,9 @@ export const CATALOG_ROUTES = {
       query: z.object({
         q: z.string().max(100).optional(),
         status: z.enum(['draft', 'active', 'archived']).optional(),
-        categoryId: z.uuid().optional(),
+        categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
-        brandValueId: z.uuid().optional(),
+        brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         attributeValueId: z.uuid().optional(),
         lowStock: flag,
@@ -326,9 +328,9 @@ export const CATALOG_ROUTES = {
       query: z.object({
         q: z.string().max(100).optional(),
         status: z.enum(['draft', 'active', 'archived']).optional(),
-        categoryId: z.uuid().optional(),
+        categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
-        brandValueId: z.uuid().optional(),
+        brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         lowStock: flag,
         after: z.uuid().optional(),

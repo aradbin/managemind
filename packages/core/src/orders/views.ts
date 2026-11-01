@@ -94,15 +94,16 @@ export async function listOrders(
   const limit = query.limit ?? 50;
   const where: SQL[] = [sql`true`];
   if (query.status) where.push(sql`o.status = ${query.status}`);
-  if (query.paymentStatus) where.push(sql`o.payment_status = ${query.paymentStatus}`);
+  if (query.paymentStatus?.length)
+    where.push(sql`o.payment_status = any(${sql.param(query.paymentStatus)}::text[])`);
   if (query.returnStatus) where.push(sql`o.return_status = ${query.returnStatus}`);
   if (query.deliveryStatus) where.push(sql`o.delivery_status = ${query.deliveryStatus}`);
-  if (query.zoneId) where.push(sql`o.zone_id = ${query.zoneId}`);
-  if (query.source) where.push(sql`o.source = ${query.source}`);
+  if (query.zoneId?.length) where.push(sql`o.zone_id = any(${sql.param(query.zoneId)}::uuid[])`);
+  if (query.source?.length) where.push(sql`o.source = any(${sql.param(query.source)}::text[])`);
   if (query.tag) where.push(sql`${query.tag} = any(o.tags)`);
   if (query.cancelledByShopper)
     where.push(sql`o.status = 'cancelled' and o.cancelled_by = 'shopper'`);
-  if (query.flag) where.push(sql`${query.flag} = any(o.flags)`);
+  if (query.flag?.length) where.push(sql`o.flags && ${sql.param(query.flag)}::text[]`);
   if (query.from) where.push(sql`o.placed_at >= ${dateBound(query.from, false)}`);
   if (query.to) where.push(sql`o.placed_at < ${dateBound(query.to, true)}`);
   const q = query.q?.trim();

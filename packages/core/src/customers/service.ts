@@ -3,6 +3,7 @@
 // create one; the name and email come from the first order, and a later
 // order with another name keeps the customer's (Q15). Totals are kept in
 // the same transaction as order changes. Customers are soft-deleted.
+
 import { schema } from '@managemind/db';
 import { AppError, normalizePhone } from '@managemind/shared';
 import { placeNames } from '@managemind/shared/geo';
@@ -12,6 +13,7 @@ import {
   customerInput,
   customerPatch,
 } from '@managemind/shared/orders';
+import { asList } from '@managemind/shared/query';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
@@ -118,7 +120,8 @@ export async function findOrCreateCustomer(
 
 export interface CustomerQuery {
   q?: string | undefined;
-  tag?: string | undefined;
+  /** One tag or several: customers with any of them. */
+  tag?: string | readonly string[] | undefined;
   after?: string | undefined;
   limit?: number | undefined;
 }
@@ -147,7 +150,7 @@ export async function listCustomers(
            c.last_order_at as "lastOrderAt", c.created_at as "createdAt"
       from store.customers c
      where c.deleted_at is null ${search}
-       ${query.tag ? sql`and ${query.tag} = any(c.tags)` : sql``}
+       ${asList(query.tag).length ? sql`and c.tags && ${sql.param(asList(query.tag))}::text[]` : sql``}
        ${query.after ? sql`and c.id < ${query.after}` : sql``}
      order by c.id desc limit ${limit + 1}`);
   const items = rows.slice(0, limit).map(toCustomer);

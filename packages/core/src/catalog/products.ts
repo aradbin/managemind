@@ -2,6 +2,7 @@
 // command checks its permission, writes its audit entry and emits its event
 // in the caller's transaction. Reads build their JSON in Postgres, one round
 // trip per product, which keeps Worker CPU low (ADR 0003).
+
 import { schema } from '@managemind/db';
 import { AppError, uuidv7 } from '@managemind/shared';
 import {
@@ -18,6 +19,7 @@ import {
   type VariantFields,
   variantPatch,
 } from '@managemind/shared/catalog';
+import { asList } from '@managemind/shared/query';
 import { and, eq, inArray, isNull, ne, type SQL, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
@@ -225,10 +227,11 @@ function redact(product: ProductDetail, actor: Actor): ProductDetail {
 export interface ProductListQuery {
   q?: string | undefined;
   status?: 'draft' | 'active' | 'archived' | undefined;
-  categoryId?: string | undefined;
+  /** One category, or several (any of them); each takes the categories under it. */
+  categoryId?: string | readonly string[] | undefined;
   collectionId?: string | undefined;
-  /** A value of the built-in brand attribute. */
-  brandValueId?: string | undefined;
+  /** A value of the built-in brand attribute, or several (any of them). */
+  brandValueId?: string | readonly string[] | undefined;
   tag?: string | undefined;
   attributeValueId?: string | undefined;
   lowStock?: boolean | undefined;
@@ -277,17 +280,19 @@ export async function listProducts(
       or exists (select 1 from store.variants sv where sv.product_id = p.id and lower(sv.sku) like ${`${likeEscape(text.toLowerCase())}%`})
       or exists (select 1 from store.product_tags tg where tg.product_id = p.id and tg.tag = ${normalizeKey(text)}))`);
   }
-  if (query.categoryId) {
+  const categoryIds = asList(query.categoryId);
+  if (categoryIds.length) {
     where.push(sql`exists (
       with recursive tree as (
-        select id from store.categories where id = ${query.categoryId}
+        select id from store.categories where id = any(${sql.param(categoryIds)}::uuid[])
         union all select c.id from store.categories c join tree on c.parent_id = tree.id)
       select 1 from store.product_categories pc where pc.product_id = p.id and pc.category_id in (select id from tree))`);
   }
   if (query.collectionId) where.push(await collectionMatch(tx, query.collectionId));
-  if (query.brandValueId) {
+  const brandValueIds = asList(query.brandValueId);
+  if (brandValueIds.length) {
     where.push(sql`exists (select 1 from store.product_attributes pa join store.attributes a on a.id = pa.attribute_id
-      where pa.product_id = p.id and a.key = 'brand' and pa.value_id = ${query.brandValueId})`);
+      where pa.product_id = p.id and a.key = 'brand' and pa.value_id = any(${sql.param(brandValueIds)}::uuid[]))`);
   }
   if (query.attributeValueId) {
     where.push(sql`exists (select 1 from store.product_attributes pa

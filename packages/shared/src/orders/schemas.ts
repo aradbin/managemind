@@ -1,11 +1,13 @@
 // Inputs for carts, checkout, addresses and delivery zones (phase-4-plan
 // §3.2–§3.5), shared by the API, the storefront's scripts and the admin.
 // The services check everything again; the client never sends a price.
+
 import { z } from 'zod';
 import { CATALOG_LIMITS } from '../catalog/limits';
 import { cleanString, locale } from '../catalog/schemas';
 import { cleanText, normalizeTag } from '../catalog/text';
 import { placeNames } from '../geo/index';
+import { oneOrMany } from '../query';
 import { phoneNumber } from '../tenant-settings';
 import {
   MANUAL_ORDER_SOURCES,
@@ -405,18 +407,18 @@ export const manualQuoteInput = manualOrderInput.extend({
 
 export const orderListQuery = z.object({
   status: z.enum(['pending', 'confirmed', 'processing', 'completed', 'cancelled']).optional(),
-  paymentStatus: z.enum(PAYMENT_STATUSES).optional(),
+  paymentStatus: oneOrMany(z.enum(PAYMENT_STATUSES)),
   returnStatus: z.enum(RETURN_STATUSES).optional(),
   deliveryStatus: z
     .enum(['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'])
     .optional(),
-  zoneId: z.uuid().optional(),
-  source: z.enum(ORDER_SOURCES).optional(),
+  zoneId: oneOrMany(z.uuid()),
+  source: oneOrMany(z.enum(ORDER_SOURCES)),
   tag: z.string().max(50).optional(),
   /** Cancelled by the shopper (§3.9). */
   cancelledByShopper: z.coerce.boolean().optional(),
   /** A flag staff filter by: risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
-  flag: z.enum(['flagged_phone', 'possible_duplicate', 'unreachable']).optional(),
+  flag: oneOrMany(z.enum(['flagged_phone', 'possible_duplicate', 'unreachable'])),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   q: z.string().trim().max(100).optional(),
@@ -491,7 +493,7 @@ export const inspectInput = z
 export const returnListQuery = z
   .object({
     status: z.enum(RETURN_RECORD_STATUSES).optional(),
-    reason: z.enum(RETURN_REASONS).optional(),
+    reason: oneOrMany(z.enum(RETURN_REASONS)),
     orderId: z.uuid().optional(),
     /** The createdAt of the last row seen, for the next page. */
     before: z.iso.datetime().optional(),

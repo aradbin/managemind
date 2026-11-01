@@ -4,6 +4,7 @@
 // permission. Every command that changes an order or a payment accepts an
 // Idempotency-Key (PLAN.md), which the admin sends. Another store's IDs
 // answer 404, and every route with an ID is in the isolation suite.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   addAddress,
@@ -97,6 +98,7 @@ import {
   shipmentReturnInput,
   signOrderToken,
 } from '@managemind/shared/orders';
+import { oneOrMany } from '@managemind/shared/query';
 import type { Context } from 'hono';
 import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
@@ -743,7 +745,7 @@ const r = <
 
 const customerQuery = z.object({
   q: z.string().trim().max(100).optional(),
-  tag: z.string().max(50).optional(),
+  tag: oneOrMany(z.string().max(50)),
   after: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });

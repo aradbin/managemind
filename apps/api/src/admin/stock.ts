@@ -1,6 +1,7 @@
 // Stock counts and the adjustments list in the admin (phase-8-plan §3.4,
 // §3.5, §6). Expected quantities stay hidden while a count is being
 // counted, and values need catalog.cost; the core services decide both.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   applyStockCount,
@@ -19,6 +20,7 @@ import {
   stockCountInput,
 } from '@managemind/shared/back-office';
 import { ADJUSTMENT_REASONS } from '@managemind/shared/catalog';
+import { oneOrMany } from '@managemind/shared/query';
 import { queueStockCountApply } from '../stock-counts';
 import { inStore, type StaffEnv } from './context';
 
@@ -139,7 +141,7 @@ export const STOCK_ROUTES = {
     summary: 'Adjustments and hand receipts with totals; values with catalog.cost (inventory.read)',
     request: {
       query: z.object({
-        reason: z.enum(ADJUSTMENT_REASONS).optional(),
+        reason: oneOrMany(z.enum(ADJUSTMENT_REASONS)),
         locationId: z.uuid().optional(),
         actorId: z.uuid().optional(),
         from: day.optional(),

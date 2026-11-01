@@ -403,6 +403,15 @@ describe('reading orders', () => {
     expect(found.items.map((o) => o.id)).toEqual([placed.id]);
     // A viewer can't search by phone.
     expect((await run((tx) => listOrders(tx, viewer, { q: '01712340210' }))).items).toEqual([]);
+    // Several values in one filter match any of them.
+    const either = await run((tx) =>
+      listOrders(tx, owner, { q: '01712340210', paymentStatus: ['paid', 'unpaid'] }),
+    );
+    expect(either.items.map((o) => o.id)).toEqual([placed.id]);
+    const neither = await run((tx) =>
+      listOrders(tx, owner, { q: '01712340210', source: ['instagram', 'exchange'] }),
+    );
+    expect(neither.items).toEqual([]);
     const pending = await run((tx) => listOrders(tx, owner, { status: 'pending', limit: 2 }));
     expect(pending.items.every((o) => o.status === 'pending')).toBe(true);
     if (pending.nextCursor) {
