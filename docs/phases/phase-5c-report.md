@@ -4,6 +4,7 @@
 - Plan: the owner's brief (a modern, clean admin that is responsive and easier to use on phones), then the design canvas "ManageMind Admin Redesign". The owner approved its 18 screens before any code was written.
 - Decision: [ADR 0029](../adr/0029-admin-redesign.md)
 - Pull request: #69, one commit per step (§1). Merged and deployed on Oct 24: the deploy's smoke, shop API and cache checks passed
+- Second redesign (§7): the owner's second canvas, on shadcn/ui's neutral theme, with every admin page drawn. [ADR 0033](../adr/0033-admin-shadcn-redesign.md); pull request #92, Nov 1
 
 > Phase 5C sits between launch readiness (5B) and the pilot. The pilot's clients use the admin every day, mostly on phones. No data model, API or storefront change: the admin's look, layout and navigation only.
 
@@ -131,3 +132,90 @@ Accessibility holds the existing bar. The E2E runs axe on every screen it visits
 - **Lighthouse on the next green `full-preview` run.** Neither run reached it (§5). The storefront is unchanged, so its budgets should hold.
 - **Workers Paid**, if full previews keep failing on CPU stops (§5). Its trigger in ADR 0013 is the first stop in production.
 - **The pilot's feedback** on the phone layout, especially the five tabs and the pinned actions.
+
+## 7. The second redesign (Oct 31 – Nov 1)
+
+The owner had the whole admin redrawn on a second canvas (`design/admin-redesign/`): shadcn/ui's default neutral theme, compact, with desktop and phone boards for every page and a "Design rules" board that settles one way to do each thing. [ADR 0033](../adr/0033-admin-shadcn-redesign.md) records the decisions; it amends ADR 0029's colours, sizes, status chips and shell. Pull request #92.
+
+**Summary**
+
+- **Look:**
+  - neutral colour tokens with a near-black accent, in light and dark;
+  - compact controls (32 px buttons in headers, 36 px inputs, 40 px with 16 px text on phones);
+  - 14 px card corners;
+  - soft status tints, each with its word. Every text pair still passes AA.
+- **One layout:**
+  - **Sidebar:** its areas (Orders, Catalog, Inventory, Reports, Online store, Platform) open into their pages, and it can be hidden.
+  - **Inset panel:** the page sits in a white panel beside the sidebar.
+  - **Header:** "Area › Page", then search, Create, View store, language, theme, help and the account.
+  - **Phones:** Home, Orders, Products, Customers and Menu.
+  - **Section tabs and the platform's dark band are gone.** The sidebar and Menu list those pages.
+- **Every list on one pattern:**
+  - stage tabs and dashed filter buttons, which pick several values;
+  - rows that open the record and a ⋯ menu per row;
+  - the selection bar;
+  - a loading frame, and one way out of an empty filtered list.
+- **Forms by size (design rule 1):**
+  - **Side panels:** customers and addresses, expenses, recurring expenses, expense categories, catalog categories, attributes, suppliers, stock adjustments and stock history.
+  - **Save bars:** the product, promotion and collection editors.
+  - **Dialogs:** short choices.
+- **Controls (design rule 3):**
+  - searchable selects for names from long lists (places, categories, suppliers, specifications);
+  - choice buttons, segmented controls and switches;
+  - বাংলা | English as one segmented field;
+  - dates day first.
+- **Expenses compared with last month:** the month's total says how much more or less it is than last month. While a month is still going, it compares with the same days of last month.
+
+**Steps**
+
+| Step | Commit | What |
+| --- | --- | --- |
+| 1 | `e2e8bc7` | Tokens, sizes, the sidebar, header and phone Menu; no section tabs |
+| 2 | `fcd6531` | The list pattern, on Products and Orders |
+| 3 | `78594f6` | Customers, Promotions, Expenses, Inventory, Returns; side panels |
+| 4 | `83cff27` | Categories (tree table and panel), attributes, collections |
+| 5 | `e4d9e01` | Suppliers, purchase orders, stock counts, adjustments |
+| 6 | `deab5cd` | Incomplete orders, courier returns, store pages |
+| 7 | `37c5a0b` | The platform's stores and billing |
+| 8 | `72b078c` | Save bars on the full-page editors |
+| 9 | `1b7148a` | Form controls; ADR 0033 |
+| 10 | `c92dde4`, `86b44d7` | Several values per filter: the API and the admin |
+| 11 | `f600f49` | Searchable selects |
+| 12 | this commit | Expenses compared with last month; these docs |
+
+**API change.** Most of this changes only the admin. The one API change: list filters take several values, comma-separated ("paid,partially_paid"), matching any of them. One value works as before. This covers:
+- orders: payment, source, zone and flag;
+- products and their export: category and brand;
+- customers: tag, returns: reason, purchase orders: supplier, adjustments: reason.
+
+`oneOrMany()` and `asList()` live in `@managemind/shared/query`; the SDK types are regenerated. `@radix-ui/react-popover` 1.3.1 joins the catalog for the searchable select; it shares its internals with the dropdown menu already used.
+
+**Where the build differs from the boards:**
+
+- **Filter choices have no counts beside them.** No endpoint counts per choice.
+- **Lists load more, rather than showing numbered pages.** The list endpoints use cursors and don't return totals.
+- **Short fixed lists stay native selects** (statuses, kinds, the day of the month). Phones show them with their own picker.
+- **Returns have a tab per status.** The board's "In progress" spans several statuses, and the API takes one. The list shows units rather than value, since the list endpoint has no value and no search.
+- **Expense categories don't move up or down.** Their position field's meaning wasn't checked.
+- **Expense, customer tag and attribute filters work on what is loaded:**
+  - expenses: the month on screen;
+  - customer tags: the tags on the customers loaded so far.
+
+**Tests and measurements**
+
+| Check | Result |
+| --- | --- |
+| Lint (Biome), every package's typecheck, the admin build | Pass |
+| Unit tests: admin, shared | Pass; new tests for `oneOrMany` and `asList` |
+| API tests | 230 pass |
+| Core tests | Pass, with new tests for multi-value order and customer filters, except one that also fails on `master` on Nov 1: `back-office-reports.test.ts › values the stock at a month's end at the cost then`. It looks tied to the date |
+| Admin JavaScript before sign-in | 139 KiB (before: 137); budget 150 KiB |
+| E2E | **Not run yet** (it needs a seeded preview). About fifteen steps follow the new layout: new records' buttons say what they make, the category panel holds its specifications, searchable selects are picked by a `choose()` helper, the courier-returns row is a table row on desktops |
+
+**Follow-ups**
+
+- **Run the preview E2E on #92** before it merges.
+- **The stock-valuation test** that fails on Nov 1, on `master` too.
+- **Numbered pages, if wanted:** totals and page offsets on the list endpoints (see the assessment in the PR).
+- **The pilot's feedback** on the compact sizes on phones.
+

@@ -148,6 +148,24 @@ function Entries({ month, top }: { month: string; top: Top }) {
     queryFn: async () =>
       unwrap(await api.GET('/v1/admin/expenses', { params: { query: { ...range, limit: 200 } } })),
   });
+  // Last month, to compare: the same days of it while this month is still going,
+  // so a half-finished month isn't set against a whole one.
+  const earlier = shiftMonth(month, -1);
+  const earlierRange = (() => {
+    const whole = monthRange(earlier);
+    if (month !== thisMonth()) return { ...whole, partial: false };
+    const day = Math.min(Number(dhakaToday().slice(8, 10)), Number(whole.to.slice(8, 10)));
+    return { from: whole.from, to: `${earlier}-${String(day).padStart(2, '0')}`, partial: true };
+  })();
+  const before = useQuery({
+    queryKey: ['expenses', { from: earlierRange.from, to: earlierRange.to }, 'total'] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET('/v1/admin/expenses', {
+          params: { query: { from: earlierRange.from, to: earlierRange.to, limit: 1 } },
+        }),
+      ).totals.total,
+  });
   const [editing, setEditing] = useState<Expense | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Expense>();
   const [q, setQ] = useState('');
@@ -319,6 +337,29 @@ function Entries({ month, top }: { month: string; top: Top }) {
             <span className="text-sm text-muted-foreground">
               {t('expenses.count', { count: totals.count })}
             </span>
+            {before.data !== undefined && (
+              <span className="text-sm text-muted-foreground md:ml-auto">
+                <Comparison
+                  now={totals.total}
+                  then={before.data}
+                  period={
+                    earlierRange.partial
+                      ? new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          timeZone: 'UTC',
+                        }).formatRange(
+                          new Date(`${earlierRange.from}T00:00:00Z`),
+                          new Date(`${earlierRange.to}T00:00:00Z`),
+                        )
+                      : new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+                          month: 'long',
+                          timeZone: 'UTC',
+                        }).format(new Date(`${earlier}-01T00:00:00Z`))
+                  }
+                />
+              </span>
+            )}
           </p>
           <div aria-hidden className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
             {totals.byCategory.map((c) => (
@@ -464,6 +505,16 @@ function Entries({ month, top }: { month: string; top: Top }) {
       </ConfirmDialog>
     </>
   );
+}
+
+/** "৳12,930 more than September", against last month or the same days of it. */
+function Comparison({ now, then, period }: { now: number; then: number; period: string }) {
+  const { t, locale } = useLocale();
+  if (then === 0) return <>{t('expenses.noneBefore', { period })}</>;
+  const diff = now - then;
+  if (diff === 0) return <>{t('expenses.same', { period })}</>;
+  const amount = priceOrDash(Math.abs(diff), locale);
+  return <>{t(diff > 0 ? 'expenses.more' : 'expenses.less', { amount, period })}</>;
 }
 
 /**
