@@ -181,6 +181,7 @@ export async function fetchOrders(
   after?: string,
   limit = 50,
   offset?: number,
+  counts = false,
 ) {
   const { cancelledByShopper, ...rest } = filters;
   return unwrap(
@@ -189,6 +190,7 @@ export async function fetchOrders(
         query: compact({
           ...rest,
           ...(cancelledByShopper ? { cancelledByShopper: true } : {}),
+          ...(counts ? { counts: 'true' } : {}),
           after,
           offset,
           limit,
@@ -199,9 +201,10 @@ export async function fetchOrders(
 }
 
 /** The orders list, a page at a time (usePagedList). */
-export const ordersList = (filters: OrderFilters) => ({
-  queryKey: ['orders', filters] as const,
-  fetchPage: (offset: number, limit: number) => fetchOrders(filters, undefined, limit, offset),
+export const ordersList = (filters: OrderFilters, more: { counts?: boolean } = {}) => ({
+  queryKey: ['orders', filters, more] as const,
+  fetchPage: (offset: number, limit: number) =>
+    fetchOrders(filters, undefined, limit, offset, more.counts),
 });
 
 /** One tab of the confirmation queue (phase-6-plan §3.5); refreshed every 30 seconds while open. */

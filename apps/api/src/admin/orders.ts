@@ -763,6 +763,19 @@ export const ORDER_ROUTES = {
         items: z.array(OrderSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        /** What the matching orders come to. */
+        value: z.number(),
+        /** With `counts=true`: how many each tab holds, with the other filters. */
+        counts: z
+          .object({
+            all: z.number().int(),
+            pending: z.number().int(),
+            toShip: z.number().int(),
+            shipped: z.number().int(),
+            delivered: z.number().int(),
+            cancelled: z.number().int(),
+          })
+          .optional(),
       }),
       'Orders',
     ),

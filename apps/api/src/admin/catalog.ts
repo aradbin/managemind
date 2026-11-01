@@ -310,19 +310,38 @@ export const CATALOG_ROUTES = {
     request: {
       query: z.object({
         q: z.string().max(100).optional(),
-        status: z.enum(['draft', 'active', 'archived']).optional(),
+        /** `any` includes archived products; without it they are left out. */
+        status: z.enum(['draft', 'active', 'archived', 'any']).optional(),
         categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
         brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         attributeValueId: z.uuid().optional(),
         lowStock: flag,
+        /** A column, "-column" for the other way; newest first without it. */
+        sort: z
+          .enum(['title', '-title', 'price', '-price', 'variants', '-variants', 'stock', '-stock'])
+          .optional(),
+        /** Also how many match in each status, for the list's tabs. */
+        counts: flag,
         after: z.uuid().optional(),
         offset: pageOffset,
         limit,
       }),
     },
-    responses: json(counted(ProductSummary), 'Products'),
+    responses: json(
+      counted(ProductSummary).extend({
+        counts: z
+          .object({
+            any: z.number().int(),
+            draft: z.number().int(),
+            active: z.number().int(),
+            archived: z.number().int(),
+          })
+          .optional(),
+      }),
+      'Products',
+    ),
   }),
   exportProducts: r({
     method: 'get',
@@ -331,7 +350,7 @@ export const CATALOG_ROUTES = {
     request: {
       query: z.object({
         q: z.string().max(100).optional(),
-        status: z.enum(['draft', 'active', 'archived']).optional(),
+        status: z.enum(['draft', 'active', 'archived', 'any']).optional(),
         categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
         brandValueId: oneOrMany(z.uuid()),
@@ -670,7 +689,11 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.products, async (c) => {
     const { lowStock, ...query } = c.req.valid('query');
     const result = await inStore(c, (tx) =>
-      listProducts(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
+      listProducts(tx, actor(c), {
+        ...query,
+        lowStock: lowStock === 'true',
+        counts: query.counts === 'true',
+      }),
     );
     return c.json(result, 200);
   });

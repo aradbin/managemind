@@ -671,5 +671,19 @@ describe('collections and the product list', () => {
       other,
     );
     expect(elsewhere.items).toEqual([]);
+
+    // Sorted by price either way, and the tabs' counts over the other filters.
+    const cheapest = await run((tx) => listProducts(tx, owner, { q: marker, sort: 'price' }));
+    expect(cheapest.items.map((p) => p.id)).toEqual([ids[0], ids[1], ids[2]]);
+    const dearest = await run((tx) =>
+      listProducts(tx, owner, { q: marker, sort: '-price', offset: 1, limit: 1 }),
+    );
+    expect(dearest.items.map((p) => p.id)).toEqual([ids[1]]);
+    const counted = await run((tx) =>
+      listProducts(tx, owner, { q: marker, status: 'archived', counts: true }),
+    );
+    expect(counted.total).toBe(0);
+    expect(counted.counts).toMatchObject({ any: 3, archived: 0 });
+    expect((counted.counts?.draft ?? 0) + (counted.counts?.active ?? 0)).toBe(3);
   });
 });

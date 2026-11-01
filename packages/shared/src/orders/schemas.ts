@@ -423,6 +423,11 @@ export const orderListQuery = z.object({
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
   q: z.string().trim().max(100).optional(),
+  /** Also how many match in each of the list's tabs. */
+  counts: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true'),
   after: z.string().max(100).optional(),
   offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(200).optional(),

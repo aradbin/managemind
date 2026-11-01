@@ -118,7 +118,6 @@ export function InventoryPage() {
           },
         }),
       ),
-    rowKey: (r) => r.variantId,
     page,
     onPageChange: (next) =>
       navigate({ to: '/inventory', search: { ...search, page: next > 1 ? next : undefined } }),

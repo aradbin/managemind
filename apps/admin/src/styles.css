@@ -231,3 +231,26 @@
     @apply text-primary underline;
   }
 }
+
+/* A loading placeholder (the canvas's .mm-skel): a soft bar that breathes. */
+@layer components {
+  .mm-skel {
+    display: block;
+    flex: none;
+    max-width: 100%;
+    border-radius: 6px;
+    background: color-mix(in oklch, var(--color-foreground) 8%, transparent);
+    animation: mm-pulse 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mm-skel {
+      animation: none;
+    }
+  }
+}
+
+@keyframes mm-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

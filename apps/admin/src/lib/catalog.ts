@@ -40,7 +40,9 @@ export function pick<T>(values: Translated<T> | undefined, locale: Locale): T | 
 }
 
 /** "৳১,২৫০.০০" for display, in the admin's language. */
-export const formatPrice = (amount: number, locale: Locale) => format(money(amount), locale);
+/** A price as the boards write it: "৳1,920" for whole taka, "৳1,920.50" with poisha. */
+export const formatPrice = (amount: number, locale: Locale) =>
+  format(money(amount), locale).replace(/\.(?:00|০০)(?=\D*$)/u, '');
 
 /** A price range for lists: "৳500" or "৳500 – ৳900". */
 export function formatRange(min: number | null, max: number | null, locale: Locale): string {
@@ -64,7 +66,8 @@ export function readPrice(text: string): number | null | undefined {
 
 export interface ProductFilters {
   q?: string | undefined;
-  status?: 'draft' | 'active' | 'archived' | undefined;
+  /** `any` includes archived products, as the list's All tab does. */
+  status?: 'draft' | 'active' | 'archived' | 'any' | undefined;
   categoryId?: string | undefined;
   collectionId?: string | undefined;
   brandValueId?: string | undefined;
@@ -72,9 +75,22 @@ export interface ProductFilters {
   lowStock?: boolean | undefined;
 }
 
+export type ProductSort =
+  | 'title'
+  | '-title'
+  | 'price'
+  | '-price'
+  | 'variants'
+  | '-variants'
+  | 'stock'
+  | '-stock';
+
 /** The products list, a page at a time (usePagedList). */
-export const productsList = (filters: ProductFilters) => ({
-  queryKey: ['products', filters] as const,
+export const productsList = (
+  filters: ProductFilters,
+  more: { sort?: ProductSort | undefined; counts?: boolean } = {},
+) => ({
+  queryKey: ['products', filters, more] as const,
   fetchPage: async (offset: number, limit: number) =>
     unwrap(
       await api.GET('/v1/admin/products', {
@@ -82,6 +98,8 @@ export const productsList = (filters: ProductFilters) => ({
           query: compact({
             ...filters,
             lowStock: filters.lowStock ? ('true' as const) : undefined,
+            sort: more.sort,
+            counts: more.counts ? ('true' as const) : undefined,
             offset,
             limit,
           }),

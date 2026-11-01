@@ -13,7 +13,7 @@ import { Notice } from '../components/notice';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { Dialog } from '../components/ui/dialog';
+import { Dialog, DialogFooter } from '../components/ui/dialog';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import {
@@ -28,6 +28,7 @@ import {
 } from '../lib/catalog';
 import { download, toCsv } from '../lib/download';
 import { errorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 
 type Locale = 'bn' | 'en';
 type Cells = Record<string, string>;
@@ -216,25 +217,48 @@ async function allProducts(
   return out;
 }
 
-export function ExportButton({ filters }: { filters: ProductFilters }) {
+export function ExportButton({
+  filters,
+  selectedIds = [],
+  iconOnPhone = false,
+  open: controlled,
+  onOpenChange,
+}: {
+  filters: ProductFilters;
+  /** The products picked in the list, to export only them. */
+  selectedIds?: readonly string[];
+  /** On phones the button is an icon, as the phone board draws it. */
+  iconOnPhone?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const cost = usePermission('catalog.cost');
   const stock = usePermission('inventory.read');
-  const [open, setOpen] = useState(false);
+  const [own, setOwn] = useState(false);
+  const open = controlled ?? own;
+  const setOpen = (next: boolean) => {
+    setOwn(next);
+    onOpenChange?.(next);
+  };
+  const [format, setFormat] = useState<'xlsx' | 'csv'>('xlsx');
+  const [which, setWhich] = useState<'filtered' | 'selected'>('filtered');
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string>();
   const store = useQuery({ ...storeSettingsQuery, enabled: open });
   const categories = useQuery({ ...categoriesQuery, enabled: open });
   const attributes = useQuery({ ...attributesQuery, enabled: open });
   const ready = store.data && categories.data && attributes.data;
+  const onlySelected = which === 'selected' && selectedIds.length > 0;
 
-  async function run(format: 'csv' | 'xlsx') {
+  async function run() {
     if (!store.data || !categories.data || !attributes.data) return;
     setError(undefined);
     setProgress(0);
     try {
-      const products = await allProducts(filters, setProgress);
+      const all = await allProducts(filters, setProgress);
+      const products = onlySelected ? all.filter((p) => selectedIds.includes(p.id)) : all;
       const columns = exportColumns(attributes.data, { cost, stock });
       const context = {
         defaultLocale: store.data.defaultLocale,
@@ -267,9 +291,15 @@ export function ExportButton({ filters }: { filters: ProductFilters }) {
 
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)}>
+      <Button
+        variant="secondary"
+        size={iconOnPhone ? undefined : 'default'}
+        className={iconOnPhone ? 'max-md:w-9 max-md:px-0' : undefined}
+        aria-label={t('export.button')}
+        onClick={() => setOpen(true)}
+      >
         <Download aria-hidden className="size-4" />
-        {t('export.button')}
+        <span className={iconOnPhone ? 'max-md:sr-only' : undefined}>{t('export.button')}</span>
       </Button>
       <Dialog
         open={open}
@@ -280,16 +310,60 @@ export function ExportButton({ filters }: { filters: ProductFilters }) {
         {progress !== null ? (
           <p role="status">{t('export.progress', { count: progress })}</p>
         ) : (
-          <div className="flex flex-col gap-2 md:flex-row">
-            <Button disabled={!ready} onClick={() => run('xlsx')}>
-              {t('export.xlsx')}
-            </Button>
-            <Button variant="secondary" disabled={!ready} onClick={() => run('csv')}>
-              {t('export.csv')}
-            </Button>
-          </div>
+          <>
+            <fieldset className="flex flex-col gap-3">
+              <legend className="mb-3 font-medium">{t('export.format')}</legend>
+              {(['xlsx', 'csv'] as const).map((f) => (
+                <label key={f} className="flex cursor-pointer items-center gap-3">
+                  <input
+                    type="radio"
+                    name="export-format"
+                    checked={format === f}
+                    onChange={() => setFormat(f)}
+                  />
+                  {t(f === 'xlsx' ? 'export.xlsxFile' : 'export.csv')}
+                </label>
+              ))}
+            </fieldset>
+            <fieldset className="flex flex-col gap-3">
+              <legend className="mb-3 font-medium">{t('export.which')}</legend>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="radio"
+                  name="export-which"
+                  checked={!onlySelected}
+                  onChange={() => setWhich('filtered')}
+                />
+                {t('export.matching')}
+              </label>
+              <label
+                className={cn(
+                  'flex cursor-pointer items-center gap-3',
+                  selectedIds.length === 0 && 'opacity-50',
+                )}
+              >
+                <input
+                  type="radio"
+                  name="export-which"
+                  disabled={selectedIds.length === 0}
+                  checked={onlySelected}
+                  onChange={() => setWhich('selected')}
+                />
+                {t('export.selected', { count: selectedIds.length })}
+              </label>
+            </fieldset>
+          </>
         )}
         {error && <Notice tone="error">{error}</Notice>}
+        <DialogFooter className="pt-2">
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            {t('action.cancel')}
+          </Button>
+          <Button disabled={!ready || progress !== null} onClick={run}>
+            <Download aria-hidden />
+            {t('export.button')}
+          </Button>
+        </DialogFooter>
       </Dialog>
     </>
   );

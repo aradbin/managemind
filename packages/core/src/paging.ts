@@ -14,3 +14,20 @@ export async function countWhere(
   );
   return Number(rows[0]?.n ?? 0);
 }
+
+/**
+ * How many rows match in each value of `column`, for a list's tabs: the same
+ * filters as the page, without the one on `column` itself.
+ */
+export async function countBy(
+  tx: Pick<TenantTx, 'db'>,
+  from: SQL,
+  where: readonly SQL[],
+  column: SQL,
+): Promise<Record<string, number>> {
+  const { rows } = await tx.db.execute<{ k: string | null; n: number }>(
+    sql`select ${column} as k, count(*)::int as n from ${from}
+        where ${where.length ? sql.join([...where], sql` and `) : sql`true`} group by 1`,
+  );
+  return Object.fromEntries(rows.map((r) => [String(r.k), Number(r.n)]));
+}

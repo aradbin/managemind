@@ -52,7 +52,6 @@ export function PlatformBillingPage() {
   const [creating, setCreating] = useState(false);
   const invoices = usePagedList({
     queryKey: ['platform', 'invoices', filter, search.tenant ?? null] as const,
-    size: PAGE,
     fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/platform/invoices', {

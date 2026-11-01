@@ -1197,7 +1197,7 @@ const STAFF_CANCEL_CODES = [
   'other',
 ] as const satisfies readonly CancelCode[];
 
-function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+export function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const [reason, setReason] = useState('');

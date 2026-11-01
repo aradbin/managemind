@@ -3476,13 +3476,15 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "draft" | "active" | "archived";
+                    status?: "draft" | "active" | "archived" | "any";
                     categoryId?: string[] | string;
                     collectionId?: string;
                     brandValueId?: string[] | string;
                     tag?: string;
                     attributeValueId?: string;
                     lowStock?: "true" | "false";
+                    sort?: "title" | "-title" | "price" | "-price" | "variants" | "-variants" | "stock" | "-stock";
+                    counts?: "true" | "false";
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -3503,6 +3505,12 @@ export interface paths {
                             items: components["schemas"]["ProductSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                any: number;
+                                draft: number;
+                                active: number;
+                                archived: number;
+                            };
                         };
                     };
                 };
@@ -3625,7 +3633,7 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "draft" | "active" | "archived";
+                    status?: "draft" | "active" | "archived" | "any";
                     categoryId?: string[] | string;
                     collectionId?: string;
                     brandValueId?: string[] | string;
@@ -6785,6 +6793,7 @@ export interface paths {
                     from?: string;
                     to?: string;
                     q?: string;
+                    counts?: "true" | "false";
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -6805,6 +6814,15 @@ export interface paths {
                             items: components["schemas"]["OrderSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            value: number;
+                            counts?: {
+                                all: number;
+                                pending: number;
+                                toShip: number;
+                                shipped: number;
+                                delivered: number;
+                                cancelled: number;
+                            };
                         };
                     };
                 };

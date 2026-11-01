@@ -408,6 +408,14 @@ describe('reading orders', () => {
       listOrders(tx, owner, { q: '01712340210', paymentStatus: ['paid', 'unpaid'] }),
     );
     expect(either.items.map((o) => o.id)).toEqual([placed.id]);
+    // The tabs' counts leave the stage out; the value is what the matches come to.
+    const tabs = await run((tx) =>
+      listOrders(tx, owner, { q: '01712340210', status: 'cancelled', counts: true }),
+    );
+    expect(tabs.items).toEqual([]);
+    expect(tabs.value).toBe(0);
+    expect(tabs.counts).toMatchObject({ all: 1, cancelled: 0 });
+    expect(found.value).toBe(placed.total);
     const neither = await run((tx) =>
       listOrders(tx, owner, { q: '01712340210', source: ['instagram', 'exchange'] }),
     );
