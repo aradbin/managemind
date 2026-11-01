@@ -34,7 +34,8 @@ type Reason = (typeof REASONS)[number];
 
 export function AdjustmentsPage() {
   const { t, locale } = useLocale();
-  const [reason, setReason] = useState<Reason | undefined>();
+  /** One reason or several, comma-separated. */
+  const [reason, setReason] = useState<string>();
   const [from, setFrom] = useState<string>();
   const [to, setTo] = useState<string>();
   const filters = {
@@ -160,10 +161,11 @@ export function AdjustmentsPage() {
           filters={[
             {
               key: 'reason',
+              multi: true,
               label: t('adjustments.reason'),
               value: reason,
               options: REASONS.map((r) => ({ value: r, label: reasonText(r) })),
-              onChange: (v) => setReason(v as Reason | undefined),
+              onChange: setReason,
             },
             dateRangeFilter({
               key: 'date',

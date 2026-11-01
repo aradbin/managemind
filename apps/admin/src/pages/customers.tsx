@@ -183,6 +183,7 @@ export function CustomersPage() {
           filters={[
             {
               key: 'tag',
+              multi: true,
               label: t('customers.tagFilter'),
               value: search.tag,
               options: tags.map((tag) => ({ value: tag, label: tag })),

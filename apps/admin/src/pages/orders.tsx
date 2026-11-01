@@ -173,6 +173,7 @@ export function OrdersPage() {
   const filters: FilterDef[] = [
     {
       key: 'payment',
+      multi: true,
       label: t('order.payment'),
       value: search.paymentStatus,
       options: PAYMENTS.map((s) => ({ value: s, label: t(`paymentStatus.${s}`) })),
@@ -180,6 +181,7 @@ export function OrdersPage() {
     },
     {
       key: 'source',
+      multi: true,
       label: t('order.source'),
       value: search.source,
       options: SOURCES.map((s) => ({ value: s, label: t(`source.${s}`) })),
@@ -187,6 +189,7 @@ export function OrdersPage() {
     },
     {
       key: 'zone',
+      multi: true,
       label: t('order.zone'),
       value: search.zoneId,
       options: (zones.data ?? []).map((z) => ({ value: z.id, label: pickText(z.name, locale) })),
@@ -194,6 +197,7 @@ export function OrdersPage() {
     },
     {
       key: 'flag',
+      multi: true,
       label: t('orders.flag'),
       value: search.flag,
       options: FLAGS.map((f) => ({ value: f, label: t(`orders.flag.${f}`) })),

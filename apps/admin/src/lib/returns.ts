@@ -22,7 +22,8 @@ export const RETURN_STEPS = ['requested', 'approved', 'received', 'inspected', '
 
 export type ReturnReason = ReturnSummary['reason'];
 
-export const returnsQuery = (status?: ReturnStatus, before?: string, reason?: ReturnReason) => ({
+/** `reason`: one or several, comma-separated. */
+export const returnsQuery = (status?: ReturnStatus, before?: string, reason?: string) => ({
   queryKey: ['returns', status ?? null, before ?? null, reason ?? null] as const,
   queryFn: async () =>
     unwrap(

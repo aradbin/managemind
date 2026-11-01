@@ -73,7 +73,7 @@ export function AttributesPage() {
     () =>
       (attributes.data ?? []).filter(
         (a) =>
-          (!type || a.type === type) &&
+          (!type || type.split(',').includes(a.type)) &&
           (!words || [a.key, a.name.bn, a.name.en].join(' ').toLowerCase().includes(words)),
       ),
     [attributes.data, type, words],
@@ -169,6 +169,7 @@ export function AttributesPage() {
           filters={[
             {
               key: 'type',
+              multi: true,
               label: t('attributes.type'),
               value: type,
               options: TYPES.map((x) => ({ value: x, label: t(`attributes.type.${x}`) })),

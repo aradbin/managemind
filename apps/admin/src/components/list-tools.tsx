@@ -72,9 +72,29 @@ export interface FilterOption {
 export interface FilterDef {
   key: string;
   label: string;
+  /** The picked value; with `multi`, the picked values joined by commas ("paid,unpaid"). */
   value: string | undefined;
   options: readonly FilterOption[];
   onChange: (value: string | undefined) => void;
+  /** Several values at once, matching any of them (design rule 4). */
+  multi?: boolean;
+}
+
+/** A filter's picked values, as a list. */
+export const pickedValues = (filter: FilterDef): string[] =>
+  filter.value ? (filter.multi ? filter.value.split(',').filter(Boolean) : [filter.value]) : [];
+
+/** Picks or drops one value; the filter is cleared once nothing is picked. */
+function toggleValue(filter: FilterDef, value: string) {
+  if (!filter.multi) {
+    filter.onChange(filter.value === value ? undefined : value);
+    return;
+  }
+  const now = pickedValues(filter);
+  const next = now.includes(value) ? now.filter((v) => v !== value) : [...now, value];
+  // In the options' order, so the same choice reads the same in the URL.
+  const ordered = filter.options.map((o) => o.value).filter((v) => next.includes(v));
+  filter.onChange(ordered.length ? ordered.join(',') : undefined);
 }
 
 /**
@@ -121,7 +141,8 @@ function FilterButton({ filter }: { filter: FilterDef }) {
   const wrap = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const listId = useId();
-  const picked = filter.options.find((o) => o.value === filter.value);
+  const values = pickedValues(filter);
+  const picked = filter.options.filter((o) => values.includes(o.value));
   const q = query.trim().toLowerCase();
   const options = q
     ? filter.options.filter((o) => o.label.toLowerCase().includes(q))
@@ -143,8 +164,13 @@ function FilterButton({ filter }: { filter: FilterDef }) {
     return () => document.removeEventListener('pointerdown', onDown);
   });
 
-  const choose = (value: string | undefined) => {
-    filter.onChange(value);
+  /** One choice closes the list; with several allowed, it stays open for more. */
+  const choose = (value: string) => {
+    toggleValue(filter, value);
+    if (!filter.multi) close(true);
+  };
+  const clear = () => {
+    filter.onChange(undefined);
     close(true);
   };
 
@@ -175,14 +201,18 @@ function FilterButton({ filter }: { filter: FilterDef }) {
         onClick={() => (open ? close(false) : setOpen(true))}
         className={cn(
           'inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-dashed border-input bg-background px-3 text-sm font-medium shadow-xs hover:bg-muted md:min-h-8 dark:bg-white/5',
-          picked && 'border-solid',
+          picked.length > 0 && 'border-solid',
         )}
       >
-        {picked ? (
+        {picked.length > 0 ? (
           <>
             {filter.label}
             <span aria-hidden className="h-4 w-px bg-border" />
-            <span className="rounded-md bg-muted px-1 text-xs font-normal">{picked.label}</span>
+            <span className="max-w-40 truncate rounded-md bg-muted px-1 text-xs font-normal">
+              {picked.length === 1
+                ? picked[0]?.label
+                : t('list.selectedCount', { count: picked.length })}
+            </span>
           </>
         ) : (
           <>
@@ -218,29 +248,42 @@ function FilterButton({ filter }: { filter: FilterDef }) {
                 {t('list.noOption')}
               </p>
             )}
-            {options.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                data-filter-item
-                aria-pressed={o.value === filter.value}
-                onClick={() => choose(o.value === filter.value ? undefined : o.value)}
-                className="flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-muted focus-visible:bg-muted md:min-h-8"
-              >
-                <Check
-                  aria-hidden
-                  className={cn('size-4 shrink-0', o.value !== filter.value && 'invisible')}
-                />
-                <span className="truncate">{o.label}</span>
-              </button>
-            ))}
+            {options.map((o) => {
+              const on = values.includes(o.value);
+              return (
+                <button
+                  key={o.value}
+                  type="button"
+                  data-filter-item
+                  aria-pressed={on}
+                  onClick={() => choose(o.value)}
+                  className="flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-muted focus-visible:bg-muted md:min-h-8"
+                >
+                  {filter.multi ? (
+                    // A box to tick: several can be picked.
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
+                        on && 'border-primary bg-primary text-primary-foreground',
+                      )}
+                    >
+                      {on && <Check className="size-3" />}
+                    </span>
+                  ) : (
+                    <Check aria-hidden className={cn('size-4 shrink-0', !on && 'invisible')} />
+                  )}
+                  <span className="truncate">{o.label}</span>
+                </button>
+              );
+            })}
           </div>
-          {picked && (
+          {picked.length > 0 && (
             <div className="border-t border-border p-1">
               <button
                 type="button"
                 data-filter-item
-                onClick={() => choose(undefined)}
+                onClick={clear}
                 className="flex min-h-9 w-full items-center justify-center rounded-md text-sm outline-none hover:bg-muted focus-visible:bg-muted md:min-h-8"
               >
                 {t('list.clearFilter')}
@@ -281,13 +324,13 @@ function FilterDrawer({ filters }: { filters: readonly FilterDef[] }) {
               <legend className="mb-2 text-sm font-medium">{f.label}</legend>
               <div className="flex flex-wrap gap-2">
                 {f.options.map((o) => {
-                  const on = o.value === f.value;
+                  const on = pickedValues(f).includes(o.value);
                   return (
                     <button
                       key={o.value}
                       type="button"
                       aria-pressed={on}
-                      onClick={() => f.onChange(on ? undefined : o.value)}
+                      onClick={() => toggleValue(f, o.value)}
                       className={cn(
                         'min-h-9 rounded-lg border border-input px-3 text-sm',
                         on && 'border-primary bg-primary text-primary-foreground',

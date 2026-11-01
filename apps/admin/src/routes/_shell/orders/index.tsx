@@ -1,5 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defined, searchFlag, searchOneOf, searchText, searchUuid } from '../../../lib/search';
+import {
+  defined,
+  searchFlag,
+  searchOneOf,
+  searchSomeOf,
+  searchText,
+  searchUuids,
+} from '../../../lib/search';
 import { OrdersPage } from '../../../pages/orders';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -17,7 +24,7 @@ export const Route = createFileRoute('/_shell/orders/')({
         'completed',
         'cancelled',
       ] as const),
-      paymentStatus: searchOneOf(search.paymentStatus, [
+      paymentStatus: searchSomeOf(search.paymentStatus, [
         'unpaid',
         'partially_paid',
         'paid',
@@ -31,7 +38,7 @@ export const Route = createFileRoute('/_shell/orders/')({
         'delivered',
         'failed',
       ] as const),
-      source: searchOneOf(search.source, [
+      source: searchSomeOf(search.source, [
         'website',
         'facebook',
         'messenger',
@@ -42,10 +49,10 @@ export const Route = createFileRoute('/_shell/orders/')({
         'other',
         'exchange',
       ] as const),
-      zoneId: searchUuid(search.zoneId),
+      zoneId: searchUuids(search.zoneId),
       tag: searchText(search.tag, 50),
       cancelledByShopper: searchFlag(search.cancelledByShopper),
-      flag: searchOneOf(search.flag, [
+      flag: searchSomeOf(search.flag, [
         'flagged_phone',
         'possible_duplicate',
         'unreachable',

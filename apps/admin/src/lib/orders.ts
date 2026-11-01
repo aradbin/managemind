@@ -159,13 +159,8 @@ export function dateRangeFilter({
 
 export interface OrderFilters {
   status?: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled' | undefined;
-  paymentStatus?:
-    | 'unpaid'
-    | 'partially_paid'
-    | 'paid'
-    | 'partially_refunded'
-    | 'refunded'
-    | undefined;
+  /** One payment status or several, comma-separated, as each filter below. */
+  paymentStatus?: string | undefined;
   deliveryStatus?:
     | 'not_shipped'
     | 'partially_shipped'
@@ -173,22 +168,12 @@ export interface OrderFilters {
     | 'delivered'
     | 'failed'
     | undefined;
-  source?:
-    | 'website'
-    | 'facebook'
-    | 'messenger'
-    | 'whatsapp'
-    | 'instagram'
-    | 'phone'
-    | 'walk_in'
-    | 'other'
-    | 'exchange'
-    | undefined;
+  source?: string | undefined;
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;
   /** Risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
-  flag?: 'flagged_phone' | 'possible_duplicate' | 'unreachable' | undefined;
+  flag?: string | undefined;
   from?: string | undefined;
   to?: string | undefined;
   q?: string | undefined;

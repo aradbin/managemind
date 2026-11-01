@@ -198,6 +198,7 @@ export function PurchaseOrdersPage() {
           filters={[
             {
               key: 'supplier',
+              multi: true,
               label: t('po.supplier'),
               value: supplierId,
               options: (suppliers.data ?? []).map((x) => ({ value: x.id, label: x.name })),

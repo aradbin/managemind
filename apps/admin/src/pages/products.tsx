@@ -99,6 +99,7 @@ export function ProductsPage() {
   const filters: FilterDef[] = [
     {
       key: 'category',
+      multi: true,
       label: t('catalog.category'),
       value: search.categoryId,
       options: categoryOptions(categories.data ?? [], locale).map((c) => ({
@@ -111,6 +112,7 @@ export function ProductsPage() {
       ? [
           {
             key: 'brand',
+            multi: true,
             label: pick(brand.name, locale) ?? t('attribute.brand'),
             value: search.brandValueId,
             options: brand.values.map((v) => ({ value: v.id, label: pick(v.label, locale) ?? '' })),

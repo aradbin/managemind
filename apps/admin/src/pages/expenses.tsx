@@ -173,7 +173,7 @@ function Entries({ month, top }: { month: string; top: Top }) {
     const words = q.trim().toLowerCase();
     return (list.data?.items ?? []).filter(
       (e) =>
-        (!category || e.categoryId === category) &&
+        (!category || category.split(',').includes(e.categoryId)) &&
         (!words || `${e.payee ?? ''} ${e.note ?? ''}`.toLowerCase().includes(words)),
     );
   }, [list.data, q, category]);
@@ -358,6 +358,7 @@ function Entries({ month, top }: { month: string; top: Top }) {
           filters={[
             {
               key: 'category',
+              multi: true,
               label: t('expenses.category'),
               value: category,
               options: (categories.data ?? []).map((c) => ({ value: c.id, label: c.name[locale] })),

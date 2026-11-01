@@ -14,12 +14,7 @@ import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/returns';
 import { errorMessage } from '../lib/errors';
 import { dateOnly } from '../lib/orders';
-import {
-  type ReturnReason,
-  type ReturnStatus,
-  type ReturnSummary,
-  returnsQuery,
-} from '../lib/returns';
+import { type ReturnStatus, type ReturnSummary, returnsQuery } from '../lib/returns';
 
 /** A return's status as a status badge: waiting, moving, done or refused. */
 export function ReturnStatusChip({ status }: { status: string }) {
@@ -47,7 +42,8 @@ export function ReturnsPage() {
   const { t, locale } = useLocale();
   const navigate = useNavigate();
   const [status, setStatus] = useState<ReturnStatus | undefined>(undefined);
-  const [reason, setReason] = useState<ReturnReason | undefined>(undefined);
+  /** One reason or several, comma-separated. */
+  const [reason, setReason] = useState<string | undefined>(undefined);
   const list = useInfiniteQuery({
     queryKey: ['returns', status ?? null, reason ?? null] as const,
     initialPageParam: undefined as string | undefined,
@@ -118,13 +114,14 @@ export function ReturnsPage() {
           filters={[
             {
               key: 'reason',
+              multi: true,
               label: t('returns.reasonFilter'),
               value: reason,
               options: RETURN_REASONS.map((r) => ({
                 value: r,
                 label: t(`return.reason.${r}` as AdminKey),
               })),
-              onChange: (v) => setReason(v as ReturnReason | undefined),
+              onChange: setReason,
             },
           ]}
           onReset={reason ? () => setReason(undefined) : undefined}
