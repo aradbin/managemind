@@ -112,6 +112,28 @@ describe('customers', () => {
     expect((await run((tx) => listCustomers(tx, owner, { q: 'karim' }))).items).toEqual([]);
   });
 
+  it('come in numbered pages with a total, skipping the cursor', async () => {
+    const owner = actorAs('owner');
+    for (let i = 0; i < 5; i++) {
+      await run((tx) =>
+        createCustomer(tx, owner, { phone: `0171100030${i}`, name: `Paged ${i}`, tags: ['paged'] }),
+      );
+    }
+    const page = (offset: number) =>
+      run((tx) => listCustomers(tx, owner, { tag: 'paged', limit: 2, offset }));
+    const [one, two, three] = [await page(0), await page(2), await page(4)];
+    expect([one.total, two.total, three.total]).toEqual([5, 5, 5]);
+    expect([one.items.length, two.items.length, three.items.length]).toEqual([2, 2, 1]);
+    const ids = [...one.items, ...two.items, ...three.items].map((x) => x.id);
+    expect(new Set(ids).size).toBe(5);
+    expect(three.nextCursor).toBeNull();
+    // An offset ignores a cursor sent with it.
+    const withCursor = await run((tx) =>
+      listCustomers(tx, owner, { tag: 'paged', limit: 2, offset: 0, after: ids[3] }),
+    );
+    expect(withCursor.items.map((x) => x.id)).toEqual(ids.slice(0, 2));
+  });
+
   it('are hidden from viewers', async () => {
     await expect(run((tx) => listCustomers(tx, actorAs('viewer')))).rejects.toMatchObject({
       code: 'forbidden',

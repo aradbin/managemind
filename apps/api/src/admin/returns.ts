@@ -144,7 +144,14 @@ export const RETURN_ROUTES = {
     path: '/returns',
     summary: 'Returns, newest first (orders.read)',
     request: { query: returnListQuery },
-    responses: json(z.array(ReturnSummary), 'Returns'),
+    responses: json(
+      z.object({
+        items: z.array(ReturnSummary),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
+      'Returns',
+    ),
   }),
   createReturn: r({
     method: 'post',

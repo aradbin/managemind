@@ -51,25 +51,48 @@ const fromTenants = (tx: PlatformTx) =>
     .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
     .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id));
 
+export interface TenantQuery {
+  q?: string;
+  status?: TenantSummary['status'];
+  after?: string;
+  /** Rows to skip, for numbered pages; `after` is then ignored. */
+  offset?: number;
+  limit?: number;
+}
+
+const tenantFilters = (query: TenantQuery, withCursor: boolean) => {
+  const q = query.q?.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
+  return and(
+    q ? or(ilike(t.slug, `%${q}%`), ilike(t.name, `%${q}%`)) : undefined,
+    query.status ? eq(t.status, query.status) : undefined,
+    withCursor && query.after && query.offset === undefined ? gt(t.slug, query.after) : undefined,
+  );
+};
+
 /** Stores by slug, filtered by a search on slug or name and by status. */
 export async function listTenants(
   tx: PlatformTx,
   actor: Actor,
-  query: { q?: string; status?: TenantSummary['status']; after?: string; limit?: number } = {},
+  query: TenantQuery = {},
 ): Promise<TenantSummary[]> {
   requirePlatformRole(actor, 'support');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 100);
-  const q = query.q?.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
   return fromTenants(tx)
-    .where(
-      and(
-        q ? or(ilike(t.slug, `%${q}%`), ilike(t.name, `%${q}%`)) : undefined,
-        query.status ? eq(t.status, query.status) : undefined,
-        query.after ? gt(t.slug, query.after) : undefined,
-      ),
-    )
+    .where(tenantFilters(query, true))
     .orderBy(asc(t.slug))
-    .limit(limit);
+    .limit(limit)
+    .offset(query.offset ?? 0);
+}
+
+/** How many stores match the search and status, for numbered pages. */
+export async function countTenants(
+  tx: PlatformTx,
+  actor: Actor,
+  query: TenantQuery = {},
+): Promise<number> {
+  requirePlatformRole(actor, 'support');
+  const [row] = await tx.db.select({ n: count() }).from(t).where(tenantFilters(query, false));
+  return row?.n ?? 0;
 }
 
 export interface TenantDetail extends TenantSummary {

@@ -691,14 +691,20 @@ export async function listReturns(
   tx: TenantTx,
   actor: Actor,
   query: unknown,
-): Promise<ReturnSummary[]> {
+): Promise<{ items: ReturnSummary[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'orders.read');
   const q = parseInput(returnListQuery, query);
   const where: SQL[] = [];
   if (q.status) where.push(eq(r.status, q.status));
   if (q.reason?.length) where.push(inArray(r.reason, q.reason));
   if (q.orderId) where.push(eq(r.orderId, q.orderId));
-  if (q.before) where.push(lt(r.createdAt, new Date(q.before)));
+  // How many match, for numbered pages: the filters without the cursor.
+  const [counted] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(r)
+    .where(where.length ? and(...where) : undefined);
+  const total = Number(counted?.n ?? 0);
+  if (q.before && q.offset === undefined) where.push(lt(r.createdAt, new Date(q.before)));
   const o = schema.orders;
   const rows = await tx.db
     .select({
@@ -717,9 +723,10 @@ export async function listReturns(
     .innerJoin(o, eq(o.id, r.orderId))
     .where(where.length ? and(...where) : undefined)
     .orderBy(desc(r.createdAt))
-    .limit(q.limit);
+    .limit(q.limit + 1)
+    .offset(q.offset ?? 0);
   const { settings } = await orderSettings(tx);
-  return rows.map((x) => ({
+  const items = rows.slice(0, q.limit).map((x) => ({
     id: x.id,
     number: x.number,
     displayNumber: formatReturnNumber(x.number),
@@ -732,6 +739,8 @@ export async function listReturns(
     units: Number(x.units),
     createdAt: x.createdAt.toISOString(),
   }));
+  const last = rows.length > q.limit ? items[items.length - 1] : undefined;
+  return { items, nextCursor: last?.createdAt ?? null, total };
 }
 
 export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise<ReturnDetail> {

@@ -59,7 +59,7 @@ import {
   productPatch,
   variantPatch,
 } from '@managemind/shared/catalog';
-import { oneOrMany } from '@managemind/shared/query';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import type { Context } from 'hono';
 import { inStore, type StaffEnv } from './context';
 
@@ -79,6 +79,9 @@ const body = <T extends z.ZodType>(schema: T) => ({
 });
 const page = <T extends z.ZodType>(item: T) =>
   z.object({ items: z.array(item), nextCursor: z.string().nullable() });
+/** A list with numbered pages: how many match, beside the page. */
+const counted = <T extends z.ZodType>(item: T) =>
+  z.object({ items: z.array(item), nextCursor: z.string().nullable(), total: z.number().int() });
 const limit = z.coerce.number().int().min(1).max(100).optional();
 const flag = z.enum(['true', 'false']).optional();
 
@@ -315,10 +318,11 @@ export const CATALOG_ROUTES = {
         attributeValueId: z.uuid().optional(),
         lowStock: flag,
         after: z.uuid().optional(),
+        offset: pageOffset,
         limit,
       }),
     },
-    responses: json(page(ProductSummary), 'Products'),
+    responses: json(counted(ProductSummary), 'Products'),
   }),
   exportProducts: r({
     method: 'get',
@@ -585,10 +589,11 @@ export const CATALOG_ROUTES = {
         locationId: z.uuid().optional(),
         q: z.string().max(100).optional(),
         after: z.uuid().optional(),
+        offset: pageOffset,
         limit,
       }),
     },
-    responses: json(page(InventoryRow), 'Inventory'),
+    responses: json(counted(InventoryRow), 'Inventory'),
   }),
   adjustInventory: r({
     method: 'post',

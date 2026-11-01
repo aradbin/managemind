@@ -20,7 +20,7 @@ import {
   stockCountInput,
 } from '@managemind/shared/back-office';
 import { ADJUSTMENT_REASONS } from '@managemind/shared/catalog';
-import { oneOrMany } from '@managemind/shared/query';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import { queueStockCountApply } from '../stock-counts';
 import { inStore, type StaffEnv } from './context';
 
@@ -73,6 +73,7 @@ const Adjustments = z
   .object({
     items: z.array(Adjustment),
     nextCursor: z.string().nullable(),
+    total: z.number().int(),
     totals: z.object({
       count: z.number().int(),
       units: z.number().int(),
@@ -147,6 +148,7 @@ export const STOCK_ROUTES = {
         from: day.optional(),
         to: day.optional(),
         ...cursor,
+        offset: pageOffset,
       }),
     },
     responses: json(Adjustments, 'Adjustments'),
@@ -155,9 +157,19 @@ export const STOCK_ROUTES = {
     method: 'get',
     path: '/stock-counts',
     summary: 'Stock counts, newest first (inventory.read)',
-    request: { query: z.object({ status: z.enum(STOCK_COUNT_STATUSES).optional(), ...cursor }) },
+    request: {
+      query: z.object({
+        status: z.enum(STOCK_COUNT_STATUSES).optional(),
+        ...cursor,
+        offset: pageOffset,
+      }),
+    },
     responses: json(
-      z.object({ items: z.array(StockCountSummary), nextCursor: z.string().nullable() }),
+      z.object({
+        items: z.array(StockCountSummary),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Counts',
     ),
   }),

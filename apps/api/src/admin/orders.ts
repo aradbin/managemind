@@ -98,7 +98,7 @@ import {
   shipmentReturnInput,
   signOrderToken,
 } from '@managemind/shared/orders';
-import { oneOrMany } from '@managemind/shared/query';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import type { Context } from 'hono';
 import { credentialsKeyring } from '../notifications';
 import { gatewayFor } from '../payments';
@@ -747,6 +747,7 @@ const customerQuery = z.object({
   q: z.string().trim().max(100).optional(),
   tag: oneOrMany(z.string().max(50)),
   after: z.uuid().optional(),
+  offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 const AddressParams = z.object({ id: z.uuid(), addressId: z.uuid() });
@@ -758,7 +759,11 @@ export const ORDER_ROUTES = {
     summary: 'Orders, newest first, with filters and search (orders.read)',
     request: { query: orderListQuery },
     responses: json(
-      z.object({ items: z.array(OrderSummary), nextCursor: z.string().nullable() }),
+      z.object({
+        items: z.array(OrderSummary),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Orders',
     ),
   }),
@@ -877,7 +882,11 @@ export const ORDER_ROUTES = {
       'Checkouts shoppers left after typing a phone, newest first (orders.read and customers.read)',
     request: { query: incompleteListQuery },
     responses: json(
-      z.object({ items: z.array(IncompleteSummary), nextCursor: z.string().nullable() }),
+      z.object({
+        items: z.array(IncompleteSummary),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Incomplete orders',
     ),
   }),
@@ -1041,7 +1050,11 @@ export const ORDER_ROUTES = {
     summary: 'Customers, searched by phone or name, filtered by tag (customers.read)',
     request: { query: customerQuery },
     responses: json(
-      z.object({ items: z.array(Customer), nextCursor: z.string().nullable() }),
+      z.object({
+        items: z.array(Customer),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Customers',
     ),
   }),

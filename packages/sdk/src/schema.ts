@@ -3484,6 +3484,7 @@ export interface paths {
                     attributeValueId?: string;
                     lowStock?: "true" | "false";
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -3501,6 +3502,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["ProductSummary"][];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -5122,6 +5124,7 @@ export interface paths {
                     locationId?: string;
                     q?: string;
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -5139,6 +5142,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["InventoryRow"][];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -5170,6 +5174,7 @@ export interface paths {
                     to?: string;
                     before?: string;
                     limit?: number;
+                    offset?: number | null;
                 };
                 header?: never;
                 path?: never;
@@ -6781,6 +6786,7 @@ export interface paths {
                     to?: string;
                     q?: string;
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -6798,6 +6804,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["OrderSummary"][];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -7368,6 +7375,7 @@ export interface paths {
                 query?: {
                     tab?: "open" | "converted" | "recovered" | "dismissed";
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -7385,6 +7393,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["IncompleteOrderSummary"][];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -8323,6 +8332,7 @@ export interface paths {
                     q?: string;
                     tag?: string[] | string;
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -8340,6 +8350,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["Customer"][];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -9092,6 +9103,7 @@ export interface paths {
                     reason?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[] | string;
                     orderId?: string;
                     before?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -9106,7 +9118,11 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ReturnSummary"][];
+                        "application/json": {
+                            items: components["schemas"]["ReturnSummary"][];
+                            nextCursor: string | null;
+                            total: number;
+                        };
                     };
                 };
             };
@@ -11794,6 +11810,7 @@ export interface paths {
                     supplierId?: string[] | string;
                     before?: string;
                     limit?: number;
+                    offset?: number | null;
                 };
                 header?: never;
                 path?: never;
@@ -11807,7 +11824,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["PurchaseOrderPage"];
+                        "application/json": components["schemas"]["PurchaseOrderPage"] & {
+                            total: number;
+                        };
                     };
                 };
             };
@@ -12459,6 +12478,7 @@ export interface paths {
                     status?: "counting" | "review" | "applying" | "applied" | "cancelled";
                     before?: string;
                     limit?: number;
+                    offset?: number | null;
                 };
                 header?: never;
                 path?: never;
@@ -12491,6 +12511,7 @@ export interface paths {
                                 appliedAt: string | null;
                             }[];
                             nextCursor: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -14262,6 +14283,7 @@ export interface paths {
                     q?: string;
                     status?: "active" | "suspended" | "closed" | "purged";
                     after?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -14279,6 +14301,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["TenantSummary"][];
                             next: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -15797,6 +15820,7 @@ export interface paths {
                     tenantId?: string;
                     due?: "overdue" | "week";
                     before?: string;
+                    offset?: number | null;
                     limit?: number;
                 };
                 header?: never;
@@ -15814,6 +15838,7 @@ export interface paths {
                         "application/json": {
                             items: components["schemas"]["PlatformInvoiceSummary"][];
                             next: string | null;
+                            total: number;
                         };
                     };
                 };
@@ -20022,6 +20047,7 @@ export interface components {
                 value?: number | null;
             }[];
             nextCursor: string | null;
+            total: number;
             totals: {
                 count: number;
                 units: number;

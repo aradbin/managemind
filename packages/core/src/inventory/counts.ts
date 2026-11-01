@@ -226,15 +226,24 @@ export async function listStockCounts(
   query: {
     status?: StockCountStatus | undefined;
     before?: string | undefined;
+    /** Rows to skip, for numbered pages; the cursor is then ignored. */
+    offset?: number | undefined;
     limit?: number | undefined;
   } = {},
-): Promise<{ items: StockCountSummary[]; nextCursor: string | null }> {
+): Promise<{ items: StockCountSummary[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'inventory.read');
   await requireBackOffice(tx);
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
+  const matching = query.status ? [eq(sc.status, query.status)] : [];
+  // How many match, for numbered pages.
+  const [counted] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(sc)
+    .where(matching.length ? and(...matching) : undefined);
+  const total = Number(counted?.n ?? 0);
   const filters = [
-    query.status ? eq(sc.status, query.status) : undefined,
-    query.before ? lt(sc.id, query.before) : undefined,
+    ...matching,
+    query.before && query.offset === undefined ? lt(sc.id, query.before) : undefined,
   ].filter((f) => f !== undefined);
   const rows = await tx.db
     .select({
@@ -244,7 +253,8 @@ export async function listStockCounts(
     .from(sc)
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(sc.id))
-    .limit(limit + 1);
+    .limit(limit + 1)
+    .offset(query.offset ?? 0);
   const items = rows.slice(0, limit).map(({ row, counted }) => ({
     id: row.id,
     number: row.number,
@@ -257,7 +267,11 @@ export async function listStockCounts(
     createdAt: row.createdAt.toISOString(),
     appliedAt: iso(row.appliedAt),
   }));
-  return { items, nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null };
+  return {
+    items,
+    nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+    total,
+  };
 }
 
 /** The live, tracked variants a scope covers, at most 2,000 (§3.5). */

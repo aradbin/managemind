@@ -40,6 +40,8 @@ export interface AdjustmentQuery {
   from?: string | undefined;
   to?: string | undefined;
   before?: string | undefined;
+  /** Rows to skip, for numbered pages; the cursor is then ignored. */
+  offset?: number | undefined;
   limit?: number | undefined;
 }
 
@@ -75,6 +77,8 @@ export async function listAdjustments(
 ): Promise<{
   items: AdjustmentRow[];
   nextCursor: string | null;
+  /** How many match, for numbered pages (the same as totals.count). */
+  total: number;
   totals: { count: number; units: number; value?: number; unvalued: number };
 }> {
   authorize(actor, 'inventory.read');
@@ -98,8 +102,8 @@ export async function listAdjustments(
     select m.id, m.variant_id, m.location_id, m.quantity, m.reason, m.note, m.reference_type,
            m.reference_id, m.actor_type, m.actor_id, m.created_at, m.unit_cost
       from store.stock_movements m
-     where ${where} ${q.before ? sql`and m.id < ${q.before}` : sql``}
-     order by m.id desc limit ${limit + 1}`);
+     where ${where} ${q.before && q.offset === undefined ? sql`and m.id < ${q.before}` : sql``}
+     order by m.id desc limit ${limit + 1} offset ${q.offset ?? 0}`);
   const { rows: sums } = await tx.db.execute<{
     count: number;
     units: number;
@@ -142,6 +146,7 @@ export async function listAdjustments(
   return {
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+    total: s?.count ?? 0,
     totals: {
       count: s?.count ?? 0,
       units: s?.units ?? 0,

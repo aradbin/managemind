@@ -7,7 +7,7 @@ import { CATALOG_LIMITS } from '../catalog/limits';
 import { cleanString, locale } from '../catalog/schemas';
 import { cleanText, normalizeTag } from '../catalog/text';
 import { placeNames } from '../geo/index';
-import { oneOrMany } from '../query';
+import { oneOrMany, pageOffset } from '../query';
 import { phoneNumber } from '../tenant-settings';
 import {
   MANUAL_ORDER_SOURCES,
@@ -191,6 +191,7 @@ export const INCOMPLETE_TABS = ['open', 'converted', 'recovered', 'dismissed'] a
 export const incompleteListQuery = z.object({
   tab: z.enum(INCOMPLETE_TABS).default('open'),
   after: z.string().max(100).optional(),
+  offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 export type IncompleteListQuery = z.infer<typeof incompleteListQuery>;
@@ -423,6 +424,7 @@ export const orderListQuery = z.object({
   to: z.iso.date().optional(),
   q: z.string().trim().max(100).optional(),
   after: z.string().max(100).optional(),
+  offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 export type OrderListQuery = z.infer<typeof orderListQuery>;
@@ -497,6 +499,7 @@ export const returnListQuery = z
     orderId: z.uuid().optional(),
     /** The createdAt of the last row seen, for the next page. */
     before: z.iso.datetime().optional(),
+    offset: pageOffset,
     limit: z.coerce.number().int().min(1).max(100).default(50),
   })
   .strict();

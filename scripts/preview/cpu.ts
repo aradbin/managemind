@@ -359,7 +359,9 @@ async function returnOnce(order: { id: string; number: string; phone: string }) 
     }),
     'request return',
   );
-  const [ret] = await json<{ id: string }[]>(
+  const {
+    items: [ret],
+  } = await json<{ items: { id: string }[] }>(
     await call('GET', `/v1/admin/returns?orderId=${order.id}`),
     'returns',
   );

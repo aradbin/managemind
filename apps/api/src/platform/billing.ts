@@ -4,6 +4,7 @@
 // for super admins (§4).
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
+  countInvoices,
   createManualInvoice,
   getInvoice,
   getIssuer,
@@ -19,6 +20,7 @@ import {
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import { BILLING_PAYMENT_METHODS, dhakaDate, INVOICE_STATUSES } from '@managemind/shared/billing';
+import { pageOffset } from '@managemind/shared/query';
 import { eq } from 'drizzle-orm';
 import { relayTo, type StaffEnv } from '../admin/context';
 
@@ -104,11 +106,16 @@ export const PLATFORM_BILLING_ROUTES = {
         /** overdue: issued and past due; week: issued and due within 7 days. */
         due: z.enum(['overdue', 'week']).optional(),
         before: z.iso.datetime().optional(),
+        offset: pageOffset,
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
     },
     responses: json(
-      z.object({ items: z.array(InvoiceSummary), next: z.string().nullable() }),
+      z.object({
+        items: z.array(InvoiceSummary),
+        next: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Invoices',
     ),
   }),
@@ -196,27 +203,27 @@ export function registerPlatformBilling(platform: OpenAPIHono<StaffEnv>): void {
   const today = () => dhakaDate(new Date());
 
   platform.openapi(R.invoices, async (c) => {
-    const { status, tenantId, due, before, limit = 50 } = c.req.valid('query');
+    const { status, tenantId, due, before, offset, limit = 50 } = c.req.valid('query');
     if (!c.var.staff.actor.platformRole) throw new AppError('forbidden');
-    const items = await withPlatform(c.var.staff.client, (tx) =>
-      listInvoices(
-        tx,
-        c.var.staff.actor,
-        {
-          limit,
-          ...(status ? { status } : {}),
-          ...(tenantId ? { tenantId } : {}),
-          ...(due === 'overdue' ? { overdue: true } : {}),
-          ...(due === 'week' ? { dueThisWeek: true } : {}),
-          ...(before ? { before } : {}),
-        },
-        today(),
-      ),
-    );
+    const filter = {
+      limit,
+      ...(status ? { status } : {}),
+      ...(tenantId ? { tenantId } : {}),
+      ...(due === 'overdue' ? { overdue: true } : {}),
+      ...(due === 'week' ? { dueThisWeek: true } : {}),
+      ...(before ? { before } : {}),
+      ...(offset !== undefined ? { offset } : {}),
+    };
+    const day = today();
+    const { items, total } = await withPlatform(c.var.staff.client, async (tx) => ({
+      items: await listInvoices(tx, c.var.staff.actor, filter, day),
+      total: await countInvoices(tx, c.var.staff.actor, filter, day),
+    }));
     return c.json(
       {
         items: items.map((x) => ({ ...summaryOut(x), storeName: x.storeName })),
         next: items.length === limit ? (items.at(-1)?.createdAt.toISOString() ?? null) : null,
+        total,
       },
       200,
     );

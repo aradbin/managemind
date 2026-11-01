@@ -25,6 +25,7 @@ import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
+import { countWhere } from '../paging';
 import { recordCostCorrections } from '../purchasing/costs';
 import type { TenantTx } from '../tenant';
 import { replaceProductAttributes, replaceProductTags } from './attributes';
@@ -237,6 +238,8 @@ export interface ProductListQuery {
   lowStock?: boolean | undefined;
   /** The last id of the previous page. */
   after?: string | undefined;
+  /** Rows to skip, for numbered pages; the cursor is then ignored. */
+  offset?: number | undefined;
   limit?: number | undefined;
 }
 
@@ -265,12 +268,11 @@ export async function listProducts(
   tx: TenantTx,
   actor: Actor,
   query: ProductListQuery = {},
-): Promise<{ items: ProductSummary[]; nextCursor: string | null }> {
+): Promise<{ items: ProductSummary[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'catalog.read');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 100);
   const where: SQL[] = [];
   where.push(query.status ? sql`p.status = ${query.status}` : sql`p.status <> 'archived'`);
-  if (query.after) where.push(sql`p.id < ${query.after}`);
   if (query.q?.trim()) {
     const text = query.q.trim().normalize('NFC');
     const like = `%${likeEscape(text)}%`;
@@ -304,6 +306,9 @@ export async function listProducts(
     );
   }
   if (query.lowStock) where.push(sql`${LOW_STOCK} `);
+  // How many match, for numbered pages: the filters without the cursor.
+  const total = await countWhere(tx, sql`store.products p`, where);
+  if (query.after && query.offset === undefined) where.push(sql`p.id < ${query.after}`);
 
   const { rows } = await tx.db.execute<ProductSummary>(sql`
     select p.id, p.status,
@@ -328,7 +333,7 @@ export async function listProducts(
         from store.variants sv where sv.product_id = p.id and sv.archived_at is null) agg on true
     where ${sql.join(where, sql` and `)}
     order by p.id desc
-    limit ${limit + 1}`);
+    limit ${limit + 1} offset ${query.offset ?? 0}`);
   const stock = actor.permissions.has('inventory.read');
   const items = rows.slice(0, limit).map((row) => {
     const { available, lowStock, ...rest } = row;
@@ -344,6 +349,7 @@ export async function listProducts(
   return {
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+    total,
   };
 }
 

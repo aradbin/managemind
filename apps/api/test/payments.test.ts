@@ -547,8 +547,11 @@ describe('returns and refunds through the API', () => {
 
     const staff = await staffOf(s);
     const list: Json = await (await staff.get('/api/admin/returns')).json();
-    expect(list).toMatchObject([{ displayNumber: 'R1001', status: 'requested', units: 1 }]);
-    const id = list[0].id as string;
+    expect(list).toMatchObject({
+      items: [{ displayNumber: 'R1001', status: 'requested', units: 1 }],
+      total: 1,
+    });
+    const id = list.items[0].id as string;
     const detail: Json = await (await staff.get(`/api/admin/returns/${id}`)).json();
     expect(detail.photos).toHaveLength(1);
     const photo = await staff.get(`/api/admin/returns/${id}/photos/${detail.photos[0].id}`);

@@ -28,3 +28,9 @@ export function oneOrMany<T extends z.ZodType<string, string>>(item: T) {
 /** A filter's one value or several, as a list (empty when unset). */
 export const asList = <T extends string>(value: T | readonly T[] | undefined): T[] =>
   value === undefined ? [] : typeof value === 'string' ? [value] : [...value];
+
+/**
+ * Where a numbered page starts: the rows to skip. With it, a list ignores
+ * its cursor, so a page can be reached directly (ADR 0033).
+ */
+export const pageOffset = z.coerce.number().int().min(0).max(100_000).optional();

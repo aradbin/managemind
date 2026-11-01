@@ -17,6 +17,7 @@ import { type Actor, authorize } from '../access';
 import { storeEntitlements } from '../billing/entitlements';
 import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
+import { countWhere } from '../paging';
 import { orderSettings } from '../pricing/quote';
 import { incompleteCounts } from '../recovery/index';
 import { monthToDateProfit, orderProfits } from '../reports/back-office';
@@ -87,7 +88,7 @@ export async function listOrders(
   tx: TenantTx,
   actor: Actor,
   query: OrderListQuery = {},
-): Promise<{ items: OrderSummary[]; nextCursor: string | null }> {
+): Promise<{ items: OrderSummary[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'orders.read');
   const personal = actor.permissions.has('customers.read');
   const { checkout, settings } = await orderSettings(tx);
@@ -122,7 +123,10 @@ export async function listOrders(
     }
     where.push(parts.length ? sql`(${sql.join(parts, sql` or `)})` : sql`false`);
   }
-  const cursor = query.after ? decodeCursor(query.after) : null;
+  // How many match, for numbered pages: the filters without the cursor.
+  const total = await countWhere(tx, sql`store.orders o`, where);
+  const offset = query.offset;
+  const cursor = offset === undefined && query.after ? decodeCursor(query.after) : null;
   if (cursor)
     where.push(sql`(o.placed_at, o.id) < (${cursor.placedAt}::timestamptz, ${cursor.id}::uuid)`);
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
@@ -130,7 +134,7 @@ export async function listOrders(
            o.phone, o.address->'names'->'area' as area, o.zone_name, o.total, o.tags, o.flags, o.cancelled_by, o.placed_at,
            (select coalesce(sum(quantity), 0)::int from store.order_lines l where l.order_id = o.id) as item_count
       from store.orders o where ${sql.join(where, sql` and `)}
-     order by o.placed_at desc, o.id desc limit ${limit + 1}`);
+     order by o.placed_at desc, o.id desc limit ${limit + 1} offset ${offset ?? 0}`);
   const page = rows.slice(0, limit);
   // Every phone on the page in one query.
   const risks = await phoneRisks(
@@ -172,7 +176,7 @@ export async function listOrders(
     }
   }
   const last = rows.length > limit ? items[items.length - 1] : undefined;
-  return { items, nextCursor: last ? encodeCursor(last.placedAt, last.id) : null };
+  return { items, nextCursor: last ? encodeCursor(last.placedAt, last.id) : null, total };
 }
 
 export interface OrderLineView {
