@@ -79,7 +79,20 @@ The build comes in steps. This first step changes what every page shares, so eve
   - checkboxes and radios are 16 px;
   - `SwitchField` and `Switch` are drawn as switches; `SwitchField` stays a checkbox to assistive tech, so its forms and the E2E keep working;
   - the বাংলা | English tabs are a segmented control.
-- Not built:
-  - **Searchable selects** for 8 or more options (design rule 3). The admin keeps native selects: 31 E2E steps choose with them, and a phone's own picker is easier to use. A searchable select is worth it where people type names, such as the place picker and the category and supplier choices; that is a decision for the owner.
-  - **Some board details the API doesn't support:** counts beside each filter choice, page numbers instead of "Load more", a filter that picks several values at once, and comparison with last month on expenses.
+- Searchable selects (`components/ui/combobox.tsx`, on Radix Popover) replace native selects where people pick names from long lists:
+  - places, categories, suppliers and expense categories;
+  - a product's choice specifications and "Add a specification";
+  - collection rules and the theme editor's link target.
+
+  Typing matches either language's name. Short fixed lists stay native selects, which phones show with their own picker. The E2E picks through a `choose()` helper.
+- Filters pick several values (design rule 4). The list endpoints read a comma-separated filter as "any of these" (`oneOrMany` in `@managemind/shared/query`), for:
+  - orders' payment, source, zone and flag;
+  - products' category and brand;
+  - customers' tag, returns' reason, purchase orders' supplier and adjustments' reason.
+
+  One value still works as before.
+- Not built, because the API doesn't give what the boards draw:
+  - a count beside each filter choice;
+  - page numbers instead of "Load more";
+  - expenses compared with last month.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.
