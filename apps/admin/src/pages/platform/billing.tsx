@@ -3,13 +3,7 @@
 // one, and our own invoice details, which every invoice carries.
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { paths } from '@managemind/sdk';
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -28,6 +22,7 @@ import '../../i18n/billing';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { formatPrice, readPrice } from '../../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
+import { usePagedList } from '../../lib/paged';
 import { cn } from '../../lib/utils';
 
 export const FILTERS = ['all', 'draft', 'overdue', 'week', 'paid', 'void'] as const;
@@ -55,23 +50,22 @@ export function PlatformBillingPage() {
   const { data: me } = useSuspenseQuery(meQuery);
   const superAdmin = me.user.platformRole === 'super_admin';
   const [creating, setCreating] = useState(false);
-  const invoices = useInfiniteQuery({
+  const invoices = usePagedList({
     queryKey: ['platform', 'invoices', filter, search.tenant ?? null] as const,
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ pageParam }) =>
+    size: PAGE,
+    fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/platform/invoices', {
           params: {
             query: {
               ...filterQuery(filter),
               ...(search.tenant ? { tenantId: search.tenant } : {}),
-              ...(pageParam ? { before: pageParam } : {}),
-              limit: PAGE,
+              offset,
+              limit,
             },
           },
         }),
       ),
-    getNextPageParam: (last) => last.next ?? undefined,
   });
   const tenant = useQuery({
     queryKey: ['platform', 'tenant', search.tenant],
@@ -88,7 +82,7 @@ export function PlatformBillingPage() {
     queryFn: async () => unwrap(await api.GET('/v1/platform/billing/issuer')),
   });
   const navigate = useNavigate();
-  const items = invoices.data?.pages.flatMap((p) => p.items) ?? [];
+  const items = invoices.items;
   return (
     <div className="flex flex-col gap-4">
       <PageHeader className="mb-0" title={t('pbilling.title')} />
@@ -137,15 +131,13 @@ export function PlatformBillingPage() {
       )}
       <DataList
         label={t('pbilling.title')}
-        items={invoices.data ? items : undefined}
+        items={items}
         rowKey={(i) => i.id}
         isPending={invoices.isPending}
         error={invoices.isError ? errorMessage(invoices.error, t) : undefined}
         onRetry={() => invoices.refetch()}
         empty={t('pbilling.none')}
-        hasMore={invoices.hasNextPage}
-        loadingMore={invoices.isFetchingNextPage}
-        onLoadMore={() => invoices.fetchNextPage()}
+        pager={invoices.pager}
         onOpen={(i) => navigate({ to: '/platform/billing/$id', params: { id: i.id } })}
         columns={[
           {

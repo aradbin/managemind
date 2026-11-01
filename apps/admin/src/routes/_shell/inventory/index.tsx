@@ -1,9 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defined, searchFlag, searchText } from '../../../lib/search';
+import { defined, searchFlag, searchPage, searchText } from '../../../lib/search';
 import { InventoryPage } from '../../../pages/inventory';
 
 export const Route = createFileRoute('/_shell/inventory/')({
   validateSearch: (search: Record<string, unknown>) =>
-    defined({ q: searchText(search.q, 100), lowStock: searchFlag(search.lowStock) }),
+    defined({
+      q: searchText(search.q, 100),
+      lowStock: searchFlag(search.lowStock),
+      page: searchPage(search.page),
+    }),
   component: InventoryPage,
 });

@@ -3,7 +3,7 @@
 // delay. Staff call, note it, dismiss it, or create the order in one click:
 // the manual order screen starts from the record, which becomes converted.
 import { formatPhone } from '@managemind/shared/phone';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { Phone, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
@@ -25,12 +25,13 @@ import {
   dateTime,
   type IncompleteSummary,
   type IncompleteTab,
+  incompleteList,
   incompleteOrderQuery,
-  incompleteQuery,
   lineLabel,
   orderErrorMessage,
   pickText,
 } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import { cn } from '../lib/utils';
 
 const TABS = ['open', 'converted', 'recovered', 'dismissed'] as const satisfies IncompleteTab[];
@@ -59,8 +60,8 @@ export function IncompleteOrdersPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: IncompleteTab };
   const tab = search.tab ?? 'open';
-  const list = useInfiniteQuery(incompleteQuery(tab));
-  const items = list.data?.pages.flatMap((p) => p.items) ?? [];
+  const list = usePagedList(incompleteList(tab));
+  const items = list.items;
   const open = (i: IncompleteSummary) =>
     navigate({ to: '/orders/incomplete/$id', params: { id: i.id } });
   const what = (i: IncompleteSummary) =>
@@ -116,16 +117,14 @@ export function IncompleteOrdersPage() {
       />
       <DataList
         label={t('incomplete.title')}
-        items={list.data ? items : undefined}
+        items={items}
         rowKey={(i) => i.id}
         columns={columns}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
         empty={t(tab === 'open' ? 'incomplete.empty' : 'incomplete.emptyOther')}
-        hasMore={list.hasNextPage}
-        loadingMore={list.isFetchingNextPage}
-        onLoadMore={() => list.fetchNextPage()}
+        pager={list.pager}
         onOpen={open}
         menu={(i) => (
           <RowMenu label={i.name || formatPhone(i.phone)}>

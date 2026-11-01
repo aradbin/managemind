@@ -72,23 +72,22 @@ export interface ProductFilters {
   lowStock?: boolean | undefined;
 }
 
-export const productsQuery = (filters: ProductFilters) => ({
+/** The products list, a page at a time (usePagedList). */
+export const productsList = (filters: ProductFilters) => ({
   queryKey: ['products', filters] as const,
-  queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+  fetchPage: async (offset: number, limit: number) =>
     unwrap(
       await api.GET('/v1/admin/products', {
         params: {
           query: compact({
             ...filters,
             lowStock: filters.lowStock ? ('true' as const) : undefined,
-            after: pageParam,
-            limit: 50,
+            offset,
+            limit,
           }),
         },
       }),
     ),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (page: ProductPage) => page.nextCursor ?? undefined,
 });
 
 export const productQuery = (id: string) => ({

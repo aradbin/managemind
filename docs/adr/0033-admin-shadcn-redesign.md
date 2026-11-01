@@ -93,7 +93,11 @@ The build comes in steps. This first step changes what every page shares, so eve
 
   One value still works as before.
 - Expenses compare the month with last month, or with the same days of last month while the month is still going, from the expenses endpoint's totals.
-- Not built, because the API doesn't give what the boards draw:
-  - a count beside each filter choice;
-  - page numbers instead of "Load more".
+- Long lists say how many match and page by device (`lib/paged.ts`, the pager in `components/data-list.tsx`):
+  - desktops get numbered pages ("101–150 of 1,234", Previous, 1 … 3 4 5 … 25, Next): people there jump between pages and share a page's address;
+  - phones keep "Load more" under "Showing 100 of 1,234": scrolling on is easier there than aiming at small numbers, and a row already shown isn't shown twice when new orders shift the list;
+  - orders, products, customers and inventory keep the page in the address (`?page=3`), Back returns to it, and a new filter starts at page 1.
+
+  The list endpoints answer with `total` and take `offset` for this; the cursor still works for the exports.
+- Not built, because the API doesn't give what the boards draw: a count beside each filter choice.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.

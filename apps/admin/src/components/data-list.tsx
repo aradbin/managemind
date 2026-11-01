@@ -1,10 +1,14 @@
 // A list that is a table from the md breakpoint and divided rows in one card
 // on phones (phase-1-plan §7.3, ADR 0033), with loading, empty and error
-// states and "load more" for cursor pagination. A list can draw its own phone
+// states, and numbered pages on desktops with "Load more" on phones (a
+// `pager` from usePagedList), or plain "Load more" for cursor pagination. A list can draw its own phone
 // row instead of the label-and-value one, let rows be selected, end each row
 // with a ⋯ menu, and open a record from anywhere on its row (design rule 5).
-import type { MouseEvent, ReactNode } from 'react';
+import { formatNumber } from '@managemind/shared/i18n';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { type MouseEvent, type ReactNode, useRef } from 'react';
 import { useLocale } from '../i18n';
+import { type Pager, pageList } from '../lib/paged';
 import { cn } from '../lib/utils';
 import { Notice } from './notice';
 import { Button } from './ui/button';
@@ -44,6 +48,8 @@ interface DataListProps<T> {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  /** Pages and the count, from usePagedList; replaces hasMore and onLoadMore. */
+  pager?: Pager | undefined;
   /** The phone row's content, instead of each column as label and value. */
   card?: (item: T) => ReactNode;
   selection?: Selection<T> | undefined;
@@ -75,6 +81,7 @@ export function DataList<T>({
   hasMore,
   loadingMore,
   onLoadMore,
+  pager,
   card,
   selection,
   onOpen,
@@ -82,6 +89,7 @@ export function DataList<T>({
   summary,
 }: DataListProps<T>) {
   const { t } = useLocale();
+  const top = useRef<HTMLDivElement>(null);
   if (isPending) {
     // The list's frame at once, with grey rows where the data goes (ADR 0033).
     return (
@@ -153,8 +161,14 @@ export function DataList<T>({
       : undefined;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+    <div ref={top} className="flex scroll-mt-4 flex-col gap-3">
+      <div
+        aria-busy={pager?.mode === 'pages' && pager.busy ? true : undefined}
+        className={cn(
+          'hidden overflow-x-auto rounded-xl border border-border bg-card transition-opacity md:block',
+          pager?.mode === 'pages' && pager.busy && 'opacity-60',
+        )}
+      >
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{label}</caption>
           <thead className="border-b border-border bg-muted/60">
@@ -215,7 +229,11 @@ export function DataList<T>({
         {selection && (
           <div className="flex h-11 items-center gap-3 border-b border-border bg-muted/60 px-4 text-sm font-medium">
             {selectAll}
-            <span>{summary ?? label}</span>
+            <span>
+              {pager?.mode === 'more'
+                ? t('list.showing', { shown: pager.shown, total: pager.total })
+                : (summary ?? label)}
+            </span>
           </div>
         )}
         <ul aria-label={label} className="divide-y divide-border">
@@ -260,7 +278,38 @@ export function DataList<T>({
           ))}
         </ul>
       </div>
-      {hasMore && onLoadMore && (
+      {pager?.mode === 'pages' && (
+        <PageNumbers
+          pager={pager}
+          onPage={(page) => {
+            pager.onPage(page);
+            // Back to the list's first row when it starts above the screen.
+            if ((top.current?.getBoundingClientRect().top ?? 0) < 0) {
+              top.current?.scrollIntoView({ block: 'start' });
+            }
+          }}
+        />
+      )}
+      {pager?.mode === 'more' && (
+        <div className="flex flex-col items-center gap-2">
+          {!selection && (
+            <p className="text-sm text-muted-foreground">
+              {t('list.showing', { shown: pager.shown, total: pager.total })}
+            </p>
+          )}
+          {pager.hasMore && (
+            <Button
+              variant="secondary"
+              className="w-full"
+              disabled={pager.loadingMore}
+              onClick={pager.onLoadMore}
+            >
+              {t('list.more')}
+            </Button>
+          )}
+        </div>
+      )}
+      {!pager && hasMore && onLoadMore && (
         <div className="flex justify-center">
           <Button variant="secondary" disabled={loadingMore} onClick={onLoadMore}>
             {t('list.more')}
@@ -268,5 +317,77 @@ export function DataList<T>({
         </div>
       )}
     </div>
+  );
+}
+
+function PageNumbers({
+  pager,
+  onPage,
+}: {
+  pager: Extract<Pager, { mode: 'pages' }>;
+  onPage: (page: number) => void;
+}) {
+  const { t, locale } = useLocale();
+  const { page, pageCount, total, size } = pager;
+  const from = total ? (page - 1) * size + 1 : 0;
+  const to = Math.min(page * size, total);
+  const pageButton =
+    'inline-flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-sm font-medium tabular-nums hover:bg-muted disabled:pointer-events-none disabled:opacity-50';
+  return (
+    <nav
+      aria-label={t('list.pages')}
+      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+    >
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        {t('list.range', { from, to, total })}
+      </p>
+      {pageCount > 1 && (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className={pageButton}
+            disabled={page <= 1}
+            onClick={() => onPage(page - 1)}
+          >
+            <ChevronLeft aria-hidden className="size-4" />
+            {t('list.prev')}
+          </button>
+          {pageList(page, pageCount).map((p, i) =>
+            p === 'gap' ? (
+              <span
+                key={`gap-${i}`}
+                aria-hidden
+                className="inline-flex size-8 items-center justify-center text-muted-foreground"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={p}
+                type="button"
+                aria-current={p === page ? 'page' : undefined}
+                aria-label={t('list.page', { page: p })}
+                className={cn(
+                  pageButton,
+                  p === page && 'border border-border bg-background shadow-xs hover:bg-muted/60',
+                )}
+                onClick={() => p !== page && onPage(p)}
+              >
+                {formatNumber(locale, p)}
+              </button>
+            ),
+          )}
+          <button
+            type="button"
+            className={pageButton}
+            disabled={page >= pageCount}
+            onClick={() => onPage(page + 1)}
+          >
+            {t('list.next')}
+            <ChevronRight aria-hidden className="size-4" />
+          </button>
+        </div>
+      )}
+    </nav>
   );
 }

@@ -2,7 +2,6 @@
 // Reason filter. Shoppers' requests wait at "requested" until staff approve or
 // reject them. A row opens the return; its menu also opens the order.
 import { RETURN_REASONS, RETURN_RECORD_STATUSES } from '@managemind/shared/orders';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
@@ -14,7 +13,8 @@ import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/returns';
 import { errorMessage } from '../lib/errors';
 import { dateOnly } from '../lib/orders';
-import { type ReturnStatus, type ReturnSummary, returnsQuery } from '../lib/returns';
+import { usePagedList } from '../lib/paged';
+import { type ReturnStatus, type ReturnSummary, returnsList } from '../lib/returns';
 
 /** A return's status as a status badge: waiting, moving, done or refused. */
 export function ReturnStatusChip({ status }: { status: string }) {
@@ -44,14 +44,8 @@ export function ReturnsPage() {
   const [status, setStatus] = useState<ReturnStatus | undefined>(undefined);
   /** One reason or several, comma-separated. */
   const [reason, setReason] = useState<string | undefined>(undefined);
-  const list = useInfiniteQuery({
-    queryKey: ['returns', status ?? null, reason ?? null] as const,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) => returnsQuery(status, pageParam, reason).queryFn(),
-    getNextPageParam: (last: ReturnSummary[]) =>
-      last.length === 50 ? last[last.length - 1]?.createdAt : undefined,
-  });
-  const rows = list.data?.pages.flat() ?? [];
+  const list = usePagedList(returnsList(status, reason));
+  const rows = list.items;
   const open = (r: ReturnSummary) => navigate({ to: '/returns/$id', params: { id: r.id } });
   const reasonText = (r: ReturnSummary) => t(`return.reason.${r.reason}` as AdminKey);
   const columns: Column<ReturnSummary>[] = [
@@ -129,7 +123,7 @@ export function ReturnsPage() {
       </div>
       <DataList
         label={t('returns.title')}
-        items={list.data ? rows : undefined}
+        items={rows}
         rowKey={(r) => r.id}
         columns={columns}
         isPending={list.isPending}
@@ -143,9 +137,7 @@ export function ReturnsPage() {
             </Button>
           ) : undefined
         }
-        hasMore={list.hasNextPage}
-        loadingMore={list.isFetchingNextPage}
-        onLoadMore={() => list.fetchNextPage()}
+        pager={list.pager}
         onOpen={open}
         menu={(r) => (
           <RowMenu label={r.displayNumber}>

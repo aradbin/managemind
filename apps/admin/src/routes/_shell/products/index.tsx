@@ -3,6 +3,7 @@ import {
   defined,
   searchFlag,
   searchOneOf,
+  searchPage,
   searchText,
   searchUuid,
   searchUuids,
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_shell/products/')({
       brandValueId: searchUuids(search.brandValueId),
       tag: searchText(search.tag, 50),
       lowStock: searchFlag(search.lowStock),
+      page: searchPage(search.page),
     }),
   component: ProductsPage,
 });

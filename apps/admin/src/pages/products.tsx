@@ -3,10 +3,10 @@
 // product, and selection for a bulk price edit in the selection bar.
 
 import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
-import { useInfiniteQuery, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ImageOff, Plus, Search, SquarePen, Tag, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import {
@@ -38,13 +38,14 @@ import {
   pick,
   priceInput,
   productQuery,
-  productsQuery,
+  productsList,
   readPrice,
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { usePagedList } from '../lib/paged';
 import { ExportButton } from './export';
 
-export type ProductSearch = ProductFilters;
+export type ProductSearch = ProductFilters & { page?: number | undefined };
 
 const STATUSES = ['active', 'draft', 'archived'] as const;
 
@@ -64,7 +65,8 @@ export function ProductsPage() {
       from: '/products/',
       to: '/products',
       search: (prev: ProductSearch) => {
-        const next = { ...prev, ...patch };
+        // A new filter starts again at page 1.
+        const next = { ...prev, page: undefined, ...patch };
         return Object.fromEntries(
           Object.entries(next).filter(([, v]) => v !== undefined && v !== '' && v !== false),
         ) as ProductSearch;
@@ -80,11 +82,21 @@ export function ProductsPage() {
     return () => clearTimeout(id);
   });
 
-  const products = useInfiniteQuery(productsQuery(search));
+  const { page, ...listFilters } = search;
+  const products = usePagedList({
+    ...productsList(listFilters),
+    page,
+    onPageChange: (next) =>
+      navigate({
+        from: '/products/',
+        to: '/products',
+        search: (prev: ProductSearch) => ({ ...prev, page: next > 1 ? next : undefined }),
+      }),
+  });
   const categories = useQuery(categoriesQuery);
   const attributes = useQuery(attributesQuery);
   const brand = attributes.data?.find((a) => a.key === 'brand');
-  const items = useMemo(() => products.data?.pages.flatMap((p) => p.items) ?? [], [products.data]);
+  const items = products.items;
   const title = (p: ProductSummary) => pick(p.titles, locale) ?? t('product.untitled');
 
   const toggle = (id: string) =>
@@ -248,7 +260,6 @@ export function ProductsPage() {
       </div>
       <DataList
         label={t('catalog.products')}
-        summary={t('list.shown', { count: items.length })}
         items={items}
         rowKey={(p) => p.id}
         columns={columns}
@@ -263,9 +274,7 @@ export function ProductsPage() {
             </Button>
           ) : undefined
         }
-        hasMore={products.hasNextPage}
-        loadingMore={products.isFetchingNextPage}
-        onLoadMore={() => products.fetchNextPage()}
+        pager={products.pager}
         onOpen={(p) => navigate({ to: '/products/$id', params: { id: p.id } })}
         selection={
           canWrite

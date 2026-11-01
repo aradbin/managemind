@@ -1,10 +1,10 @@
 // Inventory → Purchase orders (phase-8-plan §3.2, §3.12; ADR 0033): newest
 // first, a tab per status and a Supplier filter, with how much of each has
 // arrived and which are late.
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus, Truck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
 import { FilterButtons, RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
@@ -16,6 +16,7 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { errorMessage } from '../lib/errors';
 import { dateOnly } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import {
   dhakaToday,
   PO_STATUSES,
@@ -57,20 +58,16 @@ export function PurchaseOrdersPage() {
   const [supplierId, setSupplierId] = useState<string>();
   const suppliers = useQuery(suppliersQuery());
   const filter = { ...(status ? { status } : {}), ...(supplierId ? { supplierId } : {}) };
-  const list = useInfiniteQuery({
+  const list = usePagedList({
     queryKey: ['purchase-orders', filter] as const,
-    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+    fetchPage: async (offset, limit) =>
       unwrap(
         await api.GET('/v1/admin/purchase-orders', {
-          params: {
-            query: { ...filter, ...(pageParam ? { before: pageParam } : {}) },
-          },
+          params: { query: { ...filter, offset, limit } },
         }),
       ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
-  const items = useMemo(() => list.data?.pages.flatMap((p) => p.items) ?? [], [list.data]);
+  const items = list.items;
   const open = (o: PurchaseOrderSummary) =>
     navigate({ to: '/inventory/purchase-orders/$id', params: { id: o.id } });
   const receivable = (o: PurchaseOrderSummary) =>
@@ -267,9 +264,7 @@ export function PurchaseOrdersPage() {
             </span>
           </div>
         )}
-        hasMore={list.hasNextPage}
-        loadingMore={list.isFetchingNextPage}
-        onLoadMore={() => list.fetchNextPage()}
+        pager={list.pager}
       />
     </div>
   );

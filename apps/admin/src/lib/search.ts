@@ -31,6 +31,12 @@ export const searchUuids = (value: unknown) => {
   return kept.length ? [...new Set(kept)].slice(0, 20).join(',') : undefined;
 };
 
+/** A list's page from 2 on; page 1 stays out of the address. */
+export const searchPage = (value: unknown) => {
+  const n = typeof value === 'string' ? Number(value) : value;
+  return typeof n === 'number' && Number.isInteger(n) && n > 1 && n <= 10_000 ? n : undefined;
+};
+
 /** Drops the undefined entries, so the URL carries only what is set. */
 export function defined<T extends Record<string, unknown>>(o: T): { [K in keyof T]?: T[K] } {
   return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as {

@@ -6,7 +6,7 @@ import { formatDateTime, formatNumber } from '@managemind/shared/i18n';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { History, Package, SlidersHorizontal, Truck, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import { RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
@@ -22,9 +22,14 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { compact, type InventoryRow, pick } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { usePagedList } from '../lib/paged';
 import { costHistoryQuery, priceOrDash } from '../lib/purchasing';
 
-export type InventorySearch = { q?: string | undefined; lowStock?: boolean | undefined };
+export type InventorySearch = {
+  q?: string | undefined;
+  lowStock?: boolean | undefined;
+  page?: number | undefined;
+};
 
 const MODES = [
   'received',
@@ -90,32 +95,35 @@ export function InventoryPage() {
       if ((search.q ?? '') !== q.trim()) {
         navigate({
           to: '/inventory',
-          search: { ...search, q: q.trim() || undefined },
+          search: { ...search, q: q.trim() || undefined, page: undefined },
           replace: true,
         });
       }
     }, 350);
     return () => clearTimeout(id);
   });
-  const levels = useInfiniteQuery({
-    queryKey: ['inventory', search],
-    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+  const { page, ...filters } = search;
+  const levels = usePagedList({
+    queryKey: ['inventory', filters],
+    fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/admin/inventory', {
           params: {
             query: compact({
-              q: search.q,
-              lowStock: search.lowStock ? ('true' as const) : undefined,
-              after: pageParam,
-              limit: 50,
+              q: filters.q,
+              lowStock: filters.lowStock ? ('true' as const) : undefined,
+              offset,
+              limit,
             }),
           },
         }),
       ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    rowKey: (r) => r.variantId,
+    page,
+    onPageChange: (next) =>
+      navigate({ to: '/inventory', search: { ...search, page: next > 1 ? next : undefined } }),
   });
-  const items = useMemo(() => levels.data?.pages.flatMap((p) => p.items) ?? [], [levels.data]);
+  const items = levels.items;
   const filtered = Boolean(search.q || search.lowStock);
   const reset = () => {
     setQ('');
@@ -207,7 +215,7 @@ export function InventoryPage() {
             onChange={(e) =>
               navigate({
                 to: '/inventory',
-                search: { ...search, lowStock: e.target.checked || undefined },
+                search: { ...search, lowStock: e.target.checked || undefined, page: undefined },
                 replace: true,
               })
             }
@@ -237,9 +245,7 @@ export function InventoryPage() {
             </Button>
           ) : undefined
         }
-        hasMore={levels.hasNextPage}
-        loadingMore={levels.isFetchingNextPage}
-        onLoadMore={() => levels.fetchNextPage()}
+        pager={levels.pager}
         onOpen={setHistory}
         menu={(r) => (
           <RowMenu label={rowLabel(r, locale)}>

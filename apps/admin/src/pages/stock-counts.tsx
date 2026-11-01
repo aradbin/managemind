@@ -1,10 +1,10 @@
 // Inventory → Counts (phase-8-plan §3.5, §3.12; ADR 0033): the counts, newest
 // first, a tab per status, and starting one for the whole location, a
 // category, a tag or chosen items.
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import { RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
@@ -22,6 +22,7 @@ import { api, unwrap } from '../lib/api';
 import { categoriesQuery, categoryChoices, categoryOptions } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateOnly, lineLabel } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import { PURCHASING_KEYS, type StockCountSummary } from '../lib/purchasing';
 
 const SCOPES = ['all', 'category', 'tag', 'variants'] as const;
@@ -57,20 +58,16 @@ export function StockCountsPage() {
   const [starting, setStarting] = useState(false);
   const [status, setStatus] = useState<CountStatus | ''>('');
   const categories = useQuery(categoriesQuery);
-  const list = useInfiniteQuery({
+  const list = usePagedList({
     queryKey: ['stock-counts', status] as const,
-    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+    fetchPage: async (offset, limit) =>
       unwrap(
         await api.GET('/v1/admin/stock-counts', {
-          params: {
-            query: { ...(status ? { status } : {}), ...(pageParam ? { before: pageParam } : {}) },
-          },
+          params: { query: { ...(status ? { status } : {}), offset, limit } },
         }),
       ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
-  const items = useMemo(() => list.data?.pages.flatMap((p) => p.items) ?? [], [list.data]);
+  const items = list.items;
   const open = (c: StockCountSummary) =>
     navigate({ to: '/inventory/counts/$id', params: { id: c.id } });
   /** What is counted, as specifically as the scope says. */
@@ -173,9 +170,7 @@ export function StockCountsPage() {
             </Button>
           ) : undefined
         }
-        hasMore={list.hasNextPage}
-        loadingMore={list.isFetchingNextPage}
-        onLoadMore={() => list.fetchNextPage()}
+        pager={list.pager}
         onOpen={open}
         menu={(c) => (
           <RowMenu label={c.reference}>

@@ -48,16 +48,13 @@ export type IncompleteDetail = Json<'/v1/admin/incomplete-orders/{id}', 'get'>;
 export type IncompleteTab = 'open' | 'converted' | 'recovered' | 'dismissed';
 
 /** Incomplete checkouts (phase-6-plan §3.2), newest change first. */
-export const incompleteQuery = (tab: IncompleteTab) => ({
+/** One tab of incomplete orders, a page at a time (usePagedList). */
+export const incompleteList = (tab: IncompleteTab) => ({
   queryKey: ['incomplete-orders', tab] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+  fetchPage: (offset: number, limit: number) =>
     api
-      .GET('/v1/admin/incomplete-orders', {
-        params: { query: { tab, limit: 50, ...(pageParam ? { after: pageParam } : {}) } },
-      })
+      .GET('/v1/admin/incomplete-orders', { params: { query: { tab, limit, offset } } })
       .then(unwrap),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: IncompletePage) => last.nextCursor ?? undefined,
 });
 
 export const incompleteOrderQuery = (id: string) => ({
@@ -179,7 +176,12 @@ export interface OrderFilters {
   q?: string | undefined;
 }
 
-export async function fetchOrders(filters: OrderFilters, after?: string, limit = 50) {
+export async function fetchOrders(
+  filters: OrderFilters,
+  after?: string,
+  limit = 50,
+  offset?: number,
+) {
   const { cancelledByShopper, ...rest } = filters;
   return unwrap(
     await api.GET('/v1/admin/orders', {
@@ -188,6 +190,7 @@ export async function fetchOrders(filters: OrderFilters, after?: string, limit =
           ...rest,
           ...(cancelledByShopper ? { cancelledByShopper: true } : {}),
           after,
+          offset,
           limit,
         }) as never,
       },
@@ -195,11 +198,10 @@ export async function fetchOrders(filters: OrderFilters, after?: string, limit =
   );
 }
 
-export const ordersQuery = (filters: OrderFilters) => ({
+/** The orders list, a page at a time (usePagedList). */
+export const ordersList = (filters: OrderFilters) => ({
   queryKey: ['orders', filters] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => fetchOrders(filters, pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: OrderPage) => last.nextCursor ?? undefined,
+  fetchPage: (offset: number, limit: number) => fetchOrders(filters, undefined, limit, offset),
 });
 
 /** One tab of the confirmation queue (phase-6-plan §3.5); refreshed every 30 seconds while open. */
@@ -220,19 +222,23 @@ export interface CustomerFilters {
   tag?: string | undefined;
 }
 
-export async function fetchCustomers(filters: CustomerFilters, after?: string, limit = 50) {
+export async function fetchCustomers(
+  filters: CustomerFilters,
+  after?: string,
+  limit = 50,
+  offset?: number,
+) {
   return unwrap(
     await api.GET('/v1/admin/customers', {
-      params: { query: compact({ ...filters, after, limit }) },
+      params: { query: compact({ ...filters, after, offset, limit }) },
     }),
   );
 }
 
-export const customersQuery = (filters: CustomerFilters) => ({
+/** The customers list, a page at a time (usePagedList). */
+export const customersList = (filters: CustomerFilters) => ({
   queryKey: ['customers', filters] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => fetchCustomers(filters, pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: { nextCursor: string | null }) => last.nextCursor ?? undefined,
+  fetchPage: (offset: number, limit: number) => fetchCustomers(filters, undefined, limit, offset),
 });
 
 export const customerQuery = (id: string) => ({

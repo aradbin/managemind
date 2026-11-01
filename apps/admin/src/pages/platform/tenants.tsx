@@ -1,7 +1,7 @@
 // Platform: stores (phase-1-plan §7.3), searched by name or address and
 // filtered by status, with their plan and setup progress (phase-5b-plan
 // §3.2); super admins open the New store page.
-import { useInfiniteQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -14,19 +14,20 @@ import '../../i18n/launch';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage } from '../../lib/errors';
 import { dateOnly } from '../../lib/orders';
+import { usePagedList } from '../../lib/paged';
 import { StatusBadge, TENANT_STATUSES, type TenantStatus } from './status';
 
 type Tenant = Awaited<ReturnType<typeof fetchTenants>>['items'][number];
 
-async function fetchTenants(q: string, status: TenantStatus | '', after?: string) {
+async function fetchTenants(q: string, status: TenantStatus | '', offset = 0, limit = 50) {
   return unwrap(
     await api.GET('/v1/platform/tenants', {
       params: {
         query: {
-          limit: 50,
+          limit,
+          offset,
           ...(q ? { q } : {}),
           ...(status ? { status } : {}),
-          ...(after ? { after } : {}),
         },
       },
     }),
@@ -50,11 +51,9 @@ export function TenantsPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<TenantStatus | ''>('');
   const q = useDebounced(query.trim());
-  const tenants = useInfiniteQuery({
+  const tenants = usePagedList({
     queryKey: ['platform', 'tenants', q, status],
-    queryFn: ({ pageParam }) => fetchTenants(q, status, pageParam),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.next ?? undefined,
+    fetchPage: (offset: number, limit: number) => fetchTenants(q, status, offset, limit),
   });
   const open = (x: Tenant) => navigate({ to: '/platform/tenants/$id', params: { id: x.id } });
   const setup = (x: Tenant) =>
@@ -119,15 +118,13 @@ export function TenantsPage() {
       />
       <DataList<Tenant>
         label={t('platform.tenants')}
-        items={tenants.data?.pages.flatMap((p) => p.items)}
+        items={tenants.items}
         rowKey={(x) => x.id}
         isPending={tenants.isPending}
         error={tenants.isError ? errorMessage(tenants.error, t) : undefined}
         onRetry={() => tenants.refetch()}
         empty={t('tenants.none')}
-        hasMore={tenants.hasNextPage}
-        loadingMore={tenants.isFetchingNextPage}
-        onLoadMore={() => tenants.fetchNextPage()}
+        pager={tenants.pager}
         onOpen={open}
         card={(x) => (
           <div className="flex items-start gap-3">

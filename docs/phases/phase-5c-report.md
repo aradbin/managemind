@@ -165,6 +165,7 @@ The owner had the whole admin redrawn on a second canvas (`design/admin-redesign
   - বাংলা | English as one segmented field;
   - dates day first.
 - **Expenses compared with last month:** the month's total says how much more or less it is than last month. While a month is still going, it compares with the same days of last month.
+- **Pages and counts:** every long list says how many match. On desktops it has numbered pages ("101–150 of 1,234", Previous, 1 … 3 4 5 … 25, Next); on phones it keeps "Load more", with "Showing 100 of 1,234". Orders, products, customers and inventory keep the page in the address, so a page can be shared and Back returns to it; a new filter starts again at page 1. Built once (`usePagedList` in `lib/paged.ts`, the pager in `DataList`), so every paged list has it: those four, incomplete orders, returns, purchase orders, stock counts, adjustments, and the platform's stores and invoices.
 
 **Steps**
 
@@ -181,19 +182,21 @@ The owner had the whole admin redrawn on a second canvas (`design/admin-redesign
 | 9 | `1b7148a` | Form controls; ADR 0033 |
 | 10 | `c92dde4`, `86b44d7` | Several values per filter: the API and the admin |
 | 11 | `f600f49` | Searchable selects |
-| 12 | this commit | Expenses compared with last month; these docs |
+| 12 | `ca4a992` | Expenses compared with last month; these docs |
+| 13 | `6953d99`, this commit | Totals and page offsets in the API; numbered pages on desktops, Load more on phones |
 
-**API change.** Most of this changes only the admin. The one API change: list filters take several values, comma-separated ("paid,partially_paid"), matching any of them. One value works as before. This covers:
+**API changes.** Most of this changes only the admin. The first API change: list filters take several values, comma-separated ("paid,partially_paid"), matching any of them. One value works as before. This covers:
 - orders: payment, source, zone and flag;
 - products and their export: category and brand;
 - customers: tag, returns: reason, purchase orders: supplier, adjustments: reason.
 
 `oneOrMany()` and `asList()` live in `@managemind/shared/query`; the SDK types are regenerated. `@radix-ui/react-popover` 1.3.1 joins the catalog for the searchable select; it shares its internals with the dropdown menu already used.
 
+The second API change: every paged list the admin shows answers with `total`, how many rows match, and takes `offset` (`pageOffset` in `@managemind/shared/query`). An offset ignores the cursor; the cursor works as before, so the exports and other callers are unchanged. The returns list now answers `{ items, nextCursor, total }` like the others rather than a bare array. Counting costs one more query per page, over the same filters and indexes as the page.
+
 **Where the build differs from the boards:**
 
 - **Filter choices have no counts beside them.** No endpoint counts per choice.
-- **Lists load more, rather than showing numbered pages.** The list endpoints use cursors and don't return totals.
 - **Short fixed lists stay native selects** (statuses, kinds, the day of the month). Phones show them with their own picker.
 - **Returns have a tab per status.** The board's "In progress" spans several statuses, and the API takes one. The list shows units rather than value, since the list endpoint has no value and no search.
 - **Expense categories don't move up or down.** Their position field's meaning wasn't checked.

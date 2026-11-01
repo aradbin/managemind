@@ -3,6 +3,7 @@ import {
   defined,
   searchFlag,
   searchOneOf,
+  searchPage,
   searchSomeOf,
   searchText,
   searchUuids,
@@ -59,6 +60,7 @@ export const Route = createFileRoute('/_shell/orders/')({
       ] as const),
       from: date(search.from),
       to: date(search.to),
+      page: searchPage(search.page),
     }),
   component: OrdersPage,
 });

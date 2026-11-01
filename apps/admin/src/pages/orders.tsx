@@ -4,10 +4,10 @@
 // bulk confirm, booking and printing in the selection bar.
 
 import { formatDateTime } from '@managemind/shared/i18n';
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Check, FileText, Plus, Printer, Search, Truck, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import {
   barAction,
@@ -43,14 +43,15 @@ import {
   idempotencyKey,
   type OrderFilters,
   type OrderSummary,
-  ordersQuery,
+  ordersList,
   pickText,
   withKey,
   zonesQuery,
 } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import { OrderExportButton } from './order-export';
 
-export type OrderSearch = OrderFilters;
+export type OrderSearch = OrderFilters & { page?: number | undefined };
 
 /** The tabs: each sets the order and delivery statuses and keeps every other filter. */
 const TABS = [
@@ -116,7 +117,8 @@ export function OrdersPage() {
       to: '/orders',
       search: (prev: OrderSearch) =>
         Object.fromEntries(
-          Object.entries({ ...prev, ...patch }).filter(
+          // A new filter starts again at page 1.
+          Object.entries({ ...prev, page: undefined, ...patch }).filter(
             ([, v]) => v !== undefined && v !== '' && v !== false,
           ),
         ) as OrderSearch,
@@ -130,9 +132,20 @@ export function OrdersPage() {
     return () => clearTimeout(id);
   });
 
-  const orders = useInfiniteQuery(ordersQuery(search));
+  const { page, ...listFilters } = search;
+  const orders = usePagedList({
+    ...ordersList(listFilters),
+    page,
+    // A page is a step back can return to, so it isn't replaced.
+    onPageChange: (next) =>
+      navigate({
+        from: '/orders/',
+        to: '/orders',
+        search: (prev: OrderSearch) => ({ ...prev, page: next > 1 ? next : undefined }),
+      }),
+  });
   const zones = useQuery(zonesQuery);
-  const items = useMemo(() => orders.data?.pages.flatMap((p) => p.items) ?? [], [orders.data]);
+  const items = orders.items;
 
   const tab = TABS.find(
     (x) => x.status === search.status && x.deliveryStatus === search.deliveryStatus,
@@ -415,7 +428,6 @@ export function OrdersPage() {
       </div>
       <DataList
         label={t('nav.orders')}
-        summary={t('list.shown', { count: items.length })}
         items={items}
         rowKey={(o) => o.id}
         columns={columns}
@@ -434,9 +446,7 @@ export function OrdersPage() {
             </Button>
           ) : undefined
         }
-        hasMore={orders.hasNextPage}
-        loadingMore={orders.isFetchingNextPage}
-        onLoadMore={() => orders.fetchNextPage()}
+        pager={orders.pager}
         onOpen={open}
         selection={{
           isSelected: (o) => selected.has(o.id),

@@ -4,7 +4,7 @@
 // import screen; export.
 import { formatNumber } from '@managemind/shared/i18n';
 import { normalizePhone } from '@managemind/shared/phone';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { FileUp, MessageCircle, Phone, Plus, SquarePen, UserRound } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -34,15 +34,16 @@ import {
   type CustomerFilters,
   type CustomerSummary,
   customerQuery,
-  customersQuery,
+  customersList,
   dateOnly,
   geoQuery,
   orderErrorMessage,
 } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import { cn } from '../lib/utils';
 import { CustomerExportButton } from './order-export';
 
-export type CustomerSearch = CustomerFilters;
+export type CustomerSearch = CustomerFilters & { page?: number | undefined };
 
 const splitTags = (text: string) =>
   text
@@ -64,7 +65,8 @@ export function CustomersPage() {
       to: '/customers',
       search: (prev: CustomerSearch) =>
         Object.fromEntries(
-          Object.entries({ ...prev, ...patch }).filter(([, v]) => v),
+          // A new filter starts again at page 1.
+          Object.entries({ ...prev, page: undefined, ...patch }).filter(([, v]) => v),
         ) as CustomerSearch,
       replace: true,
     });
@@ -74,11 +76,18 @@ export function CustomersPage() {
     }, 350);
     return () => clearTimeout(id);
   });
-  const customers = useInfiniteQuery(customersQuery(search));
-  const items = useMemo(
-    () => customers.data?.pages.flatMap((p) => p.items) ?? [],
-    [customers.data],
-  );
+  const { page, ...filters } = search;
+  const customers = usePagedList({
+    ...customersList(filters),
+    page,
+    onPageChange: (next) =>
+      navigate({
+        from: '/customers/',
+        to: '/customers',
+        search: (prev: CustomerSearch) => ({ ...prev, page: next > 1 ? next : undefined }),
+      }),
+  });
+  const items = customers.items;
   // The tags on the customers loaded so far, and the one filtered by.
   const tags = useMemo(
     () =>
@@ -247,9 +256,7 @@ export function CustomersPage() {
             </Button>
           ) : undefined
         }
-        hasMore={customers.hasNextPage}
-        loadingMore={customers.isFetchingNextPage}
-        onLoadMore={() => customers.fetchNextPage()}
+        pager={customers.pager}
       />
       {panel && <CustomerSheet customer={panel.customer} onClose={() => setPanel(null)} />}
     </div>

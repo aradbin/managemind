@@ -2,8 +2,7 @@
 // made by hand or by a count, with its reason, who made it and its value at
 // the cost then, filtered by reason and date with filter buttons, with totals.
 import { formatNumber } from '@managemind/shared/i18n';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
 import { FilterButtons } from '../components/list-tools';
@@ -15,6 +14,7 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { errorMessage } from '../lib/errors';
 import { dateRangeFilter, dateTime, lineLabel, pickText } from '../lib/orders';
+import { usePagedList } from '../lib/paged';
 import { type Adjustment, priceOrDash } from '../lib/purchasing';
 import { allPages } from '../lib/report-export';
 
@@ -43,19 +43,17 @@ export function AdjustmentsPage() {
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
   };
-  const list = useInfiniteQuery({
+  const list = usePagedList({
     queryKey: ['adjustments', filters] as const,
-    queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+    fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/admin/inventory/adjustments', {
-          params: { query: { ...filters, ...(pageParam ? { before: pageParam } : {}) } },
+          params: { query: { ...filters, offset, limit } },
         }),
       ),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
-  const items = useMemo(() => list.data?.pages.flatMap((p) => p.items) ?? [], [list.data]);
-  const totals = list.data?.pages[0]?.totals;
+  const items = list.items;
+  const totals = list.first?.totals;
   const filtered = Boolean(reason || from || to);
   const reset = () => {
     setReason(undefined);
@@ -206,9 +204,7 @@ export function AdjustmentsPage() {
             </Button>
           ) : undefined
         }
-        hasMore={list.hasNextPage}
-        loadingMore={list.isFetchingNextPage}
-        onLoadMore={() => list.fetchNextPage()}
+        pager={list.pager}
         card={(a) => (
           <div className="flex items-start gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
