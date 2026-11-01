@@ -291,10 +291,14 @@ export async function releaseDomains(
         // Reopened before this ran: nothing to release.
         if (store?.status !== 'closed') return;
         const d = schema.tenantDomains;
+        // Locked, so a release running at the same time (the close's queue
+        // message and the purge request both release) waits here and then
+        // sees the domains it already removed, instead of failing on them.
         const rows = await tx.db
           .select({ id: d.id, status: d.status })
           .from(d)
-          .where(eq(d.tenantId, tenantId));
+          .where(eq(d.tenantId, tenantId))
+          .for('update');
         for (const row of rows) {
           if (row.status === 'removed') continue;
           await removeDomain(tx, owner, row.id, { provider });
