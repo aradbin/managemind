@@ -97,7 +97,10 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/inventory/suppliers`);
     await expect(page.getByRole('heading', { name: m('suppliers.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'suppliers');
-    await page.getByRole('button', { name: m('suppliers.new') }).first().click();
+    await page
+      .getByRole('button', { name: m('suppliers.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('suppliers.new') });
     await dialog.getByLabel(m('suppliers.name'), { exact: true }).fill(supplierName);
     await dialog.getByLabel(pattern(m('suppliers.openingBalance'))).fill('500');
@@ -210,7 +213,10 @@ test('back office', async ({ page }, info) => {
   await test.step('a count while an order ships applies only the real difference', async () => {
     await page.goto(`${API}/inventory/counts`);
     await expectAccessible(page, 'counts');
-    await page.getByRole('button', { name: m('counts.new') }).first().click();
+    await page
+      .getByRole('button', { name: m('counts.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('counts.new') });
     await dialog.getByLabel(m('counts.scope.tag')).check();
     await dialog.getByLabel(m('counts.tag'), { exact: true }).fill(tag);
@@ -287,7 +293,10 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/expenses`);
     await expect(page.getByRole('heading', { name: m('expenses.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'expenses');
-    await page.getByRole('button', { name: m('expenses.new') }).first().click();
+    await page
+      .getByRole('button', { name: m('expenses.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('expenses.new') });
     await choose(dialog.getByLabel(m('expenses.category')), { index: 2 });
     await dialog.getByLabel(m('expenses.amount')).fill('3500');
@@ -304,7 +313,10 @@ test('back office', async ({ page }, info) => {
     await expect(page.getByRole('link', { name: m('expenses.receiptView') }).first()).toBeVisible();
 
     await page.getByRole('button', { name: m('expenses.tab.recurring') }).click();
-    await page.getByRole('button', { name: m('recurring.new') }).first().click();
+    await page
+      .getByRole('button', { name: m('recurring.new') })
+      .first()
+      .click();
     const rent = page.getByRole('dialog', { name: m('recurring.new') });
     await choose(rent.getByLabel(m('expenses.category')), { index: 0 });
     await rent.getByLabel(m('expenses.amount')).fill('25000');
