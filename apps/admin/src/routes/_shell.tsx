@@ -17,15 +17,26 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import {
+  BadgePercent,
   ChevronRight,
+  ClipboardCheck,
   ExternalLink,
+  File,
+  FileText,
+  Folder,
+  LayoutGrid,
   type LucideIcon,
   Menu as MenuIcon,
   Moon,
+  Package,
   PanelLeft,
   Plus,
   Search,
+  ShoppingBag,
   Sun,
+  Truck,
+  Users,
+  Wallet,
 } from 'lucide-react';
 import { Fragment, lazy, Suspense, useEffect, useId, useState } from 'react';
 import { AccountMenu } from '../components/account-menu';
@@ -83,6 +94,7 @@ function Shell() {
   const store = me.stores.find((s) => s.tenantId === me.activeStore);
   const nav = useNav();
   const toConfirm = useToConfirm();
+  const onMenu = useRouterState({ select: (s) => s.location.pathname === '/more' });
   const [searching, setSearching] = useState(false);
   const [sidebar, setSidebar] = useState(() => {
     try {
@@ -116,21 +128,21 @@ function Shell() {
   }, []);
 
   return (
-    <div className="min-h-dvh md:flex">
+    <div className="min-h-dvh md:flex md:h-dvh md:overflow-hidden">
       {sidebar && <Sidebar me={me} groups={nav.groups} toConfirm={toConfirm} />}
 
       <div
         className={cn(
-          'flex min-h-dvh min-w-0 flex-1 flex-col bg-canvas pb-[calc(4.25rem+env(safe-area-inset-bottom))] md:m-2 md:min-h-[calc(100dvh-1rem)] md:rounded-xl md:pb-0 md:shadow-sm',
+          'flex min-h-dvh min-w-0 flex-1 flex-col bg-canvas pb-[calc(4rem+env(safe-area-inset-bottom))] md:m-2 md:h-[calc(100dvh-1rem)] md:min-h-0 md:overflow-hidden md:rounded-xl md:pb-0 md:shadow-sm',
           sidebar && 'md:ml-0',
         )}
       >
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-canvas/95 px-3 backdrop-blur md:h-12 md:rounded-t-xl md:px-4">
-          <div className="hidden min-w-0 items-center md:flex">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-canvas px-3 md:static md:h-12 md:px-4">
+          <div className="hidden min-w-0 items-center gap-2 md:flex">
             <Button
               variant="ghost"
               size="icon"
-              className="-ml-1 size-7 md:size-7"
+              className="-ml-1 md:size-7"
               aria-label={t('nav.toggleSidebar')}
               aria-expanded={sidebar}
               title={t('nav.toggleSidebar')}
@@ -142,17 +154,23 @@ function Shell() {
             <HeaderBreadcrumb groups={nav.groups} />
           </div>
           <div className="min-w-0 flex-1 md:hidden">
-            <StoreSwitcher me={me} />
+            {onMenu ? (
+              <p className="pl-1 text-xl leading-7 font-semibold tracking-[-0.01em]">
+                {t('nav.menu')}
+              </p>
+            ) : (
+              <StoreSwitcher me={me} />
+            )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 md:ml-auto">
+          <div className="flex shrink-0 items-center gap-2 md:ml-auto [&_svg]:max-md:size-[18px]">
             <button
               type="button"
               aria-haspopup="dialog"
               onClick={() => setSearching(true)}
-              className="hidden h-8 w-64 items-center gap-2 rounded-lg border border-input bg-background pr-1.5 pl-2.5 text-sm text-muted-foreground shadow-xs hover:bg-muted lg:flex dark:bg-white/5"
+              className="hidden h-8 w-64 items-center gap-1.5 rounded-lg border border-border bg-background pr-1.5 pl-2.5 text-sm text-muted-foreground shadow-xs hover:bg-accent md:flex dark:border-input dark:bg-white/[0.045]"
             >
               <Search aria-hidden className="size-4" />
-              <span className="flex-1 truncate text-left">{t('search.placeholder')}</span>
+              <span className="flex-1 truncate text-left">{t('search.button')}</span>
               <kbd className="inline-flex h-5 items-center rounded-md bg-muted px-1 font-sans text-xs font-medium">
                 {shortcut()}
               </kbd>
@@ -160,7 +178,7 @@ function Shell() {
             <Button
               variant="secondary"
               size="icon"
-              className="lg:hidden"
+              className="md:hidden"
               aria-label={t('search.open')}
               aria-haspopup="dialog"
               title={t('search.open')}
@@ -168,15 +186,15 @@ function Shell() {
             >
               <Search aria-hidden />
             </Button>
-            <CreateMenu />
-            <div className="hidden md:flex">
-              <ViewStore />
+            <div className={cn('flex', onMenu && 'max-md:hidden')}>
+              <CreateMenu />
             </div>
-            <LanguageSwitch icon />
             <div className="hidden items-center gap-2 md:flex">
+              <ViewStore />
+              <LanguageSwitch icon />
               <ThemeToggle />
               <HelpMenu />
-              <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+              <span aria-hidden className="mx-1 h-4 w-px bg-border" />
               <AccountMenu me={me} />
             </div>
           </div>
@@ -216,16 +234,17 @@ function Shell() {
             <TermsPrompt />
           </Suspense>
         )}
-        <main className="flex-1 px-3 py-4 md:px-6 md:py-6">
-          <div className="mx-auto w-full max-w-7xl">
-            <Outlet />
-          </div>
+        <main
+          id="main"
+          className="flex min-w-0 flex-1 flex-col p-4 md:min-h-0 md:overflow-y-auto md:px-6 md:pt-5 md:pb-6"
+        >
+          <Outlet />
         </main>
       </div>
 
       <nav
         aria-label={t('nav.main')}
-        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-canvas px-1 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border bg-canvas px-1 pb-[env(safe-area-inset-bottom)] md:hidden"
       >
         {nav.tabs.map((item) => (
           <Tab key={item.to} item={item} badge={item.to === '/orders' ? toConfirm : 0} />
@@ -244,7 +263,7 @@ function Sidebar({ me, groups, toConfirm }: { me: Me; groups: NavGroup[]; toConf
   return (
     <aside
       aria-label={t('nav.sidebar')}
-      className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-60 md:shrink-0 md:flex-col md:gap-2 md:p-2"
+      className="hidden text-sm md:flex md:h-dvh md:w-60 md:shrink-0 md:flex-col md:gap-2 md:p-2"
     >
       <div className="pt-2">
         {me.stores.length > 0 ? (
@@ -253,7 +272,7 @@ function Sidebar({ me, groups, toConfirm }: { me: Me; groups: NavGroup[]; toConf
           <p className="flex min-h-12 items-center gap-2 p-2 text-sm font-semibold">
             <span
               aria-hidden
-              className="inline-flex size-8 items-center justify-center rounded-[10px] bg-primary text-primary-foreground"
+              className="inline-flex size-8 items-center justify-center rounded-[10px] bg-sidebar-primary text-primary-foreground dark:text-white"
             >
               m
             </span>
@@ -295,10 +314,7 @@ function SidebarGroup({
   return (
     <div className="flex flex-col">
       {labelled && (
-        <h2
-          id={id}
-          className="flex h-8 items-center px-2 text-xs font-medium text-muted-foreground"
-        >
+        <h2 id={id} className="flex h-8 items-center px-2 text-xs font-medium text-foreground/70">
           {t(group.label)}
         </h2>
       )}
@@ -325,8 +341,8 @@ function SidebarGroup({
 }
 
 const navRow =
-  'flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-sm hover:bg-muted';
-const navActive = 'bg-muted font-medium';
+  'flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-sm hover:bg-accent';
+const navActive = 'bg-accent font-medium';
 
 /** An area: opens into its pages, and is open while one of them is shown. */
 function SidebarArea({
@@ -362,7 +378,7 @@ function SidebarArea({
         {item.toConfirm && !open && toConfirm > 0 && <Badge count={toConfirm} />}
         <ChevronRight
           aria-hidden
-          className={cn('size-4 shrink-0 transition-transform', open && 'rotate-90')}
+          className={cn('size-4 shrink-0 transition-transform duration-200', open && 'rotate-90')}
         />
       </button>
       <ul
@@ -378,7 +394,7 @@ function SidebarArea({
                 to={leaf.to}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'flex h-7 items-center gap-2 rounded-lg px-2 text-sm hover:bg-muted',
+                  'flex h-7 items-center gap-2 rounded-lg px-2 text-sm hover:bg-accent',
                   current && navActive,
                 )}
               >
@@ -414,7 +430,7 @@ function HeaderBreadcrumb({ groups }: { groups: NavGroup[] }) {
           <li key={c.label} className="flex min-w-0 items-center gap-1.5">
             {i > 0 && <ChevronRight aria-hidden className="size-3.5 shrink-0" />}
             {c.to ? (
-              <Link to={c.to} className="truncate hover:text-foreground">
+              <Link to={c.to} className="truncate underline-offset-4 hover:underline">
                 {c.label}
               </Link>
             ) : (
@@ -429,26 +445,104 @@ function HeaderBreadcrumb({ groups }: { groups: NavGroup[] }) {
   );
 }
 
-/** The header's + menu: start the records people make most (ADR 0033). */
+/**
+ * The header's + menu (ADR 0033 and 0034): every record people make, in the
+ * canvas's four groups, as far as the person may make them. Records that
+ * open in a side panel open it on their list page (`?new=1`).
+ */
 function CreateMenu() {
   const { t } = useLocale();
   const navigate = useNavigate();
   const { data: me } = useQuery(meQuery);
   const has = (p: Permission) => Boolean(me?.activeStore && me.permissions.includes(p));
-  const groups = [
+  type Entry = { to: CreateTo; label: AdminKey; icon: LucideIcon; panel?: boolean };
+  const groups: Entry[][] = [
     [
       ...(has('orders.write')
-        ? [{ to: '/orders/new' as const, label: 'create.order' as const }]
+        ? [{ to: '/orders/new' as const, label: 'create.order' as const, icon: ShoppingBag }]
+        : []),
+      ...(has('customers.write')
+        ? [
+            {
+              to: '/customers' as const,
+              label: 'create.customer' as const,
+              icon: Users,
+              panel: true,
+            },
+          ]
         : []),
       ...(has('promotions.write')
-        ? [{ to: '/promotions/new' as const, label: 'create.promotion' as const }]
+        ? [
+            {
+              to: '/promotions/new' as const,
+              label: 'create.promotion' as const,
+              icon: BadgePercent,
+            },
+          ]
+        : []),
+      ...(has('expenses.write')
+        ? [
+            {
+              to: '/expenses' as const,
+              label: 'create.expense' as const,
+              icon: Wallet,
+              panel: true,
+            },
+          ]
         : []),
     ],
     has('catalog.write')
-      ? [{ to: '/products/new' as const, label: 'create.product' as const }]
+      ? [
+          { to: '/products/new' as const, label: 'create.product' as const, icon: Package },
+          {
+            to: '/catalog/categories' as const,
+            label: 'create.category' as const,
+            icon: Folder,
+            panel: true,
+          },
+          {
+            to: '/catalog/collections/$id' as const,
+            label: 'create.collection' as const,
+            icon: LayoutGrid,
+          },
+        ]
       : [],
-    has('purchasing.write')
-      ? [{ to: '/inventory/purchase-orders/new' as const, label: 'create.purchaseOrder' as const }]
+    [
+      ...(has('purchasing.write')
+        ? [
+            {
+              to: '/inventory/purchase-orders/new' as const,
+              label: 'create.purchaseOrder' as const,
+              icon: FileText,
+            },
+            {
+              to: '/inventory/suppliers' as const,
+              label: 'create.supplier' as const,
+              icon: Truck,
+              panel: true,
+            },
+          ]
+        : []),
+      ...(has('inventory.write')
+        ? [
+            {
+              to: '/inventory/counts' as const,
+              label: 'create.count' as const,
+              icon: ClipboardCheck,
+              panel: true,
+            },
+          ]
+        : []),
+    ],
+    has('settings.write')
+      ? [
+          {
+            to: '/online-store/pages' as const,
+            label: 'create.storePage' as const,
+            icon: File,
+            panel: true,
+          },
+        ]
       : [],
   ].filter((g) => g.length > 0);
   if (groups.length === 0) return null;
@@ -465,16 +559,25 @@ function CreateMenu() {
         </Button>
       </Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content align="end" sideOffset={6} className={menuContent}>
+        <Menu.Content align="end" sideOffset={8} className={cn(menuContent, 'w-56')}>
           {groups.map((g, i) => (
-            <Fragment key={g[0]?.to}>
+            <Fragment key={g[0]?.label}>
               {i > 0 && <Menu.Separator className={menuSeparator} />}
               {g.map((entry) => (
                 <Menu.Item
-                  key={entry.to}
+                  key={entry.label}
                   className={menuItem}
-                  onSelect={() => navigate({ to: entry.to })}
+                  onSelect={() =>
+                    navigate(
+                      entry.to === '/catalog/collections/$id'
+                        ? { to: entry.to, params: { id: 'new' } }
+                        : entry.panel
+                          ? { to: entry.to, search: { new: 1 } as never }
+                          : { to: entry.to },
+                    )
+                  }
                 >
+                  <entry.icon aria-hidden />
                   {t(entry.label)}
                 </Menu.Item>
               ))}
@@ -485,6 +588,19 @@ function CreateMenu() {
     </Menu.Root>
   );
 }
+
+type CreateTo =
+  | '/orders/new'
+  | '/customers'
+  | '/promotions/new'
+  | '/expenses'
+  | '/products/new'
+  | '/catalog/categories'
+  | '/catalog/collections/$id'
+  | '/inventory/purchase-orders/new'
+  | '/inventory/suppliers'
+  | '/inventory/counts'
+  | '/online-store/pages';
 
 /** Light or dark in one press; the account menu also offers the device's setting. */
 function ThemeToggle() {
@@ -523,15 +639,15 @@ function Tab({
     <Link
       to={item.to}
       activeOptions={{ exact: item.to === '/' }}
-      className="group flex min-h-13 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted-foreground"
-      activeProps={{ 'aria-current': 'page', className: 'text-foreground' }}
+      className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] leading-[14px] font-medium text-muted-foreground"
+      activeProps={{ 'aria-current': 'page', className: 'text-foreground font-semibold' }}
     >
-      <span className="relative flex h-7 w-12 items-center justify-center rounded-full group-aria-[current=page]:bg-muted">
-        <Icon aria-hidden className="size-4 accent-primary" />
+      <span className="relative flex h-7 w-[52px] items-center justify-center rounded-full group-aria-[current=page]:bg-muted">
+        <Icon aria-hidden className="size-5" />
         {badge > 0 && (
           <Badge
             count={badge}
-            className="absolute -top-1 right-1 h-4 min-w-4 rounded-full bg-danger px-1 text-[10px] text-danger-foreground"
+            className="absolute -top-1 right-1.5 h-4 min-w-4 rounded-full bg-danger-fill px-1 text-[10px] font-semibold text-white"
           />
         )}
       </span>

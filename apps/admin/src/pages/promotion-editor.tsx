@@ -42,7 +42,7 @@ import { StateChip } from './promotions';
 
 const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 const selectClass =
-  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
+  'w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal';
 
 export function NewPromotionPage() {
   return <Editor promotion={undefined} />;
@@ -177,7 +177,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                     <input
                       type="radio"
                       name="promo-kind"
-                      className="size-4 accent-primary"
                       checked={d.kind === k}
                       onChange={() => set({ kind: k })}
                     />
@@ -283,7 +282,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-4 accent-primary"
                       checked={d.getSame}
                       onChange={(e) => set({ getSame: e.target.checked })}
                     />
@@ -339,7 +337,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                     <label key={z.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
                       <input
                         type="checkbox"
-                        className="size-4 accent-primary"
                         checked={d.zoneIds.includes(z.id)}
                         onChange={(e) =>
                           set({
@@ -357,7 +354,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="checkbox"
-                  className="size-4 accent-primary"
                   checked={d.firstOrder}
                   onChange={(e) => set({ firstOrder: e.target.checked })}
                 />
@@ -391,7 +387,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-4 accent-primary"
                       checked={d.paymentMethods.includes(m)}
                       onChange={(e) =>
                         set({
@@ -458,7 +453,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <label className="flex min-h-10 items-start gap-3 md:min-h-9">
                 <input
                   type="checkbox"
-                  className="mt-3 size-5"
+                  className="mt-3"
                   checked={d.exclusive}
                   onChange={(e) => set({ exclusive: e.target.checked })}
                 />
@@ -654,7 +649,9 @@ function TestCart({
                     )}
                   </span>
                   <span
-                    className={r.applied ? 'font-medium text-success' : 'text-muted-foreground'}
+                    className={
+                      r.applied ? 'font-medium text-success-foreground' : 'text-muted-foreground'
+                    }
                   >
                     {r.applied ? `−${money(r.amount)}` : t('promo.notApplied')}
                   </span>

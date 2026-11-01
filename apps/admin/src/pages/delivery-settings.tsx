@@ -170,12 +170,7 @@ function FeeCalculator() {
         value={kg}
         onChange={(e) => setKg(e.target.value)}
       />
-      <p
-        role="status"
-        className={
-          quote.data ? 'rounded-lg bg-primary-soft px-4 py-3 font-semibold text-primary' : ''
-        }
-      >
+      <p role="status" className={quote.data ? 'rounded-lg bg-muted px-4 py-3 font-semibold' : ''}>
         {quote.data
           ? quote.data.zone && quote.data.fee !== null
             ? t('delivery.feeIs', {
@@ -336,7 +331,6 @@ function ZoneDialog({
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={weighted}
             onChange={(e) => setWeighted(e.target.checked)}
           />
@@ -378,7 +372,6 @@ function ZoneDialog({
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={fallback}
             disabled={otherFallback && !fallback}
             onChange={(e) => setFallback(e.target.checked)}
@@ -411,7 +404,6 @@ function ZoneDialog({
                         >
                           <input
                             type="checkbox"
-                            className="size-4 accent-primary"
                             disabled={taken.has(`d${d.id}`)}
                             checked={districtIds.includes(d.id)}
                             onChange={() => toggle(districtIds, setDistrictIds, d.id)}
@@ -429,7 +421,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >
@@ -452,7 +444,6 @@ function ZoneDialog({
                     >
                       <input
                         type="checkbox"
-                        className="size-4 accent-primary"
                         disabled={taken.has(`a${a.id}`)}
                         checked={areaIds.includes(a.id)}
                         onChange={() => toggle(areaIds, setAreaIds, a.id)}
@@ -474,12 +465,7 @@ function ZoneDialog({
           </fieldset>
         )}
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-          />
+          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
           {t('delivery.active')}
         </label>
         {invalid && <Notice tone="error">{t('delivery.invalid')}</Notice>}

@@ -51,7 +51,7 @@ type Source = (typeof MANUAL_ORDER_SOURCES)[number];
 type Method = (typeof MANUAL_METHODS)[number];
 
 const selectClass =
-  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
+  'w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal';
 const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 const toLatin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
@@ -411,7 +411,6 @@ export function NewOrderPage() {
                 <label className="flex min-h-10 items-center gap-2 md:min-h-9">
                   <input
                     type="checkbox"
-                    className="size-4 accent-primary"
                     checked={allowBlocked}
                     onChange={(e) => setAllowBlocked(e.target.checked)}
                   />
@@ -531,7 +530,6 @@ export function NewOrderPage() {
             <label className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={!delivery}
                 onChange={(e) => setDelivery(!e.target.checked)}
               />
@@ -604,7 +602,6 @@ export function NewOrderPage() {
                     <input
                       type="radio"
                       name="discount-kind"
-                      className="size-4 accent-primary"
                       checked={discountKind === k}
                       onChange={() => setDiscountKind(k)}
                     />
@@ -645,7 +642,6 @@ export function NewOrderPage() {
                 <input
                   type="radio"
                   name="paid"
-                  className="size-4 accent-primary"
                   checked={paid === p}
                   onChange={() => {
                     setPaid(p);

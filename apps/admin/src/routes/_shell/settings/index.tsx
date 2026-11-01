@@ -206,7 +206,7 @@ function Page() {
                       <span
                         className={cn(
                           'mt-1 inline-flex items-center gap-1.5 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current',
-                          status[to] ? 'text-success' : 'text-warning-foreground',
+                          status[to] ? 'text-success-foreground' : 'text-warning-foreground',
                         )}
                       >
                         {t(status[to] ? 'settings.ready' : 'settings.toFinish')}

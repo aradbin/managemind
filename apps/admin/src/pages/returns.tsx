@@ -25,13 +25,13 @@ export function ReturnStatusChip({ status }: { status: string }) {
       : status === 'rejected'
         ? 'bg-danger-soft text-danger'
         : status === 'resolved'
-          ? 'bg-success-soft text-success'
+          ? 'bg-success-soft text-success-foreground'
           : status === 'in_transit'
             ? 'bg-shipped text-shipped-foreground'
             : 'bg-info text-info-foreground';
   return (
     <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
     >
       {t(`return.status.${status}` as AdminKey)}
     </span>

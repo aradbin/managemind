@@ -145,7 +145,6 @@ function ShopperChannels() {
                       <label className="inline-flex size-11 items-center justify-center">
                         <input
                           type="checkbox"
-                          className="size-4 accent-primary"
                           aria-label={`${t(`message.event.${event}`)}: ${channel === 'email' ? t('notify.email') : channel === 'sms' ? 'SMS' : 'WhatsApp'}`}
                           checked={value[channel].includes(event)}
                           onChange={() => toggle(channel, event)}
@@ -163,7 +162,7 @@ function ShopperChannels() {
       <label className="flex min-h-10 items-start gap-3 md:min-h-9">
         <input
           type="checkbox"
-          className="mt-1 size-5"
+          className="mt-1"
           disabled={!canEdit || save.isPending}
           checked={value.whatsappFirst}
           onChange={(e) => setValue({ ...value, whatsappFirst: e.target.checked })}
@@ -298,7 +297,6 @@ function StoreEmail() {
                   <input
                     type="radio"
                     name="email-provider"
-                    className="size-4 accent-primary"
                     checked={provider === p}
                     onChange={() => setProvider(p)}
                   />
@@ -529,7 +527,6 @@ function SmsGateway() {
                   <input
                     type="radio"
                     name="sms-provider"
-                    className="size-4 accent-primary"
                     checked={provider === p}
                     onChange={() => setProvider(p)}
                   />
@@ -587,7 +584,6 @@ function SmsGateway() {
                       <input
                         type="radio"
                         name="sms-method"
-                        className="size-4 accent-primary"
                         checked={http.method === m}
                         onChange={() => setHttp({ ...http, method: m })}
                       />

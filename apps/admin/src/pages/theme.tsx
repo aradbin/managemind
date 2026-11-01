@@ -42,7 +42,7 @@ import { cn } from '../lib/utils';
 
 const SAVE_DELAY_MS = 1200;
 const select =
-  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
+  'w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] disabled:opacity-50';
 
 /** The CSS variables the storefront takes from the tokens (its Layout.astro). */
 function cssVars(theme: Theme): Record<string, string> {
@@ -715,7 +715,6 @@ function Check({
     <label className="flex min-h-10 items-center gap-3 md:min-h-9">
       <input
         type="checkbox"
-        className="size-4 accent-primary"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}

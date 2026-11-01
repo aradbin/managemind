@@ -7,7 +7,7 @@ import { normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { FileUp, MessageCircle, Phone, Plus, SquarePen, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
@@ -28,6 +28,7 @@ import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { useOpenNew } from '../lib/open-new';
 import {
   type Customer,
   type CustomerAddress,
@@ -59,6 +60,10 @@ export function CustomersPage() {
   const [q, setQ] = useState(search.q ?? '');
   /** The panel: a new customer, or one being edited. */
   const [panel, setPanel] = useState<{ customer?: CustomerSummary } | null>(null);
+  useOpenNew(
+    useCallback(() => setPanel({}), []),
+    canWrite,
+  );
   const setFilter = (patch: Partial<CustomerSearch>) =>
     navigate({
       from: '/customers/',
@@ -107,7 +112,7 @@ export function CustomersPage() {
           <button
             key={tag}
             type="button"
-            className="h-[22px] rounded-md bg-muted px-1.5 text-xs font-medium hover:bg-border"
+            className="h-[22px] rounded-lg bg-muted px-1.5 text-xs font-medium hover:bg-border"
             onClick={() => setFilter({ tag })}
           >
             {tag}
@@ -281,7 +286,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 function FlaggedBadge() {
   const { t } = useLocale();
   return (
-    <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-danger-soft px-2 text-xs font-medium text-danger">
+    <span className="inline-flex h-[22px] shrink-0 items-center rounded-lg bg-danger-soft px-2 text-xs font-medium text-danger">
       {t('customers.flagged')}
     </span>
   );
@@ -865,7 +870,6 @@ function AddressSheet({
             <label className="flex min-h-9 items-center gap-3 text-sm">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={isDefault}
                 onChange={(e) => setDefault(e.target.checked)}
               />

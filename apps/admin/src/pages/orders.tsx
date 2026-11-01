@@ -411,7 +411,6 @@ export function OrdersPage() {
                 <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
                   <input
                     type="checkbox"
-                    className="size-4 accent-primary"
                     checked={Boolean(search.cancelledByShopper)}
                     onChange={(e) =>
                       setFilter({ cancelledByShopper: e.target.checked || undefined })
@@ -568,7 +567,7 @@ function FlagChips({ flags }: { flags: readonly string[] }) {
         .map((f) => (
           <span
             key={f}
-            className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground"
+            className="inline-flex h-[22px] items-center whitespace-nowrap rounded-lg bg-warning px-2 text-xs font-medium text-warning-foreground"
           >
             {t(`orders.flag.${f}`)}
           </span>

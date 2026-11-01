@@ -81,7 +81,7 @@ export function LanguageTabs({
             )}
             {invalid?.has(lang) && (
               <>
-                <span aria-hidden className="size-2 rounded-full bg-danger" />
+                <span aria-hidden className="size-2 rounded-full bg-danger-fill" />
                 <span className="sr-only">{t('form.invalid')}</span>
               </>
             )}

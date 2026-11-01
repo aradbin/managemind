@@ -36,13 +36,13 @@ export function PoStatusChip({ status }: { status: PurchaseOrderStatus }) {
       : status === 'partially_received'
         ? 'bg-warning text-warning-foreground'
         : status === 'received'
-          ? 'bg-success-soft text-success'
+          ? 'bg-success-soft text-success-foreground'
           : status === 'cancelled'
             ? 'border border-border text-muted-foreground'
             : 'bg-muted text-muted-foreground';
   return (
     <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
     >
       {t(`po.status.${status}`)}
     </span>

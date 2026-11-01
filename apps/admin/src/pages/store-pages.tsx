@@ -7,7 +7,7 @@ import { MAX_PAGES, PAGE_KINDS, PAGE_TITLES, type PageKind } from '@managemind/s
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Plus, SquarePen } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, LanguageTabs } from '../components/catalog/language-tabs';
@@ -27,6 +27,7 @@ import { ApiError, api, unwrap } from '../lib/api';
 import { pick, storeSettingsQuery } from '../lib/catalog';
 import { saveErrorMessage } from '../lib/errors';
 import { pageQuery, pagesQuery, type StorePage } from '../lib/online-store';
+import { useOpenNew } from '../lib/open-new';
 import { cn } from '../lib/utils';
 
 export function StorePagesPage() {
@@ -35,6 +36,10 @@ export function StorePagesPage() {
   const canWrite = usePermission('settings.write');
   const pages = useQuery(pagesQuery);
   const [adding, setAdding] = useState(false);
+  useOpenNew(
+    useCallback(() => setAdding(true), []),
+    canWrite && Boolean(pages.data),
+  );
   const title = (p: StorePage) => pick(p.translations, locale)?.title ?? '—';
   const open = (p: StorePage) => navigate({ to: '/online-store/pages/$id', params: { id: p.id } });
   const shown = (p: StorePage) => (
@@ -173,7 +178,7 @@ function NewPage({ existing, onClose }: { existing: StorePage[]; onClose: () => 
             id={id}
             value={kind}
             onChange={(e) => setKind(e.target.value as PageKind)}
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
           >
             {PAGE_KINDS.map((k) => (
               <option key={k} value={k} disabled={taken.has(k)}>
@@ -333,7 +338,7 @@ function PageEditor({ page, defaultLang }: { page: StorePage; defaultLang: Lang 
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-3 size-5"
+              className="mt-3"
               checked={published}
               onChange={(e) => setPublished(e.target.checked)}
             />

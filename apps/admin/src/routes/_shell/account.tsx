@@ -90,7 +90,6 @@ function Profile({ me }: { me: Me }) {
               <input
                 type="radio"
                 name="locale"
-                className="size-4 accent-primary"
                 checked={locale === value}
                 onChange={() => {
                   setChoice(value);

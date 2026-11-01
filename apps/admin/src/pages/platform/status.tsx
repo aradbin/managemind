@@ -10,9 +10,9 @@ export function StatusBadge({ status }: { status: TenantStatus }) {
   return (
     <span
       className={cn(
-        'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium',
+        'inline-flex h-[22px] items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium',
         status === 'active'
-          ? 'bg-success-soft text-success'
+          ? 'bg-success-soft text-success-foreground'
           : status === 'suspended'
             ? 'bg-warning text-warning-foreground'
             : 'border border-border text-muted-foreground',

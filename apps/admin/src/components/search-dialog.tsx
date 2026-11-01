@@ -1,15 +1,23 @@
-// Search from anywhere (ADR 0029): Ctrl+K or the top bar's search opens it.
-// What is typed searches orders, products or customers in their own lists
-// (each already searches by number, name and phone), and matches page names.
+// Search from anywhere (ADR 0029, 0034): Ctrl+K or the header's search opens
+// the canvas's command palette. What is typed searches orders, products or
+// customers in their own lists (each already searches by number, name and
+// phone); below, every page the sidebar reaches, grouped as it groups them.
+// The arrows move through the results, Enter opens one, Escape closes.
+import * as RadixDialog from '@radix-ui/react-dialog';
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronRight, Search } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type LucideIcon, Package, Search, ShoppingBag, Users } from 'lucide-react';
+import { Fragment, type KeyboardEvent, useState } from 'react';
 import { useLocale } from '../i18n';
 import { type NavTo, useNav } from './nav';
 import { usePermission } from './permission-gate';
-import { Dialog } from './ui/dialog';
 
-type Target = { key: string; label: string; go: () => Promise<void> };
+type Target = { key: string; label: string; icon: LucideIcon; go: () => Promise<void> };
+type Group = { key: string; label: string; items: Target[] };
+
+const item =
+  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm leading-5 outline-none hover:bg-accent focus-visible:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground';
+const kbd =
+  'inline-flex h-5 items-center rounded-md bg-muted px-1 font-sans text-xs font-medium text-muted-foreground';
 
 export function SearchDialog({
   open,
@@ -26,6 +34,7 @@ export function SearchDialog({
   const products = usePermission('catalog.read');
   const customers = usePermission('customers.read');
   const q = query.trim();
+  const match = (s: string) => !q || s.toLowerCase().includes(q.toLowerCase());
 
   const close = (next: boolean) => {
     onOpenChange(next);
@@ -38,6 +47,7 @@ export function SearchDialog({
               {
                 key: 'o',
                 label: t('search.orders', { q }),
+                icon: ShoppingBag,
                 go: () => navigate({ to: '/orders', search: { q } }),
               },
             ]
@@ -47,6 +57,7 @@ export function SearchDialog({
               {
                 key: 'p',
                 label: t('search.products', { q }),
+                icon: Package,
                 go: () => navigate({ to: '/products', search: { q } }),
               },
             ]
@@ -56,85 +67,144 @@ export function SearchDialog({
               {
                 key: 'c',
                 label: t('search.customers', { q }),
+                icon: Users,
                 go: () => navigate({ to: '/customers', search: { q } }),
               },
             ]
           : []),
       ]
     : [];
-  // Every page the sidebar lists; an area's pages read "Catalog › Products".
-  const all: { to: NavTo; label: string }[] = nav.groups.flatMap((g) =>
-    g.items.flatMap((i) =>
-      i.children
-        ? i.children.map((c) => ({ to: c.to, label: `${t(i.label)} › ${t(c.label)}` }))
-        : [{ to: i.to, label: t(i.label) }],
-    ),
-  );
-  const seen = new Set<string>();
-  const pages: Target[] = all
-    .filter((i) => !seen.has(i.to) && seen.add(i.to))
-    .filter((i) => !q || i.label.toLowerCase().includes(q.toLowerCase()))
-    .map((i) => ({ key: i.to, label: i.label, go: () => navigate({ to: i.to }) }));
+  // "Go to" holds the pages of their own; then each area with its pages. An
+  // area's name matches all of its pages.
+  const go = (to: NavTo) => () => navigate({ to });
+  const items = nav.groups.flatMap((g) => g.items);
+  const groups: Group[] = [
+    {
+      key: 'go',
+      label: t('search.pages'),
+      items: items
+        .filter((i) => !i.children && match(t(i.label)))
+        .map((i) => ({ key: i.key, label: t(i.label), icon: i.icon, go: go(i.to) })),
+    },
+    ...items
+      .filter((i) => i.children)
+      .map((i) => ({
+        key: i.key,
+        label: t(i.label),
+        items: (i.children ?? [])
+          .filter((c) => match(t(c.label)) || match(t(i.label)))
+          .map((c) => ({ key: c.to, label: t(c.label), icon: i.icon, go: go(c.to) })),
+      })),
+  ].filter((g) => g.items.length > 0);
+  const first = searches[0] ?? groups[0]?.items[0];
 
   async function pick(target: Target | undefined) {
     if (!target) return;
     close(false);
     await target.go();
   }
-  function submit(e: FormEvent) {
+  function onKey(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    void pick(searches[0] ?? pages[0]);
+    const box = e.currentTarget;
+    const all = Array.from(box.querySelectorAll<HTMLButtonElement>('[data-cmd]'));
+    const at = all.indexOf(document.activeElement as HTMLButtonElement);
+    const next = e.key === 'ArrowDown' ? Math.min(at + 1, all.length - 1) : at - 1;
+    if (next < 0) box.querySelector<HTMLInputElement>('input')?.focus();
+    else all[next]?.focus();
   }
 
-  const row =
-    'flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left hover:bg-muted focus-visible:bg-muted';
   return (
-    <Dialog open={open} onOpenChange={close} title={t('search.open')}>
-      <form onSubmit={submit}>
-        <label className="flex min-h-12 items-center gap-2 rounded-lg border border-input bg-background px-3 focus-within:outline-2 focus-within:outline-ring">
-          <Search aria-hidden className="size-5 text-muted-foreground" />
-          <span className="sr-only">{t('search.open')}</span>
-          <input
-            type="search"
-            autoFocus
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search.placeholder')}
-            className="min-w-0 flex-1 bg-transparent text-base outline-none"
-          />
-        </label>
-      </form>
-      {!q && <p className="text-sm text-muted-foreground">{t('search.hint')}</p>}
-      {searches.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {searches.map((s) => (
-            <li key={s.key}>
-              <button type="button" className={row} onClick={() => pick(s)}>
-                <Search aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-                <span className="flex-1 truncate">{s.label}</span>
-                <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {pages.length > 0 && (
-        <section aria-labelledby="search-pages" className="flex flex-col gap-1">
-          <h3 id="search-pages" className="px-3 text-xs font-semibold text-muted-foreground">
-            {t('search.pages')}
-          </h3>
-          <ul className="flex flex-col gap-1">
-            {pages.map((p) => (
-              <li key={p.key}>
-                <button type="button" className={row} onClick={() => pick(p)}>
-                  <span className="flex-1 truncate">{p.label}</span>
-                  <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-                </button>
-              </li>
+    <RadixDialog.Root open={open} onOpenChange={close}>
+      <RadixDialog.Portal>
+        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
+        <RadixDialog.Content
+          aria-describedby={undefined}
+          onKeyDown={onKey}
+          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-border bg-popover text-foreground shadow-lg"
+        >
+          <RadixDialog.Title className="sr-only">{t('search.open')}</RadixDialog.Title>
+          <form
+            className="flex h-12 items-center gap-2 border-b border-border px-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void pick(first);
+            }}
+          >
+            <Search aria-hidden className="size-4 shrink-0 opacity-50" />
+            <input
+              type="text"
+              autoComplete="off"
+              aria-label={t('search.open')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('search.placeholder')}
+              className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none md:text-sm"
+            />
+          </form>
+          <div className="max-h-[300px] overflow-y-auto">
+            {searches.length > 0 && (
+              <fieldset aria-label={t('search.open')} className="p-1">
+                <p className="px-2 py-1.5 text-xs leading-4 font-medium text-muted-foreground">
+                  {t('search.open')}
+                </p>
+                {searches.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    data-cmd
+                    className={item}
+                    onClick={() => pick(s)}
+                  >
+                    <s.icon aria-hidden />
+                    {s.label}
+                  </button>
+                ))}
+              </fieldset>
+            )}
+            {groups.map((g, i) => (
+              <Fragment key={g.key}>
+                {(i > 0 || searches.length > 0) && <div className="h-px bg-border" />}
+                <fieldset aria-label={g.label} className="p-1">
+                  <p className="px-2 py-1.5 text-xs leading-4 font-medium text-muted-foreground">
+                    {g.label}
+                  </p>
+                  {g.items.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      data-cmd
+                      className={item}
+                      onClick={() => pick(p)}
+                    >
+                      <p.icon aria-hidden />
+                      {p.label}
+                    </button>
+                  ))}
+                </fieldset>
+              </Fragment>
             ))}
-          </ul>
-        </section>
-      )}
-    </Dialog>
+            {groups.length === 0 && searches.length === 0 && (
+              <p className="py-6 text-center text-sm">{t('list.noResults')}</p>
+            )}
+          </div>
+          <div className="hidden h-10 items-center gap-4 border-t border-border px-3 text-xs text-muted-foreground md:flex">
+            <span className="inline-flex items-center gap-1.5">
+              <kbd className={kbd}>↑</kbd>
+              <kbd className={kbd}>↓</kbd>
+              {t('search.navigate')}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <kbd className={kbd}>↵</kbd>
+              {t('search.enter')}
+            </span>
+            <span className="ml-auto inline-flex items-center gap-1.5">
+              <kbd className={kbd}>esc</kbd>
+              {t('action.close')}
+            </span>
+          </div>
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
   );
 }

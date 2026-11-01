@@ -225,7 +225,6 @@ function CountView({ count }: { count: StockCount }) {
         <label className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={onlyLeft}
             onChange={(e) => setOnlyLeft(e.target.checked)}
           />

@@ -94,7 +94,7 @@ export function CodReportPage() {
           </label>
           <select
             id="cod-courier"
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={courier}
             onChange={(e) => setCourier(e.target.value as Courier | '')}
           >
@@ -310,7 +310,7 @@ function PayoutDialog({
       </label>
       <select
         id={`payout-col-${key}`}
-        className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+        className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
         value={cols[key]}
         onChange={(e) => {
           setCols((c) => ({ ...c, [key]: Number(e.target.value) }));
@@ -340,7 +340,7 @@ function PayoutDialog({
           </label>
           <select
             id="payout-courier"
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={courier}
             onChange={(e) => {
               setCourier(e.target.value as Courier);

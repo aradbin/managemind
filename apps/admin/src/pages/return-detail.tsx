@@ -163,7 +163,7 @@ function Steps({ ret }: { ret: ReturnDetail }) {
           key={step}
           aria-current={i === reached ? 'step' : undefined}
           className={`flex items-center gap-1 rounded-full px-3 py-1 ${
-            i <= reached ? 'bg-primary-soft text-primary' : 'bg-muted text-muted-foreground'
+            i <= reached ? 'bg-muted text-foreground' : 'bg-muted text-muted-foreground'
           }`}
         >
           {i < reached && <Check aria-hidden className="size-4" />}
@@ -624,7 +624,7 @@ export function CreateReturnDialog({ orderId, onClose }: { orderId: string; onCl
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t('return.reason')}
             <select
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
               value={reason}
               onChange={(e) => setReason(e.target.value as typeof reason)}
             >

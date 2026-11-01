@@ -1,6 +1,6 @@
-// The title row of a page, with its main action on the right. A page under
-// another starts with a back arrow to it (ADR 0033); the header's breadcrumb
-// says where the page sits.
+// The title row of a page as the canvas draws it (ADR 0033 and 0034): a back
+// arrow when the page sits under another, the title (20 px), its status
+// badges, and the actions on the right; a muted line under it if needed.
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
@@ -10,42 +10,51 @@ import { cn } from '../lib/utils';
 export function PageHeader({
   title,
   description,
+  badges,
   actions,
   className,
   parent,
 }: {
   title: string;
-  description?: string | undefined;
+  description?: ReactNode;
+  /** Status badges right after the title. */
+  badges?: ReactNode;
   actions?: ReactNode;
   /** For pages that space their sections themselves, `mb-0`. */
   className?: string;
-  /** The page this one sits under, as a breadcrumb above the title. */
+  /** The page this one sits under: a ghost arrow back to it, before the title. */
   parent?: {
     to:
       | '/settings'
       | '/online-store'
+      | '/online-store/pages'
       | '/products'
       | '/customers'
       | '/orders'
+      | '/orders/incomplete'
+      | '/returns'
       | '/reports'
+      | '/inventory'
       | '/inventory/purchase-orders'
       | '/inventory/suppliers'
       | '/inventory/counts'
       | '/catalog/collections'
-      | '/promotions';
+      | '/promotions'
+      | '/platform';
     label: string;
   };
 }) {
   return (
-    <div className={cn('mb-5 flex flex-wrap items-start justify-between gap-3', className)}>
-      <div className="flex min-w-0 items-start gap-2">
+    <div className={cn('mb-4 flex flex-col gap-2', className)}>
+      <div className="flex flex-wrap items-center gap-3">
         {parent && <BackLink to={parent.to} label={parent.label} />}
-        <div className="flex min-w-0 flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          {description && <p className="text-sm text-muted-foreground">{description}</p>}
-        </div>
+        <h1 className="min-w-0 truncate text-xl leading-7 font-semibold tracking-[-0.01em]">
+          {title}
+        </h1>
+        {badges && <span className="flex flex-wrap gap-1.5">{badges}</span>}
+        {actions && <div className="ml-auto flex flex-wrap gap-2">{actions}</div>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -60,12 +69,12 @@ export function BackLink({
 }) {
   const { t } = useLocale();
   return (
-    <nav aria-label={t('nav.breadcrumb')} className="-ml-1.5 shrink-0">
+    <nav aria-label={t('nav.breadcrumb')} className="-ml-2 shrink-0">
       <Link
         to={to}
         aria-label={label}
         title={label}
-        className="inline-flex size-8 items-center justify-center rounded-lg hover:bg-muted"
+        className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-accent md:size-8"
       >
         <ArrowLeft aria-hidden className="size-4" />
       </Link>

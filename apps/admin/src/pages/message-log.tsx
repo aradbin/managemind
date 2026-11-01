@@ -21,7 +21,7 @@ const STATUSES = ['failed', 'skipped', 'queued', 'sent'] as const;
 const CHANNELS = ['sms', 'email', 'push'] as const;
 
 const select =
-  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
+  'h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal';
 
 export function MessageLogPage({ orderId }: { orderId?: string | undefined } = {}) {
   const { t, locale } = useLocale();

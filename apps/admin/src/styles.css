@@ -1,43 +1,58 @@
 @import "tailwindcss";
 
 /*
- * Colour tokens (phase-1-plan §7.3; ADR 0029, redrawn on shadcn/ui's neutral
- * theme in ADR 0033). Components use these names, never raw colours. The
- * sidebar sits on `sidebar`; pages sit on `canvas`, the white inset panel
- * beside it; cards are `card`. `background` is the surface of inputs, menus
- * and dialogs. Each status tone is a soft tint with its own darker text, and
- * every text and background pair meets WCAG AA (4.5:1) in both themes.
+ * Colour tokens: shadcn/ui's neutral theme as the design canvas draws it
+ * (design/admin-redesign, ADR 0033 and 0034). Components use these names,
+ * never raw colours. The sidebar sits on `sidebar`; pages sit on `canvas`,
+ * the inset panel beside it; cards are `card`, menus and popovers `popover`.
+ * `background` is the surface of dialogs and side panels.
+ *
+ * Status tones are the canvas's: a tint of the tone (`warning`, `info`,
+ * `shipped`, `success-soft`, `danger-soft`) with text in the tone
+ * (`*-foreground`). Where the canvas's text shade falls below 4.5:1 on its
+ * tint, the text is darkened just enough (ADR 0034); the tints are exact.
  */
 @theme {
   --font-sans:
     "Inter Variable", "Noto Sans Bengali", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --radius-xl: 0.875rem;
+  --tone-warn: oklch(0.666 0.179 58.318);
+  --tone-info: oklch(0.546 0.245 262.881);
+  --tone-violet: oklch(0.541 0.281 293.009);
+  --tone-success: oklch(0.723 0.219 149.579);
+  --tone-danger: oklch(0.577 0.245 27.325);
   --color-sidebar: oklch(0.985 0 0);
+  --color-sidebar-primary: oklch(0.205 0 0);
+  --color-page: oklch(0.985 0 0);
   --color-canvas: oklch(1 0 0);
   --color-card: oklch(1 0 0);
+  --color-popover: oklch(1 0 0);
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
   --color-muted: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.52 0 0);
+  --color-muted-foreground: oklch(0.545 0 0);
+  --color-accent: oklch(0.97 0 0);
   --color-border: oklch(0.922 0 0);
   --color-input: oklch(0.922 0 0);
   --color-primary: oklch(0.205 0 0);
   --color-primary-foreground: oklch(0.985 0 0);
-  --color-primary-soft: oklch(0.97 0 0);
-  --color-primary-hover: oklch(0.32 0 0);
-  --color-danger: oklch(0.56 0.23 27.325);
-  --color-danger-foreground: oklch(0.985 0 0);
-  --color-danger-soft: oklch(0.975 0.012 20);
-  --color-danger-hover: oklch(0.505 0.213 27.518);
-  --color-warning: oklch(0.967 0.035 75);
-  --color-warning-foreground: oklch(0.5 0.14 48);
-  --color-success: oklch(0.5 0.14 150);
-  --color-success-soft: oklch(0.965 0.035 150);
-  --color-info: oklch(0.96 0.025 260);
-  --color-info-foreground: oklch(0.488 0.243 264.376);
-  --color-shipped: oklch(0.962 0.03 295);
-  --color-shipped-foreground: oklch(0.491 0.27 292.581);
   --color-ring: oklch(0.708 0 0);
+  --color-bar: #155dfc;
+  /* Red: text and icons (`danger`), fills under white text (`danger-fill`). */
+  --color-danger: oklch(0.531 0.245 27.325);
+  --color-danger-fill: oklch(0.577 0.245 27.325);
+  --color-danger-foreground: oklch(1 0 0);
+  --color-danger-soft: color-mix(in oklch, var(--tone-danger) 12%, transparent);
+  --color-warning: color-mix(in oklch, var(--tone-warn) 16%, transparent);
+  --color-warning-foreground: oklch(0.536 0.179 58.318);
+  --color-info: color-mix(in oklch, var(--tone-info) 12%, transparent);
+  --color-info-foreground: oklch(0.538 0.245 262.881);
+  --color-shipped: color-mix(in oklch, var(--tone-violet) 12%, transparent);
+  --color-shipped-foreground: oklch(0.541 0.281 293.009);
+  /* Green: dots and bars (`success`), text (`success-foreground`). */
+  --color-success: var(--tone-success);
+  --color-success-soft: color-mix(in oklch, var(--tone-success) 14%, transparent);
+  --color-success-foreground: oklch(0.499 0.219 149.579);
 }
 
 /*
@@ -48,32 +63,33 @@
 @media screen {
   :root[data-theme="dark"] {
     color-scheme: dark;
+    --tone-warn: oklch(0.769 0.188 70.08);
+    --tone-info: oklch(0.707 0.165 254.624);
+    --tone-violet: oklch(0.702 0.183 293.541);
+    --tone-success: oklch(0.792 0.209 151.711);
+    --tone-danger: oklch(0.704 0.191 22.216);
     --color-sidebar: oklch(0.205 0 0);
+    --color-sidebar-primary: oklch(0.488 0.243 264.376);
+    --color-page: oklch(0.145 0 0);
     --color-canvas: oklch(0.145 0 0);
-    --color-card: oklch(0.175 0 0);
-    --color-background: oklch(0.175 0 0);
+    --color-card: oklch(0.205 0 0);
+    --color-popover: oklch(0.205 0 0);
+    --color-background: oklch(0.145 0 0);
     --color-foreground: oklch(0.985 0 0);
     --color-muted: oklch(0.269 0 0);
     --color-muted-foreground: oklch(0.708 0 0);
+    --color-accent: oklch(0.269 0 0);
     --color-border: oklch(1 0 0 / 10%);
     --color-input: oklch(1 0 0 / 15%);
     --color-primary: oklch(0.922 0 0);
     --color-primary-foreground: oklch(0.205 0 0);
-    --color-primary-soft: oklch(0.269 0 0);
-    --color-primary-hover: oklch(0.82 0 0);
-    --color-danger: oklch(0.704 0.191 22.216);
-    --color-danger-foreground: oklch(0.205 0 0);
-    --color-danger-soft: oklch(0.27 0.06 25);
-    --color-danger-hover: oklch(0.78 0.15 22);
-    --color-warning: oklch(0.28 0.05 70);
-    --color-warning-foreground: oklch(0.82 0.15 75);
-    --color-success: oklch(0.792 0.18 151.711);
-    --color-success-soft: oklch(0.27 0.05 150);
-    --color-info: oklch(0.27 0.06 260);
-    --color-info-foreground: oklch(0.8 0.1 260);
-    --color-shipped: oklch(0.27 0.07 295);
-    --color-shipped-foreground: oklch(0.82 0.11 295);
     --color-ring: oklch(0.556 0 0);
+    --color-bar: #2b7fff;
+    --color-danger: oklch(0.704 0.191 22.216);
+    --color-warning-foreground: oklch(0.769 0.188 70.08);
+    --color-info-foreground: oklch(0.707 0.165 254.624);
+    --color-shipped-foreground: oklch(0.702 0.183 293.541);
+    --color-success-foreground: oklch(0.792 0.209 151.711);
   }
 }
 
@@ -89,8 +105,7 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-sidebar text-foreground font-sans antialiased;
-    font-feature-settings: "cv11" 1;
+    @apply bg-sidebar text-sm text-foreground font-sans antialiased;
   }
   /* A fieldset drawn as a card keeps its legend inside, as the card's heading. */
   fieldset.rounded-xl > legend {
@@ -112,20 +127,86 @@
     padding-right: 2rem;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.625rem center;
+    background-position: right 0.75rem center;
     background-size: 1rem;
   }
   select:disabled {
     cursor: not-allowed;
   }
-  /* Checkboxes, radios and ranges in the accent colour. */
-  input {
-    accent-color: var(--color-primary);
+  :root[data-theme="dark"] select:not([multiple]):not([size]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
   }
-  /* Visible focus for keyboard users everywhere: shadcn/ui's soft ring. */
+  /*
+   * Checkboxes and radios drawn as the canvas's .mm-check and .mm-radio
+   * (ADR 0034): 16 px (18 px on phones), 4 px corners, a white tick on the
+   * near-black fill; radios a dot. They stay native inputs, so forms,
+   * keyboards and assistive tech work as before. Switches draw themselves.
+   */
+  input[type="checkbox"]:not(.mm-switch),
+  input[type="radio"] {
+    appearance: none;
+    flex: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin: 0;
+    border: 1px solid var(--color-input);
+    background-color: var(--color-background);
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    cursor: pointer;
+    vertical-align: middle;
+  }
+  @media (min-width: 48rem) {
+    input[type="checkbox"]:not(.mm-switch),
+    input[type="radio"] {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+  :root[data-theme="dark"] input[type="checkbox"]:not(.mm-switch, :checked, :indeterminate),
+  :root[data-theme="dark"] input[type="radio"] {
+    background-color: oklch(1 0 0 / 4.5%);
+  }
+  input[type="checkbox"]:not(.mm-switch) {
+    border-radius: 4px;
+  }
+  input[type="checkbox"]:not(.mm-switch):checked,
+  input[type="checkbox"]:not(.mm-switch):indeterminate {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+    background-size: 0.75rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fafafa' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
+  input[type="checkbox"]:not(.mm-switch):indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fafafa' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  }
+  :root[data-theme="dark"] input[type="checkbox"]:not(.mm-switch):checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23262626' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
+  :root[data-theme="dark"] input[type="checkbox"]:not(.mm-switch):indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23262626' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  }
+  input[type="radio"] {
+    border-radius: 9999px;
+  }
+  input[type="radio"]:checked {
+    border-color: var(--color-primary);
+    background-image: radial-gradient(circle, var(--color-primary) 0 4px, transparent 4.5px);
+  }
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  /*
+   * Visible focus for keyboard users everywhere: shadcn/ui's soft ring. The
+   * transparent outline still shows in Windows' high-contrast mode.
+   */
   :focus-visible {
-    outline: 2px solid var(--color-ring);
+    outline: 2px solid transparent;
     outline-offset: 2px;
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-ring) 50%, transparent);
   }
 }
 

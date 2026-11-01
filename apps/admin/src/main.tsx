@@ -6,6 +6,7 @@
 import './zod-config';
 import '@fontsource-variable/inter';
 import '@fontsource/noto-sans-bengali/400.css';
+import '@fontsource/noto-sans-bengali/500.css';
 import '@fontsource/noto-sans-bengali/600.css';
 import './styles.css';
 import { QueryClientProvider } from '@tanstack/react-query';

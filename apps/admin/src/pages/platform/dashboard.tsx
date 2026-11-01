@@ -81,7 +81,7 @@ export function PlatformDashboardPage() {
                     </span>
                     <span aria-hidden className="h-2 w-full overflow-hidden rounded bg-muted">
                       <span
-                        className={`block h-full ${near ? 'bg-danger' : 'bg-primary'}`}
+                        className={`block h-full ${near ? 'bg-danger-fill' : 'bg-primary'}`}
                         style={{ width: `${Math.min(pct, 100)}%` }}
                       />
                     </span>

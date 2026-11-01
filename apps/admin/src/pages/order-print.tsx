@@ -79,7 +79,7 @@ export function OrderPrintPage() {
         <label className="ml-auto flex items-center gap-2 text-sm">
           {t('print.language')}
           <select
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={lang}
             onChange={(e) => setLang(e.target.value as Locale)}
           >

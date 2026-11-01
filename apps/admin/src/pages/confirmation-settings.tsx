@@ -189,7 +189,7 @@ export function ConfirmationSettingsPage() {
     <label className="flex min-h-10 items-start gap-3 md:min-h-9">
       <input
         type="checkbox"
-        className="mt-3 size-5"
+        className="mt-3"
         checked={confirmation[key]}
         onChange={(e) => setConfirmation({ ...confirmation, [key]: e.target.checked })}
       />
@@ -261,7 +261,6 @@ export function ConfirmationSettingsPage() {
                     <input
                       type="radio"
                       name="auto-confirm"
-                      className="size-4 accent-primary"
                       checked={confirmation.autoConfirm === r}
                       onChange={() => setConfirmation({ ...confirmation, autoConfirm: r })}
                     />
@@ -329,7 +328,7 @@ export function ConfirmationSettingsPage() {
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-3 size-5"
+              className="mt-3"
               checked={recovery.incomplete}
               onChange={(e) => setRecovery({ ...recovery, incomplete: e.target.checked })}
             />

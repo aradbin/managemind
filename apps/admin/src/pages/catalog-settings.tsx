@@ -110,12 +110,7 @@ export function VatSettingsPage() {
         className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
       >
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
-          />
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           <span className="font-medium">{t('vat.enabled')}</span>
         </label>
         {enabled && (
@@ -134,7 +129,6 @@ export function VatSettingsPage() {
                   <input
                     type="radio"
                     name="inclusive"
-                    className="size-4 accent-primary"
                     checked={inclusive === inc}
                     onChange={() => setInclusive(inc)}
                   />
@@ -196,7 +190,6 @@ export function VatSettingsPage() {
                     <label className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
                       <input
                         type="checkbox"
-                        className="size-4 accent-primary"
                         checked={c.exempt}
                         onChange={(e) =>
                           setCategories(

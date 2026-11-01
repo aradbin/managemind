@@ -206,7 +206,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('receive.supplier')}
                 <select
-                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
                   value={supplierId}
                   onChange={(e) => setSupplierId(e.target.value)}
                 >
@@ -300,7 +300,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                             aria-label={t('po.remove', { item: label })}
                             onClick={() => setLines(lines.filter((_, j) => j !== i))}
                           >
-                            <Trash2 aria-hidden className="size-4 accent-primary" />
+                            <Trash2 aria-hidden className="size-4" />
                           </Button>
                         )}
                       </div>
@@ -364,12 +364,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
           {canPay && hasSupplier && (
             <section className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
               <label className="flex min-h-11 items-center gap-3 font-medium">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-primary"
-                  checked={pay}
-                  onChange={(e) => setPay(e.target.checked)}
-                />
+                <input type="checkbox" checked={pay} onChange={(e) => setPay(e.target.checked)} />
                 {t('receive.payNow')}
               </label>
               {pay && (
@@ -388,7 +383,6 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                           <input
                             type="radio"
                             name="method"
-                            className="size-4 accent-primary"
                             checked={method === m}
                             onChange={() => setMethod(m)}
                           />

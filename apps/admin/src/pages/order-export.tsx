@@ -135,7 +135,6 @@ export function OrderExportButton({
                   <input
                     type="radio"
                     name="export-format"
-                    className="size-4 accent-primary"
                     checked={kind === f}
                     onChange={() => setKind(f)}
                   />
@@ -151,7 +150,6 @@ export function OrderExportButton({
                     <input
                       type="radio"
                       name="export-scope"
-                      className="size-4 accent-primary"
                       checked={scope === s}
                       onChange={() => setScope(s)}
                     />

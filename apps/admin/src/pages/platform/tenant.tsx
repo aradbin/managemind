@@ -269,7 +269,7 @@ function Lifecycle({ tenant }: { tenant: Tenant }) {
               id="lifecycle-category"
               value={category}
               onChange={(e) => setCategory(e.target.value as typeof category)}
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             >
               {/* Overdue suspensions come from billing (phase-5b-plan §3.8). */}
               {(['abuse', 'client_request', 'other'] as const).map((r) => (

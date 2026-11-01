@@ -39,7 +39,7 @@ import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { cn } from '../lib/utils';
 
 const selectClass =
-  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
+  'h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
@@ -594,13 +594,7 @@ function CollectionEditor({
             <legend className="mb-1 text-sm font-medium">{t('collections.kind')}</legend>
             {(['manual', 'rule'] as const).map((k) => (
               <label key={k} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                <input
-                  type="radio"
-                  name="kind"
-                  className="size-4 accent-primary"
-                  checked={kind === k}
-                  onChange={() => setKind(k)}
-                />
+                <input type="radio" name="kind" checked={kind === k} onChange={() => setKind(k)} />
                 <span>
                   {t(`collections.${k}`)}{' '}
                   <span className="text-sm text-muted-foreground">
@@ -627,7 +621,6 @@ function CollectionEditor({
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={published}
             onChange={(e) => setPublished(e.target.checked)}
           />

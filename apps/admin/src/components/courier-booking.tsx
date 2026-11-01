@@ -167,7 +167,6 @@ export function BookDialog({
                           <input
                             type="radio"
                             name="courier-place"
-                            className="size-4 accent-primary"
                             checked={place?.externalId === pl.externalId}
                             onChange={() => setPlace(pl)}
                           />
@@ -374,7 +373,7 @@ export function CourierPanel({
           </label>
           <select
             id={`fake-${s.id}`}
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={fakeStatus}
             onChange={(e) => setFakeStatus(e.target.value as typeof fakeStatus)}
           >
@@ -404,12 +403,7 @@ export function CourierPanel({
           {t('couriers.cancelPanel', { courier: name })}
         </p>
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={inPanel}
-            onChange={(e) => setInPanel(e.target.checked)}
-          />
+          <input type="checkbox" checked={inPanel} onChange={(e) => setInPanel(e.target.checked)} />
           {t('couriers.cancelledInPanel', { courier: name })}
         </label>
       </ConfirmDialog>
@@ -511,7 +505,7 @@ export function BulkBookDialog({ orderIds, onClose }: { orderIds: string[]; onCl
             </label>
             <select
               id="bulk-courier"
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={chosen ?? ''}
               onChange={(e) => setCourier(e.target.value as Courier)}
             >

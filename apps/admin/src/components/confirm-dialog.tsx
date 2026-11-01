@@ -47,9 +47,10 @@ export function ConfirmDialog({
         onOpenChange(next);
       }}
       title={title}
+      alert
     >
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-4 text-sm text-muted-foreground [&_input]:text-foreground [&_label]:text-foreground"
         onSubmit={(e) => {
           e.preventDefault();
           if (ready && !busy) onConfirm();
@@ -65,12 +66,13 @@ export function ConfirmDialog({
           />
         )}
         {error && <Notice tone="error">{error}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+        <div className="flex flex-wrap-reverse justify-end gap-2">
+          <Button variant="secondary" size="lg" onClick={() => onOpenChange(false)}>
             {t('action.cancel')}
           </Button>
           <Button
             type="submit"
+            size="lg"
             variant={destructive ? 'danger' : 'primary'}
             disabled={!ready || busy}
           >

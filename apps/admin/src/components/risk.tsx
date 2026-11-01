@@ -13,7 +13,7 @@ export type PhoneRisk = components['schemas']['PhoneRisk'];
 
 const TONES = {
   risky: 'bg-danger-soft text-danger',
-  trusted: 'bg-success-soft text-success',
+  trusted: 'bg-success-soft text-success-foreground',
   known: 'bg-muted text-foreground',
   new: 'bg-muted text-muted-foreground',
 };
@@ -55,7 +55,7 @@ export function ScoreBadge({ risk, className }: { risk: PhoneRisk; className?: s
     <span
       title={detail || t('risk.newHint')}
       className={cn(
-        'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium tabular-nums',
+        'inline-flex h-[22px] items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium tabular-nums',
         TONES[tone],
         className,
       )}

@@ -418,7 +418,9 @@ function Lines({ order: o }: { order: OrderDetail }) {
               <span>
                 {money(l.unitPrice)} × {l.quantity}
               </span>
-              {l.discount > 0 && <span className="text-success">−{money(l.discount)}</span>}
+              {l.discount > 0 && (
+                <span className="text-success-foreground">−{money(l.discount)}</span>
+              )}
               <span className="font-medium">{money(l.total)}</span>
             </div>
           </li>
@@ -754,12 +756,7 @@ function ShipmentRow({
       >
         {o.totals.codDue > 0 && (
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={cash}
-              onChange={(e) => setCash(e.target.checked)}
-            />
+            <input type="checkbox" checked={cash} onChange={(e) => setCash(e.target.checked)} />
             {t('order.cashCollected', { amount: formatPrice(o.totals.codDue, locale) })}
           </label>
         )}
@@ -1243,7 +1240,6 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
             <input
               type="radio"
               name="cancel-code"
-              className="size-4 accent-primary"
               checked={code === c}
               onChange={() => setCode(c)}
             />
@@ -1439,7 +1435,7 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
           <select
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
             value={method}
             onChange={(e) => setMethod(e.target.value as typeof method)}
           >

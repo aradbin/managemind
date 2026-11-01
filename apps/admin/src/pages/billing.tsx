@@ -106,7 +106,7 @@ export function BillingPage() {
                   {m.limit !== null && (
                     <span aria-hidden className="h-2 overflow-hidden rounded-full bg-muted">
                       <span
-                        className={`block h-full ${m.level === 'ok' ? 'bg-primary' : 'bg-danger'}`}
+                        className={`block h-full ${m.level === 'ok' ? 'bg-primary' : 'bg-danger-fill'}`}
                         style={{
                           width: `${m.limit === 0 ? 100 : Math.min(100, (m.used / m.limit) * 100)}%`,
                         }}

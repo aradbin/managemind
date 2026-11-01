@@ -270,7 +270,6 @@ function MetaForm() {
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
               checked={value.feed.enabled}
               onChange={(e) =>
                 setValue((v) => ({ ...v, feed: { ...v.feed, enabled: e.target.checked } }))
@@ -291,7 +290,7 @@ function MetaForm() {
                 <input
                   type="radio"
                   name="purchase-at"
-                  className="mt-1 size-5"
+                  className="mt-1"
                   checked={value.purchaseAt === at}
                   onChange={() => setValue((v) => ({ ...v, purchaseAt: at }))}
                 />
@@ -302,7 +301,7 @@ function MetaForm() {
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-1 size-5"
+              className="mt-1"
               checked={value.deliveredEvent}
               onChange={(e) => setValue((v) => ({ ...v, deliveredEvent: e.target.checked }))}
             />

@@ -379,13 +379,13 @@ function Editor({
                     key={s}
                     className={cn(
                       'flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border p-3',
-                      content.status === s && 'border-primary bg-primary-soft',
+                      content.status === s && 'border-primary bg-muted',
                     )}
                   >
                     <input
                       type="radio"
                       name="status"
-                      className="mt-0.5 size-5 accent-primary"
+                      className="mt-0.5"
                       checked={content.status === s}
                       onChange={() => update({ status: s })}
                     />
@@ -436,7 +436,7 @@ function Editor({
                 {t('product.vatCategory')}
                 <select
                   disabled={disabled}
-                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
                   value={content.vatCategory}
                   onChange={(e) => update({ vatCategory: e.target.value })}
                 >
@@ -597,7 +597,6 @@ function CheckboxList({
             <label key={item.id} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={checked.includes(item.id)}
                 onChange={(e) =>
                   onChange(

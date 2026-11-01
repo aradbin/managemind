@@ -77,7 +77,6 @@ export function ReturnSettingsPage() {
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
               checked={policy.shopperRequests}
               onChange={(e) => setPolicy({ ...policy, shopperRequests: e.target.checked })}
             />
@@ -101,7 +100,6 @@ export function ReturnSettingsPage() {
             <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={policy.shopperPaysFor.includes(r)}
                 onChange={() =>
                   setPolicy({
@@ -117,7 +115,7 @@ export function ReturnSettingsPage() {
         <label className="flex min-h-10 items-start gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="mt-3 size-5"
+            className="mt-3"
             checked={policy.refundDeliveryFee}
             onChange={(e) => setPolicy({ ...policy, refundDeliveryFee: e.target.checked })}
           />
@@ -134,7 +132,6 @@ export function ReturnSettingsPage() {
             <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={policy.refundMethods.includes(m)}
                 onChange={() =>
                   setPolicy({
@@ -158,7 +155,6 @@ export function ReturnSettingsPage() {
             <label key={c.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={policy.excludedCategoryIds.includes(c.id)}
                 onChange={() =>
                   setPolicy({

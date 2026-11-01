@@ -158,7 +158,6 @@ function SettingsForm({ store }: { store: Store }) {
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
               checked={indexing}
               onChange={(e) => setIndexing(e.target.checked)}
             />
@@ -172,7 +171,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={selectId}
               value={numerals}
               onChange={(e) => setNumerals(e.target.value)}
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             >
               {(['auto', 'bengali', 'latin'] as const).map((v) => (
                 <option key={v} value={v}>
@@ -251,7 +250,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={showId}
               value={show}
               onChange={(e) => setShow(e.target.value as typeof show)}
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             >
               {CHAT_PLACEMENTS.map((v) => (
                 <option key={v} value={v}>
@@ -266,7 +265,6 @@ function SettingsForm({ store }: { store: Store }) {
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
               checked={holidayOn}
               onChange={(e) => setHolidayOn(e.target.checked)}
             />

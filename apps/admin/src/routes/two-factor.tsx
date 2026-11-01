@@ -94,12 +94,7 @@ function TwoFactor() {
             />
           )}
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={trust}
-              onChange={(e) => setTrust(e.target.checked)}
-            />
+            <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} />
             {t('twoFactor.trust')}
           </label>
           {error && <Notice tone="error">{error}</Notice>}

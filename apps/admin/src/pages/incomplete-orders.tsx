@@ -43,10 +43,11 @@ const StatusLabel = ({ status }: { status: IncompleteSummary['status'] }) => {
   return (
     <span
       className={cn(
-        'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium',
+        'inline-flex h-[22px] items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium',
         status === 'open' && 'bg-warning text-warning-foreground',
         status === 'contacted' && 'bg-info text-info-foreground',
-        (status === 'converted' || status === 'recovered') && 'bg-success-soft text-success',
+        (status === 'converted' || status === 'recovered') &&
+          'bg-success-soft text-success-foreground',
         status === 'dismissed' && 'bg-muted text-muted-foreground',
       )}
     >

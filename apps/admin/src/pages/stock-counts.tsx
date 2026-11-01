@@ -4,7 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import { RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
@@ -21,6 +21,7 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { categoriesQuery, categoryChoices, categoryOptions } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { useOpenNew } from '../lib/open-new';
 import { dateOnly, lineLabel } from '../lib/orders';
 import { usePagedList } from '../lib/paged';
 import { PURCHASING_KEYS, type StockCountSummary } from '../lib/purchasing';
@@ -40,11 +41,11 @@ function CountStatusChip({ status }: { status: CountStatus }) {
       : status === 'review'
         ? 'bg-warning text-warning-foreground'
         : status === 'applied'
-          ? 'bg-success-soft text-success'
+          ? 'bg-success-soft text-success-foreground'
           : 'border border-border text-muted-foreground';
   return (
     <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
     >
       {t(`counts.status.${status}`)}
     </span>
@@ -56,6 +57,10 @@ export function StockCountsPage() {
   const navigate = useNavigate();
   const canWrite = usePermission('inventory.write');
   const [starting, setStarting] = useState(false);
+  useOpenNew(
+    useCallback(() => setStarting(true), []),
+    canWrite,
+  );
   const [status, setStatus] = useState<CountStatus | ''>('');
   const categories = useQuery(categoriesQuery);
   const list = usePagedList({
@@ -266,7 +271,7 @@ function NewCountDialog({ onClose }: { onClose: () => void }) {
                 <input
                   type="radio"
                   name="scope"
-                  className="mt-0.5 size-4 shrink-0 accent-primary"
+                  className="mt-0.5 shrink-0"
                   checked={kind === s}
                   onChange={() => setKind(s)}
                 />

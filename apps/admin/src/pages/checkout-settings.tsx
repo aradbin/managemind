@@ -142,7 +142,6 @@ export function CheckoutSettingsPage() {
                 <input
                   type="radio"
                   name="email-mode"
-                  className="size-4 accent-primary"
                   checked={checkout.email === m}
                   onChange={() => setCheckout({ ...checkout, email: m })}
                 />
@@ -171,7 +170,7 @@ export function CheckoutSettingsPage() {
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-3 size-5"
+              className="mt-3"
               checked={checkout.termsCheckbox}
               onChange={(e) => setCheckout({ ...checkout, termsCheckbox: e.target.checked })}
             />
@@ -185,7 +184,7 @@ export function CheckoutSettingsPage() {
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-3 size-5"
+              className="mt-3"
               checked={checkout.accounts}
               onChange={(e) => setCheckout({ ...checkout, accounts: e.target.checked })}
             />
@@ -206,7 +205,6 @@ export function CheckoutSettingsPage() {
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-4 accent-primary"
               checked={cod.enabled}
               onChange={(e) => setCod({ ...cod, enabled: e.target.checked })}
             />
@@ -228,7 +226,6 @@ export function CheckoutSettingsPage() {
                 <input
                   type="radio"
                   name="advance"
-                  className="size-4 accent-primary"
                   checked={cod.advance === r}
                   onChange={() => setCod({ ...cod, advance: r })}
                 />
@@ -252,7 +249,6 @@ export function CheckoutSettingsPage() {
                 <input
                   type="radio"
                   name="otp"
-                  className="size-4 accent-primary"
                   checked={cod.otp === r}
                   onChange={() => setCod({ ...cod, otp: r })}
                 />

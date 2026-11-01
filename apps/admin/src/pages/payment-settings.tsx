@@ -167,7 +167,6 @@ export function PaymentSettingsPage() {
                     <input
                       type="radio"
                       name="ssl-mode"
-                      className="size-4 accent-primary"
                       checked={mode === m}
                       onChange={() => setMode(m)}
                     />

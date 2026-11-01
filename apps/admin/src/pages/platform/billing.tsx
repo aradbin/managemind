@@ -169,11 +169,11 @@ export function PlatformBillingPage() {
             cell: (i) => (
               <span
                 className={cn(
-                  'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium',
+                  'inline-flex h-[22px] items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium',
                   i.overdue
                     ? 'bg-danger-soft text-danger'
                     : i.status === 'paid'
-                      ? 'bg-success-soft text-success'
+                      ? 'bg-success-soft text-success-foreground'
                       : i.status === 'draft' || i.status === 'void'
                         ? 'bg-muted text-muted-foreground'
                         : 'bg-info text-info-foreground',

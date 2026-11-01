@@ -20,6 +20,10 @@ import { Input } from './ui/input';
 import { switchLook } from './ui/switch';
 
 /** A message key for a field's error; zod's own messages are English-only. */
+/** A field's label and its hint, as the canvas's .mm-label and .mm-hint. */
+export const fieldLabel = 'mb-2 block text-sm leading-none font-medium';
+export const fieldHint = 'mt-1.5 text-[13px] leading-[18px] text-muted-foreground';
+
 export function fieldErrorKey(error: FieldError | undefined): AdminKey | undefined {
   if (!error) return;
   if (error.message && Object.hasOwn(messages.en, error.message)) return error.message as AdminKey;
@@ -116,8 +120,8 @@ function FieldShell({ label, hint, optional, error, children }: FieldShellProps)
   const key = fieldErrorKey(error);
   const described = [hint && `${id}-hint`, key && `${id}-error`].filter(Boolean).join(' ');
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+    <div className="flex min-w-0 flex-col">
+      <label htmlFor={id} className={fieldLabel}>
         {label}
         {optional && (
           <span className="font-normal text-muted-foreground"> ({t('form.optional')})</span>
@@ -129,12 +133,12 @@ function FieldShell({ label, hint, optional, error, children }: FieldShellProps)
         ...(described ? { 'aria-describedby': described } : {}),
       })}
       {hint && (
-        <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+        <p id={`${id}-hint`} className={fieldHint}>
           {hint}
         </p>
       )}
       {key && (
-        <p id={`${id}-error`} role="alert" className="text-sm text-danger">
+        <p id={`${id}-error`} role="alert" className={cn(fieldHint, 'text-danger')}>
           {t(key)}
         </p>
       )}
@@ -205,7 +209,7 @@ export function SelectField({
           {...a11y}
           {...register(name)}
           disabled={disabled}
-          className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50"
+          className="w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] disabled:opacity-50"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value} disabled={o.disabled}>
@@ -232,13 +236,15 @@ export function SwitchField({
   const { register } = useFormContext();
   const id = useId();
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex min-h-9 flex-col justify-center">
-        <label htmlFor={id} className="text-sm font-medium">
+    <div
+      className={cn('flex min-h-10 justify-between gap-4', hint ? 'items-start' : 'items-center')}
+    >
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <label htmlFor={id} className="font-medium">
           {label}
         </label>
         {hint && (
-          <p id={`${id}-hint`} className="text-sm text-muted-foreground">
+          <p id={`${id}-hint`} className="text-[13px] text-muted-foreground">
             {hint}
           </p>
         )}
@@ -250,7 +256,7 @@ export function SwitchField({
         disabled={disabled}
         {...(hint ? { 'aria-describedby': `${id}-hint` } : {})}
         {...register(name)}
-        className={cn(switchLook, 'mt-2')}
+        className={cn(switchLook, hint && 'mt-0.5')}
       />
     </div>
   );

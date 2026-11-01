@@ -222,7 +222,10 @@ function Figure({
       </span>
       {change != null ? (
         <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          <span aria-hidden className={cn('font-semibold', up ? 'text-success' : 'text-danger')}>
+          <span
+            aria-hidden
+            className={cn('font-semibold', up ? 'text-success-foreground' : 'text-danger')}
+          >
             {up ? '▲' : '▼'} {change}
           </span>
           <span aria-hidden>{t('dashboard.vsYesterday')}</span>

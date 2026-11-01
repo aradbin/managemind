@@ -247,7 +247,6 @@ export function ProductsPage() {
                 <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
                   <input
                     type="checkbox"
-                    className="size-4 accent-primary"
                     checked={Boolean(search.lowStock)}
                     onChange={(e) => setFilter({ lowStock: e.target.checked || undefined })}
                   />
@@ -347,13 +346,13 @@ export function StatusBadge({ status }: { status: 'draft' | 'active' | 'archived
   const { t } = useLocale();
   const tone =
     status === 'active'
-      ? 'bg-success-soft text-success'
+      ? 'bg-success-soft text-success-foreground'
       : status === 'draft'
         ? 'bg-muted text-muted-foreground'
         : 'border border-border text-muted-foreground';
   return (
     <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
     >
       {t(`status.${status}`)}
     </span>

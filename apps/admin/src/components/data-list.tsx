@@ -134,7 +134,7 @@ export function DataList<T>({
   const selectAll = selection && (
     <input
       type="checkbox"
-      className="block size-4 shrink-0 accent-primary"
+      className="block shrink-0"
       aria-label={t('list.selectAll')}
       checked={all}
       ref={(el) => {
@@ -147,7 +147,7 @@ export function DataList<T>({
     selection && (
       <input
         type="checkbox"
-        className="block size-4 shrink-0 accent-primary"
+        className="block shrink-0"
         aria-label={selection.label(item)}
         checked={selection.isSelected(item)}
         onChange={() => selection.toggle(item)}

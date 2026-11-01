@@ -93,7 +93,7 @@ export function SalesReportPage() {
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('sales.by')}
             <select
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={by}
               onChange={(e) => setBy(e.target.value as By)}
             >
@@ -146,7 +146,7 @@ export function SalesReportPage() {
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('sales.sortBy')}
             <select
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
             >

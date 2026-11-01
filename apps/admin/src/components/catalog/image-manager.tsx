@@ -238,7 +238,7 @@ export function ImageManager({
             <label key={v.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
               <span>{variantLabel(product, v.id, locale)}</span>
               <select
-                className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+                className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
                 value={variantImages[v.id] ?? ''}
                 onChange={(e) => {
                   setVariantImages({ ...variantImages, [v.id]: e.target.value || null });

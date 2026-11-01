@@ -106,7 +106,7 @@ export function SetupCard() {
             return (
               <li key={i.item} className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1">
                 {i.done ? (
-                  <CircleCheck aria-hidden className="size-5 shrink-0 text-success" />
+                  <CircleCheck aria-hidden className="size-5 shrink-0 text-success-foreground" />
                 ) : (
                   <Circle aria-hidden className="size-5 shrink-0 text-muted-foreground" />
                 )}

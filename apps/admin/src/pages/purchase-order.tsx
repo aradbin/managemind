@@ -413,7 +413,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                           aria-label={t('po.remove', { item: label })}
                           onClick={() => setLines(lines.filter((_, j) => j !== i))}
                         >
-                          <Trash2 aria-hidden className="size-4 accent-primary" />
+                          <Trash2 aria-hidden className="size-4" />
                         </Button>
                       )}
                     </div>
@@ -481,7 +481,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                     aria-label={t('po.remove', { item: c.label || t('po.otherCosts') })}
                     onClick={() => setCosts(costs.filter((_, j) => j !== i))}
                   >
-                    <Trash2 aria-hidden className="size-4 accent-primary" />
+                    <Trash2 aria-hidden className="size-4" />
                   </Button>
                 )}
               </div>

@@ -303,7 +303,7 @@ function Mapping({
               </span>
               <select
                 aria-label={t('import.mapTo', { column: header || String(i + 1) })}
-                className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+                className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
                 value={refValue(choices[i] ?? null)}
                 onChange={(e) => {
                   setChoices(choices.map((c, j) => (j === i ? refFrom(e.target.value) : c)));

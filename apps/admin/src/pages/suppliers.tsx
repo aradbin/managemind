@@ -5,7 +5,7 @@ import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ClipboardList, FileText, FileUp, Plus, SquarePen } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
@@ -21,6 +21,7 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { priceInput, readPrice } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { useOpenNew } from '../lib/open-new';
 import { PURCHASING_KEYS, priceOrDash, type Supplier, suppliersQuery } from '../lib/purchasing';
 
 /** "You owe ৳500", "Advance ৳200" or "Settled". */
@@ -42,6 +43,10 @@ export function SuppliersPage() {
   const [q, setQ] = useState('');
   const [archived, setArchived] = useState(false);
   const [panel, setPanel] = useState<{ supplier?: Supplier } | null>(null);
+  useOpenNew(
+    useCallback(() => setPanel({}), []),
+    canWrite,
+  );
   useEffect(() => {
     const timer = setTimeout(() => setQ(text.trim()), 300);
     return () => clearTimeout(timer);

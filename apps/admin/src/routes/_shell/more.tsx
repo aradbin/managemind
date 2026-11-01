@@ -1,11 +1,12 @@
-// Menu (ADR 0029, ADR 0033): on phones, everything the five-tab bar leaves
-// out. Who is signed in, the store switch, every area with its pages (an area
-// opens into them, as in the desktop sidebar), help, and the account with
-// light or dark and sign-out. Desktops reach the same through the sidebar and
-// the header, but the page works there too.
+// Menu (ADR 0029, 0033 and 0034, the canvas's phone Menu): everything the
+// five-tab bar leaves out. Who is signed in and the store switch, every area
+// the tab bar doesn't hold (an area opens into its pages, as in the desktop
+// sidebar), View store, the preferences (dark mode, language, help) and sign
+// out. Desktops reach the same through the sidebar and the header, but the
+// page works there too.
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouterState } from '@tanstack/react-router';
-import { ChevronRight, ExternalLink, LogOut, UserRound } from 'lucide-react';
+import { ChevronRight, CircleHelp, ExternalLink, Languages, LogOut, Moon, Sun } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { useSignOut } from '../../components/account-menu';
 import { useHelpLinks } from '../../components/help-menu';
@@ -18,122 +19,158 @@ import {
   useToConfirm,
 } from '../../components/nav';
 import { usePermission } from '../../components/permission-gate';
-import { StoreSwitcher } from '../../components/store-switcher';
-import { ThemeSwitch } from '../../components/theme-choice';
+import { initials, StoreSwitcher } from '../../components/store-switcher';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
+import { Segmented } from '../../components/ui/segmented';
+import { Switch } from '../../components/ui/switch';
 import { useLocale } from '../../i18n';
 import { meQuery } from '../../lib/api';
 import { storeSettingsQuery } from '../../lib/catalog';
+import { setThemeChoice, useThemeChoice } from '../../lib/theme';
+import { cn } from '../../lib/utils';
 
 export const Route = createFileRoute('/_shell/more')({ component: MorePage });
 
-const row = 'flex min-h-13 w-full items-center gap-3 px-3.5 text-left hover:bg-muted';
-const tile = 'inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted';
-const chevron = <ChevronRight aria-hidden className="size-4 shrink-0 text-muted-foreground" />;
+const row =
+  'flex min-h-13 w-full items-center gap-3 border-b border-border px-3 py-2 text-left last:border-b-0 hover:bg-accent';
+const tile =
+  'inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg]:size-4';
+const chevron = (
+  <ChevronRight
+    aria-hidden
+    className="size-4 shrink-0 text-muted-foreground transition-transform duration-200"
+  />
+);
+const sub = 'truncate text-[13px] leading-[18px] text-muted-foreground';
+
+/** The tab bar holds Home and Customers; the Menu lists the rest. */
+const IN_TABS = new Set(['home', 'customers']);
 
 function MorePage() {
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
   const { data: me } = useSuspenseQuery(meQuery);
   const nav = useNav();
-  const store = me.stores.find((s) => s.tenantId === me.activeStore);
   const canViewStore = usePermission('settings.read');
   const settings = useQuery({ ...storeSettingsQuery, enabled: canViewStore });
   const { links: help } = useHelpLinks(true);
   const signOut = useSignOut();
   const [confirming, setConfirming] = useState(false);
+  const choice = useThemeChoice();
+  const dark =
+    choice === 'dark' ||
+    (choice === 'system' &&
+      typeof document !== 'undefined' &&
+      document.documentElement.dataset.theme === 'dark');
+  const helpLink = help[0];
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <h1 className="text-xl font-semibold tracking-tight md:text-xl">{t('nav.menu')}</h1>
+    <div className="-m-4 flex min-h-full flex-col gap-6 bg-page px-4 pt-4 pb-6 md:m-0 md:mx-auto md:w-full md:max-w-xl md:bg-transparent md:p-0">
+      <h1 className="hidden text-xl leading-7 font-semibold tracking-[-0.01em] md:block">
+        {t('nav.menu')}
+      </h1>
 
-      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
-        <Link to="/account" className={`${row} min-h-[4.5rem]`}>
+      <div className={group}>
+        <Link to="/account" className={cn(row, 'min-h-16')}>
           <span
             aria-hidden
-            className="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-muted"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-[13px] font-medium"
           >
-            <UserRound className="size-6" />
+            {initials(me.user.name)}
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="flex items-center gap-2">
-              <span className="truncate font-semibold">{me.user.name}</span>
-              {store && (
-                <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  {t(`role.${store.role}`)}
-                </span>
-              )}
-            </span>
-            <span className="truncate text-sm text-muted-foreground">{me.user.email}</span>
+            <span className="truncate font-medium">{me.user.name}</span>
+            <span className={sub}>{me.user.email}</span>
           </span>
           {chevron}
         </Link>
         {me.stores.length > 0 && <StoreSwitcher me={me} look="row" />}
-        {settings.data && (
-          <a href={settings.data.storeUrl} target="_blank" rel="noopener" className={row}>
-            <span aria-hidden className={tile}>
-              <ExternalLink className="size-4" />
-            </span>
-            <span className="flex-1">{t('store.view')}</span>
-            <span className="text-xs text-muted-foreground">{t('more.newTab')}</span>
-          </a>
-        )}
       </div>
 
-      {nav.groups.map((group) => (
-        <Group key={group.key} group={group} />
+      {nav.groups.map((g) => (
+        <Group
+          key={g.key}
+          group={g}
+          extra={
+            g.key === 'store' &&
+            settings.data && (
+              <a href={settings.data.storeUrl} target="_blank" rel="noopener" className={row}>
+                <span aria-hidden className={tile}>
+                  <ExternalLink />
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium">{t('store.view')}</span>
+                  <span className={sub}>{t('more.opensNewTab')}</span>
+                </span>
+              </a>
+            )
+          }
+        />
       ))}
 
-      {help.length > 0 && (
-        <Section label={t('more.help')}>
-          {help.map((l) => (
-            <a
-              key={l.label}
-              href={l.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={row}
-            >
-              <span className="flex-1">{t(l.label)}</span>
-              <ExternalLink aria-hidden className="size-4 text-muted-foreground" />
-            </a>
-          ))}
-        </Section>
-      )}
-
-      <Section label={t('nav.account')}>
-        <Link to="/account" className={row}>
+      <Section label={t('more.preferences')}>
+        <div className={cn(row, 'hover:bg-transparent')}>
           <span aria-hidden className={tile}>
-            <UserRound className="size-4" />
+            {dark ? <Sun /> : <Moon />}
           </span>
-          <span className="flex-1">{t('account.title')}</span>
-          {chevron}
-        </Link>
-        <ThemeSwitch />
-        <button
-          type="button"
-          className={`${row} font-medium text-danger`}
-          onClick={() => setConfirming(true)}
-        >
-          <span aria-hidden className={`${tile} bg-danger-soft`}>
-            <LogOut className="size-4" />
+          <label htmlFor="menu-dark" className="flex-1 cursor-pointer font-medium">
+            {t('more.darkMode')}
+          </label>
+          <Switch
+            id="menu-dark"
+            checked={dark}
+            onCheckedChange={(on) => setThemeChoice(on ? 'dark' : 'light')}
+          />
+        </div>
+        <div className={cn(row, 'hover:bg-transparent')}>
+          <span aria-hidden className={tile}>
+            <Languages />
           </span>
-          <span className="flex-1">{t('action.signOut')}</span>
-        </button>
+          <span className="flex-1 font-medium">{t('more.language')}</span>
+          <Segmented
+            label={t('more.language')}
+            value={locale}
+            onChange={setLocale}
+            options={[
+              { value: 'bn', label: 'বাংলা' },
+              { value: 'en', label: 'English' },
+            ]}
+            className="h-9 [&>button]:h-[30px] [&>button]:px-2.5 [&>button]:text-[13px]"
+          />
+        </div>
+        {helpLink && (
+          <a href={helpLink.href} target="_blank" rel="noopener noreferrer" className={row}>
+            <span aria-hidden className={tile}>
+              <CircleHelp />
+            </span>
+            <span className="flex-1 font-medium">{t('more.help')}</span>
+            {chevron}
+          </a>
+        )}
       </Section>
+
+      <Button
+        variant="secondary"
+        className="w-full text-danger hover:text-danger"
+        onClick={() => setConfirming(true)}
+      >
+        <LogOut aria-hidden />
+        {t('action.signOut')}
+      </Button>
 
       <Dialog
         open={confirming}
         onOpenChange={setConfirming}
         title={t('more.signOutTitle', { platform: 'managemind' })}
         description={t('more.signOutBody')}
+        alert
       >
-        <div className="flex flex-col gap-2 md:flex-row-reverse">
-          <Button variant="danger" size="lg" onClick={signOut}>
-            {t('action.signOut')}
-          </Button>
+        <div className="flex flex-wrap-reverse justify-end gap-2">
           <Button variant="secondary" size="lg" onClick={() => setConfirming(false)}>
             {t('action.cancel')}
+          </Button>
+          <Button variant="danger" size="lg" onClick={signOut}>
+            {t('action.signOut')}
           </Button>
         </div>
       </Dialog>
@@ -141,90 +178,108 @@ function MorePage() {
   );
 }
 
+const group = 'overflow-hidden rounded-xl border border-border bg-background max-md:rounded-[12px]';
+
 function Section({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-2">
-      <h2 id={id} className="px-1 text-xs font-medium text-muted-foreground">
+    <section aria-labelledby={id} className="flex flex-col">
+      <h2
+        id={id}
+        className="px-1 pb-2 text-[13px] leading-[18px] font-medium text-muted-foreground"
+      >
         {label}
       </h2>
-      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background">
-        {children}
-      </div>
+      <div className={group}>{children}</div>
     </section>
   );
 }
 
-function Group({ group }: { group: NavGroup }) {
+function Group({ group: g, extra }: { group: NavGroup; extra?: ReactNode }) {
   const { t } = useLocale();
   const nav = useNav();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const here = locate(nav.groups, path);
+  const items = g.items.filter((item) => !IN_TABS.has(item.key));
+  if (items.length === 0 && !extra) return null;
   return (
-    <Section label={t(group.label)}>
-      {group.items.map((item) =>
+    <Section label={t(g.label)}>
+      {items.map((item) =>
         item.children ? (
-          <Area key={item.key} item={item} open={here?.item.key === item.key} />
+          <Area key={item.key} item={item} here={here} />
         ) : (
           <Link key={item.key} to={item.to} className={row}>
             <span aria-hidden className={tile}>
-              <item.icon className="size-4" />
+              <item.icon />
             </span>
-            <span className="flex-1">{t(item.label)}</span>
+            <span className="flex-1 font-medium">{t(item.label)}</span>
             {chevron}
           </Link>
         ),
       )}
+      {extra}
     </Section>
   );
 }
 
-/** An area's row opens into its pages. */
-function Area({ item, open: inside }: { item: NavItem; open: boolean }) {
-  const { t, locale } = useLocale();
+/** An area's row opens into its pages; the page you are on is marked. */
+function Area({ item, here }: { item: NavItem; here: ReturnType<typeof locate> }) {
+  const { t } = useLocale();
   const toConfirm = useToConfirm();
   const id = useId();
+  const inside = here?.item.key === item.key;
   const [open, setOpen] = useState(inside);
-  const names = (item.children ?? []).map((c) => t(c.label));
   return (
-    <div>
+    <div className={cn('border-b border-border last:border-b-0', open && 'pb-1.5')}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen(!open)}
-        className={row}
+        className={cn(row, 'border-b-0')}
       >
         <span aria-hidden className={tile}>
-          <item.icon className="size-4" />
+          <item.icon />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
-          <span>{t(item.label)}</span>
-          {!open && (
-            <span className="truncate text-xs text-muted-foreground">
-              {new Intl.ListFormat(locale, { type: 'unit' }).format(names)}
-            </span>
-          )}
+          <span className="font-medium">{t(item.label)}</span>
+          {item.summary && <span className={sub}>{t(item.summary)}</span>}
         </span>
+        {item.toConfirm && !open && toConfirm > 0 && (
+          <Badge
+            count={toConfirm}
+            className="h-5 min-w-5 rounded-full bg-danger-fill px-1.5 font-semibold text-white"
+          />
+        )}
         <ChevronRight
           aria-hidden
-          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-90' : ''}`}
+          className={cn(
+            'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            open && 'rotate-90',
+          )}
         />
       </button>
-      <ul id={id} hidden={!open} className="pb-2">
-        {item.children?.map((leaf) => (
-          <li key={leaf.to}>
-            <Link
-              to={leaf.to}
-              className="flex min-h-11 items-center gap-2 py-1 pr-3.5 pl-[3.75rem] text-sm hover:bg-muted"
-            >
-              <span className="flex-1">{t(leaf.label)}</span>
-              {leaf.toConfirm && toConfirm > 0 && (
-                <Badge count={toConfirm} className="bg-danger text-danger-foreground" />
-              )}
-            </Link>
-          </li>
-        ))}
+      <ul id={id} hidden={!open}>
+        {item.children?.map((leaf) => {
+          const current = inside && here?.leaf?.to === leaf.to;
+          return (
+            <li key={leaf.to}>
+              <Link
+                to={leaf.to}
+                aria-current={current ? 'page' : undefined}
+                className="mx-2 flex min-h-11 items-center gap-2 rounded-lg pr-2 pl-12 hover:bg-accent aria-[current=page]:bg-accent aria-[current=page]:font-medium"
+              >
+                <span className="flex-1">{t(leaf.label)}</span>
+                {leaf.toConfirm && toConfirm > 0 && (
+                  <Badge
+                    count={toConfirm}
+                    className="h-5 min-w-5 rounded-full bg-danger-fill px-1.5 font-semibold text-white"
+                  />
+                )}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

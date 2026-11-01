@@ -69,7 +69,7 @@ export function StockReportPage() {
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('stockReport.asOf')}
             <select
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
             >
@@ -181,7 +181,7 @@ export function StockReportPage() {
         <label className="flex items-center gap-2 self-start text-sm font-medium">
           {t('stockReport.slowDays')}
           <select
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
           >

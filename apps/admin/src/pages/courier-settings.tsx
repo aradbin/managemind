@@ -201,7 +201,6 @@ function CourierCard({
                     <input
                       type="radio"
                       name={`${courier}-mode`}
-                      className="size-4 accent-primary"
                       checked={mode === m}
                       onChange={() => setMode(m)}
                     />
@@ -228,7 +227,7 @@ function CourierCard({
                 {check.data?.pickupStores.length ? (
                   <select
                     id={`${courier}-pickup`}
-                    className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+                    className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
                     value={pickup ?? ''}
                     onChange={(e) => setPickup(Number(e.target.value))}
                   >
@@ -427,7 +426,7 @@ function Defaults({ connected }: { connected: Courier[] }) {
     <label className="flex min-h-10 items-start gap-3 md:min-h-9">
       <input
         type="checkbox"
-        className="mt-1 size-5"
+        className="mt-1"
         checked={value[key]}
         onChange={(e) => setValue((v) => ({ ...v, [key]: e.target.checked }))}
       />
@@ -456,7 +455,7 @@ function Defaults({ connected }: { connected: Courier[] }) {
             </label>
             <select
               id="courier-default"
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={value.default ?? ''}
               onChange={(e) =>
                 setValue((v) => ({ ...v, default: (e.target.value || null) as Courier | null }))
@@ -485,7 +484,7 @@ function Defaults({ connected }: { connected: Courier[] }) {
           <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="mt-1 size-5"
+              className="mt-1"
               checked={value.autoBook === 'on_confirm'}
               onChange={(e) =>
                 setValue((v) => ({ ...v, autoBook: e.target.checked ? 'on_confirm' : 'never' }))

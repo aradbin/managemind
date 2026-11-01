@@ -45,7 +45,7 @@ export function StateChip({ state }: { state: PromotionState }) {
   const { t } = useLocale();
   const tone =
     state === 'live'
-      ? 'bg-success-soft text-success'
+      ? 'bg-success-soft text-success-foreground'
       : state === 'scheduled'
         ? 'bg-info text-info-foreground'
         : state === 'paused'
@@ -55,7 +55,7 @@ export function StateChip({ state }: { state: PromotionState }) {
             : 'bg-muted text-muted-foreground';
   return (
     <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
+      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
     >
       {t(`promoState.${state}`)}
     </span>

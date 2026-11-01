@@ -210,7 +210,6 @@ export function InventoryPage() {
         <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={Boolean(search.lowStock)}
             onChange={(e) =>
               navigate({
@@ -387,7 +386,7 @@ function AdjustSheet({ row, onClose }: { row: InventoryRow; onClose: () => void 
                       <input
                         type="radio"
                         name={name}
-                        className="size-4 shrink-0 accent-primary"
+                        className="shrink-0"
                         checked={mode === m}
                         onChange={() => setMode(m)}
                       />

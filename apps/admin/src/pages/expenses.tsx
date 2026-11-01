@@ -19,7 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
@@ -59,6 +59,7 @@ import {
   thisMonth,
   uploadReceipt,
 } from '../lib/expenses';
+import { useOpenNew } from '../lib/open-new';
 import { dateOnly, idempotencyKey } from '../lib/orders';
 import { dhakaToday, priceOrDash, SPEND_METHODS, type SpendMethod } from '../lib/purchasing';
 import { cn } from '../lib/utils';
@@ -167,6 +168,10 @@ function Entries({ month, top }: { month: string; top: Top }) {
       ).totals.total,
   });
   const [editing, setEditing] = useState<Expense | 'new' | null>(null);
+  useOpenNew(
+    useCallback(() => setEditing('new'), []),
+    canWrite,
+  );
   const [deleting, setDeleting] = useState<Expense>();
   const [q, setQ] = useState('');
   const [category, setCategory] = useState<string>();
@@ -815,7 +820,6 @@ function ExpenseSheet({
             <label className="flex min-h-9 items-center gap-2 text-sm">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={removePhoto}
                 onChange={(e) => setRemovePhoto(e.target.checked)}
               />
@@ -916,7 +920,7 @@ function Recurring({ top }: { top: Top }) {
         r.active ? (
           <span className="text-muted-foreground">{state(r)}</span>
         ) : (
-          <span className="inline-flex h-[22px] items-center rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground">
+          <span className="inline-flex h-[22px] items-center rounded-lg bg-warning px-2 text-xs font-medium text-warning-foreground">
             {state(r)}
           </span>
         ),
@@ -1108,7 +1112,7 @@ function RecurringSheet({
               </label>
               <select
                 id={dayId}
-                className={cn(control, 'min-h-10 md:min-h-9')}
+                className={cn(control, 'h-10 md:h-9')}
                 value={day}
                 onChange={(e) => setDay(Number(e.target.value))}
               >
@@ -1356,7 +1360,7 @@ function CategorySheet({
               aria-label={t(
                 lang === 'bn' ? 'expenseCategories.nameBn' : 'expenseCategories.nameEn',
               )}
-              className={cn(control, 'min-h-10 md:min-h-9')}
+              className={cn(control, 'h-10 md:h-9')}
               value={names[lang]}
               maxLength={100}
               onChange={(e) => setNames({ ...names, [lang]: e.target.value })}

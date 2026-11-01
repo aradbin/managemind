@@ -477,7 +477,7 @@ function AttributeSheet({
                 </label>
                 <select
                   id={typeId}
-                  className={cn(control, 'min-h-10 md:min-h-9')}
+                  className={cn(control, 'h-10 md:h-9')}
                   value={type}
                   disabled={Boolean(attribute)}
                   onChange={(e) => {
@@ -499,7 +499,7 @@ function AttributeSheet({
                 </label>
                 <input
                   id={keyId}
-                  className={cn(control, 'min-h-10 font-mono md:min-h-9')}
+                  className={cn(control, 'h-10 font-mono md:h-9')}
                   value={key}
                   readOnly={Boolean(attribute)}
                   pattern="[a-z][a-z0-9_]*"

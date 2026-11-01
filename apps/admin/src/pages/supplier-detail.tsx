@@ -317,7 +317,6 @@ function PaymentDialog({ supplierId, onClose }: { supplierId: string; onClose: (
                 <input
                   type="radio"
                   name="method"
-                  className="size-4 accent-primary"
                   checked={method === m}
                   onChange={() => setMethod(m)}
                 />
