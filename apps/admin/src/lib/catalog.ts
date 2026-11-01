@@ -139,6 +139,22 @@ export function categoryOptions(categories: readonly Category[], locale: Locale)
   return ordered.map((c) => ({ id: c.id, depth: c.depth, label: path(c).join(' › ') }));
 }
 
+/**
+ * Categories for a searchable select: each with its path, findable by its
+ * name in either language.
+ */
+export function categoryChoices(categories: readonly Category[], locale: Locale) {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return categoryOptions(categories, locale).map((o) => {
+    const c = byId.get(o.id);
+    return {
+      value: o.id,
+      label: o.label,
+      keywords: `${c?.translations.bn?.name ?? ''} ${c?.translations.en?.name ?? ''}`,
+    };
+  });
+}
+
 /** Invalidates everything that shows a product. */
 export const productKeys = (id?: string) =>
   id ? [['product', id], ['products'], ['inventory']] : [['products'], ['inventory']];

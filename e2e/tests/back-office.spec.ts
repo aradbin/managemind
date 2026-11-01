@@ -12,7 +12,7 @@ import { bn } from '../../apps/admin/src/i18n/bn';
 import { expensesBn } from '../../apps/admin/src/i18n/expenses-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { purchasingBn } from '../../apps/admin/src/i18n/purchasing-bn';
-import { expectAccessible, pngImage, signIn } from './helpers';
+import { choose, expectAccessible, pngImage, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -118,9 +118,9 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/inventory/purchase-orders`);
     await page.getByRole('link', { name: m('po.new') }).click();
     await expect(page.getByRole('heading', { name: m('po.new'), level: 1 })).toBeVisible();
-    await page
-      .getByRole('combobox', { name: m('po.supplier') })
-      .selectOption({ label: supplierName });
+    await choose(page.getByRole('combobox', { name: m('po.supplier'), exact: true }), {
+      label: supplierName,
+    });
     for (const title of titles) {
       await page.getByLabel(m('order.addProduct')).fill(title);
       await page
@@ -285,7 +285,7 @@ test('back office', async ({ page }, info) => {
     await expectAccessible(page, 'expenses');
     await page.getByRole('button', { name: m('expenses.new') }).click();
     const dialog = page.getByRole('dialog', { name: m('expenses.new') });
-    await dialog.getByLabel(m('expenses.category')).selectOption({ index: 3 });
+    await choose(dialog.getByLabel(m('expenses.category')), { index: 2 });
     await dialog.getByLabel(m('expenses.amount')).fill('3500');
     await dialog.getByLabel(m('purchasing.method.card')).check();
     await dialog.locator('input[type=file]').setInputFiles({
@@ -302,7 +302,7 @@ test('back office', async ({ page }, info) => {
     await page.getByRole('button', { name: m('expenses.tab.recurring') }).click();
     await page.getByRole('button', { name: m('recurring.new') }).click();
     const rent = page.getByRole('dialog', { name: m('recurring.new') });
-    await rent.getByLabel(m('expenses.category')).selectOption({ index: 1 });
+    await choose(rent.getByLabel(m('expenses.category')), { index: 0 });
     await rent.getByLabel(m('expenses.amount')).fill('25000');
     await rent.getByLabel(m('recurring.dayOfMonth')).selectOption('5');
     await expectAccessible(page, 'recurring expense form');

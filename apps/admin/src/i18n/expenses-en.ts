@@ -8,6 +8,7 @@ export const expensesEn = {
   'expenses.tab.categories': 'Categories',
   'expenses.new': 'Record expense',
   'expenses.edit': 'Edit expense',
+  'expenses.findCategory': 'Search categories',
   'expenses.searchList': 'Search paid to and notes',
   'expenses.count': '{count} expenses',
   'expenses.today': 'Today',

@@ -4,7 +4,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import { RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
@@ -12,13 +12,14 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { Button } from '../components/ui/button';
+import { Combobox } from '../components/ui/combobox';
 import { Dialog } from '../components/ui/dialog';
 import { VariantPicker } from '../components/variant-picker';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
-import { categoriesQuery, categoryOptions } from '../lib/catalog';
+import { categoriesQuery, categoryChoices, categoryOptions } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateOnly, lineLabel } from '../lib/orders';
 import { PURCHASING_KEYS, type StockCountSummary } from '../lib/purchasing';
@@ -217,6 +218,7 @@ function NewCountDialog({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const [kind, setKind] = useState<ScopeKind>('all');
   const [categoryId, setCategoryId] = useState('');
+  const categoryField = useId();
   const [tag, setTag] = useState('');
   const [chosen, setChosen] = useState<{ id: string; label: string }[]>([]);
   const [note, setNote] = useState('');
@@ -282,21 +284,18 @@ function NewCountDialog({ onClose }: { onClose: () => void }) {
           </div>
         </fieldset>
         {kind === 'category' && (
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            {t('counts.category')}
-            <select
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base font-normal shadow-xs md:min-h-9 md:text-sm"
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor={categoryField} className="text-sm font-medium">
+              {t('counts.category')}
+            </label>
+            <Combobox
+              id={categoryField}
+              searchLabel={t('categories.search')}
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="" />
-              {categoryOptions(categories.data ?? [], locale).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
+              options={categoryChoices(categories.data ?? [], locale)}
+              onChange={setCategoryId}
+            />
+          </div>
         )}
         {kind === 'tag' && (
           <Field

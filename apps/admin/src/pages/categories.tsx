@@ -27,7 +27,7 @@ import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { control } from '../components/ui/input';
+import { Combobox } from '../components/ui/combobox';
 import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
@@ -35,6 +35,7 @@ import {
   attributesQuery,
   type Category,
   categoriesQuery,
+  categoryChoices,
   categoryOptions,
   pick,
   storeSettingsQuery,
@@ -527,19 +528,18 @@ function CategorySheet({
             <label htmlFor={parentField} className="text-sm font-medium">
               {t('categories.parent')}
             </label>
-            <select
+            <Combobox
               id={parentField}
-              className={cn(control, 'min-h-10 md:min-h-9')}
+              searchLabel={t('categories.search')}
               value={parentId}
-              onChange={(e) => setParentId(e.target.value)}
-            >
-              <option value="">{t('categories.topLevel')}</option>
-              {parents.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: t('categories.topLevel') },
+                ...categoryChoices(all, locale).filter((o) =>
+                  parents.some((p) => p.id === o.value),
+                ),
+              ]}
+              onChange={setParentId}
+            />
             <p className="text-sm text-muted-foreground">{t('categories.depthHint')}</p>
           </div>
           <fieldset className="flex flex-col gap-2">

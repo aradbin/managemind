@@ -284,6 +284,9 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'place.district': 'জেলা',
   'place.area': 'এলাকা (থানা বা উপজেলা)',
   'place.choose': 'বেছে নিন…',
+  'place.findDivision': 'বিভাগ খুঁজুন',
+  'place.findDistrict': 'জেলা খুঁজুন',
+  'place.findArea': 'এলাকা খুঁজুন',
   'place.line': 'রাস্তার ঠিকানা',
   'place.lineHint': 'বাসা, রোড আর কাছের পরিচিত জায়গা।',
 

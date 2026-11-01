@@ -117,6 +117,8 @@ export const en = {
   'form.invalidEmail': 'Enter a valid email address.',
   'form.invalidPhone': 'Enter a Bangladeshi mobile number, such as 01712-345678.',
   'form.optional': 'optional',
+  'form.choose': 'Choose…',
+  'form.typeToNarrow': '{count} more: type to narrow the list.',
   'list.empty': 'Nothing here yet.',
   'list.more': 'Load more',
   'action.close': 'Close',

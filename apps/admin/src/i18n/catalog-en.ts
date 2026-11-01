@@ -157,6 +157,8 @@ export const catalogEn = {
   'specs.title': 'Specifications',
   'specs.intro': 'Facts shoppers see on the product page and can filter by. All optional.',
   'specs.add': 'Add a specification',
+  'specs.find': 'Search specifications',
+  'specs.findValue': 'Search {name}',
   'specs.remove': 'Remove {name}',
   'specs.yes': 'Yes',
   'specs.no': 'No',

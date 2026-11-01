@@ -8,6 +8,7 @@ export const expensesBn: Record<keyof typeof expensesEn, string> = {
   'expenses.tab.categories': 'ক্যাটাগরি',
   'expenses.new': 'খরচ লিখুন',
   'expenses.edit': 'খরচ বদলান',
+  'expenses.findCategory': 'ক্যাটাগরি খুঁজুন',
   'expenses.searchList': 'কাকে দেওয়া ও নোটে খুঁজুন',
   'expenses.count': '{count}টি খরচ',
   'expenses.today': 'আজ',

@@ -157,6 +157,8 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'specs.title': 'বৈশিষ্ট্য',
   'specs.intro': 'যে তথ্য ক্রেতারা পণ্যের পাতায় দেখেন এবং যা দিয়ে ফিল্টার করতে পারেন। সবই ঐচ্ছিক।',
   'specs.add': 'একটি বৈশিষ্ট্য যোগ করুন',
+  'specs.find': 'বৈশিষ্ট্য খুঁজুন',
+  'specs.findValue': '{name} খুঁজুন',
   'specs.remove': '{name} সরান',
   'specs.yes': 'হ্যাঁ',
   'specs.no': 'না',

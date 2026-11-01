@@ -75,6 +75,8 @@ export const promotionsEn = {
   'promo.maxUses': 'Times per order',
   'promo.maxUsesHint': 'Empty for no limit.',
   'promo.addCategory': 'Add a category',
+  'promo.findCategory': 'Search categories',
+  'promo.findCollection': 'Search collections',
   'promo.addCollection': 'Add a collection',
   'promo.addProduct': 'Add a product',
   'promo.chosen': 'Chosen',

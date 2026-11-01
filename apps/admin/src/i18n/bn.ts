@@ -113,6 +113,8 @@ export const bn: Record<keyof typeof en, string> = {
   'form.invalidEmail': 'সঠিক ইমেইল ঠিকানা লিখুন।',
   'form.invalidPhone': 'বাংলাদেশি মোবাইল নম্বর লিখুন, যেমন ০১৭১২-৩৪৫৬৭৮।',
   'form.optional': 'ঐচ্ছিক',
+  'form.choose': 'বেছে নিন…',
+  'form.typeToNarrow': 'আরও {count}টি: খুঁজতে লিখুন।',
   'list.empty': 'এখনো কিছু নেই।',
   'list.more': 'আরও দেখুন',
   'action.close': 'বন্ধ করুন',

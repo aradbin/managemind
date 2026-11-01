@@ -7,6 +7,7 @@ import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
 import { pagesQuery } from '../../lib/online-store';
+import { Combobox } from '../ui/combobox';
 import { Input } from '../ui/input';
 
 type Kind = ThemeLink['type'];
@@ -93,22 +94,15 @@ export function LinkPicker({
           <label htmlFor={`${id}-target`} className="text-sm font-medium">
             {t('section.linkTarget')}
           </label>
-          <select
+          <Combobox
             id={`${id}-target`}
-            className={select}
+            searchLabel={t('section.findTarget')}
+            placeholder="—"
             disabled={disabled}
             value={value.id}
-            onChange={(e) => onChange({ ...value, id: e.target.value })}
-          >
-            <option value="" disabled>
-              —
-            </option>
-            {targets.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            options={targets.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(target) => onChange({ ...value, id: target })}
+          />
         </div>
       )}
       {value?.type === 'search' && (

@@ -20,7 +20,14 @@ import { catalogBn } from '../../apps/admin/src/i18n/catalog-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { promotionsBn } from '../../apps/admin/src/i18n/promotions-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
-import { expectAccessible, expectScriptBudget, mailCount, nextMail, signIn } from './helpers';
+import {
+  choose,
+  expectAccessible,
+  expectScriptBudget,
+  mailCount,
+  nextMail,
+  signIn,
+} from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API, STOREFRONT } from './urls';
 
@@ -82,9 +89,10 @@ async function stockOf(request: APIRequestContext, title: string, variantId: str
 }
 
 async function choosePlace(page: Page, ids: { division: string; district: string; area: string }) {
-  await page.getByLabel(m('place.division'), { exact: true }).selectOption(ids.division);
-  await page.getByLabel(m('place.district'), { exact: true }).selectOption(ids.district);
-  await page.getByLabel(m('place.area'), { exact: true }).selectOption(ids.area);
+  // Searchable selects: a district has dozens of areas.
+  await choose(page.getByLabel(m('place.division'), { exact: true }), { value: ids.division });
+  await choose(page.getByLabel(m('place.district'), { exact: true }), { value: ids.district });
+  await choose(page.getByLabel(m('place.area'), { exact: true }), { value: ids.area });
 }
 
 test('orders, promotions and accounts', async ({

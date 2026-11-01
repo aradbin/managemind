@@ -114,6 +114,7 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'section.link.search': 'একটি খোঁজ',
   'section.link.url': 'অন্য ওয়েবসাইট',
   'section.linkTarget': 'কোনটি',
+  'section.findTarget': 'খুঁজুন',
   'section.linkSearch': 'খোঁজের শব্দ',
   'section.linkUrl': 'ওয়েব ঠিকানা (https://…)',
   'section.categories': 'ক্যাটাগরি',

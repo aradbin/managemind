@@ -114,6 +114,7 @@ export const onlineStoreEn = {
   'section.link.search': 'A search',
   'section.link.url': 'Another website',
   'section.linkTarget': 'Which one',
+  'section.findTarget': 'Search',
   'section.linkSearch': 'Search words',
   'section.linkUrl': 'Web address (https://…)',
   'section.categories': 'Categories',

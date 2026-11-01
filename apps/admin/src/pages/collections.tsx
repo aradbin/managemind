@@ -19,6 +19,7 @@ import { usePermission } from '../components/permission-gate';
 import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { Combobox } from '../components/ui/combobox';
 import { Input } from '../components/ui/input';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
@@ -26,7 +27,7 @@ import {
   attributesQuery,
   type Collection,
   categoriesQuery,
-  categoryOptions,
+  categoryChoices,
   collectionsQuery,
   formatPrice,
   pick,
@@ -312,19 +313,14 @@ function ConditionRow({
         </Button>
       </div>
       {condition.type === 'category' && (
-        <select
-          aria-label={t('catalog.category')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('catalog.category')}
+          searchLabel={t('categories.search')}
+          placeholder="—"
           value={condition.categoryId}
-          onChange={(e) => onChange({ ...condition, categoryId: e.target.value })}
-        >
-          <option value="">—</option>
-          {categoryOptions(categories.data ?? [], locale).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
+          options={categoryChoices(categories.data ?? [], locale)}
+          onChange={(categoryId) => onChange({ ...condition, categoryId })}
+        />
       )}
       {condition.type === 'price' && (
         <div className="grid grid-cols-2 gap-2">
@@ -355,57 +351,56 @@ function ConditionRow({
         />
       )}
       {condition.type === 'brand' && (
-        <select
-          aria-label={t('attribute.brand')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('attribute.brand')}
+          searchLabel={t('specs.findValue', { name: t('attribute.brand') })}
+          placeholder="—"
           value={condition.valueId}
-          onChange={(e) => onChange({ ...condition, valueId: e.target.value })}
-        >
-          <option value="">—</option>
-          {(brand?.values ?? []).map((v) => (
-            <option key={v.id} value={v.id}>
-              {pick(v.label, locale)}
-            </option>
-          ))}
-        </select>
+          options={(brand?.values ?? []).map((v) => ({
+            value: v.id,
+            label: pick(v.label, locale) ?? '',
+            keywords: `${v.label.bn ?? ''} ${v.label.en ?? ''}`,
+          }))}
+          onChange={(valueId) => onChange({ ...condition, valueId })}
+        />
       )}
       {(condition.type === 'attribute_value' ||
         condition.type === 'attribute_range' ||
         condition.type === 'attribute_boolean') && (
-        <select
-          aria-label={t('catalog.attributes')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('catalog.attributes')}
+          searchLabel={t('specs.find')}
+          placeholder="—"
           value={condition.attributeId}
-          onChange={(e) => onChange({ ...condition, attributeId: e.target.value } as Condition)}
-        >
-          <option value="">—</option>
-          {typed(
+          options={typed(
             condition.type === 'attribute_value'
               ? ['choice', 'multi_choice']
               : condition.type === 'attribute_range'
                 ? ['number']
                 : ['boolean'],
-          ).map((a) => (
-            <option key={a.id} value={a.id}>
-              {pick(a.name, locale) ?? a.key}
-            </option>
-          ))}
-        </select>
+          ).map((a) => ({
+            value: a.id,
+            label: pick(a.name, locale) ?? a.key,
+            keywords: `${a.key} ${a.name.bn ?? ''} ${a.name.en ?? ''}`,
+          }))}
+          onChange={(attributeId) => onChange({ ...condition, attributeId } as Condition)}
+        />
       )}
       {condition.type === 'attribute_value' && attribute && (
-        <select
-          aria-label={t('rules.value')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('rules.value')}
+          searchLabel={t('specs.findValue', {
+            name: pick(attribute.name, locale) ?? attribute.key,
+          })}
+          placeholder="—"
           value={condition.valueId}
-          onChange={(e) => onChange({ ...condition, valueId: e.target.value })}
-        >
-          <option value="">—</option>
-          {attribute.values.map((v) => (
-            <option key={v.id} value={v.id}>
-              {pick(v.label, locale)}
-            </option>
-          ))}
-        </select>
+          options={attribute.values.map((v) => ({
+            value: v.id,
+            label: pick(v.label, locale) ?? '',
+            keywords: `${v.label.bn ?? ''} ${v.label.en ?? ''}`,
+          }))}
+          onChange={(valueId) => onChange({ ...condition, valueId })}
+        />
       )}
       {condition.type === 'attribute_range' && (
         <div className="grid grid-cols-2 gap-2">

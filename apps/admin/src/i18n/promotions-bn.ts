@@ -75,6 +75,8 @@ export const promotionsBn: Record<keyof typeof promotionsEn, string> = {
   'promo.maxUses': 'এক অর্ডারে কতবার',
   'promo.maxUsesHint': 'সীমা না চাইলে খালি রাখুন।',
   'promo.addCategory': 'ক্যাটাগরি যোগ করুন',
+  'promo.findCategory': 'ক্যাটাগরি খুঁজুন',
+  'promo.findCollection': 'কালেকশন খুঁজুন',
   'promo.addCollection': 'কালেকশন যোগ করুন',
   'promo.addProduct': 'পণ্য যোগ করুন',
   'promo.chosen': 'বাছাই করা',

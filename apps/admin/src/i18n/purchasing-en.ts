@@ -68,6 +68,7 @@ export const purchasingEn = {
   'po.number': 'PO',
   'po.supplier': 'Supplier',
   'po.chooseSupplier': 'Choose a supplier',
+  'po.findSupplier': 'Search suppliers',
   'po.status': 'Status',
   'po.status.draft': 'Draft',
   'po.status.ordered': 'Ordered',

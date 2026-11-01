@@ -16,6 +16,7 @@
     "@managemind/shared": "workspace:*",
     "@radix-ui/react-dialog": "catalog:",
     "@radix-ui/react-dropdown-menu": "catalog:",
+    "@radix-ui/react-popover": "catalog:",
     "@radix-ui/react-slot": "catalog:",
     "@sentry/react": "catalog:",
     "@tanstack/react-query": "catalog:",

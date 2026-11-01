@@ -11,7 +11,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { en } from '../../apps/admin/src/i18n/en';
 import { fixtureCsv } from './catalog-fixture';
-import { expectAccessible, pngImage, signIn, t } from './helpers';
+import { choose, expectAccessible, pngImage, signIn, t } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -99,7 +99,7 @@ test('catalog flows', async ({ page }, info) => {
     await page.getByRole('button', { name: category, exact: true }).click();
     dialog = page.getByRole('dialog');
     await expect(dialog.getByLabel('কাপড়')).toBeChecked();
-    await dialog.getByLabel(t('categories.parent')).selectOption({ label: parent });
+    await choose(dialog.getByLabel(t('categories.parent')), { label: parent });
     await expectAccessible(page, 'edit category');
     await dialog.getByRole('button', { name: t('action.save') }).click();
     await expect(dialog).toBeHidden();
@@ -147,9 +147,11 @@ test('catalog flows', async ({ page }, info) => {
       .getByLabel(`${parent} › ${category}`)
       .check();
     // The category's template brings the fabric; the brand is added by hand.
-    await page.getByLabel('কাপড়', { exact: true }).selectOption({ label: 'সুতি' });
-    await page.getByLabel(t('specs.add')).selectOption({ label: t('attribute.brand') });
-    await page.getByLabel(t('attribute.brand'), { exact: true }).selectOption({ label: 'আড়ং' });
+    await choose(page.getByLabel('কাপড়', { exact: true }), { label: 'সুতি' });
+    await choose(page.getByRole('combobox', { name: t('specs.add'), exact: true }), {
+      label: t('attribute.brand'),
+    });
+    await choose(page.getByLabel(t('attribute.brand'), { exact: true }), { label: 'আড়ং' });
     const tags = page.getByRole('combobox', { name: new RegExp(`^${t('product.tags')}`) });
     await tags.fill('ঈদ');
     await tags.press('Enter');
@@ -161,8 +163,11 @@ test('catalog flows', async ({ page }, info) => {
     await page.reload();
     await expect(editor.locator('strong')).toHaveText('ঢাকাই');
     await expect(editor.locator('li')).toHaveText('সুতি');
-    await expect(page.getByLabel('কাপড়', { exact: true })).toHaveValue(/.+/);
-    await expect(page.getByLabel(t('attribute.brand'), { exact: true })).toHaveValue(/.+/);
+    await expect(page.getByLabel('কাপড়', { exact: true })).toHaveAttribute('data-value', /.+/);
+    await expect(page.getByLabel(t('attribute.brand'), { exact: true })).toHaveAttribute(
+      'data-value',
+      /.+/,
+    );
     await expect(page.getByText('ঈদ', { exact: true })).toBeVisible();
   });
 

@@ -37,6 +37,7 @@ import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { Combobox } from '../components/ui/combobox';
 import { control, Textarea } from '../components/ui/input';
 import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { Switch } from '../components/ui/switch';
@@ -572,22 +573,19 @@ function CategorySelect({ value, onChange }: { value: string; onChange: (id: str
       <label htmlFor={id} className="text-sm font-medium">
         {t('expenses.category')}
       </label>
-      <select
+      <Combobox
         id={id}
-        className={cn(control, 'min-h-10 md:min-h-9')}
+        searchLabel={t('expenses.findCategory')}
         value={value}
-        required
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="" />
-        {categories.data
-          ?.filter((c) => !c.archived || c.id === value)
-          .map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name[locale]}
-            </option>
-          ))}
-      </select>
+        options={(categories.data ?? [])
+          .filter((c) => !c.archived || c.id === value)
+          .map((c) => ({
+            value: c.id,
+            label: c.name[locale],
+            keywords: `${c.name.bn} ${c.name.en}`,
+          }))}
+        onChange={onChange}
+      />
     </div>
   );
 }

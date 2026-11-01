@@ -290,6 +290,9 @@ export const ordersEn = {
   'place.district': 'District',
   'place.area': 'Area (thana or upazila)',
   'place.choose': 'Choose…',
+  'place.findDivision': 'Search divisions',
+  'place.findDistrict': 'Search districts',
+  'place.findArea': 'Search areas',
   'place.line': 'Street address',
   'place.lineHint': 'House, road and a landmark.',
 

@@ -67,6 +67,7 @@ export const purchasingBn: Record<keyof typeof purchasingEn, string> = {
   'po.number': 'পিও',
   'po.supplier': 'সরবরাহকারী',
   'po.chooseSupplier': 'সরবরাহকারী বেছে নিন',
+  'po.findSupplier': 'সরবরাহকারী খুঁজুন',
   'po.status': 'অবস্থা',
   'po.status.draft': 'খসড়া',
   'po.status.ordered': 'অর্ডার দেওয়া',
