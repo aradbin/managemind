@@ -138,11 +138,11 @@ export function CheckoutSettingsPage() {
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.email')}</legend>
             {EMAIL_FIELD_MODES.map((m) => (
-              <label key={m} className="flex min-h-11 items-center gap-3">
+              <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="email-mode"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={checkout.email === m}
                   onChange={() => setCheckout({ ...checkout, email: m })}
                 />
@@ -168,7 +168,7 @@ export function CheckoutSettingsPage() {
             onChange={(e) => setCheckout({ ...checkout, orderNumberPrefix: e.target.value })}
             error={err(errors.prefix)}
           />
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-3 size-5"
@@ -182,7 +182,7 @@ export function CheckoutSettingsPage() {
               </span>
             </span>
           </label>
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-3 size-5"
@@ -203,10 +203,10 @@ export function CheckoutSettingsPage() {
           className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
         >
           <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.cod')}</legend>
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={cod.enabled}
               onChange={(e) => setCod({ ...cod, enabled: e.target.checked })}
             />
@@ -224,11 +224,11 @@ export function CheckoutSettingsPage() {
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.advance')}</legend>
             {COD_ADVANCE_RULES.map((r) => (
-              <label key={r} className="flex min-h-11 items-center gap-3">
+              <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="advance"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={cod.advance === r}
                   onChange={() => setCod({ ...cod, advance: r })}
                 />
@@ -248,11 +248,11 @@ export function CheckoutSettingsPage() {
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.otp')}</legend>
             {COD_OTP_RULES.map((r) => (
-              <label key={r} className="flex min-h-11 items-center gap-3">
+              <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="otp"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={cod.otp === r}
                   onChange={() => setCod({ ...cod, otp: r })}
                 />

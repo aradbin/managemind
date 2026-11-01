@@ -20,7 +20,7 @@ export function ThemeMenuItems({ item }: { item: string }) {
   const choice = useThemeChoice();
   return (
     <>
-      <Menu.Label className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+      <Menu.Label className="px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">
         {t('appearance.title')}
       </Menu.Label>
       <Menu.RadioGroup value={choice} onValueChange={(v) => setThemeChoice(parseThemeChoice(v))}>
@@ -30,13 +30,13 @@ export function ThemeMenuItems({ item }: { item: string }) {
             <Menu.RadioItem
               key={c}
               value={c}
-              className={`${item} gap-3`}
+              className={`${item} gap-2`}
               onSelect={(e) => e.preventDefault()}
             >
               <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
               <span className="flex-1">{t(`appearance.${c}`)}</span>
               <Menu.ItemIndicator>
-                <Check aria-hidden className="size-4 text-primary" />
+                <Check aria-hidden className="size-4" />
               </Menu.ItemIndicator>
             </Menu.RadioItem>
           );
@@ -54,13 +54,13 @@ export function ThemeSwitch() {
   return (
     <fieldset className="px-3.5 py-3">
       <legend className="float-left mb-2.5 w-full font-medium">{t('appearance.title')}</legend>
-      <div className="clear-both grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+      <div className="clear-both grid grid-cols-3 gap-1 rounded-[10px] bg-muted p-[3px]">
         {THEME_CHOICES.map((c) => {
           const Icon = ICONS[c];
           return (
             <label
               key={c}
-              className="relative flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground has-checked:bg-background has-checked:text-foreground has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-ring"
+              className="relative flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-sm font-medium text-muted-foreground has-checked:bg-background has-checked:text-foreground has-checked:shadow-sm has-focus-visible:ring-2 has-focus-visible:ring-ring"
             >
               <input
                 type="radio"

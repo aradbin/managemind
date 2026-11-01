@@ -14,7 +14,7 @@ import { LinkPicker } from './link-picker';
 import { LocalizedField } from './localized-field';
 
 const select =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 /** A new section of a kind, with empty texts (the storefront hides empty ones). */
 export function newSection(type: ThemeSection['type']): ThemeSection {
@@ -111,10 +111,10 @@ function CheckList({
       <legend className="px-1 text-sm font-medium">{legend}</legend>
       <p className="text-sm text-muted-foreground">{hint}</p>
       {options.map((o) => (
-        <label key={o.id} className="flex min-h-11 items-center gap-3">
+        <label key={o.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={selected.includes(o.id)}
             onChange={(e) =>
               onChange(

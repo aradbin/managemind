@@ -21,6 +21,7 @@ import { cartByToken, cartView } from '../cart/service';
 import { parseInput } from '../catalog/common';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
 import { effectivePriceSql, type Localized } from '../orders/variants';
+import { countWhere } from '../paging';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 
@@ -203,7 +204,7 @@ export async function listIncompleteOrders(
   tx: TenantTx,
   actor: Actor,
   query: unknown = {},
-): Promise<{ items: IncompleteSummary[]; nextCursor: string | null }> {
+): Promise<{ items: IncompleteSummary[]; nextCursor: string | null; total: number }> {
   readAccess(actor);
   const q = parseInput(incompleteListQuery, query);
   const { settings } = await orderSettings(tx);
@@ -214,11 +215,12 @@ export async function listIncompleteOrders(
       sql`i.updated_at <= now() - make_interval(mins => ${settings.recovery.showAfterMinutes})`,
     );
   }
-  const after = q.after ? decodeCursor(q.after) : null;
+  const total = await countWhere(tx, sql`store.incomplete_orders i`, where);
+  const after = q.offset === undefined && q.after ? decodeCursor(q.after) : null;
   if (after) where.push(sql`(i.updated_at, i.id) < (${after.at}::timestamptz, ${after.id}::uuid)`);
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
     select i.* from store.incomplete_orders i where ${sql.join(where, sql` and `)}
-     order by i.updated_at desc, i.id desc limit ${limit + 1}`);
+     order by i.updated_at desc, i.id desc limit ${limit + 1} offset ${q.offset ?? 0}`);
   const page = rows.slice(0, limit);
   const risks = await phoneRisks(
     tx,
@@ -227,7 +229,7 @@ export async function listIncompleteOrders(
   );
   const items = page.map((r) => summary(r, risks));
   const last = rows.length > limit ? items[items.length - 1] : undefined;
-  return { items, nextCursor: last ? btoa(`${last.updatedAt}|${last.id}`) : null };
+  return { items, nextCursor: last ? btoa(`${last.updatedAt}|${last.id}`) : null, total };
 }
 
 /** How many open records staff can see now, and today's recovered ones, for the dashboard. */

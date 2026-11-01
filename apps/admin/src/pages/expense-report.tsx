@@ -6,7 +6,6 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { ReportRange, useRange } from '../components/report-range';
 import { Table } from '../components/report-table';
-import { ReportsNav } from '../components/reports-nav';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/back-office-reports';
@@ -49,7 +48,6 @@ export function ExpenseReportPage() {
           </Button>
         }
       />
-      <ReportsNav />
       <ReportRange value={range} onChange={setRange} />
       {report.isPending && valid && <p role="status">{t('loading')}</p>}
       {report.isError && <Notice tone="error">{errorMessage(report.error, t)}</Notice>}

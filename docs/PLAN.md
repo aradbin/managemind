@@ -42,7 +42,7 @@ We will build our own multi-tenant commerce platform for Bangladeshi SMEs on Clo
 | 4 — Cart, checkout, orders, promotions and COD | Done; in production, with a COD order checked end to end on demo-grocery | [`phase-4-report.md`](phases/phase-4-report.md) |
 | 5A — Online payments, notifications and returns | Built; merged and deployed (#60, Oct 23). Online payment, SMS and push stay off in production until the owner adds `CREDENTIALS_KEY` and the VAPID keys | [`phase-5a-report.md`](phases/phase-5a-report.md) |
 | 5B — Launch readiness and pilot | Built; merged and deployed (#66, Oct 24). Backups, online invoice payment and the dispatch token wait for the owner's keys. **The Actions minutes ran out on Oct 24:** CI, previews, deploys and the scheduled workflows waited for the monthly reset until the owner made the repository public for a while, where Actions minutes are free (#69 ran this way); it was made private again on Oct 27. The pilot follows | [`phase-5b-report.md`](phases/phase-5b-report.md) |
-| 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24) | [`phase-5c-report.md`](phases/phase-5c-report.md) |
+| 5C — Admin redesign | Built (Oct 24): every admin screen redesigned to the owner's approved screens, at phone and desktop sizes, in both languages and themes. Merged and deployed (#69, Oct 24). **Second redesign (Nov 1):** every page on shadcn/ui's neutral theme with one layout, lists that filter by several values and show numbered pages with totals, side panels, save bars and searchable selects (ADR 0033); on #92, waiting for the preview E2E | [`phase-5c-report.md`](phases/phase-5c-report.md) |
 | 6 — Sales recovery | Built (Oct 24): the delivery success score, duplicate orders, the call queue, the SMS link and incomplete orders. Everything ships off or harmless until the pilot's feedback sets the script, the threshold and the defaults (Q1). Merged and deployed (#72 and #73, Oct 25). The checkout notice waits for the legal review's wording, and the SMS link for `CREDENTIALS_KEY` and a store's SMS gateway | [`phase-6-plan.md`](phases/phase-6-plan.md), [`phase-6-report.md`](phases/phase-6-report.md) |
 | 7 — Couriers and fulfillment | Built (Oct 25): booking, status by webhook and poll, COD by the amount collected, courier returns, area mapping and COD reconciliation, with a test courier for previews. Merged and deployed (#75, Oct 25). The Steadfast, Pathao and RedX adapters wait for credentials to be checked against the couriers before stores are offered them; production waits for `CREDENTIALS_KEY` | [`phase-7-plan.md`](phases/phase-7-plan.md), [`phase-7-report.md`](phases/phase-7-report.md) |
 | 8 — Back office | Built (Oct 26): purchasing, stock counts, expenses, the reports with their exports, and imports. Merged and deployed (#85, Oct 27). Its follow-ups followed on Oct 27: the formula guard on the order and customer CSVs, the Overview tab's export, and the 50-variant count and PO editor in the tests. The accountant's review of the report definitions (§3.8) and a pilot's sample files are still to come | [`phase-8-plan.md`](phases/phase-8-plan.md), [`phase-8-report.md`](phases/phase-8-report.md) |
@@ -585,9 +585,20 @@ Everything below comes from outside the codebase (accounts, domains, credentials
 - [x] Light, dark or the device's setting, chosen in the account menu or on More and remembered on the device (added after #69; ADR 0029 item 7).
 - [x] The E2E, with axe and the CSP check, passes at both viewports. The admin's JavaScript before sign-in stays within its 150 KiB budget.
 
+**Second redesign (Oct 31 – Nov 1).** The owner had every admin page redrawn on shadcn/ui's neutral theme, with a design rules board; [ADR 0033](adr/0033-admin-shadcn-redesign.md) records the decisions and phase-5c-report §7 the build.
+
+- [x] Neutral tokens in both themes with AA contrast; compact sizes; status tints with their words.
+- [x] One layout: a sidebar whose areas open into their pages, a header with "Area › Page", the phone's Menu tab; no section tabs.
+- [x] Every list on one pattern: stage tabs, filter buttons, rows that open, row menus, the selection bar.
+- [x] Filters that pick several values, with the list endpoints reading them as "any of these".
+- [x] Side panels for small forms, save bars on full-page editors, searchable selects for long lists of names.
+- [x] Expenses compared with last month, or with the same days of it while the month is still going.
+- [x] Every long list says how many match: numbered pages on desktops, Load more on phones; the list endpoints return totals and take offsets.
+- [ ] The E2E at both viewports on #92, then merge and deploy.
+
 **Acceptance criteria**
 
-- Every admin screen follows the approved designs or their patterns, at phone and desktop sizes, in Bangla and English. Where the build differs, ADR 0029 says why.
+- Every admin screen follows the approved designs or their patterns, at phone and desktop sizes, in Bangla and English. Where the build differs, ADR 0029 says why. Where the second redesign differs from its boards, ADR 0033 says why.
 - No accessibility or contrast regression: the E2E's axe check passes on every screen it visits.
 
 ## Phases 6–10 — After the pilot

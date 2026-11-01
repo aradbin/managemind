@@ -7,7 +7,6 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { Table } from '../components/report-table';
-import { ReportsNav } from '../components/reports-nav';
 import { useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
@@ -65,13 +64,12 @@ export function StockReportPage() {
         title={t('stockReport.title')}
         description={t('stockReport.intro')}
       />
-      <ReportsNav />
       {cost && (
         <>
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('stockReport.asOf')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
             >
@@ -183,7 +181,7 @@ export function StockReportPage() {
         <label className="flex items-center gap-2 self-start text-sm font-medium">
           {t('stockReport.slowDays')}
           <select
-            className="min-h-11 rounded-md border border-input bg-background px-3"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
           >

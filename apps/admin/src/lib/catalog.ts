@@ -72,23 +72,22 @@ export interface ProductFilters {
   lowStock?: boolean | undefined;
 }
 
-export const productsQuery = (filters: ProductFilters) => ({
+/** The products list, a page at a time (usePagedList). */
+export const productsList = (filters: ProductFilters) => ({
   queryKey: ['products', filters] as const,
-  queryFn: async ({ pageParam }: { pageParam: string | undefined }) =>
+  fetchPage: async (offset: number, limit: number) =>
     unwrap(
       await api.GET('/v1/admin/products', {
         params: {
           query: compact({
             ...filters,
             lowStock: filters.lowStock ? ('true' as const) : undefined,
-            after: pageParam,
-            limit: 50,
+            offset,
+            limit,
           }),
         },
       }),
     ),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (page: ProductPage) => page.nextCursor ?? undefined,
 });
 
 export const productQuery = (id: string) => ({
@@ -137,6 +136,22 @@ export function categoryOptions(categories: readonly Category[], locale: Locale)
   };
   visit(null);
   return ordered.map((c) => ({ id: c.id, depth: c.depth, label: path(c).join(' › ') }));
+}
+
+/**
+ * Categories for a searchable select: each with its path, findable by its
+ * name in either language.
+ */
+export function categoryChoices(categories: readonly Category[], locale: Locale) {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return categoryOptions(categories, locale).map((o) => {
+    const c = byId.get(o.id);
+    return {
+      value: o.id,
+      label: o.label,
+      keywords: `${c?.translations.bn?.name ?? ''} ${c?.translations.en?.name ?? ''}`,
+    };
+  });
 }
 
 /** Invalidates everything that shows a product. */

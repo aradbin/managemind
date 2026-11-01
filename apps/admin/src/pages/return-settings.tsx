@@ -74,10 +74,10 @@ export function ReturnSettingsPage() {
         className="flex flex-col gap-6 rounded-xl border border-border bg-background p-4 md:p-5"
       >
         <div className="flex flex-col gap-3">
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={policy.shopperRequests}
               onChange={(e) => setPolicy({ ...policy, shopperRequests: e.target.checked })}
             />
@@ -98,10 +98,10 @@ export function ReturnSettingsPage() {
             {t('returnSettings.shopperPaysHint')}
           </p>
           {RETURN_REASONS.map((r) => (
-            <label key={r} className="flex min-h-11 items-center gap-3">
+            <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={policy.shopperPaysFor.includes(r)}
                 onChange={() =>
                   setPolicy({
@@ -114,7 +114,7 @@ export function ReturnSettingsPage() {
             </label>
           ))}
         </fieldset>
-        <label className="flex min-h-11 items-start gap-3">
+        <label className="flex min-h-10 items-start gap-3 md:min-h-9">
           <input
             type="checkbox"
             className="mt-3 size-5"
@@ -131,10 +131,10 @@ export function ReturnSettingsPage() {
         <fieldset className="flex flex-col gap-1">
           <legend className="mb-1 font-medium">{t('returnSettings.methods')}</legend>
           {OFFERED_REFUND_METHODS.map((m) => (
-            <label key={m} className="flex min-h-11 items-center gap-3">
+            <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={policy.refundMethods.includes(m)}
                 onChange={() =>
                   setPolicy({
@@ -155,10 +155,10 @@ export function ReturnSettingsPage() {
           <p className="mb-1 text-sm text-muted-foreground">{t('returnSettings.excludedHint')}</p>
           {options.length === 0 && <p className="text-sm text-muted-foreground">—</p>}
           {options.map((c) => (
-            <label key={c.id} className="flex min-h-11 items-center gap-3">
+            <label key={c.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={policy.excludedCategoryIds.includes(c.id)}
                 onChange={() =>
                   setPolicy({

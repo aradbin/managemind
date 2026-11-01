@@ -7,7 +7,6 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { ReportRange, useRange } from '../components/report-range';
-import { ReportsNav } from '../components/reports-nav';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
@@ -68,7 +67,6 @@ export function SalesReportPage() {
   return (
     <div className="flex max-w-5xl flex-col gap-5">
       <PageHeader className="mb-0" title={t('sales.title')} description={t('sales.intro')} />
-      <ReportsNav />
       <ReportRange value={range} onChange={setRange} />
       <p className="-mt-2 text-sm text-muted-foreground">{t('reports.salesBasis')}</p>
       {sales.isPending && valid && <p role="status">{t('loading')}</p>}
@@ -95,7 +93,7 @@ export function SalesReportPage() {
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('sales.by')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
               value={by}
               onChange={(e) => setBy(e.target.value as By)}
             >
@@ -148,7 +146,7 @@ export function SalesReportPage() {
           <label className="flex items-center gap-2 self-start text-sm font-medium">
             {t('sales.sortBy')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
             >

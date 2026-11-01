@@ -76,7 +76,7 @@ export function OrderDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-20 md:pb-0">
       <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/orders" className="font-medium text-primary hover:underline">
+        <Link to="/orders" className="font-medium text-primary underline underline-offset-2">
           {t('nav.orders')}
         </Link>
         <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
@@ -85,7 +85,7 @@ export function OrderDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-xl font-semibold tracking-tight">
               {t('order.title', { number: o.displayNumber })}
             </h1>
             <div className="flex flex-wrap gap-1.5">
@@ -137,7 +137,7 @@ export function OrderDetailPage() {
                       <Link
                         to="/orders/$id"
                         params={{ id: other.id }}
-                        className="font-medium text-primary underline-offset-2 hover:underline"
+                        className="font-medium text-primary underline underline-offset-2"
                       >
                         {other.displayNumber}
                       </Link>
@@ -753,10 +753,10 @@ function ShipmentRow({
         }
       >
         {o.totals.codDue > 0 && (
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={cash}
               onChange={(e) => setCash(e.target.checked)}
             />
@@ -1239,11 +1239,11 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
         {STAFF_CANCEL_CODES.map((c) => (
-          <label key={c} className="flex min-h-11 items-center gap-3">
+          <label key={c} className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="radio"
               name="cancel-code"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={code === c}
               onChange={() => setCode(c)}
             />
@@ -1439,7 +1439,7 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
           <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
             value={method}
             onChange={(e) => setMethod(e.target.value as typeof method)}
           >

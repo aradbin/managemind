@@ -1,4 +1,5 @@
-// An inline message: errors are alerts (announced at once), the rest status.
+// An inline message (ADR 0033): a grey note for information, a red outlined
+// alert for problems. Errors are alerts (announced at once), the rest status.
 import type { ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
@@ -13,8 +14,8 @@ export function Notice({
     <p
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
-        'rounded-lg px-3 py-2 text-sm',
-        tone === 'error' ? 'bg-danger-soft text-danger' : 'bg-muted',
+        'rounded-[10px] border px-3 py-2.5 text-sm',
+        tone === 'error' ? 'border-danger/50 text-danger' : 'border-border bg-muted/60',
       )}
     >
       {children}

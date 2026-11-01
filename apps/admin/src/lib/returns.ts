@@ -11,7 +11,7 @@ type Json<P extends keyof paths, M extends keyof paths[P]> = paths[P][M] extends
     ? T
     : never;
 
-export type ReturnSummary = Json<'/v1/admin/returns', 'get'>[number];
+export type ReturnSummary = Json<'/v1/admin/returns', 'get'>['items'][number];
 export type ReturnDetail = Json<'/v1/admin/returns/{id}', 'get'>;
 export type ReturnableLine = Json<'/v1/admin/orders/{id}/returnable', 'get'>[number];
 export type RefundPreview = Json<'/v1/admin/orders/{id}/refunds/preview', 'post'>;
@@ -20,13 +20,21 @@ export type RefundMethod = Json<'/v1/admin/orders/{id}/refunds', 'post'>['method
 
 export const RETURN_STEPS = ['requested', 'approved', 'received', 'inspected', 'resolved'] as const;
 
-export const returnsQuery = (status?: ReturnStatus, before?: string) => ({
-  queryKey: ['returns', status ?? null, before ?? null] as const,
-  queryFn: async () =>
+export type ReturnReason = ReturnSummary['reason'];
+
+/** Returns, a page at a time (usePagedList); `reason`: one or several, comma-separated. */
+export const returnsList = (status?: ReturnStatus, reason?: string) => ({
+  queryKey: ['returns', status ?? null, reason ?? null] as const,
+  fetchPage: async (offset: number, limit: number) =>
     unwrap(
       await api.GET('/v1/admin/returns', {
         params: {
-          query: { ...(status ? { status } : {}), ...(before ? { before } : {}), limit: 50 },
+          query: {
+            ...(status ? { status } : {}),
+            ...(reason ? { reason } : {}),
+            offset,
+            limit,
+          },
         },
       }),
     ),

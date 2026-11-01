@@ -6,6 +6,7 @@
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import {
   type AttributeDraft,
@@ -26,9 +27,11 @@ import { TagInput } from '../components/catalog/tag-input';
 import { VariantTable } from '../components/catalog/variant-table';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
@@ -266,22 +269,28 @@ function Editor({
           title={title}
           actions={
             canWrite && (
-              <>
+              <RowMenu label={title}>
                 {archived ? (
-                  <Button variant="secondary" onClick={() => lifecycle.mutate('restore')}>
+                  <RowMenuItem onSelect={() => lifecycle.mutate('restore')}>
+                    <ArchiveRestore aria-hidden />
                     {t('product.restore')}
-                  </Button>
+                  </RowMenuItem>
                 ) : (
-                  <Button variant="secondary" onClick={() => setConfirm('archive')}>
+                  <RowMenuItem onSelect={() => setConfirm('archive')}>
+                    <Archive aria-hidden />
                     {t('product.archive')}
-                  </Button>
+                  </RowMenuItem>
                 )}
                 {product.status === 'draft' && (
-                  <Button variant="quiet" onClick={() => setConfirm('delete')}>
-                    {t('product.delete')}
-                  </Button>
+                  <>
+                    <RowMenuSeparator />
+                    <RowMenuItem danger onSelect={() => setConfirm('delete')}>
+                      <Trash2 aria-hidden />
+                      {t('product.delete')}
+                    </RowMenuItem>
+                  </>
                 )}
-              </>
+              </RowMenu>
             )
           }
         />
@@ -298,19 +307,6 @@ function Editor({
         )}
       </div>
 
-      {canWrite && !archived && dirty && (
-        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex items-center gap-3 bg-foreground px-4 py-3 text-background md:sticky md:top-16 md:bottom-auto md:rounded-xl">
-          <span className="flex-1 text-sm font-medium">{t('product.unsaved')}</span>
-          <Button
-            variant="secondary"
-            className="text-foreground"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-          >
-            {t('product.save')}
-          </Button>
-        </div>
-      )}
       {saveError && <Notice tone="error">{saveError}</Notice>}
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -440,7 +436,7 @@ function Editor({
                 {t('product.vatCategory')}
                 <select
                   disabled={disabled}
-                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal md:text-sm"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                   value={content.vatCategory}
                   onChange={(e) => update({ vatCategory: e.target.value })}
                 >
@@ -467,6 +463,18 @@ function Editor({
         </div>
       </div>
 
+      <SaveBar
+        show={canWrite && !archived && dirty}
+        message={t('product.unsaved')}
+        discardLabel={t('product.discard')}
+        onDiscard={() => {
+          setContent(fromProduct(product));
+          setDirty(false);
+        }}
+        saveLabel={t('product.save')}
+        busy={save.isPending}
+        onSave={() => save.mutate()}
+      />
       <ConfirmDialog
         open={confirm !== null}
         onOpenChange={(open) => !open && setConfirm(null)}
@@ -586,10 +594,10 @@ function CheckboxList({
       ) : (
         <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-background p-2">
           {items.map((item) => (
-            <label key={item.id} className="flex min-h-11 items-center gap-3 text-sm">
+            <label key={item.id} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={checked.includes(item.id)}
                 onChange={(e) =>
                   onChange(

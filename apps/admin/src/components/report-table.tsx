@@ -43,7 +43,7 @@ export function Table({
           className="-mx-4 overflow-x-auto border-y border-border md:-mx-5"
         >
           <table className="w-full text-left text-sm">
-            <thead className="bg-canvas text-xs text-muted-foreground">
+            <thead className="bg-muted/60 text-sm">
               <tr>
                 {head.map((h, i) => (
                   <th

@@ -131,11 +131,11 @@ export function OrderExportButton({
             <fieldset className="flex flex-col gap-1">
               <legend className="mb-1 text-sm font-medium">{t('export.format')}</legend>
               {EXPORT_FORMATS.map((f) => (
-                <label key={f} className="flex min-h-11 items-center gap-3">
+                <label key={f} className="flex min-h-10 items-center gap-3 md:min-h-9">
                   <input
                     type="radio"
                     name="export-format"
-                    className="size-5"
+                    className="size-4 accent-primary"
                     checked={kind === f}
                     onChange={() => setKind(f)}
                   />
@@ -147,11 +147,11 @@ export function OrderExportButton({
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('export.which')}</legend>
                 {(['selected', 'filtered'] as const).map((s) => (
-                  <label key={s} className="flex min-h-11 items-center gap-3">
+                  <label key={s} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name="export-scope"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={scope === s}
                       onChange={() => setScope(s)}
                     />

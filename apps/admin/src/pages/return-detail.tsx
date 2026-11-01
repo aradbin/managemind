@@ -64,7 +64,7 @@ export function ReturnDetailPage() {
       <Breadcrumb to="/returns" label={t('returns.title')} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight">
             {t('return.title', { number: r.displayNumber })}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -624,7 +624,7 @@ export function CreateReturnDialog({ orderId, onClose }: { orderId: string; onCl
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t('return.reason')}
             <select
-              className="min-h-11 rounded-md border border-input bg-background px-3 font-normal"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
               value={reason}
               onChange={(e) => setReason(e.target.value as typeof reason)}
             >

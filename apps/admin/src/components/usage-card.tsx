@@ -33,7 +33,7 @@ export function UsageCard() {
           </li>
         ))}
       </ul>
-      <Link to="/settings/billing" className="text-primary underline-offset-2 hover:underline">
+      <Link to="/settings/billing" className="text-primary underline underline-offset-2">
         {t('usage.link')}
       </Link>
     </section>

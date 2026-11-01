@@ -62,7 +62,6 @@ export function ConfirmQueuePage() {
     <div className="flex flex-col gap-4 pb-20 md:pb-0">
       <PageHeader
         className="mb-0"
-        parent={{ to: '/orders', label: t('nav.orders') }}
         title={t('queue.title')}
         description={t('queue.intro')}
         actions={
@@ -88,35 +87,38 @@ export function ConfirmQueuePage() {
       )}
       <nav
         aria-label={t('queue.title')}
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0"
+        className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] md:mx-0 md:px-0"
       >
-        {TABS.map((x) => {
-          const count = x.count ? queue.data?.counts[x.count] : undefined;
-          return (
-            <Link
-              key={x.key}
-              to="/orders/confirm"
-              search={x.key === 'to_call' ? {} : { tab: x.key }}
-              aria-current={tab === x.key ? 'page' : undefined}
-              className={cn(
-                'flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground',
-                tab === x.key && 'border-foreground bg-foreground text-background',
-              )}
-            >
-              {t(x.label)}
-              {count ? (
-                <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
-                  {count}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
+        <div className="inline-flex h-9 items-center rounded-[10px] bg-muted p-[3px]">
+          {TABS.map((x) => {
+            const count = x.count ? queue.data?.counts[x.count] : undefined;
+            return (
+              <Link
+                key={x.key}
+                to="/orders/confirm"
+                search={x.key === 'to_call' ? {} : { tab: x.key }}
+                aria-current={tab === x.key ? 'page' : undefined}
+                className={cn(
+                  'inline-flex h-[30px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground',
+                  tab === x.key &&
+                    'bg-background text-foreground shadow-sm dark:border-input dark:bg-input',
+                )}
+              >
+                {t(x.label)}
+                {count ? (
+                  <span className="rounded-md px-1 text-xs font-medium text-muted-foreground tabular-nums">
+                    {count}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
       </nav>
       {queue.isPending && <p role="status">{t('loading')}</p>}
       {queue.isError && <Notice tone="error">{errorMessage(queue.error, t)}</Notice>}
       {queue.data?.enabled && items.length === 0 && (
-        <p className="rounded-xl border border-border bg-background p-6 text-center text-muted-foreground">
+        <p className="rounded-xl border border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
           {t(
             tab === 'later'
               ? 'queue.emptyLater'
@@ -190,7 +192,7 @@ function QueueCard({
             <Link
               to="/orders/$id"
               params={{ id: item.orderId }}
-              className="font-medium text-primary underline-offset-2 hover:underline"
+              className="font-medium text-primary underline underline-offset-2"
             >
               {item.displayNumber}
             </Link>{' '}
@@ -201,7 +203,7 @@ function QueueCard({
         <span className="flex flex-col items-end gap-1">
           <ScoreBadge risk={item.risk} />
           {item.flags.includes('possible_duplicate') && (
-            <span className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground">
+            <span className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground">
               {t('orders.flag.possible_duplicate')}
             </span>
           )}
@@ -248,11 +250,11 @@ function QueueCard({
         canWrite && (
           <Button
             asChild
-            className="mt-auto min-h-12 text-base"
+            className="mt-auto text-base"
             onClick={() => claim.mutate(item.orderId, { onSuccess: onOpen })}
           >
             <a href={`tel:${item.phone}`}>
-              <Phone aria-hidden className="size-5" />
+              <Phone aria-hidden className="size-4 accent-primary" />
               {t('queue.call', { phone: formatPhone(item.phone) })}
             </a>
           </Button>
@@ -361,9 +363,9 @@ function CallPanelDialog({
       title={t('queue.panelTitle', { number: panel.displayNumber, name: panel.name })}
     >
       <div className="flex flex-col gap-4">
-        <Button asChild variant="secondary" className="min-h-12 text-base">
+        <Button asChild variant="secondary" className="text-base">
           <a href={`tel:${panel.phone}`}>
-            <Phone aria-hidden className="size-5" />
+            <Phone aria-hidden className="size-4 accent-primary" />
             {formatPhone(panel.phone)}
           </a>
         </Button>
@@ -394,7 +396,7 @@ function CallPanelDialog({
                 <input
                   type="radio"
                   name="outcome"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={choice === c}
                   onChange={() => setChoice(c)}
                 />
@@ -407,11 +409,11 @@ function CallPanelDialog({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('queue.when')}</legend>
             {times.map((x) => (
-              <label key={x.key} className="flex min-h-11 items-center gap-3 text-sm">
+              <label key={x.key} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
                 <input
                   type="radio"
                   name="due"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={dueAt === x.at.toISOString()}
                   onChange={() => setDueAt(x.at.toISOString())}
                 />
@@ -424,11 +426,11 @@ function CallPanelDialog({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('order.cancelCode')}</legend>
             {CALL_CODES.map((c) => (
-              <label key={c} className="flex min-h-11 items-center gap-3 text-sm">
+              <label key={c} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
                 <input
                   type="radio"
                   name="call-code"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={code === c}
                   onChange={() => setCode(c)}
                 />
@@ -438,10 +440,10 @@ function CallPanelDialog({
           </fieldset>
         )}
         {choice === 'wrong_number' && canBlock && (
-          <label className="flex min-h-11 items-center gap-3 text-sm">
+          <label className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={block}
               onChange={(e) => setBlock(e.target.checked)}
             />
@@ -465,7 +467,7 @@ function CallPanelDialog({
           <Link
             to="/orders/$id"
             params={{ id: panel.orderId }}
-            className="text-sm text-primary underline-offset-2 hover:underline"
+            className="text-sm text-primary underline underline-offset-2"
           >
             {t('queue.editOrder')}
           </Link>

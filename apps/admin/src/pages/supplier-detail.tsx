@@ -140,7 +140,7 @@ export function SupplierDetailPage() {
                 <Link
                   to="/inventory/purchase-orders/$id"
                   params={{ id: o.id }}
-                  className="font-medium text-primary hover:underline"
+                  className="font-medium text-primary underline underline-offset-2"
                 >
                   {o.reference}
                 </Link>
@@ -192,7 +192,7 @@ function LedgerTable({ ledger, supplierId }: { ledger: SupplierLedger; supplierI
       <div className="overflow-x-auto rounded-xl border border-border bg-background">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{t('suppliers.ledger')}</caption>
-          <thead className="border-b border-border bg-canvas text-xs text-muted-foreground">
+          <thead className="border-b border-border bg-muted/60 text-sm">
             <tr>
               <th scope="col" className="px-4 py-3 font-medium">
                 {t('payment.date')}
@@ -313,11 +313,11 @@ function PaymentDialog({ supplierId, onClose }: { supplierId: string; onClose: (
           <legend className="mb-1 text-sm font-medium">{t('payment.method')}</legend>
           <div className="flex flex-wrap gap-x-4">
             {SPEND_METHODS.map((m) => (
-              <label key={m} className="flex min-h-11 items-center gap-2">
+              <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
                 <input
                   type="radio"
                   name="method"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={method === m}
                   onChange={() => setMethod(m)}
                 />

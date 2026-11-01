@@ -14,7 +14,7 @@ import {
   MOVEMENT_EFFECT,
   type StockMovementType,
 } from '@managemind/shared/catalog';
-import { eq, sql } from 'drizzle-orm';
+import { eq, type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
@@ -449,14 +449,16 @@ export async function listInventory(
     locationId?: string | undefined;
     q?: string | undefined;
     after?: string | undefined;
+    /** Rows to skip, for numbered pages; the cursor is then ignored. */
+    offset?: number | undefined;
     limit?: number | undefined;
   } = {},
-): Promise<{ items: InventoryRow[]; nextCursor: string | null }> {
+): Promise<{ items: InventoryRow[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'inventory.read');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
   const location = query.locationId ? sql`and l.location_id = ${query.locationId}` : sql``;
-  const { rows } = await tx.db.execute<InventoryRow>(sql`
-    select * from (
+  // The variants with their stock; `cursor` narrows to those after a page's last row.
+  const variants = (cursor: SQL) => sql`
       select v.id as "variantId", v.product_id as "productId", v.sku,
         v.track_inventory as "trackInventory", v.allow_backorder as "allowBackorder",
         v.low_stock_threshold as "lowStockThreshold",
@@ -478,7 +480,7 @@ export async function listInventory(
       left join lateral (select sum(l.on_hand) as on_hand, sum(l.reserved) as reserved
                            from store.inventory_levels l where l.variant_id = v.id ${location}) s on true
       where v.archived_at is null
-        ${query.after ? sql`and v.id > ${query.after}` : sql``}
+        ${cursor}
         ${
           query.q
             ? sql`and (lower(v.sku) like ${`${query.q.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`}
@@ -487,12 +489,22 @@ export async function listInventory(
             : sql``
         }
       order by v.id
-    ) x ${query.lowStock ? sql`where "lowStock"` : sql``}
-    limit ${limit + 1}`);
+`;
+  const lowStock = query.lowStock ? sql`where "lowStock"` : sql``;
+  // How many match, for numbered pages.
+  const counted = await tx.db.execute<{ n: number }>(
+    sql`select count(*)::int as n from (${variants(sql``)}) x ${lowStock}`,
+  );
+  const total = Number(counted.rows[0]?.n ?? 0);
+  const after = query.after && query.offset === undefined ? sql`and v.id > ${query.after}` : sql``;
+  const { rows } = await tx.db.execute<InventoryRow>(sql`
+    select * from (${variants(after)}) x ${lowStock}
+    limit ${limit + 1} offset ${query.offset ?? 0}`);
   const items = rows.slice(0, limit);
   return {
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.variantId ?? null) : null,
+    total,
   };
 }
 

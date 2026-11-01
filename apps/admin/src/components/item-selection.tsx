@@ -7,13 +7,14 @@ import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import {
   categoriesQuery,
-  categoryOptions,
+  categoryChoices,
   collectionsQuery,
   pick,
   productQuery,
 } from '../lib/catalog';
 import type { Selection } from '../lib/promotions';
 import { Button } from './ui/button';
+import { Combobox } from './ui/combobox';
 import { Input } from './ui/input';
 
 /** The names of what a selection holds, for summaries: categories, collections, then products. */
@@ -106,40 +107,40 @@ export function ItemSelection({
         </ul>
       )}
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          {t('promo.addCategory')}
-          <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={`${id}-category`} className="text-sm font-medium">
+            {t('promo.addCategory')}
+          </label>
+          <Combobox
+            id={`${id}-category`}
+            searchLabel={t('promo.findCategory')}
+            placeholder={t('place.choose')}
             value=""
-            onChange={(e) => e.target.value && toggle('categoryIds', e.target.value)}
-          >
-            <option value="">{t('place.choose')}</option>
-            {categoryOptions(categories.data ?? [], locale)
-              .filter((c) => !value.categoryIds.includes(c.id))
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          {t('promo.addCollection')}
-          <select
-            className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+            options={categoryChoices(categories.data ?? [], locale).filter(
+              (c) => !value.categoryIds.includes(c.value),
+            )}
+            onChange={(v) => v && toggle('categoryIds', v)}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={`${id}-collection`} className="text-sm font-medium">
+            {t('promo.addCollection')}
+          </label>
+          <Combobox
+            id={`${id}-collection`}
+            searchLabel={t('promo.findCollection')}
+            placeholder={t('place.choose')}
             value=""
-            onChange={(e) => e.target.value && toggle('collectionIds', e.target.value)}
-          >
-            <option value="">{t('place.choose')}</option>
-            {(collections.data ?? [])
+            options={(collections.data ?? [])
               .filter((c) => !value.collectionIds.includes(c.id))
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {pick(c.translations, locale)?.name ?? '—'}
-                </option>
-              ))}
-          </select>
-        </label>
+              .map((c) => ({
+                value: c.id,
+                label: pick(c.translations, locale)?.name ?? '—',
+                keywords: `${c.translations.bn?.name ?? ''} ${c.translations.en?.name ?? ''}`,
+              }))}
+            onChange={(v) => v && toggle('collectionIds', v)}
+          />
+        </div>
       </div>
       <div className="flex flex-col gap-1.5">
         <label htmlFor={id} className="text-sm font-medium">

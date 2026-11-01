@@ -127,6 +127,10 @@ export const couriersBn: Record<keyof typeof couriersEn, string> = {
   'couriers.dash.inTransit': 'কুরিয়ারের কাছে পার্সেল',
   'couriers.dash.returning': 'ফেরত আসছে এমন পার্সেল',
   'couriers.returns.title': 'কুরিয়ার থেকে ফেরত',
+  'couriers.returns.courier': 'কুরিয়ার',
+  'couriers.returns.why': 'কারণ',
+  'couriers.returns.cameBack': 'ফেরত এসেছে',
+  'couriers.returns.itemsCol': 'পণ্য',
   'couriers.returns.description':
     'কুরিয়ার যেসব পার্সেল ফেরত এনেছে বলছে। দোকানে পৌঁছালে "পেয়েছি" চাপুন: তাতে পণ্য স্টকে ফেরে।',
   'couriers.returns.empty': 'কোনো পার্সেল অপেক্ষায় নেই।',

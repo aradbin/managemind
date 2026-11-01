@@ -109,10 +109,10 @@ export function VatSettingsPage() {
         disabled={!canEdit || save.isPending}
         className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
       >
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
           />
@@ -130,11 +130,11 @@ export function VatSettingsPage() {
             <fieldset className="flex flex-col gap-1">
               <legend className="mb-1 text-sm font-medium">{t('vat.prices')}</legend>
               {[true, false].map((inc) => (
-                <label key={String(inc)} className="flex min-h-11 items-center gap-3">
+                <label key={String(inc)} className="flex min-h-10 items-center gap-3 md:min-h-9">
                   <input
                     type="radio"
                     name="inclusive"
-                    className="size-5"
+                    className="size-4 accent-primary"
                     checked={inclusive === inc}
                     onChange={() => setInclusive(inc)}
                   />
@@ -193,10 +193,10 @@ export function VatSettingsPage() {
                     }
                   />
                   <span className="flex items-center gap-2">
-                    <label className="flex min-h-11 items-center gap-2 text-sm">
+                    <label className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         checked={c.exempt}
                         onChange={(e) =>
                           setCategories(

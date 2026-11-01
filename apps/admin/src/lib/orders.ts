@@ -1,8 +1,9 @@
 // Orders, customers and delivery for the admin screens (phase-4-plan §7):
 // the API's types, queries, and the small helpers the screens share.
 import type { paths } from '@managemind/sdk';
-import { formatDateTime, type Locale } from '@managemind/shared/i18n';
+import type { Locale } from '@managemind/shared/i18n';
 import type { QueryClient } from '@tanstack/react-query';
+import type { FilterDef } from '../components/list-tools';
 import type { AdminKey } from '../i18n';
 import { ApiError, api, unwrap } from './api';
 import { compact } from './catalog';
@@ -47,16 +48,13 @@ export type IncompleteDetail = Json<'/v1/admin/incomplete-orders/{id}', 'get'>;
 export type IncompleteTab = 'open' | 'converted' | 'recovered' | 'dismissed';
 
 /** Incomplete checkouts (phase-6-plan §3.2), newest change first. */
-export const incompleteQuery = (tab: IncompleteTab) => ({
+/** One tab of incomplete orders, a page at a time (usePagedList). */
+export const incompleteList = (tab: IncompleteTab) => ({
   queryKey: ['incomplete-orders', tab] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) =>
+  fetchPage: (offset: number, limit: number) =>
     api
-      .GET('/v1/admin/incomplete-orders', {
-        params: { query: { tab, limit: 50, ...(pageParam ? { after: pageParam } : {}) } },
-      })
+      .GET('/v1/admin/incomplete-orders', { params: { query: { tab, limit, offset } } })
       .then(unwrap),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: IncompletePage) => last.nextCursor ?? undefined,
 });
 
 export const incompleteOrderQuery = (id: string) => ({
@@ -74,21 +72,92 @@ export const pickText = (v: Localized | null | undefined, locale: Locale) =>
 export const idempotencyKey = () => crypto.randomUUID();
 export const withKey = (key: string) => ({ params: { header: { 'idempotency-key': key } } });
 
-export const dateTime = (locale: Locale, iso: string) => formatDateTime(locale, new Date(iso));
-export const dateOnly = (locale: Locale, iso: string) =>
-  formatDateTime(locale, new Date(iso), { dateStyle: 'medium' });
+/**
+ * Dates put the day first, and the year only when it isn't this one (ADR 0033,
+ * design rule 11): "29 Oct", "29 Oct 2025", "29 Oct, 4:05 PM". English uses
+ * British order; Bangla is day first already.
+ */
+const dayFirst = (locale: Locale, at: Date, time: boolean) =>
+  new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    ...(at.getFullYear() === new Date().getFullYear() ? {} : { year: 'numeric' }),
+    ...(time ? { hour: 'numeric', minute: '2-digit', hour12: true } : {}),
+  })
+    .formatToParts(at)
+    .map((p) => (p.type === 'dayPeriod' ? p.value.toUpperCase() : p.value))
+    .join('');
+export const dateTime = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), true);
+export const dateOnly = (locale: Locale, iso: string) => dayFirst(locale, new Date(iso), false);
+
+// The server reads dates as Dhaka dates, so today is Dhaka's today.
+const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
+const dhakaDay = (daysAgo: number) => DHAKA_DAY.format(new Date(Date.now() - daysAgo * 86_400_000));
+
+/** A date filter's choices, as from and to Dhaka dates. */
+export function dateRanges() {
+  const today = dhakaDay(0);
+  return {
+    today: { from: today, to: today },
+    week: { from: dhakaDay(6), to: today },
+    month: { from: dhakaDay(29), to: today },
+    thisMonth: { from: `${today.slice(0, 8)}01`, to: today },
+  } as const;
+}
+
+/**
+ * A filter button for a date range (design rule 4): Today, the last 7 or 30
+ * days, this month, or the range a link brought, which no choice matches.
+ * Its words live with the orders' messages.
+ */
+export function dateRangeFilter({
+  key,
+  label,
+  from,
+  to,
+  onChange,
+  t,
+}: {
+  key: string;
+  label: string;
+  from: string | undefined;
+  to: string | undefined;
+  onChange: (range: { from?: string | undefined; to?: string | undefined }) => void;
+  t: (key: AdminKey, params?: Record<string, string | number>) => string;
+}): FilterDef {
+  const preset = dateRanges();
+  const keys = Object.keys(preset) as (keyof typeof preset)[];
+  const match = keys.find((k) => preset[k].from === from && preset[k].to === to);
+  const custom = (from || to) && !match;
+  return {
+    key,
+    label,
+    value: from || to ? (match ?? 'custom') : undefined,
+    options: [
+      ...keys.map((k) => ({ value: k, label: t(`orders.range.${k}`) })),
+      ...(custom
+        ? [
+            {
+              value: 'custom',
+              label: t('orders.range.custom', { from: from ?? '…', to: to ?? '…' }),
+            },
+          ]
+        : []),
+    ],
+    onChange: (v) => {
+      if (v === 'custom') return;
+      const range = v ? preset[v as keyof typeof preset] : undefined;
+      onChange({ from: range?.from, to: range?.to });
+    },
+  };
+}
 
 // ---- Queries ---------------------------------------------------------------------------
 
 export interface OrderFilters {
   status?: 'pending' | 'confirmed' | 'processing' | 'completed' | 'cancelled' | undefined;
-  paymentStatus?:
-    | 'unpaid'
-    | 'partially_paid'
-    | 'paid'
-    | 'partially_refunded'
-    | 'refunded'
-    | undefined;
+  /** One payment status or several, comma-separated, as each filter below. */
+  paymentStatus?: string | undefined;
   deliveryStatus?:
     | 'not_shipped'
     | 'partially_shipped'
@@ -96,28 +165,23 @@ export interface OrderFilters {
     | 'delivered'
     | 'failed'
     | undefined;
-  source?:
-    | 'website'
-    | 'facebook'
-    | 'messenger'
-    | 'whatsapp'
-    | 'instagram'
-    | 'phone'
-    | 'walk_in'
-    | 'other'
-    | 'exchange'
-    | undefined;
+  source?: string | undefined;
   zoneId?: string | undefined;
   tag?: string | undefined;
   cancelledByShopper?: boolean | undefined;
   /** Risky phones, possible duplicates, unreachable (phase-6-plan §3.8). */
-  flag?: 'flagged_phone' | 'possible_duplicate' | 'unreachable' | undefined;
+  flag?: string | undefined;
   from?: string | undefined;
   to?: string | undefined;
   q?: string | undefined;
 }
 
-export async function fetchOrders(filters: OrderFilters, after?: string, limit = 50) {
+export async function fetchOrders(
+  filters: OrderFilters,
+  after?: string,
+  limit = 50,
+  offset?: number,
+) {
   const { cancelledByShopper, ...rest } = filters;
   return unwrap(
     await api.GET('/v1/admin/orders', {
@@ -126,6 +190,7 @@ export async function fetchOrders(filters: OrderFilters, after?: string, limit =
           ...rest,
           ...(cancelledByShopper ? { cancelledByShopper: true } : {}),
           after,
+          offset,
           limit,
         }) as never,
       },
@@ -133,11 +198,10 @@ export async function fetchOrders(filters: OrderFilters, after?: string, limit =
   );
 }
 
-export const ordersQuery = (filters: OrderFilters) => ({
+/** The orders list, a page at a time (usePagedList). */
+export const ordersList = (filters: OrderFilters) => ({
   queryKey: ['orders', filters] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => fetchOrders(filters, pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: OrderPage) => last.nextCursor ?? undefined,
+  fetchPage: (offset: number, limit: number) => fetchOrders(filters, undefined, limit, offset),
 });
 
 /** One tab of the confirmation queue (phase-6-plan §3.5); refreshed every 30 seconds while open. */
@@ -158,19 +222,23 @@ export interface CustomerFilters {
   tag?: string | undefined;
 }
 
-export async function fetchCustomers(filters: CustomerFilters, after?: string, limit = 50) {
+export async function fetchCustomers(
+  filters: CustomerFilters,
+  after?: string,
+  limit = 50,
+  offset?: number,
+) {
   return unwrap(
     await api.GET('/v1/admin/customers', {
-      params: { query: compact({ ...filters, after, limit }) },
+      params: { query: compact({ ...filters, after, offset, limit }) },
     }),
   );
 }
 
-export const customersQuery = (filters: CustomerFilters) => ({
+/** The customers list, a page at a time (usePagedList). */
+export const customersList = (filters: CustomerFilters) => ({
   queryKey: ['customers', filters] as const,
-  queryFn: ({ pageParam }: { pageParam: string | undefined }) => fetchCustomers(filters, pageParam),
-  initialPageParam: undefined as string | undefined,
-  getNextPageParam: (last: { nextCursor: string | null }) => last.nextCursor ?? undefined,
+  fetchPage: (offset: number, limit: number) => fetchCustomers(filters, undefined, limit, offset),
 });
 
 export const customerQuery = (id: string) => ({

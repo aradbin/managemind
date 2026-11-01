@@ -20,7 +20,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { FileUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -49,7 +48,6 @@ export function ImportPage() {
   return (
     <div className="flex max-w-5xl flex-col">
       <PageHeader title={t('catalog.import')} description={t('import.intro')} />
-      <CatalogNav />
       {search.job ? (
         <JobProgress
           jobId={search.job}
@@ -305,7 +303,7 @@ function Mapping({
               </span>
               <select
                 aria-label={t('import.mapTo', { column: header || String(i + 1) })}
-                className="min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm"
+                className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
                 value={refValue(choices[i] ?? null)}
                 onChange={(e) => {
                   setChoices(choices.map((c, j) => (j === i ? refFrom(e.target.value) : c)));

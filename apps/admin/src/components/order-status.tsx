@@ -12,7 +12,7 @@ const PREFIX: Record<Kind, string> = {
   shipment: 'shipmentStatus',
 };
 
-/** Each tone is a background and text pair from the colour tokens. */
+/** Each tone is a soft tint and its text, from the colour tokens (ADR 0033). */
 const TONES = {
   waiting: 'bg-warning text-warning-foreground',
   progress: 'bg-info text-info-foreground',
@@ -24,21 +24,26 @@ const TONES = {
 
 const TONE: Record<string, keyof typeof TONES> = {
   pending: 'waiting',
-  unpaid: 'waiting',
-  not_shipped: 'waiting',
   partially_paid: 'waiting',
   requested: 'waiting',
+  unpaid: 'ended',
+  not_shipped: 'ended',
   confirmed: 'progress',
   processing: 'progress',
   booked: 'progress',
+  approved: 'progress',
+  received: 'progress',
+  inspected: 'progress',
   shipped: 'moving',
   in_transit: 'moving',
   partially_shipped: 'moving',
   completed: 'good',
   paid: 'good',
   delivered: 'good',
+  resolved: 'good',
   failed: 'bad',
   returned: 'bad',
+  rejected: 'bad',
   cancelled: 'ended',
   voided: 'ended',
   refunded: 'ended',
@@ -49,7 +54,7 @@ export function StatusChip({ kind, status }: { kind: Kind; status: string }) {
   const { t } = useLocale();
   return (
     <span
-      className={`inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-medium before:size-1.5 before:rounded-full before:bg-current ${TONES[TONE[status] ?? 'progress']}`}
+      className={`inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${TONES[TONE[status] ?? 'progress']}`}
     >
       {t(`${PREFIX[kind]}.${status}` as AdminKey)}
     </span>

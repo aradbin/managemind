@@ -8,6 +8,7 @@ import {
   CHECKLIST_ITEMS,
   type Checklist,
   closeTenant,
+  countTenants,
   courierAreaReview,
   createPlan,
   createTenant,
@@ -55,6 +56,7 @@ import {
   TENANT_KINDS,
 } from '@managemind/shared/billing';
 import { AREA_COURIERS } from '@managemind/shared/orders';
+import { pageOffset } from '@managemind/shared/query';
 import { THEME_PRESETS } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -190,11 +192,16 @@ export const PLATFORM_ROUTES = {
         q: z.string().max(100).optional(),
         status: Status.optional(),
         after: z.string().max(40).optional(),
+        offset: pageOffset,
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
     },
     responses: json(
-      z.object({ items: z.array(TenantSummary), next: z.string().nullable() }),
+      z.object({
+        items: z.array(TenantSummary),
+        next: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Stores',
     ),
   }),
@@ -696,17 +703,20 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
   const R = PLATFORM_ROUTES;
 
   platform.openapi(R.tenants, async (c) => {
-    const { q, status, after, limit = 50 } = c.req.valid('query');
-    const items = await withPlatform(c.var.staff.client, (tx) =>
-      listTenants(tx, c.var.staff.actor, {
-        limit,
-        ...(q ? { q } : {}),
-        ...(status ? { status } : {}),
-        ...(after ? { after } : {}),
-      }),
-    );
+    const { q, status, after, offset, limit = 50 } = c.req.valid('query');
+    const query = {
+      limit,
+      ...(q ? { q } : {}),
+      ...(status ? { status } : {}),
+      ...(after ? { after } : {}),
+      ...(offset !== undefined ? { offset } : {}),
+    };
+    const { items, total } = await withPlatform(c.var.staff.client, async (tx) => ({
+      items: await listTenants(tx, c.var.staff.actor, query),
+      total: await countTenants(tx, c.var.staff.actor, query),
+    }));
     return c.json(
-      { items, next: items.length === limit ? (items.at(-1)?.slug ?? null) : null },
+      { items, next: items.length === limit ? (items.at(-1)?.slug ?? null) : null, total },
       200,
     );
   });

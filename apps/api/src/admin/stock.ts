@@ -1,6 +1,7 @@
 // Stock counts and the adjustments list in the admin (phase-8-plan §3.4,
 // §3.5, §6). Expected quantities stay hidden while a count is being
 // counted, and values need catalog.cost; the core services decide both.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   applyStockCount,
@@ -19,6 +20,7 @@ import {
   stockCountInput,
 } from '@managemind/shared/back-office';
 import { ADJUSTMENT_REASONS } from '@managemind/shared/catalog';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import { queueStockCountApply } from '../stock-counts';
 import { inStore, type StaffEnv } from './context';
 
@@ -71,6 +73,7 @@ const Adjustments = z
   .object({
     items: z.array(Adjustment),
     nextCursor: z.string().nullable(),
+    total: z.number().int(),
     totals: z.object({
       count: z.number().int(),
       units: z.number().int(),
@@ -139,12 +142,13 @@ export const STOCK_ROUTES = {
     summary: 'Adjustments and hand receipts with totals; values with catalog.cost (inventory.read)',
     request: {
       query: z.object({
-        reason: z.enum(ADJUSTMENT_REASONS).optional(),
+        reason: oneOrMany(z.enum(ADJUSTMENT_REASONS)),
         locationId: z.uuid().optional(),
         actorId: z.uuid().optional(),
         from: day.optional(),
         to: day.optional(),
         ...cursor,
+        offset: pageOffset,
       }),
     },
     responses: json(Adjustments, 'Adjustments'),
@@ -153,9 +157,19 @@ export const STOCK_ROUTES = {
     method: 'get',
     path: '/stock-counts',
     summary: 'Stock counts, newest first (inventory.read)',
-    request: { query: z.object({ status: z.enum(STOCK_COUNT_STATUSES).optional(), ...cursor }) },
+    request: {
+      query: z.object({
+        status: z.enum(STOCK_COUNT_STATUSES).optional(),
+        ...cursor,
+        offset: pageOffset,
+      }),
+    },
     responses: json(
-      z.object({ items: z.array(StockCountSummary), nextCursor: z.string().nullable() }),
+      z.object({
+        items: z.array(StockCountSummary),
+        nextCursor: z.string().nullable(),
+        total: z.number().int(),
+      }),
       'Counts',
     ),
   }),

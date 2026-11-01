@@ -3,17 +3,12 @@
 // one, and our own invoice details, which every invoice carries.
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { paths } from '@managemind/sdk';
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { DataList } from '../../components/data-list';
 import { Form, SelectField, SwitchField, TextField } from '../../components/form';
 import { statusLabel } from '../../components/invoice-document';
 import { Notice } from '../../components/notice';
@@ -27,6 +22,8 @@ import '../../i18n/billing';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { formatPrice, readPrice } from '../../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
+import { usePagedList } from '../../lib/paged';
+import { cn } from '../../lib/utils';
 
 export const FILTERS = ['all', 'draft', 'overdue', 'week', 'paid', 'void'] as const;
 export type Filter = (typeof FILTERS)[number];
@@ -53,23 +50,22 @@ export function PlatformBillingPage() {
   const { data: me } = useSuspenseQuery(meQuery);
   const superAdmin = me.user.platformRole === 'super_admin';
   const [creating, setCreating] = useState(false);
-  const invoices = useInfiniteQuery({
+  const invoices = usePagedList({
     queryKey: ['platform', 'invoices', filter, search.tenant ?? null] as const,
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ pageParam }) =>
+    size: PAGE,
+    fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/platform/invoices', {
           params: {
             query: {
               ...filterQuery(filter),
               ...(search.tenant ? { tenantId: search.tenant } : {}),
-              ...(pageParam ? { before: pageParam } : {}),
-              limit: PAGE,
+              offset,
+              limit,
             },
           },
         }),
       ),
-    getNextPageParam: (last) => last.next ?? undefined,
   });
   const tenant = useQuery({
     queryKey: ['platform', 'tenant', search.tenant],
@@ -85,28 +81,38 @@ export function PlatformBillingPage() {
     queryKey: ['platform', 'issuer'],
     queryFn: async () => unwrap(await api.GET('/v1/platform/billing/issuer')),
   });
-  const items = invoices.data?.pages.flatMap((p) => p.items) ?? [];
+  const navigate = useNavigate();
+  const items = invoices.items;
   return (
-    <div className="flex max-w-5xl flex-col gap-6">
-      <PageHeader title={t('pbilling.title')} />
+    <div className="flex flex-col gap-4">
+      <PageHeader className="mb-0" title={t('pbilling.title')} />
       {superAdmin && issuer.isSuccess && !issuer.data && (
         <Notice tone="error">{t('pbilling.issuerMissing')}</Notice>
       )}
-      <nav aria-label={t('pbilling.filters')} className="flex flex-wrap items-center gap-2">
-        {FILTERS.map((f) => (
-          <Button key={f} variant={f === filter ? 'primary' : 'secondary'} asChild>
+      <nav
+        aria-label={t('pbilling.filters')}
+        className="-mx-3 overflow-x-auto px-3 md:mx-0 md:px-0"
+      >
+        <div className="inline-flex h-9 items-center rounded-[10px] bg-muted p-[3px]">
+          {FILTERS.map((f) => (
             <Link
+              key={f}
               to="/platform/billing"
               search={{
                 ...(f === 'all' ? {} : { filter: f }),
                 ...(search.tenant ? { tenant: search.tenant } : {}),
               }}
               {...(f === filter ? { 'aria-current': 'page' as const } : {})}
+              className={cn(
+                'inline-flex h-[30px] items-center whitespace-nowrap rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground',
+                f === filter &&
+                  'bg-background text-foreground shadow-sm dark:border-input dark:bg-input',
+              )}
             >
               {t(`pbilling.filter.${f}` as AdminKey)}
             </Link>
-          </Button>
-        ))}
+          ))}
+        </div>
       </nav>
       {search.tenant && (
         <div className="flex flex-wrap items-center gap-2">
@@ -123,70 +129,76 @@ export function PlatformBillingPage() {
           )}
         </div>
       )}
-      {invoices.isError && <Notice tone="error">{errorMessage(invoices.error, t)}</Notice>}
-      {invoices.isPending && <p role="status">{t('loading')}</p>}
-      {invoices.isSuccess && items.length === 0 && (
-        <p className="text-muted-foreground">{t('pbilling.none')}</p>
-      )}
-      {items.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-muted-foreground">
-                <th className="py-2 text-start font-normal">{t('invoice.number')}</th>
-                <th className="text-start font-normal">{t('pbilling.store')}</th>
-                <th className="text-start font-normal">{t('invoice.status')}</th>
-                <th className="text-start font-normal">{t('invoice.dueOn')}</th>
-                <th className="text-end font-normal">{t('invoice.total')}</th>
-                <th className="text-end font-normal">{t('invoice.amountDue')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((i) => (
-                <tr key={i.id} className="border-t border-border">
-                  <td className="py-2">
-                    <Link
-                      to="/platform/billing/$id"
-                      params={{ id: i.id }}
-                      className="text-primary underline-offset-2 hover:underline"
-                    >
-                      {i.number ?? t('invoice.status.draft')}
-                    </Link>
-                  </td>
-                  <td>
-                    <Link
-                      to="/platform/billing"
-                      search={{ ...(filter === 'all' ? {} : { filter }), tenant: i.tenantId }}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {i.storeName}
-                    </Link>
-                  </td>
-                  <td className={i.overdue ? 'font-semibold text-danger' : ''}>
-                    {statusLabel(locale, i)}
-                  </td>
-                  <td>{i.dueOn ? formatDay(locale, i.dueOn) : '—'}</td>
-                  <td className="text-end">{formatPrice(i.total, locale)}</td>
-                  <td className="text-end">
-                    {i.amountDue ? formatPrice(i.amountDue, locale) : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {invoices.hasNextPage && (
-        <div>
-          <Button
-            variant="secondary"
-            disabled={invoices.isFetchingNextPage}
-            onClick={() => invoices.fetchNextPage()}
-          >
-            {t('pbilling.more')}
-          </Button>
-        </div>
-      )}
+      <DataList
+        label={t('pbilling.title')}
+        items={items}
+        rowKey={(i) => i.id}
+        isPending={invoices.isPending}
+        error={invoices.isError ? errorMessage(invoices.error, t) : undefined}
+        onRetry={() => invoices.refetch()}
+        empty={t('pbilling.none')}
+        pager={invoices.pager}
+        onOpen={(i) => navigate({ to: '/platform/billing/$id', params: { id: i.id } })}
+        columns={[
+          {
+            header: t('invoice.number'),
+            cell: (i) => (
+              <Link
+                to="/platform/billing/$id"
+                params={{ id: i.id }}
+                className="font-mono font-medium underline-offset-2 hover:underline"
+              >
+                {i.number ?? t('invoice.status.draft')}
+              </Link>
+            ),
+          },
+          {
+            header: t('pbilling.store'),
+            cell: (i) => (
+              <Link
+                to="/platform/billing"
+                search={{ ...(filter === 'all' ? {} : { filter }), tenant: i.tenantId }}
+                className="underline-offset-2 hover:underline"
+              >
+                {i.storeName}
+              </Link>
+            ),
+          },
+          {
+            header: t('invoice.status'),
+            cell: (i) => (
+              <span
+                className={cn(
+                  'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium',
+                  i.overdue
+                    ? 'bg-danger-soft text-danger'
+                    : i.status === 'paid'
+                      ? 'bg-success-soft text-success'
+                      : i.status === 'draft' || i.status === 'void'
+                        ? 'bg-muted text-muted-foreground'
+                        : 'bg-info text-info-foreground',
+                )}
+              >
+                {statusLabel(locale, i)}
+              </span>
+            ),
+          },
+          {
+            header: t('invoice.dueOn'),
+            cell: (i) => (
+              <span className="whitespace-nowrap text-muted-foreground">
+                {i.dueOn ? formatDay(locale, i.dueOn) : '—'}
+              </span>
+            ),
+          },
+          { header: t('invoice.total'), numeric: true, cell: (i) => formatPrice(i.total, locale) },
+          {
+            header: t('invoice.amountDue'),
+            numeric: true,
+            cell: (i) => (i.amountDue ? formatPrice(i.amountDue, locale) : '—'),
+          },
+        ]}
+      />
       {search.tenant && tenant.data && (
         <NewInvoiceDialog
           open={creating}

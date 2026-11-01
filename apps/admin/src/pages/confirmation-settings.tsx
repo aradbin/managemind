@@ -186,7 +186,7 @@ export function ConfirmationSettingsPage() {
     label: string,
     hint?: string,
   ) => (
-    <label className="flex min-h-11 items-start gap-3">
+    <label className="flex min-h-10 items-start gap-3 md:min-h-9">
       <input
         type="checkbox"
         className="mt-3 size-5"
@@ -257,11 +257,11 @@ export function ConfirmationSettingsPage() {
                   {t('confirmSettings.autoConfirm')}
                 </legend>
                 {AUTO_CONFIRM_RULES.map((r) => (
-                  <label key={r} className="flex min-h-11 items-center gap-3">
+                  <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name="auto-confirm"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={confirmation.autoConfirm === r}
                       onChange={() => setConfirmation({ ...confirmation, autoConfirm: r })}
                     />
@@ -326,7 +326,7 @@ export function ConfirmationSettingsPage() {
 
         <fieldset disabled={!canEdit || save.isPending} className={card}>
           <legend className="mb-2 text-lg font-semibold">{t('incomplete.title')}</legend>
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-3 size-5"

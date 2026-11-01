@@ -95,7 +95,7 @@ function SignIn() {
 
   return (
     <AuthLayout step={step === 'email' ? 1 : 2} steps={2}>
-      <h1 className="text-2xl font-semibold tracking-tight">{t('signIn.title')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{t('signIn.title')}</h1>
       {step === 'email' ? (
         <form onSubmit={send} className="flex flex-col gap-4">
           <p className="text-muted-foreground">{t('signIn.intro')}</p>

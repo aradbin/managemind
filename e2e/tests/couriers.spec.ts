@@ -179,7 +179,12 @@ test('couriers', async ({ page }, info) => {
       page.getByRole('heading', { name: m('couriers.returns.title'), level: 1 }),
     ).toBeVisible();
     await expectAccessible(page, 'courier returns');
-    const row = page.getByRole('listitem').filter({ hasText: placed.displayNumber });
+    // A table row on desktops, a list item on phones.
+    const row = page
+      .locator('tr, li')
+      .filter({ hasText: placed.displayNumber })
+      .locator('visible=true')
+      .first();
     await row.getByRole('button', { name: m('couriers.received') }).click();
     await expect(toast(page, m('couriers.receivedDone'))).toBeVisible();
     expect((await order(`/v1/admin/orders/${placed.id}`)).shipments[0]?.status).toBe('returned');

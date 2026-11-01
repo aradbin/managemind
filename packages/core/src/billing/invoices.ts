@@ -267,7 +267,40 @@ export interface InvoiceFilter {
   dueThisWeek?: boolean;
   /** The createdAt of the last one seen. */
   before?: string;
+  /** Rows to skip, for numbered pages; `before` is then ignored. */
+  offset?: number;
   limit?: number;
+}
+
+const invoiceWhere = (filter: InvoiceFilter, today: string, withCursor: boolean) =>
+  and(
+    filter.status ? eq(i.status, filter.status) : undefined,
+    filter.tenantId ? eq(i.tenantId, filter.tenantId) : undefined,
+    filter.overdue ? and(eq(i.status, 'issued'), lt(i.dueOn, today)) : undefined,
+    filter.dueThisWeek
+      ? and(
+          eq(i.status, 'issued'),
+          sql`${i.dueOn} between ${today}::date and ${addDays(today, 7)}::date`,
+        )
+      : undefined,
+    withCursor && filter.before && filter.offset === undefined
+      ? lt(i.createdAt, new Date(filter.before))
+      : undefined,
+  );
+
+/** How many invoices match the filter, for numbered pages. */
+export async function countInvoices(
+  tx: { db: TenantTx['db'] },
+  actor: Actor,
+  filter: InvoiceFilter,
+  today: string,
+): Promise<number> {
+  if (!filter.tenantId || actor.kind !== 'system') requirePlatformRole(actor, 'support');
+  const [row] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(i)
+    .where(invoiceWhere(filter, today, false));
+  return Number(row?.n ?? 0);
 }
 
 export async function listInvoices(
@@ -281,22 +314,10 @@ export async function listInvoices(
     .select({ ...invoiceColumns, storeName: schema.tenants.name })
     .from(i)
     .innerJoin(schema.tenants, eq(schema.tenants.id, i.tenantId))
-    .where(
-      and(
-        filter.status ? eq(i.status, filter.status) : undefined,
-        filter.tenantId ? eq(i.tenantId, filter.tenantId) : undefined,
-        filter.overdue ? and(eq(i.status, 'issued'), lt(i.dueOn, today)) : undefined,
-        filter.dueThisWeek
-          ? and(
-              eq(i.status, 'issued'),
-              sql`${i.dueOn} between ${today}::date and ${addDays(today, 7)}::date`,
-            )
-          : undefined,
-        filter.before ? lt(i.createdAt, new Date(filter.before)) : undefined,
-      ),
-    )
+    .where(invoiceWhere(filter, today, true))
     .orderBy(desc(i.createdAt))
-    .limit(Math.min(Math.max(filter.limit ?? 50, 1), 100));
+    .limit(Math.min(Math.max(filter.limit ?? 50, 1), 100))
+    .offset(filter.offset ?? 0);
   return rows.map((r) => ({ ...summary(r as InvoiceRow, today), storeName: r.storeName }));
 }
 

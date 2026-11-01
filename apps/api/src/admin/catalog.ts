@@ -2,6 +2,7 @@
 // bodies use the shared schemas the services validate again; each service
 // checks its own permission. Another store's IDs answer 404 (RLS hides the
 // rows), and every route with an ID is in the isolation suite.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   adjustInventory,
@@ -58,6 +59,7 @@ import {
   productPatch,
   variantPatch,
 } from '@managemind/shared/catalog';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import type { Context } from 'hono';
 import { inStore, type StaffEnv } from './context';
 
@@ -77,6 +79,9 @@ const body = <T extends z.ZodType>(schema: T) => ({
 });
 const page = <T extends z.ZodType>(item: T) =>
   z.object({ items: z.array(item), nextCursor: z.string().nullable() });
+/** A list with numbered pages: how many match, beside the page. */
+const counted = <T extends z.ZodType>(item: T) =>
+  z.object({ items: z.array(item), nextCursor: z.string().nullable(), total: z.number().int() });
 const limit = z.coerce.number().int().min(1).max(100).optional();
 const flag = z.enum(['true', 'false']).optional();
 
@@ -306,17 +311,18 @@ export const CATALOG_ROUTES = {
       query: z.object({
         q: z.string().max(100).optional(),
         status: z.enum(['draft', 'active', 'archived']).optional(),
-        categoryId: z.uuid().optional(),
+        categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
-        brandValueId: z.uuid().optional(),
+        brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         attributeValueId: z.uuid().optional(),
         lowStock: flag,
         after: z.uuid().optional(),
+        offset: pageOffset,
         limit,
       }),
     },
-    responses: json(page(ProductSummary), 'Products'),
+    responses: json(counted(ProductSummary), 'Products'),
   }),
   exportProducts: r({
     method: 'get',
@@ -326,9 +332,9 @@ export const CATALOG_ROUTES = {
       query: z.object({
         q: z.string().max(100).optional(),
         status: z.enum(['draft', 'active', 'archived']).optional(),
-        categoryId: z.uuid().optional(),
+        categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
-        brandValueId: z.uuid().optional(),
+        brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         lowStock: flag,
         after: z.uuid().optional(),
@@ -583,10 +589,11 @@ export const CATALOG_ROUTES = {
         locationId: z.uuid().optional(),
         q: z.string().max(100).optional(),
         after: z.uuid().optional(),
+        offset: pageOffset,
         limit,
       }),
     },
-    responses: json(page(InventoryRow), 'Inventory'),
+    responses: json(counted(InventoryRow), 'Inventory'),
   }),
   adjustInventory: r({
     method: 'post',

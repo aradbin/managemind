@@ -9,6 +9,7 @@ import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { type Attribute, attributesQuery, pick } from '../../lib/catalog';
 import { Button } from '../ui/button';
+import { Combobox } from '../ui/combobox';
 import { Input } from '../ui/input';
 import { LANGUAGE_NAMES, type Lang, otherLang } from './language-tabs';
 
@@ -150,23 +151,23 @@ export function AttributeFields({
         />
       ))}
       {addable.length > 0 && (
-        <select
-          aria-label={t('specs.add')}
+        <Combobox
+          ariaLabel={t('specs.add')}
+          searchLabel={t('specs.find')}
+          placeholder={t('specs.add')}
           disabled={disabled}
-          className="min-h-11 rounded-lg border border-input bg-background px-3 text-base md:max-w-xs md:text-sm"
+          className="md:max-w-xs"
           value=""
-          onChange={(e) => {
-            const attribute = all.find((a) => a.id === e.target.value);
+          options={addable.map((a) => ({
+            value: a.id,
+            label: pick(a.name, locale) ?? a.key,
+            keywords: `${a.key} ${a.name.bn ?? ''} ${a.name.en ?? ''}`,
+          }))}
+          onChange={(v) => {
+            const attribute = all.find((a) => a.id === v);
             if (attribute) set(attribute, emptyDraft(attribute));
           }}
-        >
-          <option value="">{t('specs.add')}</option>
-          {addable.map((a) => (
-            <option key={a.id} value={a.id}>
-              {pick(a.name, locale)}
-            </option>
-          ))}
-        </select>
+        />
       )}
     </section>
   );
@@ -211,20 +212,22 @@ function AttributeField({
   let input: React.ReactNode = null;
   if (draft.type === 'choice') {
     input = (
-      <select
+      <Combobox
         id={id}
         disabled={disabled}
-        className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm"
+        searchLabel={t('specs.findValue', { name })}
+        placeholder="—"
         value={draft.valueIds[0] ?? ''}
-        onChange={(e) => onChange({ ...draft, valueIds: e.target.value ? [e.target.value] : [] })}
-      >
-        <option value="">—</option>
-        {attribute.values.map((v) => (
-          <option key={v.id} value={v.id}>
-            {pick(v.label, locale)}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '', label: '—' },
+          ...attribute.values.map((v) => ({
+            value: v.id,
+            label: pick(v.label, locale) ?? '',
+            keywords: `${v.label.bn ?? ''} ${v.label.en ?? ''}`,
+          })),
+        ]}
+        onChange={(v) => onChange({ ...draft, valueIds: v ? [v] : [] })}
+      />
     );
   } else if (draft.type === 'multi_choice') {
     return (
@@ -235,10 +238,10 @@ function AttributeField({
         </legend>
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {attribute.values.map((v) => (
-            <label key={v.id} className="flex min-h-11 items-center gap-2 text-sm">
+            <label key={v.id} className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={draft.valueIds.includes(v.id)}
                 onChange={(e) =>
                   onChange({
@@ -270,7 +273,7 @@ function AttributeField({
       <select
         id={id}
         disabled={disabled}
-        className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base md:text-sm"
+        className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
         value={draft.value === null ? '' : draft.value ? 'yes' : 'no'}
         onChange={(e) =>
           onChange({ ...draft, value: e.target.value === '' ? null : e.target.value === 'yes' })

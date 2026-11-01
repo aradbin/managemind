@@ -6,13 +6,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { X } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { Field } from '../components/field';
 import { ItemSelection, useSelectionNames } from '../components/item-selection';
 import { Notice } from '../components/notice';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker } from '../components/place-picker';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
@@ -41,7 +42,7 @@ import { StateChip } from './promotions';
 
 const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 const selectClass =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base font-normal';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
 
 export function NewPromotionPage() {
   return <Editor promotion={undefined} />;
@@ -64,6 +65,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
   const canWrite = usePermission('promotions.write');
   const zones = useQuery(zonesQuery);
   const [d, setD] = useState<Draft>(() => (promotion ? fromPromotion(promotion) : newDraft()));
+  // What was last saved, to tell whether anything changed since.
+  const [saved, setSaved] = useState<Draft>(d);
+  const changed = JSON.stringify(d) !== JSON.stringify(saved);
+  const formId = useId();
   const [showProblems, setShowProblems] = useState(false);
   const set = (patch: Partial<Draft>) => setD((prev) => ({ ...prev, ...patch }));
   const built = toInput(d);
@@ -84,11 +89,12 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
           )
         : unwrap(await api.POST('/v1/admin/promotions', { body: built.input as never }));
     },
-    onSuccess: async (saved) => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      queryClient.setQueryData(['promotion', saved.id], saved);
+      queryClient.setQueryData(['promotion', result.id], result);
+      setSaved(d);
       toast(t('account.saved'));
-      if (!promotion) navigate({ to: '/promotions/$id', params: { id: saved.id } });
+      if (!promotion) navigate({ to: '/promotions/$id', params: { id: result.id } });
     },
   });
   const submit = () => {
@@ -105,9 +111,9 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
 
   return (
     <div className="flex max-w-6xl flex-col gap-4">
-      <Breadcrumb to="/promotions" label={t('nav.promotions')} />
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <BackLink to="/promotions" label={t('nav.promotions')} />
+        <h1 className="text-xl font-semibold tracking-tight">
           {promotion ? pickText(promotion.title, locale) || t('promo.untitled') : t('promo.new')}
         </h1>
         {promotion && <StateChip state={promotion.state} />}
@@ -134,6 +140,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
       </p>
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <form
+          id={formId}
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
@@ -166,11 +173,11 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <fieldset className="flex flex-col gap-1" disabled={Boolean(promotion)}>
                 <legend className="mb-1 text-sm font-medium">{t('promo.kind')}</legend>
                 {(['automatic', 'code'] as const).map((k) => (
-                  <label key={k} className="flex min-h-11 items-center gap-3">
+                  <label key={k} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="radio"
                       name="promo-kind"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.kind === k}
                       onChange={() => set({ kind: k })}
                     />
@@ -273,10 +280,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                       error={problem('percent')}
                     />
                   </div>
-                  <label className="flex min-h-11 items-center gap-3">
+                  <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.getSame}
                       onChange={(e) => set({ getSame: e.target.checked })}
                     />
@@ -329,10 +336,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                 <fieldset className="flex flex-col gap-1">
                   <legend className="mb-1 text-sm font-medium">{t('promo.zones')}</legend>
                   {zones.data.map((z) => (
-                    <label key={z.id} className="flex min-h-11 items-center gap-3">
+                    <label key={z.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         checked={d.zoneIds.includes(z.id)}
                         onChange={(e) =>
                           set({
@@ -347,10 +354,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                   ))}
                 </fieldset>
               )}
-              <label className="flex min-h-11 items-center gap-3">
+              <label className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="checkbox"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={d.firstOrder}
                   onChange={(e) => set({ firstOrder: e.target.checked })}
                 />
@@ -381,10 +388,10 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               <fieldset className="flex flex-col gap-1">
                 <legend className="mb-1 text-sm font-medium">{t('promo.paymentMethods')}</legend>
                 {(['cod', 'manual', 'online'] as const).map((m) => (
-                  <label key={m} className="flex min-h-11 items-center gap-3">
+                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
                     <input
                       type="checkbox"
-                      className="size-5"
+                      className="size-4 accent-primary"
                       checked={d.paymentMethods.includes(m)}
                       onChange={(e) =>
                         set({
@@ -448,7 +455,7 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
                 />
               </div>
               {problem('number') && <p className="text-sm text-danger">{problem('number')}</p>}
-              <label className="flex min-h-11 items-start gap-3">
+              <label className="flex min-h-10 items-start gap-3 md:min-h-9">
                 <input
                   type="checkbox"
                   className="mt-3 size-5"
@@ -479,13 +486,6 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
             {save.error && !(save.error instanceof Error && save.error.message === 'invalid') && (
               <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>
             )}
-            {canWrite && (
-              <div>
-                <Button type="submit" disabled={save.isPending}>
-                  {t('action.save')}
-                </Button>
-              </div>
-            )}
           </fieldset>
         </form>
         <aside className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
@@ -493,6 +493,22 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
           {promotion?.kind === 'code' && <Codes promotion={promotion} />}
         </aside>
       </div>
+      <SaveBar
+        show={canWrite && (!promotion || changed)}
+        message={promotion ? t('promo.unsaved') : undefined}
+        discardLabel={promotion ? t('promo.discard') : t('action.cancel')}
+        onDiscard={() => {
+          if (!promotion) {
+            navigate({ to: '/promotions' });
+            return;
+          }
+          setD(saved);
+          setShowProblems(false);
+        }}
+        saveLabel={promotion ? t('action.save') : t('promo.create')}
+        busy={save.isPending}
+        form={formId}
+      />
     </div>
   );
 }

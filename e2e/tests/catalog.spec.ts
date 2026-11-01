@@ -11,7 +11,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import { en } from '../../apps/admin/src/i18n/en';
 import { fixtureCsv } from './catalog-fixture';
-import { expectAccessible, pngImage, signIn, t } from './helpers';
+import { choose, expectAccessible, pngImage, signIn, t } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -56,7 +56,7 @@ test('catalog flows', async ({ page }, info) => {
       await dialog.getByRole('button', { name: t('options.addValue') }).click();
     }
     await expectAccessible(page, 'new attribute');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('attributes.create') }).click();
     await expect(dialog).toBeHidden();
     await expect(toast(page, t('attributes.saved')).first()).toBeVisible();
     await expectAccessible(page, 'attributes');
@@ -79,36 +79,34 @@ test('catalog flows', async ({ page }, info) => {
     await expect(
       page.getByRole('heading', { name: t('catalog.categories'), level: 1 }),
     ).toBeVisible();
-    await page.getByRole('button', { name: t('categories.new') }).click();
+    // The header's button; the empty list offers a second one.
+    await page
+      .getByRole('button', { name: t('categories.new') })
+      .first()
+      .click();
     let dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(category);
+    // Its specifications are picked in the same panel.
+    await dialog.getByLabel('কাপড়').check();
     await expectAccessible(page, 'new category');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('categories.create') }).click();
     await expect(dialog).toBeHidden();
     await expect(toast(page, t('categories.saved'))).toBeVisible();
     await expectAccessible(page, 'categories');
 
+    // A second category, and the first moved under it.
     await page
-      .getByRole('button', { name: t('categories.template', { count: '০' }) })
-      .locator('visible=true')
+      .getByRole('button', { name: t('categories.new') })
       .first()
       .click();
     dialog = page.getByRole('dialog');
-    await dialog.getByLabel('কাপড়').check();
-    await expectAccessible(page, 'category specifications');
-    await dialog.getByRole('button', { name: t('action.save') }).click();
-    await expect(dialog).toBeHidden();
-    await expect(toast(page, t('categories.templateSaved'))).toBeVisible();
-
-    // A second category, and the first moved under it.
-    await page.getByRole('button', { name: t('categories.new') }).click();
-    dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('categories.name'), { exact: false }).first().fill(parent);
-    await dialog.getByRole('button', { name: t('action.save') }).click();
+    await dialog.getByRole('button', { name: t('categories.create') }).click();
     await expect(dialog).toBeHidden();
-    await page.getByRole('button', { name: t('categories.edit', { name: category }) }).click();
+    await page.getByRole('button', { name: category, exact: true }).click();
     dialog = page.getByRole('dialog');
-    await dialog.getByLabel(t('categories.parent')).selectOption({ label: parent });
+    await expect(dialog.getByLabel('কাপড়')).toBeChecked();
+    await choose(dialog.getByLabel(t('categories.parent')), { label: parent });
     await expectAccessible(page, 'edit category');
     await dialog.getByRole('button', { name: t('action.save') }).click();
     await expect(dialog).toBeHidden();
@@ -156,9 +154,11 @@ test('catalog flows', async ({ page }, info) => {
       .getByLabel(`${parent} › ${category}`)
       .check();
     // The category's template brings the fabric; the brand is added by hand.
-    await page.getByLabel('কাপড়', { exact: true }).selectOption({ label: 'সুতি' });
-    await page.getByLabel(t('specs.add')).selectOption({ label: t('attribute.brand') });
-    await page.getByLabel(t('attribute.brand'), { exact: true }).selectOption({ label: 'আড়ং' });
+    await choose(page.getByLabel('কাপড়', { exact: true }), { label: 'সুতি' });
+    await choose(page.getByRole('combobox', { name: t('specs.add'), exact: true }), {
+      label: t('attribute.brand'),
+    });
+    await choose(page.getByLabel(t('attribute.brand'), { exact: true }), { label: 'আড়ং' });
     const tags = page.getByRole('combobox', { name: new RegExp(`^${t('product.tags')}`) });
     await tags.fill('ঈদ');
     await tags.press('Enter');
@@ -170,8 +170,11 @@ test('catalog flows', async ({ page }, info) => {
     await page.reload();
     await expect(editor.locator('strong')).toHaveText('ঢাকাই');
     await expect(editor.locator('li')).toHaveText('সুতি');
-    await expect(page.getByLabel('কাপড়', { exact: true })).toHaveValue(/.+/);
-    await expect(page.getByLabel(t('attribute.brand'), { exact: true })).toHaveValue(/.+/);
+    await expect(page.getByLabel('কাপড়', { exact: true })).toHaveAttribute('data-value', /.+/);
+    await expect(page.getByLabel(t('attribute.brand'), { exact: true })).toHaveAttribute(
+      'data-value',
+      /.+/,
+    );
     await expect(page.getByText('ঈদ', { exact: true })).toBeVisible();
   });
 

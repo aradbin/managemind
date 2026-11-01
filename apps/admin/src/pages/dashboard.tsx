@@ -68,7 +68,7 @@ export function DashboardView() {
           <p className="text-sm text-muted-foreground">
             {formatDateTime(locale, now, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="text-2xl font-semibold tracking-tight">{t(greeting)}</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{t(greeting)}</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           {canReports && (
@@ -171,7 +171,10 @@ function ProfitNumbers({
         <h2 id="dashboard-profit" className="font-semibold">
           {t('dashboard.profit.title')}
         </h2>
-        <Link to="/reports/profit" className="text-sm font-medium text-primary hover:underline">
+        <Link
+          to="/reports/profit"
+          className="text-sm font-medium text-primary underline underline-offset-2"
+        >
           {t('dashboard.profit.open')}
         </Link>
       </div>
@@ -342,7 +345,10 @@ function RecentOrders() {
       title={t('dashboard.recent')}
       padded={false}
       action={
-        <Link to="/orders" className="text-sm font-medium text-primary hover:underline">
+        <Link
+          to="/orders"
+          className="text-sm font-medium text-primary underline underline-offset-2"
+        >
           {t('dashboard.viewAll')}
         </Link>
       }

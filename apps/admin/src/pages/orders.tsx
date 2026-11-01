@@ -1,12 +1,23 @@
-// The order list (phase-4-plan §7, redesigned in ADR 0029): status tabs and
-// filters kept in the URL, cards on phones and a table from md, and selection
-// for bulk confirm, printing and export in a bar that appears with it.
-import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+// The order list (phase-4-plan §7; ADR 0029, ADR 0033): stage tabs with
+// counts, search and filter buttons kept in the URL, rows on phones and a
+// table from md that open the order, a ⋯ menu per row, and selection for
+// bulk confirm, booking and printing in the selection bar.
+
+import { formatDateTime } from '@managemind/shared/i18n';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { Plus, Printer, SlidersHorizontal } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Check, FileText, Plus, Printer, Search, Truck, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
-import { Field } from '../components/field';
+import {
+  barAction,
+  FilterButtons,
+  type FilterDef,
+  RowMenu,
+  RowMenuItem,
+  SelectionBar,
+  StageTabs,
+} from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { PageHeader } from '../components/page-header';
@@ -28,23 +39,19 @@ import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
   dashboardQuery,
-  dateTime,
+  dateRangeFilter,
   idempotencyKey,
   type OrderFilters,
   type OrderSummary,
-  ordersQuery,
+  ordersList,
   pickText,
   withKey,
   zonesQuery,
 } from '../lib/orders';
-import { defined } from '../lib/search';
-import { cn } from '../lib/utils';
+import { usePagedList } from '../lib/paged';
 import { OrderExportButton } from './order-export';
 
-export type OrderSearch = OrderFilters;
-
-const selectClass =
-  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
+export type OrderSearch = OrderFilters & { page?: number | undefined };
 
 /** The tabs: each sets the order and delivery statuses and keeps every other filter. */
 const TABS = [
@@ -71,20 +78,7 @@ const TABS = [
   deliveryStatus: OrderSearch['deliveryStatus'];
 }[];
 
-/** The filters behind the Filters button: everything but search and the tabs. */
-const PANEL = [
-  'paymentStatus',
-  'source',
-  'zoneId',
-  'flag',
-  'from',
-  'to',
-  'cancelledByShopper',
-] as const;
-
-const STATUSES = ['pending', 'confirmed', 'processing', 'completed', 'cancelled'] as const;
 const PAYMENTS = ['unpaid', 'partially_paid', 'paid', 'partially_refunded', 'refunded'] as const;
-const DELIVERIES = ['not_shipped', 'partially_shipped', 'shipped', 'delivered', 'failed'] as const;
 const SOURCES = [
   'website',
   'facebook',
@@ -106,9 +100,8 @@ export function OrdersPage() {
   const [q, setQ] = useState(search.q ?? '');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [bulkBooking, setBulkBooking] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const panelCount = PANEL.filter((k) => search[k] !== undefined).length;
-  const [panel, setPanel] = useState(panelCount > 0);
+  /** The pending orders being confirmed: the selection's, or one row's. */
+  const [confirming, setConfirming] = useState<OrderSummary[]>();
   const dashboard = useQuery(dashboardQuery).data;
   const counts = dashboard?.counts;
   const tabCount = (key: string) =>
@@ -124,7 +117,8 @@ export function OrdersPage() {
       to: '/orders',
       search: (prev: OrderSearch) =>
         Object.fromEntries(
-          Object.entries({ ...prev, ...patch }).filter(
+          // A new filter starts again at page 1.
+          Object.entries({ ...prev, page: undefined, ...patch }).filter(
             ([, v]) => v !== undefined && v !== '' && v !== false,
           ),
         ) as OrderSearch,
@@ -138,10 +132,99 @@ export function OrdersPage() {
     return () => clearTimeout(id);
   });
 
-  const orders = useInfiniteQuery(ordersQuery(search));
+  const { page, ...listFilters } = search;
+  const orders = usePagedList({
+    ...ordersList(listFilters),
+    page,
+    // A page is a step back can return to, so it isn't replaced.
+    onPageChange: (next) =>
+      navigate({
+        from: '/orders/',
+        to: '/orders',
+        search: (prev: OrderSearch) => ({ ...prev, page: next > 1 ? next : undefined }),
+      }),
+  });
   const zones = useQuery(zonesQuery);
-  const items = useMemo(() => orders.data?.pages.flatMap((p) => p.items) ?? [], [orders.data]);
-  const filtered = Object.keys(search).length > 0;
+  const items = orders.items;
+
+  const tab = TABS.find(
+    (x) => x.status === search.status && x.deliveryStatus === search.deliveryStatus,
+  );
+  // A stage no tab shows (a link from Home, say) reads as a filter that can be removed.
+  const odd = tab
+    ? []
+    : [
+        ...(search.status ? [t(`orderStatus.${search.status}`)] : []),
+        ...(search.deliveryStatus ? [t(`deliveryStatus.${search.deliveryStatus}`)] : []),
+      ];
+  const filtered = Boolean(
+    search.q ||
+      search.paymentStatus ||
+      search.source ||
+      search.zoneId ||
+      search.flag ||
+      search.from ||
+      search.to ||
+      search.cancelledByShopper ||
+      search.tag,
+  );
+  const reset = () => {
+    setQ('');
+    setFilter({
+      q: undefined,
+      paymentStatus: undefined,
+      source: undefined,
+      zoneId: undefined,
+      flag: undefined,
+      from: undefined,
+      to: undefined,
+      cancelledByShopper: undefined,
+      tag: undefined,
+    });
+  };
+
+  const filters: FilterDef[] = [
+    {
+      key: 'payment',
+      multi: true,
+      label: t('order.payment'),
+      value: search.paymentStatus,
+      options: PAYMENTS.map((s) => ({ value: s, label: t(`paymentStatus.${s}`) })),
+      onChange: (v) => setFilter({ paymentStatus: v as OrderSearch['paymentStatus'] }),
+    },
+    {
+      key: 'source',
+      multi: true,
+      label: t('order.source'),
+      value: search.source,
+      options: SOURCES.map((s) => ({ value: s, label: t(`source.${s}`) })),
+      onChange: (v) => setFilter({ source: v as OrderSearch['source'] }),
+    },
+    {
+      key: 'zone',
+      multi: true,
+      label: t('order.zone'),
+      value: search.zoneId,
+      options: (zones.data ?? []).map((z) => ({ value: z.id, label: pickText(z.name, locale) })),
+      onChange: (v) => setFilter({ zoneId: v }),
+    },
+    {
+      key: 'flag',
+      multi: true,
+      label: t('orders.flag'),
+      value: search.flag,
+      options: FLAGS.map((f) => ({ value: f, label: t(`orders.flag.${f}`) })),
+      onChange: (v) => setFilter({ flag: v as OrderSearch['flag'] }),
+    },
+    dateRangeFilter({
+      key: 'placed',
+      label: t('order.placedAt'),
+      from: search.from,
+      to: search.to,
+      onChange: setFilter,
+      t,
+    }),
+  ];
 
   const toggle = (id: string) =>
     setSelected((prev) => {
@@ -167,22 +250,28 @@ export function OrdersPage() {
         ) : null}
       </>
     );
+  const area = (o: OrderSummary) => pickText(o.area, locale);
+  const placed = (o: OrderSummary) => {
+    const at = new Date(o.placedAt);
+    return {
+      // Day first, as everywhere in the admin (design rule 11): "29 Oct".
+      day: new Intl.DateTimeFormat(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+        day: 'numeric',
+        month: 'short',
+      }).format(at),
+      time: formatDateTime(locale, at, { timeStyle: 'short' }),
+    };
+  };
+
   const columns: Column<OrderSummary>[] = [
     {
       header: t('order.number'),
       cell: (o) => (
-        <span className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            className="size-5 shrink-0"
-            aria-label={t('orders.select', { number: o.displayNumber })}
-            checked={selected.has(o.id)}
-            onChange={() => toggle(o.id)}
-          />
+        <span className="flex flex-col items-start">
           <Link
             to="/orders/$id"
             params={{ id: o.id }}
-            className="font-medium underline-offset-2 hover:underline"
+            className="font-mono font-medium underline-offset-2 hover:underline"
           >
             {o.displayNumber}
           </Link>
@@ -192,41 +281,63 @@ export function OrdersPage() {
         </span>
       ),
     },
-    { header: t('order.placedAt'), cell: (o) => dateTime(locale, o.placedAt) },
     {
       header: t('order.customer'),
       cell: (o) => (
         <span className="flex flex-col items-start gap-0.5">
-          <span>{o.name}</span>
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium">{o.name}</span>
+            {o.risk.risky && <ScoreBadge risk={o.risk} className="h-5 px-1.5" />}
+            <FlagChips flags={o.flags} />
+          </span>
+          <span className="text-xs text-muted-foreground">
             {o.phone}
-            <ScoreBadge risk={o.risk} className="h-5 px-2" />
+            {area(o) ? ` · ${area(o)}` : ''}
           </span>
         </span>
       ),
     },
     {
-      header: t('order.status'),
+      header: t('order.placedAt'),
       cell: (o) => (
-        <span className="flex flex-wrap gap-1">
-          <StatusChip kind="order" status={o.status} />
-          <StatusChip kind="payment" status={o.paymentStatus} />
-          <StatusChip kind="delivery" status={o.deliveryStatus} />
-          <FlagChips flags={o.flags} />
+        <span className="flex flex-col whitespace-nowrap">
+          <span>{placed(o).day}</span>
+          <span className="text-xs text-muted-foreground">{placed(o).time}</span>
         </span>
       ),
     },
-    { header: t('order.area'), cell: (o) => pickText(o.area, locale) || '—' },
-    { header: t('order.total'), cell: (o) => formatPrice(o.total, locale) },
+    { header: t('order.status'), cell: (o) => <StatusChip kind="order" status={o.status} /> },
+    {
+      header: t('order.payment'),
+      cell: (o) => <StatusChip kind="payment" status={o.paymentStatus} />,
+    },
+    {
+      header: t('order.delivery'),
+      cell: (o) => <StatusChip kind="delivery" status={o.deliveryStatus} />,
+    },
+    { header: t('order.total'), numeric: true, cell: (o) => formatPrice(o.total, locale) },
     // Gross profit for cost holders (phase-8-plan §3.8): the server leaves it out otherwise.
     ...(showProfit
-      ? [{ header: t('orders.col.profit'), cell: (o: OrderSummary) => profitText(o) }]
+      ? [
+          {
+            header: t('orders.col.profit'),
+            numeric: true,
+            wide: true,
+            cell: (o: OrderSummary) => profitText(o),
+          },
+        ]
       : []),
-    { header: t('order.source'), cell: (o) => t(`source.${o.source}` as AdminKey) },
   ];
 
   const ids = [...selected];
   const pendingSelected = items.filter((o) => selected.has(o.id) && o.status === 'pending');
+  const open = (o: OrderSummary) => navigate({ to: '/orders/$id', params: { id: o.id } });
+  const print = (ids: string[], doc: 'invoice' | 'slip') =>
+    window.open(
+      `/print/orders?${new URLSearchParams({ ids: ids.join(','), doc })}`,
+      '_blank',
+      'noopener',
+    );
 
   return (
     <div className="flex flex-col gap-4">
@@ -235,294 +346,84 @@ export function OrdersPage() {
         title={t('nav.orders')}
         actions={
           <>
-            <Button variant="secondary" asChild>
-              <Link to="/returns">{t('orders.returns')}</Link>
-            </Button>
-            <OrderExportButton filters={search} selected={ids} />
+            <OrderExportButton filters={listFilters} selected={ids} />
             {canWrite && (
-              <Button asChild className="hidden md:inline-flex">
+              <Button asChild>
                 <Link to="/orders/new">
-                  <Plus aria-hidden className="size-4" />
-                  {t('orders.new')}
+                  <Plus aria-hidden />
+                  <span className="md:hidden">{t('orders.newShort')}</span>
+                  <span className="sr-only md:not-sr-only">{t('orders.new')}</span>
                 </Link>
               </Button>
             )}
           </>
         }
       />
-      <nav
-        aria-label={t('order.status')}
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:gap-6 md:border-b md:border-border md:px-0"
-      >
-        {TABS.map((tab) => {
-          const active =
-            search.status === tab.status && search.deliveryStatus === tab.deliveryStatus;
-          const count = tabCount(tab.key);
-          return (
-            <Link
-              key={tab.key}
-              from="/orders/"
-              to="/orders"
-              search={(prev: OrderSearch) =>
-                defined({ ...prev, status: tab.status, deliveryStatus: tab.deliveryStatus })
-              }
-              aria-current={active ? 'page' : undefined}
-              className={cn(
-                'flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground',
-                'md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5',
-                active &&
-                  'border-foreground bg-foreground text-background md:border-foreground md:bg-transparent md:text-foreground',
-              )}
-            >
-              {t(tab.label)}
-              {count ? (
-                <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
-                  {count}
-                </span>
-              ) : null}
-            </Link>
-          );
-        })}
-        <Link
-          to="/orders/confirm"
-          className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
-        >
-          {t('queue.tabLabel')}
-          {counts?.toCall ? (
-            <span className="rounded-full bg-warning px-1.5 text-xs font-semibold text-warning-foreground tabular-nums">
-              {counts.toCall}
-            </span>
-          ) : null}
-        </Link>
-        {dashboard?.incomplete && (
-          <Link
-            to="/orders/incomplete"
-            className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
-          >
-            {t('incomplete.title')}
-            {dashboard.incomplete.open ? (
-              <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
-                {dashboard.incomplete.open}
-              </span>
-            ) : null}
-          </Link>
-        )}
-        {dashboard?.counts.courierReturns ? (
-          <Link
-            to="/orders/courier-returns"
-            className="flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-input bg-background px-4 text-sm font-medium text-muted-foreground md:min-h-11 md:rounded-none md:border-0 md:border-b-2 md:border-transparent md:bg-transparent md:px-0.5"
-          >
-            {t('couriers.returns.title')}
-            <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-foreground tabular-nums">
-              {dashboard.counts.courierReturns}
-            </span>
-          </Link>
-        ) : null}
-      </nav>
+      <StageTabs
+        label={t('order.status')}
+        tabs={TABS.map((x) => ({ key: x.key, label: t(x.label), count: tabCount(x.key) }))}
+        value={tab?.key}
+        onChange={(key) => {
+          const next = TABS.find((x) => x.key === key);
+          setFilter({
+            status: next?.status,
+            deliveryStatus: next?.deliveryStatus,
+            ...(key === 'cancelled' ? {} : { cancelledByShopper: undefined }),
+          });
+        }}
+      />
       <div className="flex flex-wrap items-center gap-2">
-        <Input
-          type="search"
-          className="min-w-0 flex-1 basis-64 md:max-w-sm"
-          aria-label={t('orders.search')}
-          placeholder={t('orders.search')}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <Button
-          variant="secondary"
-          aria-expanded={panel}
-          aria-controls="order-filters"
-          onClick={() => setPanel((v) => !v)}
-        >
-          <SlidersHorizontal aria-hidden className="size-4" />
-          {panelCount ? t('orders.filtersOn', { count: panelCount }) : t('orders.filters')}
-        </Button>
-        {search.tag && (
-          <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
-            {t('orders.tagFilter', { tag: search.tag })} ×
-          </Button>
-        )}
-      </div>
-      {panel && (
-        <div
-          id="order-filters"
-          className="grid gap-3 rounded-xl border border-border bg-background p-4 md:grid-cols-4 md:items-end"
-        >
-          <select
-            aria-label={t('order.status')}
-            className={selectClass}
-            value={search.status ?? ''}
-            onChange={(e) =>
-              setFilter({ status: (e.target.value || undefined) as OrderSearch['status'] })
-            }
-          >
-            <option value="">{t('orders.allStatuses')}</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {t(`orderStatus.${s}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t('order.payment')}
-            className={selectClass}
-            value={search.paymentStatus ?? ''}
-            onChange={(e) =>
-              setFilter({
-                paymentStatus: (e.target.value || undefined) as OrderSearch['paymentStatus'],
-              })
-            }
-          >
-            <option value="">{t('orders.allPayments')}</option>
-            {PAYMENTS.map((s) => (
-              <option key={s} value={s}>
-                {t(`paymentStatus.${s}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t('order.delivery')}
-            className={selectClass}
-            value={search.deliveryStatus ?? ''}
-            onChange={(e) =>
-              setFilter({
-                deliveryStatus: (e.target.value || undefined) as OrderSearch['deliveryStatus'],
-              })
-            }
-          >
-            <option value="">{t('orders.allDeliveries')}</option>
-            {DELIVERIES.map((s) => (
-              <option key={s} value={s}>
-                {t(`deliveryStatus.${s}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t('order.source')}
-            className={selectClass}
-            value={search.source ?? ''}
-            onChange={(e) =>
-              setFilter({ source: (e.target.value || undefined) as OrderSearch['source'] })
-            }
-          >
-            <option value="">{t('orders.allSources')}</option>
-            {SOURCES.map((s) => (
-              <option key={s} value={s}>
-                {t(`source.${s}`)}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t('orders.flag')}
-            className={selectClass}
-            value={search.flag ?? ''}
-            onChange={(e) =>
-              setFilter({ flag: (e.target.value || undefined) as OrderSearch['flag'] })
-            }
-          >
-            <option value="">{t('orders.allFlags')}</option>
-            {FLAGS.map((f) => (
-              <option key={f} value={f}>
-                {t(`orders.flag.${f}`)}
-              </option>
-            ))}
-          </select>
-          {zones.data && zones.data.length > 0 && (
-            <select
-              aria-label={t('order.zone')}
-              className={selectClass}
-              value={search.zoneId ?? ''}
-              onChange={(e) => setFilter({ zoneId: e.target.value || undefined })}
-            >
-              <option value="">{t('orders.allZones')}</option>
-              {zones.data.map((z) => (
-                <option key={z.id} value={z.id}>
-                  {pickText(z.name, locale)}
-                </option>
-              ))}
-            </select>
-          )}
-          <Field
-            label={t('orders.from')}
-            type="date"
-            value={search.from ?? ''}
-            onChange={(e) => setFilter({ from: e.target.value || undefined })}
+        <div className="relative min-w-0 flex-1 basis-48 md:w-64 md:flex-none">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
           />
-          <Field
-            label={t('orders.to')}
-            type="date"
-            value={search.to ?? ''}
-            onChange={(e) => setFilter({ to: e.target.value || undefined })}
+          <Input
+            type="search"
+            className="pl-9"
+            aria-label={t('orders.search')}
+            placeholder={t('orders.search')}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
           />
-          <label className="flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-5 accent-primary"
-              checked={Boolean(search.cancelledByShopper)}
-              onChange={(e) => setFilter({ cancelledByShopper: e.target.checked || undefined })}
-            />
-            {t('orders.cancelledByShopper')}
-          </label>
-          {filtered && (
-            <Button
-              variant="ghost"
-              className="justify-self-start text-primary"
-              onClick={() => {
-                setQ('');
-                void navigate({ to: '/orders', search: {}, replace: true });
-              }}
-            >
-              {t('orders.clearFilters')}
-            </Button>
-          )}
         </div>
-      )}
-      {items.length > 0 && (
-        <div
-          className={cn(
-            'flex min-h-12 flex-wrap items-center gap-2 rounded-xl px-3 py-1',
-            selected.size > 0 && 'bg-foreground text-background',
-          )}
-        >
-          <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
-            <input
-              type="checkbox"
-              className="size-5 accent-primary"
-              checked={allSelected}
-              onChange={() =>
-                setSelected(allSelected ? new Set() : new Set(items.map((o) => o.id)))
-              }
-            />
-            {selected.size > 0 ? (
-              <span aria-live="polite">{t('orders.selected', { count: selected.size })}</span>
-            ) : (
-              t('orders.selectAll')
-            )}
-          </label>
-          {selected.size > 0 && (
+        <FilterButtons
+          filters={filters}
+          onReset={filtered ? reset : undefined}
+          extra={
             <>
-              {canWrite && pendingSelected.length > 0 && (
-                <Button variant="secondary" onClick={() => setConfirming(true)}>
-                  {t('orders.bulkConfirm', { count: pendingSelected.length })}
+              {odd.length > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setFilter({ status: undefined, deliveryStatus: undefined })}
+                >
+                  {t('orders.statusFilter', { status: odd.join(', ') })}
+                  <X aria-hidden />
                 </Button>
               )}
-              {canWrite && (
-                <Button variant="secondary" onClick={() => setBulkBooking(true)}>
-                  {t('couriers.bulk.book')}
+              {search.tag && (
+                <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
+                  {t('orders.tagFilter', { tag: search.tag })}
+                  <X aria-hidden />
                 </Button>
               )}
-              <PrintLinks ids={ids} />
-              <Button
-                variant="ghost"
-                className="ms-auto hover:bg-transparent hover:underline"
-                onClick={() => setSelected(new Set())}
-              >
-                {t('orders.clearSelection')}
-              </Button>
+              {(tab?.key === 'cancelled' || search.cancelledByShopper) && (
+                <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-primary"
+                    checked={Boolean(search.cancelledByShopper)}
+                    onChange={(e) =>
+                      setFilter({ cancelledByShopper: e.target.checked || undefined })
+                    }
+                  />
+                  {t('orders.cancelledByShopper')}
+                </label>
+              )}
             </>
-          )}
-        </div>
-      )}
+          }
+        />
+      </div>
       <DataList
         label={t('nav.orders')}
         items={items}
@@ -531,63 +432,115 @@ export function OrdersPage() {
         isPending={orders.isPending}
         error={orders.isError ? errorMessage(orders.error, t) : undefined}
         onRetry={() => orders.refetch()}
-        empty={filtered ? t('orders.noMatches') : t('orders.empty')}
-        hasMore={orders.hasNextPage}
-        loadingMore={orders.isFetchingNextPage}
-        onLoadMore={() => orders.fetchNextPage()}
+        empty={
+          filtered || search.status || search.deliveryStatus
+            ? t('orders.noMatches')
+            : t('orders.empty')
+        }
+        emptyAction={
+          filtered ? (
+            <Button variant="secondary" onClick={reset}>
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
+        pager={orders.pager}
+        onOpen={open}
+        selection={{
+          isSelected: (o) => selected.has(o.id),
+          toggle: (o) => toggle(o.id),
+          toggleAll: () => setSelected(allSelected ? new Set() : new Set(items.map((o) => o.id))),
+          label: (o) => t('orders.select', { number: o.displayNumber }),
+        }}
+        menu={(o) => (
+          <RowMenu label={o.displayNumber}>
+            <RowMenuItem onSelect={() => open(o)}>
+              <FileText aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            {canWrite && o.status === 'pending' && (
+              <RowMenuItem onSelect={() => setConfirming([o])}>
+                <Check aria-hidden />
+                {t('order.confirm')}
+              </RowMenuItem>
+            )}
+            <RowMenuItem onSelect={() => print([o.id], 'invoice')}>
+              <Printer aria-hidden />
+              {t('orders.printInvoice')}
+            </RowMenuItem>
+            <RowMenuItem onSelect={() => print([o.id], 'slip')}>
+              <Printer aria-hidden />
+              {t('orders.printSlip')}
+            </RowMenuItem>
+          </RowMenu>
+        )}
         card={(o) => (
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-5 shrink-0 accent-primary"
-                aria-label={t('orders.select', { number: o.displayNumber })}
-                checked={selected.has(o.id)}
-                onChange={() => toggle(o.id)}
-              />
-              <Link to="/orders/$id" params={{ id: o.id }} className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-semibold">{o.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  <span className="font-medium text-primary">{o.displayNumber}</span> ·{' '}
-                  {dateTime(locale, o.placedAt)}
-                  {pickText(o.area, locale) ? ` · ${pickText(o.area, locale)}` : ''}
-                </span>
-              </Link>
-              <span className="flex flex-col items-end">
-                <span className="font-semibold tabular-nums">{formatPrice(o.total, locale)}</span>
-                {showProfit && o.grossProfit != null && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {t('orders.col.profit')} {profitText(o)}
-                  </span>
-                )}
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="flex flex-wrap items-center gap-2">
+                <Link to="/orders/$id" params={{ id: o.id }} className="font-mono font-medium">
+                  {o.displayNumber}
+                </Link>
+                <StatusChip kind="order" status={o.status} />
+              </span>
+              <span className="truncate text-sm">
+                {o.name}
+                {area(o) ? ` · ${area(o)}` : ''}
+              </span>
+              <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {placed(o).day}, {placed(o).time}
+                {o.risk.risky && <ScoreBadge risk={o.risk} className="h-5 px-1.5" />}
+                <FlagChips flags={o.flags} />
               </span>
             </div>
-            <div className="flex flex-wrap gap-1.5 ps-8">
-              <StatusChip kind="order" status={o.status} />
+            <span className="flex shrink-0 flex-col items-end gap-1">
+              <span className="font-medium tabular-nums">{formatPrice(o.total, locale)}</span>
               <StatusChip kind="payment" status={o.paymentStatus} />
-              <StatusChip kind="delivery" status={o.deliveryStatus} />
-              <ScoreBadge risk={o.risk} />
-              <FlagChips flags={o.flags} />
-            </div>
+              {showProfit && o.grossProfit != null && (
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {t('orders.col.profit')} {profitText(o)}
+                </span>
+              )}
+            </span>
           </div>
         )}
       />
-      {canWrite && (
-        <Button
-          asChild
-          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 min-h-13 rounded-2xl px-5 text-base font-semibold shadow-lg md:hidden"
-        >
-          <Link to="/orders/new">
-            <Plus aria-hidden className="size-5" />
-            {t('orders.new')}
-          </Link>
-        </Button>
-      )}
+      <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
+        {canWrite && pendingSelected.length > 0 && (
+          <button
+            type="button"
+            className={barAction}
+            onClick={() => setConfirming(pendingSelected)}
+          >
+            <Check aria-hidden />
+            {t('orders.bulkConfirm', { count: pendingSelected.length })}
+          </button>
+        )}
+        {canWrite && (
+          <button type="button" className={barAction} onClick={() => setBulkBooking(true)}>
+            <Truck aria-hidden />
+            {t('couriers.bulk.book')}
+          </button>
+        )}
+        {(['invoice', 'slip'] as const).map((doc) => (
+          <button
+            key={doc}
+            type="button"
+            className={barAction}
+            disabled={ids.length > 100}
+            title={ids.length > 100 ? t('print.tooMany') : undefined}
+            onClick={() => print(ids, doc)}
+          >
+            <Printer aria-hidden />
+            {t(doc === 'invoice' ? 'print.invoices' : 'print.slips')}
+          </button>
+        ))}
+      </SelectionBar>
       {confirming && (
         <BulkConfirmDialog
-          orders={pendingSelected}
+          orders={confirming}
           onClose={(done) => {
-            setConfirming(false);
+            setConfirming(undefined);
             if (done) setSelected(new Set());
           }}
         />
@@ -615,7 +568,7 @@ function FlagChips({ flags }: { flags: readonly string[] }) {
         .map((f) => (
           <span
             key={f}
-            className="inline-flex h-6 items-center whitespace-nowrap rounded-full bg-warning px-2.5 text-xs font-medium text-warning-foreground"
+            className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground"
           >
             {t(`orders.flag.${f}`)}
           </span>

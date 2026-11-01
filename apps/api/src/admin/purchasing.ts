@@ -3,6 +3,7 @@
 // payments, and a variant's cost history. Costs are left out of every
 // response without catalog.cost, and balances without purchasing.pay; the
 // core services decide both.
+
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   cancelPurchaseOrder,
@@ -43,6 +44,7 @@ import {
   supplierPaymentInput,
   supplierPaymentPatch,
 } from '@managemind/shared/back-office';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import { inStore, type StaffEnv } from './context';
 import { idempotent } from './orders';
 
@@ -334,11 +336,15 @@ export const PURCHASING_ROUTES = {
     request: {
       query: z.object({
         status: z.enum(PURCHASE_ORDER_STATUSES).optional(),
-        supplierId: z.uuid().optional(),
+        supplierId: oneOrMany(z.uuid()),
         ...cursor,
+        offset: pageOffset,
       }),
     },
-    responses: json(Page(PurchaseOrderSummary, 'PurchaseOrderPage'), 'Purchase orders'),
+    responses: json(
+      Page(PurchaseOrderSummary, 'PurchaseOrderPage').extend({ total: z.number().int() }),
+      'Purchase orders',
+    ),
   }),
   createPurchaseOrder: r({
     method: 'post',

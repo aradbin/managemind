@@ -135,6 +135,10 @@ export const couriersEn = {
   'couriers.dash.inTransit': 'Parcels with the courier',
   'couriers.dash.returning': 'Parcels coming back',
   'couriers.returns.title': 'Courier returns',
+  'couriers.returns.courier': 'Courier',
+  'couriers.returns.why': 'Why',
+  'couriers.returns.cameBack': 'Came back',
+  'couriers.returns.itemsCol': 'Items',
   'couriers.returns.description':
     "Parcels a courier says it brought back. Tap Received once they're in the shop: that puts them back in stock.",
   'couriers.returns.empty': 'No parcels waiting.',

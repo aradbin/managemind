@@ -3,6 +3,7 @@
 // when the rest won't come. Totals are computed here from the lines and
 // other costs; the client's are never used. Costs are left out of every
 // view without catalog.cost.
+
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import {
@@ -16,6 +17,7 @@ import {
   purchaseOrderPatch,
   purchaseTotals,
 } from '@managemind/shared/back-office';
+import { asList } from '@managemind/shared/query';
 import { tenantSettings } from '@managemind/shared/settings';
 import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
@@ -185,18 +187,30 @@ export async function listPurchaseOrders(
   actor: Actor,
   query: {
     status?: PurchaseOrderStatus | undefined;
-    supplierId?: string | undefined;
+    /** One supplier or several. */
+    supplierId?: string | readonly string[] | undefined;
     before?: string | undefined;
+    /** Rows to skip, for numbered pages; the cursor is then ignored. */
+    offset?: number | undefined;
     limit?: number | undefined;
   } = {},
-): Promise<{ items: PurchaseOrderSummary[]; nextCursor: string | null }> {
+): Promise<{ items: PurchaseOrderSummary[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'purchasing.read');
   await requireBackOffice(tx);
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
-  const filters = [
+  const matching = [
     query.status ? eq(po.status, query.status) : undefined,
-    query.supplierId ? eq(po.supplierId, query.supplierId) : undefined,
-    query.before ? lt(po.id, query.before) : undefined,
+    asList(query.supplierId).length ? inArray(po.supplierId, asList(query.supplierId)) : undefined,
+  ].filter((f) => f !== undefined);
+  // How many match, for numbered pages: the filters without the cursor.
+  const [counted] = await tx.db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(po)
+    .where(matching.length ? and(...matching) : undefined);
+  const total = Number(counted?.n ?? 0);
+  const filters = [
+    ...matching,
+    query.before && query.offset === undefined ? lt(po.id, query.before) : undefined,
   ].filter((f) => f !== undefined);
   const rows = await tx.db
     .select({
@@ -216,7 +230,8 @@ export async function listPurchaseOrders(
     .innerJoin(schema.suppliers, eq(schema.suppliers.id, po.supplierId))
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(po.id))
-    .limit(limit + 1);
+    .limit(limit + 1)
+    .offset(query.offset ?? 0);
   const cost = seesCost(actor);
   const items = rows.slice(0, limit).map((r) => ({
     id: r.id,
@@ -231,7 +246,11 @@ export async function listPurchaseOrders(
     createdAt: r.createdAt.toISOString(),
     ...(cost ? { total: r.total } : {}),
   }));
-  return { items, nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null };
+  return {
+    items,
+    nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+    total,
+  };
 }
 
 interface LineIn {

@@ -42,7 +42,7 @@ import { cn } from '../lib/utils';
 
 const SAVE_DELAY_MS = 1200;
 const select =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 /** The CSS variables the storefront takes from the tokens (its Layout.astro). */
 function cssVars(theme: Theme): Record<string, string> {
@@ -69,11 +69,7 @@ export function ThemePage() {
   const store = useQuery(storeSettingsQuery);
   return (
     <>
-      <PageHeader
-        parent={{ to: '/online-store', label: t('nav.onlineStore') }}
-        title={t('theme.title')}
-        description={t('theme.description')}
-      />
+      <PageHeader title={t('theme.title')} description={t('theme.description')} />
       {theme.isPending || store.isPending ? (
         <p role="status">{t('loading')}</p>
       ) : theme.isError || store.isError ? (
@@ -716,10 +712,10 @@ function Check({
   disabled: boolean;
 }) {
   return (
-    <label className="flex min-h-11 items-center gap-3">
+    <label className="flex min-h-10 items-center gap-3 md:min-h-9">
       <input
         type="checkbox"
-        className="size-5"
+        className="size-4 accent-primary"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}

@@ -5,7 +5,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { ChevronRight, Search } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useLocale } from '../i18n';
-import { type NavItem, useNav } from './nav';
+import { type NavTo, useNav } from './nav';
 import { usePermission } from './permission-gate';
 import { Dialog } from './ui/dialog';
 
@@ -62,12 +62,19 @@ export function SearchDialog({
           : []),
       ]
     : [];
-  const all: NavItem[] = [...nav.more.sell, ...nav.sell, ...nav.more.store, ...nav.platform];
+  // Every page the sidebar lists; an area's pages read "Catalog › Products".
+  const all: { to: NavTo; label: string }[] = nav.groups.flatMap((g) =>
+    g.items.flatMap((i) =>
+      i.children
+        ? i.children.map((c) => ({ to: c.to, label: `${t(i.label)} › ${t(c.label)}` }))
+        : [{ to: i.to, label: t(i.label) }],
+    ),
+  );
   const seen = new Set<string>();
   const pages: Target[] = all
     .filter((i) => !seen.has(i.to) && seen.add(i.to))
-    .filter((i) => !q || t(i.label).toLowerCase().includes(q.toLowerCase()))
-    .map((i) => ({ key: i.to, label: t(i.label), go: () => navigate({ to: i.to }) }));
+    .filter((i) => !q || i.label.toLowerCase().includes(q.toLowerCase()))
+    .map((i) => ({ key: i.to, label: i.label, go: () => navigate({ to: i.to }) }));
 
   async function pick(target: Target | undefined) {
     if (!target) return;

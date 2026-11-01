@@ -155,10 +155,10 @@ function SettingsForm({ store }: { store: Store }) {
         className="flex flex-col gap-8 rounded-xl border border-border bg-background p-4 md:p-5"
       >
         <Section title={t('storefront.indexing')} hint={t('storefront.indexingHint')}>
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={indexing}
               onChange={(e) => setIndexing(e.target.checked)}
             />
@@ -172,7 +172,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={selectId}
               value={numerals}
               onChange={(e) => setNumerals(e.target.value)}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             >
               {(['auto', 'bengali', 'latin'] as const).map((v) => (
                 <option key={v} value={v}>
@@ -251,7 +251,7 @@ function SettingsForm({ store }: { store: Store }) {
               id={showId}
               value={show}
               onChange={(e) => setShow(e.target.value as typeof show)}
-              className="min-h-11 rounded-lg border border-input bg-background px-3 text-base"
+              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
             >
               {CHAT_PLACEMENTS.map((v) => (
                 <option key={v} value={v}>
@@ -263,10 +263,10 @@ function SettingsForm({ store }: { store: Store }) {
         </Section>
 
         <Section title={t('storefront.holiday')} hint={t('storefront.holidayHint')}>
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={holidayOn}
               onChange={(e) => setHolidayOn(e.target.checked)}
             />

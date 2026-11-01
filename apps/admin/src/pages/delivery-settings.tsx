@@ -84,12 +84,12 @@ export function DeliverySettingsPage() {
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{pickText(z.name, locale)}</span>
                   {z.isFallback && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                    <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
                       {t('delivery.fallbackShort')}
                     </span>
                   )}
                   {!z.active && (
-                    <span className="rounded-full bg-warning px-2 py-0.5 text-xs font-semibold text-warning-foreground">
+                    <span className="rounded-md bg-warning px-2 py-0.5 text-xs font-medium text-warning-foreground">
                       {t('delivery.inactive')}
                     </span>
                   )}
@@ -333,10 +333,10 @@ function ZoneDialog({
           value={fee}
           onChange={(e) => setFee(e.target.value)}
         />
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={weighted}
             onChange={(e) => setWeighted(e.target.checked)}
           />
@@ -375,10 +375,10 @@ function ZoneDialog({
             onChange={(e) => setEstEn(e.target.value)}
           />
         </div>
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={fallback}
             disabled={otherFallback && !fallback}
             onChange={(e) => setFallback(e.target.checked)}
@@ -405,10 +405,13 @@ function ZoneDialog({
                     <p className="text-sm font-medium">{div[locale]}</p>
                     <div className="grid grid-cols-2 gap-x-3 md:grid-cols-3">
                       {idx.districtsOf(div.id).map((d) => (
-                        <label key={d.id} className="flex min-h-11 items-center gap-2 text-sm">
+                        <label
+                          key={d.id}
+                          className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                        >
                           <input
                             type="checkbox"
-                            className="size-5"
+                            className="size-4 accent-primary"
                             disabled={taken.has(`d${d.id}`)}
                             checked={districtIds.includes(d.id)}
                             onChange={() => toggle(districtIds, setDistrictIds, d.id)}
@@ -426,7 +429,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-11 rounded-lg border border-input bg-background px-3 text-base font-normal"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >
@@ -443,10 +446,13 @@ function ZoneDialog({
               {pickDistrict !== null && (
                 <div className="grid max-h-60 grid-cols-2 gap-x-3 overflow-y-auto md:grid-cols-3">
                   {idx.areasOf(pickDistrict).map((a) => (
-                    <label key={a.id} className="flex min-h-11 items-center gap-2 text-sm">
+                    <label
+                      key={a.id}
+                      className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                    >
                       <input
                         type="checkbox"
-                        className="size-5"
+                        className="size-4 accent-primary"
                         disabled={taken.has(`a${a.id}`)}
                         checked={areaIds.includes(a.id)}
                         onChange={() => toggle(areaIds, setAreaIds, a.id)}
@@ -467,10 +473,10 @@ function ZoneDialog({
             </div>
           </fieldset>
         )}
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
           />

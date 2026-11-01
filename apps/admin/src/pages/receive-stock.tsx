@@ -6,9 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { CatalogNav } from '../components/catalog-nav';
 import { Field } from '../components/field';
-import { InventoryNav } from '../components/inventory-nav';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
@@ -171,8 +169,6 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
     <div className="flex max-w-5xl flex-col gap-6">
       <div>
         <PageHeader title={t('receive.title')} description={t('receive.intro')} />
-        <CatalogNav />
-        <InventoryNav />
       </div>
       {order ? (
         <p className="font-medium">
@@ -180,7 +176,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
           <Link
             to="/inventory/purchase-orders/$id"
             params={{ id: order.id }}
-            className="text-primary hover:underline"
+            className="text-primary underline underline-offset-2"
           >
             {order.reference}
           </Link>
@@ -188,7 +184,10 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
       ) : (
         !canDirect && (
           <Notice tone="info">
-            <Link to="/inventory/purchase-orders" className="text-primary hover:underline">
+            <Link
+              to="/inventory/purchase-orders"
+              className="text-primary underline underline-offset-2"
+            >
               {t('po.title')}
             </Link>
           </Notice>
@@ -207,7 +206,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('receive.supplier')}
                 <select
-                  className="min-h-11 rounded-md border border-input bg-background px-3"
+                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
                   value={supplierId}
                   onChange={(e) => setSupplierId(e.target.value)}
                 >
@@ -301,7 +300,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                             aria-label={t('po.remove', { item: label })}
                             onClick={() => setLines(lines.filter((_, j) => j !== i))}
                           >
-                            <Trash2 aria-hidden className="size-5" />
+                            <Trash2 aria-hidden className="size-4 accent-primary" />
                           </Button>
                         )}
                       </div>
@@ -367,7 +366,7 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
               <label className="flex min-h-11 items-center gap-3 font-medium">
                 <input
                   type="checkbox"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={pay}
                   onChange={(e) => setPay(e.target.checked)}
                 />
@@ -385,11 +384,11 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                     <legend className="mb-1 text-sm font-medium">{t('payment.method')}</legend>
                     <div className="flex flex-wrap gap-x-4">
                       {SPEND_METHODS.map((m) => (
-                        <label key={m} className="flex min-h-11 items-center gap-2">
+                        <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
                           <input
                             type="radio"
                             name="method"
-                            className="size-5"
+                            className="size-4 accent-primary"
                             checked={method === m}
                             onChange={() => setMethod(m)}
                           />

@@ -12,7 +12,7 @@ import { bn } from '../../apps/admin/src/i18n/bn';
 import { expensesBn } from '../../apps/admin/src/i18n/expenses-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { purchasingBn } from '../../apps/admin/src/i18n/purchasing-bn';
-import { expectAccessible, pngImage, signIn } from './helpers';
+import { choose, expectAccessible, pngImage, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -97,12 +97,16 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/inventory/suppliers`);
     await expect(page.getByRole('heading', { name: m('suppliers.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'suppliers');
-    await page.getByRole('button', { name: m('suppliers.new') }).click();
+    await page
+      .getByRole('button', { name: m('suppliers.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('suppliers.new') });
     await dialog.getByLabel(m('suppliers.name'), { exact: true }).fill(supplierName);
     await dialog.getByLabel(pattern(m('suppliers.openingBalance'))).fill('500');
     await expectAccessible(page, 'new supplier');
-    await dialog.getByRole('button', { name: m('action.save') }).click();
+    // A new record's button says what it makes (design rule 7).
+    await dialog.getByRole('button', { name: m('suppliers.new') }).click();
     await expect(toast(page, m('suppliers.saved'))).toBeVisible();
     const found = await adminCall<{ items: { id: string; name: string }[] }>(
       page.request,
@@ -117,9 +121,9 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/inventory/purchase-orders`);
     await page.getByRole('link', { name: m('po.new') }).click();
     await expect(page.getByRole('heading', { name: m('po.new'), level: 1 })).toBeVisible();
-    await page
-      .getByRole('combobox', { name: m('po.supplier') })
-      .selectOption({ label: supplierName });
+    await choose(page.getByRole('combobox', { name: m('po.supplier'), exact: true }), {
+      label: supplierName,
+    });
     for (const title of titles) {
       await page.getByLabel(m('order.addProduct')).fill(title);
       await page
@@ -162,7 +166,11 @@ test('back office', async ({ page }, info) => {
       [2, '4'],
     ] as const) {
       await page.goto(`${API}/inventory/purchase-orders/${poId}`);
-      await page.getByRole('link', { name: m('po.receive') }).click();
+      // The order's own link: the sidebar also has "Receive stock".
+      await page
+        .getByRole('main')
+        .getByRole('link', { name: m('po.receive'), exact: true })
+        .click();
       await expect(page.getByRole('heading', { name: m('receive.title'), level: 1 })).toBeVisible();
       const fields = page.getByLabel(m('receive.quantity'), { exact: true });
       await expect(fields).toHaveCount(2);
@@ -205,7 +213,10 @@ test('back office', async ({ page }, info) => {
   await test.step('a count while an order ships applies only the real difference', async () => {
     await page.goto(`${API}/inventory/counts`);
     await expectAccessible(page, 'counts');
-    await page.getByRole('button', { name: m('counts.new') }).click();
+    await page
+      .getByRole('button', { name: m('counts.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('counts.new') });
     await dialog.getByLabel(m('counts.scope.tag')).check();
     await dialog.getByLabel(m('counts.tag'), { exact: true }).fill(tag);
@@ -282,9 +293,12 @@ test('back office', async ({ page }, info) => {
     await page.goto(`${API}/expenses`);
     await expect(page.getByRole('heading', { name: m('expenses.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'expenses');
-    await page.getByRole('button', { name: m('expenses.new') }).click();
+    await page
+      .getByRole('button', { name: m('expenses.new') })
+      .first()
+      .click();
     const dialog = page.getByRole('dialog', { name: m('expenses.new') });
-    await dialog.getByLabel(m('expenses.category')).selectOption({ index: 3 });
+    await choose(dialog.getByLabel(m('expenses.category')), { index: 2 });
     await dialog.getByLabel(m('expenses.amount')).fill('3500');
     await dialog.getByLabel(m('purchasing.method.card')).check();
     await dialog.locator('input[type=file]').setInputFiles({
@@ -293,18 +307,22 @@ test('back office', async ({ page }, info) => {
       buffer: pngImage(64, 64, [200, 120, 40]),
     });
     await expectAccessible(page, 'expense form');
-    await dialog.getByRole('button', { name: m('action.save') }).click();
+    // A new record's button says what it makes (design rule 7).
+    await dialog.getByRole('button', { name: m('expenses.new') }).click();
     await expect(toast(page, m('expenses.saved'))).toBeVisible();
     await expect(page.getByRole('link', { name: m('expenses.receiptView') }).first()).toBeVisible();
 
     await page.getByRole('button', { name: m('expenses.tab.recurring') }).click();
-    await page.getByRole('button', { name: m('recurring.new') }).click();
+    await page
+      .getByRole('button', { name: m('recurring.new') })
+      .first()
+      .click();
     const rent = page.getByRole('dialog', { name: m('recurring.new') });
-    await rent.getByLabel(m('expenses.category')).selectOption({ index: 1 });
+    await choose(rent.getByLabel(m('expenses.category')), { index: 0 });
     await rent.getByLabel(m('expenses.amount')).fill('25000');
     await rent.getByLabel(m('recurring.dayOfMonth')).selectOption('5');
     await expectAccessible(page, 'recurring expense form');
-    await rent.getByRole('button', { name: m('action.save') }).click();
+    await rent.getByRole('button', { name: m('recurring.new') }).click();
     await expect(toast(page, m('recurring.saved'))).toBeVisible();
     await expectAccessible(page, 'recurring expenses');
   });
@@ -346,7 +364,8 @@ test('back office', async ({ page }, info) => {
       '/reports/cod-outstanding',
     ]) {
       await page.goto(`${API}${path}`);
-      await expect(page.getByRole('navigation', { name: m('reports.sections') })).toBeVisible();
+      // The sidebar (or the phone's Menu) lists the reports; each page has its title.
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await expectAccessible(page, path);
     }
   });

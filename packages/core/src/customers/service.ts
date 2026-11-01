@@ -3,6 +3,7 @@
 // create one; the name and email come from the first order, and a later
 // order with another name keeps the customer's (Q15). Totals are kept in
 // the same transaction as order changes. Customers are soft-deleted.
+
 import { schema } from '@managemind/db';
 import { AppError, normalizePhone } from '@managemind/shared';
 import { placeNames } from '@managemind/shared/geo';
@@ -12,12 +13,14 @@ import {
   customerInput,
   customerPatch,
 } from '@managemind/shared/orders';
+import { asList } from '@managemind/shared/query';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput, pgError } from '../catalog/common';
 import { type PhoneRisk, phoneRisk } from '../fraud/index';
 import { emit } from '../outbox';
+import { countWhere } from '../paging';
 import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 
@@ -118,8 +121,11 @@ export async function findOrCreateCustomer(
 
 export interface CustomerQuery {
   q?: string | undefined;
-  tag?: string | undefined;
+  /** One tag or several: customers with any of them. */
+  tag?: string | readonly string[] | undefined;
   after?: string | undefined;
+  /** Rows to skip, for numbered pages; the cursor is then ignored. */
+  offset?: number | undefined;
   limit?: number | undefined;
 }
 
@@ -128,7 +134,7 @@ export async function listCustomers(
   tx: TenantTx,
   actor: Actor,
   query: CustomerQuery = {},
-): Promise<{ items: Customer[]; nextCursor: string | null }> {
+): Promise<{ items: Customer[]; nextCursor: string | null; total: number }> {
   authorize(actor, 'customers.read');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
   const q = query.q?.trim();
@@ -141,17 +147,26 @@ export async function listCustomers(
         ? sql`and c.phone like ${`%${digits}%`}`
         : sql`and app.search_text(c.name) like app.search_text(${`%${q.replace(/[\\%_]/g, (x) => `\\${x}`)}%`})`
     : sql``;
+  const tags = asList(query.tag);
+  const filters = [
+    sql`c.deleted_at is null ${search}`,
+    ...(tags.length ? [sql`c.tags && ${sql.param(tags)}::text[]`] : []),
+  ];
+  const total = await countWhere(tx, sql`store.customers c`, filters);
   const { rows } = await tx.db.execute<Record<keyof typeof CUSTOMER_COLUMNS, unknown>>(sql`
     select c.id, c.phone, c.name, c.email, c.tags, c.note, c.order_count as "orderCount",
            c.total_spent as "totalSpent", c.first_order_at as "firstOrderAt",
            c.last_order_at as "lastOrderAt", c.created_at as "createdAt"
       from store.customers c
-     where c.deleted_at is null ${search}
-       ${query.tag ? sql`and ${query.tag} = any(c.tags)` : sql``}
-       ${query.after ? sql`and c.id < ${query.after}` : sql``}
-     order by c.id desc limit ${limit + 1}`);
+     where ${sql.join(filters, sql` and `)}
+       ${query.after && query.offset === undefined ? sql`and c.id < ${query.after}` : sql``}
+     order by c.id desc limit ${limit + 1} offset ${query.offset ?? 0}`);
   const items = rows.slice(0, limit).map(toCustomer);
-  return { items, nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null };
+  return {
+    items,
+    nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
+    total,
+  };
 }
 
 async function loadCustomer(tx: TenantTx, id: string): Promise<Customer> {

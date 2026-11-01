@@ -267,10 +267,10 @@ function MetaForm() {
             {t('meta.feed')}
           </h2>
           <p className="text-sm text-muted-foreground">{t('meta.feed.intro')}</p>
-          <label className="flex min-h-11 items-center gap-3">
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
             <input
               type="checkbox"
-              className="size-5"
+              className="size-4 accent-primary"
               checked={value.feed.enabled}
               onChange={(e) =>
                 setValue((v) => ({ ...v, feed: { ...v.feed, enabled: e.target.checked } }))
@@ -287,7 +287,7 @@ function MetaForm() {
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-1 text-sm font-medium">{t('meta.purchaseAt')}</legend>
             {(['placed', 'confirmed'] as const).map((at) => (
-              <label key={at} className="flex min-h-11 items-start gap-3">
+              <label key={at} className="flex min-h-10 items-start gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="purchase-at"
@@ -299,7 +299,7 @@ function MetaForm() {
               </label>
             ))}
           </fieldset>
-          <label className="flex min-h-11 items-start gap-3">
+          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
             <input
               type="checkbox"
               className="mt-1 size-5"

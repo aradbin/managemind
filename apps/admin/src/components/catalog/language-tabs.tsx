@@ -1,6 +1,7 @@
-// Bangla and English tabs for translated fields (phase-2-plan §3.2, §7). The
-// store's default language comes first and is required; the other is
-// optional and can be added or removed.
+// Bangla and English tabs for translated fields (phase-2-plan §3.2, §7), drawn
+// as a segmented control (ADR 0033, design rule 2). The store's default
+// language comes first and is required; the other is optional and can be
+// added or removed.
 import { type KeyboardEvent, type ReactNode, useId, useRef } from 'react';
 import { useLocale } from '../../i18n';
 import { cn } from '../../lib/utils';
@@ -18,7 +19,7 @@ interface LanguageTabsProps {
   present: ReadonlySet<Lang>;
   children: (lang: Lang) => ReactNode;
   /** Marks a tab whose fields have errors. */
-  invalid?: ReadonlySet<Lang>;
+  invalid?: ReadonlySet<Lang> | undefined;
 }
 
 /** WAI-ARIA tabs with arrow-key navigation. */
@@ -45,7 +46,7 @@ export function LanguageTabs({
       <div
         role="tablist"
         aria-label={t('product.languages')}
-        className="flex gap-1 border-b border-border"
+        className="inline-flex h-9 self-start rounded-[10px] bg-muted p-[3px]"
       >
         {langs.map((lang) => (
           <button
@@ -62,10 +63,10 @@ export function LanguageTabs({
             onClick={() => onChange(lang)}
             onKeyDown={onKeyDown}
             className={cn(
-              '-mb-px flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm',
+              'flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 text-sm font-medium',
               active === lang
-                ? 'border-primary font-semibold'
-                : 'border-transparent text-muted-foreground',
+                ? 'bg-background text-foreground shadow-sm dark:border-input dark:bg-input'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             <span lang={lang}>{LANGUAGE_NAMES[lang]}</span>

@@ -1,5 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { defined, searchFlag, searchOneOf, searchText, searchUuid } from '../../../lib/search';
+import {
+  defined,
+  searchFlag,
+  searchOneOf,
+  searchPage,
+  searchText,
+  searchUuid,
+  searchUuids,
+} from '../../../lib/search';
 import { ProductsPage } from '../../../pages/products';
 
 // The list's filters live in the URL, so a filtered list can be shared and survives a reload.
@@ -8,11 +16,12 @@ export const Route = createFileRoute('/_shell/products/')({
     defined({
       q: searchText(search.q, 100),
       status: searchOneOf(search.status, ['draft', 'active', 'archived'] as const),
-      categoryId: searchUuid(search.categoryId),
+      categoryId: searchUuids(search.categoryId),
       collectionId: searchUuid(search.collectionId),
-      brandValueId: searchUuid(search.brandValueId),
+      brandValueId: searchUuids(search.brandValueId),
       tag: searchText(search.tag, 50),
       lowStock: searchFlag(search.lowStock),
+      page: searchPage(search.page),
     }),
   component: ProductsPage,
 });

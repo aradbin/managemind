@@ -3,7 +3,7 @@
 import { createHmac } from 'node:crypto';
 import { deflateSync, gzipSync } from 'node:zlib';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { billingBn } from '../../apps/admin/src/i18n/billing-bn';
 import { bn as baseBn } from '../../apps/admin/src/i18n/bn';
 import { launchBn } from '../../apps/admin/src/i18n/launch-bn';
@@ -233,4 +233,24 @@ export async function createStore(page: Page, store: NewStore): Promise<void> {
   // Creating a store seeds its defaults and preset catalog: on a preview,
   // which has no Hyperdrive, that alone takes a few seconds.
   await expect(page.getByRole('heading', { name: store.name })).toBeVisible({ timeout: 30_000 });
+}
+
+/**
+ * Picks from the admin's searchable select (a combobox that opens a list):
+ * by an option's value, its exact name, or its place in the list.
+ */
+export async function choose(
+  trigger: Locator,
+  pick: { value: string } | { label: string } | { index: number },
+): Promise<void> {
+  await trigger.click();
+  const list = trigger.page().getByRole('listbox');
+  const option =
+    'value' in pick
+      ? list.locator(`[role="option"][data-value="${pick.value}"]`)
+      : 'label' in pick
+        ? list.getByRole('option', { name: pick.label, exact: true })
+        : list.getByRole('option').nth(pick.index);
+  await option.click();
+  await expect(list).toBeHidden();
 }

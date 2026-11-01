@@ -5,20 +5,21 @@ import { CATALOG_LIMITS } from '@managemind/shared/catalog';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Filter, Hand, Plus, SquarePen, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../components/catalog/language-tabs';
-import { CatalogNav } from '../components/catalog-nav';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
+import { RowMenu, RowMenuItem, SearchInput, StageTabs } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { Combobox } from '../components/ui/combobox';
 import { Input } from '../components/ui/input';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
@@ -26,7 +27,7 @@ import {
   attributesQuery,
   type Collection,
   categoriesQuery,
-  categoryOptions,
+  categoryChoices,
   collectionsQuery,
   formatPrice,
   pick,
@@ -35,14 +36,50 @@ import {
   storeSettingsQuery,
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 
 const selectClass =
-  'min-h-11 rounded-lg border border-input bg-background px-3 text-base md:text-sm';
+  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
+  const navigate = useNavigate();
   const canWrite = usePermission('catalog.write');
   const collections = useQuery(collectionsQuery);
+  const [q, setQ] = useState('');
+  const [kind, setKind] = useState<'all' | 'manual' | 'rule'>('all');
+  const name = (c: Collection) => pick(c.translations, locale)?.name ?? '—';
+  const words = q.trim().toLowerCase();
+  const items = collections.data?.filter(
+    (c) =>
+      (kind === 'all' || c.kind === kind) &&
+      (!words ||
+        [c.translations.bn?.name, c.translations.en?.name].join(' ').toLowerCase().includes(words)),
+  );
+  const open = (c: Collection) =>
+    navigate({ to: '/catalog/collections/$id', params: { id: c.id } });
+  const kindCell = (c: Collection) => (
+    <span className="flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
+      {c.kind === 'manual' ? (
+        <Hand aria-hidden className="size-4" />
+      ) : (
+        <Filter aria-hidden className="size-4" />
+      )}
+      {t(c.kind === 'manual' ? 'collections.manual' : 'collections.rule')}
+    </span>
+  );
+  const shown = (c: Collection) => (
+    <span className="flex items-center gap-1.5 whitespace-nowrap">
+      <span
+        aria-hidden
+        className={cn(
+          'size-2 rounded-full',
+          c.published ? 'bg-success' : 'border border-muted-foreground',
+        )}
+      />
+      {t(c.published ? 'collections.published' : 'collections.hidden')}
+    </span>
+  );
   const columns: Column<Collection>[] = [
     {
       header: t('collections.name'),
@@ -52,46 +89,94 @@ export function CollectionsPage() {
           params={{ id: c.id }}
           className="font-medium underline-offset-2 hover:underline"
         >
-          {pick(c.translations, locale)?.name ?? '—'}
+          {name(c)}
         </Link>
       ),
     },
-    {
-      header: t('collections.kind'),
-      cell: (c) => t(c.kind === 'manual' ? 'collections.manual' : 'collections.rule'),
-    },
-    { header: t('collections.products'), cell: (c) => c.productCount },
-    {
-      header: t('collections.visibility'),
-      cell: (c) => t(c.published ? 'collections.published' : 'collections.hidden'),
-    },
+    { header: t('collections.kind'), cell: kindCell },
+    { header: t('collections.products'), numeric: true, cell: (c) => c.productCount },
+    { header: t('collections.visibility'), cell: shown },
   ];
   return (
-    <div className="max-w-5xl">
+    <div className="flex flex-col gap-4">
       <PageHeader
+        className="mb-0"
         title={t('catalog.collections')}
         description={t('collections.intro')}
         actions={
           canWrite && (
             <Button asChild>
               <Link to="/catalog/collections/$id" params={{ id: 'new' }}>
-                <Plus aria-hidden className="size-4" />
+                <Plus aria-hidden />
                 {t('collections.new')}
               </Link>
             </Button>
           )
         }
       />
-      <CatalogNav />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          label={t('collections.search')}
+          value={q}
+          onChange={setQ}
+        />
+        <StageTabs
+          label={t('collections.kind')}
+          tabs={[
+            { key: 'all', label: t('collections.all') },
+            { key: 'manual', label: t('collections.manual') },
+            { key: 'rule', label: t('collections.rule') },
+          ]}
+          value={kind}
+          onChange={setKind}
+        />
+      </div>
       <DataList
         label={t('catalog.collections')}
-        items={collections.data}
+        items={items}
         rowKey={(c) => c.id}
         columns={columns}
         isPending={collections.isPending}
         error={collections.isError ? errorMessage(collections.error, t) : undefined}
         onRetry={() => collections.refetch()}
-        empty={t('collections.empty')}
+        empty={words || kind !== 'all' ? t('collections.noMatches') : t('collections.empty')}
+        emptyAction={
+          words || kind !== 'all' ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setQ('');
+                setKind('all');
+              }}
+            >
+              {t('list.resetFilters')}
+            </Button>
+          ) : undefined
+        }
+        onOpen={open}
+        menu={(c) => (
+          <RowMenu label={name(c)}>
+            <RowMenuItem onSelect={() => open(c)}>
+              <SquarePen aria-hidden />
+              {canWrite ? t('collections.edit') : t('list.open')}
+            </RowMenuItem>
+          </RowMenu>
+        )}
+        card={(c) => (
+          <div className="flex items-start gap-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Link to="/catalog/collections/$id" params={{ id: c.id }} className="font-medium">
+                {name(c)}
+              </Link>
+              <span className="flex flex-wrap items-center gap-3 text-xs">
+                {kindCell(c)}
+                {shown(c)}
+              </span>
+            </div>
+            <span className="shrink-0 text-sm tabular-nums">{c.productCount}</span>
+          </div>
+        )}
       />
     </div>
   );
@@ -228,19 +313,14 @@ function ConditionRow({
         </Button>
       </div>
       {condition.type === 'category' && (
-        <select
-          aria-label={t('catalog.category')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('catalog.category')}
+          searchLabel={t('categories.search')}
+          placeholder="—"
           value={condition.categoryId}
-          onChange={(e) => onChange({ ...condition, categoryId: e.target.value })}
-        >
-          <option value="">—</option>
-          {categoryOptions(categories.data ?? [], locale).map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
+          options={categoryChoices(categories.data ?? [], locale)}
+          onChange={(categoryId) => onChange({ ...condition, categoryId })}
+        />
       )}
       {condition.type === 'price' && (
         <div className="grid grid-cols-2 gap-2">
@@ -271,57 +351,56 @@ function ConditionRow({
         />
       )}
       {condition.type === 'brand' && (
-        <select
-          aria-label={t('attribute.brand')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('attribute.brand')}
+          searchLabel={t('specs.findValue', { name: t('attribute.brand') })}
+          placeholder="—"
           value={condition.valueId}
-          onChange={(e) => onChange({ ...condition, valueId: e.target.value })}
-        >
-          <option value="">—</option>
-          {(brand?.values ?? []).map((v) => (
-            <option key={v.id} value={v.id}>
-              {pick(v.label, locale)}
-            </option>
-          ))}
-        </select>
+          options={(brand?.values ?? []).map((v) => ({
+            value: v.id,
+            label: pick(v.label, locale) ?? '',
+            keywords: `${v.label.bn ?? ''} ${v.label.en ?? ''}`,
+          }))}
+          onChange={(valueId) => onChange({ ...condition, valueId })}
+        />
       )}
       {(condition.type === 'attribute_value' ||
         condition.type === 'attribute_range' ||
         condition.type === 'attribute_boolean') && (
-        <select
-          aria-label={t('catalog.attributes')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('catalog.attributes')}
+          searchLabel={t('specs.find')}
+          placeholder="—"
           value={condition.attributeId}
-          onChange={(e) => onChange({ ...condition, attributeId: e.target.value } as Condition)}
-        >
-          <option value="">—</option>
-          {typed(
+          options={typed(
             condition.type === 'attribute_value'
               ? ['choice', 'multi_choice']
               : condition.type === 'attribute_range'
                 ? ['number']
                 : ['boolean'],
-          ).map((a) => (
-            <option key={a.id} value={a.id}>
-              {pick(a.name, locale) ?? a.key}
-            </option>
-          ))}
-        </select>
+          ).map((a) => ({
+            value: a.id,
+            label: pick(a.name, locale) ?? a.key,
+            keywords: `${a.key} ${a.name.bn ?? ''} ${a.name.en ?? ''}`,
+          }))}
+          onChange={(attributeId) => onChange({ ...condition, attributeId } as Condition)}
+        />
       )}
       {condition.type === 'attribute_value' && attribute && (
-        <select
-          aria-label={t('rules.value')}
-          className={selectClass}
+        <Combobox
+          ariaLabel={t('rules.value')}
+          searchLabel={t('specs.findValue', {
+            name: pick(attribute.name, locale) ?? attribute.key,
+          })}
+          placeholder="—"
           value={condition.valueId}
-          onChange={(e) => onChange({ ...condition, valueId: e.target.value })}
-        >
-          <option value="">—</option>
-          {attribute.values.map((v) => (
-            <option key={v.id} value={v.id}>
-              {pick(v.label, locale)}
-            </option>
-          ))}
-        </select>
+          options={attribute.values.map((v) => ({
+            value: v.id,
+            label: pick(v.label, locale) ?? '',
+            keywords: `${v.label.bn ?? ''} ${v.label.en ?? ''}`,
+          }))}
+          onChange={(valueId) => onChange({ ...condition, valueId })}
+        />
       )}
       {condition.type === 'attribute_range' && (
         <div className="grid grid-cols-2 gap-2">
@@ -349,6 +428,7 @@ function ConditionRow({
 export function CollectionEditorPage({ id }: { id: string }) {
   const { t } = useLocale();
   const isNew = id === 'new';
+  const [resets, setResets] = useState(0);
   const collection = useQuery({ ...collectionsQuery, enabled: !isNew });
   const store = useQuery(storeSettingsQuery);
   if (store.isPending || (!isNew && collection.isPending))
@@ -357,9 +437,11 @@ export function CollectionEditorPage({ id }: { id: string }) {
   if (!isNew && !found) return <Notice tone="error">{t('collections.notFound')}</Notice>;
   return (
     <CollectionEditor
-      key={id}
+      // Discard starts the editor again from what was saved.
+      key={`${id}-${resets}`}
       collection={found ?? null}
       defaultLang={store.data?.defaultLocale ?? 'bn'}
+      onDiscard={() => setResets((n) => n + 1)}
     />
   );
 }
@@ -367,9 +449,11 @@ export function CollectionEditorPage({ id }: { id: string }) {
 function CollectionEditor({
   collection,
   defaultLang,
+  onDiscard,
 }: {
   collection: Collection | null;
   defaultLang: Lang;
+  onDiscard: () => void;
 }) {
   const { t, locale } = useLocale();
   const toast = useToast();
@@ -389,6 +473,8 @@ function CollectionEditor({
     ((collection?.rules as { conditions?: Condition[] } | null)?.conditions ?? []) as Condition[],
   );
   const [deleting, setDeleting] = useState(false);
+  /** Anything typed, picked or added in the form since it was saved. */
+  const [changed, setChanged] = useState(false);
   const other = otherLang(defaultLang);
   const ready = conditions.length > 0 && conditions.every(complete);
 
@@ -434,6 +520,7 @@ function CollectionEditor({
     },
     onSuccess: async (saved) => {
       await queryClient.invalidateQueries({ queryKey: collectionsQuery.queryKey });
+      setChanged(false);
       toast(t('collections.saved'));
       if (!collection)
         await navigate({ to: '/catalog/collections/$id', params: { id: saved.id }, replace: true });
@@ -454,28 +541,33 @@ function CollectionEditor({
   });
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <Breadcrumb to="/catalog/collections" label={t('catalog.collections')} />
-        <PageHeader
-          className="mb-0"
-          title={
-            collection ? (pick(collection.translations, locale)?.name ?? '—') : t('collections.new')
-          }
-          actions={
-            collection &&
-            canWrite && (
-              <Button variant="ghost" onClick={() => setDeleting(true)}>
-                <Trash2 aria-hidden className="size-4" />
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <PageHeader
+        className="mb-0"
+        parent={{ to: '/catalog/collections', label: t('catalog.collections') }}
+        title={
+          collection ? (pick(collection.translations, locale)?.name ?? '—') : t('collections.new')
+        }
+        actions={
+          collection &&
+          canWrite && (
+            <RowMenu label={pick(collection.translations, locale)?.name ?? '—'}>
+              <RowMenuItem danger onSelect={() => setDeleting(true)}>
+                <Trash2 aria-hidden />
                 {t('action.delete')}
-              </Button>
-            )
-          }
-        />
-      </div>
+              </RowMenuItem>
+            </RowMenu>
+          )
+        }
+      />
       <fieldset
         disabled={!canWrite}
-        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+        onChangeCapture={() => setChanged(true)}
+        onInputCapture={() => setChanged(true)}
+        onClickCapture={(e) => {
+          if ((e.target as HTMLElement).closest('button')) setChanged(true);
+        }}
+        className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 md:p-5"
       >
         {[defaultLang, other].map((l) => (
           <div key={l} className="flex flex-col gap-3">
@@ -501,11 +593,11 @@ function CollectionEditor({
           <fieldset className="flex flex-col gap-1">
             <legend className="mb-1 text-sm font-medium">{t('collections.kind')}</legend>
             {(['manual', 'rule'] as const).map((k) => (
-              <label key={k} className="flex min-h-11 items-center gap-3">
+              <label key={k} className="flex min-h-10 items-center gap-3 md:min-h-9">
                 <input
                   type="radio"
                   name="kind"
-                  className="size-5"
+                  className="size-4 accent-primary"
                   checked={kind === k}
                   onChange={() => setKind(k)}
                 />
@@ -532,10 +624,10 @@ function CollectionEditor({
             ))}
           </select>
         </label>
-        <label className="flex min-h-11 items-center gap-3">
+        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-5"
+            className="size-4 accent-primary"
             checked={published}
             onChange={(e) => setPublished(e.target.checked)}
           />
@@ -572,16 +664,16 @@ function CollectionEditor({
         )}
       </fieldset>
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-      {canWrite && (
-        <div>
-          <Button
-            disabled={save.isPending || !names[defaultLang].trim() || (kind === 'rule' && !ready)}
-            onClick={() => save.mutate()}
-          >
-            {t('action.save')}
-          </Button>
-        </div>
-      )}
+      <SaveBar
+        show={canWrite && (!collection || changed)}
+        message={collection ? t('product.unsaved') : undefined}
+        discardLabel={collection ? t('product.discard') : t('action.cancel')}
+        onDiscard={() => (collection ? onDiscard() : navigate({ to: '/catalog/collections' }))}
+        saveLabel={collection ? t('action.save') : t('collections.create')}
+        busy={save.isPending}
+        saveDisabled={!names[defaultLang].trim() || (kind === 'rule' && !ready)}
+        onSave={() => save.mutate()}
+      />
       {collection && kind === 'rule' && (
         <RulePreview collectionId={collection.id} conditions={ready ? conditions : null} />
       )}

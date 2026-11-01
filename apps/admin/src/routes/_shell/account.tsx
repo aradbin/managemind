@@ -23,7 +23,7 @@ function Page() {
   const { data: me } = useSuspenseQuery(meQuery);
   return (
     <div className="flex max-w-2xl flex-col gap-5">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('account.title')}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{t('account.title')}</h1>
       <Profile me={me} />
       <TwoFactor me={me} />
       <Sessions />
@@ -86,11 +86,11 @@ function Profile({ me }: { me: Me }) {
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1.5 text-sm font-medium">{t('account.language')}</legend>
           {(['bn', 'en'] as const).map((value) => (
-            <label key={value} lang={value} className="flex min-h-11 items-center gap-3">
+            <label key={value} lang={value} className="flex min-h-10 items-center gap-3 md:min-h-9">
               <input
                 type="radio"
                 name="locale"
-                className="size-5"
+                className="size-4 accent-primary"
                 checked={locale === value}
                 onChange={() => {
                   setChoice(value);

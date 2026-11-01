@@ -20,7 +20,8 @@ import { eventLabel } from './templates';
 const STATUSES = ['failed', 'skipped', 'queued', 'sent'] as const;
 const CHANNELS = ['sms', 'email', 'push'] as const;
 
-const select = 'min-h-11 rounded-md border border-input bg-background px-3 font-normal';
+const select =
+  'min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal';
 
 export function MessageLogPage({ orderId }: { orderId?: string | undefined } = {}) {
   const { t, locale } = useLocale();

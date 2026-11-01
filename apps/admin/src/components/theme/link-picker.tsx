@@ -7,12 +7,13 @@ import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
 import { pagesQuery } from '../../lib/online-store';
+import { Combobox } from '../ui/combobox';
 import { Input } from '../ui/input';
 
 type Kind = ThemeLink['type'];
 const KINDS: Kind[] = ['category', 'collection', 'product', 'page', 'search', 'url'];
 const select =
-  'min-h-11 w-full rounded-lg border border-input bg-background px-3 text-base disabled:opacity-50';
+  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 export function LinkPicker({
   value,
@@ -93,22 +94,15 @@ export function LinkPicker({
           <label htmlFor={`${id}-target`} className="text-sm font-medium">
             {t('section.linkTarget')}
           </label>
-          <select
+          <Combobox
             id={`${id}-target`}
-            className={select}
+            searchLabel={t('section.findTarget')}
+            placeholder="—"
             disabled={disabled}
             value={value.id}
-            onChange={(e) => onChange({ ...value, id: e.target.value })}
-          >
-            <option value="" disabled>
-              —
-            </option>
-            {targets.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            options={targets.map((o) => ({ value: o.id, label: o.label }))}
+            onChange={(target) => onChange({ ...value, id: target })}
+          />
         </div>
       )}
       {value?.type === 'search' && (

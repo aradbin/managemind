@@ -6,7 +6,7 @@ import { purchaseTotals } from '@managemind/shared/back-office';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
@@ -14,6 +14,7 @@ import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { Combobox } from '../components/ui/combobox';
 import { VariantPicker } from '../components/variant-picker';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
@@ -70,6 +71,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
     (!order || ['draft', 'ordered', 'partially_received'].includes(order.status));
   const suppliers = useQuery({ ...suppliersQuery(), enabled: editable });
   const [supplierId, setSupplierId] = useState(order?.supplier.id ?? search.supplierId ?? '');
+  const supplierField = useId();
   const [expectedOn, setExpectedOn] = useState(order?.expectedOn ?? '');
   const [supplierRef, setSupplierRef] = useState(order?.supplierRef ?? '');
   const [note, setNote] = useState(order?.note ?? '');
@@ -271,22 +273,23 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
       >
         <section className="grid gap-4 rounded-xl border border-border bg-background p-4 md:grid-cols-2">
           {editable && (!order || order.status === 'draft') ? (
-            <label className="flex flex-col gap-1.5 text-sm font-medium">
-              {t('po.supplier')}
-              <select
-                className="min-h-11 rounded-md border border-input bg-background px-3"
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor={supplierField} className="text-sm font-medium">
+                {t('po.supplier')}
+              </label>
+              <Combobox
+                id={supplierField}
+                searchLabel={t('po.findSupplier')}
+                placeholder={t('po.chooseSupplier')}
                 value={supplierId}
-                required
-                onChange={(e) => setSupplierId(e.target.value)}
-              >
-                <option value="">{t('po.chooseSupplier')}</option>
-                {suppliers.data?.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                options={(suppliers.data ?? []).map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                  keywords: [s.contactName, ...s.phones].filter(Boolean).join(' '),
+                }))}
+                onChange={setSupplierId}
+              />
+            </div>
           ) : (
             <div className="flex flex-col gap-1.5 text-sm">
               <span className="font-medium">{t('po.supplier')}</span>
@@ -294,7 +297,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                 <Link
                   to="/inventory/suppliers/$id"
                   params={{ id: order.supplier.id }}
-                  className="text-primary hover:underline"
+                  className="text-primary underline underline-offset-2"
                 >
                   {supplierName}
                 </Link>
@@ -410,7 +413,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                           aria-label={t('po.remove', { item: label })}
                           onClick={() => setLines(lines.filter((_, j) => j !== i))}
                         >
-                          <Trash2 aria-hidden className="size-5" />
+                          <Trash2 aria-hidden className="size-4 accent-primary" />
                         </Button>
                       )}
                     </div>
@@ -478,7 +481,7 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                     aria-label={t('po.remove', { item: c.label || t('po.otherCosts') })}
                     onClick={() => setCosts(costs.filter((_, j) => j !== i))}
                   >
-                    <Trash2 aria-hidden className="size-5" />
+                    <Trash2 aria-hidden className="size-4 accent-primary" />
                   </Button>
                 )}
               </div>
