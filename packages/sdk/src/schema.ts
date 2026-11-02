@@ -5131,6 +5131,7 @@ export interface paths {
                     lowStock?: "true" | "false";
                     locationId?: string;
                     q?: string;
+                    summary?: "true" | "false";
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -5151,6 +5152,12 @@ export interface paths {
                             items: components["schemas"]["InventoryRow"][];
                             nextCursor: string | null;
                             total: number;
+                            summary?: {
+                                tracked: number;
+                                units: number;
+                                lowStock: number;
+                                valueAtCost?: number;
+                            };
                         };
                     };
                 };

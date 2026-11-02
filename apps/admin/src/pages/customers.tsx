@@ -3,15 +3,21 @@
 // and note; customers and addresses edited in side panels; import through the
 // import screen; export.
 import { formatNumber } from '@managemind/shared/i18n';
-import { normalizePhone } from '@managemind/shared/phone';
+import { formatPhone, normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { FileUp, MessageCircle, Phone, Plus, SquarePen, UserRound } from 'lucide-react';
+import { FileUp, MessageCircle, Phone, Plus, SquarePen, Trash2, UserRound } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
-import { FilterButtons, RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
+import {
+  FilterButtons,
+  RowMenu,
+  RowMenuItem,
+  RowMenuSeparator,
+  SearchInput,
+} from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { BackLink, PageHeader } from '../components/page-header';
@@ -60,6 +66,18 @@ export function CustomersPage() {
   const [q, setQ] = useState(search.q ?? '');
   /** The panel: a new customer, or one being edited. */
   const [panel, setPanel] = useState<{ customer?: CustomerSummary } | null>(null);
+  const [deleting, setDeleting] = useState<CustomerSummary | null>(null);
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(await api.DELETE('/v1/admin/customers/{id}', { params: { path: { id } } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast(t('customers.deleted'));
+      setDeleting(null);
+    },
+  });
   useOpenNew(
     useCallback(() => setPanel({}), []),
     canWrite,
@@ -105,14 +123,16 @@ export function CustomersPage() {
     setFilter({ q: undefined, tag: undefined });
   };
   const open = (c: CustomerSummary) => navigate({ to: '/customers/$id', params: { id: c.id } });
+  const picked = (search.tag ?? '').split(',').filter(Boolean);
   const tagChips = (c: CustomerSummary) =>
     c.tags.length > 0 && (
-      <span className="flex flex-wrap gap-1">
+      <span className="flex min-w-0 flex-wrap gap-1">
         {c.tags.map((tag) => (
           <button
             key={tag}
             type="button"
-            className="h-[22px] rounded-lg bg-muted px-1.5 text-xs font-medium hover:bg-border"
+            aria-pressed={picked.includes(tag)}
+            className="relative z-[1] inline-flex h-[22px] items-center rounded-md bg-muted px-2 text-xs font-medium whitespace-nowrap hover:bg-accent aria-pressed:bg-primary aria-pressed:text-primary-foreground"
             onClick={() => setFilter({ tag })}
           >
             {tag}
@@ -123,14 +143,11 @@ export function CustomersPage() {
   const columns: Column<CustomerSummary>[] = [
     {
       header: t('order.customer'),
+      skeleton: 'text',
       cell: (c) => (
-        <span className="flex items-center gap-3">
+        <span className="flex min-w-0 items-center gap-2.5">
           <Avatar name={c.name} />
-          <Link
-            to="/customers/$id"
-            params={{ id: c.id }}
-            className="truncate font-medium underline-offset-2 hover:underline"
-          >
+          <Link to="/customers/$id" params={{ id: c.id }} className="truncate font-medium">
             {c.name}
           </Link>
           {c.flagged && <FlaggedBadge />}
@@ -139,7 +156,9 @@ export function CustomersPage() {
     },
     {
       header: t('customer.phone'),
-      cell: (c) => <span className="font-mono text-muted-foreground">{c.phone}</span>,
+      cell: (c) => (
+        <span className="text-muted-foreground tabular-nums">{formatPhone(c.phone)}</span>
+      ),
     },
     {
       header: t('customer.orders'),
@@ -159,23 +178,35 @@ export function CustomersPage() {
         </span>
       ),
     },
-    { header: t('customer.tags'), wide: true, cell: (c) => tagChips(c) },
+    { header: t('customer.tags'), skeleton: 'badge', cell: (c) => tagChips(c) },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('nav.customers')}
         actions={
           <>
-            <CustomerExportButton filters={filters} />
+            <span className="hidden md:contents">
+              <CustomerExportButton filters={filters} />
+              {canWrite && (
+                <Button variant="secondary" asChild>
+                  <Link to="/customers/import">
+                    <FileUp aria-hidden />
+                    {t('customers.import')}
+                  </Link>
+                </Button>
+              )}
+            </span>
             {canWrite && (
-              <Button variant="secondary" asChild>
-                <Link to="/customers/import">
-                  <FileUp aria-hidden />
-                  {t('customers.import')}
-                </Link>
-              </Button>
+              <span className="md:hidden">
+                <RowMenu label={t('customers.importExport')} trigger="outline">
+                  <RowMenuItem onSelect={() => navigate({ to: '/customers/import' })}>
+                    <FileUp aria-hidden />
+                    {t('customers.import')}
+                  </RowMenuItem>
+                </RowMenu>
+              </span>
             )}
             {canWrite && (
               <Button onClick={() => setPanel({})}>
@@ -186,10 +217,11 @@ export function CustomersPage() {
           </>
         }
       />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 md:flex-wrap">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 md:w-[280px] md:flex-none"
           label={t('customers.search')}
+          placeholder={t('customers.searchPhone')}
           value={q}
           onChange={setQ}
         />
@@ -204,6 +236,7 @@ export function CustomersPage() {
               onChange: (tag) => setFilter({ tag }),
             },
           ]}
+          width={220}
           onReset={filtered ? reset : undefined}
         />
       </div>
@@ -212,11 +245,25 @@ export function CustomersPage() {
         items={items}
         rowKey={(c) => c.id}
         onOpen={open}
+        grid="minmax(0,1.5fr) 124px 60px 104px 92px minmax(0,1fr) 40px"
+        rowHeight={52}
         menu={(c) => (
           <RowMenu label={c.name}>
             <RowMenuItem onSelect={() => open(c)}>
               <UserRound aria-hidden />
-              {t('list.open')}
+              {t('customers.view')}
+            </RowMenuItem>
+            <RowMenuItem onSelect={() => window.open(`tel:${c.phone}`, '_self')}>
+              <Phone aria-hidden />
+              {t('order.call')}
+            </RowMenuItem>
+            <RowMenuItem
+              onSelect={() =>
+                window.open(`https://wa.me/${c.phone.replace(/\D/g, '')}`, '_blank', 'noopener')
+              }
+            >
+              <MessageCircle aria-hidden />
+              {t('order.whatsapp')}
             </RowMenuItem>
             {canWrite && (
               <RowMenuItem onSelect={() => setPanel({ customer: c })}>
@@ -224,27 +271,41 @@ export function CustomersPage() {
                 {t('customers.edit')}
               </RowMenuItem>
             )}
+            {canWrite && (
+              <>
+                <RowMenuSeparator />
+                <RowMenuItem danger onSelect={() => setDeleting(c)}>
+                  <Trash2 aria-hidden />
+                  {t('action.delete')}
+                </RowMenuItem>
+              </>
+            )}
           </RowMenu>
         )}
         card={(c) => (
-          <div className="flex items-start gap-3">
-            <Avatar name={c.name} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Avatar name={c.name} className="size-10 text-[13px]" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="flex min-w-0 items-center gap-2">
                 <Link to="/customers/$id" params={{ id: c.id }} className="truncate font-medium">
                   {c.name}
                 </Link>
                 {c.flagged && <FlaggedBadge />}
               </span>
-              <span className="text-sm text-muted-foreground">
-                {c.phone} · {t('dashboard.orders', { count: c.orderCount })}
-                {c.lastOrderAt ? ` · ${dateOnly(locale, c.lastOrderAt)}` : ''}
+              <span className="truncate text-[13px] leading-[18px] text-muted-foreground tabular-nums">
+                {formatPhone(c.phone)} · {t('dashboard.orders', { count: c.orderCount })}
               </span>
-              {tagChips(c)}
             </div>
             {c.orderCount > 0 && (
-              <span className="shrink-0 font-medium tabular-nums">
-                {formatPrice(c.totalSpent, locale)}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className="font-medium tabular-nums">
+                  {formatPrice(c.totalSpent, locale)}
+                </span>
+                {c.lastOrderAt && (
+                  <span className="text-xs text-muted-foreground">
+                    {dateOnly(locale, c.lastOrderAt)}
+                  </span>
+                )}
               </span>
             )}
           </div>
@@ -263,6 +324,17 @@ export function CustomersPage() {
         }
         pager={customers.pager}
       />
+      {deleting && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setDeleting(null)}
+          title={t('customers.deleteTitle', { name: deleting.name })}
+          confirmLabel={t('action.delete')}
+          busy={remove.isPending}
+          error={remove.error ? errorMessage(remove.error, t) : undefined}
+          onConfirm={() => remove.mutate(deleting.id)}
+        />
+      )}
       {panel && <CustomerSheet customer={panel.customer} onClose={() => setPanel(null)} />}
     </div>
   );
@@ -274,7 +346,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
     <span
       aria-hidden
       className={cn(
-        'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium',
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold',
         className,
       )}
     >
@@ -286,7 +358,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 function FlaggedBadge() {
   const { t } = useLocale();
   return (
-    <span className="inline-flex h-[22px] shrink-0 items-center rounded-lg bg-danger-soft px-2 text-xs font-medium text-danger">
+    <span className="inline-flex h-[22px] shrink-0 items-center rounded-lg bg-danger-soft px-2 text-xs font-medium whitespace-nowrap text-danger">
       {t('customers.flagged')}
     </span>
   );

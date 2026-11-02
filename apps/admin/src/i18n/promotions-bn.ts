@@ -2,7 +2,7 @@
 import type { promotionsEn } from './promotions-en';
 
 export const promotionsBn: Record<keyof typeof promotionsEn, string> = {
-  'promo.intro': 'নিজে থেকে বা কোড দিয়ে খাটে এমন ছাড়। সব জায়গায় একই নিয়মে দাম হিসাব হয়।',
+  'promo.intro': 'নিজে থেকে বা কোড দিয়ে খাটে এমন ছাড়।',
   'promo.new': 'নতুন অফার',
   'promo.create': 'প্রমোশন তৈরি করুন',
   'promo.unsaved': 'পরিবর্তন সেভ হয়নি',

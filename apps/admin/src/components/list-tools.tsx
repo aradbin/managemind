@@ -487,16 +487,25 @@ export function SortDrawer({
 }
 
 /** The ⋯ button that ends a row: open or edit, other actions, then the destructive one. */
-export function RowMenu({ label, children }: { label: string; children: ReactNode }) {
+export function RowMenu({
+  label,
+  trigger = 'ghost',
+  children,
+}: {
+  label: string;
+  /** "outline" for a page's own ⋯ beside its header buttons. */
+  trigger?: 'ghost' | 'outline';
+  children: ReactNode;
+}) {
   const { t } = useLocale();
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
         <Button
-          variant="ghost"
+          variant={trigger === 'outline' ? 'secondary' : 'ghost'}
           size="icon"
-          className="relative z-[1] size-8 md:size-8"
-          aria-label={`${t('list.rowActions')}: ${label}`}
+          className={cn('relative z-[1]', trigger === 'ghost' && 'size-8 md:size-8')}
+          aria-label={trigger === 'outline' ? label : `${t('list.rowActions')}: ${label}`}
         >
           <Ellipsis aria-hidden />
         </Button>

@@ -267,16 +267,12 @@ test('returns and refunds', async ({
     await expect(byMethod.first()).toBeVisible();
     await expectAccessible(page, 'reports');
 
+    await page
+      .getByRole('button', { name: m('reports.exportWhat', { what: m('reports.refunds') }) })
+      .click();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page
-        .getByRole('button', {
-          name: m('reports.exportOf', {
-            what: m('reports.refunds'),
-            format: m('reports.export.csv'),
-          }),
-        })
-        .click(),
+      page.getByRole('menuitem', { name: m('reports.export.csv') }).click(),
     ]);
     expect(download.suggestedFilename()).toMatch(
       /^refunds-by-method-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.csv$/,

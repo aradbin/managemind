@@ -348,6 +348,9 @@ export const ordersEn = {
   'export.customersDone': 'Exported {count} customers.',
 
   'customers.search': 'Search by phone or name',
+  'customers.searchPhone': 'Phone or name',
+  'customers.importExport': 'Import and export',
+  'customers.view': 'View customer',
   'customers.new': 'Add customer',
   'customers.edit': 'Edit customer',
   'customers.flagged': 'Flagged',

@@ -39,6 +39,7 @@ export const expensesBn: Record<keyof typeof expensesEn, string> = {
   'expenses.payee': 'কাকে দিলেন',
   'expenses.note': 'নোট',
   'expenses.receipt': 'রসিদের ছবি',
+  'expenses.receiptShort': 'রসিদ',
   'expenses.receiptAdd': 'ছবি যোগ করুন',
   'expenses.receiptReplace': 'ছবি বদলান',
   'expenses.receiptRemove': 'ছবি সরান',

@@ -332,16 +332,12 @@ test('back office', async ({ page }, info) => {
     await expect(page.getByRole('heading', { name: m('profit.title'), level: 1 })).toBeVisible();
     await expect(page.getByRole('cell', { name: m('profit.netProfit') })).toBeVisible();
     await expectAccessible(page, 'profit report');
+    await page
+      .getByRole('button', { name: m('reports.exportWhat', { what: m('profit.title') }) })
+      .click();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page
-        .getByRole('button', {
-          name: m('reports.exportOf', {
-            what: m('profit.title'),
-            format: m('reports.export.xlsx'),
-          }),
-        })
-        .click(),
+      page.getByRole('menuitem', { name: m('reports.export.xlsxFile') }).click(),
     ]);
     expect(download.suggestedFilename()).toMatch(
       /^profit-\d{4}-\d{2}-01-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.xlsx$/,

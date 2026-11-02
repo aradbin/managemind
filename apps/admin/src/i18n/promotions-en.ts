@@ -1,7 +1,6 @@
 // Promotions (phase-4-plan §3.13, §7), loaded with their screens.
 export const promotionsEn = {
-  'promo.intro':
-    'Discounts that apply by themselves, or with a code. One engine prices them everywhere.',
+  'promo.intro': 'Discounts that apply by themselves, or with a code.',
   'promo.new': 'New promotion',
   'promo.create': 'Create promotion',
   'promo.unsaved': 'Unsaved changes',

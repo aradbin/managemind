@@ -11,6 +11,7 @@ import {
   ArchiveRestore,
   ChevronLeft,
   ChevronRight,
+  FileUp,
   Paperclip,
   Pause,
   Play,
@@ -238,9 +239,9 @@ function Entries({ month, top }: { month: string; top: Top }) {
     {
       header: t('expenses.payee'),
       cell: (e) => (
-        <span className="flex flex-col">
-          <span>{e.payee ?? '—'}</span>
-          {e.note && <span className="text-xs text-muted-foreground">{e.note}</span>}
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate">{e.payee ?? ''}</span>
+          {e.note && <span className="truncate text-xs text-muted-foreground">{e.note}</span>}
         </span>
       ),
     },
@@ -251,8 +252,7 @@ function Entries({ month, top }: { month: string; top: Top }) {
       ),
     },
     {
-      header: t('expenses.receipt'),
-      wide: true,
+      header: t('expenses.receiptShort'),
       cell: (e) =>
         e.hasReceipt ? (
           <a
@@ -261,7 +261,7 @@ function Entries({ month, top }: { month: string; top: Top }) {
             rel="noopener"
             aria-label={t('expenses.receiptView')}
             title={t('expenses.receiptView')}
-            className="inline-flex size-8 items-center justify-center rounded-lg hover:bg-muted"
+            className="relative z-[1] inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent"
           >
             <Paperclip aria-hidden className="size-4" />
           </a>
@@ -275,7 +275,10 @@ function Entries({ month, top }: { month: string; top: Top }) {
         <>
           {canWrite && (
             <Button variant="secondary" asChild>
-              <Link to="/expenses/import">{t('boImport.import')}</Link>
+              <Link to="/expenses/import">
+                <FileUp aria-hidden />
+                {t('boImport.import')}
+              </Link>
             </Button>
           )}
           {list.data && list.data.items.length > 0 && (
@@ -420,6 +423,8 @@ function Entries({ month, top }: { month: string; top: Top }) {
         items={list.data ? items : undefined}
         rowKey={(e) => e.id}
         columns={columns}
+        grid="64px minmax(0,1.1fr) minmax(0,1.6fr) 72px 64px 104px 40px"
+        rowHeight={52}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}

@@ -607,12 +607,26 @@ export const CATALOG_ROUTES = {
         lowStock: flag,
         locationId: z.uuid().optional(),
         q: z.string().max(100).optional(),
+        /** Also the figures above the list. */
+        summary: flag,
         after: z.uuid().optional(),
         offset: pageOffset,
         limit,
       }),
     },
-    responses: json(counted(InventoryRow), 'Inventory'),
+    responses: json(
+      counted(InventoryRow).extend({
+        summary: z
+          .object({
+            tracked: z.number().int(),
+            units: z.number().int(),
+            lowStock: z.number().int(),
+            valueAtCost: z.number().optional(),
+          })
+          .optional(),
+      }),
+      'Inventory',
+    ),
   }),
   adjustInventory: r({
     method: 'post',
@@ -865,7 +879,11 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
     const { lowStock, ...query } = c.req.valid('query');
     return c.json(
       await inStore(c, (tx) =>
-        listInventory(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
+        listInventory(tx, actor(c), {
+          ...query,
+          lowStock: lowStock === 'true',
+          summary: query.summary === 'true',
+        }),
       ),
       200,
     );

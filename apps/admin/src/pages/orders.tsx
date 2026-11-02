@@ -260,7 +260,6 @@ export function OrdersPage() {
   const columns: Column<OrderSummary>[] = [
     {
       header: t('order.number'),
-      width: 76,
       cell: (o) => (
         <Link
           to="/orders/$id"
@@ -290,7 +289,6 @@ export function OrdersPage() {
     },
     {
       header: t('order.placedAt'),
-      width: 112,
       skeleton: 'lines',
       cell: (o) => (
         <span className="flex flex-col whitespace-nowrap tabular-nums">
@@ -301,25 +299,21 @@ export function OrdersPage() {
     },
     {
       header: t('order.status'),
-      width: 100,
       skeleton: 'badge',
       cell: (o) => <StatusChip kind="order" status={o.status} />,
     },
     {
       header: t('order.payment'),
-      width: 104,
       skeleton: 'badge',
       cell: (o) => <StatusChip kind="payment" status={o.paymentStatus} />,
     },
     {
       header: t('order.delivery'),
-      width: 120,
       skeleton: 'badge',
       cell: (o) => <StatusChip kind="delivery" status={o.deliveryStatus} />,
     },
     {
       header: t('order.total'),
-      width: 88,
       numeric: true,
       cell: (o) => <span className="font-medium">{formatPrice(o.total, locale)}</span>,
     },
@@ -441,7 +435,7 @@ export function OrdersPage() {
         items={items}
         rowKey={(o) => o.id}
         columns={columns}
-        cells="roomy"
+        grid="24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px"
         rowHeight={56}
         isPending={orders.isPending}
         error={orders.isError ? errorMessage(orders.error, t) : undefined}

@@ -8,22 +8,26 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { History, Package, SlidersHorizontal, Truck, X } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
+import { ExportButtons } from '../components/export-buttons';
 import { Field } from '../components/field';
-import { RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
+import { RowMenu, RowMenuItem, SearchInput, ToolbarSummary } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
+import { StatRow } from '../components/ui/stat-row';
 import { useLocale } from '../i18n';
 // The receive hint and the cost history live with the purchasing screens' messages.
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
-import { compact, type InventoryRow, pick } from '../lib/catalog';
+import { compact, formatPrice, type InventoryRow, pick } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { usePagedList } from '../lib/paged';
 import { costHistoryQuery, priceOrDash } from '../lib/purchasing';
+import { cn } from '../lib/utils';
 
 export type InventorySearch = {
   q?: string | undefined;
@@ -103,120 +107,224 @@ export function InventoryPage() {
     return () => clearTimeout(id);
   });
   const { page, ...filters } = search;
+  const fetchLevels = async (offset: number, limit: number, summary = false) =>
+    unwrap(
+      await api.GET('/v1/admin/inventory', {
+        params: {
+          query: compact({
+            q: filters.q,
+            lowStock: filters.lowStock ? ('true' as const) : undefined,
+            summary: summary ? ('true' as const) : undefined,
+            offset,
+            limit,
+          }),
+        },
+      }),
+    );
   const levels = usePagedList({
     queryKey: ['inventory', filters],
-    fetchPage: async (offset: number, limit: number) =>
-      unwrap(
-        await api.GET('/v1/admin/inventory', {
-          params: {
-            query: compact({
-              q: filters.q,
-              lowStock: filters.lowStock ? ('true' as const) : undefined,
-              offset,
-              limit,
-            }),
-          },
-        }),
-      ),
+    fetchPage: (offset: number, limit: number) => fetchLevels(offset, limit, true),
     page,
     onPageChange: (next) =>
       navigate({ to: '/inventory', search: { ...search, page: next > 1 ? next : undefined } }),
   });
   const items = levels.items;
+  const summary = (
+    levels.first as
+      | { summary?: { tracked: number; units: number; lowStock: number; valueAtCost?: number } }
+      | undefined
+  )?.summary;
   const filtered = Boolean(search.q || search.lowStock);
+  const setLow = (on: boolean) =>
+    navigate({
+      to: '/inventory',
+      search: { ...search, lowStock: on || undefined, page: undefined },
+      replace: true,
+    });
   const reset = () => {
     setQ('');
     navigate({ to: '/inventory', search: {}, replace: true });
   };
   const available = (r: InventoryRow) =>
     r.trackInventory ? (
-      <span className="inline-flex items-center justify-end gap-2">
-        {r.lowStock && (
-          <span className="inline-flex h-5 items-center rounded-md bg-danger-soft px-1.5 text-xs font-medium text-danger">
-            {t('inventory.low')}
-          </span>
-        )}
-        <span className={r.lowStock ? 'font-medium text-danger' : 'font-medium'}>
+      <span className="inline-flex items-center justify-end gap-1.5">
+        {r.lowStock && <StatusBadge tone="bad">{t('inventory.lowBadge')}</StatusBadge>}
+        <span className={cn('font-semibold tabular-nums', r.lowStock && 'text-danger')}>
           {formatNumber(locale, r.available)}
         </span>
       </span>
     ) : (
       <span className="text-muted-foreground">{t('inventory.untracked')}</span>
     );
-  const adjust = (r: InventoryRow) =>
-    canWrite && (
-      <Button variant="secondary" onClick={() => setAdjusting(r)}>
-        {t('inventory.adjust')}
-      </Button>
-    );
+  const menu = (r: InventoryRow) => (
+    <RowMenu label={rowLabel(r, locale)}>
+      {canWrite && r.trackInventory && (
+        <RowMenuItem onSelect={() => setAdjusting(r)}>
+          <SlidersHorizontal aria-hidden />
+          {t('inventory.adjustTitle')}
+        </RowMenuItem>
+      )}
+      <RowMenuItem onSelect={() => setHistory(r)}>
+        <History aria-hidden />
+        {t('inventory.historyTitle')}
+      </RowMenuItem>
+      <RowMenuItem onSelect={() => navigate({ to: '/products/$id', params: { id: r.productId } })}>
+        <Package aria-hidden />
+        {t('inventory.openProduct')}
+      </RowMenuItem>
+    </RowMenu>
+  );
   const columns: Column<InventoryRow>[] = [
     {
       header: t('inventory.item'),
+      skeleton: 'lines',
       cell: (r) => (
-        <span className="flex flex-col">
-          <Link
-            to="/products/$id"
-            params={{ id: r.productId }}
-            className="font-medium underline-offset-2 hover:underline"
+        <span className="flex min-w-0 flex-col">
+          <button
+            type="button"
+            className="truncate text-left font-medium"
+            onClick={() => setHistory(r)}
           >
             {pick(r.titles, locale) ?? '—'}
-          </Link>
+          </button>
           {optionsOf(r, locale) && (
-            <span className="text-xs text-muted-foreground">{optionsOf(r, locale)}</span>
+            <span className="truncate text-[13px] text-muted-foreground">
+              {optionsOf(r, locale)}
+            </span>
           )}
         </span>
       ),
     },
     {
       header: t('variant.sku'),
-      cell: (r) => <span className="font-mono text-xs text-muted-foreground">{r.sku ?? '—'}</span>,
+      cell: (r) => (
+        <span className="block truncate font-mono text-xs text-muted-foreground">
+          {r.sku ?? '—'}
+        </span>
+      ),
     },
-    { header: t('inventory.onHand'), numeric: true, cell: (r) => formatNumber(locale, r.onHand) },
+    {
+      header: t('inventory.onHand'),
+      numeric: true,
+      cell: (r) => (r.trackInventory ? formatNumber(locale, r.onHand) : '—'),
+    },
     {
       header: t('inventory.reserved'),
       numeric: true,
       cell: (r) => (
-        <span className="text-muted-foreground">{formatNumber(locale, r.reserved)}</span>
+        <span className="text-muted-foreground">
+          {r.trackInventory ? formatNumber(locale, r.reserved) : '—'}
+        </span>
       ),
     },
     { header: t('inventory.available'), numeric: true, cell: available },
-    { header: t('inventory.actions'), actions: true, cell: (r) => adjust(r) },
+    {
+      header: t('inventory.actions'),
+      actions: true,
+      cell: (r) => (
+        <span className="flex items-center justify-end gap-1">
+          {canWrite && r.trackInventory && (
+            <Button
+              variant="secondary"
+              className="relative z-[1] h-7 px-2.5 has-[>svg]:px-2.5 md:h-7"
+              aria-label={t('inventory.adjustFor', { item: rowLabel(r, locale) })}
+              onClick={() => setAdjusting(r)}
+            >
+              {t('inventory.adjust')}
+            </Button>
+          )}
+          {menu(r)}
+        </span>
+      ),
+    },
   ];
+  const exportHead = [
+    t('inventory.item'),
+    t('variant.sku'),
+    t('inventory.onHand'),
+    t('inventory.reserved'),
+    t('inventory.available'),
+  ];
+  async function exportRows() {
+    const out: (string | number)[][] = [];
+    for (let offset = 0; ; offset += 200) {
+      const page = await fetchLevels(offset, 200);
+      for (const r of page.items) {
+        out.push([rowLabel(r, locale), r.sku ?? '', r.onHand, r.reserved, r.available]);
+      }
+      if (offset + 200 >= page.total) return out;
+    }
+  }
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('catalog.inventory')}
-        description={t('inventory.intro')}
         actions={
-          canWrite && (
-            <Button asChild>
-              <Link to="/inventory/receive">
-                <Truck aria-hidden />
-                {t('nav.receiveStock')}
-              </Link>
-            </Button>
-          )
+          <>
+            <span className="hidden md:contents">
+              <ExportButtons
+                name="stock"
+                chevron={false}
+                what={t('catalog.inventory')}
+                head={exportHead}
+                rows={exportRows}
+              />
+            </span>
+            {canWrite && (
+              <Button asChild>
+                <Link to="/inventory/receive">
+                  <Truck aria-hidden />
+                  {t('nav.receiveStock')}
+                </Link>
+              </Button>
+            )}
+          </>
         }
       />
+      {summary && (
+        <StatRow
+          stats={[
+            { label: t('inventory.statTracked'), value: formatNumber(locale, summary.tracked) },
+            { label: t('inventory.statUnits'), value: formatNumber(locale, summary.units) },
+            ...(summary.valueAtCost !== undefined
+              ? [
+                  {
+                    label: t('inventory.statValue'),
+                    value: formatPrice(Math.round(summary.valueAtCost / 100) * 100, locale),
+                  },
+                ]
+              : []),
+            {
+              label: t('inventory.statLow'),
+              alert: summary.lowStock > 0,
+              value: (
+                <button
+                  type="button"
+                  aria-pressed={Boolean(search.lowStock)}
+                  aria-label={t('inventory.statLowAria', { count: summary.lowStock })}
+                  onClick={() => setLow(!search.lowStock)}
+                  className="underline decoration-transparent underline-offset-[3px] hover:decoration-current aria-pressed:decoration-current"
+                >
+                  {formatNumber(locale, summary.lowStock)}
+                </button>
+              ),
+            },
+          ]}
+        />
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[280px] md:flex-none"
           label={t('inventory.search')}
           value={q}
           onChange={setQ}
         />
-        <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
+        <label className="ml-2 hidden cursor-pointer items-center gap-2 font-medium md:inline-flex">
           <input
             type="checkbox"
             checked={Boolean(search.lowStock)}
-            onChange={(e) =>
-              navigate({
-                to: '/inventory',
-                search: { ...search, lowStock: e.target.checked || undefined, page: undefined },
-                replace: true,
-              })
-            }
+            onChange={(e) => setLow(e.target.checked)}
           />
           {t('products.lowStockOnly')}
         </label>
@@ -226,16 +334,23 @@ export function InventoryPage() {
             <X aria-hidden />
           </Button>
         )}
+        {levels.first && (
+          <ToolbarSummary>
+            {t('inventory.itemCount', { count: formatNumber(locale, levels.total) })}
+          </ToolbarSummary>
+        )}
       </div>
       <DataList
         label={t('catalog.inventory')}
         items={items}
         rowKey={(r) => r.variantId}
         columns={columns}
+        grid="minmax(0,2.4fr) minmax(0,1fr) 84px 84px 120px 132px"
+        rowHeight={52}
         isPending={levels.isPending}
         error={levels.isError ? errorMessage(levels.error, t) : undefined}
         onRetry={() => levels.refetch()}
-        empty={t('inventory.empty')}
+        empty={filtered ? t('inventory.noMatches') : t('inventory.empty')}
         emptyAction={
           filtered ? (
             <Button variant="secondary" onClick={reset}>
@@ -245,44 +360,16 @@ export function InventoryPage() {
         }
         pager={levels.pager}
         onOpen={setHistory}
-        menu={(r) => (
-          <RowMenu label={rowLabel(r, locale)}>
-            {canWrite && (
-              <RowMenuItem onSelect={() => setAdjusting(r)}>
-                <SlidersHorizontal aria-hidden />
-                {t('inventory.adjustTitle')}
-              </RowMenuItem>
-            )}
-            <RowMenuItem onSelect={() => setHistory(r)}>
-              <History aria-hidden />
-              {t('inventory.historyTitle')}
-            </RowMenuItem>
-            <RowMenuItem
-              onSelect={() => navigate({ to: '/products/$id', params: { id: r.productId } })}
-            >
-              <Package aria-hidden />
-              {t('inventory.openProduct')}
-            </RowMenuItem>
-          </RowMenu>
-        )}
         card={(r) => (
-          <div className="flex items-start gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <Link to="/products/$id" params={{ id: r.productId }} className="font-medium">
-                {pick(r.titles, locale) ?? '—'}
-              </Link>
-              <span className="text-xs text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-medium">{pick(r.titles, locale) ?? '—'}</span>
+              <span className="truncate text-[13px] leading-[18px] text-muted-foreground">
                 {[optionsOf(r, locale), r.sku].filter(Boolean).join(' · ')}
               </span>
-              <span className="text-xs text-muted-foreground">
-                {t('inventory.onHand')} {formatNumber(locale, r.onHand)} · {t('inventory.reserved')}{' '}
-                {formatNumber(locale, r.reserved)}
-              </span>
             </div>
-            <span className="flex shrink-0 flex-col items-end gap-1.5">
-              {available(r)}
-              {adjust(r)}
-            </span>
+            <span className="shrink-0">{available(r)}</span>
+            <span className="-mr-2 shrink-0">{menu(r)}</span>
           </div>
         )}
       />

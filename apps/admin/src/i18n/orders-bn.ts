@@ -342,6 +342,9 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'export.customersDone': '{count} জন ক্রেতা এক্সপোর্ট হয়েছে।',
 
   'customers.search': 'ফোন বা নাম দিয়ে খুঁজুন',
+  'customers.searchPhone': 'ফোন বা নাম',
+  'customers.importExport': 'ইমপোর্ট ও এক্সপোর্ট',
+  'customers.view': 'ক্রেতা দেখুন',
   'customers.new': 'ক্রেতা যোগ করুন',
   'customers.edit': 'ক্রেতার তথ্য বদলান',
   'customers.flagged': 'চিহ্নিত',

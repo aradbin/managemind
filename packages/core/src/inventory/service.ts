@@ -452,8 +452,15 @@ export async function listInventory(
     /** Rows to skip, for numbered pages; the cursor is then ignored. */
     offset?: number | undefined;
     limit?: number | undefined;
+    /** Also the figures above the list: tracked items, units, value at cost, low stock. */
+    summary?: boolean | undefined;
   } = {},
-): Promise<{ items: InventoryRow[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: InventoryRow[];
+  nextCursor: string | null;
+  total: number;
+  summary?: InventorySummary;
+}> {
   authorize(actor, 'inventory.read');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
   const location = query.locationId ? sql`and l.location_id = ${query.locationId}` : sql``;
@@ -501,11 +508,44 @@ export async function listInventory(
     select * from (${variants(after)}) x ${lowStock}
     limit ${limit + 1} offset ${query.offset ?? 0}`);
   const items = rows.slice(0, limit);
+  let summary: InventorySummary | undefined;
+  if (query.summary) {
+    // Every tracked variant, whatever the search: the store's stock at a glance.
+    const { rows: sums } = await tx.db.execute<{
+      tracked: number;
+      units: string | null;
+      value: string | null;
+      low: number;
+    }>(sql`
+      select count(*)::int as tracked, sum("onHand") as units,
+             sum(greatest("onHand", 0) * cost) as value,
+             count(*) filter (where "lowStock")::int as low
+        from (select x.*, v.cost_price as cost from (${variants(sql``)}) x
+                join store.variants v on v.id = x."variantId") y
+       where "trackInventory"`);
+    const r = sums[0];
+    summary = {
+      tracked: Number(r?.tracked ?? 0),
+      units: Number(r?.units ?? 0),
+      lowStock: Number(r?.low ?? 0),
+      // What the stock cost, only for those who may see costs.
+      ...(actor.permissions.has('catalog.cost') ? { valueAtCost: Number(r?.value ?? 0) } : {}),
+    };
+  }
   return {
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.variantId ?? null) : null,
     total,
+    ...(summary ? { summary } : {}),
   };
+}
+
+/** The figures above the stock list. */
+export interface InventorySummary {
+  tracked: number;
+  units: number;
+  lowStock: number;
+  valueAtCost?: number;
 }
 
 export type MovementRow = {

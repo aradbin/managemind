@@ -98,6 +98,12 @@ interface DataListProps<T> {
   selectOnPhone?: boolean;
   /** False where the phone board's rows have no ⋯ (products). */
   menuOnPhone?: boolean;
+  /**
+   * The board's grid for the desktop rows ("24px 76px minmax(0,1.7fr) …
+   * 36px", the checkbox and ⋯ columns included): rows 16 px in, 12 px
+   * between columns, 8 px out. The rows keep the table's roles.
+   */
+  grid?: string;
 }
 
 /** A press on a control inside the row is that control's, not the row's. */
@@ -135,6 +141,7 @@ export function DataList<T>({
   cardClassName,
   selectOnPhone = true,
   menuOnPhone = true,
+  grid,
 }: DataListProps<T>) {
   const { t } = useLocale();
   const top = useRef<HTMLDivElement>(null);
@@ -182,6 +189,7 @@ export function DataList<T>({
   // Cell spacing: every cell 8 px (tight), or 16 px in, 12 px between, 8 px out (roomy).
   const span = columns.length + (selection ? 1 : 0) + (menu ? 1 : 0);
   const pad = (i: number) => {
+    if (grid) return '';
     if (cells === 'tight') return 'px-2';
     if (i === 0) return 'pr-1.5 pl-4';
     if (i === span - 1) return 'pr-2 pl-1.5';
@@ -193,13 +201,29 @@ export function DataList<T>({
     c.width === undefined
       ? undefined
       : { width: typeof c.width === 'number' ? c.width + padPx(i) : c.width };
-  const checkWidth = { width: (cells === 'roomy' ? 24 : 16) + padPx(0) };
+  const checkWidth = grid ? undefined : { width: (cells === 'roomy' ? 24 : 16) + padPx(0) };
+  // Grid rows: the board's columns, 16 px in, 12 px between, 8 px out.
+  const gridRow = grid
+    ? ({ display: 'grid', gridTemplateColumns: grid, columnGap: 12, alignItems: 'center' } as const)
+    : undefined;
+  const rowPad = grid ? 'pr-2 pl-4' : '';
+  const cell = grid ? 'block min-w-0' : '';
+  /** Grid rows are drawn as blocks, so they say what they are. */
+  const role = (r: 'row' | 'cell' | 'columnheader' | 'rowgroup') => (grid ? { role: r } : {});
 
   const header = (
-    <thead className="bg-muted">
-      <tr className="border-b border-border">
+    <thead className={cn('bg-muted', grid && 'block rounded-t-[10px]')} {...role('rowgroup')}>
+      <tr
+        className={cn('border-b border-border', rowPad, grid && 'h-10')}
+        style={gridRow}
+        {...role('row')}
+      >
         {selection && (
-          <th style={checkWidth} className={cn('h-10', pad(0))}>
+          <th
+            style={checkWidth}
+            className={cn(!grid && 'h-10', cell, pad(0))}
+            {...role('columnheader')}
+          >
             {selectAll}
           </th>
         )}
@@ -210,10 +234,12 @@ export function DataList<T>({
             <th
               key={c.header}
               scope="col"
-              style={widthOf(c, at)}
+              {...role('columnheader')}
+              style={grid ? undefined : widthOf(c, at)}
               aria-sort={on === 'asc' ? 'ascending' : on === 'desc' ? 'descending' : undefined}
               className={cn(
-                'h-10 font-medium whitespace-nowrap text-foreground',
+                'font-medium whitespace-nowrap text-foreground',
+                grid ? cell : 'h-10',
                 pad(at),
                 (c.actions || c.numeric) && 'text-right',
                 c.wide && 'hidden lg:table-cell',
@@ -236,8 +262,9 @@ export function DataList<T>({
         })}
         {menu && (
           <th
-            style={{ width: (cells === 'roomy' ? 36 : 32) + padPx(span - 1) }}
-            className={cn('h-10', pad(span - 1))}
+            style={grid ? undefined : { width: (cells === 'roomy' ? 36 : 32) + padPx(span - 1) }}
+            className={cn(!grid && 'h-10', cell, pad(span - 1))}
+            {...role('columnheader')}
           >
             <span className="sr-only">{t('list.rowActions')}</span>
           </th>
@@ -247,8 +274,10 @@ export function DataList<T>({
   );
 
   const stateRow = (content: ReactNode) => (
-    <tr>
-      <td colSpan={span}>{content}</td>
+    <tr className={cn(grid && 'block')} {...role('row')}>
+      <td colSpan={span} className={cn(grid && 'block')} {...role('cell')}>
+        {content}
+      </td>
     </tr>
   );
 
@@ -265,29 +294,34 @@ export function DataList<T>({
         <table
           className={cn(
             'w-full border-collapse text-left text-sm',
-            columns.some((c) => c.width !== undefined) && 'table-fixed',
+            grid ? 'block' : columns.some((c) => c.width !== undefined) && 'table-fixed',
           )}
+          {...(grid ? { role: 'table', 'aria-label': label } : {})}
         >
           <caption className="sr-only">{label}</caption>
           {header}
-          <tbody>
+          <tbody className={cn(grid && 'block')} {...role('rowgroup')}>
             {state === 'loading' &&
               SKELETON_WIDTHS.map((w, r) => (
                 <tr
                   key={w + r}
                   aria-hidden
-                  className="border-b border-border last:border-b-0"
-                  style={{ height: rowHeight }}
+                  className={cn('border-b border-border last:border-b-0', rowPad)}
+                  style={grid ? { ...gridRow, minHeight: rowHeight } : { height: rowHeight }}
                 >
                   {selection && (
-                    <td className={pad(0)}>
+                    <td className={cn(cell, pad(0))}>
                       <span className="mm-skel size-4" />
                     </td>
                   )}
                   {columns.map((c, i) => (
                     <td
                       key={c.header}
-                      className={cn(pad(i + (selection ? 1 : 0)), c.wide && 'hidden lg:table-cell')}
+                      className={cn(
+                        cell,
+                        pad(i + (selection ? 1 : 0)),
+                        c.wide && 'hidden lg:table-cell',
+                      )}
                     >
                       <Skeleton
                         kind={c.skeleton ?? (c.actions ? 'none' : 'text')}
@@ -296,7 +330,7 @@ export function DataList<T>({
                       />
                     </td>
                   ))}
-                  {menu && <td />}
+                  {menu && <td className={cell} />}
                 </tr>
               ))}
             {state === 'loading' && (
@@ -321,18 +355,26 @@ export function DataList<T>({
                     key={rowKey(item)}
                     onClick={open(item)}
                     data-selected={picked ? '' : undefined}
-                    style={{ height: rowHeight }}
+                    style={grid ? { ...gridRow, minHeight: rowHeight } : { height: rowHeight }}
                     className={cn(
                       'border-b border-border last:border-b-0 hover:bg-muted/50 data-selected:bg-muted',
+                      rowPad,
                       onOpen && 'cursor-pointer',
                     )}
+                    {...role('row')}
                   >
-                    {selection && <td className={pad(0)}>{check(item)}</td>}
+                    {selection && (
+                      <td className={cn(cell, pad(0))} {...role('cell')}>
+                        {check(item)}
+                      </td>
+                    )}
                     {columns.map((c, i) => (
                       <td
                         key={c.header}
+                        {...role('cell')}
                         className={cn(
-                          'py-2 align-middle',
+                          cell,
+                          grid ? 'py-1.5' : 'py-2 align-middle',
                           pad(i + (selection ? 1 : 0)),
                           (c.actions || c.numeric) && 'text-right',
                           c.numeric && 'whitespace-nowrap tabular-nums',
@@ -342,7 +384,11 @@ export function DataList<T>({
                         {c.cell(item)}
                       </td>
                     ))}
-                    {menu && <td className={cn('text-right', pad(span - 1))}>{menu(item)}</td>}
+                    {menu && (
+                      <td className={cn('text-right', cell, pad(span - 1))} {...role('cell')}>
+                        {menu(item)}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
