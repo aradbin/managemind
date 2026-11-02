@@ -4,22 +4,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
-import { FilterButtons, RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
+import {
+  FilterButtons,
+  RowMenu,
+  RowMenuItem,
+  SearchInput,
+  StageTabs,
+  ToolbarSummary,
+} from '../components/list-tools';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { StatusBadge, type Tone } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
+import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { dateOnly } from '../lib/orders';
 import { usePagedList } from '../lib/paged';
 import {
   dhakaToday,
-  PO_STATUSES,
   type PurchaseOrderStatus,
   type PurchaseOrderSummary,
   priceOrDash,
@@ -30,44 +38,66 @@ import { allPages } from '../lib/report-export';
 /** A purchase order's status as a status badge (design rule 9). */
 export function PoStatusChip({ status }: { status: PurchaseOrderStatus }) {
   const { t } = useLocale();
-  const tone =
+  const tone: Tone =
     status === 'ordered'
-      ? 'bg-info text-info-foreground'
+      ? 'progress'
       : status === 'partially_received'
-        ? 'bg-warning text-warning-foreground'
+        ? 'waiting'
         : status === 'received'
-          ? 'bg-success-soft text-success-foreground'
+          ? 'good'
           : status === 'cancelled'
-            ? 'border border-border text-muted-foreground'
-            : 'bg-muted text-muted-foreground';
-  return (
-    <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
-    >
-      {t(`po.status.${status}`)}
-    </span>
-  );
+            ? 'outline'
+            : 'ended';
+  return <StatusBadge tone={tone}>{t(`po.status.${status}`)}</StatusBadge>;
 }
+
+/** The tabs: each status, with ordered and partly received as one "To receive". */
+const TABS = ['', 'draft', 'to_receive', 'received', 'closed', 'cancelled'] as const;
+type Tab = (typeof TABS)[number];
+const COUNT_KEY = {
+  '': 'all',
+  draft: 'draft',
+  to_receive: 'toReceive',
+  received: 'received',
+  closed: 'closed',
+  cancelled: 'cancelled',
+} as const;
 
 export function PurchaseOrdersPage() {
   const { t, locale } = useLocale();
   const navigate = useNavigate();
   const canWrite = usePermission('purchasing.write');
   const canReceive = usePermission('inventory.write');
-  const [status, setStatus] = useState<PurchaseOrderStatus | ''>('');
+  const [status, setStatus] = useState<Tab>('');
   const [supplierId, setSupplierId] = useState<string>();
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setQ(text.trim()), 350);
+    return () => clearTimeout(id);
+  }, [text]);
   const suppliers = useQuery(suppliersQuery());
-  const filter = { ...(status ? { status } : {}), ...(supplierId ? { supplierId } : {}) };
+  const filter = {
+    ...(status ? { status } : {}),
+    ...(supplierId ? { supplierId } : {}),
+    ...(q ? { q } : {}),
+  };
   const list = usePagedList({
     queryKey: ['purchase-orders', filter] as const,
     fetchPage: async (offset, limit) =>
       unwrap(
         await api.GET('/v1/admin/purchase-orders', {
-          params: { query: { ...filter, offset, limit } },
+          params: { query: { ...filter, counts: 'true', offset, limit } },
         }),
       ),
   });
   const items = list.items;
+  const counts = list.first?.counts;
+  const filtered = Boolean(supplierId || q);
+  const reset = () => {
+    setSupplierId(undefined);
+    setText('');
+  };
   const open = (o: PurchaseOrderSummary) =>
     navigate({ to: '/inventory/purchase-orders/$id', params: { id: o.id } });
   const receivable = (o: PurchaseOrderSummary) =>
@@ -76,11 +106,11 @@ export function PurchaseOrdersPage() {
     o.status === 'draft' ? (
       '—'
     ) : (
-      <span className="flex flex-col gap-1">
-        <span className="text-xs">
+      <span className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-[13px] leading-4 tabular-nums">
           {t('po.progress', { received: o.received, ordered: o.ordered })}
         </span>
-        <span aria-hidden className="block h-1 w-28 overflow-hidden rounded-full bg-muted">
+        <span aria-hidden className="block h-1 w-full overflow-hidden rounded-full bg-muted">
           <span
             className={`block h-full rounded-full ${o.received >= o.ordered ? 'bg-success' : 'bg-primary'}`}
             style={{ width: `${o.ordered ? Math.min(100, (o.received / o.ordered) * 100) : 0}%` }}
@@ -108,15 +138,18 @@ export function PurchaseOrdersPage() {
         <Link
           to="/inventory/purchase-orders/$id"
           params={{ id: o.id }}
-          className="font-mono font-medium underline-offset-2 hover:underline"
+          className="font-mono font-medium tracking-[0.02em]"
         >
           {o.reference}
         </Link>
       ),
     },
-    { header: t('po.supplier'), cell: (o) => o.supplier.name },
-    { header: t('po.status'), cell: (o) => <PoStatusChip status={o.status} /> },
-    { header: t('po.received'), cell: progress },
+    {
+      header: t('po.supplier'),
+      cell: (o) => <span className="block truncate">{o.supplier.name}</span>,
+    },
+    { header: t('po.status'), skeleton: 'badge', cell: (o) => <PoStatusChip status={o.status} /> },
+    { header: t('po.received'), skeleton: 'lines', cell: progress },
     { header: t('po.expectedOn'), cell: expected },
     ...(items.some((o) => o.total !== undefined)
       ? [
@@ -129,11 +162,10 @@ export function PurchaseOrdersPage() {
       : []),
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('po.title')}
-        description={t('po.intro')}
         actions={
           <>
             {items.length > 0 && (
@@ -183,14 +215,22 @@ export function PurchaseOrdersPage() {
       />
       <StageTabs
         label={t('po.status')}
-        tabs={[
-          { key: '', label: t('po.all') },
-          ...PO_STATUSES.map((x) => ({ key: x, label: t(`po.status.${x}`) })),
-        ]}
+        tabs={TABS.map((x) => ({
+          key: x,
+          label:
+            x === '' ? t('po.all') : x === 'to_receive' ? t('po.toReceive') : t(`po.status.${x}`),
+          count: x === '' ? counts?.all : counts?.[COUNT_KEY[x]] || undefined,
+        }))}
         value={status}
-        onChange={(key) => setStatus(key as PurchaseOrderStatus | '')}
+        onChange={(key) => setStatus(key)}
       />
       <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-[280px] md:flex-none"
+          label={t('po.search')}
+          value={text}
+          onChange={setText}
+        />
         <FilterButtons
           filters={[
             {
@@ -202,21 +242,33 @@ export function PurchaseOrdersPage() {
               onChange: setSupplierId,
             },
           ]}
-          onReset={supplierId ? () => setSupplierId(undefined) : undefined}
+          onReset={filtered ? reset : undefined}
         />
+        {counts && counts.toReceive > 0 && (
+          <ToolbarSummary>
+            {counts.toReceiveValue === undefined
+              ? t('po.summaryCount', { count: counts.toReceive })
+              : t('po.summary', {
+                  count: counts.toReceive,
+                  value: formatPrice(counts.toReceiveValue, locale),
+                })}
+          </ToolbarSummary>
+        )}
       </div>
       <DataList
         label={t('po.title')}
         items={items}
         rowKey={(o) => o.id}
         columns={columns}
+        grid="96px minmax(0,1.6fr) 130px minmax(0,1.2fr) 120px 110px 40px"
+        rowHeight={56}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
-        empty={status || supplierId ? t('po.noMatches') : t('po.empty')}
+        empty={status || filtered ? t('po.noMatches') : t('po.empty')}
         emptyAction={
-          supplierId ? (
-            <Button variant="secondary" onClick={() => setSupplierId(undefined)}>
+          filtered ? (
+            <Button variant="secondary" onClick={reset}>
               {t('list.resetFilters')}
             </Button>
           ) : undefined

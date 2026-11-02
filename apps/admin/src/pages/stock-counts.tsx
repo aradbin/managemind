@@ -1,6 +1,7 @@
 // Inventory → Counts (phase-8-plan §3.5, §3.12; ADR 0033): the counts, newest
 // first, a tab per status, and starting one for the whole location, a
 // category, a tag or chosen items.
+import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { FileText, Plus } from 'lucide-react';
@@ -42,7 +43,7 @@ function CountStatusChip({ status }: { status: CountStatus }) {
         ? 'bg-warning text-warning-foreground'
         : status === 'applied'
           ? 'bg-success-soft text-success-foreground'
-          : 'border border-border text-muted-foreground';
+          : 'text-muted-foreground shadow-[inset_0_0_0_1px_var(--color-border)]';
   return (
     <span
       className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium ${tone}`}
@@ -68,11 +69,12 @@ export function StockCountsPage() {
     fetchPage: async (offset, limit) =>
       unwrap(
         await api.GET('/v1/admin/stock-counts', {
-          params: { query: { ...(status ? { status } : {}), offset, limit } },
+          params: { query: { ...(status ? { status } : {}), counts: 'true', offset, limit } },
         }),
       ),
   });
   const items = list.items;
+  const counts = list.first?.counts;
   const open = (c: StockCountSummary) =>
     navigate({ to: '/inventory/counts/$id', params: { id: c.id } });
   /** What is counted, as specifically as the scope says. */
@@ -96,11 +98,11 @@ export function StockCountsPage() {
     return t(`counts.scope.${scope.kind}`);
   };
   const progress = (c: StockCountSummary) => (
-    <span className="flex flex-col gap-1">
-      <span className="text-xs">
+    <span className="flex min-w-0 flex-col gap-1.5">
+      <span className="text-[13px] leading-4 tabular-nums">
         {t('counts.progress', { counted: c.countedLines, total: c.lineCount })}
       </span>
-      <span aria-hidden className="block h-1 w-28 overflow-hidden rounded-full bg-muted">
+      <span aria-hidden className="block h-1 w-full overflow-hidden rounded-full bg-muted">
         <span
           className={`block h-full rounded-full ${c.lineCount && c.countedLines >= c.lineCount ? 'bg-success' : 'bg-primary'}`}
           style={{
@@ -117,15 +119,35 @@ export function StockCountsPage() {
         <Link
           to="/inventory/counts/$id"
           params={{ id: c.id }}
-          className="font-mono font-medium underline-offset-2 hover:underline"
+          className="font-mono font-medium tracking-[0.02em]"
         >
           {c.reference}
         </Link>
       ),
     },
-    { header: t('counts.what'), cell: what },
-    { header: t('po.status'), cell: (c) => <CountStatusChip status={c.status} /> },
-    { header: t('counts.counted'), cell: progress },
+    { header: t('counts.what'), cell: (c) => <span className="block truncate">{what(c)}</span> },
+    {
+      header: t('po.status'),
+      skeleton: 'badge',
+      cell: (c) => <CountStatusChip status={c.status} />,
+    },
+    { header: t('counts.counted'), skeleton: 'lines', cell: progress },
+    {
+      header: t('counts.differences'),
+      cell: (c) =>
+        c.status === 'counting' || c.status === 'cancelled' ? (
+          <span className="text-muted-foreground">—</span>
+        ) : c.differentLines === 0 ? (
+          <span className="text-muted-foreground">{t('counts.allMatch')}</span>
+        ) : (
+          <span className="block truncate">
+            {t('counts.diffText', {
+              count: c.differentLines,
+              units: `${c.differenceUnits > 0 ? '+' : ''}${formatNumber(locale, c.differenceUnits)}`,
+            })}
+          </span>
+        ),
+    },
     {
       header: t('counts.started'),
       cell: (c) => (
@@ -136,11 +158,10 @@ export function StockCountsPage() {
     },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('counts.title')}
-        description={t('counts.intro')}
         actions={
           canWrite && (
             <Button onClick={() => setStarting(true)}>
@@ -153,8 +174,12 @@ export function StockCountsPage() {
       <StageTabs
         label={t('po.status')}
         tabs={[
-          { key: '', label: t('counts.all') },
-          ...STATUSES.map((x) => ({ key: x, label: t(`counts.status.${x}`) })),
+          { key: '', label: t('counts.all'), count: counts?.all },
+          ...STATUSES.map((x) => ({
+            key: x,
+            label: t(`counts.status.${x}`),
+            count: counts?.[x] || undefined,
+          })),
         ]}
         value={status}
         onChange={(key) => setStatus(key as CountStatus | '')}
@@ -164,6 +189,8 @@ export function StockCountsPage() {
         items={items}
         rowKey={(c) => c.id}
         columns={columns}
+        grid="90px minmax(0,1.6fr) 110px minmax(0,1.3fr) minmax(0,1.2fr) 90px 40px"
+        rowHeight={56}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}

@@ -312,7 +312,7 @@ test('back office', async ({ page }, info) => {
     await expect(toast(page, m('expenses.saved'))).toBeVisible();
     await expect(page.getByRole('link', { name: m('expenses.receiptView') }).first()).toBeVisible();
 
-    await page.getByRole('button', { name: m('expenses.tab.recurring') }).click();
+    await page.getByRole('tab', { name: m('expenses.tab.recurring') }).click();
     await page
       .getByRole('button', { name: m('recurring.new') })
       .first()

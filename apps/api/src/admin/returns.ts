@@ -66,6 +66,9 @@ const ReturnSummary = z
     reason: z.enum(RETURN_REASONS),
     requestedBy: z.string(),
     units: z.number().int(),
+    firstItem: z.record(z.string(), z.string()).nullable().optional(),
+    moreItems: z.number().int().optional(),
+    value: z.number().int().optional(),
     createdAt: z.string(),
   })
   .openapi('ReturnSummary');
@@ -149,6 +152,17 @@ export const RETURN_ROUTES = {
         items: z.array(ReturnSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        counts: z
+          .object({
+            all: z.number().int(),
+            requested: z.number().int(),
+            inProgress: z.number().int(),
+            resolved: z.number().int(),
+            rejected: z.number().int(),
+            open: z.number().int(),
+            openValue: z.number(),
+          })
+          .optional(),
       }),
       'Returns',
     ),

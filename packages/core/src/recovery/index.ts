@@ -6,6 +6,7 @@
 // are deleted keepDays after their last change by the daily cleanup.
 import { schema } from '@managemind/db';
 import { AppError, formatPhone } from '@managemind/shared';
+import { geoIndex } from '@managemind/shared/geo';
 import {
   checkoutDraftInput,
   type IncompleteListQuery,
@@ -139,6 +140,10 @@ export interface IncompleteSummary {
   name: string | null;
   phone: string;
   area: { divisionId?: number; districtId?: number; areaId?: number } | null;
+  /** The area's name, for the list's second line. */
+  areaName: Localized | null;
+  /** How far the shopper got: their details, the delivery, or the payment. */
+  leftAt: 'contact' | 'delivery' | 'payment';
   itemCount: number;
   subtotal: number;
   /** The first lines' titles, for the list. */
@@ -158,6 +163,11 @@ const TAB_WHERE: Record<IncompleteListQuery['tab'], SQL> = {
   dismissed: sql`i.status = 'dismissed'`,
 };
 
+function areaNameOf(id: unknown): Localized | null {
+  const area = typeof id === 'number' ? geoIndex().area(id) : undefined;
+  return area ? { bn: area.bn, en: area.en } : null;
+}
+
 function summary(r: Record<string, unknown>, risks: Map<string, PhoneRisk>): IncompleteSummary {
   const lines = r.lines as IncompleteLine[];
   const address = (r.address ?? {}) as Record<string, unknown>;
@@ -167,6 +177,8 @@ function summary(r: Record<string, unknown>, risks: Map<string, PhoneRisk>): Inc
     name: (r.name as string) ?? null,
     phone: r.phone as string,
     area: Object.keys(address).length ? (address as IncompleteSummary['area']) : null,
+    areaName: areaNameOf(address.areaId),
+    leftAt: !r.name ? 'contact' : !address.areaId || !address.line ? 'delivery' : 'payment',
     itemCount: lines.reduce((n, l) => n + l.quantity, 0),
     subtotal: Number(r.subtotal),
     items: lines.slice(0, 3).map((l) => ({ title: l.title, quantity: l.quantity })),
@@ -204,17 +216,48 @@ export async function listIncompleteOrders(
   tx: TenantTx,
   actor: Actor,
   query: unknown = {},
-): Promise<{ items: IncompleteSummary[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: IncompleteSummary[];
+  nextCursor: string | null;
+  total: number;
+  /** With counts: each tab's records, and what the open carts hold. */
+  counts?: Record<IncompleteListQuery['tab'], number> & { openValue: number };
+}> {
   readAccess(actor);
   const q = parseInput(incompleteListQuery, query);
   const { settings } = await orderSettings(tx);
   const limit = q.limit ?? 50;
-  const where: SQL[] = [TAB_WHERE[q.tab]];
-  if (q.tab === 'open') {
-    where.push(
-      sql`i.updated_at <= now() - make_interval(mins => ${settings.recovery.showAfterMinutes})`,
-    );
+  // Open records show once the shopper has stopped typing for a while.
+  const settled = sql`(i.status not in ('open', 'contacted') or i.updated_at <= now() - make_interval(mins => ${settings.recovery.showAfterMinutes}))`;
+  const text = q.q?.trim();
+  const found: SQL[] = [];
+  if (text) {
+    const digits = text.replace(/\D/g, '');
+    const parts: SQL[] = [
+      sql`app.search_text(coalesce(i.name, '')) like app.search_text(${`%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`})`,
+    ];
+    if (digits.length >= 4) parts.push(sql`i.phone like ${`%${digits.replace(/^0/, '')}%`}`);
+    found.push(sql`(${sql.join(parts, sql` or `)})`);
   }
+  let counts: (Record<IncompleteListQuery['tab'], number> & { openValue: number }) | undefined;
+  if (q.counts) {
+    const { rows: c } = await tx.db.execute<Record<string, string | number | null>>(sql`
+      select count(*) filter (where ${TAB_WHERE.open})::int as open,
+             count(*) filter (where ${TAB_WHERE.converted})::int as converted,
+             count(*) filter (where ${TAB_WHERE.recovered})::int as recovered,
+             count(*) filter (where ${TAB_WHERE.dismissed})::int as dismissed,
+             coalesce(sum(i.subtotal) filter (where ${TAB_WHERE.open}), 0) as open_value
+        from store.incomplete_orders i where ${sql.join([settled, ...found], sql` and `)}`);
+    const r = c[0] ?? {};
+    counts = {
+      open: Number(r.open ?? 0),
+      converted: Number(r.converted ?? 0),
+      recovered: Number(r.recovered ?? 0),
+      dismissed: Number(r.dismissed ?? 0),
+      openValue: Number(r.open_value ?? 0),
+    };
+  }
+  const where: SQL[] = [TAB_WHERE[q.tab], settled, ...found];
   const total = await countWhere(tx, sql`store.incomplete_orders i`, where);
   const after = q.offset === undefined && q.after ? decodeCursor(q.after) : null;
   if (after) where.push(sql`(i.updated_at, i.id) < (${after.at}::timestamptz, ${after.id}::uuid)`);
@@ -229,7 +272,12 @@ export async function listIncompleteOrders(
   );
   const items = page.map((r) => summary(r, risks));
   const last = rows.length > limit ? items[items.length - 1] : undefined;
-  return { items, nextCursor: last ? btoa(`${last.updatedAt}|${last.id}`) : null, total };
+  return {
+    items,
+    nextCursor: last ? btoa(`${last.updatedAt}|${last.id}`) : null,
+    total,
+    ...(counts ? { counts } : {}),
+  };
 }
 
 /** How many open records staff can see now, and today's recovered ones, for the dashboard. */

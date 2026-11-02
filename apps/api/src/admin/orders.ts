@@ -226,6 +226,8 @@ const IncompleteSummary = z
     name: z.string().nullable(),
     phone: z.string(),
     area: IncompleteArea.nullable(),
+    areaName: Localized.nullable(),
+    leftAt: z.enum(['contact', 'delivery', 'payment']),
     itemCount: z.number().int(),
     subtotal: z.number().int(),
     items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
@@ -899,6 +901,15 @@ export const ORDER_ROUTES = {
         items: z.array(IncompleteSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        counts: z
+          .object({
+            open: z.number().int(),
+            converted: z.number().int(),
+            recovered: z.number().int(),
+            dismissed: z.number().int(),
+            openValue: z.number(),
+          })
+          .optional(),
       }),
       'Incomplete orders',
     ),

@@ -5,8 +5,9 @@ import { formatNumber } from '@managemind/shared/i18n';
 import { useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { ExportButtons } from '../components/export-buttons';
-import { FilterButtons } from '../components/list-tools';
+import { FilterButtons, ToolbarSummary } from '../components/list-tools';
 import { PageHeader } from '../components/page-header';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
@@ -76,28 +77,29 @@ export function AdjustmentsPage() {
     </span>
   );
   const why = (a: Adjustment) => (
-    <span className="flex flex-wrap items-center gap-2">
-      <span className="rounded-md border border-border px-1.5 text-xs font-medium text-muted-foreground">
-        {reasonText(a.reason)}
-      </span>
-      {a.note && <span className="text-sm">{a.note}</span>}
+    <span className="flex min-w-0 items-center gap-2">
+      <Badge>{reasonText(a.reason)}</Badge>
+      {a.note && <span className="truncate text-muted-foreground">{a.note}</span>}
     </span>
   );
   const columns: Column<Adjustment>[] = [
     {
       header: t('adjustments.when'),
       cell: (a) => (
-        <span className="whitespace-nowrap text-muted-foreground">
+        <span className="whitespace-nowrap text-muted-foreground tabular-nums">
           {dateTime(locale, a.createdAt)}
         </span>
       ),
     },
     {
-      header: t('po.lines'),
+      header: t('adjustments.item'),
+      skeleton: 'lines',
       cell: (a) => (
-        <span className="flex flex-col">
-          <span className="font-medium">{pickText(a.title, locale)}</span>
-          {options(a) && <span className="text-xs text-muted-foreground">{options(a)}</span>}
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-medium">{pickText(a.title, locale)}</span>
+          {options(a) && (
+            <span className="truncate text-[13px] text-muted-foreground">{options(a)}</span>
+          )}
         </span>
       ),
     },
@@ -108,7 +110,11 @@ export function AdjustmentsPage() {
           {
             header: t('counts.value'),
             numeric: true,
-            cell: (a: Adjustment) => (a.value == null ? '—' : money(a.value)),
+            cell: (a: Adjustment) => (
+              <span className={a.value != null && a.value < 0 ? 'text-danger' : undefined}>
+                {a.value == null ? '—' : money(a.value)}
+              </span>
+            ),
           },
         ]
       : []),
@@ -131,11 +137,10 @@ export function AdjustmentsPage() {
     ]);
   };
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('adjustments.title')}
-        description={t('adjustments.intro')}
         actions={
           items.length > 0 ? (
             <ExportButtons
@@ -143,7 +148,7 @@ export function AdjustmentsPage() {
               what={t('adjustments.title')}
               head={[
                 t('adjustments.when'),
-                t('po.lines'),
+                t('adjustments.item'),
                 t('adjustments.reason'),
                 t('inventory.note'),
                 t('inventory.quantity'),
@@ -180,12 +185,12 @@ export function AdjustmentsPage() {
           onReset={filtered ? reset : undefined}
         />
         {totals && totals.count > 0 && (
-          <p className="ml-auto text-sm text-muted-foreground">
+          <ToolbarSummary>
             {t('adjustments.totals', { count: totals.count, units: totals.units })}
             {totals.value !== undefined &&
               ` · ${t('adjustments.totalValue', { value: money(totals.value) })}`}
             {totals.unvalued > 0 && ` · ${t('adjustments.unvalued', { n: totals.unvalued })}`}
-          </p>
+          </ToolbarSummary>
         )}
       </div>
       <DataList
@@ -193,6 +198,12 @@ export function AdjustmentsPage() {
         items={items}
         rowKey={(a) => a.id}
         columns={columns}
+        grid={
+          totals?.value !== undefined
+            ? '150px minmax(0,2fr) minmax(0,1.6fr) 84px 110px'
+            : '150px minmax(0,2fr) minmax(0,1.6fr) 84px'
+        }
+        rowHeight={52}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
@@ -219,6 +230,7 @@ export function AdjustmentsPage() {
           </div>
         )}
       />
+      <p className="text-[13px] text-muted-foreground">{t('adjustments.footnote')}</p>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function StatusBadge({ status }: { status: TenantStatus }) {
           ? 'bg-success-soft text-success-foreground'
           : status === 'suspended'
             ? 'bg-warning text-warning-foreground'
-            : 'border border-border text-muted-foreground',
+            : 'text-muted-foreground shadow-[inset_0_0_0_1px_var(--color-border)]',
       )}
     >
       {t(`status.${status}`)}

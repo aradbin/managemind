@@ -6,15 +6,22 @@ import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { Phone, ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
-import { RowMenu, RowMenuItem, StageTabs } from '../components/list-tools';
+import {
+  RowMenu,
+  RowMenuItem,
+  SearchInput,
+  StageTabs,
+  ToolbarSummary,
+} from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { BackLink, PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { RiskPanel, ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
@@ -37,22 +44,23 @@ import { cn } from '../lib/utils';
 const TABS = ['open', 'converted', 'recovered', 'dismissed'] as const satisfies IncompleteTab[];
 const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
-/** "Open" for open and contacted records, as the tab calls them. */
+/** Where a record stands, as the board marks it: not called yet in muted words, else a badge. */
 const StatusLabel = ({ status }: { status: IncompleteSummary['status'] }) => {
   const { t } = useLocale();
+  if (status === 'open')
+    return <span className="text-muted-foreground">{t('incomplete.notCalled')}</span>;
   return (
-    <span
-      className={cn(
-        'inline-flex h-[22px] items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium',
-        status === 'open' && 'bg-warning text-warning-foreground',
-        status === 'contacted' && 'bg-info text-info-foreground',
-        (status === 'converted' || status === 'recovered') &&
-          'bg-success-soft text-success-foreground',
-        status === 'dismissed' && 'bg-muted text-muted-foreground',
-      )}
+    <StatusBadge
+      tone={
+        status === 'converted' || status === 'recovered'
+          ? 'good'
+          : status === 'contacted'
+            ? 'ended'
+            : 'outline'
+      }
     >
       {t(`incomplete.status.${status}` as AdminKey)}
-    </span>
+    </StatusBadge>
   );
 };
 
@@ -61,66 +69,107 @@ export function IncompleteOrdersPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { tab?: IncompleteTab };
   const tab = search.tab ?? 'open';
-  const list = usePagedList(incompleteList(tab));
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setQ(text.trim()), 350);
+    return () => clearTimeout(id);
+  }, [text]);
+  const list = usePagedList(incompleteList(tab, q));
   const items = list.items;
+  const counts = list.first?.counts;
   const open = (i: IncompleteSummary) =>
     navigate({ to: '/orders/incomplete/$id', params: { id: i.id } });
-  const what = (i: IncompleteSummary) =>
-    i.items.map((x) => `${pickText(x.title, locale)} × ${x.quantity}`).join(', ');
+  /** The first item, and how many more: "Cotton Panjabi and 2 more items". */
+  const what = (i: IncompleteSummary) => {
+    const first = pickText(i.items[0]?.title, locale);
+    const more = i.itemCount - (i.items[0]?.quantity ?? 0);
+    return more > 0 ? t('incomplete.andMore', { first, count: more }) : first;
+  };
   const columns: Column<IncompleteSummary>[] = [
     {
-      header: t('order.customer'),
+      header: t('incomplete.shopper'),
+      skeleton: 'lines',
       cell: (i) => (
-        <span className="flex flex-col items-start gap-0.5">
-          <span className="flex flex-wrap items-center gap-1.5">
+        <span className="flex min-w-0 flex-col">
+          <span className="flex min-w-0 items-center gap-2">
             <Link
               to="/orders/incomplete/$id"
               params={{ id: i.id }}
-              className="font-medium underline-offset-2 hover:underline"
+              className={cn('truncate font-medium', !i.name && 'text-muted-foreground')}
             >
-              {i.name || t('incomplete.noName')}
+              {i.name || t('incomplete.noNameGiven')}
             </Link>
-            {i.risk.risky && <ScoreBadge risk={i.risk} className="h-5 px-1.5" />}
+            {i.risk.risky && <ScoreBadge risk={i.risk} />}
           </span>
-          <span className="font-mono text-xs text-muted-foreground">{formatPhone(i.phone)}</span>
+          <span className="truncate text-[13px] text-muted-foreground tabular-nums">
+            {formatPhone(i.phone)} · {i.areaName ? pickText(i.areaName, locale) : '—'}
+          </span>
         </span>
       ),
     },
     {
-      header: t('incomplete.items'),
-      cell: (i) => <span className="line-clamp-2 text-sm">{what(i)}</span>,
+      header: t('incomplete.itemsCol'),
+      cell: (i) => <span className="block truncate">{what(i)}</span>,
     },
     {
-      header: t('incomplete.left'),
+      header: t('incomplete.value'),
+      numeric: true,
+      cell: (i) => <span className="font-medium">{formatPrice(i.subtotal, locale)}</span>,
+    },
+    { header: t('incomplete.leftAt'), cell: (i) => t(`incomplete.leftAt.${i.leftAt}`) },
+    {
+      header: t('incomplete.started'),
       cell: (i) => (
-        <span className="whitespace-nowrap text-muted-foreground">
-          {dateTime(locale, i.updatedAt)}
+        <span className="whitespace-nowrap text-muted-foreground tabular-nums">
+          {dateTime(locale, i.createdAt)}
         </span>
       ),
     },
-    { header: t('order.status'), cell: (i) => <StatusLabel status={i.status} /> },
-    { header: t('order.total'), numeric: true, cell: (i) => formatPrice(i.subtotal, locale) },
+    {
+      header: t('order.status'),
+      skeleton: 'badge',
+      cell: (i) => <StatusLabel status={i.status} />,
+    },
   ];
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader
-        className="mb-0"
-        title={t('incomplete.title')}
-        description={t('incomplete.intro')}
-      />
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PageHeader className="mb-0" title={t('incomplete.title')} />
       <StageTabs
         label={t('incomplete.title')}
-        tabs={TABS.map((x) => ({ key: x, label: t(`incomplete.tab.${x}`) }))}
+        tabs={TABS.map((x) => ({
+          key: x,
+          label: t(`incomplete.tab.${x}`),
+          count: counts?.[x] || undefined,
+        }))}
         value={tab}
         onChange={(x) =>
           navigate({ to: '/orders/incomplete', search: x === 'open' ? {} : { tab: x } })
         }
       />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-[280px] md:flex-none"
+          label={t('incomplete.search')}
+          value={text}
+          onChange={setText}
+        />
+        {counts && counts.open > 0 && (
+          <ToolbarSummary>
+            {t('incomplete.summary', {
+              count: counts.open,
+              value: formatPrice(counts.openValue, locale),
+            })}
+          </ToolbarSummary>
+        )}
+      </div>
       <DataList
         label={t('incomplete.title')}
         items={items}
         rowKey={(i) => i.id}
         columns={columns}
+        grid="minmax(0,1.3fr) minmax(0,1.6fr) 96px 120px 136px 104px 36px"
+        rowHeight={56}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
@@ -159,6 +208,7 @@ export function IncompleteOrdersPage() {
           </div>
         )}
       />
+      <p className="text-[13px] text-muted-foreground">{t('incomplete.footnote')}</p>
     </div>
   );
 }

@@ -6800,7 +6800,7 @@ export interface paths {
                     from?: string;
                     to?: string;
                     q?: string;
-                    counts?: "true" | "false";
+                    counts?: boolean | ("true" | "false");
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -7399,6 +7399,8 @@ export interface paths {
             parameters: {
                 query?: {
                     tab?: "open" | "converted" | "recovered" | "dismissed";
+                    q?: string;
+                    counts?: boolean | ("true" | "false");
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -7419,6 +7421,13 @@ export interface paths {
                             items: components["schemas"]["IncompleteOrderSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                open: number;
+                                converted: number;
+                                recovered: number;
+                                dismissed: number;
+                                openValue: number;
+                            };
                         };
                     };
                 };
@@ -9124,7 +9133,9 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved" | "in_progress";
+                    q?: string;
+                    counts?: boolean | ("true" | "false");
                     reason?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[] | string;
                     orderId?: string;
                     before?: string;
@@ -9147,6 +9158,15 @@ export interface paths {
                             items: components["schemas"]["ReturnSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                all: number;
+                                requested: number;
+                                inProgress: number;
+                                resolved: number;
+                                rejected: number;
+                                open: number;
+                                openValue: number;
+                            };
                         };
                     };
                 };
@@ -11116,10 +11136,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Parcels the courier returned, waiting to be received (orders.read) */
+        /** Parcels a courier couldn’t deliver: coming back, or received (orders.read) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    tab?: "coming" | "received";
+                    q?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -11133,18 +11156,33 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** Format: uuid */
-                            shipmentId: string;
-                            /** Format: uuid */
-                            orderId: string;
-                            displayNumber: string;
-                            courier: string;
-                            consignmentId: string | null;
-                            name: string;
-                            failedReason: string | null;
-                            returnedByCourierAt: string;
-                            items: number;
-                        }[];
+                            items: {
+                                /** Format: uuid */
+                                shipmentId: string;
+                                /** Format: uuid */
+                                orderId: string;
+                                displayNumber: string;
+                                courier: string;
+                                consignmentId: string | null;
+                                name: string;
+                                failedReason: string | null;
+                                /** @enum {string} */
+                                state: "on_its_way" | "handed_back" | "received";
+                                since: string;
+                                returnedByCourierAt: string;
+                                items: number;
+                                firstItem: {
+                                    title: string;
+                                    quantity: number;
+                                } | null;
+                                value: number;
+                            }[];
+                            counts: {
+                                coming: number;
+                                received: number;
+                                comingValue: number;
+                            };
+                        };
                     };
                 };
             };
@@ -11831,8 +11869,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
+                    status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled" | "to_receive";
                     supplierId?: string[] | string;
+                    q?: string;
+                    counts?: "true" | "false";
                     before?: string;
                     limit?: number;
                     offset?: number | null;
@@ -11851,6 +11891,15 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["PurchaseOrderPage"] & {
                             total: number;
+                            counts?: {
+                                all: number;
+                                draft: number;
+                                toReceive: number;
+                                received: number;
+                                closed: number;
+                                cancelled: number;
+                                toReceiveValue?: number;
+                            };
                         };
                     };
                 };
@@ -12501,6 +12550,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "counting" | "review" | "applying" | "applied" | "cancelled";
+                    counts?: "true" | "false";
                     before?: string;
                     limit?: number;
                     offset?: number | null;
@@ -12532,11 +12582,16 @@ export interface paths {
                                 };
                                 lineCount: number;
                                 countedLines: number;
+                                differentLines: number;
+                                differenceUnits: number;
                                 createdAt: string;
                                 appliedAt: string | null;
                             }[];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };
@@ -18835,6 +18890,12 @@ export interface components {
                 districtId?: number;
                 areaId?: number;
             } | null;
+            areaName: {
+                bn?: string;
+                en?: string;
+            } | null;
+            /** @enum {string} */
+            leftAt: "contact" | "delivery" | "payment";
             itemCount: number;
             subtotal: number;
             items: {
@@ -19081,6 +19142,11 @@ export interface components {
             reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
             requestedBy: string;
             units: number;
+            firstItem?: {
+                [key: string]: string;
+            } | null;
+            moreItems?: number;
+            value?: number;
             createdAt: string;
         };
         ReturnDetail: components["schemas"]["ReturnSummary"] & {
@@ -19792,6 +19858,10 @@ export interface components {
             openingBalance?: number;
             /** @description Only with purchasing.pay */
             balance?: number;
+            /** @description In the list */
+            openOrders?: number;
+            /** @description In the list */
+            ordersToReceive?: number;
         };
         ImportResult: {
             created: number;

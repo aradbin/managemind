@@ -138,8 +138,12 @@ const CourierReturn = z.object({
   consignmentId: z.string().nullable(),
   name: z.string(),
   failedReason: z.string().nullable(),
+  state: z.enum(['on_its_way', 'handed_back', 'received']),
+  since: z.string(),
   returnedByCourierAt: z.string(),
   items: z.number().int(),
+  firstItem: z.object({ title: z.string(), quantity: z.number().int() }).nullable(),
+  value: z.number().int(),
 });
 
 const Matched = z.object({
@@ -325,8 +329,24 @@ export const COURIER_ROUTES = {
   courierReturns: r({
     method: 'get',
     path: '/courier-returns',
-    summary: 'Parcels the courier returned, waiting to be received (orders.read)',
-    responses: json(z.array(CourierReturn), 'Returns'),
+    summary: 'Parcels a courier couldn’t deliver: coming back, or received (orders.read)',
+    request: {
+      query: z.object({
+        tab: z.enum(['coming', 'received']).optional(),
+        q: z.string().trim().max(100).optional(),
+      }),
+    },
+    responses: json(
+      z.object({
+        items: z.array(CourierReturn),
+        counts: z.object({
+          coming: z.number().int(),
+          received: z.number().int(),
+          comingValue: z.number().int(),
+        }),
+      }),
+      'Returns',
+    ),
   }),
   codReport: r({
     method: 'get',
@@ -581,7 +601,7 @@ export function registerCouriers(admin: OpenAPIHono<StaffEnv>): void {
     return c.json({ asked }, 200);
   });
   admin.openapi(R.courierReturns, async (c) =>
-    c.json(await inStore(c, (tx) => listCourierReturns(tx, actor(c))), 200),
+    c.json(await inStore(c, (tx) => listCourierReturns(tx, actor(c), c.req.valid('query'))), 200),
   );
   admin.openapi(R.codReport, async (c) =>
     c.json(await inStore(c, (tx) => codReconciliation(tx, actor(c), c.req.valid('query'))), 200),

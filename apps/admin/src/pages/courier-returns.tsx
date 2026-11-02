@@ -1,20 +1,26 @@
 // Orders → Courier returns (phase-7-plan §3.5, Q9): parcels a courier says
 // it brought back, as a list (ADR 0033). Received puts them back in stock, as Phase 5A's return
 // of a failed shipment does; nothing is restocked before staff see it.
+
+import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { PackageCheck } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
+import { SearchInput, StageTabs, ToolbarSummary } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/couriers';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
-import { courierName, courierReturnsQuery } from '../lib/couriers';
+import { formatPrice } from '../lib/catalog';
+import { type CourierReturn, courierName, courierReturnsQuery } from '../lib/couriers';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateTime } from '../lib/orders';
 
@@ -23,7 +29,15 @@ export function CourierReturnsPage() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const canWrite = usePermission('orders.write');
-  const list = useQuery(courierReturnsQuery);
+  const [tab, setTab] = useState<'coming' | 'received'>('coming');
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setQ(text.trim()), 350);
+    return () => clearTimeout(id);
+  }, [text]);
+  const list = useQuery(courierReturnsQuery(tab, q));
+  const counts = list.data?.counts;
   const receive = useMutation({
     mutationFn: async (id: string) =>
       unwrap(
@@ -35,107 +49,161 @@ export function CourierReturnsPage() {
     onSuccess: async () => {
       toast(t('couriers.receivedDone'));
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: courierReturnsQuery.queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['courier-returns'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
         queryClient.invalidateQueries({ queryKey: ['orders'] }),
       ]);
     },
   });
-  type Row = NonNullable<typeof list.data>[number];
-  const received = (r: Row) =>
-    canWrite && (
+  const received = (r: CourierReturn) =>
+    canWrite &&
+    r.state !== 'received' && (
       <Button
         variant="secondary"
+        className="relative z-[1]"
         disabled={receive.isPending}
         onClick={() => receive.mutate(r.shipmentId)}
       >
-        <PackageCheck aria-hidden />
+        <Check aria-hidden />
         {t('couriers.received')}
       </Button>
     );
-  const columns: Column<Row>[] = [
+  const parcel = (r: CourierReturn) =>
+    [
+      r.firstItem
+        ? r.firstItem.quantity > 1
+          ? `${formatNumber(locale, r.firstItem.quantity)} × ${r.firstItem.title}`
+          : r.firstItem.title
+        : t('couriers.returns.items', { n: r.items }),
+      formatPrice(r.value, locale),
+    ].join(' · ');
+  const state = (r: CourierReturn) => (
+    <StatusBadge
+      tone={r.state === 'handed_back' ? 'waiting' : r.state === 'on_its_way' ? 'moving' : 'good'}
+    >
+      {t(`couriers.returns.state.${r.state}`)}
+    </StatusBadge>
+  );
+  const columns: Column<CourierReturn>[] = [
     {
       header: t('order.number'),
       cell: (r) => (
         <Link
           to="/orders/$id"
           params={{ id: r.orderId }}
-          className="font-mono font-medium underline-offset-2 hover:underline"
+          className="font-mono font-medium tracking-[0.02em]"
         >
           {r.displayNumber}
         </Link>
       ),
     },
-    { header: t('order.customer'), cell: (r) => <span className="font-medium">{r.name}</span> },
+    {
+      header: t('order.customer'),
+      skeleton: 'lines',
+      cell: (r) => (
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate font-medium">{r.name}</span>
+          <span className="truncate text-[13px] text-muted-foreground">{parcel(r)}</span>
+        </span>
+      ),
+    },
     {
       header: t('couriers.returns.courier'),
+      skeleton: 'lines',
       cell: (r) => (
-        <span className="flex flex-col">
+        <span className="flex min-w-0 flex-col">
           {courierName(r.courier, t)}
           {r.consignmentId && (
-            <span className="font-mono text-xs text-muted-foreground">{r.consignmentId}</span>
+            <span className="truncate font-mono text-xs text-muted-foreground">
+              {r.consignmentId}
+            </span>
           )}
         </span>
       ),
     },
     {
-      header: t('couriers.returns.why'),
-      wide: true,
-      cell: (r) => <span className="text-muted-foreground">{r.failedReason ?? '—'}</span>,
+      header: t('couriers.returns.whyBack'),
+      cell: (r) => <span className="block truncate">{r.failedReason ?? '—'}</span>,
     },
     {
-      header: t('couriers.returns.cameBack'),
+      header: t('couriers.returns.since'),
       cell: (r) => (
-        <span className="whitespace-nowrap text-muted-foreground">
-          {dateTime(locale, r.returnedByCourierAt)}
+        <span className="text-[13px] text-muted-foreground tabular-nums">
+          {dateTime(locale, r.since)}
         </span>
       ),
     },
-    {
-      header: t('couriers.returns.itemsCol'),
-      numeric: true,
-      cell: (r) => r.items,
-    },
+    { header: t('order.status'), skeleton: 'badge', cell: state },
     { header: t('couriers.received'), actions: true, cell: received },
   ];
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader
-        className="mb-0"
-        title={t('couriers.returns.title')}
-        description={t('couriers.returns.description')}
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PageHeader className="mb-0" title={t('couriers.returns.title')} />
+      <StageTabs
+        label={t('couriers.returns.title')}
+        tabs={[
+          { key: 'coming', label: t('couriers.returns.coming'), count: counts?.coming },
+          {
+            key: 'received',
+            label: t('couriers.returns.receivedTab'),
+            count: counts?.received || undefined,
+          },
+        ]}
+        value={tab}
+        onChange={setTab}
       />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-[320px] md:flex-none"
+          label={t('couriers.returns.search')}
+          value={text}
+          onChange={setText}
+        />
+        {counts && counts.coming > 0 && (
+          <ToolbarSummary>
+            {t('couriers.returns.summary', {
+              count: counts.coming,
+              value: formatPrice(counts.comingValue, locale),
+            })}
+          </ToolbarSummary>
+        )}
+      </div>
       {receive.error && <Notice tone="error">{saveErrorMessage(receive.error, t)}</Notice>}
       <DataList
         label={t('couriers.returns.title')}
-        items={list.data}
+        items={list.data?.items}
         rowKey={(r) => r.shipmentId}
         columns={columns}
+        grid="76px minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.4fr) 110px 120px 128px"
+        rowHeight={60}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}
-        empty={t('couriers.returns.empty')}
+        empty={t(q ? 'couriers.returns.noMatches' : 'couriers.returns.empty')}
         card={(r) => (
           <div className="flex items-start gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex items-center gap-2">
-                <Link to="/orders/$id" params={{ id: r.orderId }} className="font-mono font-medium">
+                <Link
+                  to="/orders/$id"
+                  params={{ id: r.orderId }}
+                  className="font-mono font-semibold tracking-[0.02em]"
+                >
                   {r.displayNumber}
                 </Link>
-                <span className="truncate text-sm">{r.name}</span>
+                {state(r)}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="truncate">{r.name}</span>
+              <span className="truncate text-[13px] text-muted-foreground">
                 {courierName(r.courier, t)}
-                {r.consignmentId && ` · ${r.consignmentId}`} ·{' '}
-                {t('couriers.returns.items', { n: r.items })} ·{' '}
-                {dateTime(locale, r.returnedByCourierAt)}
+                {r.failedReason ? ` · ${r.failedReason}` : ''}
               </span>
-              {r.failedReason && <span className="text-sm">{r.failedReason}</span>}
             </div>
             <span className="shrink-0">{received(r)}</span>
           </div>
         )}
       />
+      <p className="text-[13px] text-muted-foreground">{t('couriers.returns.footnote')}</p>
     </div>
   );
 }

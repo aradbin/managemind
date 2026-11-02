@@ -265,7 +265,6 @@ export function InventoryPage() {
             <span className="hidden md:contents">
               <ExportButtons
                 name="stock"
-                chevron={false}
                 what={t('catalog.inventory')}
                 head={exportHead}
                 rows={exportRows}

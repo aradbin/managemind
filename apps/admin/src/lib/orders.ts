@@ -49,11 +49,13 @@ export type IncompleteTab = 'open' | 'converted' | 'recovered' | 'dismissed';
 
 /** Incomplete checkouts (phase-6-plan §3.2), newest change first. */
 /** One tab of incomplete orders, a page at a time (usePagedList). */
-export const incompleteList = (tab: IncompleteTab) => ({
-  queryKey: ['incomplete-orders', tab] as const,
+export const incompleteList = (tab: IncompleteTab, q = '') => ({
+  queryKey: ['incomplete-orders', tab, q] as const,
   fetchPage: (offset: number, limit: number) =>
     api
-      .GET('/v1/admin/incomplete-orders', { params: { query: { tab, limit, offset } } })
+      .GET('/v1/admin/incomplete-orders', {
+        params: { query: { tab, limit, offset, counts: 'true', ...(q ? { q } : {}) } },
+      })
       .then(unwrap),
 });
 

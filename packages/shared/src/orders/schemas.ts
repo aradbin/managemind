@@ -190,6 +190,13 @@ export const INCOMPLETE_TABS = ['open', 'converted', 'recovered', 'dismissed'] a
 
 export const incompleteListQuery = z.object({
   tab: z.enum(INCOMPLETE_TABS).default('open'),
+  /** A name or part of a phone number. */
+  q: z.string().trim().max(100).optional(),
+  /** Also each tab's records and what the open carts hold. */
+  counts: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .optional()
+    .transform((v) => v === true || v === 'true'),
   after: z.string().max(100).optional(),
   offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -425,9 +432,9 @@ export const orderListQuery = z.object({
   q: z.string().trim().max(100).optional(),
   /** Also how many match in each of the list's tabs. */
   counts: z
-    .enum(['true', 'false'])
+    .union([z.boolean(), z.enum(['true', 'false'])])
     .optional()
-    .transform((v) => v === 'true'),
+    .transform((v) => v === true || v === 'true'),
   after: z.string().max(100).optional(),
   offset: pageOffset,
   limit: z.coerce.number().int().min(1).max(200).optional(),
@@ -499,7 +506,15 @@ export const inspectInput = z
 
 export const returnListQuery = z
   .object({
-    status: z.enum(RETURN_RECORD_STATUSES).optional(),
+    /** A status, or in_progress: approved, on the way, received or inspected. */
+    status: z.enum([...RETURN_RECORD_STATUSES, 'in_progress']).optional(),
+    /** A return or order number, or part of the customer's name. */
+    q: z.string().trim().max(100).optional(),
+    /** Also each tab's returns, and the open ones' value. */
+    counts: z
+      .union([z.boolean(), z.enum(['true', 'false'])])
+      .optional()
+      .transform((v) => v === true || v === 'true'),
     reason: oneOrMany(z.enum(RETURN_REASONS)),
     orderId: z.uuid().optional(),
     /** The createdAt of the last row seen, for the next page. */

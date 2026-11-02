@@ -16,17 +16,22 @@ export type ConnectedCourier = Couriers['connected'][number];
 export type BookingPreview = Json<'/v1/admin/orders/{id}/booking/preview', 'post'>;
 export type BookingOutcome = Json<'/v1/admin/orders/{id}/booking', 'post'>;
 export type CourierPlace = Json<'/v1/admin/couriers/{courier}/places', 'get'>[number];
-export type CourierReturn = Json<'/v1/admin/courier-returns', 'get'>[number];
+export type CourierReturn = Json<'/v1/admin/courier-returns', 'get'>['items'][number];
 
 export const couriersQuery = {
   queryKey: ['couriers'] as const,
   queryFn: async () => unwrap(await api.GET('/v1/admin/couriers')),
 };
 
-export const courierReturnsQuery = {
-  queryKey: ['courier-returns'] as const,
-  queryFn: async () => unwrap(await api.GET('/v1/admin/courier-returns')),
-};
+export const courierReturnsQuery = (tab: 'coming' | 'received' = 'coming', q = '') => ({
+  queryKey: ['courier-returns', tab, q] as const,
+  queryFn: async () =>
+    unwrap(
+      await api.GET('/v1/admin/courier-returns', {
+        params: { query: { tab, ...(q ? { q } : {}) } },
+      }),
+    ),
+});
 
 /** A courier's name: brand names as they are, the test courier in the admin's language. */
 export function courierName(courier: string, t: (key: AdminKey) => string): string {

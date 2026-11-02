@@ -283,6 +283,7 @@ function Entries({ month, top }: { month: string; top: Top }) {
           )}
           {list.data && list.data.items.length > 0 && (
             <ExportButtons
+              chevron
               name={`expenses-${month}`}
               what={t('expenses.title')}
               head={[

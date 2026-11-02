@@ -1,7 +1,8 @@
 // Inventory → Suppliers (phase-8-plan §3.1, §3.12; ADR 0033): the list with
 // what is owed to each, and the side panel to add or edit one. Balances show only to
 // those who record payments (purchasing.pay).
-import type { Locale } from '@managemind/shared/i18n';
+import { formatNumber, type Locale } from '@managemind/shared/i18n';
+import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ClipboardList, FileText, FileUp, Plus, SquarePen } from 'lucide-react';
@@ -14,12 +15,14 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
+import { StatRow } from '../components/ui/stat-row';
 import { useLocale } from '../i18n';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
-import { priceInput, readPrice } from '../lib/catalog';
+import { formatPrice, priceInput, readPrice } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { useOpenNew } from '../lib/open-new';
 import { PURCHASING_KEYS, priceOrDash, type Supplier, suppliersQuery } from '../lib/purchasing';
@@ -52,17 +55,20 @@ export function SuppliersPage() {
     return () => clearTimeout(timer);
   }, [text]);
   const list = useQuery(suppliersQuery({ q, archived }));
+  // Every active supplier, for the figures and the tabs' counts.
+  const active = useQuery(suppliersQuery({ q: '', archived: false }));
+  const gone = useQuery(suppliersQuery({ q: '', archived: true }));
   const owes = list.data?.some((s) => s.balance !== undefined);
+  const all = active.data ?? [];
+  const owedAll = all.reduce((n, s) => n + Math.max(s.balance ?? 0, 0), 0);
+  const advances = all.reduce((n, s) => n + Math.max(-(s.balance ?? 0), 0), 0);
+  const toReceive = all.reduce((n, s) => n + (s.ordersToReceive ?? 0), 0);
   const open = (s: Supplier) => navigate({ to: '/inventory/suppliers/$id', params: { id: s.id } });
   const phones = (s: Supplier) =>
     s.phones.length ? (
       <span className="flex items-center gap-1.5 whitespace-nowrap">
-        <span className="font-mono text-muted-foreground">{s.phones[0]}</span>
-        {s.phones.length > 1 && (
-          <span className="rounded-md bg-muted px-1 text-xs font-medium">
-            +{s.phones.length - 1}
-          </span>
-        )}
+        <span className="text-muted-foreground tabular-nums">{formatPhone(s.phones[0] ?? '')}</span>
+        {s.phones.length > 1 && <SecondaryBadge>+{s.phones.length - 1}</SecondaryBadge>}
       </span>
     ) : (
       '—'
@@ -71,7 +77,7 @@ export function SuppliersPage() {
     s.balance === undefined ? (
       '—'
     ) : (
-      <span className={s.balance > 0 ? 'font-medium' : 'text-muted-foreground'}>
+      <span className={s.balance > 0 ? 'font-semibold' : 'text-muted-foreground'}>
         {balanceText(s.balance, t, locale)}
       </span>
     );
@@ -82,22 +88,29 @@ export function SuppliersPage() {
         <Link
           to="/inventory/suppliers/$id"
           params={{ id: s.id }}
-          className="font-medium underline-offset-2 hover:underline"
+          className="block truncate font-medium"
         >
           {s.name}
         </Link>
       ),
     },
     { header: t('suppliers.phone'), cell: phones },
-    { header: t('suppliers.contactName'), wide: true, cell: (s) => s.contactName ?? '—' },
-    ...(owes ? [{ header: t('suppliers.balance'), numeric: true, cell: balance }] : []),
+    {
+      header: t('suppliers.contactName'),
+      cell: (s) => <span className="block truncate">{s.contactName ?? '—'}</span>,
+    },
+    {
+      header: t('suppliers.openOrders'),
+      numeric: true,
+      cell: (s) => (s.openOrders ? formatNumber(locale, s.openOrders) : '—'),
+    },
+    { header: t('suppliers.balance'), numeric: true, cell: balance },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('suppliers.title')}
-        description={t('suppliers.intro')}
         actions={
           <>
             {list.data && list.data.length > 0 && (
@@ -137,17 +150,35 @@ export function SuppliersPage() {
           </>
         }
       />
+      {active.data && (
+        <StatRow
+          stats={[
+            ...(owes
+              ? [
+                  { label: t('suppliers.statOwed'), value: formatPrice(owedAll, locale) },
+                  { label: t('suppliers.statAdvances'), value: formatPrice(advances, locale) },
+                ]
+              : []),
+            { label: t('suppliers.statToReceive'), value: formatNumber(locale, toReceive) },
+            { label: t('suppliers.statActive'), value: formatNumber(locale, all.length) },
+          ]}
+        />
+      )}
       <StageTabs
         label={t('suppliers.title')}
         tabs={[
-          { key: 'active', label: t('suppliers.active') },
-          { key: 'archived', label: t('suppliers.archived') },
+          { key: 'active', label: t('suppliers.active'), count: active.data?.length },
+          {
+            key: 'archived',
+            label: t('suppliers.archived'),
+            count: gone.data?.length || undefined,
+          },
         ]}
         value={archived ? 'archived' : 'active'}
         onChange={(key) => setArchived(key === 'archived')}
       />
       <SearchInput
-        className="w-full md:w-64"
+        className="w-full md:w-[280px]"
         label={t('suppliers.search')}
         value={text}
         onChange={setText}
@@ -157,6 +188,8 @@ export function SuppliersPage() {
         items={list.data}
         rowKey={(s) => s.id}
         columns={columns}
+        grid="minmax(0,1.8fr) 150px minmax(0,1fr) 110px 150px 40px"
+        rowHeight={52}
         isPending={list.isPending}
         error={list.isError ? errorMessage(list.error, t) : undefined}
         onRetry={() => list.refetch()}

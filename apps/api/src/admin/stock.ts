@@ -131,6 +131,9 @@ const StockCountSummary = z.object({
   scope: Scope,
   lineCount: z.number().int(),
   countedLines: z.number().int(),
+  /** Counted items whose number differs from the system's, and the units in all. */
+  differentLines: z.number().int(),
+  differenceUnits: z.number().int(),
   createdAt: z.string(),
   appliedAt: z.string().nullable(),
 });
@@ -160,6 +163,11 @@ export const STOCK_ROUTES = {
     request: {
       query: z.object({
         status: z.enum(STOCK_COUNT_STATUSES).optional(),
+        /** Also how many counts each status holds. */
+        counts: z
+          .enum(['true', 'false'])
+          .optional()
+          .transform((v) => v === 'true'),
         ...cursor,
         offset: pageOffset,
       }),
@@ -169,6 +177,7 @@ export const STOCK_ROUTES = {
         items: z.array(StockCountSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        counts: z.record(z.string(), z.number().int()).optional(),
       }),
       'Counts',
     ),
