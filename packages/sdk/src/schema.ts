@@ -14361,7 +14361,9 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "active" | "suspended" | "closed" | "purged";
+                    status?: "active" | "suspended" | "closed" | "purged" | "setting_up";
+                    kind?: ("client" | "demo" | "test")[] | string;
+                    plan?: string[] | string;
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -14382,6 +14384,9 @@ export interface paths {
                             items: components["schemas"]["TenantSummary"][];
                             next: string | null;
                             total: number;
+                            counts: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };
@@ -15898,6 +15903,7 @@ export interface paths {
                 query?: {
                     status?: "draft" | "issued" | "paid" | "void";
                     tenantId?: string;
+                    q?: string;
                     due?: "overdue" | "week";
                     before?: string;
                     offset?: number | null;
@@ -15919,6 +15925,9 @@ export interface paths {
                             items: components["schemas"]["PlatformInvoiceSummary"][];
                             next: string | null;
                             total: number;
+                            counts: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };

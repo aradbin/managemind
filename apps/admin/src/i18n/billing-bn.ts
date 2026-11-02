@@ -71,6 +71,8 @@ export const billingBn: Record<keyof typeof billingEn, string> = {
   'usage.over': '{name}: {limit}-এর মধ্যে {used}। প্ল্যানের সীমা পূর্ণ হয়েছে।',
   'usage.link': 'প্ল্যান ও বিল দেখুন',
   'pbilling.title': 'বিলিং',
+  'pbilling.search': 'নম্বর বা স্টোর খুঁজুন',
+  'pbilling.count': '{count}টি ইনভয়েস',
   'pbilling.filters': 'দেখান',
   'pbilling.filter.all': 'সব',
   'pbilling.filter.draft': 'খসড়া',

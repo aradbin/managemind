@@ -212,6 +212,10 @@ export const bn: Record<keyof typeof en, string> = {
   'platform.twoFactorRequired':
     'প্ল্যাটফর্ম অংশ ব্যবহার করতে টু-ফ্যাক্টর লগইন লাগবে। আগে অ্যাকাউন্ট পেজে এটি চালু করুন।',
   'tenants.search': 'নাম বা ঠিকানা দিয়ে খুঁজুন',
+  'tenants.settingUp': 'সেটআপ চলছে',
+  'tenants.kind': 'ধরন',
+  'tenants.store': 'স্টোর',
+  'tenants.count': '{count}টি স্টোর',
   'tenants.status': 'অবস্থা',
   'tenants.allStatuses': 'সব',
   'status.active': 'চালু',

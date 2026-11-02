@@ -150,7 +150,6 @@ export function CategoriesPage() {
       <PageHeader
         className="mb-0"
         title={t('catalog.categories')}
-        description={t('categories.intro')}
         actions={
           canWrite && (
             <Button onClick={() => setEditing({ mode: 'create', parentId: null })}>
@@ -162,7 +161,7 @@ export function CategoriesPage() {
       />
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
           label={t('categories.search')}
           value={q}
           onChange={setQ}
@@ -174,7 +173,7 @@ export function CategoriesPage() {
           </Button>
         )}
         {all.length > 0 && (
-          <span className="ml-auto text-sm text-muted-foreground">
+          <span className="ml-auto text-[13px] text-muted-foreground tabular-nums">
             {t('categories.count', { count: all.length, top })}
           </span>
         )}
@@ -347,6 +346,7 @@ export function CategoriesPage() {
       >
         <p>{t('categories.deleteBody', { name: name(deleting) })}</p>
       </ConfirmDialog>
+      <p className="text-[13px] text-muted-foreground">{t('categories.footnote')}</p>
     </div>
   );
 }

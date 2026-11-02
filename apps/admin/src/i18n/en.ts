@@ -218,6 +218,10 @@ export const en = {
   'platform.twoFactorRequired':
     'The platform area needs two-factor login. Set it up on your account page first.',
   'tenants.search': 'Search by name or address',
+  'tenants.settingUp': 'Still setting up',
+  'tenants.kind': 'Kind',
+  'tenants.store': 'Store',
+  'tenants.count': '{count} stores',
   'tenants.status': 'Status',
   'tenants.allStatuses': 'All',
   'status.active': 'Active',

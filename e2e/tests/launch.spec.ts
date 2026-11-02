@@ -54,6 +54,7 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
     code = await setUpTwoFactor(admin);
     await admin.goto(`${API}/platform/billing`);
     await expect(admin.getByRole('heading', { name: t('pbilling.title'), level: 1 })).toBeVisible();
+    await admin.getByRole('button', { name: t('pbilling.issuer') }).click();
     await admin.getByLabel(t('issuer.legalName')).fill('managemind Ltd');
     await admin.getByLabel(t('issuer.address')).fill('Gulshan, Dhaka');
     await admin.getByLabel(t('issuer.bkash')).fill('01700000000');

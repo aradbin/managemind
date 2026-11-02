@@ -143,6 +143,9 @@ export const onlineStoreEn = {
   'section.badgeText': 'Text ({language})',
 
   'pages.title': 'Pages',
+  'pages.status': 'Status',
+  'pages.updated': 'Updated',
+  'pages.countNote': '{count} of {max} pages. A store has at most {max} pages.',
   'pages.pageTitle': 'Title',
   'pages.inStore': 'In the store',
   'pages.description':

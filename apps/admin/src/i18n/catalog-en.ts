@@ -165,8 +165,10 @@ export const catalogEn = {
   'specs.invalidNumber': 'A number specification has something that isn’t a number.',
   'attribute.brand': 'Brand',
 
-  'categories.intro': 'Categories group products for shoppers to browse, up to 3 levels deep.',
   'categories.new': 'New category',
+  'categories.footnote':
+    'Up to 3 levels deep. To change the order shoppers see, use Move up and Move down in a row’s ⋯ menu.',
+  'attributes.count': '{count} attributes',
   'categories.create': 'Create category',
   'categories.editTitle': 'Edit category',
   'categories.search': 'Search categories',
@@ -203,7 +205,6 @@ export const catalogEn = {
     'The editor shows these first for products in this category and the categories under it.',
   'categories.templateSaved': 'Specifications saved.',
 
-  'collections.intro': 'Collections pick products for the store’s pages: by hand, or by rules.',
   'collections.new': 'New collection',
   'collections.create': 'Create collection',
   'collections.search': 'Search collections',
@@ -212,7 +213,7 @@ export const catalogEn = {
   'collections.edit': 'Edit collection',
   'collections.name': 'Name',
   'collections.kind': 'Kind',
-  'collections.manual': 'Chosen by hand',
+  'collections.manual': 'By hand',
   'collections.rule': 'By rules',
   'collections.manual.hint': 'you choose the products and their order',
   'collections.rule.hint': 'products that match every rule join on their own',
@@ -265,7 +266,7 @@ export const catalogEn = {
   'rules.matches': '{count} products match.',
 
   'attributes.intro':
-    'Specifications such as fabric or RAM, shown on product pages and used as filters.',
+    'Product facts such as fabric or weight. Shown on product pages and used as store filters.',
   'attributes.new': 'New attribute',
   'attributes.create': 'Create attribute',
   'attributes.edit': 'Edit attribute',

@@ -165,8 +165,9 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'specs.invalidNumber': 'সংখ্যার কোনো বৈশিষ্ট্যে এমন কিছু আছে যা সংখ্যা নয়।',
   'attribute.brand': 'ব্র্যান্ড',
 
-  'categories.intro': 'ক্যাটাগরি ক্রেতাদের ব্রাউজ করার জন্য পণ্যগুলোকে ভাগ করে, সর্বোচ্চ ৩ স্তর পর্যন্ত।',
   'categories.new': 'নতুন ক্যাটাগরি',
+  'categories.footnote': 'সর্বোচ্চ ৩ স্তর। ক্রেতারা যে ক্রমে দেখেন তা বদলাতে সারির ⋯ মেনুতে ওপরে বা নিচে সরান।',
+  'attributes.count': '{count}টি অ্যাট্রিবিউট',
   'categories.create': 'ক্যাটাগরি তৈরি করুন',
   'categories.editTitle': 'ক্যাটাগরি বদলান',
   'categories.search': 'ক্যাটাগরি খুঁজুন',
@@ -201,7 +202,6 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'categories.templateIntro': 'এই ক্যাটাগরি ও এর ভেতরের ক্যাটাগরির পণ্যের জন্য এডিটর এগুলো আগে দেখাবে।',
   'categories.templateSaved': 'বৈশিষ্ট্য সংরক্ষিত হয়েছে।',
 
-  'collections.intro': 'কালেকশন দোকানের পাতার জন্য পণ্য বাছাই করে: হাতে, অথবা নিয়ম দিয়ে।',
   'collections.new': 'নতুন কালেকশন',
   'collections.create': 'কালেকশন তৈরি করুন',
   'collections.search': 'কালেকশন খুঁজুন',
@@ -210,7 +210,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'collections.edit': 'কালেকশন বদলান',
   'collections.name': 'নাম',
   'collections.kind': 'ধরন',
-  'collections.manual': 'হাতে বাছাই করা',
+  'collections.manual': 'হাতে',
   'collections.rule': 'নিয়ম দিয়ে',
   'collections.manual.hint': 'পণ্য ও তাদের ক্রম আপনি ঠিক করবেন',
   'collections.rule.hint': 'সব নিয়মের সাথে মেলে এমন পণ্য নিজে থেকেই যুক্ত হয়',
@@ -262,7 +262,7 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'rules.incomplete': 'কোন পণ্য মেলে দেখতে নিয়মগুলো পূরণ করুন।',
   'rules.matches': '{count}টি পণ্য মেলে।',
 
-  'attributes.intro': 'কাপড় বা RAM-এর মতো বৈশিষ্ট্য, যা পণ্যের পাতায় দেখা যায় এবং ফিল্টারে ব্যবহার হয়।',
+  'attributes.intro': 'কাপড় বা ওজনের মতো পণ্যের তথ্য। পণ্যের পাতায় দেখা যায় এবং স্টোরের ফিল্টারে ব্যবহার হয়।',
   'attributes.new': 'নতুন বৈশিষ্ট্য',
   'attributes.create': 'বৈশিষ্ট্য তৈরি করুন',
   'attributes.edit': 'বৈশিষ্ট্য বদলান',

@@ -143,6 +143,9 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'section.badgeText': 'লেখা ({language})',
 
   'pages.title': 'পাতা',
+  'pages.status': 'স্ট্যাটাস',
+  'pages.updated': 'হালনাগাদ',
+  'pages.countNote': '{max}টির মধ্যে {count}টি পেজ। একটি স্টোরে সর্বোচ্চ {max}টি পেজ থাকে।',
   'pages.pageTitle': 'শিরোনাম',
   'pages.inStore': 'দোকানে',
   'pages.description': 'আমাদের সম্পর্কে, যোগাযোগ, আপনার নীতিমালা আর অন্যান্য পাতা। দোকানের ফুটারে এগুলোর তালিকা থাকে।',

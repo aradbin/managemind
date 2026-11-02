@@ -3,7 +3,7 @@
 // read it; nothing here reaches into the store schema.
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
-import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, ilike, inArray, lt, or, sql } from 'drizzle-orm';
 import { type Actor, requirePlatformRole } from '../access';
 import type { PlatformTx } from '../platform';
 
@@ -53,18 +53,31 @@ const fromTenants = (tx: PlatformTx) =>
 
 export interface TenantQuery {
   q?: string;
-  status?: TenantSummary['status'];
+  /** A status, or setting_up: active stores whose setup checklist isn't done. */
+  status?: TenantSummary['status'] | 'setting_up';
+  /** One kind or several. */
+  kind?: readonly TenantSummary['kind'][];
+  /** One plan code or several. */
+  plan?: readonly string[];
   after?: string;
   /** Rows to skip, for numbered pages; `after` is then ignored. */
   offset?: number;
   limit?: number;
 }
 
-const tenantFilters = (query: TenantQuery, withCursor: boolean) => {
+const settingUp = sql`(${t.status} = 'active' and coalesce((${schema.storeHealth.checklist}->>'done')::int < (${schema.storeHealth.checklist}->>'total')::int, false))`;
+const planCode = sql`coalesce(${schema.plans.code}, ${t.plan})`;
+
+const tenantFilters = (query: TenantQuery, withCursor: boolean, withStatus = true) => {
   const q = query.q?.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
   return and(
     q ? or(ilike(t.slug, `%${q}%`), ilike(t.name, `%${q}%`)) : undefined,
-    query.status ? eq(t.status, query.status) : undefined,
+    withStatus && query.status === 'setting_up' ? settingUp : undefined,
+    withStatus && query.status && query.status !== 'setting_up'
+      ? eq(t.status, query.status)
+      : undefined,
+    query.kind?.length ? inArray(t.kind, [...query.kind]) : undefined,
+    query.plan?.length ? sql`${planCode} = any(${sql.param([...query.plan])}::text[])` : undefined,
     withCursor && query.after && query.offset === undefined ? gt(t.slug, query.after) : undefined,
   );
 };
@@ -91,8 +104,45 @@ export async function countTenants(
   query: TenantQuery = {},
 ): Promise<number> {
   requirePlatformRole(actor, 'support');
-  const [row] = await tx.db.select({ n: count() }).from(t).where(tenantFilters(query, false));
+  const [row] = await tx.db
+    .select({ n: count() })
+    .from(t)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.tenantId, t.id))
+    .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
+    .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id))
+    .where(tenantFilters(query, false));
   return row?.n ?? 0;
+}
+
+/** How many stores each of the list's tabs holds, with the search and other filters. */
+export async function countTenantTabs(
+  tx: PlatformTx,
+  actor: Actor,
+  query: TenantQuery = {},
+): Promise<Record<'all' | 'active' | 'setting_up' | 'suspended' | 'closed' | 'purged', number>> {
+  requirePlatformRole(actor, 'support');
+  const [row] = await tx.db
+    .select({
+      all: count(),
+      active: sql<number>`count(*) filter (where ${t.status} = 'active')::int`,
+      setting_up: sql<number>`count(*) filter (where ${settingUp})::int`,
+      suspended: sql<number>`count(*) filter (where ${t.status} = 'suspended')::int`,
+      closed: sql<number>`count(*) filter (where ${t.status} = 'closed')::int`,
+      purged: sql<number>`count(*) filter (where ${t.status} = 'purged')::int`,
+    })
+    .from(t)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.tenantId, t.id))
+    .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
+    .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id))
+    .where(tenantFilters(query, false, false));
+  return {
+    all: Number(row?.all ?? 0),
+    active: Number(row?.active ?? 0),
+    setting_up: Number(row?.setting_up ?? 0),
+    suspended: Number(row?.suspended ?? 0),
+    closed: Number(row?.closed ?? 0),
+    purged: Number(row?.purged ?? 0),
+  };
 }
 
 export interface TenantDetail extends TenantSummary {

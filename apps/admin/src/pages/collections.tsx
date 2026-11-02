@@ -102,7 +102,6 @@ export function CollectionsPage() {
       <PageHeader
         className="mb-0"
         title={t('catalog.collections')}
-        description={t('collections.intro')}
         actions={
           canWrite && (
             <Button asChild>
@@ -116,7 +115,7 @@ export function CollectionsPage() {
       />
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
           label={t('collections.search')}
           value={q}
           onChange={setQ}
@@ -136,6 +135,7 @@ export function CollectionsPage() {
         label={t('catalog.collections')}
         items={items}
         rowKey={(c) => c.id}
+        grid="minmax(0,1fr) 150px 100px 130px 48px"
         columns={columns}
         isPending={collections.isPending}
         error={collections.isError ? errorMessage(collections.error, t) : undefined}

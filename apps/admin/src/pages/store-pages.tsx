@@ -19,6 +19,7 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
 import { useLocale } from '../i18n';
@@ -28,6 +29,7 @@ import { pick, storeSettingsQuery } from '../lib/catalog';
 import { saveErrorMessage } from '../lib/errors';
 import { pageQuery, pagesQuery, type StorePage } from '../lib/online-store';
 import { useOpenNew } from '../lib/open-new';
+import { dateOnly } from '../lib/orders';
 import { cn } from '../lib/utils';
 
 export function StorePagesPage() {
@@ -42,43 +44,46 @@ export function StorePagesPage() {
   );
   const title = (p: StorePage) => pick(p.translations, locale)?.title ?? '—';
   const open = (p: StorePage) => navigate({ to: '/online-store/pages/$id', params: { id: p.id } });
+  const other = (p: StorePage) => pick(p.translations, locale === 'bn' ? 'en' : 'bn')?.title;
   const shown = (p: StorePage) => (
-    <span className="flex items-center gap-1.5 whitespace-nowrap">
-      <span
-        aria-hidden
-        className={cn(
-          'size-2 rounded-full',
-          p.published ? 'bg-success' : 'border border-muted-foreground',
-        )}
-      />
+    <StatusBadge tone={p.published ? 'good' : 'ended'}>
       {p.published ? t('pages.published') : t('pages.hidden')}
-    </span>
+    </StatusBadge>
   );
   const columns: Column<StorePage>[] = [
     {
       header: t('pages.pageTitle'),
+      skeleton: 'lines',
       cell: (p) => (
-        <Link
-          to="/online-store/pages/$id"
-          params={{ id: p.id }}
-          className="font-medium underline-offset-2 hover:underline"
-        >
-          {title(p)}
-        </Link>
+        <span className="flex min-w-0 flex-col">
+          <Link to="/online-store/pages/$id" params={{ id: p.id }} className="truncate font-medium">
+            {title(p)}
+          </Link>
+          {other(p) && other(p) !== title(p) && (
+            <span className="truncate text-xs text-muted-foreground">{other(p)}</span>
+          )}
+        </span>
       ),
     },
     {
       header: t('pages.kind'),
       cell: (p) => <span className="text-muted-foreground">{t(`pages.kind.${p.kind}`)}</span>,
     },
-    { header: t('pages.inStore'), cell: shown },
+    { header: t('pages.status'), skeleton: 'badge', cell: shown },
+    {
+      header: t('pages.updated'),
+      cell: (p) => (
+        <span className="text-muted-foreground tabular-nums">{dateOnly(locale, p.updatedAt)}</span>
+      ),
+    },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex w-full max-w-[860px] flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('pages.title')}
         description={t('pages.description')}
+        parent={{ to: '/online-store', label: t('nav.onlineStore') }}
         actions={
           canWrite && (
             <Button
@@ -96,6 +101,8 @@ export function StorePagesPage() {
         items={pages.data}
         rowKey={(p) => p.id}
         columns={columns}
+        grid="minmax(0,1.6fr) minmax(0,1fr) 84px 124px 40px"
+        rowHeight={56}
         isPending={pages.isPending}
         error={pages.isError ? saveErrorMessage(pages.error, t) : undefined}
         onRetry={() => pages.refetch()}
@@ -110,17 +117,28 @@ export function StorePagesPage() {
           </RowMenu>
         )}
         card={(p) => (
-          <div className="flex items-start gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <Link to="/online-store/pages/$id" params={{ id: p.id }} className="font-medium">
+          <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Link
+                to="/online-store/pages/$id"
+                params={{ id: p.id }}
+                className="truncate font-medium"
+              >
                 {title(p)}
               </Link>
-              <span className="text-xs text-muted-foreground">{t(`pages.kind.${p.kind}`)}</span>
+              <span className="truncate text-[13px] text-muted-foreground">
+                {t(`pages.kind.${p.kind}`)}
+              </span>
             </div>
-            <span className="shrink-0 text-sm">{shown(p)}</span>
+            {shown(p)}
           </div>
         )}
       />
+      {pages.data && (
+        <p className="text-[13px] text-muted-foreground">
+          {t('pages.countNote', { count: pages.data.length, max: MAX_PAGES })}
+        </p>
+      )}
       {adding && pages.data && <NewPage existing={pages.data} onClose={() => setAdding(false)} />}
     </div>
   );

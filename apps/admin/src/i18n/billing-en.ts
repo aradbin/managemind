@@ -71,6 +71,8 @@ export const billingEn = {
   'usage.over': '{name}: {used} of {limit}. Your plan’s limit is reached.',
   'usage.link': 'See plan and billing',
   'pbilling.title': 'Billing',
+  'pbilling.search': 'Search by number or store',
+  'pbilling.count': '{count} invoices',
   'pbilling.filters': 'Show',
   'pbilling.filter.all': 'All',
   'pbilling.filter.draft': 'Drafts',

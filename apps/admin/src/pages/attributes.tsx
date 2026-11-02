@@ -33,6 +33,7 @@ import {
   RowMenuItem,
   RowMenuSeparator,
   SearchInput,
+  ToolbarSummary,
 } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
@@ -160,7 +161,7 @@ export function AttributesPage() {
       />
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
           label={t('attributes.search')}
           value={q}
           onChange={setQ}
@@ -178,11 +179,16 @@ export function AttributesPage() {
           ]}
           onReset={filtered ? reset : undefined}
         />
+        {attributes.data && (
+          <ToolbarSummary>{t('attributes.count', { count: items.length })}</ToolbarSummary>
+        )}
       </div>
       <DataList
         label={t('catalog.attributes')}
         items={attributes.data ? items : undefined}
         rowKey={(a) => a.id}
+        grid="minmax(0,1.2fr) 150px minmax(0,1.4fr) 150px 80px 48px"
+        rowHeight={56}
         columns={columns}
         isPending={attributes.isPending}
         error={attributes.isError ? errorMessage(attributes.error, t) : undefined}

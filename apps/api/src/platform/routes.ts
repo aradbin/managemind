@@ -9,6 +9,7 @@ import {
   type Checklist,
   closeTenant,
   countTenants,
+  countTenantTabs,
   courierAreaReview,
   createPlan,
   createTenant,
@@ -56,7 +57,7 @@ import {
   TENANT_KINDS,
 } from '@managemind/shared/billing';
 import { AREA_COURIERS } from '@managemind/shared/orders';
-import { pageOffset } from '@managemind/shared/query';
+import { oneOrMany, pageOffset } from '@managemind/shared/query';
 import { THEME_PRESETS } from '@managemind/shared/storefront';
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -190,7 +191,10 @@ export const PLATFORM_ROUTES = {
     request: {
       query: z.object({
         q: z.string().max(100).optional(),
-        status: Status.optional(),
+        /** A status, or setting_up: active stores still setting up. */
+        status: z.enum(['active', 'suspended', 'closed', 'purged', 'setting_up']).optional(),
+        kind: oneOrMany(Kind),
+        plan: oneOrMany(z.string().max(40)),
         after: z.string().max(40).optional(),
         offset: pageOffset,
         limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -201,6 +205,8 @@ export const PLATFORM_ROUTES = {
         items: z.array(TenantSummary),
         next: z.string().nullable(),
         total: z.number().int(),
+        /** How many stores each tab holds, with the search and filters. */
+        counts: z.record(z.string(), z.number().int()),
       }),
       'Stores',
     ),
@@ -703,20 +709,28 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
   const R = PLATFORM_ROUTES;
 
   platform.openapi(R.tenants, async (c) => {
-    const { q, status, after, offset, limit = 50 } = c.req.valid('query');
+    const { q, status, kind, plan, after, offset, limit = 50 } = c.req.valid('query');
     const query = {
       limit,
       ...(q ? { q } : {}),
       ...(status ? { status } : {}),
+      ...(kind?.length ? { kind } : {}),
+      ...(plan?.length ? { plan } : {}),
       ...(after ? { after } : {}),
       ...(offset !== undefined ? { offset } : {}),
     };
-    const { items, total } = await withPlatform(c.var.staff.client, async (tx) => ({
+    const { items, total, counts } = await withPlatform(c.var.staff.client, async (tx) => ({
       items: await listTenants(tx, c.var.staff.actor, query),
       total: await countTenants(tx, c.var.staff.actor, query),
+      counts: await countTenantTabs(tx, c.var.staff.actor, query),
     }));
     return c.json(
-      { items, next: items.length === limit ? (items.at(-1)?.slug ?? null) : null, total },
+      {
+        items,
+        next: items.length === limit ? (items.at(-1)?.slug ?? null) : null,
+        total,
+        counts,
+      },
       200,
     );
   });

@@ -261,6 +261,8 @@ export async function getStoreInvoice(tx: TenantTx, id: string, today: string): 
 export interface InvoiceFilter {
   status?: InvoiceStatus;
   tenantId?: string;
+  /** An invoice number, or part of the store's name. */
+  q?: string;
   /** Issued and past due. */
   overdue?: boolean;
   /** Issued and due within the next 7 days. */
@@ -272,10 +274,19 @@ export interface InvoiceFilter {
   limit?: number;
 }
 
+const invoiceSearch = (q: string | undefined) => {
+  const text = q?.trim();
+  if (!text) return undefined;
+  const like = `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  return sql`(${i.number} ilike ${like} or exists (select 1 from platform.tenants tn
+    where tn.id = ${i.tenantId} and tn.name ilike ${like}))`;
+};
+
 const invoiceWhere = (filter: InvoiceFilter, today: string, withCursor: boolean) =>
   and(
     filter.status ? eq(i.status, filter.status) : undefined,
     filter.tenantId ? eq(i.tenantId, filter.tenantId) : undefined,
+    invoiceSearch(filter.q),
     filter.overdue ? and(eq(i.status, 'issued'), lt(i.dueOn, today)) : undefined,
     filter.dueThisWeek
       ? and(
@@ -301,6 +312,37 @@ export async function countInvoices(
     .from(i)
     .where(invoiceWhere(filter, today, false));
   return Number(row?.n ?? 0);
+}
+
+/** How many invoices each of the list's tabs holds, with the search and store. */
+export async function countInvoiceTabs(
+  tx: { db: TenantTx['db'] },
+  actor: Actor,
+  filter: Pick<InvoiceFilter, 'tenantId' | 'q'>,
+  today: string,
+): Promise<Record<'all' | 'draft' | 'overdue' | 'week' | 'paid' | 'void', number>> {
+  requirePlatformRole(actor, 'support');
+  const [row] = await tx.db
+    .select({
+      all: sql<number>`count(*)::int`,
+      draft: sql<number>`count(*) filter (where ${i.status} = 'draft')::int`,
+      overdue: sql<number>`count(*) filter (where ${i.status} = 'issued' and ${i.dueOn} < ${today}::date)::int`,
+      week: sql<number>`count(*) filter (where ${i.status} = 'issued' and ${i.dueOn} between ${today}::date and ${addDays(today, 7)}::date)::int`,
+      paid: sql<number>`count(*) filter (where ${i.status} = 'paid')::int`,
+      void: sql<number>`count(*) filter (where ${i.status} = 'void')::int`,
+    })
+    .from(i)
+    .where(
+      and(filter.tenantId ? eq(i.tenantId, filter.tenantId) : undefined, invoiceSearch(filter.q)),
+    );
+  return {
+    all: Number(row?.all ?? 0),
+    draft: Number(row?.draft ?? 0),
+    overdue: Number(row?.overdue ?? 0),
+    week: Number(row?.week ?? 0),
+    paid: Number(row?.paid ?? 0),
+    void: Number(row?.void ?? 0),
+  };
 }
 
 export async function listInvoices(
