@@ -44,6 +44,7 @@ import { HelpMenu } from '../components/help-menu';
 import { LanguageSwitch } from '../components/language-switch';
 import {
   Badge,
+  isUnder,
   locate,
   type NavGroup,
   type NavItem,
@@ -268,7 +269,11 @@ function Shell() {
         {nav.tabs.map((item) => (
           <Tab key={item.to} item={item} badge={item.to === '/orders' ? toConfirm : 0} />
         ))}
-        <Tab item={{ to: '/more', label: 'nav.menu', icon: MenuIcon }} badge={0} />
+        <Tab
+          item={{ to: '/more', label: 'nav.menu', icon: MenuIcon }}
+          badge={0}
+          current={!nav.tabs.some((tab) => isUnder(pathname, tab.to))}
+        />
       </nav>
     </div>
   );
@@ -656,9 +661,12 @@ function ThemeToggle() {
 function Tab({
   item,
   badge,
+  current,
 }: {
   item: { to: NavTo | '/more'; label: AdminKey; icon: LucideIcon };
   badge: number;
+  /** Menu is current on the pages it lists: no other tab holds them. */
+  current?: boolean;
 }) {
   const { t } = useLocale();
   const Icon = item.icon;
@@ -666,7 +674,11 @@ function Tab({
     <Link
       to={item.to}
       activeOptions={{ exact: item.to === '/' }}
-      className="group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] leading-[14px] font-medium text-muted-foreground"
+      {...(current ? { 'aria-current': 'page' as const } : {})}
+      className={cn(
+        'group flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] leading-[14px] font-medium text-muted-foreground',
+        current && 'font-semibold text-foreground',
+      )}
       activeProps={{ 'aria-current': 'page', className: 'text-foreground font-semibold' }}
     >
       <span className="relative flex h-7 w-[52px] items-center justify-center rounded-full group-aria-[current=page]:bg-muted">

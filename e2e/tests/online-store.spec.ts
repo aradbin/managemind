@@ -46,10 +46,11 @@ test('online store flows', async ({ page, context }, info) => {
     await expect(page.getByRole('heading', { name: ot('theme.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'theme editor');
     const iframe = page.locator(`iframe[title="${ot('theme.previewTitle')}"]`);
-    if (phone) await page.getByRole('tab', { name: ot('theme.preview') }).click();
+    // On phones the preview opens full screen from the Preview button (ADR 0034).
+    if (phone) await page.getByRole('button', { name: ot('theme.preview'), exact: true }).click();
     // The preview shows the draft, marked as such.
     await expect(page.frameLocator('iframe').locator('.preview-bar').last()).toBeVisible();
-    if (phone) await page.getByRole('tab', { name: ot('theme.edit') }).click();
+    if (phone) await page.getByRole('button', { name: ot('theme.closePreview') }).click();
 
     const field = page
       .getByRole('textbox', { name: ot('theme.color.primary') })
@@ -64,9 +65,11 @@ test('online store flows', async ({ page, context }, info) => {
         ),
       )
       .toBe(primary);
-    await expect(page.getByRole('status').filter({ hasText: ot('theme.saved') })).toBeVisible({
-      timeout: 15_000,
-    });
+    // Desktops say "Draft saved" beside the status; phones show the status alone.
+    if (!phone)
+      await expect(page.getByRole('status').filter({ hasText: ot('theme.saved') })).toBeVisible({
+        timeout: 15_000,
+      });
   });
 
   await test.step('they publish and the store shows the colour', async () => {
@@ -86,12 +89,11 @@ test('online store flows', async ({ page, context }, info) => {
     await page.goto(`${API}/online-store/pages`);
     await expect(page.getByRole('heading', { name: ot('pages.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'pages');
+    // "New page" is a menu of the kinds; a kind opens its new page (ADR 0034).
     await page.getByRole('button', { name: ot('pages.new') }).click();
-    const dialog = page.getByRole('dialog');
-    await dialog.getByLabel(ot('pages.kind')).selectOption('about');
-    await dialog.getByRole('button', { name: ot('pages.new') }).click();
+    await page.getByRole('menuitem', { name: ot('pages.kind.about') }).click();
     await expect(page).toHaveURL(/\/online-store\/pages\/[0-9a-f-]{36}$/);
-    await page.getByRole('checkbox', { name: new RegExp(ot('pages.published')) }).check();
+    await page.getByRole('switch', { name: ot('pages.published') }).click();
     await expectAccessible(page, 'page editor');
     await page.getByRole('button', { name: t('action.save') }).click();
     await expect(toast(page, ot('onlineStore.purgeNote')).first()).toBeVisible();
