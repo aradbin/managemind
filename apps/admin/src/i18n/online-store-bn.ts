@@ -4,6 +4,15 @@ import type { onlineStoreEn } from './online-store-en';
 export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'onlineStore.title': 'অনলাইন স্টোর',
   'onlineStore.description': 'ক্রেতারা আপনার দোকান কেমন দেখবেন, এর পাতা ও সেটিংস।',
+  'onlineStore.yourStore': 'আপনার দোকান',
+  'onlineStore.copyLink': 'লিংক কপি করুন',
+  'onlineStore.copied': 'লিংক কপি হয়েছে।',
+  'onlineStore.live': 'অর্ডার নেওয়া চলছে, সার্চ ইঞ্জিনে দেখা যায়।',
+  'onlineStore.notLive': 'সার্চ ইঞ্জিন এখনো আপনার দোকান দেখায় না। প্রস্তুত হলে দোকানের সেটিংসে চালু করুন।',
+  'onlineStore.unpublished': 'কিছু পরিবর্তন এখনো প্রকাশ হয়নি।',
+  'onlineStore.pagesCount': '{count}টি পেজ · {published}টি প্রকাশিত',
+  'onlineStore.indexed': 'সার্চ ইঞ্জিনে দেখা যায়',
+  'onlineStore.notIndexed': 'সার্চ ইঞ্জিনে লুকানো',
   'onlineStore.purgeNote': 'পরিবর্তন দোকানে দেখা যেতে এক মিনিটের মতো সময় লাগতে পারে।',
 
   'theme.title': 'থিম',
@@ -220,6 +229,10 @@ export const onlineStoreBn: Record<keyof typeof onlineStoreEn, string> = {
   'business.bin': 'বিআইএন (ভ্যাট নিবন্ধন)',
 
   'domains.default': 'মূল ঠিকানা',
+  'domains.alwaysWorks': 'সবসময় চলে',
+  'domains.yours': 'আপনার ডোমেইন',
+  'domains.connect': 'যুক্ত করুন',
+  'domains.actions': '{domain}-এর জন্য কাজ',
   'domains.primary': 'প্রধান',
   'domains.primaryHint': 'ক্রেতা ও সার্চ ইঞ্জিন প্রধান ঠিকানা ব্যবহার করে। অন্যগুলো সেখানে নিয়ে যায়।',
   'domains.add': 'ডোমেইন যুক্ত করুন',

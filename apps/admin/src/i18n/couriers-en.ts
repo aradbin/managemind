@@ -2,8 +2,10 @@
 // order page and the order list, courier returns, and the reconciliation
 // report. Loaded with those pages.
 export const couriersEn = {
-  'couriers.intro':
-    'Book parcels from the order page and follow them here. Each courier sends its updates by itself once connected; we also ask twice a day.',
+  'couriers.intro': 'Book parcels from the order page and follow them here.',
+  'couriers.cardHint':
+    'Each courier sends its updates by itself once connected; we also ask twice a day.',
+  'couriers.byHand': 'Book its parcels by hand until you connect it.',
   'couriers.name.fake': 'Test courier',
   'couriers.connected': 'Connected',
   'couriers.connectedSandbox': 'Connected, sandbox',

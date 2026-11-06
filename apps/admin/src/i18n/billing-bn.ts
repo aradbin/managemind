@@ -4,6 +4,7 @@ export const billingBn: Record<keyof typeof billingEn, string> = {
   'billing.plan': 'প্ল্যান',
   'billing.noPlan': 'এখনো কোনো প্ল্যান ঠিক করা হয়নি। ঠিক না হওয়া পর্যন্ত কোনো সীমা নেই।',
   'billing.monthly': 'মাসে {price}',
+  'billing.dueOn': 'পরিশোধের শেষ দিন {date}',
   'billing.trialUntil': '{date} পর্যন্ত ফ্রি',
   'billing.billingDay': 'প্রতি মাসের {day} তারিখে ইনভয়েস হয়',
   'billing.usage': 'এই মেয়াদের ব্যবহার',

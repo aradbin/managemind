@@ -1,7 +1,9 @@
 // Division, district and area from the list, then the street line
 // (phase-4-plan §3.2): couriers need an area from the list, never typed text.
 // Each is a searchable select (ADR 0033): a district has dozens of areas.
+
 import { useQuery } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { useId } from 'react';
 import { useLocale } from '../i18n';
 import { geoQuery } from '../lib/orders';
@@ -31,6 +33,7 @@ export function PlacePicker({
   disabled,
   withLine = true,
   row = false,
+  trailing,
 }: {
   value: PlaceDraft;
   onChange: (next: PlaceDraft) => void;
@@ -42,6 +45,8 @@ export function PlacePicker({
    * the district names its division, so there is no division to choose.
    */
   row?: boolean;
+  /** In a row without the street, what takes its place (the fee calculator's weight). */
+  trailing?: ReactNode;
 }) {
   const { t, locale } = useLocale();
   const id = useId();
@@ -100,6 +105,7 @@ export function PlacePicker({
             onChange={(v) => onChange({ ...value, areaId: num(v) })}
           />
         </div>
+        {!withLine && trailing}
         {withLine && (
           <Field
             label={t('place.street')}

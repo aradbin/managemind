@@ -68,9 +68,17 @@ export function ChoiceChips<T extends string>({
   options,
   onChange,
   className,
-}: ChoiceProps<T>) {
-  return (
-    <fieldset aria-label={label} className={cn('flex flex-wrap gap-1.5', className)}>
+  showLabel,
+}: ChoiceProps<T> & {
+  /** The label before the chips, as the delivery log draws "Status". */
+  showLabel?: boolean;
+}) {
+  const id = useId();
+  const chips = (
+    <fieldset
+      {...(showLabel ? { 'aria-labelledby': id } : { 'aria-label': label })}
+      className={cn('m-0 flex flex-wrap gap-1.5 border-0 p-0', className)}
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -84,8 +92,46 @@ export function ChoiceChips<T extends string>({
       ))}
     </fieldset>
   );
+  if (!showLabel) return chips;
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span id={id} className="text-[13px] leading-none font-medium whitespace-nowrap">
+        {label}
+      </span>
+      {chips}
+    </div>
+  );
 }
 
 /** One choice chip: grey, near-black when chosen. */
 export const chipClass =
   'inline-flex h-8 items-center rounded-md bg-muted px-3 text-[13px] font-medium text-foreground hover:bg-accent aria-pressed:bg-primary aria-pressed:text-primary-foreground md:h-7 md:px-2.5 md:text-xs';
+
+/** Several choices on at once, as pressed chips (.mm-chipq): reasons, categories. */
+export function ToggleChips<T extends string>({
+  options,
+  value,
+  onToggle,
+  className,
+}: {
+  options: readonly Option<T>[];
+  value: readonly T[];
+  onToggle: (value: T) => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn('flex flex-wrap gap-1.5', className)}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={value.includes(o.value)}
+          onClick={() => onToggle(o.value)}
+          className={chipClass}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}

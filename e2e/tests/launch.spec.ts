@@ -91,8 +91,10 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
   await test.step("the plan's limit shows its upgrade message", async () => {
     await owner.goto(`${API}/settings/domains`);
     const add = async (hostname: string) => {
-      await owner.getByLabel(t('domains.hostname')).fill(hostname);
       await owner.getByRole('button', { name: t('domains.add') }).click();
+      const dialog = owner.getByRole('dialog', { name: t('domains.add') });
+      await dialog.getByLabel(t('domains.hostname')).fill(hostname);
+      await dialog.getByRole('button', { name: t('domains.connect') }).click();
     };
     await add(`www.${p.launchSlug}.example.com`);
     await expect(owner.getByText(`www.${p.launchSlug}.example.com`).first()).toBeVisible();

@@ -4,6 +4,19 @@
 export const onlineStoreEn = {
   'onlineStore.title': 'Online store',
   'onlineStore.description': 'How your store looks to shoppers, its pages and settings.',
+  'onlineStore.yourStore': 'Your store',
+  'onlineStore.copyLink': 'Copy link',
+  'onlineStore.copied': 'Link copied.',
+  'onlineStore.live': 'Open for orders and shown in search engines.',
+  'onlineStore.notLive':
+    'Search engines don’t list your store yet. Turn it on in Store settings when you’re ready.',
+  'onlineStore.unpublished': 'You have changes that aren’t published yet.',
+  'onlineStore.pagesCount': {
+    one: '{count} page · {published} published',
+    other: '{count} pages · {published} published',
+  },
+  'onlineStore.indexed': 'Shown in search engines',
+  'onlineStore.notIndexed': 'Hidden from search engines',
   'onlineStore.purgeNote': 'Changes can take a minute to appear on your store.',
 
   'theme.title': 'Theme',
@@ -224,6 +237,10 @@ export const onlineStoreEn = {
   'business.bin': 'BIN (VAT registration)',
 
   'domains.default': 'Default address',
+  'domains.alwaysWorks': 'Always works',
+  'domains.yours': 'Your domains',
+  'domains.connect': 'Connect',
+  'domains.actions': 'Actions for {domain}',
   'domains.primary': 'Primary',
   'domains.primaryHint':
     'Shoppers and search engines use the primary address. The others redirect to it.',

@@ -3,20 +3,25 @@
 // before they are saved, and never shown again: only the last 4 of the ID.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { CircleAlert, CircleCheck } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { ChoiceChips } from '../components/ui/segmented';
 import { useLocale } from '../i18n';
 import '../i18n/messages';
 import { api, unwrap } from '../lib/api';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { credentialsQuery, fieldErrors } from '../lib/messaging';
 import { dateTime } from '../lib/orders';
+import { cn } from '../lib/utils';
 
 type Mode = 'sandbox' | 'live';
 
@@ -70,7 +75,7 @@ export function PaymentSettingsPage() {
 
   if (!canEdit) {
     return (
-      <div className="flex max-w-2xl flex-col gap-6">
+      <div className="flex flex-col gap-3 md:gap-4">
         <PageHeader
           parent={{ to: '/settings', label: t('settings.title') }}
           title={t('payments.title')}
@@ -84,50 +89,69 @@ export function PaymentSettingsPage() {
   if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
 
   const refused = fieldErrors(save.error).secrets;
-  const showForm = editing || !saved;
+  // The form opens from "Connect SSLCommerz" or "Change", as drawn.
+  const showForm = editing;
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('payments.title')}
-        description={t('payments.intro')}
+        description={`${t('payments.description')}.`}
       />
-      <section
-        aria-labelledby="ssl-h"
-        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
-      >
-        <h2 id="ssl-h" className="font-semibold">
-          SSLCommerz
-        </h2>
-        {saved ? (
-          <div className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5">
-            <p className="font-medium">
-              {saved.mode === 'live' ? t('payments.connectedLive') : t('payments.connectedSandbox')}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {t('payments.storeIdEnds', { hint: saved.hint })}
-              {saved.checkedAt &&
-                ` · ${t('payments.checked', { when: dateTime(locale, saved.checkedAt) })}`}
-            </p>
+      <section aria-labelledby="ssl-h" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+        <div className="flex flex-col gap-1">
+          <h2 id="ssl-h" className={cardTitle}>
+            SSLCommerz
+          </h2>
+          <p className="text-[13px] text-muted-foreground">{t('payments.intro')}</p>
+        </div>
+        {saved && !editing && (
+          <>
+            <div className="flex gap-2.5">
+              {saved.checkError ? (
+                <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
+              ) : (
+                <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-success" />
+              )}
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-medium">
+                  {saved.mode === 'live'
+                    ? t('payments.connectedLive')
+                    : t('payments.connectedSandbox')}
+                </span>
+                <span className="text-[13px] text-muted-foreground">
+                  {t('payments.storeIdEnds', { hint: saved.hint })}
+                  {saved.checkedAt &&
+                    ` · ${t('payments.checked', { when: dateTime(locale, saved.checkedAt) })}`}
+                </span>
+              </div>
+            </div>
             {saved.checkError && (
               <Notice tone="error">{t('payments.failing', { reason: saved.checkError })}</Notice>
             )}
             {saved.mode === 'sandbox' && <Notice>{t('payments.sandboxNotice')}</Notice>}
-            {!editing && (
-              <div className="flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => setEditing(true)}>
-                  {t('payments.change')}
-                </Button>
-                <Button variant="secondary" onClick={() => setRemoving(true)}>
-                  {t('payments.remove')}
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">{t('payments.none')}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setEditing(true)}>
+                {t('payments.change')}
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-danger hover:text-danger"
+                onClick={() => setRemoving(true)}
+              >
+                {t('payments.remove')}
+              </Button>
+            </div>
+          </>
         )}
-
+        {!saved && !editing && (
+          <>
+            <p className="text-muted-foreground">{t('payments.none')}</p>
+            <Button className="self-start" onClick={() => setEditing(true)}>
+              {t('payments.connect')}
+            </Button>
+          </>
+        )}
         {showForm && (
           <form
             className="flex flex-col gap-4"
@@ -141,7 +165,7 @@ export function PaymentSettingsPage() {
               save.mutate();
             }}
           >
-            <fieldset disabled={save.isPending} className="flex flex-col gap-4">
+            <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-4 border-0 p-0">
               <Field
                 label={t('payments.storeId')}
                 autoComplete="off"
@@ -160,20 +184,18 @@ export function PaymentSettingsPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 error={missing && !password.trim() ? t('form.required') : undefined}
               />
-              <fieldset className="flex flex-col gap-1">
-                <legend className="mb-1 text-sm font-medium">{t('payments.mode')}</legend>
-                {(['sandbox', 'live'] as const).map((m) => (
-                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                    <input
-                      type="radio"
-                      name="ssl-mode"
-                      checked={mode === m}
-                      onChange={() => setMode(m)}
-                    />
-                    {t(`payments.mode.${m}`)}
-                  </label>
-                ))}
-              </fieldset>
+              <div className="flex flex-col">
+                <span className={fieldLabel}>{t('payments.mode')}</span>
+                <ChoiceChips<Mode>
+                  label={t('payments.mode')}
+                  value={mode}
+                  options={(['sandbox', 'live'] as const).map((m) => ({
+                    value: m,
+                    label: t(`payments.mode.${m}`),
+                  }))}
+                  onChange={setMode}
+                />
+              </div>
             </fieldset>
             {refused && (
               <Notice tone="error">{t('payments.refused', { reason: refused.message })}</Notice>
@@ -185,28 +207,28 @@ export function PaymentSettingsPage() {
               <Button type="submit" disabled={save.isPending}>
                 {save.isPending ? t('payments.checking') : t('payments.save')}
               </Button>
-              {saved && (
-                <Button
-                  variant="secondary"
-                  disabled={save.isPending}
-                  onClick={() => {
-                    setEditing(false);
-                    save.reset();
-                  }}
-                >
-                  {t('action.cancel')}
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                disabled={save.isPending}
+                onClick={() => {
+                  setEditing(false);
+                  setMissing(false);
+                  save.reset();
+                }}
+              >
+                {t('action.cancel')}
+              </Button>
             </div>
           </form>
         )}
-        <p className="text-sm text-muted-foreground">
-          {t('payments.advanceLink')}{' '}
-          <Link to="/settings/checkout" className="underline">
-            {t('checkoutSettings.title')}
-          </Link>
-        </p>
       </section>
+      <p className="text-[13px] text-muted-foreground">
+        {t('payments.advanceLink')}{' '}
+        <Link to="/settings/checkout" className="text-foreground underline underline-offset-[3px]">
+          {t('checkoutSettings.title')}
+        </Link>
+        .
+      </p>
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}

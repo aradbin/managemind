@@ -1,6 +1,6 @@
 // A setting that's on or off (ADR 0033, design rule 3): a checkbox drawn as
 // the canvas's .mm-switch (32 × 18, a 16 px knob), so it keeps the checkbox's keyboard and form behaviour.
-import type { ComponentProps } from 'react';
+import { type ComponentProps, type ReactNode, useId } from 'react';
 import { cn } from '../../lib/utils';
 
 /** The switch's look, for a checkbox that keeps its checkbox role. */
@@ -26,5 +26,51 @@ export function Switch({
       className={cn(switchLook, className)}
       {...props}
     />
+  );
+}
+
+/**
+ * A setting's row, as drawn (.mm-swrow): its name and a line under it on the
+ * left, the switch on the right. The whole row's text is the switch's label.
+ */
+export function SwitchRow({
+  label,
+  hint,
+  checked,
+  onCheckedChange,
+  disabled,
+  className,
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  checked: boolean;
+  onCheckedChange: (on: boolean) => void;
+  disabled?: boolean | undefined;
+  className?: string;
+}) {
+  const id = useId();
+  return (
+    <div
+      className={cn('flex justify-between gap-4', hint ? 'items-start' : 'items-center', className)}
+    >
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <label htmlFor={id} className="cursor-pointer font-medium">
+          {label}
+        </label>
+        {hint && (
+          <p id={`${id}-hint`} className="text-[13px] text-muted-foreground">
+            {hint}
+          </p>
+        )}
+      </div>
+      <Switch
+        id={id}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        disabled={disabled}
+        className={cn(hint && 'mt-0.5')}
+        {...(hint ? { 'aria-describedby': `${id}-hint` } : {})}
+      />
+    </div>
   );
 }

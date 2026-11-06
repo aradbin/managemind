@@ -505,8 +505,11 @@ export const ordersEn = {
     'No orders yet. Share your store link, or add an order from Facebook or a phone call.',
   'dashboard.allClear': 'Nothing is waiting for you.',
 
-  'delivery.intro':
-    'Each zone has a fee, and may charge more for heavy orders. An area listed in a zone wins over its district; the fallback zone covers everywhere else.',
+  'delivery.intro': 'Each zone has a fee, and may charge more for heavy orders.',
+  'delivery.zones': 'Zones',
+  'delivery.zonesHint':
+    'An area listed in a zone wins over its district; the fallback zone covers everywhere else.',
+  'delivery.calculatorHint': 'Check what a shopper would pay.',
   'delivery.add': 'Add zone',
   'delivery.edit': 'Edit zone',
   'delivery.noFallback': 'No active fallback zone: shoppers outside your zones can’t order.',
@@ -561,7 +564,7 @@ export const ordersEn = {
   'checkoutSettings.codEnabled': 'Offer cash on delivery',
   'checkoutSettings.codOffNotice':
     'With cash on delivery off and no online payment yet, the store can’t take orders.',
-  'checkoutSettings.codMax': 'Highest order total for cash on delivery (৳)',
+  'checkoutSettings.codMax': 'Highest order total for cash on delivery',
   'checkoutSettings.codMaxHint': 'Leave empty for no limit.',
   'checkoutSettings.advance': 'Advance delivery charge',
   'checkoutSettings.advance.never': 'Never',
@@ -707,6 +710,7 @@ export const ordersEn = {
   'confirmSettings.scriptEn': 'English',
   'confirmSettings.unknownPlaceholder': 'Not a placeholder: {names}',
   'confirmSettings.preview': 'Preview',
+  'confirmSettings.scriptLanguage': 'Script language',
   'confirmSettings.smsLink': 'Text new orders a link to confirm or cancel',
   'confirmSettings.smsLinkHint':
     'One SMS per order from your gateway. The link works for 48 hours, while the order waits.',

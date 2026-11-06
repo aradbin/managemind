@@ -17,11 +17,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Field } from '../components/field';
+import { fieldHint, fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { MoneyInput, RadioCard } from '../components/ui/choice';
+import { ChoiceChips } from '../components/ui/segmented';
+import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { ApiError, api, unwrap } from '../lib/api';
@@ -29,6 +35,7 @@ import { priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { fieldErrors } from '../lib/messaging';
 import { blockedQuery, dateOnly } from '../lib/orders';
+import { cn } from '../lib/utils';
 
 const int = (s: string) => {
   const n = Number(s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim());
@@ -51,6 +58,10 @@ export function CheckoutSettingsPage() {
     codMax: '',
   });
   const [loaded, setLoaded] = useState(false);
+  // What was loaded or last saved: the save bar shows once something differs.
+  const [snapshot, setSnapshot] = useState('');
+  const current = JSON.stringify({ checkout, cod, text });
+  const dirty = loaded && current !== snapshot;
   useEffect(() => {
     if (!store.data || loaded) return;
     const c = {
@@ -58,15 +69,17 @@ export function CheckoutSettingsPage() {
       ...(store.data.checkout as Partial<CheckoutSettings>),
     };
     const d = { ...defaultCodSettings(), ...(store.data.cod as Partial<CodSettings>) };
-    setCheckout(c);
-    setCod(d);
-    setText({
+    const tx = {
       maxQty: String(c.maxQuantityPerLine),
       phoneHour: String(c.rateLimits.perPhoneHour),
       phoneDay: String(c.rateLimits.perPhoneDay),
       ipHour: String(c.rateLimits.perIpHour),
       codMax: priceInput(d.maxOrderValue),
-    });
+    };
+    setCheckout(c);
+    setCod(d);
+    setText(tx);
+    setSnapshot(JSON.stringify({ checkout: c, cod: d, text: tx }));
     setLoaded(true);
   }, [store.data, loaded]);
 
@@ -107,6 +120,7 @@ export function CheckoutSettingsPage() {
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(storeSettingsQuery.queryKey, saved);
+      setSnapshot(current);
       toast(t('account.saved'));
     },
   });
@@ -116,7 +130,7 @@ export function CheckoutSettingsPage() {
   const refused = fieldErrors(save.error);
   const err = (bad: boolean) => (bad ? t('form.invalid') : undefined);
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('checkoutSettings.title')}
@@ -124,7 +138,7 @@ export function CheckoutSettingsPage() {
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-3 md:gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate();
@@ -132,107 +146,100 @@ export function CheckoutSettingsPage() {
       >
         <fieldset
           disabled={!canEdit || save.isPending}
-          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+          aria-labelledby="checkout-card"
+          className={cn(cardPadded, 'm-0 gap-4 md:gap-4')}
         >
-          <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.checkout')}</legend>
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.email')}</legend>
-            {EMAIL_FIELD_MODES.map((m) => (
-              <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                <input
-                  type="radio"
-                  name="email-mode"
-                  checked={checkout.email === m}
-                  onChange={() => setCheckout({ ...checkout, email: m })}
-                />
-                {t(`checkoutSettings.email.${m}`)}
-              </label>
-            ))}
-          </fieldset>
-          <Field
-            label={t('checkoutSettings.maxQty')}
-            hint={t('checkoutSettings.maxQtyHint')}
-            inputMode="numeric"
-            value={text.maxQty}
-            onChange={(e) => setText({ ...text, maxQty: e.target.value })}
-            error={err(errors.maxQty)}
-          />
-          <Field
-            label={t('checkoutSettings.prefix')}
-            hint={t('checkoutSettings.prefixHint', {
-              example: `${checkout.orderNumberPrefix}1001`,
-            })}
-            value={checkout.orderNumberPrefix}
-            maxLength={8}
-            onChange={(e) => setCheckout({ ...checkout, orderNumberPrefix: e.target.value })}
-            error={err(errors.prefix)}
-          />
-          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="mt-3"
-              checked={checkout.termsCheckbox}
-              onChange={(e) => setCheckout({ ...checkout, termsCheckbox: e.target.checked })}
+          <h2 id="checkout-card" className={cardTitle}>
+            {t('checkoutSettings.checkout')}
+          </h2>
+          <div className="flex flex-col">
+            <span className={fieldLabel}>{t('checkoutSettings.email')}</span>
+            <ChoiceChips
+              label={t('checkoutSettings.email')}
+              value={checkout.email}
+              options={EMAIL_FIELD_MODES.map((m) => ({
+                value: m,
+                label: t(`checkoutSettings.email.${m}`),
+              }))}
+              onChange={(email) => setCheckout({ ...checkout, email })}
             />
-            <span className="flex min-h-11 flex-col justify-center">
-              {t('checkoutSettings.terms')}
-              <span className="text-sm text-muted-foreground">
-                {t('checkoutSettings.termsHint')}
-              </span>
-            </span>
-          </label>
-          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="mt-3"
-              checked={checkout.accounts}
-              onChange={(e) => setCheckout({ ...checkout, accounts: e.target.checked })}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
+            <Field
+              label={t('checkoutSettings.maxQty')}
+              hint={t('checkoutSettings.maxQtyHint')}
+              inputMode="numeric"
+              value={text.maxQty}
+              onChange={(e) => setText({ ...text, maxQty: e.target.value })}
+              error={err(errors.maxQty)}
             />
-            <span className="flex min-h-11 flex-col justify-center">
-              {t('checkoutSettings.accounts')}
-              <span className="text-sm text-muted-foreground">
-                {t('checkoutSettings.accountsHint')}
-              </span>
-            </span>
-          </label>
+            <Field
+              label={t('checkoutSettings.prefix')}
+              hint={t('checkoutSettings.prefixHint', {
+                example: `${checkout.orderNumberPrefix}1001`,
+              })}
+              value={checkout.orderNumberPrefix}
+              maxLength={8}
+              onChange={(e) => setCheckout({ ...checkout, orderNumberPrefix: e.target.value })}
+              error={err(errors.prefix)}
+            />
+          </div>
+          <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
+          <SwitchRow
+            label={t('checkoutSettings.terms')}
+            hint={t('checkoutSettings.termsHint')}
+            checked={checkout.termsCheckbox}
+            onCheckedChange={(on) => setCheckout({ ...checkout, termsCheckbox: on })}
+          />
+          <SwitchRow
+            label={t('checkoutSettings.accounts')}
+            hint={t('checkoutSettings.accountsHint')}
+            checked={checkout.accounts}
+            onCheckedChange={(on) => setCheckout({ ...checkout, accounts: on })}
+          />
         </fieldset>
 
         <fieldset
           disabled={!canEdit || save.isPending}
-          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+          aria-labelledby="checkout-cod"
+          className={cn(cardPadded, 'm-0 gap-4 md:gap-4')}
         >
-          <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.cod')}</legend>
-          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              checked={cod.enabled}
-              onChange={(e) => setCod({ ...cod, enabled: e.target.checked })}
-            />
-            {t('checkoutSettings.codEnabled')}
-          </label>
-          {!cod.enabled && <Notice>{t('checkoutSettings.codOffNotice')}</Notice>}
-          <Field
-            label={t('checkoutSettings.codMax')}
-            hint={t('checkoutSettings.codMaxHint')}
-            inputMode="decimal"
-            value={text.codMax}
-            onChange={(e) => setText({ ...text, codMax: e.target.value })}
-            error={err(errors.codMax)}
+          <h2 id="checkout-cod" className={cardTitle}>
+            {t('checkoutSettings.cod')}
+          </h2>
+          <SwitchRow
+            label={t('checkoutSettings.codEnabled')}
+            checked={cod.enabled}
+            onCheckedChange={(on) => setCod({ ...cod, enabled: on })}
           />
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.advance')}</legend>
+          {!cod.enabled && <Notice>{t('checkoutSettings.codOffNotice')}</Notice>}
+          <div className="flex flex-col">
+            <label htmlFor="cod-max" className={fieldLabel}>
+              {t('checkoutSettings.codMax')}
+            </label>
+            <MoneyInput
+              id="cod-max"
+              aria-describedby="cod-max-hint"
+              aria-invalid={errors.codMax}
+              value={text.codMax}
+              onChange={(e) => setText({ ...text, codMax: e.target.value })}
+            />
+            <p id="cod-max-hint" className={cn(fieldHint, errors.codMax && 'text-danger')}>
+              {errors.codMax ? t('form.invalid') : t('checkoutSettings.codMaxHint')}
+            </p>
+          </div>
+          <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+            <legend className={fieldLabel}>{t('checkoutSettings.advance')}</legend>
             {COD_ADVANCE_RULES.map((r) => (
-              <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                <input
-                  type="radio"
-                  name="advance"
-                  checked={cod.advance === r}
-                  onChange={() => setCod({ ...cod, advance: r })}
-                />
-                {t(`checkoutSettings.advance.${r}`)}
-              </label>
+              <RadioCard
+                key={r}
+                name="advance"
+                checked={cod.advance === r}
+                onChange={() => setCod({ ...cod, advance: r })}
+                label={t(`checkoutSettings.advance.${r}`)}
+              />
             ))}
-            <p className="text-sm text-muted-foreground">{t('checkoutSettings.advanceHint')}</p>
+            <p className={fieldHint}>{t('checkoutSettings.advanceHint')}</p>
             {refused['cod.advance'] && (
               <Notice tone="error">
                 {t('checkoutSettings.needsGateway')}{' '}
@@ -242,31 +249,34 @@ export function CheckoutSettingsPage() {
               </Notice>
             )}
           </fieldset>
-          <fieldset className="flex flex-col gap-1">
-            <legend className="mb-1 text-sm font-medium">{t('checkoutSettings.otp')}</legend>
+          <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+            <legend className={fieldLabel}>{t('checkoutSettings.otp')}</legend>
             {COD_OTP_RULES.map((r) => (
-              <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                <input
-                  type="radio"
-                  name="otp"
-                  checked={cod.otp === r}
-                  onChange={() => setCod({ ...cod, otp: r })}
-                />
-                {t(`checkoutSettings.otp.${r}`)}
-              </label>
+              <RadioCard
+                key={r}
+                name="otp"
+                checked={cod.otp === r}
+                onChange={() => setCod({ ...cod, otp: r })}
+                label={t(`checkoutSettings.otp.${r}`)}
+              />
             ))}
-            <p className="text-sm text-muted-foreground">{t('checkoutSettings.otpHint')}</p>
+            <p className={fieldHint}>{t('checkoutSettings.otpHint')}</p>
             {refused['cod.otp'] && <Notice tone="error">{t('checkoutSettings.needsSms')}</Notice>}
           </fieldset>
         </fieldset>
 
         <fieldset
           disabled={!canEdit || save.isPending}
-          className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
+          aria-labelledby="checkout-limits"
+          className={cn(cardPadded, 'm-0 gap-4 md:gap-4')}
         >
-          <legend className="mb-2 text-lg font-semibold">{t('checkoutSettings.limits')}</legend>
-          <p className="text-sm text-muted-foreground">{t('checkoutSettings.limitsHint')}</p>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="flex flex-col gap-1">
+            <h2 id="checkout-limits" className={cardTitle}>
+              {t('checkoutSettings.limits')}
+            </h2>
+            <p className="text-[13px] text-muted-foreground">{t('checkoutSettings.limitsHint')}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3 md:gap-x-4">
             <Field
               label={t('checkoutSettings.perPhoneHour')}
               inputMode="numeric"
@@ -297,13 +307,18 @@ export function CheckoutSettingsPage() {
               : saveErrorMessage(save.error, t)}
           </Notice>
         )}
-        {canEdit && (
-          <div>
-            <Button type="submit" disabled={save.isPending}>
-              {t('action.save')}
-            </Button>
-          </div>
-        )}
+        <SaveBar
+          show={canEdit && dirty}
+          message={t('form.unsaved')}
+          discardLabel={t('action.discard')}
+          onDiscard={() => {
+            save.reset();
+            setLoaded(false);
+          }}
+          saveLabel={t('action.save')}
+          busy={save.isPending}
+          onSave={() => save.mutate()}
+        />
       </form>
       <Blocklist />
     </div>

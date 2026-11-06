@@ -20382,6 +20382,8 @@ export interface components {
             recipient: string;
             /** Format: uuid */
             orderId: string | null;
+            /** @description The order number, such as #1058 */
+            orderNumber: string | null;
             /** @enum {string} */
             status: "queued" | "sent" | "failed" | "skipped" | "waiting";
             /** @enum {string|null} */

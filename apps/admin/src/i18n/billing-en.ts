@@ -4,6 +4,7 @@ export const billingEn = {
   'billing.plan': 'Plan',
   'billing.noPlan': 'No plan is set yet. Nothing is limited until one is.',
   'billing.monthly': '{price} a month',
+  'billing.dueOn': 'Due {date}',
   'billing.trialUntil': 'Free until {date}',
   'billing.billingDay': 'Invoiced on day {day} of each month',
   'billing.usage': 'Use this period',

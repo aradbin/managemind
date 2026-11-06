@@ -1,8 +1,9 @@
 import type { couriersEn } from './couriers-en';
 
 export const couriersBn: Record<keyof typeof couriersEn, string> = {
-  'couriers.intro':
-    'অর্ডারের পেজ থেকে পার্সেল বুক করুন, এখানে তার খবর দেখুন। কুরিয়ার যুক্ত হলে আপডেট নিজে থেকেই আসে; আমরাও দিনে দু’বার খোঁজ নিই।',
+  'couriers.intro': 'অর্ডারের পেজ থেকে পার্সেল বুক করুন, এখানে তার খবর দেখুন।',
+  'couriers.cardHint': 'কুরিয়ার যুক্ত হলে আপডেট নিজে থেকেই আসে; আমরাও দিনে দু’বার খোঁজ নিই।',
+  'couriers.byHand': 'যুক্ত না করা পর্যন্ত এর পার্সেল হাতে বুক করুন।',
   'couriers.name.fake': 'টেস্ট কুরিয়ার',
   'couriers.connected': 'যুক্ত আছে',
   'couriers.connectedSandbox': 'যুক্ত আছে, স্যান্ডবক্স',

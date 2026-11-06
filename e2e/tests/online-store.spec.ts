@@ -137,15 +137,21 @@ test('online store flows', async ({ page, context }, info) => {
     await page.goto(`${API}/settings/domains`);
     await expect(page.getByRole('heading', { name: t('domains.title'), level: 1 })).toBeVisible();
     await expectAccessible(page, 'domains');
-    await page.getByLabel(ot('domains.hostname')).fill(hostname);
+    // "Connect a domain" asks for it in a dialog (ADR 0034).
     await page.getByRole('button', { name: ot('domains.add') }).click();
+    const dialog = page.getByRole('dialog', { name: ot('domains.add') });
+    await dialog.getByLabel(ot('domains.hostname')).fill(hostname);
+    await dialog.getByRole('button', { name: ot('domains.connect') }).click();
+    await expect(dialog).toBeHidden();
     const card = page.getByRole('listitem').filter({ hasText: hostname });
     await expect(card.getByText(ot('domains.status.pending'))).toBeVisible();
     await expect(card.getByText(ot('domains.dns'))).toBeVisible();
     await expect(card.getByRole('cell', { name: 'CNAME' })).toBeVisible();
     await expectAccessible(page, 'domain pending');
 
-    await card.getByRole('button', { name: ot('domains.remove') }).click();
+    // Disconnect sits in the domain's ⋯ menu.
+    await card.getByRole('button', { name: ot('domains.actions', { domain: hostname }) }).click();
+    await page.getByRole('menuitem', { name: ot('domains.remove') }).click();
     await page
       .getByRole('alertdialog')
       .getByRole('button', { name: ot('domains.remove') })

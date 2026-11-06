@@ -10,6 +10,12 @@ export function usePermission(permission: Permission): boolean {
   return data?.permissions.includes(permission) ?? false;
 }
 
+/** Every permission the user has, for lists that check several. */
+export function usePermissions(): ReadonlySet<Permission> {
+  const { data } = useQuery(meQuery);
+  return new Set(data?.permissions ?? []);
+}
+
 export function PermissionGate({
   allow,
   children,

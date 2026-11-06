@@ -17,19 +17,28 @@ import {
 } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { RadioCard } from '../components/ui/choice';
+import { Textarea } from '../components/ui/input';
+import { ChoiceChips } from '../components/ui/segmented';
+import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { fieldErrors } from '../lib/messaging';
+import { cn } from '../lib/utils';
 
 /** A whole number typed in either numeral system, or null. */
 const int = (s: string) => {
@@ -39,7 +48,7 @@ const int = (s: string) => {
 };
 const between = (n: number | null, min: number, max: number) => n !== null && n >= min && n <= max;
 
-const card = 'flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5';
+const card = cn(cardPadded, 'm-0 gap-4 md:gap-4');
 
 /** What the preview fills the script with. */
 const SAMPLE: Record<'bn' | 'en', Record<(typeof SCRIPT_VARIABLES)[number], string>> = {
@@ -66,7 +75,7 @@ const SAMPLE: Record<'bn' | 'en', Record<(typeof SCRIPT_VARIABLES)[number], stri
 };
 
 export function ConfirmationSettingsPage() {
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
   const canEdit = usePermission('settings.write');
@@ -87,6 +96,12 @@ export function ConfirmationSettingsPage() {
     keepDays: '30',
   });
   const [loaded, setLoaded] = useState(false);
+  // What was loaded or last saved: the save bar shows once something differs.
+  const [snapshot, setSnapshot] = useState('');
+  const [scriptLang, setScriptLang] = useState<'bn' | 'en'>('bn');
+  const [preview, setPreview] = useState(false);
+  const current = JSON.stringify({ confirmation, script, recovery, text });
+  const dirty = loaded && current !== snapshot;
   useEffect(() => {
     if (!store.data || loaded) return;
     const f = { ...defaultFraudSettings(), ...(store.data.fraud as Partial<FraudSettings>) };
@@ -101,7 +116,7 @@ export function ConfirmationSettingsPage() {
     setConfirmation(c);
     setRecovery(r);
     setScript({ bn: c.script.bn ?? '', en: c.script.en ?? '' });
-    setText({
+    const tx = {
       flagAfterFailed: String(f.flagAfterFailed),
       minScore: f.minScore === null ? '' : String(f.minScore),
       minDecided: String(f.minDecided),
@@ -110,7 +125,16 @@ export function ConfirmationSettingsPage() {
       retryAfterMinutes: String(c.retryAfterMinutes),
       showAfterMinutes: String(r.showAfterMinutes),
       keepDays: String(r.keepDays),
-    });
+    };
+    setText(tx);
+    setSnapshot(
+      JSON.stringify({
+        confirmation: c,
+        script: { bn: c.script.bn ?? '', en: c.script.en ?? '' },
+        recovery: r,
+        text: tx,
+      }),
+    );
     setLoaded(true);
   }, [store.data, loaded]);
 
@@ -173,6 +197,7 @@ export function ConfirmationSettingsPage() {
     },
     onSuccess: (saved) => {
       queryClient.setQueryData(storeSettingsQuery.queryKey, saved);
+      setSnapshot(current);
       toast(t('account.saved'));
     },
   });
@@ -186,22 +211,16 @@ export function ConfirmationSettingsPage() {
     label: string,
     hint?: string,
   ) => (
-    <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-      <input
-        type="checkbox"
-        className="mt-3"
-        checked={confirmation[key]}
-        onChange={(e) => setConfirmation({ ...confirmation, [key]: e.target.checked })}
-      />
-      <span className="flex min-h-11 flex-col justify-center">
-        {label}
-        {hint && <span className="text-sm text-muted-foreground">{hint}</span>}
-      </span>
-    </label>
+    <SwitchRow
+      label={label}
+      hint={hint}
+      checked={confirmation[key]}
+      onCheckedChange={(on) => setConfirmation({ ...confirmation, [key]: on })}
+    />
   );
   const storeName = store.data.name;
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('confirmSettings.title')}
@@ -209,19 +228,25 @@ export function ConfirmationSettingsPage() {
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <form
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-3 md:gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate();
         }}
       >
-        <fieldset disabled={!canEdit || save.isPending} className={card}>
-          <legend className="mb-2 text-lg font-semibold">{t('confirmSettings.queue')}</legend>
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          aria-labelledby="conf-queue"
+          className={card}
+        >
+          <h2 id="conf-queue" className={cardTitle}>
+            {t('confirmSettings.queue')}
+          </h2>
           {check('queue', t('confirmSettings.queueOn'), t('confirmSettings.queueHint'))}
           {confirmation.queue && (
             <>
               {check('includePaid', t('confirmSettings.includePaid'))}
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
                 <Field
                   label={t('confirmSettings.maxAttempts')}
                   inputMode="numeric"
@@ -242,6 +267,7 @@ export function ConfirmationSettingsPage() {
                 t('confirmSettings.cancelUnreachable'),
                 t('confirmSettings.cancelUnreachableHint'),
               )}
+              <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
               {check('smsLink', t('confirmSettings.smsLink'), t('confirmSettings.smsLinkHint'))}
               {refused['confirmation.smsLink'] && (
                 <Notice tone="error">{t('checkoutSettings.needsSms')}</Notice>
@@ -252,20 +278,16 @@ export function ConfirmationSettingsPage() {
                   t('confirmSettings.callRisky'),
                   t('confirmSettings.callRiskyHint'),
                 )}
-              <fieldset className="flex flex-col gap-1">
-                <legend className="mb-1 text-sm font-medium">
-                  {t('confirmSettings.autoConfirm')}
-                </legend>
+              <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+                <legend className={fieldLabel}>{t('confirmSettings.autoConfirm')}</legend>
                 {AUTO_CONFIRM_RULES.map((r) => (
-                  <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                    <input
-                      type="radio"
-                      name="auto-confirm"
-                      checked={confirmation.autoConfirm === r}
-                      onChange={() => setConfirmation({ ...confirmation, autoConfirm: r })}
-                    />
-                    {t(`confirmSettings.autoConfirm.${r}`)}
-                  </label>
+                  <RadioCard
+                    key={r}
+                    name="auto-confirm"
+                    checked={confirmation.autoConfirm === r}
+                    onChange={() => setConfirmation({ ...confirmation, autoConfirm: r })}
+                    label={t(`confirmSettings.autoConfirm.${r}`)}
+                  />
                 ))}
               </fieldset>
             </>
@@ -273,74 +295,99 @@ export function ConfirmationSettingsPage() {
         </fieldset>
 
         {confirmation.queue && (
-          <fieldset disabled={!canEdit || save.isPending} className={card}>
-            <legend className="mb-2 text-lg font-semibold">{t('confirmSettings.script')}</legend>
-            <p className="text-sm text-muted-foreground">{t('confirmSettings.scriptHint')}</p>
-            <p className="flex flex-wrap gap-1.5">
-              {SCRIPT_VARIABLES.map((v) => (
-                <code key={v} className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                  {`{${v}}`}
-                </code>
-              ))}
+          <fieldset
+            disabled={!canEdit || save.isPending}
+            aria-labelledby="conf-script"
+            className={card}
+          >
+            <h2 id="conf-script" className={cardTitle}>
+              {t('confirmSettings.script')}
+            </h2>
+            <p className="-mt-3 text-[13px] text-muted-foreground">
+              {t('confirmSettings.scriptHint')}
             </p>
-            {(['bn', 'en'] as const).map((lang) => (
-              <div key={lang} className="flex flex-col gap-1.5">
-                <label htmlFor={`script-${lang}`} className="text-sm font-medium">
-                  {t(lang === 'bn' ? 'confirmSettings.scriptBn' : 'confirmSettings.scriptEn')}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <ChoiceChips<'bn' | 'en'>
+                label={t('confirmSettings.scriptLanguage')}
+                value={scriptLang}
+                options={[
+                  { value: 'bn', label: 'বাংলা' },
+                  { value: 'en', label: 'English' },
+                ]}
+                onChange={setScriptLang}
+              />
+              <Button
+                variant="ghost"
+                aria-pressed={preview}
+                className="-mr-2 h-7 px-2 md:h-7"
+                onClick={() => setPreview(!preview)}
+              >
+                <Eye aria-hidden />
+                {t('confirmSettings.preview')}
+              </Button>
+            </div>
+            {preview ? (
+              <p
+                lang={scriptLang}
+                className="rounded-lg bg-muted p-3 whitespace-pre-wrap"
+                aria-live="polite"
+              >
+                {renderCallScript(
+                  { bn: script.bn.trim() || undefined, en: script.en.trim() || undefined },
+                  scriptLang,
+                  { ...SAMPLE[scriptLang], store_name: storeName },
+                )}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="script-text" className="sr-only">
+                  {t(scriptLang === 'bn' ? 'confirmSettings.scriptBn' : 'confirmSettings.scriptEn')}
                 </label>
-                <textarea
-                  id={`script-${lang}`}
+                <Textarea
+                  id="script-text"
                   rows={5}
                   maxLength={2000}
-                  lang={lang}
-                  value={script[lang]}
-                  placeholder={DEFAULT_CALL_SCRIPT[lang]}
-                  onChange={(e) => setScript({ ...script, [lang]: e.target.value })}
-                  aria-invalid={unknown[lang].length > 0 || undefined}
-                  className="rounded-lg border border-input bg-background p-3 text-base md:text-sm"
+                  lang={scriptLang}
+                  value={script[scriptLang]}
+                  placeholder={DEFAULT_CALL_SCRIPT[scriptLang]}
+                  onChange={(e) => setScript({ ...script, [scriptLang]: e.target.value })}
+                  aria-invalid={unknown[scriptLang].length > 0 || undefined}
                 />
-                {unknown[lang].length > 0 && (
-                  <p className="text-sm text-danger">
+                {unknown[scriptLang].length > 0 && (
+                  <p className="text-[13px] text-danger">
                     {t('confirmSettings.unknownPlaceholder', {
-                      names: unknown[lang].map((n) => `{${n}}`).join(', '),
+                      names: unknown[scriptLang].map((n) => `{${n}}`).join(', '),
                     })}
                   </p>
                 )}
+                <p className="flex flex-wrap gap-1.5">
+                  {SCRIPT_VARIABLES.map((v) => (
+                    <code key={v} className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                      {`{${v}}`}
+                    </code>
+                  ))}
+                </p>
               </div>
-            ))}
-            <div className="flex flex-col gap-1.5 rounded-lg bg-muted p-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('confirmSettings.preview')}
-              </span>
-              <p lang={locale} className="whitespace-pre-wrap text-sm">
-                {renderCallScript(
-                  { bn: script.bn.trim() || undefined, en: script.en.trim() || undefined },
-                  locale,
-                  { ...SAMPLE[locale], store_name: storeName },
-                )}
-              </p>
-            </div>
+            )}
           </fieldset>
         )}
 
-        <fieldset disabled={!canEdit || save.isPending} className={card}>
-          <legend className="mb-2 text-lg font-semibold">{t('incomplete.title')}</legend>
-          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="mt-3"
-              checked={recovery.incomplete}
-              onChange={(e) => setRecovery({ ...recovery, incomplete: e.target.checked })}
-            />
-            <span className="flex min-h-11 flex-col justify-center">
-              {t('confirmSettings.incomplete')}
-              <span className="text-sm text-muted-foreground">
-                {t('confirmSettings.incompleteHint')}
-              </span>
-            </span>
-          </label>
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          aria-labelledby="conf-incomplete"
+          className={card}
+        >
+          <h2 id="conf-incomplete" className={cardTitle}>
+            {t('incomplete.title')}
+          </h2>
+          <SwitchRow
+            label={t('confirmSettings.incomplete')}
+            hint={t('confirmSettings.incompleteHint')}
+            checked={recovery.incomplete}
+            onCheckedChange={(on) => setRecovery({ ...recovery, incomplete: on })}
+          />
           {recovery.incomplete && (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
               <Field
                 label={t('confirmSettings.showAfter')}
                 inputMode="numeric"
@@ -360,9 +407,15 @@ export function ConfirmationSettingsPage() {
           )}
         </fieldset>
 
-        <fieldset disabled={!canEdit || save.isPending} className={card}>
-          <legend className="mb-2 text-lg font-semibold">{t('confirmSettings.risky')}</legend>
-          <p className="text-sm text-muted-foreground">
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          aria-labelledby="conf-risky"
+          className={card}
+        >
+          <h2 id="conf-risky" className={cardTitle}>
+            {t('confirmSettings.risky')}
+          </h2>
+          <p className="-mt-3 text-[13px] text-muted-foreground">
             {t('confirmSettings.riskyIntro')}{' '}
             <Link to="/settings/checkout" className="underline">
               {t('checkoutSettings.title')}
@@ -376,7 +429,7 @@ export function ConfirmationSettingsPage() {
             onChange={(e) => setText({ ...text, flagAfterFailed: e.target.value })}
             error={err(errors.flagAfterFailed)}
           />
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
             <Field
               label={t('confirmSettings.minScore')}
               hint={t('confirmSettings.minScoreHint')}
@@ -396,8 +449,14 @@ export function ConfirmationSettingsPage() {
           </div>
         </fieldset>
 
-        <fieldset disabled={!canEdit || save.isPending} className={card}>
-          <legend className="mb-2 text-lg font-semibold">{t('confirmSettings.duplicates')}</legend>
+        <fieldset
+          disabled={!canEdit || save.isPending}
+          aria-labelledby="conf-dupes"
+          className={card}
+        >
+          <h2 id="conf-dupes" className={cardTitle}>
+            {t('confirmSettings.duplicates')}
+          </h2>
           <Field
             label={t('confirmSettings.duplicateMinutes')}
             hint={t('confirmSettings.duplicateMinutesHint')}
@@ -410,13 +469,18 @@ export function ConfirmationSettingsPage() {
         {save.error && !refused['confirmation.smsLink'] && (
           <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
         )}
-        {canEdit && (
-          <div>
-            <Button type="submit" disabled={save.isPending}>
-              {t('action.save')}
-            </Button>
-          </div>
-        )}
+        <SaveBar
+          show={canEdit && dirty}
+          message={t('form.unsaved')}
+          discardLabel={t('action.discard')}
+          onDiscard={() => {
+            save.reset();
+            setLoaded(false);
+          }}
+          saveLabel={t('action.save')}
+          busy={save.isPending}
+          onSave={() => save.mutate()}
+        />
       </form>
     </div>
   );

@@ -500,8 +500,11 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
     'এখনও কোনো অর্ডার নেই। দোকানের লিংক শেয়ার করুন, বা ফেসবুক কিংবা ফোনের অর্ডার যোগ করুন।',
   'dashboard.allClear': 'আপনার জন্য কিছু অপেক্ষায় নেই।',
 
-  'delivery.intro':
-    'প্রতিটি জোনের একটি চার্জ আছে, ভারী অর্ডারে বেশি নেওয়া যায়। কোনো জোনে আলাদা করে দেওয়া এলাকা তার জেলার চেয়ে আগে খাটে; বাকি সব জায়গা ফলব্যাক জোনে পড়ে।',
+  'delivery.intro': 'প্রতিটি জোনের একটি চার্জ আছে, ভারী অর্ডারে বেশি নেওয়া যায়।',
+  'delivery.zones': 'জোন',
+  'delivery.zonesHint':
+    'কোনো জোনে আলাদা করে দেওয়া এলাকা তার জেলার চেয়ে আগে খাটে; বাকি সব জায়গা ফলব্যাক জোনে পড়ে।',
+  'delivery.calculatorHint': 'একজন ক্রেতা কত দেবেন দেখে নিন।',
   'delivery.add': 'জোন যোগ করুন',
   'delivery.edit': 'জোন বদলান',
   'delivery.noFallback': 'কোনো চালু ফলব্যাক জোন নেই: আপনার জোনের বাইরের ক্রেতারা অর্ডার দিতে পারবেন না।',
@@ -555,7 +558,7 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'checkoutSettings.codEnabled': 'ক্যাশ অন ডেলিভারি দিন',
   'checkoutSettings.codOffNotice':
     'ক্যাশ অন ডেলিভারি বন্ধ থাকলে, আর অনলাইন পেমেন্ট এখনো না থাকায়, দোকান অর্ডার নিতে পারবে না।',
-  'checkoutSettings.codMax': 'ক্যাশ অন ডেলিভারিতে সর্বোচ্চ অর্ডার (৳)',
+  'checkoutSettings.codMax': 'ক্যাশ অন ডেলিভারিতে সর্বোচ্চ অর্ডার',
   'checkoutSettings.codMaxHint': 'সীমা না চাইলে খালি রাখুন।',
   'checkoutSettings.advance': 'অগ্রিম ডেলিভারি চার্জ',
   'checkoutSettings.advance.never': 'কখনো না',
@@ -693,6 +696,7 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'confirmSettings.scriptEn': 'ইংরেজি',
   'confirmSettings.unknownPlaceholder': 'এগুলো চলবে না: {names}',
   'confirmSettings.preview': 'যেমন দেখাবে',
+  'confirmSettings.scriptLanguage': 'স্ক্রিপ্টের ভাষা',
   'confirmSettings.smsLink': 'নতুন অর্ডারে নিশ্চিত বা বাতিলের লিংক এসএমএসে পাঠান',
   'confirmSettings.smsLinkHint':
     'আপনার গেটওয়ে থেকে প্রতি অর্ডারে একটি এসএমএস। অর্ডার অপেক্ষায় থাকা পর্যন্ত, ৪৮ ঘণ্টা লিংক কাজ করে।',

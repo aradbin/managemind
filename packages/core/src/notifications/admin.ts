@@ -19,12 +19,13 @@ import {
   TEMPLATE_VARIABLES,
   unknownVariables,
 } from '@managemind/shared/notifications';
-import { and, desc, eq, lt, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, lt, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { parseInput } from '../catalog/common';
 import { maskPhone } from '../orders/views';
+import { orderSettings } from '../pricing/quote';
 import type { TenantTx } from '../tenant';
 
 const m = schema.messages;
@@ -36,6 +37,8 @@ export interface MessageView {
   recipientType: 'shopper' | 'staff';
   recipient: string;
   orderId: string | null;
+  /** The order's number as staff read it ("#1058"), when the message is about one. */
+  orderNumber: string | null;
   status: 'queued' | 'sent' | 'failed' | 'skipped' | 'waiting';
   /** WhatsApp: what Meta last reported (phase-9-plan §3.2.4). */
   deliveryStatus: 'sent' | 'delivered' | 'read' | 'failed' | null;
@@ -79,6 +82,16 @@ export async function listMessages(
     .orderBy(desc(m.createdAt))
     .limit(q.limit);
   const personal = actor.permissions.has('customers.read');
+  const orderIds = [...new Set(rows.map((r) => r.orderId).filter((x): x is string => !!x))];
+  const numbers = new Map<string, string>();
+  if (orderIds.length) {
+    const { settings } = await orderSettings(tx);
+    const found = await tx.db
+      .select({ id: schema.orders.id, number: schema.orders.number })
+      .from(schema.orders)
+      .where(inArray(schema.orders.id, orderIds));
+    for (const o of found) numbers.set(o.id, `${settings.checkout.orderNumberPrefix}${o.number}`);
+  }
   return rows.map((r) => ({
     id: r.id,
     event: r.event,
@@ -91,6 +104,7 @@ export async function listMessages(
           ? maskPhone(r.recipient)
           : maskEmail(r.recipient),
     orderId: r.orderId,
+    orderNumber: r.orderId ? (numbers.get(r.orderId) ?? null) : null,
     status: r.status,
     deliveryStatus: r.deliveryStatus,
     reason: r.reason,

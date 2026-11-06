@@ -11,16 +11,21 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Field } from '../components/field';
+import { fieldHint, fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
-import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { ToggleChips } from '../components/ui/segmented';
+import { SwitchRow } from '../components/ui/switch';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
 import { categoriesQuery, categoryOptions, storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 
 const toggle = <T,>(list: readonly T[], value: T, order: readonly T[]) =>
   list.includes(value)
@@ -36,11 +41,16 @@ export function ReturnSettingsPage() {
   const categories = useQuery(categoriesQuery);
   const [policy, setPolicy] = useState<ReturnSettings | null>(null);
   const [days, setDays] = useState('7');
+  // What was loaded or last saved: the save bar shows once something differs.
+  const [snapshot, setSnapshot] = useState('');
+  const current = JSON.stringify({ policy, days });
+  const dirty = policy !== null && current !== snapshot;
   useEffect(() => {
     if (!store.data || policy) return;
     const p = { ...defaultReturnSettings(), ...(store.data.returns as Partial<ReturnSettings>) };
     setPolicy(p);
     setDays(String(p.windowDays));
+    setSnapshot(JSON.stringify({ policy: p, days: String(p.windowDays) }));
   }, [store.data, policy]);
   const windowDays = Number(days);
   const badDays = !Number.isInteger(windowDays) || windowDays < 1 || windowDays > 90;
@@ -49,6 +59,7 @@ export function ReturnSettingsPage() {
       unwrap(await api.PATCH('/v1/admin/store', { body: { returns } })),
     onSuccess: (saved) => {
       queryClient.setQueryData(storeSettingsQuery.queryKey, saved);
+      setSnapshot(current);
       toast(t('account.saved'));
     },
   });
@@ -57,7 +68,7 @@ export function ReturnSettingsPage() {
   const options = categoryOptions(categories.data ?? [], locale);
   return (
     <form
-      className="flex max-w-2xl flex-col gap-6"
+      className="flex flex-col gap-3 md:gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!badDays && policy.refundMethods.length) save.mutate({ ...policy, windowDays });
@@ -71,17 +82,18 @@ export function ReturnSettingsPage() {
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       <fieldset
         disabled={!canEdit || save.isPending}
-        className="flex flex-col gap-6 rounded-xl border border-border bg-background p-4 md:p-5"
+        aria-labelledby="returns-card"
+        className={cn(cardPadded, 'm-0 gap-4 md:gap-4')}
       >
-        <div className="flex flex-col gap-3">
-          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              checked={policy.shopperRequests}
-              onChange={(e) => setPolicy({ ...policy, shopperRequests: e.target.checked })}
-            />
-            {t('returnSettings.shopperRequests')}
-          </label>
+        <h2 id="returns-card" className={cardTitle}>
+          {t('returnSettings.title')}
+        </h2>
+        <SwitchRow
+          label={t('returnSettings.shopperRequests')}
+          checked={policy.shopperRequests}
+          onCheckedChange={(on) => setPolicy({ ...policy, shopperRequests: on })}
+        />
+        {policy.shopperRequests && (
           <Field
             label={t('returnSettings.window')}
             hint={t('returnSettings.windowHint')}
@@ -90,94 +102,93 @@ export function ReturnSettingsPage() {
             onChange={(e) => setDays(e.target.value)}
             error={badDays ? t('form.invalid') : undefined}
           />
-        </div>
-        <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 font-medium">{t('returnSettings.shopperPays')}</legend>
-          <p className="mb-1 text-sm text-muted-foreground">
-            {t('returnSettings.shopperPaysHint')}
-          </p>
-          {RETURN_REASONS.map((r) => (
-            <label key={r} className="flex min-h-10 items-center gap-3 md:min-h-9">
-              <input
-                type="checkbox"
-                checked={policy.shopperPaysFor.includes(r)}
-                onChange={() =>
-                  setPolicy({
-                    ...policy,
-                    shopperPaysFor: toggle(policy.shopperPaysFor, r, RETURN_REASONS),
-                  })
-                }
-              />
-              {t(`return.reason.${r}` as AdminKey)}
-            </label>
-          ))}
-        </fieldset>
-        <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            className="mt-3"
-            checked={policy.refundDeliveryFee}
-            onChange={(e) => setPolicy({ ...policy, refundDeliveryFee: e.target.checked })}
+        )}
+        <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
+        <fieldset className="m-0 flex flex-col border-0 p-0">
+          <legend className={fieldLabel}>{t('returnSettings.shopperPays')}</legend>
+          <ToggleChips
+            options={RETURN_REASONS.map((r) => ({
+              value: r,
+              label: t(`return.reason.${r}` as AdminKey),
+            }))}
+            value={policy.shopperPaysFor}
+            onToggle={(r) =>
+              setPolicy({
+                ...policy,
+                shopperPaysFor: toggle(policy.shopperPaysFor, r, RETURN_REASONS),
+              })
+            }
           />
-          <span className="flex min-h-11 flex-col justify-center">
-            {t('returnSettings.deliveryFee')}
-            <span className="text-sm text-muted-foreground">
-              {t('returnSettings.deliveryFeeHint')}
-            </span>
-          </span>
-        </label>
-        <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 font-medium">{t('returnSettings.methods')}</legend>
-          {OFFERED_REFUND_METHODS.map((m) => (
-            <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
-              <input
-                type="checkbox"
-                checked={policy.refundMethods.includes(m)}
-                onChange={() =>
-                  setPolicy({
-                    ...policy,
-                    refundMethods: toggle(policy.refundMethods, m, OFFERED_REFUND_METHODS),
-                  })
-                }
-              />
-              {t(`refund.method.${m}` as AdminKey)}
-            </label>
-          ))}
+          <p className={fieldHint}>{t('returnSettings.shopperPaysHint')}</p>
+        </fieldset>
+        <SwitchRow
+          label={t('returnSettings.deliveryFee')}
+          hint={t('returnSettings.deliveryFeeHint')}
+          checked={policy.refundDeliveryFee}
+          onCheckedChange={(on) => setPolicy({ ...policy, refundDeliveryFee: on })}
+        />
+        <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
+        <fieldset className="m-0 flex flex-col border-0 p-0">
+          <legend className={fieldLabel}>{t('returnSettings.methods')}</legend>
+          <div className="flex flex-col">
+            {OFFERED_REFUND_METHODS.map((m) => (
+              <label key={m} className="flex min-h-10 items-center gap-2.5 md:min-h-9">
+                <input
+                  type="checkbox"
+                  checked={policy.refundMethods.includes(m)}
+                  onChange={() =>
+                    setPolicy({
+                      ...policy,
+                      refundMethods: toggle(policy.refundMethods, m, OFFERED_REFUND_METHODS),
+                    })
+                  }
+                />
+                {t(`refund.method.${m}` as AdminKey)}
+              </label>
+            ))}
+          </div>
           {!policy.refundMethods.length && (
-            <Notice tone="error">{t('returnSettings.oneMethod')}</Notice>
+            <p role="alert" className={cn(fieldHint, 'text-danger')}>
+              {t('returnSettings.oneMethod')}
+            </p>
           )}
         </fieldset>
-        <fieldset className="flex flex-col gap-1">
-          <legend className="mb-1 font-medium">{t('returnSettings.excluded')}</legend>
-          <p className="mb-1 text-sm text-muted-foreground">{t('returnSettings.excludedHint')}</p>
-          {options.length === 0 && <p className="text-sm text-muted-foreground">—</p>}
-          {options.map((c) => (
-            <label key={c.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
-              <input
-                type="checkbox"
-                checked={policy.excludedCategoryIds.includes(c.id)}
-                onChange={() =>
-                  setPolicy({
-                    ...policy,
-                    excludedCategoryIds: policy.excludedCategoryIds.includes(c.id)
-                      ? policy.excludedCategoryIds.filter((x) => x !== c.id)
-                      : [...policy.excludedCategoryIds, c.id],
-                  })
-                }
-              />
-              {c.label}
-            </label>
-          ))}
+        <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
+        <fieldset className="m-0 flex flex-col border-0 p-0">
+          <legend className={fieldLabel}>{t('returnSettings.excluded')}</legend>
+          {options.length === 0 ? (
+            <p className="text-muted-foreground">—</p>
+          ) : (
+            <ToggleChips
+              options={options.map((c) => ({ value: c.id, label: c.label }))}
+              value={policy.excludedCategoryIds}
+              onToggle={(id) =>
+                setPolicy({
+                  ...policy,
+                  excludedCategoryIds: policy.excludedCategoryIds.includes(id)
+                    ? policy.excludedCategoryIds.filter((x) => x !== id)
+                    : [...policy.excludedCategoryIds, id],
+                })
+              }
+            />
+          )}
+          <p className={fieldHint}>{t('returnSettings.excludedHint')}</p>
         </fieldset>
       </fieldset>
       {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-      {canEdit && (
-        <div>
-          <Button type="submit" disabled={save.isPending}>
-            {t('action.save')}
-          </Button>
-        </div>
-      )}
+      <SaveBar
+        show={canEdit && dirty}
+        message={t('form.unsaved')}
+        discardLabel={t('action.discard')}
+        onDiscard={() => {
+          save.reset();
+          setPolicy(null);
+        }}
+        saveLabel={t('action.save')}
+        busy={save.isPending}
+        saveDisabled={badDays || !policy.refundMethods.length}
+        onSave={() => save.mutate({ ...policy, windowDays })}
+      />
     </form>
   );
 }

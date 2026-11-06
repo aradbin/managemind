@@ -3,9 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ExportCard } from '../components/export-card';
+import { fieldLabel } from '../components/field-styles';
 import {
   applyServerErrors,
   Form,
@@ -13,18 +14,20 @@ import {
   optionalPhone,
   optionalText,
   PhoneField,
-  SelectField,
   TextField,
 } from '../components/form';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
-import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { ChoiceChips } from '../components/ui/segmented';
 import { useLocale } from '../i18n';
 import '../i18n/online-store';
 import { api, meQuery, unwrap } from '../lib/api';
 import { saveErrorMessage } from '../lib/errors';
+import { cn } from '../lib/utils';
 
 const schema = z
   .object({
@@ -75,8 +78,9 @@ export function StoreProfilePage() {
   const isOwner =
     !me?.supportGrantId && me?.stores.find((s) => s.tenantId === me.activeStore)?.role === 'owner';
   return (
-    <div className="max-w-2xl">
+    <>
       <PageHeader
+        className="mb-0"
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('settings.store')}
         description={t('settings.store.description')}
@@ -89,7 +93,7 @@ export function StoreProfilePage() {
         <ProfileForm store={store.data} />
       )}
       {isOwner && <ExportCard />}
-    </div>
+    </>
   );
 }
 
@@ -158,65 +162,86 @@ function ProfileForm({ store }: { store: Store }) {
   });
 
   return (
-    <Form form={form} onSubmit={(v) => save.mutate(v)}>
+    <Form form={form} onSubmit={(v) => save.mutate(v)} className="flex flex-col gap-3 md:gap-4">
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
-      <fieldset
-        disabled={!canEdit || save.isPending}
-        className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
-      >
-        <TextField name="name" label={t('store.name')} maxLength={100} />
-        <SelectField
-          name="defaultLocale"
-          label={t('store.defaultLocale')}
-          options={[
-            { value: 'bn', label: 'বাংলা' },
-            { value: 'en', label: 'English' },
-          ]}
-        />
-        <h2 className="mt-2 font-semibold">{t('store.contact')}</h2>
-        <TextField
-          name="contactEmail"
-          label={t('store.contactEmail')}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          optional
-        />
-        <PhoneField name="contactPhone" label={t('store.contactPhone')} optional />
-        <TextField
-          name="line1"
-          label={t('store.addressLine1')}
-          autoComplete="address-line1"
-          optional
-        />
-        <TextField
-          name="line2"
-          label={t('store.addressLine2')}
-          autoComplete="address-line2"
-          optional
-        />
-        <TextField name="city" label={t('store.city')} autoComplete="address-level2" optional />
-        <h2 className="mt-2 font-semibold">{t('business.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('business.hint')}</p>
-        <TextField name="businessName" label={t('business.name')} maxLength={200} optional />
-        <TextField name="tradeLicense" label={t('business.tradeLicense')} maxLength={50} optional />
-        <TextField name="dbid" label={t('business.dbid')} maxLength={50} optional />
-        <TextField
-          name="bin"
-          label={t('business.bin')}
-          maxLength={20}
-          inputMode="numeric"
-          optional
-        />
+      <fieldset disabled={!canEdit || save.isPending} className="contents">
+        <section aria-labelledby="store-contact" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+          <h2 id="store-contact" className={cardTitle}>
+            {t('store.nameAndContact')}
+          </h2>
+          <TextField name="name" label={t('store.name')} maxLength={100} />
+          <Controller
+            control={form.control}
+            name="defaultLocale"
+            render={({ field }) => (
+              <div className="flex flex-col">
+                <span className={fieldLabel}>{t('store.defaultLocale')}</span>
+                <ChoiceChips
+                  label={t('store.defaultLocale')}
+                  value={field.value}
+                  options={[
+                    { value: 'bn', label: 'বাংলা (Bangla)' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                  onChange={field.onChange}
+                />
+              </div>
+            )}
+          />
+          <div role="presentation" className="-mx-4 h-px bg-border md:-mx-5" />
+          <p className={cn(fieldLabel, 'mb-0')}>{t('store.contact')}</p>
+          <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
+            <TextField
+              name="contactEmail"
+              label={t('store.contactEmail')}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+            />
+            <PhoneField name="contactPhone" label={t('store.contactPhone')} />
+          </div>
+          <TextField name="line1" label={t('store.addressLine1')} autoComplete="address-line1" />
+          <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
+            <TextField
+              name="line2"
+              label={t('store.addressLine2')}
+              autoComplete="address-line2"
+              optional
+            />
+            <TextField name="city" label={t('store.city')} autoComplete="address-level2" />
+          </div>
+        </section>
+        <section aria-labelledby="store-business" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+          <div className="flex flex-col gap-1">
+            <h2 id="store-business" className={cardTitle}>
+              {t('business.title')}
+            </h2>
+            <p className="text-[13px] text-muted-foreground">{t('business.hint')}</p>
+          </div>
+          <TextField name="businessName" label={t('business.name')} maxLength={200} />
+          <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
+            <TextField name="tradeLicense" label={t('business.tradeLicense')} maxLength={50} />
+            <TextField name="dbid" label={t('business.dbid')} maxLength={50} />
+          </div>
+          <TextField
+            name="bin"
+            label={t('business.bin')}
+            hint={t('business.binHint')}
+            maxLength={20}
+            inputMode="numeric"
+          />
+        </section>
       </fieldset>
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-      {canEdit && (
-        <div>
-          <Button type="submit" disabled={save.isPending || !form.formState.isDirty}>
-            {t('action.save')}
-          </Button>
-        </div>
-      )}
+      <SaveBar
+        show={canEdit && form.formState.isDirty}
+        message={t('form.unsaved')}
+        discardLabel={t('action.discard')}
+        onDiscard={() => form.reset()}
+        saveLabel={t('action.save')}
+        busy={save.isPending}
+        onSave={() => void form.handleSubmit((v) => save.mutate(v))()}
+      />
     </Form>
   );
 }

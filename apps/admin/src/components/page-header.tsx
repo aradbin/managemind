@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useLocale } from '../i18n';
 import { cn } from '../lib/utils';
+import { useInSettingsFrame } from './settings-frame';
 
 export function PageHeader({
   title,
@@ -44,17 +45,35 @@ export function PageHeader({
     label: string;
   };
 }) {
+  // In a settings page's frame the list beside it leads back, and on phones
+  // the frame's own header carries the title (ADR 0034).
+  const framed = useInSettingsFrame();
   return (
-    <div className={cn('mb-4 flex flex-col gap-2', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-1',
+        !framed && 'mb-4',
+        // Phones: the frame's header has the title, so the line comes first.
+        framed && 'max-md:flex-col-reverse max-md:gap-3',
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-center gap-3">
-        {parent && <BackLink to={parent.to} label={parent.label} />}
-        <h1 className="min-w-0 truncate text-xl leading-7 font-semibold tracking-[-0.01em]">
+        {parent && !framed && <BackLink to={parent.to} label={parent.label} />}
+        <h1
+          className={cn(
+            'min-w-0 truncate text-xl leading-7 font-semibold tracking-[-0.01em]',
+            framed && 'max-md:hidden',
+          )}
+        >
           {title}
         </h1>
         {badges && <span className="flex flex-wrap gap-1.5">{badges}</span>}
         {actions && <div className="ml-auto flex flex-wrap gap-2">{actions}</div>}
       </div>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      {description && (
+        <p className={cn('text-muted-foreground', framed && 'max-md:text-[13px]')}>{description}</p>
+      )}
     </div>
   );
 }

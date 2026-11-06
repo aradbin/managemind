@@ -19,6 +19,7 @@ import { Route as ShellExpensesRouteImport } from './routes/_shell/expenses'
 import { Route as ShellMoreRouteImport } from './routes/_shell/more'
 import { Route as ShellPlatformRouteImport } from './routes/_shell/platform'
 import { Route as ShellReportsRouteImport } from './routes/_shell/reports'
+import { Route as ShellSettingsRouteRouteImport } from './routes/_shell/settings/route'
 import { Route as PrintInvoiceRouteImport } from './routes/print.invoice'
 import { Route as PrintOrdersRouteImport } from './routes/print.orders'
 import { Route as PrintPurchaseOrderRouteImport } from './routes/print.purchase-order'
@@ -146,6 +147,11 @@ const ShellPlatformRoute = ShellPlatformRouteImport.update({
 const ShellReportsRoute = ShellReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => ShellRoute,
+} as any)
+const ShellSettingsRouteRoute = ShellSettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => ShellRoute,
 } as any)
 const PrintInvoiceRoute = PrintInvoiceRouteImport.update({
@@ -369,91 +375,91 @@ const ShellReturnsIdRoute = ShellReturnsIdRouteImport.update({
   getParentRoute: () => ShellRoute,
 } as any)
 const ShellSettingsIndexRoute = ShellSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => ShellRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsBillingRoute = ShellSettingsBillingRouteImport.update({
-  id: '/settings/billing',
-  path: '/settings/billing',
-  getParentRoute: () => ShellRoute,
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsCheckoutRoute = ShellSettingsCheckoutRouteImport.update({
-  id: '/settings/checkout',
-  path: '/settings/checkout',
-  getParentRoute: () => ShellRoute,
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsConfirmationRoute =
   ShellSettingsConfirmationRouteImport.update({
-    id: '/settings/confirmation',
-    path: '/settings/confirmation',
-    getParentRoute: () => ShellRoute,
+    id: '/confirmation',
+    path: '/confirmation',
+    getParentRoute: () => ShellSettingsRouteRoute,
   } as any)
 const ShellSettingsCouriersRoute = ShellSettingsCouriersRouteImport.update({
-  id: '/settings/couriers',
-  path: '/settings/couriers',
-  getParentRoute: () => ShellRoute,
+  id: '/couriers',
+  path: '/couriers',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsDeliveryRoute = ShellSettingsDeliveryRouteImport.update({
-  id: '/settings/delivery',
-  path: '/settings/delivery',
-  getParentRoute: () => ShellRoute,
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsDomainsRoute = ShellSettingsDomainsRouteImport.update({
-  id: '/settings/domains',
-  path: '/settings/domains',
-  getParentRoute: () => ShellRoute,
+  id: '/domains',
+  path: '/domains',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsLocationRoute = ShellSettingsLocationRouteImport.update({
-  id: '/settings/location',
-  path: '/settings/location',
-  getParentRoute: () => ShellRoute,
+  id: '/location',
+  path: '/location',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsMessagesRoute = ShellSettingsMessagesRouteImport.update({
-  id: '/settings/messages',
-  path: '/settings/messages',
-  getParentRoute: () => ShellRoute,
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsMetaRoute = ShellSettingsMetaRouteImport.update({
-  id: '/settings/meta',
-  path: '/settings/meta',
-  getParentRoute: () => ShellRoute,
+  id: '/meta',
+  path: '/meta',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsNotificationsRoute =
   ShellSettingsNotificationsRouteImport.update({
-    id: '/settings/notifications',
-    path: '/settings/notifications',
-    getParentRoute: () => ShellRoute,
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => ShellSettingsRouteRoute,
   } as any)
 const ShellSettingsPaymentsRoute = ShellSettingsPaymentsRouteImport.update({
-  id: '/settings/payments',
-  path: '/settings/payments',
-  getParentRoute: () => ShellRoute,
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsReturnsRoute = ShellSettingsReturnsRouteImport.update({
-  id: '/settings/returns',
-  path: '/settings/returns',
-  getParentRoute: () => ShellRoute,
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsStaffRoute = ShellSettingsStaffRouteImport.update({
-  id: '/settings/staff',
-  path: '/settings/staff',
-  getParentRoute: () => ShellRoute,
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsStoreRoute = ShellSettingsStoreRouteImport.update({
-  id: '/settings/store',
-  path: '/settings/store',
-  getParentRoute: () => ShellRoute,
+  id: '/store',
+  path: '/store',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsTemplatesRoute = ShellSettingsTemplatesRouteImport.update({
-  id: '/settings/templates',
-  path: '/settings/templates',
-  getParentRoute: () => ShellRoute,
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellSettingsVatRoute = ShellSettingsVatRouteImport.update({
-  id: '/settings/vat',
-  path: '/settings/vat',
-  getParentRoute: () => ShellRoute,
+  id: '/vat',
+  path: '/vat',
+  getParentRoute: () => ShellSettingsRouteRoute,
 } as any)
 const ShellCatalogCollectionsIndexRoute =
   ShellCatalogCollectionsIndexRouteImport.update({
@@ -568,6 +574,7 @@ export interface FileRoutesByFullPath {
   '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
+  '/settings': typeof ShellSettingsRouteRouteWithChildren
   '/account': typeof ShellAccountRoute
   '/expenses': typeof ShellExpensesRoute
   '/more': typeof ShellMoreRoute
@@ -748,6 +755,7 @@ export interface FileRoutesById {
   '/invite': typeof InviteRoute
   '/sign-in': typeof SignInRoute
   '/two-factor': typeof TwoFactorRoute
+  '/_shell/settings': typeof ShellSettingsRouteRouteWithChildren
   '/_shell/account': typeof ShellAccountRoute
   '/_shell/expenses': typeof ShellExpensesRoute
   '/_shell/more': typeof ShellMoreRoute
@@ -841,6 +849,7 @@ export interface FileRouteTypes {
     | '/invite'
     | '/sign-in'
     | '/two-factor'
+    | '/settings'
     | '/account'
     | '/expenses'
     | '/more'
@@ -1020,6 +1029,7 @@ export interface FileRouteTypes {
     | '/invite'
     | '/sign-in'
     | '/two-factor'
+    | '/_shell/settings'
     | '/_shell/account'
     | '/_shell/expenses'
     | '/_shell/more'
@@ -1187,6 +1197,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ShellReportsRouteImport
+      parentRoute: typeof ShellRoute
+    }
+    '/_shell/settings': {
+      id: '/_shell/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ShellSettingsRouteRouteImport
       parentRoute: typeof ShellRoute
     }
     '/print/invoice': {
@@ -1492,122 +1509,122 @@ declare module '@tanstack/react-router' {
     }
     '/_shell/settings/': {
       id: '/_shell/settings/'
-      path: '/settings'
+      path: '/'
       fullPath: '/settings/'
       preLoaderRoute: typeof ShellSettingsIndexRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/billing': {
       id: '/_shell/settings/billing'
-      path: '/settings/billing'
+      path: '/billing'
       fullPath: '/settings/billing'
       preLoaderRoute: typeof ShellSettingsBillingRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/checkout': {
       id: '/_shell/settings/checkout'
-      path: '/settings/checkout'
+      path: '/checkout'
       fullPath: '/settings/checkout'
       preLoaderRoute: typeof ShellSettingsCheckoutRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/confirmation': {
       id: '/_shell/settings/confirmation'
-      path: '/settings/confirmation'
+      path: '/confirmation'
       fullPath: '/settings/confirmation'
       preLoaderRoute: typeof ShellSettingsConfirmationRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/couriers': {
       id: '/_shell/settings/couriers'
-      path: '/settings/couriers'
+      path: '/couriers'
       fullPath: '/settings/couriers'
       preLoaderRoute: typeof ShellSettingsCouriersRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/delivery': {
       id: '/_shell/settings/delivery'
-      path: '/settings/delivery'
+      path: '/delivery'
       fullPath: '/settings/delivery'
       preLoaderRoute: typeof ShellSettingsDeliveryRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/domains': {
       id: '/_shell/settings/domains'
-      path: '/settings/domains'
+      path: '/domains'
       fullPath: '/settings/domains'
       preLoaderRoute: typeof ShellSettingsDomainsRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/location': {
       id: '/_shell/settings/location'
-      path: '/settings/location'
+      path: '/location'
       fullPath: '/settings/location'
       preLoaderRoute: typeof ShellSettingsLocationRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/messages': {
       id: '/_shell/settings/messages'
-      path: '/settings/messages'
+      path: '/messages'
       fullPath: '/settings/messages'
       preLoaderRoute: typeof ShellSettingsMessagesRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/meta': {
       id: '/_shell/settings/meta'
-      path: '/settings/meta'
+      path: '/meta'
       fullPath: '/settings/meta'
       preLoaderRoute: typeof ShellSettingsMetaRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/notifications': {
       id: '/_shell/settings/notifications'
-      path: '/settings/notifications'
+      path: '/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof ShellSettingsNotificationsRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/payments': {
       id: '/_shell/settings/payments'
-      path: '/settings/payments'
+      path: '/payments'
       fullPath: '/settings/payments'
       preLoaderRoute: typeof ShellSettingsPaymentsRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/returns': {
       id: '/_shell/settings/returns'
-      path: '/settings/returns'
+      path: '/returns'
       fullPath: '/settings/returns'
       preLoaderRoute: typeof ShellSettingsReturnsRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/staff': {
       id: '/_shell/settings/staff'
-      path: '/settings/staff'
+      path: '/staff'
       fullPath: '/settings/staff'
       preLoaderRoute: typeof ShellSettingsStaffRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/store': {
       id: '/_shell/settings/store'
-      path: '/settings/store'
+      path: '/store'
       fullPath: '/settings/store'
       preLoaderRoute: typeof ShellSettingsStoreRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/templates': {
       id: '/_shell/settings/templates'
-      path: '/settings/templates'
+      path: '/templates'
       fullPath: '/settings/templates'
       preLoaderRoute: typeof ShellSettingsTemplatesRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/settings/vat': {
       id: '/_shell/settings/vat'
-      path: '/settings/vat'
+      path: '/vat'
       fullPath: '/settings/vat'
       preLoaderRoute: typeof ShellSettingsVatRouteImport
-      parentRoute: typeof ShellRoute
+      parentRoute: typeof ShellSettingsRouteRoute
     }
     '/_shell/catalog/collections/': {
       id: '/_shell/catalog/collections/'
@@ -1745,6 +1762,49 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ShellSettingsRouteRouteChildren {
+  ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
+  ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
+  ShellSettingsConfirmationRoute: typeof ShellSettingsConfirmationRoute
+  ShellSettingsCouriersRoute: typeof ShellSettingsCouriersRoute
+  ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
+  ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
+  ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
+  ShellSettingsMessagesRoute: typeof ShellSettingsMessagesRoute
+  ShellSettingsMetaRoute: typeof ShellSettingsMetaRoute
+  ShellSettingsNotificationsRoute: typeof ShellSettingsNotificationsRoute
+  ShellSettingsPaymentsRoute: typeof ShellSettingsPaymentsRoute
+  ShellSettingsReturnsRoute: typeof ShellSettingsReturnsRoute
+  ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
+  ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
+  ShellSettingsTemplatesRoute: typeof ShellSettingsTemplatesRoute
+  ShellSettingsVatRoute: typeof ShellSettingsVatRoute
+  ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
+}
+
+const ShellSettingsRouteRouteChildren: ShellSettingsRouteRouteChildren = {
+  ShellSettingsBillingRoute: ShellSettingsBillingRoute,
+  ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
+  ShellSettingsConfirmationRoute: ShellSettingsConfirmationRoute,
+  ShellSettingsCouriersRoute: ShellSettingsCouriersRoute,
+  ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
+  ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
+  ShellSettingsLocationRoute: ShellSettingsLocationRoute,
+  ShellSettingsMessagesRoute: ShellSettingsMessagesRoute,
+  ShellSettingsMetaRoute: ShellSettingsMetaRoute,
+  ShellSettingsNotificationsRoute: ShellSettingsNotificationsRoute,
+  ShellSettingsPaymentsRoute: ShellSettingsPaymentsRoute,
+  ShellSettingsReturnsRoute: ShellSettingsReturnsRoute,
+  ShellSettingsStaffRoute: ShellSettingsStaffRoute,
+  ShellSettingsStoreRoute: ShellSettingsStoreRoute,
+  ShellSettingsTemplatesRoute: ShellSettingsTemplatesRoute,
+  ShellSettingsVatRoute: ShellSettingsVatRoute,
+  ShellSettingsIndexRoute: ShellSettingsIndexRoute,
+}
+
+const ShellSettingsRouteRouteWithChildren =
+  ShellSettingsRouteRoute._addFileChildren(ShellSettingsRouteRouteChildren)
+
 interface ShellPlatformRouteChildren {
   ShellPlatformAuditRoute: typeof ShellPlatformAuditRoute
   ShellPlatformCourierAreasRoute: typeof ShellPlatformCourierAreasRoute
@@ -1776,6 +1836,7 @@ const ShellPlatformRouteWithChildren = ShellPlatformRoute._addFileChildren(
 )
 
 interface ShellRouteChildren {
+  ShellSettingsRouteRoute: typeof ShellSettingsRouteRouteWithChildren
   ShellAccountRoute: typeof ShellAccountRoute
   ShellExpensesRoute: typeof ShellExpensesRoute
   ShellMoreRoute: typeof ShellMoreRoute
@@ -1809,22 +1870,6 @@ interface ShellRouteChildren {
   ShellReportsStockRoute: typeof ShellReportsStockRoute
   ShellReportsSuppliersRoute: typeof ShellReportsSuppliersRoute
   ShellReturnsIdRoute: typeof ShellReturnsIdRoute
-  ShellSettingsBillingRoute: typeof ShellSettingsBillingRoute
-  ShellSettingsCheckoutRoute: typeof ShellSettingsCheckoutRoute
-  ShellSettingsConfirmationRoute: typeof ShellSettingsConfirmationRoute
-  ShellSettingsCouriersRoute: typeof ShellSettingsCouriersRoute
-  ShellSettingsDeliveryRoute: typeof ShellSettingsDeliveryRoute
-  ShellSettingsDomainsRoute: typeof ShellSettingsDomainsRoute
-  ShellSettingsLocationRoute: typeof ShellSettingsLocationRoute
-  ShellSettingsMessagesRoute: typeof ShellSettingsMessagesRoute
-  ShellSettingsMetaRoute: typeof ShellSettingsMetaRoute
-  ShellSettingsNotificationsRoute: typeof ShellSettingsNotificationsRoute
-  ShellSettingsPaymentsRoute: typeof ShellSettingsPaymentsRoute
-  ShellSettingsReturnsRoute: typeof ShellSettingsReturnsRoute
-  ShellSettingsStaffRoute: typeof ShellSettingsStaffRoute
-  ShellSettingsStoreRoute: typeof ShellSettingsStoreRoute
-  ShellSettingsTemplatesRoute: typeof ShellSettingsTemplatesRoute
-  ShellSettingsVatRoute: typeof ShellSettingsVatRoute
   ShellCustomersIndexRoute: typeof ShellCustomersIndexRoute
   ShellInventoryIndexRoute: typeof ShellInventoryIndexRoute
   ShellOnlineStoreIndexRoute: typeof ShellOnlineStoreIndexRoute
@@ -1832,7 +1877,6 @@ interface ShellRouteChildren {
   ShellProductsIndexRoute: typeof ShellProductsIndexRoute
   ShellPromotionsIndexRoute: typeof ShellPromotionsIndexRoute
   ShellReturnsIndexRoute: typeof ShellReturnsIndexRoute
-  ShellSettingsIndexRoute: typeof ShellSettingsIndexRoute
   ShellCatalogCollectionsIdRoute: typeof ShellCatalogCollectionsIdRoute
   ShellInventoryCountsIdRoute: typeof ShellInventoryCountsIdRoute
   ShellInventoryPurchaseOrdersIdRoute: typeof ShellInventoryPurchaseOrdersIdRoute
@@ -1851,6 +1895,7 @@ interface ShellRouteChildren {
 }
 
 const ShellRouteChildren: ShellRouteChildren = {
+  ShellSettingsRouteRoute: ShellSettingsRouteRouteWithChildren,
   ShellAccountRoute: ShellAccountRoute,
   ShellExpensesRoute: ShellExpensesRoute,
   ShellMoreRoute: ShellMoreRoute,
@@ -1884,22 +1929,6 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellReportsStockRoute: ShellReportsStockRoute,
   ShellReportsSuppliersRoute: ShellReportsSuppliersRoute,
   ShellReturnsIdRoute: ShellReturnsIdRoute,
-  ShellSettingsBillingRoute: ShellSettingsBillingRoute,
-  ShellSettingsCheckoutRoute: ShellSettingsCheckoutRoute,
-  ShellSettingsConfirmationRoute: ShellSettingsConfirmationRoute,
-  ShellSettingsCouriersRoute: ShellSettingsCouriersRoute,
-  ShellSettingsDeliveryRoute: ShellSettingsDeliveryRoute,
-  ShellSettingsDomainsRoute: ShellSettingsDomainsRoute,
-  ShellSettingsLocationRoute: ShellSettingsLocationRoute,
-  ShellSettingsMessagesRoute: ShellSettingsMessagesRoute,
-  ShellSettingsMetaRoute: ShellSettingsMetaRoute,
-  ShellSettingsNotificationsRoute: ShellSettingsNotificationsRoute,
-  ShellSettingsPaymentsRoute: ShellSettingsPaymentsRoute,
-  ShellSettingsReturnsRoute: ShellSettingsReturnsRoute,
-  ShellSettingsStaffRoute: ShellSettingsStaffRoute,
-  ShellSettingsStoreRoute: ShellSettingsStoreRoute,
-  ShellSettingsTemplatesRoute: ShellSettingsTemplatesRoute,
-  ShellSettingsVatRoute: ShellSettingsVatRoute,
   ShellCustomersIndexRoute: ShellCustomersIndexRoute,
   ShellInventoryIndexRoute: ShellInventoryIndexRoute,
   ShellOnlineStoreIndexRoute: ShellOnlineStoreIndexRoute,
@@ -1907,7 +1936,6 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellProductsIndexRoute: ShellProductsIndexRoute,
   ShellPromotionsIndexRoute: ShellPromotionsIndexRoute,
   ShellReturnsIndexRoute: ShellReturnsIndexRoute,
-  ShellSettingsIndexRoute: ShellSettingsIndexRoute,
   ShellCatalogCollectionsIdRoute: ShellCatalogCollectionsIdRoute,
   ShellInventoryCountsIdRoute: ShellInventoryCountsIdRoute,
   ShellInventoryPurchaseOrdersIdRoute: ShellInventoryPurchaseOrdersIdRoute,

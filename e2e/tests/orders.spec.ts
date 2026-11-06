@@ -458,7 +458,7 @@ test('orders, promotions and accounts', async ({
 
   await test.step('the owner turns accounts on and a shopper signs in with a code', async () => {
     await page.goto(`${API}/settings/checkout`);
-    await page.getByRole('checkbox', { name: new RegExp(m('checkoutSettings.accounts')) }).check();
+    await page.getByRole('switch', { name: new RegExp(m('checkoutSettings.accounts')) }).check();
     await expectAccessible(page, 'checkout settings');
     await page
       .getByRole('button', { name: m('action.save') })
