@@ -142,7 +142,7 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
       .locator('visible=true')
       .click();
     await admin.getByRole('button', { name: t('tenant.close') }).click();
-    const dialog = admin.getByRole('dialog');
+    const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E: the test is over');
     await dialog.getByLabel(t('tenant.code')).fill(await code());
     await dialog.getByLabel(t('confirm.typeToConfirm', { word: p.launchSlug })).fill(p.launchSlug);

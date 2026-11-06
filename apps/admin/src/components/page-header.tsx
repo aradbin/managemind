@@ -62,9 +62,12 @@ export function PageHeader({
 /** A ghost arrow back to the page this one sits under, named by it. */
 export function BackLink({
   to,
+  params,
   label,
 }: {
   to: NonNullable<ComponentProps<typeof Link>['to']>;
+  /** The route's params, such as { id }. */
+  params?: Record<string, string>;
   label: string;
 }) {
   const { t } = useLocale();
@@ -72,6 +75,7 @@ export function BackLink({
     <nav aria-label={t('nav.breadcrumb')} className="-ml-2 shrink-0">
       <Link
         to={to}
+        {...(params ? { params: params as never } : {})}
         aria-label={label}
         title={label}
         className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-accent md:size-8"

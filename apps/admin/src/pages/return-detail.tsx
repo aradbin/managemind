@@ -8,15 +8,19 @@
 import { RETURN_REASONS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Check } from 'lucide-react';
+import { Check, Package } from 'lucide-react';
 import { useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { PhoneRecordHeader } from '../components/record-header';
 import { RefundDialog } from '../components/refund-dialog';
 import { useToast } from '../components/toast';
+import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { VariantPicker } from '../components/variant-picker';
@@ -25,8 +29,9 @@ import '../i18n/orders';
 import '../i18n/returns';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
-import { dateTime, idempotencyKey, lineLabel, withKey } from '../lib/orders';
+import { dateTime, idempotencyKey, lineLabel, pickText, withKey } from '../lib/orders';
 import {
   photoUrl,
   RETURN_STEPS,
@@ -36,9 +41,8 @@ import {
   returnErrorMessage,
   returnQuery,
 } from '../lib/returns';
+import { cn } from '../lib/utils';
 import { ReturnStatusChip } from './returns';
-
-const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 /** Refreshes the return, its order and the lists after a change. */
 function useRefresh(ret: { id: string; orderId: string }) {
@@ -56,87 +60,54 @@ export function ReturnDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
   const { t, locale } = useLocale();
   const ret = useQuery(returnQuery(id));
+  useRecordPage(ret.data ? t('return.title', { number: ret.data.displayNumber }) : undefined);
   if (ret.isPending) return <p role="status">{t('loading')}</p>;
   if (ret.isError) return <Notice tone="error">{errorMessage(ret.error, t)}</Notice>;
   const r = ret.data;
+  const title = t('return.title', { number: r.displayNumber });
+  const history = (
+    [
+      [r.createdAt, t('return.history.requested')],
+      [r.approvedAt, t('return.history.approved')],
+      [r.receivedAt, t('return.history.received')],
+      [r.inspectedAt, t('return.history.inspected')],
+      [
+        r.resolvedAt,
+        t(r.status === 'rejected' ? 'return.history.rejected' : 'return.history.resolved'),
+      ],
+    ] as const
+  )
+    .filter((x): x is readonly [string, string] => Boolean(x[0]))
+    .reverse();
   return (
-    <div className="flex max-w-4xl flex-col gap-4">
-      <Breadcrumb to="/returns" label={t('returns.title')} />
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight">
-            {t('return.title', { number: r.displayNumber })}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            <Link to="/orders/$id" params={{ id: r.orderId }} className="underline">
-              {r.orderNumber}
-            </Link>{' '}
-            · {r.customerName} · {dateTime(locale, r.createdAt)}
-          </p>
-          <div>
-            <ReturnStatusChip status={r.status} />
-          </div>
-        </div>
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader to="/returns" backLabel={t('return.back')} title={title} />
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="max-md:hidden">
+          <BackLink to="/returns" label={t('return.back')} />
+        </span>
+        <h1 className="text-xl leading-7 font-semibold tracking-[-0.01em] max-md:hidden">
+          {title}
+        </h1>
+        <ReturnStatusChip status={r.status} />
+        <span className="flex-1" />
+        <Actions ret={r} />
       </div>
+      <p className="-mt-2 text-muted-foreground">
+        <Link
+          to="/orders/$id"
+          params={{ id: r.orderId }}
+          className="font-mono underline-offset-4 hover:underline"
+        >
+          {r.orderNumber}
+        </Link>{' '}
+        · {r.customerName} · {dateTime(locale, r.createdAt)}
+      </p>
       <Steps ret={r} />
       {r.status === 'rejected' && (
         <Notice tone="error">
           {t('return.rejectedBecause', { reason: r.rejectReason ?? '—' })}
         </Notice>
-      )}
-      <Actions ret={r} />
-      <section aria-labelledby="return-lines" className={section}>
-        <h2 id="return-lines" className="font-semibold">
-          {t('return.lines')}
-        </h2>
-        <p className="text-sm">
-          {t(`return.reason.${r.reason}` as AdminKey)}
-          {r.shopperPaysReturn !== null &&
-            ` · ${t(r.shopperPaysReturn ? 'return.shopperPays' : 'return.storePays')}`}
-        </p>
-        {r.note && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{r.note}</p>}
-        <ul className="flex flex-col divide-y divide-border text-sm">
-          {r.lines.map((l) => (
-            <li key={l.orderLineId} className="flex flex-wrap justify-between gap-2 py-2">
-              <span>
-                {lineLabel(l, locale)} × {l.quantity}
-                {l.reason && l.reason !== r.reason && (
-                  <span className="block text-xs text-muted-foreground">
-                    {t(`return.reason.${l.reason}` as AdminKey)}
-                  </span>
-                )}
-              </span>
-              {r.inspectedAt && (
-                <span className="text-muted-foreground">
-                  {t('return.inspected', { sellable: l.restocked, damaged: l.writtenOff })}
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
-        {r.credit > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {t('return.credit', { amount: formatPrice(r.credit, locale) })}
-          </p>
-        )}
-      </section>
-      {r.photos.length > 0 && (
-        <section aria-labelledby="return-photos" className={section}>
-          <h2 id="return-photos" className="font-semibold">
-            {t('return.photos')}
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            {r.photos.map((p, i) => (
-              <a key={p.id} href={photoUrl(r.id, p.id)} target="_blank" rel="noopener">
-                <img
-                  src={photoUrl(r.id, p.id)}
-                  alt={t('return.photo', { n: i + 1 })}
-                  className="size-32 rounded-md border border-border object-cover"
-                />
-              </a>
-            ))}
-          </div>
-        </section>
       )}
       {r.exchangeOrderId && (
         <Notice>
@@ -146,10 +117,135 @@ export function ReturnDetailPage() {
           </Link>
         </Notice>
       )}
+      <div className="grid items-start gap-3 md:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section aria-labelledby="return-lines" className={cn(cardPadded, 'gap-2.5 md:gap-2.5')}>
+          <h2 id="return-lines" className={cardTitle}>
+            {t('return.lines')}
+          </h2>
+          <ul className="flex flex-col">
+            {r.lines.map((l) => {
+              const options = l.optionLabels
+                .map((o) => pickText(o, locale))
+                .filter(Boolean)
+                .join(' / ');
+              return (
+                <li
+                  key={l.orderLineId}
+                  className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    <Package aria-hidden className="size-4" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate font-medium">
+                      {l.quantity} × {pickText(l.title, locale)}
+                    </span>
+                    {options && (
+                      <span className="truncate text-xs text-muted-foreground">{options}</span>
+                    )}
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <SecondaryBadge>
+                        {t(`return.reason.${l.reason ?? r.reason}` as AdminKey)}
+                      </SecondaryBadge>
+                      {r.inspectedAt && (
+                        <span
+                          className={cn(
+                            'text-xs font-medium',
+                            l.writtenOff ? 'text-danger' : 'text-success-foreground',
+                          )}
+                        >
+                          {t('return.inspected', { sellable: l.restocked, damaged: l.writtenOff })}
+                        </span>
+                      )}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {(r.note || r.photos.length > 0) && (
+            <div className="flex flex-col gap-1.5 border-t border-border pt-3">
+              <span className={fieldLabel}>{t('return.customerSaid')}</span>
+              {r.note && (
+                <blockquote className="border-l-2 border-border pl-3 whitespace-pre-wrap">
+                  {r.note}
+                </blockquote>
+              )}
+              {r.photos.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {r.photos.map((p, i) => (
+                    <a key={p.id} href={photoUrl(r.id, p.id)} target="_blank" rel="noopener">
+                      <img
+                        src={photoUrl(r.id, p.id)}
+                        alt={t('return.photo', { n: i + 1 })}
+                        className="size-14 rounded-lg border border-border object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+        <div className="flex flex-col gap-3 md:gap-4">
+          <section aria-labelledby="return-customer" className={cardPadded}>
+            <h2 id="return-customer" className={cardTitle}>
+              {t('order.customer')}
+            </h2>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">{r.customerName}</span>
+              <span className="text-[13px] text-muted-foreground">
+                {t('return.orderRef')}{' '}
+                <Link
+                  to="/orders/$id"
+                  params={{ id: r.orderId }}
+                  className="font-mono text-foreground"
+                >
+                  {r.orderNumber}
+                </Link>
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 border-t border-border pt-3">
+              <span className={fieldLabel}>{t('return.why')}</span>
+              <span>{t(`return.reason.${r.reason}` as AdminKey)}</span>
+              {r.shopperPaysReturn !== null && (
+                <span className="text-[13px] text-muted-foreground">
+                  {t(r.shopperPaysReturn ? 'return.shopperPays' : 'return.storePays')}
+                </span>
+              )}
+              {r.credit > 0 && (
+                <span className="text-[13px] text-muted-foreground">
+                  {t('return.credit', { amount: formatPrice(r.credit, locale) })}
+                </span>
+              )}
+            </div>
+          </section>
+          <section aria-labelledby="return-history" className={cardPadded}>
+            <h2 id="return-history" className={cardTitle}>
+              {t('return.history')}
+            </h2>
+            <ol className="flex flex-col gap-3">
+              {history.map(([when, text]) => (
+                <li key={text} className="flex gap-2.5">
+                  <span
+                    aria-hidden
+                    className="mt-1.5 size-2 shrink-0 rounded-full bg-muted-foreground/60"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span>{text}</span>
+                    <span className="text-xs text-muted-foreground">{dateTime(locale, when)}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
 
+/** The board's step bar: a numbered dot per step, a check once done. */
 function Steps({ ret }: { ret: ReturnDetail }) {
   const { t } = useLocale();
   if (ret.status === 'rejected') return null;
@@ -157,19 +253,36 @@ function Steps({ ret }: { ret: ReturnDetail }) {
     ret.status === 'in_transit' ? 'approved' : (ret.status as (typeof RETURN_STEPS)[number]),
   );
   return (
-    <ol className="flex flex-wrap gap-2 text-sm" aria-label={t('return.progress')}>
-      {RETURN_STEPS.map((step, i) => (
-        <li
-          key={step}
-          aria-current={i === reached ? 'step' : undefined}
-          className={`flex items-center gap-1 rounded-full px-3 py-1 ${
-            i <= reached ? 'bg-muted text-foreground' : 'bg-muted text-muted-foreground'
-          }`}
-        >
-          {i < reached && <Check aria-hidden className="size-4" />}
-          {t(`return.step.${step}` as AdminKey)}
-        </li>
-      ))}
+    <ol className="flex items-center" aria-label={t('return.progress')}>
+      {RETURN_STEPS.map((step, i) => {
+        const done = i < reached || (i === reached && i === RETURN_STEPS.length - 1);
+        const now = i === reached && !done;
+        return (
+          <li
+            key={step}
+            aria-current={now ? 'step' : undefined}
+            className={cn(
+              'flex min-w-0 items-center gap-2 text-[13px] text-muted-foreground after:mx-2 after:h-px after:min-w-4 after:flex-1 after:bg-border last:after:hidden',
+              now ? 'flex-1 font-medium text-foreground' : 'flex-[0_1_auto] md:flex-1',
+              done && 'text-foreground',
+            )}
+          >
+            <span
+              className={cn(
+                'inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[11px] font-semibold',
+                done && 'border-primary bg-primary text-primary-foreground',
+                now &&
+                  'border-primary shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-primary)_15%,transparent)]',
+              )}
+            >
+              {done ? <Check aria-hidden className="size-3" /> : i + 1}
+            </span>
+            <span className={cn('truncate', !now && 'max-md:sr-only')}>
+              {t(`return.step.${step}` as AdminKey)}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -206,29 +319,29 @@ function Actions({ ret }: { ret: ReturnDetail }) {
   if (!canWrite) return null;
   const s = ret.status;
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-2">
+    <>
+      <span className="flex flex-wrap gap-2 max-md:w-full max-md:[&>*]:flex-1">
         {s === 'requested' && (
           <>
-            <Button disabled={move.isPending} onClick={() => move.mutate('approve')}>
-              {t('return.approve')}
-            </Button>
             <Button variant="secondary" onClick={() => setDialog('reject')}>
               {t('return.reject')}
+            </Button>
+            <Button disabled={move.isPending} onClick={() => move.mutate('approve')}>
+              {t('return.approve')}
             </Button>
           </>
         )}
         {s === 'approved' && (
           <>
-            <Button disabled={move.isPending} onClick={() => move.mutate('receive')}>
-              {t('return.receive')}
-            </Button>
             <Button
               variant="secondary"
               disabled={move.isPending}
               onClick={() => move.mutate('send')}
             >
               {t('return.send')}
+            </Button>
+            <Button disabled={move.isPending} onClick={() => move.mutate('receive')}>
+              {t('return.receive')}
             </Button>
           </>
         )}
@@ -242,18 +355,18 @@ function Actions({ ret }: { ret: ReturnDetail }) {
         )}
         {s === 'inspected' && (
           <>
-            {canRefund && <Button onClick={() => setDialog('refund')}>{t('return.refund')}</Button>}
-            <Button variant="secondary" onClick={() => setDialog('exchange')}>
-              {t('return.exchange')}
-            </Button>
             <Button variant="secondary" onClick={() => setDialog('close')}>
               {t('return.close')}
             </Button>
+            <Button variant="secondary" onClick={() => setDialog('exchange')}>
+              {t('return.exchange')}
+            </Button>
+            {canRefund && <Button onClick={() => setDialog('refund')}>{t('return.refund')}</Button>}
           </>
         )}
-      </div>
+      </span>
       {move.error && (
-        <Notice tone="error">
+        <Notice tone="error" className="w-full">
           {returnErrorMessage(move.error, (e) => saveErrorMessage(e, t))}
         </Notice>
       )}
@@ -285,7 +398,7 @@ function Actions({ ret }: { ret: ReturnDetail }) {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

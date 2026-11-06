@@ -39,20 +39,20 @@
   --color-ring: oklch(0.708 0 0);
   --color-bar: #155dfc;
   /* Red: text and icons (`danger`), fills under white text (`danger-fill`). */
-  --color-danger: oklch(0.531 0.245 27.325);
+  --color-danger: oklch(0.487 0.245 27.325);
   --color-danger-fill: oklch(0.577 0.245 27.325);
   --color-danger-foreground: oklch(1 0 0);
   --color-danger-soft: color-mix(in oklch, var(--tone-danger) 12%, transparent);
   --color-warning: color-mix(in oklch, var(--tone-warn) 16%, transparent);
-  --color-warning-foreground: oklch(0.536 0.179 58.318);
+  --color-warning-foreground: oklch(0.514 0.179 58.318);
   --color-info: color-mix(in oklch, var(--tone-info) 12%, transparent);
-  --color-info-foreground: oklch(0.538 0.245 262.881);
+  --color-info-foreground: oklch(0.518 0.245 262.881);
   --color-shipped: color-mix(in oklch, var(--tone-violet) 12%, transparent);
-  --color-shipped-foreground: oklch(0.541 0.281 293.009);
+  --color-shipped-foreground: oklch(0.534 0.281 293.009);
   /* Green: dots and bars (`success`), text (`success-foreground`). */
   --color-success: var(--tone-success);
   --color-success-soft: color-mix(in oklch, var(--tone-success) 14%, transparent);
-  --color-success-foreground: oklch(0.499 0.219 149.579);
+  --color-success-foreground: oklch(0.473 0.219 149.579);
 }
 
 /*
@@ -85,10 +85,10 @@
     --color-primary-foreground: oklch(0.205 0 0);
     --color-ring: oklch(0.556 0 0);
     --color-bar: #2b7fff;
-    --color-danger: oklch(0.704 0.191 22.216);
+    --color-danger: oklch(0.724 0.191 22.216);
     --color-warning-foreground: oklch(0.769 0.188 70.08);
     --color-info-foreground: oklch(0.707 0.165 254.624);
-    --color-shipped-foreground: oklch(0.702 0.183 293.541);
+    --color-shipped-foreground: oklch(0.716 0.183 293.541);
     --color-success-foreground: oklch(0.792 0.209 151.711);
   }
 }

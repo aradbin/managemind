@@ -30,7 +30,6 @@ import { saveErrorMessage } from '../lib/errors';
 import { pageQuery, pagesQuery, type StorePage } from '../lib/online-store';
 import { useOpenNew } from '../lib/open-new';
 import { dateOnly } from '../lib/orders';
-import { cn } from '../lib/utils';
 
 export function StorePagesPage() {
   const { t, locale } = useLocale();

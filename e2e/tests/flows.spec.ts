@@ -50,8 +50,11 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     const html = owner.locator('html');
     const pick = async (label: string) => {
       if (phone) {
+        // The phone Menu has a Dark mode switch; off is the light theme.
         await owner.goto(`${API}/more`);
-        await owner.getByRole('radio', { name: label }).check();
+        await owner
+          .getByRole('switch', { name: t('more.darkMode') })
+          .setChecked(label === t('appearance.dark'));
       } else {
         await owner.getByRole('button', { name: t('account.menu') }).click();
         await owner.getByRole('menuitemradio', { name: label }).click();
@@ -156,7 +159,8 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     await expect(admin.getByRole('heading', { name: p.storeName })).toBeVisible();
     await expectAccessible(admin, 'store detail');
     await admin.getByRole('button', { name: t('tenant.suspend') }).click();
-    const dialog = admin.getByRole('dialog');
+    // Confirmations are alert dialogs (ADR 0034).
+    const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E suspension test');
     await dialog.getByLabel(t('confirm.typeToConfirm', { word: p.slug })).fill(p.slug);
     await expectAccessible(admin, 'suspend dialog');
@@ -176,7 +180,7 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
 
     await admin.getByRole('button', { name: t('tenant.reactivate') }).click();
     await admin
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .getByRole('button', { name: t('tenant.reactivate') })
       .click();
     await expect(admin.getByText(t('tenant.reactivated', { name: p.storeName }))).toBeVisible();

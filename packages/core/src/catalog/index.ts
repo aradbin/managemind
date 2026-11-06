@@ -1,3 +1,4 @@
+export * from './activity';
 export * from './attributes';
 export * from './categories';
 export * from './collections';

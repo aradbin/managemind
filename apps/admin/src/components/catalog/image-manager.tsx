@@ -4,7 +4,7 @@
 // them, and choose a variant's image. At most 10 per product.
 import { CATALOG_LIMITS } from '@managemind/shared/catalog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ImageIcon, Plus, Trash2 } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
@@ -12,6 +12,7 @@ import { type Product, productKeys } from '../../lib/catalog';
 import { saveErrorMessage } from '../../lib/errors';
 import { fileName, ImageError, prepareImage, uploadImage } from '../../lib/images';
 import { variantLabel } from '../../pages/products';
+import { fieldLabel } from '../field-styles';
 import { Notice } from '../notice';
 import { useToast } from '../toast';
 import { Button } from '../ui/button';
@@ -52,6 +53,7 @@ export function ImageManager({
   const [dirty, setDirty] = useState(false);
   const [uploading, setUploading] = useState<{ done: number; total: number } | null>(null);
   const [uploadError, setUploadError] = useState<string>();
+  const [selected, setSelected] = useState<string | null>(null);
   const other = otherLang(defaultLang);
   const room = CATALOG_LIMITS.imagesPerProduct - items.length;
 
@@ -88,8 +90,11 @@ export function ImageManager({
     }
     setUploading(null);
     if (fileInput.current) fileInput.current.value = '';
-    if (added.length)
+    if (added.length) {
       change([...items, ...added.filter((a) => !items.some((x) => x.mediaId === a.mediaId))]);
+      // The first new photo opens, for its alt text.
+      setSelected(added[0]?.mediaId ?? null);
+    }
   }
 
   const save = useMutation({
@@ -120,109 +125,125 @@ export function ImageManager({
     },
   });
 
+  const index = items.findIndex((x) => x.mediaId === selected);
+  const item = index >= 0 ? items[index] : undefined;
   return (
-    <section aria-labelledby="images-heading" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <h2 id="images-heading" className="text-lg font-semibold">
-          {t('images.title')}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {t('images.intro', { max: CATALOG_LIMITS.imagesPerProduct })}
-        </p>
-      </div>
-      {items.length > 0 && (
-        <ol className="flex flex-col gap-3" aria-label={t('images.title')}>
-          {items.map((item, i) => (
-            <li
-              key={item.mediaId}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 md:flex-row"
+    <section aria-labelledby="images-heading" className="flex min-w-0 flex-col">
+      <span id="images-heading" className={fieldLabel}>
+        {t('images.title')}
+      </span>
+      {/* Tiles as drawn (.mm-ph, .mm-phadd): the first is the main photo. */}
+      <ol className="flex flex-wrap gap-2" aria-label={t('images.title')}>
+        {items.map((x, i) => (
+          <li key={x.mediaId}>
+            <button
+              type="button"
+              aria-pressed={selected === x.mediaId}
+              aria-label={i === 0 ? t('images.main') : t('images.position', { n: i + 1 })}
+              onClick={() => setSelected(selected === x.mediaId ? null : x.mediaId)}
+              className="relative flex size-[72px] items-center justify-center overflow-hidden rounded-[10px] border border-border bg-muted text-muted-foreground aria-pressed:border-2 aria-pressed:border-primary"
             >
-              {item.file && (
+              {x.file ? (
                 <img
-                  src={`/api/admin/media/files/${item.file}`}
-                  alt={item.alt[locale] ?? item.alt[otherLang(locale)] ?? ''}
-                  className="size-28 shrink-0 rounded object-cover"
+                  src={`/api/admin/media/files/${x.file}`}
+                  alt={x.alt[locale] ?? x.alt[otherLang(locale)] ?? ''}
+                  className="size-full object-cover"
                 />
+              ) : (
+                <ImageIcon aria-hidden className="size-5" />
               )}
-              <div className="flex flex-1 flex-col gap-2">
-                <p className="text-sm text-muted-foreground">
-                  {i === 0 ? t('images.main') : t('images.position', { n: i + 1 })}
-                </p>
-                {[defaultLang, other].map((lang) => (
-                  <Input
-                    key={lang}
-                    lang={lang}
-                    disabled={disabled}
-                    aria-label={t('images.alt', { language: LANGUAGE_NAMES[lang], n: i + 1 })}
-                    placeholder={t('images.alt', { language: LANGUAGE_NAMES[lang], n: i + 1 })}
-                    value={item.alt[lang] ?? ''}
-                    onChange={(e) =>
-                      change(
-                        items.map((x) =>
-                          x.mediaId === item.mediaId
-                            ? { ...x, alt: { ...x.alt, [lang]: e.target.value } }
-                            : x,
-                        ),
-                      )
-                    }
-                  />
-                ))}
-              </div>
-              <div className="flex gap-1 md:flex-col">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={disabled || i === 0}
-                  aria-label={t('images.up', { n: i + 1 })}
-                  onClick={() => move(i, -1)}
+              {i === 0 && (
+                <span
+                  aria-hidden
+                  className="absolute bottom-1 left-1 rounded bg-background px-1 text-[10px] leading-4 font-semibold text-foreground"
                 >
-                  <ArrowUp aria-hidden className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={disabled || i === items.length - 1}
-                  aria-label={t('images.down', { n: i + 1 })}
-                  onClick={() => move(i, 1)}
-                >
-                  <ArrowDown aria-hidden className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={disabled}
-                  aria-label={t('images.remove', { n: i + 1 })}
-                  onClick={() => change(items.filter((x) => x.mediaId !== item.mediaId))}
-                >
-                  <Trash2 aria-hidden className="size-4" />
-                </Button>
-              </div>
-            </li>
+                  {t('images.mainShort')}
+                </span>
+              )}
+            </button>
+          </li>
+        ))}
+        {room > 0 && !disabled && (
+          <li>
+            <button
+              type="button"
+              disabled={Boolean(uploading)}
+              onClick={() => fileInput.current?.click()}
+              aria-label={t('images.add')}
+              className="flex size-[72px] flex-col items-center justify-center gap-0.5 rounded-[10px] border border-dashed border-input text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+            >
+              <Plus aria-hidden className="size-4" />
+              {t('images.addShort')}
+            </button>
+          </li>
+        )}
+      </ol>
+      <input
+        ref={fileInput}
+        id={inputId}
+        type="file"
+        accept="image/*"
+        multiple
+        // The Add tile opens it; screen readers meet only the tile.
+        tabIndex={-1}
+        aria-hidden
+        className="sr-only"
+        onChange={(e) => addFiles(e.target.files)}
+      />
+      {item && (
+        <div className="mt-3 flex flex-col gap-2 rounded-[10px] border border-border p-3">
+          <p className="text-[13px] text-muted-foreground">
+            {index === 0 ? t('images.main') : t('images.position', { n: index + 1 })}
+          </p>
+          {[defaultLang, other].map((lang) => (
+            <Input
+              key={lang}
+              lang={lang}
+              disabled={disabled}
+              aria-label={t('images.alt', { language: LANGUAGE_NAMES[lang], n: index + 1 })}
+              placeholder={t('images.alt', { language: LANGUAGE_NAMES[lang], n: index + 1 })}
+              value={item.alt[lang] ?? ''}
+              onChange={(e) =>
+                change(
+                  items.map((x) =>
+                    x.mediaId === item.mediaId
+                      ? { ...x, alt: { ...x.alt, [lang]: e.target.value } }
+                      : x,
+                  ),
+                )
+              }
+            />
           ))}
-        </ol>
-      )}
-      {room > 0 && !disabled && (
-        <div>
-          <input
-            ref={fileInput}
-            id={inputId}
-            type="file"
-            accept="image/*"
-            multiple
-            // The button below opens it; screen readers meet only the button.
-            tabIndex={-1}
-            aria-hidden
-            className="sr-only"
-            onChange={(e) => addFiles(e.target.files)}
-          />
-          <Button
-            variant="secondary"
-            disabled={Boolean(uploading)}
-            onClick={() => fileInput.current?.click()}
-          >
-            <ImagePlus aria-hidden className="size-4" />
-            {t('images.add')}
-          </Button>
+          <div className="flex flex-wrap gap-1">
+            <Button
+              variant="ghost"
+              disabled={disabled || index === 0}
+              onClick={() => move(index, -1)}
+            >
+              <ArrowLeft aria-hidden className="size-4" />
+              {t('images.earlier')}
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={disabled || index === items.length - 1}
+              onClick={() => move(index, 1)}
+            >
+              <ArrowRight aria-hidden className="size-4" />
+              {t('images.later')}
+            </Button>
+            <Button
+              variant="ghost"
+              className="ms-auto text-danger"
+              disabled={disabled}
+              onClick={() => {
+                change(items.filter((x) => x.mediaId !== item.mediaId));
+                setSelected(null);
+              }}
+            >
+              <Trash2 aria-hidden className="size-4" />
+              {t('images.removeShort')}
+            </Button>
+          </div>
         </div>
       )}
       {uploading && (
@@ -232,7 +253,7 @@ export function ImageManager({
       )}
       {uploadError && <Notice tone="error">{uploadError}</Notice>}
       {product.variants.length > 1 && items.length > 0 && (
-        <fieldset className="flex flex-col gap-2" disabled={disabled}>
+        <fieldset className="mt-3 flex flex-col gap-2" disabled={disabled}>
           <legend className="mb-1 font-medium">{t('images.variantImages')}</legend>
           {product.variants.map((v) => (
             <label key={v.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
@@ -258,7 +279,7 @@ export function ImageManager({
       )}
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
       {dirty && (
-        <div>
+        <div className="mt-3 flex justify-end">
           <Button
             disabled={disabled || save.isPending || Boolean(uploading)}
             onClick={() => save.mutate()}

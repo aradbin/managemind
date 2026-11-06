@@ -395,6 +395,7 @@ export const OrderDetail = z
       phone: z.string(),
       email: z.string().nullable(),
       orderCount: z.number().int(),
+      totalSpent: Money,
     }),
     contact: z.object({ name: z.string(), phone: z.string(), email: z.string().optional() }),
     address: Address.nullable(),

@@ -5,13 +5,22 @@
 import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { Phone, ShoppingCart } from 'lucide-react';
+import {
+  CircleX,
+  MessageCircle,
+  Package,
+  Phone,
+  PhoneCall,
+  Plus,
+  ShoppingCart,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
-import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import {
   RowMenu,
   RowMenuItem,
+  RowMenuSeparator,
   SearchInput,
   StageTabs,
   ToolbarSummary,
@@ -19,14 +28,18 @@ import {
 import { Notice } from '../components/notice';
 import { BackLink, PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
-import { RiskPanel, ScoreBadge } from '../components/risk';
+import { PhoneRecordHeader } from '../components/record-header';
+import { ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
 import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { Textarea } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage } from '../lib/errors';
 import {
   dateTime,
@@ -34,7 +47,6 @@ import {
   type IncompleteTab,
   incompleteList,
   incompleteOrderQuery,
-  lineLabel,
   orderErrorMessage,
   pickText,
 } from '../lib/orders';
@@ -42,7 +54,6 @@ import { usePagedList } from '../lib/paged';
 import { cn } from '../lib/utils';
 
 const TABS = ['open', 'converted', 'recovered', 'dismissed'] as const satisfies IncompleteTab[];
-const card = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
 
 /** Where a record stands, as the board marks it: not called yet in muted words, else a badge. */
 const StatusLabel = ({ status }: { status: IncompleteSummary['status'] }) => {
@@ -241,48 +252,68 @@ export function IncompleteOrderPage() {
       toast(t(to === 'contacted' ? 'incomplete.contactedDone' : 'incomplete.dismissedDone'));
     },
   });
+  const name = detail.data?.name || undefined;
+  useRecordPage(name ?? (detail.data ? t('incomplete.noName') : undefined));
   if (detail.isPending) return <p role="status">{t('loading')}</p>;
   if (detail.isError) return <Notice tone="error">{errorMessage(detail.error, t)}</Notice>;
   const d = detail.data;
   const open = d.status === 'open' || d.status === 'contacted';
   const orderable = d.lines.filter((l) => l.orderable).length;
+  const title = t('incomplete.checkoutFrom', { name: d.name || t('incomplete.noName') });
+  const steps = ['contact', 'delivery', 'payment'] as const;
+  const reached = steps.indexOf(d.leftAt);
+  const menu = (trigger: 'outline' | 'ghost') =>
+    canWrite &&
+    open && (
+      <RowMenu label={t('list.moreActions')} trigger={trigger} page>
+        <RowMenuItem disabled={act.isPending} onSelect={() => act.mutate('contacted')}>
+          <PhoneCall aria-hidden />
+          {t('incomplete.markContacted')}
+        </RowMenuItem>
+        <RowMenuSeparator />
+        <RowMenuItem danger disabled={act.isPending} onSelect={() => act.mutate('dismiss')}>
+          <CircleX aria-hidden />
+          {t('incomplete.dismiss')}
+        </RowMenuItem>
+      </RowMenu>
+    );
   return (
-    <div className="flex flex-col gap-5 pb-20 md:pb-0">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-start gap-2">
-          <BackLink to="/orders/incomplete" label={t('incomplete.title')} />
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-semibold tracking-tight">
-                {d.name || t('incomplete.noName')}
-              </h1>
-              <StatusLabel status={d.status} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t('incomplete.savedAt', {
-                created: dateTime(locale, d.createdAt),
-                updated: dateTime(locale, d.updatedAt),
-              })}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader
+        to="/orders/incomplete"
+        backLabel={t('incomplete.back')}
+        title={t('incomplete.one')}
+      >
+        {menu('ghost')}
+      </PhoneRecordHeader>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="max-md:hidden">
+          <BackLink to="/orders/incomplete" label={t('incomplete.back')} />
+        </span>
+        <h1 className="truncate text-xl leading-7 font-semibold tracking-[-0.01em]">{title}</h1>
+        <StatusLabel status={d.status} />
+        <span className="flex-1" />
+        <span className="flex gap-2 max-md:w-full max-md:[&>*]:flex-1">
           <Button variant="secondary" asChild>
             <a href={`tel:${d.phone}`}>
               <Phone aria-hidden className="size-4" />
-              {t('queue.call', { phone: formatPhone(d.phone) })}
+              {t('order.call')}
             </a>
           </Button>
           {canWrite && open && orderable > 0 && (
             <Button asChild>
               <Link to="/orders/new" search={{ incomplete: d.id }}>
-                <ShoppingCart aria-hidden className="size-4" />
+                <Plus aria-hidden className="size-4" />
                 {t('incomplete.createOrder')}
               </Link>
             </Button>
           )}
-        </div>
+        </span>
+        <span className="max-md:hidden">{menu('outline')}</span>
       </div>
+      <p className="-mt-2 text-muted-foreground">
+        {t(`incomplete.leftAtLine.${d.leftAt}` as AdminKey)} · {dateTime(locale, d.updatedAt)}
+      </p>
       {d.orderId && (
         <Notice>
           {t(d.status === 'converted' ? 'incomplete.convertedTo' : 'incomplete.recoveredBy')}{' '}
@@ -291,92 +322,163 @@ export function IncompleteOrderPage() {
           </Link>
         </Notice>
       )}
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <section aria-labelledby="lines-h" className={card}>
-            <h2 id="lines-h" className="font-semibold">
+      {act.error && <Notice tone="error">{orderErrorMessage(act.error, t)}</Notice>}
+      <div className="grid items-start gap-3 md:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-3 md:gap-4">
+          <section aria-labelledby="lines-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+            <h2 id="lines-h" className={cardTitle}>
               {t('order.items')}
             </h2>
-            <ul className="flex flex-col divide-y divide-border">
-              {d.lines.map((l) => (
-                <li key={l.variantId} className="flex flex-wrap items-center gap-3 py-2.5">
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span>{lineLabel(l, locale)}</span>
-                    {!l.orderable && (
-                      <span className="text-xs text-danger">{t('incomplete.notOrderable')}</span>
-                    )}
-                    {l.priceNow !== null && l.priceNow !== l.price && (
-                      <span className="text-xs text-muted-foreground">
-                        {t('incomplete.priceNow', { price: formatPrice(l.priceNow, locale) })}
+            <ul className="flex flex-col">
+              {d.lines.map((l) => {
+                const options = l.optionLabels
+                  .map((o) => pickText(o, locale))
+                  .filter(Boolean)
+                  .join(' / ');
+                return (
+                  <li
+                    key={l.variantId}
+                    className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-border py-2 last:border-b-0 md:grid-cols-[40px_minmax(0,1fr)_48px_110px_96px]"
+                  >
+                    <span className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                      <Package aria-hidden className="size-4" />
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="truncate font-medium">{pickText(l.title, locale)}</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {[
+                          options,
+                          l.available !== null && t('order.available', { count: l.available }),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </span>
-                    )}
-                  </span>
-                  <span className="tabular-nums">
-                    {formatPrice(l.price, locale)} × {l.quantity}
-                  </span>
-                </li>
-              ))}
+                      {!l.orderable && (
+                        <span className="text-xs text-danger">{t('incomplete.notOrderable')}</span>
+                      )}
+                    </span>
+                    <span className="text-right text-muted-foreground tabular-nums max-md:hidden">
+                      {l.quantity} ×
+                    </span>
+                    <span className="text-right text-muted-foreground tabular-nums max-md:hidden">
+                      {l.priceNow !== null
+                        ? t('incomplete.now', { price: formatPrice(l.priceNow, locale) })
+                        : formatPrice(l.price, locale)}
+                    </span>
+                    <span className="text-right font-medium tabular-nums">
+                      {formatPrice((l.priceNow ?? l.price) * l.quantity, locale)}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
             <p className="flex justify-between border-t border-border pt-3 font-semibold">
-              <span>{t('incomplete.subtotal')}</span>
+              <span>{t('incomplete.itemsTotal')}</span>
               <span className="tabular-nums">{formatPrice(d.subtotal, locale)}</span>
             </p>
             {d.cartCode && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {t('incomplete.code', { code: d.cartCode })}
               </p>
             )}
           </section>
           {open && canWrite && (
-            <section aria-labelledby="note-h" className={card}>
-              <h2 id="note-h" className="font-semibold">
-                {t('incomplete.called')}
+            <section aria-labelledby="note-h" className={cardPadded}>
+              <h2 id="note-h" className={cardTitle}>
+                {t('incomplete.callNote')}
               </h2>
-              {d.note && <p className="whitespace-pre-wrap text-sm">{d.note}</p>}
-              <Field
-                label={t('queue.noteOptional')}
-                value={note}
-                maxLength={500}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <div className="flex flex-wrap gap-2">
+              {d.note && <p className="whitespace-pre-wrap">{d.note}</p>}
+              <div className="flex flex-col gap-2">
+                <Textarea
+                  aria-labelledby="note-h"
+                  maxLength={500}
+                  placeholder={t('incomplete.notePlaceholder')}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                />
                 <Button
                   variant="secondary"
+                  className="self-end"
                   disabled={act.isPending}
                   onClick={() => act.mutate('contacted')}
                 >
-                  {t('incomplete.markContacted')}
-                </Button>
-                <Button
-                  variant="quiet"
-                  disabled={act.isPending}
-                  onClick={() => act.mutate('dismiss')}
-                >
-                  {t('incomplete.dismiss')}
+                  {t(note.trim() ? 'incomplete.saveNote' : 'incomplete.markContacted')}
                 </Button>
               </div>
-              {act.error && <Notice tone="error">{orderErrorMessage(act.error, t)}</Notice>}
             </section>
           )}
         </div>
-        <div className="flex flex-col gap-5">
-          <section aria-labelledby="who-h" className={card}>
-            <h2 id="who-h" className="font-semibold">
-              {t('order.customer')}
+        <div className="flex flex-col gap-3 md:gap-4">
+          <section aria-labelledby="who-h" className={cardPadded}>
+            <h2 id="who-h" className={cardTitle}>
+              {t('incomplete.shopper')}
             </h2>
-            <p className="flex flex-col text-sm">
+            <div className="flex flex-col gap-0.5">
               <span className="font-medium">{d.name || t('incomplete.noName')}</span>
-              <span>{formatPhone(d.phone)}</span>
-              {d.email && <span>{d.email}</span>}
-              {d.address.line && <span className="mt-1">{d.address.line}</span>}
-            </p>
+              <span className="flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground tabular-nums">
+                {formatPhone(d.phone)}
+                <ScoreBadge risk={d.risk} />
+              </span>
+              {d.email && <span className="text-[13px] text-muted-foreground">{d.email}</span>}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" asChild>
+                <a href={`tel:${d.phone}`}>
+                  <Phone aria-hidden className="size-4" />
+                  {t('order.call')}
+                </a>
+              </Button>
+              <Button variant="secondary" asChild>
+                <a
+                  href={`https://wa.me/${d.phone.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle aria-hidden className="size-4" />
+                  {t('order.whatsapp')}
+                </a>
+              </Button>
+            </div>
+            {d.address.line && (
+              <div className="flex flex-col gap-1 border-t border-border pt-3">
+                <span className={fieldLabel}>{t('incomplete.addressTyped')}</span>
+                <span>
+                  {[d.address.line, pickText(d.areaName, locale)].filter(Boolean).join(', ')}
+                </span>
+              </div>
+            )}
             {d.contactedAt && (
               <p className="text-xs text-muted-foreground">
                 {t('incomplete.contactedAt', { time: dateTime(locale, d.contactedAt) })}
               </p>
             )}
           </section>
-          <RiskPanel risk={d.risk} />
+          <section aria-labelledby="steps-h" className={cardPadded}>
+            <h2 id="steps-h" className={cardTitle}>
+              {t('incomplete.checkout')}
+            </h2>
+            <ol className="flex flex-col gap-2.5">
+              {steps.map((step, i) => (
+                <li key={step} className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'size-2.5 rounded-full',
+                      i <= reached ? 'bg-muted-foreground' : 'border border-border',
+                    )}
+                  />
+                  <span className="flex-1">{t(`incomplete.step.${step}` as AdminKey)}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {i < reached
+                      ? t('incomplete.stepDone')
+                      : i === reached
+                        ? t('incomplete.stepLeft')
+                        : ''}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
         </div>
       </div>
     </div>

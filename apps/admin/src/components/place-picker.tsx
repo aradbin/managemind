@@ -30,12 +30,18 @@ export function PlacePicker({
   onChange,
   disabled,
   withLine = true,
+  row = false,
 }: {
   value: PlaceDraft;
   onChange: (next: PlaceDraft) => void;
   disabled?: boolean;
   /** False where only the area matters (fees, the promotions test cart). */
   withLine?: boolean;
+  /**
+   * District, area and street in one row, as the new order board draws it:
+   * the district names its division, so there is no division to choose.
+   */
+  row?: boolean;
 }) {
   const { t, locale } = useLocale();
   const id = useId();
@@ -56,6 +62,57 @@ export function PlacePicker({
       label: name(x),
       keywords: x[locale === 'bn' ? 'en' : 'bn'],
     }));
+  if (row) {
+    const allDistricts = choices(g.GEOGRAPHY.districts);
+    return (
+      <div className="grid gap-3 md:grid-cols-[140px_minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="flex flex-col gap-2">
+          <label htmlFor={`${id}-district`} className="text-sm leading-none font-medium">
+            {t('place.district')}
+          </label>
+          <Combobox
+            id={`${id}-district`}
+            searchLabel={t('place.findDistrict')}
+            placeholder={t('place.choose')}
+            disabled={disabled}
+            value={value.districtId ? String(value.districtId) : ''}
+            options={allDistricts}
+            onChange={(v) => {
+              const districtId = num(v);
+              const divisionId = districtId
+                ? (g.geoIndex().district(districtId)?.divisionId ?? null)
+                : null;
+              onChange({ ...value, divisionId, districtId, areaId: null });
+            }}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor={`${id}-area`} className="text-sm leading-none font-medium">
+            {t('place.areaShort')}
+          </label>
+          <Combobox
+            id={`${id}-area`}
+            searchLabel={t('place.findArea')}
+            placeholder={t('place.areaExample')}
+            disabled={disabled || !value.districtId}
+            value={value.areaId ? String(value.areaId) : ''}
+            options={choices(areas)}
+            onChange={(v) => onChange({ ...value, areaId: num(v) })}
+          />
+        </div>
+        {withLine && (
+          <Field
+            label={t('place.street')}
+            placeholder={t('place.streetExample')}
+            value={value.line}
+            maxLength={250}
+            disabled={disabled}
+            onChange={(e) => onChange({ ...value, line: e.target.value })}
+          />
+        )}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-3">
       <div className="grid gap-3 md:grid-cols-3">

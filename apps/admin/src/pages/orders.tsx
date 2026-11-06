@@ -40,7 +40,6 @@ import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
-  dashboardQuery,
   dateRangeFilter,
   idempotencyKey,
   type OrderFilters,

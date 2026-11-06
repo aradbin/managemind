@@ -285,7 +285,14 @@ export interface OrderDetail {
   returnStatus: string;
   source: string;
   locale: string;
-  customer: { id: string; name: string; phone: string; email: string | null; orderCount: number };
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    orderCount: number;
+    totalSpent: number;
+  };
   contact: { name: string; phone: string; email?: string };
   address: OrderAddress | null;
   zone: { id: string | null; name: Localized | null };
@@ -444,7 +451,7 @@ const mask = (detail: OrderDetail): OrderDetail => ({
 export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDetail | null> {
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
     select o.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
-           c.order_count as customer_orders
+           c.order_count as customer_orders, c.total_spent as customer_spent
       from store.orders o join store.customers c on c.id = o.customer_id where o.id = ${id}`);
   const r = rows[0];
   if (!r) return null;
@@ -555,6 +562,7 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       phone: r.customer_phone as string,
       email: (r.customer_email as string) ?? null,
       orderCount: Number(r.customer_orders),
+      totalSpent: Number(r.customer_spent ?? 0),
     },
     contact: r.contact as OrderDetail['contact'],
     address: (r.address as OrderAddress) ?? null,

@@ -1,19 +1,24 @@
 // A product's variants: a grid from md, a card per variant on phones
 // (phase-2-plan §7). Prices accept Bangla digits, ৳ and separators; cost
 // prices show only with catalog.cost; stock only with inventory.read.
+
+import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { type Product, priceInput, productKeys, readPrice, type Variant } from '../../lib/catalog';
 import { saveErrorMessage } from '../../lib/errors';
 import { variantLabel } from '../../pages/products';
-import { Notice } from '../notice';
+import { Field } from '../field';
 import { usePermission } from '../permission-gate';
 import { useToast } from '../toast';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Sheet, SheetBody, SheetFooter } from '../ui/sheet';
+import { Switch } from '../ui/switch';
 
 interface Draft {
   sku: string;
@@ -114,195 +119,232 @@ export function VariantTable({ product, disabled }: { product: Product; disabled
   });
   const label = (v: Variant) => variantLabel(product, v.id, locale);
 
-  const field = (
-    v: Variant,
-    name: keyof Draft,
-    text: string,
-    extra: { inputMode?: 'decimal' | 'numeric' } = {},
-  ) => (
-    <Input
-      aria-label={`${text} — ${label(v)}`}
-      value={drafts[v.id]?.[name] as string}
-      onChange={(e) => set(v.id, { [name]: e.target.value })}
-      className="min-w-24"
-      {...extra}
-    />
-  );
-  const check = (v: Variant, name: 'track' | 'backorder', text: string) => (
-    <input
-      type="checkbox"
-      aria-label={`${text} — ${label(v)}`}
-      checked={drafts[v.id]?.[name] as boolean}
-      onChange={(e) => set(v.id, { [name]: e.target.checked })}
-    />
-  );
-  const stockCell = (v: Variant) =>
-    v.stock ? (
-      <Link to="/inventory" search={{ q: v.sku ?? undefined }} className="underline">
-        {t('variants.stockSummary', { onHand: v.stock.onHand, available: v.stock.available })}
-      </Link>
-    ) : null;
+  const [editing, setEditing] = useState<Variant | null>(null);
+  const [allOpen, setAllOpen] = useState(false);
+  const [allPrice, setAllPrice] = useState('');
+  const isLow = (v: Variant) =>
+    v.trackInventory &&
+    v.stock !== undefined &&
+    v.lowStockThreshold !== null &&
+    v.stock.available <= v.lowStockThreshold;
 
   return (
-    <section aria-labelledby="variants-heading" className="flex flex-col gap-4">
-      <h2 id="variants-heading" className="text-lg font-semibold">
-        {t('variants.title')}
-      </h2>
-      <fieldset disabled={disabled || save.isPending} className="contents">
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-left text-sm">
-            <caption className="sr-only">{t('variants.title')}</caption>
-            <thead className="text-muted-foreground">
-              <tr>
-                <th scope="col" className="p-2">
-                  {t('variants.variant')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('product.price')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.compareAt')}
-                </th>
-                {cost && (
-                  <th scope="col" className="p-2">
-                    {t('variant.cost')}
-                  </th>
-                )}
-                <th scope="col" className="p-2">
-                  {t('variant.sku')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.barcode')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.weight')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.lowStock')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.track')}
-                </th>
-                <th scope="col" className="p-2">
-                  {t('variant.backorder')}
-                </th>
-                {stock && (
-                  <th scope="col" className="p-2">
-                    {t('product.stock')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {product.variants.map((v) => (
-                <tr key={v.id} className="align-top">
-                  <th scope="row" className="p-2 font-medium">
-                    {label(v)}
-                    {errors[v.id] && (
-                      <p role="alert" className="text-xs font-normal text-danger">
-                        {errors[v.id]}
-                      </p>
-                    )}
-                  </th>
-                  <td className="p-2">
-                    {field(v, 'price', t('product.price'), { inputMode: 'decimal' })}
-                  </td>
-                  <td className="p-2">
-                    {field(v, 'compareAt', t('variant.compareAt'), { inputMode: 'decimal' })}
-                  </td>
-                  {cost && (
-                    <td className="p-2">
-                      {field(v, 'cost', t('variant.cost'), { inputMode: 'decimal' })}
-                    </td>
-                  )}
-                  <td className="p-2">{field(v, 'sku', t('variant.sku'))}</td>
-                  <td className="p-2">{field(v, 'barcode', t('variant.barcode'))}</td>
-                  <td className="p-2">
-                    {field(v, 'weight', t('variant.weight'), { inputMode: 'numeric' })}
-                  </td>
-                  <td className="p-2">
-                    {field(v, 'threshold', t('variant.lowStock'), { inputMode: 'numeric' })}
-                  </td>
-                  <td className="p-2">{check(v, 'track', t('variant.track'))}</td>
-                  <td className="p-2">{check(v, 'backorder', t('variant.backorder'))}</td>
-                  {stock && <td className="p-2">{stockCell(v)}</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <ul className="flex flex-col gap-3 md:hidden" aria-label={t('variants.title')}>
-          {product.variants.map((v) => (
-            <li
-              key={v.id}
-              className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
+    <fieldset disabled={disabled || save.isPending} className="m-0 min-w-0 border-0 p-0">
+      {/* "Set all prices", as drawn above the table. */}
+      <div className="flex min-h-11 items-center justify-end gap-2 border-b border-border px-4 py-1.5 md:px-5">
+        {allOpen ? (
+          <>
+            <span className="mr-auto text-muted-foreground">{t('variants.setEvery')}</span>
+            <span className="relative block w-[120px]">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
+              >
+                ৳
+              </span>
+              <Input
+                inputMode="decimal"
+                aria-label={t('variants.everyPrice')}
+                className="h-8 pl-[22px] md:h-8"
+                value={allPrice}
+                onChange={(e) => setAllPrice(e.target.value)}
+              />
+            </span>
+            <Button variant="secondary" onClick={() => setAllOpen(false)}>
+              {t('action.cancel')}
+            </Button>
+            <Button
+              disabled={!allPrice.trim()}
+              onClick={() => {
+                for (const v of product.variants) set(v.id, { price: allPrice });
+                setAllOpen(false);
+                setAllPrice('');
+              }}
             >
-              <p className="font-medium">{label(v)}</p>
-              {errors[v.id] && (
-                <p role="alert" className="text-sm text-danger">
-                  {errors[v.id]}
-                </p>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                <Labelled text={t('product.price')}>
-                  {field(v, 'price', t('product.price'), { inputMode: 'decimal' })}
-                </Labelled>
-                <Labelled text={t('variant.compareAt')}>
-                  {field(v, 'compareAt', t('variant.compareAt'), { inputMode: 'decimal' })}
-                </Labelled>
-                {cost && (
-                  <Labelled text={t('variant.cost')}>
-                    {field(v, 'cost', t('variant.cost'), { inputMode: 'decimal' })}
-                  </Labelled>
+              {t('variants.apply')}
+            </Button>
+          </>
+        ) : (
+          <Button variant="ghost" className="-mr-2.5 px-2.5" onClick={() => setAllOpen(true)}>
+            {t('variants.setAll')}
+          </Button>
+        )}
+      </div>
+      <table className="w-full border-collapse">
+        <caption className="sr-only">{t('variants.title')}</caption>
+        <thead>
+          <tr className="border-b border-border">
+            <th scope="col" className="h-10 px-2 pl-4 text-left font-medium md:pl-5">
+              {t('variants.variant')}
+            </th>
+            <th scope="col" className="h-10 w-[140px] px-2 text-left font-medium">
+              {t('product.price')}
+            </th>
+            {stock && (
+              <th scope="col" className="h-10 w-[110px] px-2 text-right font-medium">
+                {t('productView.available')}
+              </th>
+            )}
+            <th scope="col" className="h-10 w-12 px-2 pr-4">
+              <span className="sr-only">{t('variants.edit')}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {product.variants.map((v) => (
+            <tr key={v.id} className="border-b border-border last:border-b-0">
+              <th scope="row" className="px-2 py-2 pl-4 text-left font-medium md:pl-5">
+                {label(v)}
+                {errors[v.id] && (
+                  <span role="alert" className="block text-xs font-normal text-danger">
+                    {errors[v.id]}
+                  </span>
                 )}
-                <Labelled text={t('variant.sku')}>{field(v, 'sku', t('variant.sku'))}</Labelled>
-                <Labelled text={t('variant.barcode')}>
-                  {field(v, 'barcode', t('variant.barcode'))}
-                </Labelled>
-                <Labelled text={t('variant.weight')}>
-                  {field(v, 'weight', t('variant.weight'), { inputMode: 'numeric' })}
-                </Labelled>
-                <Labelled text={t('variant.lowStock')}>
-                  {field(v, 'threshold', t('variant.lowStock'), { inputMode: 'numeric' })}
-                </Labelled>
-              </div>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <span className="flex items-center gap-2">
-                  {check(v, 'track', t('variant.track'))}
-                  {t('variant.track')}
+              </th>
+              <td className="px-2 py-2">
+                <span className="relative block">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
+                  >
+                    ৳
+                  </span>
+                  <Input
+                    inputMode="decimal"
+                    aria-label={`${t('product.price')} — ${label(v)}`}
+                    className="h-8 pl-[22px] tabular-nums md:h-8"
+                    value={drafts[v.id]?.price ?? ''}
+                    onChange={(e) => set(v.id, { price: e.target.value })}
+                  />
                 </span>
-                <span className="flex items-center gap-2">
-                  {check(v, 'backorder', t('variant.backorder'))}
-                  {t('variant.backorder')}
-                </span>
-              </div>
-              {stock && <p className="text-sm">{stockCell(v)}</p>}
-            </li>
+              </td>
+              {stock && (
+                <td className="px-2 py-2 text-right tabular-nums">
+                  {v.stock && v.trackInventory ? (
+                    isLow(v) ? (
+                      <span className="font-medium text-danger">
+                        {formatNumber(locale, v.stock.available)}
+                        <span className="sr-only"> ({t('inventory.lowBadge')})</span>
+                      </span>
+                    ) : (
+                      formatNumber(locale, v.stock.available)
+                    )
+                  ) : (
+                    '—'
+                  )}
+                </td>
+              )}
+              <td className="px-2 py-2 pr-4 text-right">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 md:size-8"
+                  aria-haspopup="dialog"
+                  aria-label={t('variants.editOne', { variant: label(v) })}
+                  onClick={() => setEditing(v)}
+                >
+                  <Pencil aria-hidden />
+                </Button>
+              </td>
+            </tr>
           ))}
-        </ul>
-      </fieldset>
-      {save.isError && save.error.message !== 'invalid' && (
-        <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
-      )}
-      {dirty && (
-        <div>
+        </tbody>
+      </table>
+      {(dirty || save.isError) && (
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3 md:px-5">
+          {save.isError && save.error.message !== 'invalid' && (
+            <span className="mr-auto text-sm text-danger">{saveErrorMessage(save.error, t)}</span>
+          )}
           <Button disabled={disabled || save.isPending} onClick={() => save.mutate()}>
             {t('variants.save')}
           </Button>
         </div>
       )}
-    </section>
-  );
-}
-
-/** A visible caption over an input that already has its accessible name. */
-function Labelled({ text, children }: { text: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span aria-hidden className="text-xs text-muted-foreground">
-        {text}
-      </span>
-      {children}
-    </div>
+      {editing && (
+        <Sheet
+          open
+          onOpenChange={(open) => !open && setEditing(null)}
+          title={label(editing)}
+          description={t('variants.editHint')}
+        >
+          <SheetBody>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field
+                label={t('variant.compareAt')}
+                hint={t('variants.compareAtHint')}
+                inputMode="decimal"
+                value={drafts[editing.id]?.compareAt ?? ''}
+                onChange={(e) => set(editing.id, { compareAt: e.target.value })}
+              />
+              {cost && (
+                <Field
+                  label={t('variant.cost')}
+                  inputMode="decimal"
+                  value={drafts[editing.id]?.cost ?? ''}
+                  onChange={(e) => set(editing.id, { cost: e.target.value })}
+                />
+              )}
+              <Field
+                label={t('variant.sku')}
+                value={drafts[editing.id]?.sku ?? ''}
+                onChange={(e) => set(editing.id, { sku: e.target.value })}
+              />
+              <Field
+                label={t('variant.barcode')}
+                value={drafts[editing.id]?.barcode ?? ''}
+                onChange={(e) => set(editing.id, { barcode: e.target.value })}
+              />
+              <Field
+                label={t('variant.weight')}
+                inputMode="numeric"
+                value={drafts[editing.id]?.weight ?? ''}
+                onChange={(e) => set(editing.id, { weight: e.target.value })}
+              />
+              <Field
+                label={t('variant.lowStock')}
+                inputMode="numeric"
+                value={drafts[editing.id]?.threshold ?? ''}
+                onChange={(e) => set(editing.id, { threshold: e.target.value })}
+              />
+            </div>
+            <div className="flex min-h-10 items-center justify-between gap-4">
+              <label htmlFor="variant-track" className="cursor-pointer">
+                {t('variant.track')}
+              </label>
+              <Switch
+                id="variant-track"
+                checked={drafts[editing.id]?.track ?? false}
+                onCheckedChange={(on) => set(editing.id, { track: on })}
+              />
+            </div>
+            <div className="flex min-h-10 items-center justify-between gap-4">
+              <label htmlFor="variant-backorder" className="cursor-pointer">
+                {t('variant.backorder')}
+              </label>
+              <Switch
+                id="variant-backorder"
+                checked={drafts[editing.id]?.backorder ?? false}
+                onCheckedChange={(on) => set(editing.id, { backorder: on })}
+              />
+            </div>
+            {editing.stock && (
+              <Link
+                to="/inventory"
+                search={{ q: editing.sku ?? undefined }}
+                className="text-sm underline underline-offset-4"
+              >
+                {t('variants.stockSummary', {
+                  onHand: editing.stock.onHand,
+                  available: editing.stock.available,
+                })}
+              </Link>
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <Button onClick={() => setEditing(null)}>{t('variants.done')}</Button>
+          </SheetFooter>
+        </Sheet>
+      )}
+    </fieldset>
   );
 }

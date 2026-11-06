@@ -12,7 +12,7 @@ import { bn } from '../../apps/admin/src/i18n/bn';
 import { expensesBn } from '../../apps/admin/src/i18n/expenses-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { purchasingBn } from '../../apps/admin/src/i18n/purchasing-bn';
-import { choose, expectAccessible, pngImage, signIn } from './helpers';
+import { addProduct, choose, expectAccessible, pngImage, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -125,11 +125,7 @@ test('back office', async ({ page }, info) => {
       label: supplierName,
     });
     for (const title of titles) {
-      await page.getByLabel(m('order.addProduct')).fill(title);
-      await page
-        .getByRole('list', { name: m('order.searchResults') })
-        .getByRole('button', { name: new RegExp(title) })
-        .click();
+      await addProduct(page, title);
     }
     const ordered = page.getByLabel(m('po.ordered'), { exact: true });
     const unitCost = page.getByLabel(m('po.unitCost'), { exact: true });
@@ -276,7 +272,7 @@ test('back office', async ({ page }, info) => {
     await expectAccessible(page, 'count review');
     await page.getByRole('button', { name: m('counts.apply') }).click();
     await page
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .getByRole('button', { name: m('counts.apply') })
       .click();
     await expect(toast(page, m('counts.applied'))).toBeVisible();

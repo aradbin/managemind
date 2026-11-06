@@ -27,7 +27,7 @@ import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage } from '../../lib/errors';
 import { dateOnly, pickText } from '../../lib/orders';
 import { usePagedList } from '../../lib/paged';
-import { StatusBadge, TENANT_STATUSES, type TenantStatus } from './status';
+import { StatusBadge, type TenantStatus } from './status';
 
 type Tenant = Awaited<ReturnType<typeof fetchTenants>>['items'][number];
 
@@ -213,7 +213,13 @@ export function TenantsPage() {
           <div className="flex items-center gap-3">
             <StoreTile name={x.name} className="size-8 rounded-full bg-muted text-foreground" />
             <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-medium">{x.name}</span>
+              <Link
+                to="/platform/tenants/$id"
+                params={{ id: x.id }}
+                className="truncate font-medium"
+              >
+                {x.name}
+              </Link>
               <span className="truncate text-[13px] text-muted-foreground" lang="en">
                 {x.slug}
               </span>

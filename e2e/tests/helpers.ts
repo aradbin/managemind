@@ -239,6 +239,21 @@ export async function createStore(page: Page, store: NewStore): Promise<void> {
  * Picks from the admin's searchable select (a combobox that opens a list):
  * by an option's value, its exact name, or its place in the list.
  */
+/**
+ * Adds a product to an order, a purchase order or a count: the dashed
+ * "Add a product" row opens a search box, and the match is picked from the
+ * list under it (ADR 0034).
+ */
+export async function addProduct(scope: Page | Locator, title: string): Promise<void> {
+  await scope.getByRole('button', { name: t('order.addProduct'), exact: true }).click();
+  const page = 'page' in scope ? scope.page() : scope;
+  await page.getByRole('searchbox', { name: t('order.searchProducts') }).fill(title);
+  await page
+    .getByRole('listbox', { name: t('order.searchResults') })
+    .getByRole('option', { name: new RegExp(title) })
+    .click();
+}
+
 export async function choose(
   trigger: Locator,
   pick: { value: string } | { label: string } | { index: number },

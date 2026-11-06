@@ -8,6 +8,7 @@ import type { ReactNode } from 'react';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import { cn } from '../lib/utils';
+import { cardPadded, cardTitle } from './ui/card';
 
 export type PhoneRisk = components['schemas']['PhoneRisk'];
 
@@ -25,10 +26,12 @@ const toneOf = (r: PhoneRisk): keyof typeof TONES =>
 export function useRiskCounts() {
   const { t, locale } = useLocale();
   const n = (v: number) => formatNumber(locale, v);
-  return (r: PhoneRisk, withOther = true) => {
+  return (r: PhoneRisk, withOther = true, withDelivered = true) => {
     const h = r.history;
     const parts = [
-      r.decided > 0 && t('risk.delivered', { delivered: n(h.delivered), decided: n(r.decided) }),
+      withDelivered &&
+        r.decided > 0 &&
+        t('risk.delivered', { delivered: n(h.delivered), decided: n(r.decided) }),
       h.returned > 0 && t('risk.returned', { count: n(h.returned) }),
       h.fake > 0 && t('risk.fake', { count: n(h.fake) }),
       h.wrongNumber > 0 && t('risk.wrongNumber', { count: n(h.wrongNumber) }),
@@ -77,7 +80,7 @@ export function RiskReasons({
   const { t, locale } = useLocale();
   if (!risk.risky) return null;
   return (
-    <ul className="flex flex-col gap-1 text-sm text-danger">
+    <ul className="flex flex-col gap-0.5 text-[13px] text-danger">
       {risk.reasons.map((reason) => (
         <li key={reason}>
           {t(`risk.reason.${reason}` as AdminKey, {
@@ -112,23 +115,35 @@ export function RiskPanel({
   const counts = useRiskCounts();
   const H = heading;
   const share = risk.decided ? (risk.history.delivered / risk.decided) * 100 : 0;
+  const rest = counts(risk, true, false);
+  // As the canvas draws it: "9 of 10 delivered", the bar, then the rest.
   return (
-    <section
-      aria-labelledby="risk-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <H id="risk-h" className="font-semibold">
+    <section aria-labelledby="risk-h" className={cn(cardPadded, 'gap-2.5 md:gap-3')}>
+      <div className="flex min-h-5 items-center justify-between gap-2">
+        <H id="risk-h" className={cardTitle}>
           {t('risk.title')}
         </H>
         <ScoreBadge risk={risk} />
       </div>
-      {risk.decided > 0 && (
-        <div aria-hidden className="flex h-2 overflow-hidden rounded-full bg-danger-soft">
-          <div className="bg-success" style={{ width: `${share}%` }} />
-        </div>
+      {risk.decided > 0 ? (
+        <>
+          <p className="text-base font-semibold">
+            {t('risk.delivered', {
+              delivered: formatNumber(locale, risk.history.delivered),
+              decided: formatNumber(locale, risk.decided),
+            })}
+          </p>
+          <div
+            aria-hidden
+            className="h-2 overflow-hidden rounded-full bg-[color-mix(in_oklch,var(--color-danger)_22%,transparent)]"
+          >
+            <div className="h-full rounded-full bg-success" style={{ width: `${share}%` }} />
+          </div>
+          {rest && <p className="text-[13px] text-muted-foreground">{rest}</p>}
+        </>
+      ) : (
+        <p className="text-muted-foreground">{t('risk.newHint')}</p>
       )}
-      <p className="text-sm">{counts(risk) || t('risk.newHint')}</p>
       {atPlacement !== undefined && atPlacement !== risk.score && (
         <p className="text-xs text-muted-foreground">
           {t('risk.atPlacement', {
@@ -141,7 +156,7 @@ export function RiskPanel({
       )}
       <RiskReasons risk={risk} {...(failedDeliveries === undefined ? {} : { failedDeliveries })} />
       <p className="text-xs text-muted-foreground">{t('risk.fromStore')}</p>
-      {children}
+      {children && <div className="flex">{children}</div>}
     </section>
   );
 }

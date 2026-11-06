@@ -31,7 +31,6 @@ import { cn } from '../../lib/utils';
 
 export const FILTERS = ['all', 'draft', 'overdue', 'week', 'paid', 'void'] as const;
 export type Filter = (typeof FILTERS)[number];
-const PAGE = 50;
 
 function filterQuery(filter: Filter) {
   switch (filter) {

@@ -27,6 +27,7 @@ import {
   listMovements,
   listProducts,
   moveCategory,
+  productActivity,
   runIdempotent,
   setAttributeValues,
   setCategoryAttributes,
@@ -219,6 +220,27 @@ const Collection = z
     updatedAt: z.string(),
   })
   .openapi('Collection');
+const ProductActivity = z
+  .object({
+    sold: z.number().int(),
+    revenue: z.number().int(),
+    marginBp: z.number().int().nullable(),
+    variants: z.array(z.object({ variantId: z.uuid(), sold: z.number().int() })),
+    recentOrders: z.array(
+      z.object({
+        id: z.uuid(),
+        displayNumber: z.string(),
+        placedAt: z.string(),
+        customerName: z.string(),
+        status: z.string(),
+        total: z.number().int(),
+        lines: z.array(
+          z.object({ optionLabels: z.array(translated(z.string())), quantity: z.number().int() }),
+        ),
+      }),
+    ),
+  })
+  .openapi('ProductActivity');
 const CollectionProduct = z.object({
   id: z.uuid(),
   status: z.string(),
@@ -378,6 +400,14 @@ export const CATALOG_ROUTES = {
     summary: 'A product with translations, options, variants, media, attributes and tags',
     request: { params: Id },
     responses: json(Product, 'Product'),
+  }),
+  productActivity: r({
+    method: 'get',
+    path: '/products/{id}/activity',
+    summary:
+      "A product's last 30 days (units, revenue, margin with catalog.cost) and its latest orders (orders.read)",
+    request: { params: Id },
+    responses: json(ProductActivity, 'ProductActivity'),
   }),
   updateProduct: r({
     method: 'patch',
@@ -730,6 +760,10 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.product, async (c) => {
     const { id } = c.req.valid('param');
     return c.json(await inStore(c, (tx) => getProduct(tx, actor(c), id)), 200);
+  });
+  admin.openapi(R.productActivity, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(await inStore(c, (tx) => productActivity(tx, actor(c), id)), 200);
   });
   admin.openapi(R.updateProduct, async (c) => {
     const { id } = c.req.valid('param');

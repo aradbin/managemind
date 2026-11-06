@@ -16,13 +16,13 @@ import { z } from 'zod';
 import { type AdminKey, messages, useLocale } from '../i18n';
 import { ApiError } from '../lib/api';
 import { cn } from '../lib/utils';
+import { fieldHint, fieldLabel } from './field-styles';
 import { Input } from './ui/input';
 import { switchLook } from './ui/switch';
 
+export { fieldHint, fieldLabel };
+
 /** A message key for a field's error; zod's own messages are English-only. */
-/** A field's label and its hint, as the canvas's .mm-label and .mm-hint. */
-export const fieldLabel = 'mb-2 block text-sm leading-none font-medium';
-export const fieldHint = 'mt-1.5 text-[13px] leading-[18px] text-muted-foreground';
 
 export function fieldErrorKey(error: FieldError | undefined): AdminKey | undefined {
   if (!error) return;

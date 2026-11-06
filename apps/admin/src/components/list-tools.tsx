@@ -490,11 +490,14 @@ export function SortDrawer({
 export function RowMenu({
   label,
   trigger = 'ghost',
+  page = trigger === 'outline',
   children,
 }: {
   label: string;
   /** "outline" for a page's own ⋯ beside its header buttons. */
   trigger?: 'ghost' | 'outline';
+  /** The page's own menu (named "More actions"), not a row's. */
+  page?: boolean;
   children: ReactNode;
 }) {
   const { t } = useLocale();
@@ -504,8 +507,8 @@ export function RowMenu({
         <Button
           variant={trigger === 'outline' ? 'secondary' : 'ghost'}
           size="icon"
-          className={cn('relative z-[1]', trigger === 'ghost' && 'size-8 md:size-8')}
-          aria-label={trigger === 'outline' ? label : `${t('list.rowActions')}: ${label}`}
+          className={cn('relative z-[1]', trigger === 'ghost' && !page && 'size-8 md:size-8')}
+          aria-label={page ? label : `${t('list.rowActions')}: ${label}`}
         >
           <Ellipsis aria-hidden />
         </Button>

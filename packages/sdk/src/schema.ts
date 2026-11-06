@@ -3814,6 +3814,44 @@ export interface paths {
         };
         trace?: never;
     };
+    "/v1/admin/products/{id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product's last 30 days (units, revenue, margin with catalog.cost) and its latest orders (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ProductActivity */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductActivity"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/products/{id}/options": {
         parameters: {
             query?: never;
@@ -17930,6 +17968,32 @@ export interface components {
                 }[];
             })[];
         };
+        ProductActivity: {
+            sold: number;
+            revenue: number;
+            marginBp: number | null;
+            variants: {
+                /** Format: uuid */
+                variantId: string;
+                sold: number;
+            }[];
+            recentOrders: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                placedAt: string;
+                customerName: string;
+                status: string;
+                total: number;
+                lines: {
+                    optionLabels: {
+                        bn?: string;
+                        en?: string;
+                    }[];
+                    quantity: number;
+                }[];
+            }[];
+        };
         StockMovement: {
             /** Format: uuid */
             id: string;
@@ -18557,6 +18621,7 @@ export interface components {
                 phone: string;
                 email: string | null;
                 orderCount: number;
+                totalSpent: number;
             };
             contact: {
                 name: string;

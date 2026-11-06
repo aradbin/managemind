@@ -60,6 +60,7 @@ import { menuContent, menuItem, menuSeparator } from '../components/ui/menu';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
+import { useRecord } from '../lib/crumb';
 import { errorMessage } from '../lib/errors';
 import { chooseStore, refreshAccess } from '../lib/store';
 import { setThemeChoice, useThemeChoice } from '../lib/theme';
@@ -94,7 +95,11 @@ function Shell() {
   const store = me.stores.find((s) => s.tenantId === me.activeStore);
   const nav = useNav();
   const toConfirm = useToConfirm();
-  const onMenu = useRouterState({ select: (s) => s.location.pathname === '/more' });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const onMenu = pathname === '/more';
+  // A record's page brings its own phone header, and most step past the tab bar.
+  const record = useRecord(pathname);
+  const tabBar = !record || record.tabBar;
   const [searching, setSearching] = useState(false);
   const [sidebar, setSidebar] = useState(() => {
     try {
@@ -133,11 +138,18 @@ function Shell() {
 
       <div
         className={cn(
-          'flex min-h-dvh min-w-0 flex-1 flex-col bg-canvas pb-[calc(4rem+env(safe-area-inset-bottom))] md:m-2 md:h-[calc(100dvh-1rem)] md:min-h-0 md:overflow-hidden md:rounded-xl md:pb-0 md:shadow-sm',
+          'flex min-h-dvh min-w-0 flex-1 flex-col bg-canvas md:m-2 md:h-[calc(100dvh-1rem)] md:min-h-0 md:overflow-hidden md:rounded-xl md:pb-0 md:shadow-sm',
+          tabBar && 'pb-[calc(4rem+env(safe-area-inset-bottom))]',
+          record && 'max-md:bg-page',
           sidebar && 'md:ml-0',
         )}
       >
-        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-canvas px-3 md:static md:h-12 md:px-4">
+        <header
+          className={cn(
+            'sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-canvas px-3 md:static md:h-12 md:px-4',
+            record && 'max-md:hidden',
+          )}
+        >
           <div className="hidden min-w-0 items-center gap-2 md:flex">
             <Button
               variant="ghost"
@@ -236,7 +248,10 @@ function Shell() {
         )}
         <main
           id="main"
-          className="flex min-w-0 flex-1 flex-col p-4 md:min-h-0 md:overflow-y-auto md:px-6 md:pt-5 md:pb-6"
+          className={cn(
+            'flex min-w-0 flex-1 flex-col p-4 md:min-h-0 md:overflow-y-auto md:bg-canvas md:px-6 md:pt-5 md:pb-6',
+            record && 'max-md:p-3',
+          )}
         >
           <Outlet />
         </main>
@@ -244,7 +259,10 @@ function Shell() {
 
       <nav
         aria-label={t('nav.main')}
-        className="fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border bg-canvas px-1 pb-[env(safe-area-inset-bottom)] md:hidden"
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex h-[calc(4rem+env(safe-area-inset-bottom))] border-t border-border bg-canvas px-1 pb-[env(safe-area-inset-bottom)] md:hidden',
+          !tabBar && 'hidden',
+        )}
       >
         {nav.tabs.map((item) => (
           <Tab key={item.to} item={item} badge={item.to === '/orders' ? toConfirm : 0} />
@@ -414,14 +432,20 @@ function HeaderBreadcrumb({ groups }: { groups: NavGroup[] }) {
   const { t } = useLocale();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const here = locate(groups, path);
+  const record = useRecord(path)?.title;
   if (!here) return null;
   const { item, leaf } = here;
   const page = leaf ?? item;
   // A record under a page (an order, a product) links back to its list.
   const deeper = path !== page.to && path !== item.overview;
+  // A record ends the trail with its name; an order sits straight under
+  // Orders, not under "All orders", as drawn ("Catalog › Products › …" keeps
+  // its page).
+  const skipLeaf = Boolean(record && leaf && leaf.label === 'nav.allOrders');
   const crumbs: { label: string; to?: NavTo }[] = [
     ...(leaf ? [{ label: t(item.label), to: item.to }] : []),
-    { label: t(page.label), ...(deeper ? { to: page.to } : {}) },
+    ...(skipLeaf ? [] : [{ label: t(page.label), ...(deeper ? { to: page.to } : {}) }]),
+    ...(record && deeper ? [{ label: record }] : []),
   ];
   return (
     <nav aria-label={t('nav.breadcrumb')} className="min-w-0">

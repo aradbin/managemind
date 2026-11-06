@@ -97,6 +97,7 @@ import { Route as ShellPlatformBillingIndexRouteImport } from './routes/_shell/p
 import { Route as ShellPlatformBillingIdRouteImport } from './routes/_shell/platform/billing.$id'
 import { Route as ShellPlatformTenantsIdRouteImport } from './routes/_shell/platform/tenants.$id'
 import { Route as ShellPlatformTenantsNewRouteImport } from './routes/_shell/platform/tenants.new'
+import { Route as ShellProductsIdEditRouteImport } from './routes/_shell/products/$id_.edit'
 
 const ShellRoute = ShellRouteImport.update({
   id: '/_shell',
@@ -556,6 +557,11 @@ const ShellPlatformTenantsNewRoute = ShellPlatformTenantsNewRouteImport.update({
   path: '/tenants/new',
   getParentRoute: () => ShellPlatformRoute,
 } as any)
+const ShellProductsIdEditRoute = ShellProductsIdEditRouteImport.update({
+  id: '/products/$id_/edit',
+  path: '/products/$id/edit',
+  getParentRoute: () => ShellRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ShellIndexRoute
@@ -638,6 +644,7 @@ export interface FileRoutesByFullPath {
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
+  '/products/$id/edit': typeof ShellProductsIdEditRoute
   '/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/inventory/counts/': typeof ShellInventoryCountsIndexRoute
   '/inventory/purchase-orders/': typeof ShellInventoryPurchaseOrdersIndexRoute
@@ -726,6 +733,7 @@ export interface FileRoutesByTo {
   '/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
+  '/products/$id/edit': typeof ShellProductsIdEditRoute
   '/catalog/collections': typeof ShellCatalogCollectionsIndexRoute
   '/inventory/counts': typeof ShellInventoryCountsIndexRoute
   '/inventory/purchase-orders': typeof ShellInventoryPurchaseOrdersIndexRoute
@@ -817,6 +825,7 @@ export interface FileRoutesById {
   '/_shell/platform/billing/$id': typeof ShellPlatformBillingIdRoute
   '/_shell/platform/tenants/$id': typeof ShellPlatformTenantsIdRoute
   '/_shell/platform/tenants/new': typeof ShellPlatformTenantsNewRoute
+  '/_shell/products/$id_/edit': typeof ShellProductsIdEditRoute
   '/_shell/catalog/collections/': typeof ShellCatalogCollectionsIndexRoute
   '/_shell/inventory/counts/': typeof ShellInventoryCountsIndexRoute
   '/_shell/inventory/purchase-orders/': typeof ShellInventoryPurchaseOrdersIndexRoute
@@ -908,6 +917,7 @@ export interface FileRouteTypes {
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
+    | '/products/$id/edit'
     | '/catalog/collections/'
     | '/inventory/counts/'
     | '/inventory/purchase-orders/'
@@ -996,6 +1006,7 @@ export interface FileRouteTypes {
     | '/platform/billing/$id'
     | '/platform/tenants/$id'
     | '/platform/tenants/new'
+    | '/products/$id/edit'
     | '/catalog/collections'
     | '/inventory/counts'
     | '/inventory/purchase-orders'
@@ -1086,6 +1097,7 @@ export interface FileRouteTypes {
     | '/_shell/platform/billing/$id'
     | '/_shell/platform/tenants/$id'
     | '/_shell/platform/tenants/new'
+    | '/_shell/products/$id_/edit'
     | '/_shell/catalog/collections/'
     | '/_shell/inventory/counts/'
     | '/_shell/inventory/purchase-orders/'
@@ -1723,6 +1735,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShellPlatformTenantsNewRouteImport
       parentRoute: typeof ShellPlatformRoute
     }
+    '/_shell/products/$id_/edit': {
+      id: '/_shell/products/$id_/edit'
+      path: '/products/$id/edit'
+      fullPath: '/products/$id/edit'
+      preLoaderRoute: typeof ShellProductsIdEditRouteImport
+      parentRoute: typeof ShellRoute
+    }
   }
 }
 
@@ -1822,6 +1841,7 @@ interface ShellRouteChildren {
   ShellInventorySuppliersImportRoute: typeof ShellInventorySuppliersImportRoute
   ShellOnlineStorePagesIdRoute: typeof ShellOnlineStorePagesIdRoute
   ShellOrdersIncompleteIdRoute: typeof ShellOrdersIncompleteIdRoute
+  ShellProductsIdEditRoute: typeof ShellProductsIdEditRoute
   ShellCatalogCollectionsIndexRoute: typeof ShellCatalogCollectionsIndexRoute
   ShellInventoryCountsIndexRoute: typeof ShellInventoryCountsIndexRoute
   ShellInventoryPurchaseOrdersIndexRoute: typeof ShellInventoryPurchaseOrdersIndexRoute
@@ -1896,6 +1916,7 @@ const ShellRouteChildren: ShellRouteChildren = {
   ShellInventorySuppliersImportRoute: ShellInventorySuppliersImportRoute,
   ShellOnlineStorePagesIdRoute: ShellOnlineStorePagesIdRoute,
   ShellOrdersIncompleteIdRoute: ShellOrdersIncompleteIdRoute,
+  ShellProductsIdEditRoute: ShellProductsIdEditRoute,
   ShellCatalogCollectionsIndexRoute: ShellCatalogCollectionsIndexRoute,
   ShellInventoryCountsIndexRoute: ShellInventoryCountsIndexRoute,
   ShellInventoryPurchaseOrdersIndexRoute:

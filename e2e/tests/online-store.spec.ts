@@ -71,7 +71,7 @@ test('online store flows', async ({ page, context }, info) => {
 
   await test.step('they publish and the store shows the colour', async () => {
     await page.getByRole('button', { name: ot('theme.publish'), exact: true }).click();
-    const dialog = page.getByRole('dialog');
+    const dialog = page.getByRole('alertdialog');
     await dialog.getByRole('button', { name: ot('theme.publish'), exact: true }).click();
     await expect(toast(page, ot('theme.published')).first()).toBeVisible();
 
@@ -147,7 +147,7 @@ test('online store flows', async ({ page, context }, info) => {
 
     await card.getByRole('button', { name: ot('domains.remove') }).click();
     await page
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .getByRole('button', { name: ot('domains.remove') })
       .click();
     await expect(card).toHaveCount(0);

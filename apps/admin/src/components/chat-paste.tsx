@@ -5,13 +5,17 @@
 import { formatPhone } from '@managemind/shared/phone';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { orderErrorMessage, pickText } from '../lib/orders';
+import { cn } from '../lib/utils';
 import { Notice } from './notice';
 import { Button } from './ui/button';
+import { cardPadded, cardTitle } from './ui/card';
+import { Textarea } from './ui/input';
 
 const readChat = async (text: string) =>
   unwrap(await api.POST('/v1/admin/orders/parse-chat', { body: { text } }));
@@ -20,14 +24,16 @@ export type ParsedChat = Awaited<ReturnType<typeof readChat>>;
 export function ChatPaste({
   initialText,
   onRead,
+  onClose,
 }: {
   initialText: string;
   /** Called with what the chat says; returns how many lines were added. */
   onRead: (parsed: ParsedChat) => number;
+  /** Closes the box; the page opens it from its own "Paste a chat" action. */
+  onClose: () => void;
 }) {
   const { t, locale } = useLocale();
   const [text, setText] = useState(initialText);
-  const [open, setOpen] = useState(Boolean(initialText));
   const read = useMutation({
     mutationFn: () => readChat(text),
   });
@@ -36,35 +42,36 @@ export function ChatPaste({
   const nothing = result && !result.phone && result.lines.length === 0 && !result.orders.length;
   const needsVariant = result?.lines.filter((l) => !l.variantId) ?? [];
 
-  if (!open) {
-    return (
-      <Button variant="secondary" className="self-start" onClick={() => setOpen(true)}>
-        {t('chat.paste')}
-      </Button>
-    );
-  }
   return (
-    <section
-      aria-labelledby="chat-paste-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <h2 id="chat-paste-h" className="font-semibold">
-        {t('chat.paste')}
-      </h2>
-      <p className="text-sm text-muted-foreground" id="chat-paste-hint">
+    <section aria-labelledby="chat-paste-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <div className="flex min-h-5 items-center justify-between gap-3">
+        <h2 id="chat-paste-h" className={cardTitle}>
+          {t('chat.paste')}
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="-my-1 -mr-2 size-7 md:size-7"
+          aria-label={t('action.close')}
+          onClick={onClose}
+        >
+          <X aria-hidden className="size-4" />
+        </Button>
+      </div>
+      <p className="-mt-1 text-[13px] text-muted-foreground" id="chat-paste-hint">
         {t('chat.pasteHint')}
       </p>
-      <textarea
+      <Textarea
         aria-labelledby="chat-paste-h"
         aria-describedby="chat-paste-hint"
         rows={5}
         maxLength={5000}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="rounded-lg border border-border bg-background p-3 text-base"
       />
       <Button
-        className="self-start"
+        variant="secondary"
+        className="self-end"
         disabled={!text.trim() || read.isPending}
         onClick={() => read.mutate(undefined, { onSuccess: (parsed) => setAdded(onRead(parsed)) })}
       >

@@ -528,6 +528,7 @@ describe('isolation suite', () => {
       'POST /v1/admin/invitations/{id}/resend': { id: bInvitation },
       'DELETE /v1/admin/invitations/{id}': { id: bInvitation },
       'GET /v1/admin/products/{id}': { id: product.id },
+      'GET /v1/admin/products/{id}/activity': { id: product.id },
       'PATCH /v1/admin/products/{id}': { id: product.id, body: { tags: ['x'] } },
       'PUT /v1/admin/products/{id}/options': { id: product.id, body: [] },
       'POST /v1/admin/products/{id}/archive': { id: product.id },

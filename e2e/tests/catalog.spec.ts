@@ -37,7 +37,7 @@ test('catalog flows', async ({ page }, info) => {
     await expect(
       page.getByRole('heading', { name: t('catalog.products'), level: 1 }),
     ).toBeVisible();
-    await expect(page.getByText(t('products.empty'))).toBeVisible();
+    await expect(page.getByText(t('products.empty')).locator('visible=true')).toBeVisible();
     await expectAccessible(page, 'empty product list');
   });
 
@@ -141,18 +141,26 @@ test('catalog flows', async ({ page }, info) => {
     await expect(editor.locator('strong')).toHaveText('ঢাকাই');
     await expect(editor.locator('li')).toHaveText('সুতি');
 
-    await page.getByRole('tab', { name: /^English/ }).click();
-    await page
-      .getByRole('button', { name: t('product.addTranslation', { language: 'English' }) })
-      .click();
+    // The board's editor: "Add English" beside the title, then the tabs.
+    await page.getByRole('button', { name: t('product.addLang', { language: 'English' }) }).click();
     await page.getByLabel(t('product.titleIn', { language: 'English' })).fill(titleEn);
 
-    await page.getByLabel(t('status.active'), { exact: false }).check();
+    await page
+      .getByRole('button', { name: t('product.statusIs', { status: t('status.draft') }) })
+      .locator('visible=true')
+      .click();
+    await page.getByRole('menuitemradio', { name: new RegExp(`^${t('status.active')}`) }).click();
     // Listed with its path, now that it sits under the other category.
     await page
-      .getByRole('group', { name: t('catalog.categories') })
-      .getByLabel(`${parent} › ${category}`)
-      .check();
+      .getByRole('button', { name: `${t('chips.add')}: ${t('catalog.categories')}` })
+      .click();
+    await page
+      .getByRole('listbox', { name: t('catalog.categories') })
+      .getByRole('option', { name: `${parent} › ${category}` })
+      .click();
+    await page.keyboard.press('Escape');
+    // Specifications sit under "Collections, VAT and specifications".
+    await page.getByRole('button', { name: t('product.moreOrganise') }).click();
     // The category's template brings the fabric; the brand is added by hand.
     await choose(page.getByLabel('কাপড়', { exact: true }), { label: 'সুতি' });
     await choose(page.getByRole('combobox', { name: t('specs.add'), exact: true }), {
@@ -201,8 +209,9 @@ test('catalog flows', async ({ page }, info) => {
     const option = page.getByRole('group', { name: t('options.option', { n: '১' }) });
     await option.getByLabel(`${t('options.name')} (বাংলা)`).fill('সাইজ');
     for (const size of ['ছোট', 'বড়']) {
+      // Values are chips: type one and press Enter (ADR 0034).
       await option.getByLabel(t('options.newValue')).fill(size);
-      await option.getByRole('button', { name: t('options.addValue') }).click();
+      await option.getByLabel(t('options.newValue')).press('Enter');
     }
     await expectAccessible(page, 'options');
     await page.getByRole('button', { name: t('options.save') }).click();
@@ -218,11 +227,13 @@ test('catalog flows', async ({ page }, info) => {
       page.getByRole('heading', { name: t('catalog.inventory'), level: 1 }),
     ).toBeVisible();
     await expectAccessible(page, 'inventory');
+    // The row's ⋯ menu, on phones and desktops alike (ADR 0034).
     await page
-      .getByRole('button', { name: t('inventory.adjust'), exact: true })
+      .getByRole('button', { name: new RegExp(`^${t('list.rowActions')}: `) })
       .locator('visible=true')
       .first()
       .click();
+    await page.getByRole('menuitem', { name: t('inventory.adjustTitle') }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel(t('inventory.mode.received')).check();
     await dialog.getByLabel(t('inventory.quantity')).fill('১২');
@@ -303,11 +314,11 @@ test('catalog flows', async ({ page }, info) => {
     await page.goto(`${API}/products`);
     await page.getByRole('button', { name: t('export.button') }).click();
     await expectAccessible(page, 'export dialog');
+    // The board's export dialog: the format, then Export.
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('radio', { name: t('export.csv') }).check();
     const download = page.waitForEvent('download');
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: t('export.csv') })
-      .click();
+    await dialog.getByRole('button', { name: t('export.button') }).click();
     const file = await download;
     const chunks = await (await file.createReadStream()).toArray();
     const csv = Buffer.concat(chunks as Buffer[]).toString('utf8');
@@ -328,11 +339,10 @@ test('catalog flows', async ({ page }, info) => {
   if (!big) {
     await test.step('an exported Excel file imports back as updates', async () => {
       await page.getByRole('button', { name: t('export.button') }).click();
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('radio', { name: t('export.xlsxFile') }).check();
       const download = page.waitForEvent('download');
-      await page
-        .getByRole('dialog')
-        .getByRole('button', { name: t('export.xlsx') })
-        .click();
+      await dialog.getByRole('button', { name: t('export.button') }).click();
       const chunks = await (await (await download).createReadStream()).toArray();
       const xlsx = Buffer.concat(chunks as Buffer[]);
 

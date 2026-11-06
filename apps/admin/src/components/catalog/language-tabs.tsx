@@ -99,3 +99,59 @@ export function LanguageTabs({
     </div>
   );
 }
+
+/**
+ * The two languages as the canvas's small tabs beside a field's label
+ * (.mm-tabs): the store's language first. The fields under it show the
+ * chosen language.
+ */
+export function LanguageSwitch({
+  defaultLang,
+  active,
+  onChange,
+}: {
+  defaultLang: Lang;
+  active: Lang;
+  onChange: (lang: Lang) => void;
+}) {
+  const { t } = useLocale();
+  const langs: Lang[] = [defaultLang, otherLang(defaultLang)];
+  const refs = useRef<Record<Lang, HTMLButtonElement | null>>({ bn: null, en: null });
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const next = otherLang(active);
+    onChange(next);
+    refs.current[next]?.focus();
+  };
+  return (
+    <div
+      role="tablist"
+      aria-label={t('product.languages')}
+      className="inline-flex h-8 items-center rounded-[10px] bg-muted p-[3px]"
+    >
+      {langs.map((lang) => (
+        <button
+          key={lang}
+          ref={(el) => {
+            refs.current[lang] = el;
+          }}
+          type="button"
+          role="tab"
+          lang={lang}
+          aria-selected={active === lang}
+          tabIndex={active === lang ? 0 : -1}
+          onClick={() => onChange(lang)}
+          onKeyDown={onKeyDown}
+          className={cn(
+            'inline-flex h-[26px] items-center rounded-lg border border-transparent px-2.5 text-[13px] font-medium whitespace-nowrap',
+            active === lang
+              ? 'bg-background text-foreground shadow-sm dark:border-input dark:bg-input'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {LANGUAGE_NAMES[lang]}
+        </button>
+      ))}
+    </div>
+  );
+}
