@@ -1,17 +1,21 @@
 // The owner's setup checklist on the dashboard (phase-5b-plan §3.2, §7):
 // what the store still needs before its first order, each item linked to
 // where it is done, until every required item is done. Compact since the
-// redesign (ADR 0029): progress and the next step, the full list on demand.
+// redesign (ADR 0029): progress and the next step, the full list on demand,
+// as the canvas draws it (ADR 0034).
 import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ChevronDown, Circle, CircleCheck } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { useId, useState } from 'react';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/launch';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
+import { cn } from '../lib/utils';
 import { usePermission } from './permission-gate';
 import { Button } from './ui/button';
+import { cardPadded, cardTitle } from './ui/card';
 
 type Item =
   | 'profile'
@@ -49,6 +53,8 @@ export function SetupCard() {
   const canWrite = usePermission('settings.write');
   const queryClient = useQueryClient();
   const setup = useQuery({ ...setupQuery, enabled: canRead });
+  const [open, setOpen] = useState(false);
+  const listId = useId();
   const store = useQuery({ ...storeSettingsQuery, enabled: canRead });
   const keep = useMutation({
     mutationFn: async () =>
@@ -64,81 +70,94 @@ export function SetupCard() {
   const next = items.find((i) => !i.done && !i.optional && i.item in WHERE);
   const share = total ? Math.round((done / total) * 100) : 0;
   return (
-    <section
-      aria-labelledby="setup-card-h"
-      className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <div className="flex flex-wrap items-center gap-4">
+    <section aria-labelledby="setup-card-h" className={cn(cardPadded, 'gap-3.5 md:gap-3.5')}>
+      <div className="flex items-center gap-3.5">
         <span
           aria-hidden
-          className="relative inline-flex size-12 shrink-0 items-center justify-center rounded-full"
+          className="relative inline-flex size-11 shrink-0 rounded-full"
           style={{
             background: `conic-gradient(var(--color-primary) ${share}%, var(--color-muted) 0)`,
           }}
         >
-          <span className="inline-flex size-9 items-center justify-center rounded-full bg-background text-xs font-semibold tabular-nums">
-            {formatNumber(locale, done)}/{formatNumber(locale, total)}
+          <span className="absolute inset-[5px] flex items-center justify-center rounded-full bg-card text-[11px] font-semibold tabular-nums">
+            {formatNumber(locale, share)}%
           </span>
         </span>
-        <div className="flex min-w-0 flex-1 basis-60 flex-col gap-1">
-          <h2 id="setup-card-h" className="font-semibold">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h2 id="setup-card-h" className={cardTitle}>
             {t('setup.title')}
           </h2>
-          <p className="text-sm text-muted-foreground">{t('setup.intro', { done, total })}</p>
+          <p className="text-[13px] text-muted-foreground">{t('setup.intro', { done, total })}</p>
         </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
         {next && (
-          <Button asChild>
+          <Button asChild className="max-md:flex-1">
             <Link to={WHERE[next.item as keyof typeof WHERE]}>
               {t('setup.next', { item: t(`checklist.item.${next.item}` as AdminKey) })}
+              <ChevronRight aria-hidden />
             </Link>
           </Button>
         )}
-      </div>
-      <details className="group border-t border-border pt-2">
-        <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-primary">
-          <ChevronDown aria-hidden className="size-4 transition-transform group-open:rotate-180" />
+        <Button
+          variant="ghost"
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={() => setOpen(!open)}
+          className="[&[aria-expanded=true]>svg]:rotate-180"
+        >
           {t('setup.allSteps')}
-        </summary>
-        <ul className="flex flex-col gap-1 pt-1">
-          {items.map((i) => {
-            const label = t(`checklist.item.${i.item}` as AdminKey);
-            const to = i.item in WHERE ? WHERE[i.item as keyof typeof WHERE] : undefined;
-            return (
-              <li key={i.item} className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1">
-                {i.done ? (
-                  <CircleCheck aria-hidden className="size-5 shrink-0 text-success-foreground" />
-                ) : (
-                  <Circle aria-hidden className="size-5 shrink-0 text-muted-foreground" />
-                )}
-                <span className="sr-only">{t(i.done ? 'checklist.done' : 'checklist.todo')}: </span>
-                <span className="min-w-0 flex-1">
+          <ChevronDown aria-hidden className="transition-transform duration-200" />
+        </Button>
+      </div>
+      {open && (
+        <>
+          <ul id={listId} className="flex flex-col">
+            {items.map((i) => {
+              const label = t(`checklist.item.${i.item}` as AdminKey);
+              const to = i.item in WHERE ? WHERE[i.item as keyof typeof WHERE] : undefined;
+              return (
+                <li key={i.item} className="flex min-h-9 items-center gap-2.5">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'inline-flex size-[18px] shrink-0 items-center justify-center rounded-full border border-border',
+                      i.done && 'border-success bg-success text-white',
+                    )}
+                  >
+                    {i.done && <Check className="size-3" strokeWidth={3} />}
+                  </span>
+                  <span className="sr-only">
+                    {t(i.done ? 'checklist.done' : 'checklist.todo')}:{' '}
+                  </span>
                   {!i.done && to ? (
-                    <Link to={to} className="text-primary underline underline-offset-2">
+                    <Link to={to} className="underline underline-offset-[3px]">
                       {label}
                     </Link>
                   ) : (
                     <span className={i.done ? 'text-muted-foreground' : ''}>{label}</span>
                   )}
                   {i.optional && (
-                    <span className="ms-2 text-sm text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       ({t('checklist.optional')})
                     </span>
                   )}
-                </span>
-                {i.item === 'domain' && !i.done && canWrite && host && (
-                  <Button
-                    variant="secondary"
-                    disabled={keep.isPending}
-                    onClick={() => keep.mutate()}
-                  >
-                    {t('setup.keepSubdomain', { host })}
-                  </Button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </details>
+                </li>
+              );
+            })}
+          </ul>
+          {items.some((i) => i.item === 'domain' && !i.done) && canWrite && host && (
+            <Button
+              variant="secondary"
+              className="self-start"
+              disabled={keep.isPending}
+              onClick={() => keep.mutate()}
+            >
+              {t('setup.keepSubdomain', { host })}
+            </Button>
+          )}
+        </>
+      )}
     </section>
   );
 }

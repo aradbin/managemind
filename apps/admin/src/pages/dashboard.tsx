@@ -1,12 +1,15 @@
-// The home dashboard (phase-4-plan §3.17, redesigned in ADR 0029). From top
-// to bottom: a greeting, the setup checklist and plan limits while they
-// matter, today's and this month's numbers (reports.read), the last 7 days as
-// columns with a tooltip and a table view (so no figure depends on seeing the
-// chart), what is waiting, and the latest orders (orders.read).
+// The home dashboard (phase-4-plan §3.17), as the canvas draws it (ADR 0034).
+// From top to bottom: a greeting, the setup checklist and plan limits while
+// they matter, four figures (reports.read), then two columns: the last 7 days
+// as bars (each bar names its day and amount; a table view shows the same)
+// and the latest orders on the left, what is waiting and this month's profit
+// (catalog.cost) on the right. Phones stack them with what is waiting first.
 import { formatDateTime, formatNumber, type Locale } from '@managemind/shared/i18n';
+import { formatPhone } from '@managemind/shared/phone';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
+  ChartLine,
   ChevronRight,
   CircleX,
   Clock,
@@ -22,12 +25,14 @@ import {
   Undo2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { BarChart, niceMax } from '../components/bar-chart';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
 import { usePermission } from '../components/permission-gate';
 import { SetupCard } from '../components/setup-card';
+import { type Tone, tones } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Card, CardSection } from '../components/ui/card';
+import { cardFrame, cardPadded, cardTitle } from '../components/ui/card';
 import { UsageCard } from '../components/usage-card';
 import { useLocale } from '../i18n';
 import '../i18n/back-office-reports';
@@ -50,6 +55,9 @@ const dhakaHour = (now: Date) =>
     }).format(now),
   );
 
+/** A card's ghost action at the top right, as drawn: 28 px, pulled into the padding. */
+const cardAction = '-mr-2 h-7 px-2 md:h-7';
+
 export function DashboardView() {
   const { t, locale } = useLocale();
   const data = useQuery(dashboardQuery);
@@ -60,26 +68,31 @@ export function DashboardView() {
   const hour = dhakaHour(now);
   const greeting =
     hour < 12 ? 'dashboard.morning' : hour < 17 ? 'dashboard.afternoon' : 'dashboard.evening';
+  const d = data.data;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-muted-foreground">
+    <div className="flex flex-col gap-3 md:gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-[13px] text-muted-foreground">
             {formatDateTime(locale, now, { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
-          <h1 className="text-xl font-semibold tracking-tight">{t(greeting)}</h1>
+          <h1 className="text-2xl leading-8 font-semibold tracking-[-0.02em]">{t(greeting)}</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
+        {/* Phones reach both from the header's Create and the Menu, as drawn. */}
+        <div className="flex gap-2 max-md:hidden">
           {canReports && (
             <Button variant="secondary" asChild>
-              <Link to="/reports">{t('dashboard.reports')}</Link>
+              <Link to="/reports">
+                <ChartLine aria-hidden />
+                {t('dashboard.reports')}
+              </Link>
             </Button>
           )}
           {canWrite && (
             <Button asChild>
               <Link to="/orders/new">
-                <Plus aria-hidden className="size-4" />
+                <Plus aria-hidden />
                 {t('orders.new')}
               </Link>
             </Button>
@@ -92,22 +105,37 @@ export function DashboardView() {
 
       {data.isPending && <p role="status">{t('loading')}</p>}
       {data.isError && <Notice tone="error">{errorMessage(data.error, t)}</Notice>}
-      {data.data && (
+      {d && (
         <>
-          {data.data.sales && <KeyNumbers sales={data.data.sales} locale={locale} />}
-          {data.data.profit && <ProfitNumbers profit={data.data.profit} locale={locale} />}
-          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            {/* First on phones, where acting on it matters most; beside the chart on desktops. */}
-            <div className="lg:col-start-2 lg:row-start-1">
-              <Waiting
-                counts={data.data.counts}
-                confirmation={data.data.confirmation}
-                incomplete={data.data.incomplete}
-              />
+          {d.sales && (
+            <Figures sales={d.sales} toConfirm={d.counts.awaitingConfirmation} locale={locale} />
+          )}
+          <div className="flex flex-col gap-3 md:gap-4 lg:grid lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+              {d.sales && (
+                <div className="max-lg:order-2">
+                  <WeekChart days={d.sales.days} locale={locale} />
+                </div>
+              )}
+              {canOrders && (
+                <div className="max-lg:order-4">
+                  <RecentOrders />
+                </div>
+              )}
             </div>
-            <div className="flex min-w-0 flex-col gap-6 lg:col-start-1 lg:row-start-1">
-              {data.data.sales && <WeekChart days={data.data.sales.days} locale={locale} />}
-              {canOrders && <RecentOrders />}
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+              <div className="max-lg:order-1">
+                <Waiting
+                  counts={d.counts}
+                  confirmation={d.confirmation}
+                  incomplete={d.incomplete}
+                />
+              </div>
+              {d.profit && (
+                <div className="max-lg:order-3">
+                  <Profit profit={d.profit} locale={locale} />
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -116,223 +144,220 @@ export function DashboardView() {
   );
 }
 
-function KeyNumbers({ sales, locale }: { sales: NonNullable<Dashboard['sales']>; locale: Locale }) {
+/** The four figures (.mm-figs): today, orders today, this month, the average order. */
+function Figures({
+  sales,
+  toConfirm,
+  locale,
+}: {
+  sales: NonNullable<Dashboard['sales']>;
+  toConfirm: number;
+  locale: Locale;
+}) {
   const { t } = useLocale();
   const yesterday = sales.days.at(-2);
-  const average = sales.month.orders ? Math.round(sales.month.total / sales.month.orders) : 0;
-  const salesChange =
+  // In whole taka, as drawn: "৳2,615", not "৳2,614.83".
+  const average = sales.month.orders
+    ? Math.round(sales.month.total / sales.month.orders / 100) * 100
+    : null;
+  const change =
     yesterday && yesterday.total > 0
       ? Math.round(((sales.today.total - yesterday.total) / yesterday.total) * 100)
       : null;
-  const ordersChange = yesterday ? sales.today.orders - yesterday.orders : null;
+  const figures: { label: string; value: string; note?: string; tone?: 'up' | 'down' }[] = [
+    {
+      label: t('dashboard.today'),
+      value: formatPrice(sales.today.total, locale),
+      ...(sales.today.orders === 0
+        ? { note: t('dashboard.noSalesToday') }
+        : change !== null
+          ? {
+              note: t('dashboard.vsYesterdayChange', {
+                change: `${change >= 0 ? '+' : '−'}${formatNumber(locale, Math.abs(change))}%`,
+              }),
+              tone: change >= 0 ? ('up' as const) : ('down' as const),
+            }
+          : {}),
+    },
+    {
+      label: t('dashboard.ordersToday'),
+      value: formatNumber(locale, sales.today.orders),
+      ...(toConfirm ? { note: t('dashboard.stillToConfirm', { count: toConfirm }) } : {}),
+    },
+    {
+      label: t('dashboard.month'),
+      value: formatPrice(sales.month.total, locale),
+      note: t('dashboard.orders', { count: sales.month.orders }),
+    },
+    {
+      label: t('dashboard.average'),
+      value: average === null ? '—' : formatPrice(average, locale),
+      note: t('dashboard.thisMonth'),
+    },
+  ];
   return (
-    <section
+    <dl
       aria-label={t('dashboard.sales')}
-      className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4"
+      className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
     >
-      <Figure
-        label={t('dashboard.today')}
-        value={formatPrice(sales.today.total, locale)}
-        change={salesChange === null ? null : `${formatNumber(locale, Math.abs(salesChange))}%`}
-        up={(salesChange ?? 0) >= 0}
-      />
-      <Figure
-        label={t('dashboard.ordersToday')}
-        value={formatNumber(locale, sales.today.orders)}
-        change={ordersChange === null ? null : formatNumber(locale, Math.abs(ordersChange))}
-        up={(ordersChange ?? 0) >= 0}
-      />
-      <Figure
-        label={t('dashboard.month')}
-        value={formatPrice(sales.month.total, locale)}
-        note={t('dashboard.orders', { count: sales.month.orders })}
-      />
-      <Figure
-        label={t('dashboard.average')}
-        value={formatPrice(average, locale)}
-        note={t('dashboard.thisMonth')}
-      />
-    </section>
+      {figures.map((f) => (
+        <div
+          key={f.label}
+          className="flex min-w-0 flex-col gap-1 rounded-xl border border-border bg-card px-3.5 py-3 md:p-4"
+        >
+          <dt className="text-[13px] font-medium text-muted-foreground">{f.label}</dt>
+          <dd className="truncate text-lg leading-6 font-semibold tracking-[-0.01em] tabular-nums md:text-[22px] md:leading-7">
+            {f.value}
+          </dd>
+          {f.note && (
+            <dd
+              className={cn(
+                'text-xs leading-4 font-medium',
+                f.tone === 'up'
+                  ? 'text-success-foreground'
+                  : f.tone === 'down'
+                    ? 'text-danger'
+                    : 'text-muted-foreground',
+              )}
+            >
+              {f.note}
+            </dd>
+          )}
+        </div>
+      ))}
+    </dl>
   );
 }
 
 /** This month's profit so far, for cost holders (phase-8-plan §3.12). */
-function ProfitNumbers({
-  profit,
-  locale,
-}: {
-  profit: NonNullable<Dashboard['profit']>;
-  locale: Locale;
-}) {
+function Profit({ profit, locale }: { profit: NonNullable<Dashboard['profit']>; locale: Locale }) {
   const { t } = useLocale();
+  const rows = [
+    {
+      label: t('dashboard.profit.gross'),
+      value: profit.grossProfit,
+      note: profit.missingCostUnits
+        ? t('dashboard.profit.missing', { count: formatNumber(locale, profit.missingCostUnits) })
+        : undefined,
+    },
+    { label: t('dashboard.profit.expenses'), value: profit.expenses },
+    { label: t('dashboard.profit.net'), value: profit.netProfit },
+  ];
   return (
-    <section aria-labelledby="dashboard-profit" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="dashboard-profit" className="font-semibold">
+    <section aria-labelledby="dashboard-profit" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <div className="flex min-h-5 items-center justify-between gap-3">
+        <h2 id="dashboard-profit" className={cardTitle}>
           {t('dashboard.profit.title')}
         </h2>
-        <Link
-          to="/reports/profit"
-          className="text-sm font-medium text-primary underline underline-offset-2"
-        >
-          {t('dashboard.profit.open')}
-        </Link>
+        <Button variant="ghost" asChild className={cardAction}>
+          <Link to="/reports/profit">
+            {t('dashboard.profit.open')}
+            <ChevronRight aria-hidden />
+          </Link>
+        </Button>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3">
-        <Figure
-          label={t('dashboard.profit.gross')}
-          value={formatPrice(profit.grossProfit, locale)}
-          {...(profit.missingCostUnits
-            ? {
-                note: t('dashboard.profit.missing', {
-                  count: formatNumber(locale, profit.missingCostUnits),
-                }),
-              }
-            : {})}
-        />
-        <Figure
-          label={t('dashboard.profit.expenses')}
-          value={formatPrice(profit.expenses, locale)}
-        />
-        <Figure label={t('dashboard.profit.net')} value={formatPrice(profit.netProfit, locale)} />
-      </div>
+      <dl className="flex flex-col gap-2">
+        {rows.map((r) => (
+          <div key={r.label} className="flex flex-wrap justify-between gap-x-3 tabular-nums">
+            <dt>{r.label}</dt>
+            <dd className="font-semibold">{formatPrice(r.value, locale)}</dd>
+            {r.note && <dd className="w-full text-xs text-warning-foreground">{r.note}</dd>}
+          </div>
+        ))}
+      </dl>
     </section>
-  );
-}
-
-function Figure({
-  label,
-  value,
-  change,
-  up,
-  note,
-}: {
-  label: string;
-  value: string;
-  change?: string | null;
-  up?: boolean;
-  note?: string;
-}) {
-  const { t } = useLocale();
-  return (
-    <Card className="flex min-w-0 flex-col gap-2 p-4 md:p-5">
-      <span className="text-sm font-medium text-muted-foreground">{label}</span>
-      <span className="truncate text-xl font-semibold tracking-tight tabular-nums md:text-2xl">
-        {value}
-      </span>
-      {change != null ? (
-        <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-          <span
-            aria-hidden
-            className={cn('font-semibold', up ? 'text-success-foreground' : 'text-danger')}
-          >
-            {up ? '▲' : '▼'} {change}
-          </span>
-          <span aria-hidden>{t('dashboard.vsYesterday')}</span>
-          <span className="sr-only">
-            {t('dashboard.vsYesterdaySr', { change: `${up ? '+' : '−'}${change}` })}
-          </span>
-        </span>
-      ) : (
-        note && <span className="text-xs text-muted-foreground">{note}</span>
-      )}
-    </Card>
   );
 }
 
 function WeekChart({ days, locale }: { days: Days; locale: Locale }) {
   const { t } = useLocale();
-  const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(...days.map((d) => d.total), 1);
-  const total = days.reduce((sum, d) => sum + d.total, 0);
+  const [asTable, setAsTable] = useState(false);
   const orders = days.reduce((sum, d) => sum + d.orders, 0);
-  const day = (date: string, style: 'short' | 'long') =>
-    formatDateTime(
-      locale,
-      new Date(`${date}T12:00:00+06:00`),
-      style === 'short' ? { weekday: 'short' } : { weekday: 'long', day: 'numeric', month: 'long' },
-    );
+  const none = days.every((d) => !d.orders && !d.total);
+  const date = (iso: string) => new Date(`${iso}T12:00:00+06:00`);
+  const today = days.at(-1)?.date;
+  const weekday = (iso: string) => formatDateTime(locale, date(iso), { weekday: 'short' });
+  const short = (iso: string) =>
+    formatDateTime(locale, date(iso), { weekday: 'short', day: 'numeric', month: 'short' });
   return (
-    <CardSection title={t('dashboard.week')}>
-      <p className="text-2xl font-semibold tracking-tight tabular-nums">
-        {formatPrice(total, locale)}
-      </p>
-      <p className="text-xs text-muted-foreground">{t('dashboard.weekTotal', { count: orders })}</p>
-      {/* The columns are for the eye; the table below is the accessible view. */}
-      <div
-        aria-hidden
-        className="mt-6 flex h-48 items-end gap-2 border-b border-border bg-[linear-gradient(var(--color-border)_1px,transparent_1px)] bg-[length:100%_3rem] md:gap-4"
-      >
-        {days.map((d, i) => {
-          const height = d.total ? Math.max(3, (d.total / max) * 100) : 0;
-          const last = i === days.length - 1;
-          return (
-            <div
-              key={d.date}
-              className="relative flex h-full flex-1 flex-col items-center justify-end"
-              onPointerEnter={() => setActive(i)}
-              onPointerLeave={() => setActive(null)}
-            >
-              <div
-                className={cn(
-                  'w-full max-w-9 rounded-t bg-primary transition-opacity',
-                  active === i || (active === null && last) ? 'opacity-100' : 'opacity-60',
-                )}
-                style={{ height: `${height}%` }}
-              />
-              {active === i && (
-                <div className="absolute bottom-full z-10 mb-1.5 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-xs text-background shadow-md">
-                  <p className="font-medium">{day(d.date, 'long')}</p>
-                  <p>
-                    {formatPrice(d.total, locale)} · {t('dashboard.orders', { count: d.orders })}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div
-        aria-hidden
-        className="mt-2 flex gap-2 text-center text-xs text-muted-foreground md:gap-4"
-      >
-        {days.map((d) => (
-          <span key={d.date} className="flex-1">
-            {day(d.date, 'short')}
+    <section aria-labelledby="dashboard-week" className={cn(cardPadded, 'gap-3.5 md:gap-3.5')}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <h2 id="dashboard-week" className={cardTitle}>
+            {t('dashboard.week')}
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            {t('dashboard.weekTotal', { count: orders })}
           </span>
-        ))}
+        </div>
+        {!none && (
+          <Button variant="ghost" className={cardAction} onClick={() => setAsTable(!asTable)}>
+            {t(asTable ? 'dashboard.asChart' : 'dashboard.asTable')}
+          </Button>
+        )}
       </div>
-      <details className="mt-2">
-        <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-primary">
-          {t('dashboard.asTable')}
-        </summary>
-        <table className="w-full text-left text-sm">
-          <caption className="sr-only">{t('dashboard.week')}</caption>
-          <thead className="text-muted-foreground">
-            <tr>
-              <th scope="col" className="p-1 font-medium">
-                {t('dashboard.day')}
-              </th>
-              <th scope="col" className="p-1 font-medium">
-                {t('dashboard.ordersColumn')}
-              </th>
-              <th scope="col" className="p-1 text-right font-medium">
-                {t('dashboard.salesColumn')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {days.map((d) => (
-              <tr key={d.date} className="border-t border-border">
-                <td className="p-1">{day(d.date, 'long')}</td>
-                <td className="p-1 tabular-nums">{formatNumber(locale, d.orders)}</td>
-                <td className="p-1 text-right tabular-nums">{formatPrice(d.total, locale)}</td>
+      {none ? (
+        <p className="text-muted-foreground">{t('dashboard.noSales')}</p>
+      ) : asTable ? (
+        <div className="-mx-4 overflow-x-auto md:-mx-5">
+          <table className="w-full border-collapse text-[13px] tabular-nums">
+            <caption className="sr-only">{t('dashboard.week')}</caption>
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  className="h-9 border-t border-border bg-muted px-3 pl-4 text-left font-medium text-muted-foreground md:pl-5"
+                >
+                  {t('dashboard.day')}
+                </th>
+                <th
+                  scope="col"
+                  className="h-9 border-t border-border bg-muted px-3 text-right font-medium text-muted-foreground"
+                >
+                  {t('dashboard.ordersColumn')}
+                </th>
+                <th
+                  scope="col"
+                  className="h-9 border-t border-border bg-muted px-3 pr-4 text-right font-medium text-muted-foreground md:pr-5"
+                >
+                  {t('dashboard.salesColumn')}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
-    </CardSection>
+            </thead>
+            <tbody>
+              {days
+                .slice()
+                .reverse()
+                .map((d) => (
+                  <tr key={d.date} className="border-t border-border">
+                    <td className="h-10 px-3 pl-4 md:pl-5">
+                      {d.date === today ? t('dashboard.todayShort') : short(d.date)}
+                    </td>
+                    <td className="h-10 px-3 text-right">{formatNumber(locale, d.orders)}</td>
+                    <td className="h-10 px-3 pr-4 text-right font-medium md:pr-5">
+                      {formatPrice(d.total, locale)}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <BarChart
+          narrow
+          label={t('dashboard.week')}
+          top={niceMax(Math.max(...days.map((d) => d.total)))}
+          steps={2}
+          height={180}
+          bars={days.map((d) => ({
+            key: d.date,
+            value: d.total,
+            label: d.date === today ? t('dashboard.todayShort') : weekday(d.date),
+            tip: `${short(d.date)}: ${formatPrice(d.total, locale)} · ${t('dashboard.orderCount', { count: d.orders })}`,
+          }))}
+        />
+      )}
+    </section>
   );
 }
 
@@ -340,60 +365,64 @@ function RecentOrders() {
   const { t, locale } = useLocale();
   const recent = useQuery({
     queryKey: ['orders', 'recent'],
-    queryFn: () => fetchOrders({}, undefined, 5),
+    queryFn: () => fetchOrders({}, undefined, 6),
     staleTime: 60_000,
   });
+  const has = Boolean(recent.data?.items.length);
   return (
-    <CardSection
-      title={t('dashboard.recent')}
-      padded={false}
-      action={
-        <Link
-          to="/orders"
-          className="text-sm font-medium text-primary underline underline-offset-2"
-        >
-          {t('dashboard.viewAll')}
-        </Link>
-      }
+    <section
+      aria-labelledby="dashboard-recent"
+      className={cn(cardFrame, 'flex flex-col gap-2 pt-4 pb-2 md:pt-5')}
     >
+      <div className="flex min-h-5 items-center justify-between gap-3 px-4 md:px-5">
+        <h2 id="dashboard-recent" className={cardTitle}>
+          {t('dashboard.recent')}
+        </h2>
+        {has && (
+          <Button variant="ghost" asChild className={cardAction}>
+            <Link to="/orders">
+              {t('dashboard.viewAll')}
+              <ChevronRight aria-hidden />
+            </Link>
+          </Button>
+        )}
+      </div>
       {recent.isPending && (
-        <p role="status" className="px-4 pb-4 md:px-5">
+        <p role="status" className="px-4 pb-3 md:px-5">
           {t('loading')}
         </p>
       )}
       {recent.isError && (
-        <div className="px-4 pb-4 md:px-5">
+        <div className="px-4 pb-3 md:px-5">
           <Notice tone="error">{errorMessage(recent.error, t)}</Notice>
         </div>
       )}
-      {recent.data?.items.length === 0 && (
-        <p className="px-4 pb-5 text-sm text-muted-foreground md:px-5">{t('dashboard.noOrders')}</p>
+      {recent.data && !has && (
+        <p className="px-4 pb-3 text-muted-foreground md:px-5">{t('dashboard.noOrders')}</p>
       )}
-      {recent.data && recent.data.items.length > 0 && (
-        <ul className="divide-y divide-border border-t border-border">
-          {recent.data.items.map((o) => (
+      {has && (
+        <ul>
+          {recent.data?.items.map((o) => (
             <li key={o.id}>
               <Link
                 to="/orders/$id"
                 params={{ id: o.id }}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 px-4 py-3 hover:bg-muted md:grid-cols-[10.5rem_minmax(0,1fr)_auto_7rem] md:px-5"
+                className="flex min-h-14 items-center gap-3 border-t border-border px-4 hover:bg-muted/50 md:px-5"
               >
-                <span className="flex flex-col md:order-none">
-                  <span className="font-semibold text-primary">{o.displayNumber}</span>
-                  <span className="text-xs text-muted-foreground">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="flex items-center gap-2">
+                    <span className="font-mono font-semibold tracking-[0.02em]">
+                      {o.displayNumber}
+                    </span>
+                    <span className="truncate font-medium">{o.name}</span>
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {pickText(o.area, locale) || formatPhone(o.phone)} ·{' '}
                     {dateTime(locale, o.placedAt)}
                   </span>
                 </span>
-                <span className="col-start-1 row-start-2 flex min-w-0 flex-col md:col-start-auto md:row-start-auto">
-                  <span className="truncate font-medium">{o.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {pickText(o.area, locale) || o.phone}
-                  </span>
-                </span>
-                <span className="col-start-2 row-start-2 justify-self-end md:col-start-auto md:row-start-auto md:justify-self-start">
-                  <StatusChip kind="order" status={o.status} />
-                </span>
-                <span className="col-start-2 row-start-1 text-right font-semibold tabular-nums md:col-start-auto md:row-start-auto">
+                <StatusChip kind="order" status={o.status} />
+                <span className="w-[72px] text-right font-medium tabular-nums">
                   {formatPrice(o.total, locale)}
                 </span>
               </Link>
@@ -401,9 +430,23 @@ function RecentOrders() {
           ))}
         </ul>
       )}
-    </CardSection>
+    </section>
   );
 }
+
+type WaitingRow = {
+  label: string;
+  count: number;
+  Icon: LucideIcon;
+  tone: Tone;
+  to:
+    | '/orders'
+    | '/inventory'
+    | '/orders/confirm'
+    | '/orders/incomplete'
+    | '/orders/courier-returns';
+  search: Record<string, unknown>;
+};
 
 function Waiting({
   counts,
@@ -415,184 +458,160 @@ function Waiting({
   incomplete: Dashboard['incomplete'];
 }) {
   const { t, locale } = useLocale();
-  const row = (
-    label: string,
-    value: number,
-    Icon: LucideIcon,
-    tone: string,
-    to: {
-      to:
-        | '/orders'
-        | '/inventory'
-        | '/orders/confirm'
-        | '/orders/incomplete'
-        | '/orders/courier-returns';
-      search: Record<string, unknown>;
-    },
-  ) => (
-    <Link
-      to={to.to}
-      search={to.search as never}
-      className="flex min-h-14 items-center gap-3 px-4 py-2.5 hover:bg-muted md:px-5"
-    >
-      <span
-        aria-hidden
-        className={cn('inline-flex size-9 shrink-0 items-center justify-center rounded-lg', tone)}
-      >
-        <Icon className="size-[18px]" />
-      </span>
-      <span className="flex-1 text-sm">{label}</span>
-      <span className="font-semibold tabular-nums">{formatNumber(locale, value)}</span>
-      <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-    </Link>
-  );
-  const nothing =
-    counts.awaitingConfirmation +
-      counts.toShip +
-      counts.lowStock +
-      counts.cancelledByShopper7d +
-      counts.possibleDuplicates ===
-    0;
+  // The board's order; only what has something waiting is listed.
+  const rows = (
+    [
+      confirmation && {
+        label: t('queue.tab.to_call'),
+        count: counts.toCall,
+        Icon: PhoneCall,
+        tone: 'waiting',
+        to: '/orders/confirm',
+        search: {},
+      },
+      {
+        label: t('dashboard.awaiting'),
+        count: counts.awaitingConfirmation,
+        Icon: Clock,
+        tone: 'waiting',
+        to: '/orders',
+        search: { status: 'pending' },
+      },
+      {
+        label: t('dashboard.toShip'),
+        count: counts.toShip,
+        Icon: Truck,
+        tone: 'progress',
+        to: '/orders',
+        search: { status: 'confirmed', deliveryStatus: 'not_shipped' },
+      },
+      incomplete && {
+        label: t('dashboard.incompleteCheckouts'),
+        count: incomplete.open,
+        Icon: ShoppingCart,
+        tone: 'plain',
+        to: '/orders/incomplete',
+        search: {},
+      },
+      {
+        label: t('orders.flag.possible_duplicate'),
+        count: counts.possibleDuplicates,
+        Icon: Copy,
+        tone: 'waiting',
+        to: '/orders',
+        search: { flag: 'possible_duplicate' },
+      },
+      {
+        label: t('couriers.dash.booked'),
+        count: counts.booked,
+        Icon: Package,
+        tone: 'progress',
+        to: '/orders',
+        search: { status: 'processing' },
+      },
+      {
+        label: t('couriers.dash.inTransit'),
+        count: counts.inTransit,
+        Icon: Truck,
+        tone: 'moving',
+        to: '/orders',
+        search: { deliveryStatus: 'shipped' },
+      },
+      {
+        label: t('couriers.dash.returning'),
+        count: counts.returning,
+        Icon: Undo2,
+        tone: 'bad',
+        to: '/orders',
+        search: { deliveryStatus: 'failed' },
+      },
+      {
+        label: t('couriers.returns.title'),
+        count: counts.courierReturns,
+        Icon: PackageCheck,
+        tone: 'waiting',
+        to: '/orders/courier-returns',
+        search: {},
+      },
+      {
+        label: t('dashboard.lowStock'),
+        count: counts.lowStock,
+        Icon: PackageX,
+        tone: 'bad',
+        to: '/inventory',
+        search: { lowStock: true },
+      },
+      {
+        label: t('dashboard.cancelledByShopper'),
+        count: counts.cancelledByShopper7d,
+        Icon: CircleX,
+        tone: 'plain',
+        to: '/orders',
+        search: { cancelledByShopper: true },
+      },
+    ] as (WaitingRow | null | undefined | false)[]
+  ).filter((r): r is WaitingRow => Boolean(r) && (r as WaitingRow).count > 0);
+  const notes = [
+    incomplete &&
+      incomplete.today > 0 &&
+      t('dashboard.incompleteToday', {
+        saved: formatNumber(locale, incomplete.today),
+        recovered: formatNumber(locale, incomplete.recoveredToday),
+      }),
+    confirmation &&
+      confirmation.rate !== null &&
+      t('dashboard.confirmationRate', {
+        rate: formatNumber(locale, confirmation.rate),
+        confirmed: formatNumber(locale, confirmation.confirmed),
+        decided: formatNumber(locale, confirmation.decided),
+      }),
+  ].filter((n): n is string => Boolean(n));
   return (
-    <CardSection title={t('dashboard.waiting')} padded={false}>
-      {nothing && (
-        <p className="px-4 pb-4 text-sm text-muted-foreground md:px-5">{t('dashboard.allClear')}</p>
+    <section
+      aria-labelledby="dashboard-waiting"
+      className={cn(cardFrame, 'flex flex-col gap-2 pt-4 md:pt-5')}
+    >
+      <h2 id="dashboard-waiting" className={cn(cardTitle, 'px-4 md:px-5')}>
+        {t('dashboard.waiting')}
+      </h2>
+      {rows.length === 0 ? (
+        <p className="px-4 pb-4 text-muted-foreground md:px-5 md:pb-5">{t('dashboard.allClear')}</p>
+      ) : (
+        <ul>
+          {rows.map((r) => (
+            <li key={r.label}>
+              <Link
+                to={r.to}
+                search={r.search as never}
+                aria-label={`${r.label}: ${formatNumber(locale, r.count)}`}
+                className="flex min-h-12 items-center gap-3 border-t border-border pr-3 pl-4 hover:bg-muted/50 md:pl-5"
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    'inline-flex size-7 shrink-0 items-center justify-center rounded-lg',
+                    tones[r.tone],
+                  )}
+                >
+                  <r.Icon className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{r.label}</span>
+                <span className="font-semibold tabular-nums">{formatNumber(locale, r.count)}</span>
+                <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
-      <ul className="divide-y divide-border border-t border-border">
-        {confirmation && (
-          <li>
-            {row(
-              t('queue.tab.to_call'),
-              counts.toCall,
-              PhoneCall,
-              'bg-warning text-warning-foreground',
-              { to: '/orders/confirm', search: {} },
-            )}
-          </li>
-        )}
-        <li>
-          {row(
-            t('dashboard.awaiting'),
-            counts.awaitingConfirmation,
-            Clock,
-            'bg-warning text-warning-foreground',
-            {
-              to: '/orders',
-              search: { status: 'pending' },
-            },
-          )}
-        </li>
-        <li>
-          {row(t('dashboard.toShip'), counts.toShip, Truck, 'bg-info text-info-foreground', {
-            to: '/orders',
-            search: { status: 'confirmed', deliveryStatus: 'not_shipped' },
-          })}
-        </li>
-        {incomplete && (
-          <li>
-            {row(t('incomplete.title'), incomplete.open, ShoppingCart, 'bg-muted text-foreground', {
-              to: '/orders/incomplete',
-              search: {},
-            })}
-          </li>
-        )}
-        {counts.possibleDuplicates > 0 && (
-          <li>
-            {row(
-              t('orders.flag.possible_duplicate'),
-              counts.possibleDuplicates,
-              Copy,
-              'bg-warning text-warning-foreground',
-              { to: '/orders', search: { flag: 'possible_duplicate' } },
-            )}
-          </li>
-        )}
-        {counts.booked > 0 && (
-          <li>
-            {row(
-              t('couriers.dash.booked'),
-              counts.booked,
-              Package,
-              'bg-info text-info-foreground',
-              {
-                to: '/orders',
-                search: { status: 'processing' },
-              },
-            )}
-          </li>
-        )}
-        {counts.inTransit > 0 && (
-          <li>
-            {row(
-              t('couriers.dash.inTransit'),
-              counts.inTransit,
-              Truck,
-              'bg-shipped text-shipped-foreground',
-              {
-                to: '/orders',
-                search: { deliveryStatus: 'shipped' },
-              },
-            )}
-          </li>
-        )}
-        {counts.returning > 0 && (
-          <li>
-            {row(
-              t('couriers.dash.returning'),
-              counts.returning,
-              Undo2,
-              'bg-danger-soft text-danger',
-              {
-                to: '/orders',
-                search: { deliveryStatus: 'failed' },
-              },
-            )}
-          </li>
-        )}
-        {counts.courierReturns > 0 && (
-          <li>
-            {row(
-              t('couriers.returns.title'),
-              counts.courierReturns,
-              PackageCheck,
-              'bg-warning text-warning-foreground',
-              { to: '/orders/courier-returns', search: {} },
-            )}
-          </li>
-        )}
-        <li>
-          {row(t('dashboard.lowStock'), counts.lowStock, PackageX, 'bg-danger-soft text-danger', {
-            to: '/inventory',
-            search: { lowStock: true },
-          })}
-        </li>
-        <li>
-          {row(
-            t('dashboard.cancelledByShopper'),
-            counts.cancelledByShopper7d,
-            CircleX,
-            'bg-muted text-muted-foreground',
-            { to: '/orders', search: { cancelledByShopper: true } },
-          )}
-        </li>
-      </ul>
-      {incomplete && incomplete.today > 0 && (
-        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
-          {t('dashboard.incompleteToday', {
-            saved: formatNumber(locale, incomplete.today),
-            recovered: formatNumber(locale, incomplete.recoveredToday),
-          })}
-        </p>
+      {rows.length > 0 && notes.length > 0 && (
+        <div className="-mt-2 flex flex-col gap-1 border-t border-border px-4 pt-3 pb-4 md:px-5">
+          {notes.map((n) => (
+            <p key={n} className="text-xs text-muted-foreground">
+              {n}
+            </p>
+          ))}
+        </div>
       )}
-      {confirmation && confirmation.rate !== null && (
-        <p className="border-t border-border px-4 py-3 text-sm text-muted-foreground md:px-5">
-          {t('dashboard.confirmationRate', {
-            rate: formatNumber(locale, confirmation.rate),
-            confirmed: formatNumber(locale, confirmation.confirmed),
-            decided: formatNumber(locale, confirmation.decided),
-          })}
-        </p>
-      )}
-    </CardSection>
+    </section>
   );
 }

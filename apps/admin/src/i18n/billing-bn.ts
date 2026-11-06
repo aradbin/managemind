@@ -67,6 +67,7 @@ export const billingBn: Record<keyof typeof billingEn, string> = {
   'payMethod.cash': 'নগদ টাকা',
   'payMethod.sslcommerz': 'অনলাইন পেমেন্ট',
   'usage.title': 'প্ল্যানের সীমা',
+  'usage.lead': 'প্ল্যানের সীমা।',
   'usage.warn': '{name}: {limit}-এর মধ্যে {used}, প্ল্যানের সীমার কাছাকাছি।',
   'usage.over': '{name}: {limit}-এর মধ্যে {used}। প্ল্যানের সীমা পূর্ণ হয়েছে।',
   'usage.link': 'প্ল্যান ও বিল দেখুন',

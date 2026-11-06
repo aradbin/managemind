@@ -67,6 +67,7 @@ export const billingEn = {
   'payMethod.cash': 'cash',
   'payMethod.sslcommerz': 'online payment',
   'usage.title': 'Plan limits',
+  'usage.lead': 'Plan limits.',
   'usage.warn': '{name}: {used} of {limit}, near your plan’s limit.',
   'usage.over': '{name}: {used} of {limit}. Your plan’s limit is reached.',
   'usage.link': 'See plan and billing',
