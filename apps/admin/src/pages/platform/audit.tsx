@@ -1,11 +1,12 @@
 // The platform audit log (super admins), newest first: who did what to
 // which store, with the before and after values.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { DataList } from '../../components/data-list';
 import { PageHeader } from '../../components/page-header';
 import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
+import { formatDateTime } from '../../lib/dates';
 import { errorMessage } from '../../lib/errors';
 
 interface Entry {

@@ -29,7 +29,7 @@ export function ExportButtons({
   rows: () => ReportCell[][] | Promise<ReportCell[][]>;
   /** An outline button in a page's header; a ghost one in a card's. */
   variant?: 'secondary' | 'ghost';
-  /** The ▾ after the word: ghost buttons have it; header buttons only where the board draws it. */
+  /** The ▾ after the word, where the board draws it. */
   chevron?: boolean;
 }) {
   const { t } = useLocale();
@@ -54,9 +54,9 @@ export function ExportButtons({
           aria-label={t('reports.exportWhat', { what })}
           className={cn(variant === 'ghost' && '-mr-2 h-7 px-2 md:h-7')}
         >
-          {variant === 'secondary' && <Download aria-hidden />}
+          <Download aria-hidden />
           {saving ? t('loading') : t('reports.export')}
-          {(chevron ?? variant === 'ghost') && <ChevronDown aria-hidden className="opacity-60" />}
+          {chevron && <ChevronDown aria-hidden className="opacity-60" />}
         </Button>
       </Menu.Trigger>
       <Menu.Portal>

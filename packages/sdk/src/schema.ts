@@ -19415,6 +19415,12 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+            /** @description Orders placed in the range, delivered, and with a return */
+            totals: {
+                placed: number;
+                delivered: number;
+                returned: number;
+            };
         };
         SalesReport: {
             from: string;
@@ -19434,6 +19440,17 @@ export interface components {
                 start: string;
             }[];
             totals: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+            };
+            /** @description The same number of days just before the range, for comparisons */
+            previous: {
                 ordersDelivered: number;
                 units: number;
                 grossSales: number;
@@ -19674,6 +19691,17 @@ export interface components {
                 oldestDays: number;
             }[];
             total: number;
+            /** @description The ten parcels waiting longest, oldest first */
+            oldest: {
+                /** Format: uuid */
+                orderId: string;
+                orderNumber: string;
+                tracking: string | null;
+                courier: string | null;
+                deliveredOn: string;
+                amount: number;
+                days: number;
+            }[];
         };
         RecoveryReport: {
             from: string;
@@ -19800,6 +19828,8 @@ export interface components {
                 courier: string;
                 consignmentId: string | null;
                 deliveredAt: string;
+                collected: number;
+                fee: number;
                 net: number;
                 days: number;
             }[];

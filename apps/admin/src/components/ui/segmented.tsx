@@ -2,6 +2,7 @@
 // for picking one of a few options (design rule 3): report ranges, "Show
 // by", how often, a language. Each option is a toggle button; the group is
 // labelled, and the chosen one is pressed.
+import { useId } from 'react';
 import { cn } from '../../lib/utils';
 
 interface Option<T extends string> {
@@ -23,10 +24,15 @@ export function Segmented<T extends string>({
   options,
   onChange,
   className,
-}: ChoiceProps<T>) {
-  return (
+  showLabel,
+}: ChoiceProps<T> & {
+  /** The label before the control, as reports draw "Show by". */
+  showLabel?: boolean;
+}) {
+  const id = useId();
+  const control = (
     <fieldset
-      aria-label={label}
+      {...(showLabel ? { 'aria-labelledby': id } : { 'aria-label': label })}
       className={cn(
         'inline-flex h-10 shrink-0 items-center rounded-[10px] bg-muted p-[3px] md:h-9',
         className,
@@ -44,6 +50,15 @@ export function Segmented<T extends string>({
         </button>
       ))}
     </fieldset>
+  );
+  if (!showLabel) return control;
+  return (
+    <div className="flex min-w-0 items-center gap-2 max-md:-mx-4 max-md:overflow-x-auto max-md:px-4 max-md:[scrollbar-width:none]">
+      <span id={id} className="text-[13px] leading-none font-medium whitespace-nowrap">
+        {label}
+      </span>
+      {control}
+    </div>
   );
 }
 

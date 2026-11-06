@@ -3,7 +3,7 @@
 // table from md that open the order, a ⋯ menu per row, and selection for
 // bulk confirm, booking and printing in the selection bar.
 
-import { formatDateTime, formatNumber } from '@managemind/shared/i18n';
+import { formatNumber } from '@managemind/shared/i18n';
 import { formatPhone } from '@managemind/shared/phone';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
@@ -30,6 +30,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
 import { type AdminKey, useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/back-office-reports';
 import '../i18n/orders';
 import '../i18n/couriers';

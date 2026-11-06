@@ -2,7 +2,7 @@
 // low-stock filter, an adjust panel (receive, count, damage, …, always with a
 // reason) and each variant's history in a panel. Every change is a ledger
 // entry.
-import { formatDateTime, formatNumber } from '@managemind/shared/i18n';
+import { formatNumber } from '@managemind/shared/i18n';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { History, Package, SlidersHorizontal, Truck, X } from 'lucide-react';
@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button';
 import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { StatRow } from '../components/ui/stat-row';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 // The receive hint and the cost history live with the purchasing screens' messages.
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';

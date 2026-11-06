@@ -2,7 +2,6 @@
 // removing someone and leaving the store. Only roles you could hold
 // yourself can be given (no escalation); the server enforces the same rule.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { canManageRole, STORE_ROLES, type StoreRole } from '@managemind/shared/permissions';
 import {
   useInfiniteQuery,
@@ -26,6 +25,7 @@ import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { refreshAccess } from '../lib/store';
 

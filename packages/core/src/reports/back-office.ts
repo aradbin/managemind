@@ -215,6 +215,8 @@ export async function salesReport(
   by: 'day' | 'week' | 'month';
   buckets: SalesBucket[];
   totals: Omit<SalesBucket, 'start'>;
+  /** The same number of days just before the range, for "vs. before". */
+  previous: Omit<SalesBucket, 'start'>;
 }> {
   authorize(actor, 'reports.read');
   await requireBackOffice(tx);
@@ -234,7 +236,19 @@ export async function salesReport(
     }
     buckets.set(key, b);
   }
-  return { from: q.from, to: q.to, by: q.by, buckets: [...buckets.values()], totals };
+  const length = Math.round((Date.parse(q.to) - Date.parse(q.from)) / 86_400_000) + 1;
+  const previous = zero();
+  for (const d of await dailyFacts(tx, addDays(q.from, -length), addDays(q.from, -1))) {
+    for (const f of SALES_FIELDS) previous[f] += d[f];
+  }
+  return {
+    from: q.from,
+    to: q.to,
+    by: q.by,
+    buckets: [...buckets.values()],
+    totals,
+    previous,
+  };
 }
 
 // ---- Products (§3.8) ---------------------------------------------------------------------

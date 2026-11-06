@@ -1,7 +1,6 @@
 // Platform → Terms (phase-5b-plan §3.4, §7): versions with how many stores
 // accepted each; super admins publish a new one with its effective date.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -11,6 +10,7 @@ import { PageHeader } from '../../components/page-header';
 import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { useLocale } from '../../i18n';
+import { formatDateTime } from '../../lib/dates';
 import '../../i18n/launch';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';

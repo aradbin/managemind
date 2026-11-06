@@ -697,6 +697,10 @@ describe('failed deliveries, flagged phones and reports (§3.11, §3.15)', () =>
     );
     expect(reports.returnsByReason.length).toBeGreaterThan(0);
     expect(reports.payments.find((p) => p.kind === 'cod')?.orders).toBeGreaterThan(0);
+    // The stat strip: placed, delivered and returned orders.
+    expect(reports.totals.placed).toBeGreaterThanOrEqual(reports.totals.delivered);
+    expect(reports.totals.delivered).toBeGreaterThanOrEqual(1);
+    expect(reports.totals.returned).toBeGreaterThanOrEqual(1);
     await expect(
       run((tx) => getReports(tx, actorAs('staff'), { from: today, to: today })),
     ).rejects.toMatchObject({ code: 'forbidden' });

@@ -2,7 +2,6 @@
 // checklist with a fresh check, its plan and dunning hold, and closing and
 // reopening. Super admins change; support reads.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Check, Circle } from 'lucide-react';
@@ -17,6 +16,7 @@ import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { type AdminKey, useLocale } from '../../i18n';
+import { formatDateTime } from '../../lib/dates';
 import '../../i18n/billing';
 import '../../i18n/launch';
 import { api, unwrap } from '../../lib/api';

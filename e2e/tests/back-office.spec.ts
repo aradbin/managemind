@@ -329,7 +329,7 @@ test('back office', async ({ page }, info) => {
     await expect(page.getByRole('cell', { name: m('profit.netProfit') })).toBeVisible();
     await expectAccessible(page, 'profit report');
     await page
-      .getByRole('button', { name: m('reports.exportWhat', { what: m('profit.title') }) })
+      .getByRole('button', { name: m('reports.exportWhat', { what: m('profit.statement') }) })
       .click();
     const [download] = await Promise.all([
       page.waitForEvent('download'),

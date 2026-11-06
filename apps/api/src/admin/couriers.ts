@@ -190,6 +190,8 @@ const CodReport = z
         courier: z.string(),
         consignmentId: z.string().nullable(),
         deliveredAt: z.string(),
+        collected: z.number().int(),
+        fee: z.number().int(),
         net: z.number().int(),
         days: z.number().int(),
       }),

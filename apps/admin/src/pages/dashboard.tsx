@@ -4,7 +4,7 @@
 // as bars (each bar names its day and amount; a table view shows the same)
 // and the latest orders on the left, what is waiting and this month's profit
 // (catalog.cost) on the right. Phones stack them with what is waiting first.
-import { formatDateTime, formatNumber, type Locale } from '@managemind/shared/i18n';
+import { formatNumber, type Locale } from '@managemind/shared/i18n';
 import { formatPhone } from '@managemind/shared/phone';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -35,6 +35,7 @@ import { Button } from '../components/ui/button';
 import { cardFrame, cardPadded, cardTitle } from '../components/ui/card';
 import { UsageCard } from '../components/usage-card';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/back-office-reports';
 import '../i18n/couriers';
 import '../i18n/orders';

@@ -236,6 +236,9 @@ export interface CodReport {
     courier: string;
     consignmentId: string | null;
     deliveredAt: string;
+    /** What the courier collected, and its fee: net is one less the other. */
+    collected: number;
+    fee: number;
     net: number;
     days: number;
   }[];
@@ -306,6 +309,7 @@ export async function codReconciliation(
   const pre = prefix[0]?.prefix ?? '#';
   const { rows: open } = await tx.db.execute<Record<string, unknown>>(sql`
     select s.id, s.order_id, o.number, s.courier, s.consignment_id, s.delivered_at,
+           coalesce(s.cod_collected, s.cod_amount, 0) as collected, coalesce(s.courier_fee, 0) as fee,
            coalesce(s.cod_collected, s.cod_amount, 0) - coalesce(s.courier_fee, 0) as net
       from store.shipments s join store.orders o on o.id = s.order_id
      where ${only} and ${range} and s.status = 'delivered'
@@ -359,6 +363,8 @@ export async function codReconciliation(
       courier: String(r.courier),
       consignmentId: (r.consignment_id as string) ?? null,
       deliveredAt: new Date(r.delivered_at as string).toISOString(),
+      collected: n(r.collected),
+      fee: n(r.fee),
       net: n(r.net),
       days: Math.floor((now - new Date(r.delivered_at as string).getTime()) / 86_400_000),
     })),

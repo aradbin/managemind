@@ -2,7 +2,7 @@
 // saved instead of sending, outside production. Previews need the deploy's
 // DEV_TOKEN, kept in this tab only. HTML is shown in a sandboxed frame
 // with scripts and navigation off.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useMutation } from '@tanstack/react-query';
 import { type FormEvent, Fragment, useState } from 'react';
 import { Field } from '../components/field';
@@ -10,6 +10,7 @@ import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 
 interface Mail {
   id: string;

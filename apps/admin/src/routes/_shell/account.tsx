@@ -1,7 +1,7 @@
 // Your account (phase-1-plan §5.5, §7.3): name and language, two-factor login
 // with backup codes, the devices you're signed in on, and this store's
 // alerts (phase-5a-plan §3.9).
-import { formatDateTime, type Locale } from '@managemind/shared/i18n';
+import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { type FormEvent, type ReactNode, useState } from 'react';
@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/button';
 import { useLocale } from '../../i18n';
 import { api, type Me, meQuery, unwrap } from '../../lib/api';
 import { AuthError, auth, totpSecret } from '../../lib/auth';
+import { formatDateTime } from '../../lib/dates';
 import { describeDevice } from '../../lib/device';
 import { errorMessage } from '../../lib/errors';
 

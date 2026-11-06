@@ -2,42 +2,51 @@
 // dates, what each courier collected, charged and paid out, the parcels
 // still unpaid, and the differences. Owners and managers import a courier's
 // payout statement or record a payout by hand, checked before it is saved.
-import { COURIERS, type Courier } from '@managemind/shared/orders';
+
+import { formatNumber } from '@managemind/shared/i18n';
+import { COURIERS, type Courier, LIVE_COURIERS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from '@tanstack/react-router';
+import { FileUp, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { PhoneRecordHeader } from '../components/record-header';
+import { dhakaDay, ReportRange, rangeText, useRange } from '../components/report-range';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardFrame, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
+import { Segmented } from '../components/ui/segmented';
+import { StatRow } from '../components/ui/stat-row';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
 import '../i18n/orders';
-import { Table } from '../components/report-table';
+import '../i18n/back-office-reports';
+import '../i18n/returns';
+import { ReportBlocks, ReportControls, Table } from '../components/report-table';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, readPrice } from '../lib/catalog';
 import { courierName } from '../lib/couriers';
+import { useRecordPage } from '../lib/crumb';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
-import { dateTime } from '../lib/orders';
 import { type Parsed, parseFile } from '../lib/sheet';
-
-const DHAKA_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' });
-const day = (d: Date) => DHAKA_DAY.format(d);
+import { cn } from '../lib/utils';
 
 export function CodReportPage() {
   const { t, locale } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
   const canRecord = usePermission('payments.reconcile');
-  const [from, setFrom] = useState(day(new Date(Date.now() - 30 * 86_400_000)));
-  const [to, setTo] = useState(day(new Date()));
+  const [range, setRange] = useRange();
+  const { from, to } = range;
   const [courier, setCourier] = useState<Courier | ''>('');
   const [dialog, setDialog] = useState<'import' | 'record' | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  useRecordPage(t('cod.title'));
   const key = ['reports', 'cod', from, to, courier] as const;
   const report = useQuery({
     queryKey: key,
@@ -47,6 +56,7 @@ export function CodReportPage() {
           params: { query: { from, to, ...(courier ? { courier } : {}) } },
         }),
       ),
+    enabled: from <= to,
   });
   const remove = useMutation({
     mutationFn: async (id: string) =>
@@ -57,62 +67,73 @@ export function CodReportPage() {
     },
   });
   const money = (n: number) => formatPrice(n, locale);
+  const minus = (n: number) => (n ? `−${money(n)}` : money(0));
+  const count = (n: number) => formatNumber(locale, n);
+  const short = (iso: string) =>
+    formatDateTime(locale, new Date(iso), { day: 'numeric', month: 'short' });
   const r = report.data;
+  const sum = (
+    k: 'delivered' | 'codAsked' | 'collected' | 'fees' | 'net' | 'paidOut' | 'outstanding',
+  ) => r?.couriers.reduce((a, c) => a + c[k], 0) ?? 0;
+  const actions = canRecord ? (
+    <>
+      <Button variant="secondary" onClick={() => setDialog('import')}>
+        <FileUp aria-hidden />
+        {t('cod.import')}
+      </Button>
+      <Button onClick={() => setDialog('record')}>
+        <Plus aria-hidden />
+        {t('cod.record')}
+      </Button>
+    </>
+  ) : undefined;
+  const parcel = (o: { displayNumber: string; courier: string; consignmentId: string | null }) =>
+    [o.displayNumber, [courierName(o.courier, t), o.consignmentId].filter(Boolean).join(' ')].join(
+      ' · ',
+    );
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader
-        parent={{ to: '/reports', label: t('nav.reports') }}
-        title={t('cod.title')}
-        description={t('cod.description')}
-        actions={
-          canRecord ? (
-            <>
-              <Button variant="secondary" onClick={() => setDialog('record')}>
-                {t('cod.record')}
-              </Button>
-              <Button onClick={() => setDialog('import')}>{t('cod.import')}</Button>
-            </>
-          ) : undefined
-        }
-      />
-      <div className="flex flex-wrap items-end gap-3">
-        <Field
-          label={t('reports.from')}
-          type="date"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
-        <Field
-          label={t('reports.to')}
-          type="date"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        />
-        <div className="flex flex-col gap-1">
-          <label htmlFor="cod-courier" className="text-sm font-medium">
-            {t('cod.courier')}
-          </label>
-          <select
-            id="cod-courier"
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-            value={courier}
-            onChange={(e) => setCourier(e.target.value as Courier | '')}
-          >
-            <option value="">{t('cod.allCouriers')}</option>
-            {COURIERS.map((c) => (
-              <option key={c} value={c}>
-                {courierName(c, t)}
-              </option>
-            ))}
-          </select>
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader to="/reports" backLabel={t('nav.reports')} title={t('cod.title')} />
+      <div className="flex flex-wrap items-start gap-3 max-md:hidden">
+        <BackLink to="/reports" label={t('nav.reports')} />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h1 className="text-xl leading-7 font-semibold tracking-[-0.01em]">{t('cod.title')}</h1>
+          <p className="text-muted-foreground">{t('cod.description')}</p>
         </div>
+        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
-      {report.isPending && <p role="status">{t('loading')}</p>}
+      {actions && <div className="flex gap-2 md:hidden [&>*]:flex-1">{actions}</div>}
+      <ReportRange value={range} onChange={setRange} />
+      <ReportControls>
+        <Segmented<Courier | ''>
+          label={t('cod.courier')}
+          showLabel
+          value={courier}
+          options={[
+            { value: '', label: t('cod.allCouriers') },
+            ...LIVE_COURIERS.map((c) => ({ value: c, label: courierName(c, t) })),
+          ]}
+          onChange={setCourier}
+        />
+      </ReportControls>
+      {report.isPending && from <= to && <p role="status">{t('loading')}</p>}
       {report.isError && <Notice tone="error">{errorMessage(report.error, t)}</Notice>}
       {r && (
-        <>
+        <StatRow
+          stats={[
+            { label: t('cod.collected'), value: money(sum('collected')) },
+            { label: t('cod.net'), value: money(sum('net')) },
+            { label: t('cod.paidOut'), value: money(sum('paidOut')) },
+            { label: t('cod.outstanding'), value: money(sum('outstanding')) },
+          ]}
+        />
+      )}
+      {r && (
+        <ReportBlocks>
           <Table
+            full
             caption={t('cod.summary')}
+            sub={t('cod.summarySub', { range: rangeText(range, locale) })}
             head={[
               t('cod.courier'),
               t('cod.delivered'),
@@ -122,21 +143,36 @@ export function CodReportPage() {
               t('cod.net'),
               t('cod.paidOut'),
               t('cod.outstanding'),
-              t('cod.returned'),
-              t('cod.returnCharges'),
             ]}
-            rows={r.couriers.map((c) => [
-              courierName(c.courier, t),
-              c.delivered,
-              money(c.codAsked),
-              money(c.collected),
-              money(c.fees),
-              money(c.net),
-              money(c.paidOut),
-              money(c.outstanding),
-              c.returned,
-              money(c.returnCharges),
-            ])}
+            rows={[
+              ...r.couriers.map((c) => [
+                courierName(c.courier, t),
+                count(c.delivered),
+                money(c.codAsked),
+                money(c.collected),
+                minus(c.fees),
+                money(c.net),
+                money(c.paidOut),
+                { text: money(c.outstanding), strong: true },
+              ]),
+              ...(r.couriers.length > 1
+                ? [
+                    {
+                      total: true,
+                      cells: [
+                        t('reports.total'),
+                        count(sum('delivered')),
+                        money(sum('codAsked')),
+                        money(sum('collected')),
+                        minus(sum('fees')),
+                        money(sum('net')),
+                        money(sum('paidOut')),
+                        money(sum('outstanding')),
+                      ],
+                    },
+                  ]
+                : []),
+            ]}
             empty={t('cod.none')}
             exportName="cod-summary"
             exportRows={r.couriers.map((c) => [
@@ -153,57 +189,85 @@ export function CodReportPage() {
             ])}
           />
           <Table
+            full
             caption={t('cod.outstandingList')}
-            head={[t('order.number'), t('cod.courier'), t('cod.net'), t('order.delivered')]}
+            head={[
+              t('cod.parcel'),
+              t('cod.delivered'),
+              t('cod.collected'),
+              t('cod.fee'),
+              t('codOut.days'),
+            ]}
             rows={r.outstanding.map((o) => [
-              `${o.displayNumber}${o.consignmentId ? ` · ${o.consignmentId}` : ''}`,
-              courierName(o.courier, t),
-              money(o.net),
-              t('cod.days', { n: o.days }),
+              parcel(o),
+              short(o.deliveredAt),
+              money(o.collected),
+              { text: minus(o.fee), muted: true },
+              {
+                text: t('cod.days', { n: count(o.days) }),
+                warn: o.days > 14 && o.days <= 30,
+                danger: o.days > 30,
+                strong: o.days > 14,
+              },
             ])}
             empty={t('cod.none')}
             exportName="cod-outstanding-parcels"
             exportRows={r.outstanding.map((o) => [
-              `${o.displayNumber}${o.consignmentId ? ` · ${o.consignmentId}` : ''}`,
-              courierName(o.courier, t),
-              { money: o.net },
+              parcel(o),
+              o.deliveredAt.slice(0, 10),
+              { money: o.collected },
+              { money: o.fee },
               o.days,
             ])}
           />
           <Table
             caption={t('cod.differences')}
-            head={[t('order.number'), t('cod.courier'), t('cod.differences')]}
+            head={[t('order.number'), t('cod.courier'), t('cod.what')]}
             rows={r.differences.map((d) => [
               `${d.displayNumber}${d.consignmentId ? ` · ${d.consignmentId}` : ''}`,
               courierName(d.courier, t),
-              d.kind === 'collected'
-                ? t('cod.diff.collected', { collected: money(d.collected), asked: money(d.asked) })
-                : t('cod.diff.paid', {
-                    paid: money(d.paidNet ?? 0),
-                    expected: money(d.expectedNet),
-                  }),
+              {
+                text:
+                  d.kind === 'collected'
+                    ? t('cod.diff.collected', {
+                        collected: money(d.collected),
+                        asked: money(d.asked),
+                      })
+                    : t('cod.diff.paid', {
+                        paid: money(d.paidNet ?? 0),
+                        expected: money(d.expectedNet),
+                      }),
+                danger: true,
+              },
             ])}
-            empty={t('cod.none')}
+            empty={t('cod.noDifferences')}
             exportName="cod-differences"
           />
-          <section className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5">
-            <h2 className="font-semibold">{t('cod.payouts')}</h2>
+          <section className={cn(cardFrame, 'flex min-w-0 flex-col gap-3 pt-4')}>
+            <h2 className={cn(cardTitle, 'px-4')}>{t('cod.payouts')}</h2>
             {r.payouts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('cod.none')}</p>
+              <p className="px-4 pb-4 text-muted-foreground">{t('cod.noPayouts')}</p>
             ) : (
-              <ul className="flex flex-col divide-y divide-border">
+              <ul className="pb-1">
                 {r.payouts.map((p) => (
-                  <li key={p.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-                    <span className="min-w-0 flex-1">
-                      <span className="font-medium">{courierName(p.courier, t)}</span> ·{' '}
-                      {p.reference} · {dateTime(locale, p.paidAt)} ·{' '}
-                      {t(`cod.source.${p.source}` as AdminKey)}
+                  <li
+                    key={p.id}
+                    className="flex min-h-10 flex-wrap items-center gap-x-3 border-t border-border px-4 py-1.5 text-[13px]"
+                  >
+                    <span className="w-14 tabular-nums">{short(p.paidAt)}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {courierName(p.courier, t)}{' '}
+                      <span className="text-muted-foreground">
+                        {p.reference} · {t(`cod.source.${p.source}` as AdminKey)}
+                      </span>
                     </span>
-                    <span className="tabular-nums">
-                      {money(p.amount)} · {p.parcels}
-                    </span>
+                    <span className="font-semibold tabular-nums">{money(p.amount)}</span>
                     {canRecord && (
-                      <Button variant="quiet" onClick={() => setDeleting(p.id)}>
+                      <Button
+                        variant="ghost"
+                        className="-mr-2 h-7 px-2 md:h-7"
+                        onClick={() => setDeleting(p.id)}
+                      >
                         {t('cod.delete')}
                       </Button>
                     )}
@@ -212,12 +276,7 @@ export function CodReportPage() {
               </ul>
             )}
           </section>
-          <p className="text-sm">
-            <Link to="/orders/courier-returns" className="underline">
-              {t('couriers.returns.title')}
-            </Link>
-          </p>
-        </>
+        </ReportBlocks>
       )}
       {dialog && (
         <PayoutDialog
@@ -258,7 +317,7 @@ function PayoutDialog({
   const { t, locale } = useLocale();
   const [courier, setCourier] = useState<Courier>('steadfast');
   const [reference, setReference] = useState('');
-  const [paidAt, setPaidAt] = useState(day(new Date()));
+  const [paidAt, setPaidAt] = useState(dhakaDay(new Date()));
   const [parsed, setParsed] = useState<Parsed | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [cols, setCols] = useState({ consignment: 0, collected: -1, fee: -1 });

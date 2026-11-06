@@ -1,9 +1,10 @@
 // Settings → Store → Download your store's data (phase-5b-plan §3.10, Q13),
 // for owners: once a day, prepared in a few minutes, and emailed as a link
 // that works for 7 days.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/launch';
 import { api, unwrap } from '../lib/api';
 import { errorMessage } from '../lib/errors';

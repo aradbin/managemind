@@ -4,7 +4,7 @@
 // View store, language, theme, help and the account. On phones, a five-tab bar
 // whose Menu tab lists the rest. Search opens from the header or Ctrl+K. It
 // loads /me once; without a session it sends the user to sign in.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import type { Permission } from '@managemind/shared/permissions';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
@@ -61,6 +61,7 @@ import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { useRecord } from '../lib/crumb';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage } from '../lib/errors';
 import { chooseStore, refreshAccess } from '../lib/store';
 import { setThemeChoice, useThemeChoice } from '../lib/theme';
@@ -439,9 +440,11 @@ function HeaderBreadcrumb({ groups }: { groups: NavGroup[] }) {
   // A record under a page (an order, a product) links back to its list.
   const deeper = path !== page.to && path !== item.overview;
   // A record ends the trail with its name; an order sits straight under
-  // Orders, not under "All orders", as drawn ("Catalog › Products › …" keeps
-  // its page).
-  const skipLeaf = Boolean(record && leaf && leaf.label === 'nav.allOrders');
+  // Orders, not under "All orders", and COD reconciliation under Reports, not
+  // under "Overview", as drawn ("Catalog › Products › …" keeps its page).
+  const skipLeaf = Boolean(
+    record && leaf && (leaf.label === 'nav.allOrders' || leaf.label === 'nav.overview'),
+  );
   const crumbs: { label: string; to?: NavTo }[] = [
     ...(leaf ? [{ label: t(item.label), to: item.to }] : []),
     ...(skipLeaf ? [] : [{ label: t(page.label), ...(deeper ? { to: page.to } : {}) }]),

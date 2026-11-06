@@ -2,7 +2,7 @@
 // its own domains, each with its status, the DNS record to add (with a copy
 // button), "Check now", "Make primary" and "Disconnect". Owners and Managers
 // manage them (Q10); others see them read-only.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -13,6 +13,7 @@ import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/online-store';
 import { ApiError, api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';

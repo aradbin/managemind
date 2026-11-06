@@ -1,12 +1,13 @@
 // Platform → Dashboard (phase-5b-plan §3.3): stores, sales across client
 // stores, money, use per store, and the free-tier numbers from this
 // morning's usage check, with a warning at 70%. Every number is also text.
-import { formatDateTime, formatNumber } from '@managemind/shared/i18n';
+import { formatNumber } from '@managemind/shared/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Notice } from '../../components/notice';
 import { PageHeader } from '../../components/page-header';
 import { useLocale } from '../../i18n';
+import { formatDateTime } from '../../lib/dates';
 import '../../i18n/launch';
 import { api, unwrap } from '../../lib/api';
 import { formatPrice } from '../../lib/catalog';

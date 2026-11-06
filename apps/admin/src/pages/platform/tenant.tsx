@@ -3,7 +3,6 @@
 // suspend and reactivate (with why), close and reopen; support staff open
 // the store for a limited time, and its owners are told why.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { ChevronRight } from 'lucide-react';
@@ -18,6 +17,7 @@ import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { useLocale } from '../../i18n';
+import { formatDateTime } from '../../lib/dates';
 import '../../i18n/launch';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
