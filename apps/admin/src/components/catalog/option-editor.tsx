@@ -49,16 +49,23 @@ export function OptionEditor({
   product,
   defaultLang,
   disabled,
+  startWithOne,
 }: {
   product: Product;
   defaultLang: Lang;
   disabled?: boolean;
+  /** Opened from "Add sizes, colours or other options": one empty option to fill. */
+  startWithOne?: boolean;
 }) {
   const { t } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [options, setOptions] = useState<DraftOption[]>(() => fromProduct(product));
-  const [dirty, setDirty] = useState(false);
+  const [options, setOptions] = useState<DraftOption[]>(() =>
+    startWithOne && !product.options.length
+      ? [{ key: key(), name: {}, values: [] }]
+      : fromProduct(product),
+  );
+  const [dirty, setDirty] = useState(Boolean(startWithOne && !product.options.length));
   const other = otherLang(defaultLang);
   const variants = combinationCount(options.map((o) => o.values));
 

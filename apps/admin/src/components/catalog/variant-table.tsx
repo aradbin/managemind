@@ -5,17 +5,26 @@
 import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Pencil } from 'lucide-react';
+import { ChevronRight, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
-import { type Product, priceInput, productKeys, readPrice, type Variant } from '../../lib/catalog';
+import {
+  formatPrice,
+  type Product,
+  priceInput,
+  productKeys,
+  readPrice,
+  type Variant,
+} from '../../lib/catalog';
 import { saveErrorMessage } from '../../lib/errors';
 import { variantLabel } from '../../pages/products';
 import { Field } from '../field';
+import { fieldHint, fieldLabel } from '../field-styles';
 import { usePermission } from '../permission-gate';
 import { useToast } from '../toast';
 import { Button } from '../ui/button';
+import { MoneyInput } from '../ui/choice';
 import { Input } from '../ui/input';
 import { Sheet, SheetBody, SheetFooter } from '../ui/sheet';
 import { Switch } from '../ui/switch';
@@ -74,6 +83,222 @@ function changes(v: Variant, d: Draft, cost: boolean) {
   if (d.track !== v.trackInventory) patch.trackInventory = d.track;
   if (d.backorder !== v.allowBackorder) patch.allowBackorder = d.backorder;
   return { patch };
+}
+
+/**
+ * A product with no options (ADR 0034, the canvas's "Price and stock" card):
+ * the one variant's price and stock, with the rest folded under "More
+ * pricing and shipping". Remount it (key) when the variant changes.
+ */
+export function SimpleVariant({
+  product,
+  disabled,
+  onAddOptions,
+}: {
+  product: Product;
+  disabled?: boolean;
+  onAddOptions: () => void;
+}) {
+  const { t, locale } = useLocale();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const cost = usePermission('catalog.cost');
+  const stock = usePermission('inventory.read');
+  const v = product.variants[0] as Variant;
+  const [draft, setDraft] = useState<Draft>(() => toDraft(v));
+  const [more, setMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
+  const result = changes(v, draft, cost);
+  const dirty = 'error' in result || Object.keys(result.patch).length > 0;
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if ('error' in result) {
+        setError(t(result.error as 'form.invalid'));
+        throw new Error('invalid');
+      }
+      setError(null);
+      unwrap(
+        await api.PATCH('/v1/admin/variants/{id}', {
+          params: { path: { id: v.id } },
+          body: result.patch,
+        }),
+      );
+    },
+    onSuccess: async () => {
+      for (const k of productKeys(product.id)) await queryClient.invalidateQueries({ queryKey: k });
+      toast(t('variants.saved', { count: 1 }));
+    },
+  });
+
+  const price = readPrice(draft.price);
+  const costPrice = readPrice(draft.cost);
+  const marginText =
+    price && costPrice
+      ? t('variant.profitEach', {
+          amount: formatPrice(price - costPrice, locale),
+          percent: formatNumber(locale, Math.round(((price - costPrice) / price) * 100)),
+        })
+      : t('variant.profitAdd');
+
+  return (
+    <fieldset disabled={disabled || save.isPending} className="m-0 contents min-w-0 border-0 p-0">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="flex min-w-0 flex-col">
+          <label htmlFor="simple-price" className={fieldLabel}>
+            {t('product.price')}
+          </label>
+          <MoneyInput
+            id="simple-price"
+            placeholder="0"
+            value={draft.price}
+            onChange={(e) => set({ price: e.target.value })}
+          />
+        </div>
+        {stock && (
+          <div className="flex min-w-0 flex-col">
+            <span className={fieldLabel}>{t('product.stock')}</span>
+            <div className="flex h-10 items-center justify-between gap-2 rounded-lg bg-muted pr-1 pl-3 md:h-9">
+              <span className="truncate text-muted-foreground">
+                {v.trackInventory && v.stock
+                  ? t('product.availableCount', { count: formatNumber(locale, v.stock.available) })
+                  : t('variant.notTracked')}
+              </span>
+              {v.trackInventory && (
+                <Button asChild variant="ghost" className="h-7 px-2 md:h-7">
+                  <Link to="/inventory" search={{ q: v.sku ?? undefined }}>
+                    {t('inventory.adjust')}
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        aria-expanded={more}
+        onClick={() => setMore(!more)}
+        className="-my-1 flex w-full items-center gap-1.5 py-1.5 text-left font-medium text-muted-foreground hover:text-foreground [&[aria-expanded=true]>svg]:rotate-90"
+      >
+        <ChevronRight aria-hidden className="size-4 transition-transform duration-200" />
+        {t('product.morePricing')}
+      </button>
+      {more && (
+        <div className="flex flex-col gap-4 border-t border-dashed border-border pt-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex min-w-0 flex-col">
+              <label htmlFor="simple-compare" className={fieldLabel}>
+                {t('variant.compareAt')}
+              </label>
+              <MoneyInput
+                id="simple-compare"
+                aria-describedby="simple-compare-hint"
+                value={draft.compareAt}
+                onChange={(e) => set({ compareAt: e.target.value })}
+              />
+              <p id="simple-compare-hint" className={fieldHint}>
+                {t('variants.compareAtHint')}
+              </p>
+            </div>
+            {cost && (
+              <div className="flex min-w-0 flex-col">
+                <label htmlFor="simple-cost" className={fieldLabel}>
+                  {t('variant.cost')}
+                </label>
+                <MoneyInput
+                  id="simple-cost"
+                  aria-describedby="simple-cost-hint"
+                  value={draft.cost}
+                  onChange={(e) => set({ cost: e.target.value })}
+                />
+                <p id="simple-cost-hint" className={fieldHint}>
+                  {marginText}
+                </p>
+              </div>
+            )}
+            <Field
+              label={t('variant.sku')}
+              value={draft.sku}
+              onChange={(e) => set({ sku: e.target.value })}
+            />
+            <Field
+              label={t('variant.barcode')}
+              value={draft.barcode}
+              onChange={(e) => set({ barcode: e.target.value })}
+            />
+            <Field
+              label={t('variant.weight')}
+              inputMode="numeric"
+              value={draft.weight}
+              onChange={(e) => set({ weight: e.target.value })}
+            />
+            <Field
+              label={t('variant.lowStock')}
+              inputMode="numeric"
+              value={draft.threshold}
+              onChange={(e) => set({ threshold: e.target.value })}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="simple-track" className="cursor-pointer">
+              {t('variant.track')}
+            </label>
+            <Switch
+              id="simple-track"
+              checked={draft.track}
+              onCheckedChange={(on) => set({ track: on })}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="simple-backorder" className="cursor-pointer">
+              {t('variant.backorder')}
+            </label>
+            <Switch
+              id="simple-backorder"
+              checked={draft.backorder}
+              onCheckedChange={(on) => set({ backorder: on })}
+            />
+          </div>
+        </div>
+      )}
+      {(dirty || save.isError) && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {(error || (save.isError && save.error.message !== 'invalid')) && (
+            <span role="alert" className="mr-auto text-sm text-danger">
+              {error ?? saveErrorMessage(save.error, t)}
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            disabled={save.isPending}
+            onClick={() => {
+              setDraft(toDraft(v));
+              setError(null);
+              save.reset();
+            }}
+          >
+            {t('action.cancel')}
+          </Button>
+          <Button disabled={save.isPending} onClick={() => save.mutate()}>
+            {t('action.save')}
+          </Button>
+        </div>
+      )}
+      <div className="-mx-4 -mb-4 rounded-b-[12px] border-t border-border bg-muted/50 px-4 py-3 md:-mx-5 md:-mb-5 md:rounded-b-[14px] md:px-5">
+        <Button
+          variant="ghost"
+          className="-ml-2.5 px-2.5"
+          disabled={disabled}
+          onClick={onAddOptions}
+        >
+          <Plus aria-hidden className="size-4" />
+          {t('product.addOptions')}
+        </Button>
+      </div>
+    </fieldset>
+  );
 }
 
 /** Remount it (key) when the variants change, so new variants get their drafts. */

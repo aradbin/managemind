@@ -18,7 +18,14 @@ export type RefundPreview = Json<'/v1/admin/orders/{id}/refunds/preview', 'post'
 export type ReturnStatus = ReturnSummary['status'];
 export type RefundMethod = Json<'/v1/admin/orders/{id}/refunds', 'post'>['method'];
 
-export const RETURN_STEPS = ['requested', 'approved', 'received', 'inspected', 'resolved'] as const;
+export const RETURN_STEPS = [
+  'requested',
+  'approved',
+  'in_transit',
+  'received',
+  'inspected',
+  'resolved',
+] as const;
 
 export type ReturnReason = ReturnSummary['reason'];
 

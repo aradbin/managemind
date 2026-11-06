@@ -217,6 +217,12 @@ export const catalogEn = {
   'variant.lowStock': 'Low-stock alert',
   'variant.track': 'Track stock',
   'variant.backorder': 'Sell when out of stock',
+  'variant.notTracked': 'Not tracked',
+  'variant.profitEach': 'Profit {amount} on each sale ({percent}% margin).',
+  'variant.profitAdd': 'Add it to see the profit on each sale.',
+  'product.priceAndStock': 'Price and stock',
+  'product.morePricing': 'More pricing and shipping',
+  'product.addOptions': 'Add sizes, colours or other options',
 
   'images.mainShort': 'Main',
   'images.addShort': 'Add',

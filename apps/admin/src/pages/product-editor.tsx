@@ -35,7 +35,7 @@ import {
 } from '../components/catalog/language-tabs';
 import { OptionEditor } from '../components/catalog/option-editor';
 import { TagInput } from '../components/catalog/tag-input';
-import { VariantTable } from '../components/catalog/variant-table';
+import { SimpleVariant, VariantTable } from '../components/catalog/variant-table';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
 import { fieldHint, fieldLabel } from '../components/field-styles';
@@ -318,6 +318,9 @@ function Editor({
       Boolean(product.vatCategory),
   );
   const [seoOpen, setSeoOpen] = useState(false);
+  // No options: the canvas's "Price and stock" card, until options are added.
+  const [addingOptions, setAddingOptions] = useState(false);
+  const simple = !product.options.length && product.variants.length === 1 && !addingOptions;
   const store = useQuery(storeSettingsQuery);
   const storeBase = store.data
     ? (() => {
@@ -428,43 +431,60 @@ function Editor({
         </fieldset>
       </section>
 
-      <section aria-labelledby="variants-heading" className={cn(cardPadded, 'gap-4 md:gap-4')}>
-        <div className="flex min-h-5 items-center justify-between gap-3">
-          <h2 id="variants-heading" className={cardTitle}>
-            {t('product.variants')}
+      {simple ? (
+        <section aria-labelledby="price-heading" className={cardPadded}>
+          <h2 id="price-heading" className={cardTitle}>
+            {t('product.priceAndStock')}
           </h2>
-          <span className="text-[13px] text-muted-foreground">
-            {[
-              t('product.variantCount', { count: formatNumber(locale, product.variants.length) }),
-              product.variants.some((v) => v.trackInventory && v.stock) &&
-                t('product.availableCount', {
-                  count: formatNumber(
-                    locale,
-                    product.variants.reduce(
-                      (n, v) => n + (v.trackInventory && v.stock ? v.stock.available : 0),
-                      0,
-                    ),
-                  ),
-                }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
-        </div>
-        <OptionEditor
-          key={`options-${product.updatedAt}`}
-          product={product}
-          defaultLang={defaultLang}
-          disabled={disabled}
-        />
-        <div className="-mx-4 -mb-4 min-w-0 overflow-x-auto border-t border-border md:-mx-5 md:-mb-5">
-          <VariantTable
-            key={product.variants.map((v) => v.id).join()}
+          <SimpleVariant
+            key={`${product.variants[0]?.id}-${product.updatedAt}`}
             product={product}
             disabled={disabled}
+            onAddOptions={() => setAddingOptions(true)}
           />
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section aria-labelledby="variants-heading" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+          <div className="flex min-h-5 items-center justify-between gap-3">
+            <h2 id="variants-heading" className={cardTitle}>
+              {t('product.variants')}
+            </h2>
+            <span className="text-[13px] text-muted-foreground">
+              {[
+                t('product.variantCount', { count: formatNumber(locale, product.variants.length) }),
+                product.variants.some((v) => v.trackInventory && v.stock) &&
+                  t('product.availableCount', {
+                    count: formatNumber(
+                      locale,
+                      product.variants.reduce(
+                        (n, v) => n + (v.trackInventory && v.stock ? v.stock.available : 0),
+                        0,
+                      ),
+                    ),
+                  }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+          </div>
+          <OptionEditor
+            key={`options-${product.updatedAt}`}
+            product={product}
+            defaultLang={defaultLang}
+            disabled={disabled}
+            startWithOne={addingOptions}
+          />
+          {product.options.length > 0 && (
+            <div className="-mx-4 -mb-4 min-w-0 overflow-x-auto border-t border-border md:-mx-5 md:-mb-5">
+              <VariantTable
+                key={product.variants.map((v) => v.id).join()}
+                product={product}
+                disabled={disabled}
+              />
+            </div>
+          )}
+        </section>
+      )}
 
       <section aria-labelledby="organize-heading" className={cardPadded}>
         <h2 id="organize-heading" className={cardTitle}>

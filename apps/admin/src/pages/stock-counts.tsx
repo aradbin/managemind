@@ -20,7 +20,8 @@ import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
-import { categoriesQuery, categoryChoices, categoryOptions } from '../lib/catalog';
+import { categoriesQuery, categoryChoices } from '../lib/catalog';
+import { useCountScope } from '../lib/count-scope';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { useOpenNew } from '../lib/open-new';
 import { dateOnly, lineLabel } from '../lib/orders';
@@ -63,7 +64,6 @@ export function StockCountsPage() {
     canWrite,
   );
   const [status, setStatus] = useState<CountStatus | ''>('');
-  const categories = useQuery(categoriesQuery);
   const list = usePagedList({
     queryKey: ['stock-counts', status] as const,
     fetchPage: async (offset, limit) =>
@@ -77,26 +77,7 @@ export function StockCountsPage() {
   const counts = list.first?.counts;
   const open = (c: StockCountSummary) =>
     navigate({ to: '/inventory/counts/$id', params: { id: c.id } });
-  /** What is counted, as specifically as the scope says. */
-  const what = (c: StockCountSummary) => {
-    const scope = c.scope as {
-      kind: ScopeKind;
-      categoryId?: string;
-      tag?: string;
-      variantIds?: string[];
-    };
-    if (scope.kind === 'category') {
-      const name = categoryOptions(categories.data ?? [], locale).find(
-        (o) => o.id === scope.categoryId,
-      )?.label;
-      return name ? t('counts.whatCategory', { name }) : t('counts.scope.category');
-    }
-    if (scope.kind === 'tag' && scope.tag) return t('counts.whatTag', { tag: scope.tag });
-    if (scope.kind === 'variants') {
-      return t('counts.whatItems', { count: scope.variantIds?.length ?? c.lineCount });
-    }
-    return t(`counts.scope.${scope.kind}`);
-  };
+  const what = useCountScope();
   const progress = (c: StockCountSummary) => (
     <span className="flex min-w-0 flex-col gap-1.5">
       <span className="text-[13px] leading-4 tabular-nums">

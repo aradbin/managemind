@@ -7,7 +7,7 @@
 // delivered, less what other returns cover; the order is locked while that
 // is checked, as stock is.
 import { schema } from '@managemind/db';
-import { AppError } from '@managemind/shared';
+import { AppError, formatPhone } from '@managemind/shared';
 import {
   exchangeInput,
   inspectInput,
@@ -30,6 +30,7 @@ import { applyMovements, type Movement } from '../inventory/service';
 import { recordHistory } from '../orders/history';
 import { lockOrder } from '../orders/lifecycle';
 import { type PlacedOrder, placeOrder } from '../orders/place';
+import { maskPhone } from '../orders/views';
 import { emit } from '../outbox';
 import { orderSettings, quote } from '../pricing/quote';
 import { restockAtLineCost } from '../purchasing/costs';
@@ -672,10 +673,15 @@ export interface ReturnDetail extends ReturnSummary {
   resolution: ReturnResolution | null;
   rejectReason: string | null;
   exchangeOrderId: string | null;
+  /** The order's contact phone, formatted; masked without customers.read. */
+  customerPhone: string | null;
   lines: {
     orderLineId: string;
     title: Record<string, string>;
     optionLabels: Record<string, string>[];
+    sku: string | null;
+    /** The returned units at the price paid each: unit price × quantity. */
+    value: number;
     quantity: number;
     reason: ReturnReason | null;
     restocked: number;
@@ -837,12 +843,15 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     order_line_id: string;
     title: Record<string, string>;
     option_labels: Record<string, string>[];
+    sku: string | null;
+    value: string | number;
     quantity: number;
     reason: ReturnReason | null;
     restocked: number;
     written_off: number;
   }>(sql`
-    select rl.order_line_id, l.title, l.option_labels, rl.quantity, rl.reason, rl.restocked, rl.written_off
+    select rl.order_line_id, l.title, l.option_labels, l.sku, l.unit_price * rl.quantity as value,
+           rl.quantity, rl.reason, rl.restocked, rl.written_off
       from store.return_lines rl join store.order_lines l on l.id = rl.order_line_id
      where rl.return_id = ${id} order by l.position`);
   const photos = await tx.db
@@ -852,6 +861,7 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     .orderBy(schema.returnPhotos.createdAt);
   const { settings } = await orderSettings(tx);
   const x = row.ret;
+  const phone = (row.contact as { phone?: string }).phone;
   return {
     id: x.id,
     number: x.number,
@@ -869,10 +879,17 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     resolution: x.resolution,
     rejectReason: x.rejectReason,
     exchangeOrderId: x.exchangeOrderId,
+    customerPhone: phone
+      ? actor.permissions.has('customers.read')
+        ? formatPhone(phone)
+        : maskPhone(phone)
+      : null,
     lines: lines.map((l) => ({
       orderLineId: l.order_line_id,
       title: l.title,
       optionLabels: l.option_labels ?? [],
+      sku: l.sku,
+      value: Number(l.value),
       quantity: l.quantity,
       reason: l.reason,
       restocked: l.restocked,

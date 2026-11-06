@@ -8,7 +8,7 @@
 import { RETURN_REASONS } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { Check, Package } from 'lucide-react';
+import { Check, Package, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { Field } from '../components/field';
 import { fieldLabel } from '../components/field-styles';
@@ -65,6 +65,19 @@ export function ReturnDetailPage() {
   if (ret.isError) return <Notice tone="error">{errorMessage(ret.error, t)}</Notice>;
   const r = ret.data;
   const title = t('return.title', { number: r.displayNumber });
+  const sub = (
+    <>
+      {t('return.orderWord')}{' '}
+      <Link
+        to="/orders/$id"
+        params={{ id: r.orderId }}
+        className="underline-offset-4 hover:underline"
+      >
+        {r.orderNumber}
+      </Link>{' '}
+      · {r.customerName} · {t('return.askedAt', { date: dateTime(locale, r.createdAt) })}
+    </>
+  );
   const history = (
     [
       [r.createdAt, t('return.history.requested')],
@@ -82,28 +95,26 @@ export function ReturnDetailPage() {
   return (
     <div className="flex flex-col gap-3 md:gap-4">
       <PhoneRecordHeader to="/returns" backLabel={t('return.back')} title={title} />
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="max-md:hidden">
-          <BackLink to="/returns" label={t('return.back')} />
-        </span>
-        <h1 className="text-xl leading-7 font-semibold tracking-[-0.01em] max-md:hidden">
-          {title}
-        </h1>
+      <div className="flex flex-wrap items-center gap-3 max-md:hidden">
+        <BackLink to="/returns" label={t('return.back')} />
+        <h1 className="text-xl leading-7 font-semibold tracking-[-0.01em]">{title}</h1>
         <ReturnStatusChip status={r.status} />
         <span className="flex-1" />
         <Actions ret={r} />
       </div>
-      <p className="-mt-2 text-muted-foreground">
-        <Link
-          to="/orders/$id"
-          params={{ id: r.orderId }}
-          className="font-mono underline-offset-4 hover:underline"
-        >
-          {r.orderNumber}
-        </Link>{' '}
-        · {r.customerName} · {dateTime(locale, r.createdAt)}
-      </p>
-      <Steps ret={r} />
+      <p className="-mt-2 text-muted-foreground max-md:hidden">{sub}</p>
+      <div className="max-md:hidden">
+        <Steps ret={r} />
+      </div>
+      {/* Phones: the board's summary card, with the chip, steps and actions. */}
+      <section aria-label={title} className={cn(cardPadded, 'md:hidden')}>
+        <div className="flex items-start gap-2.5">
+          <ReturnStatusChip status={r.status} />
+          <p className="min-w-0 text-[13px] leading-[18px] text-muted-foreground">{sub}</p>
+        </div>
+        <Steps ret={r} />
+        <Actions ret={r} />
+      </section>
       {r.status === 'rejected' && (
         <Notice tone="error">
           {t('return.rejectedBecause', { reason: r.rejectReason ?? '—' })}
@@ -140,8 +151,10 @@ export function ReturnDetailPage() {
                     <span className="truncate font-medium">
                       {l.quantity} × {pickText(l.title, locale)}
                     </span>
-                    {options && (
-                      <span className="truncate text-xs text-muted-foreground">{options}</span>
+                    {(options || l.sku) && (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {[options, l.sku].filter(Boolean).join(' · ')}
+                      </span>
                     )}
                     <span className="mt-1 flex flex-wrap items-center gap-1.5">
                       <SecondaryBadge>
@@ -159,6 +172,7 @@ export function ReturnDetailPage() {
                       )}
                     </span>
                   </span>
+                  <span className="font-medium tabular-nums">{formatPrice(l.value, locale)}</span>
                 </li>
               );
             })}
@@ -188,13 +202,14 @@ export function ReturnDetailPage() {
           )}
         </section>
         <div className="flex flex-col gap-3 md:gap-4">
-          <section aria-labelledby="return-customer" className={cardPadded}>
+          <section aria-labelledby="return-customer" className={cn(cardPadded, 'gap-3 md:gap-3')}>
             <h2 id="return-customer" className={cardTitle}>
               {t('order.customer')}
             </h2>
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">{r.customerName}</span>
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-[13px] text-muted-foreground tabular-nums">
+                {r.customerPhone && `${r.customerPhone} · `}
                 {t('return.orderRef')}{' '}
                 <Link
                   to="/orders/$id"
@@ -205,6 +220,15 @@ export function ReturnDetailPage() {
                 </Link>
               </span>
             </div>
+            {/* A masked phone (no customers.read) has no number to call. */}
+            {r.customerPhone && !r.customerPhone.includes('•') && (
+              <Button asChild variant="secondary" className="w-full">
+                <a href={`tel:${r.customerPhone.replace(/\D/g, '')}`}>
+                  <Phone aria-hidden />
+                  {t('order.call')}
+                </a>
+              </Button>
+            )}
             <div className="flex flex-col gap-1 border-t border-border pt-3">
               <span className={fieldLabel}>{t('return.why')}</span>
               <span>{t(`return.reason.${r.reason}` as AdminKey)}</span>
@@ -249,9 +273,7 @@ export function ReturnDetailPage() {
 function Steps({ ret }: { ret: ReturnDetail }) {
   const { t } = useLocale();
   if (ret.status === 'rejected') return null;
-  const reached = RETURN_STEPS.indexOf(
-    ret.status === 'in_transit' ? 'approved' : (ret.status as (typeof RETURN_STEPS)[number]),
-  );
+  const reached = RETURN_STEPS.indexOf(ret.status as (typeof RETURN_STEPS)[number]);
   return (
     <ol className="flex items-center" aria-label={t('return.progress')}>
       {RETURN_STEPS.map((step, i) => {
@@ -263,7 +285,8 @@ function Steps({ ret }: { ret: ReturnDetail }) {
             aria-current={now ? 'step' : undefined}
             className={cn(
               'flex min-w-0 items-center gap-2 text-[13px] text-muted-foreground after:mx-2 after:h-px after:min-w-4 after:flex-1 after:bg-border last:after:hidden',
-              now ? 'flex-1 font-medium text-foreground' : 'flex-[0_1_auto] md:flex-1',
+              'flex-1 last:flex-none',
+              now && 'font-medium text-foreground',
               done && 'text-foreground',
             )}
           >
@@ -277,9 +300,7 @@ function Steps({ ret }: { ret: ReturnDetail }) {
             >
               {done ? <Check aria-hidden className="size-3" /> : i + 1}
             </span>
-            <span className={cn('truncate', !now && 'max-md:sr-only')}>
-              {t(`return.step.${step}` as AdminKey)}
-            </span>
+            <span className="truncate max-md:sr-only">{t(`return.step.${step}` as AdminKey)}</span>
           </li>
         );
       })}
@@ -327,6 +348,7 @@ function Actions({ ret }: { ret: ReturnDetail }) {
               {t('return.reject')}
             </Button>
             <Button disabled={move.isPending} onClick={() => move.mutate('approve')}>
+              <Check aria-hidden />
               {t('return.approve')}
             </Button>
           </>

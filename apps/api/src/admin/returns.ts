@@ -78,11 +78,14 @@ const ReturnDetail = ReturnSummary.extend({
   resolution: z.enum(RETURN_RESOLUTIONS).nullable(),
   rejectReason: z.string().nullable(),
   exchangeOrderId: z.uuid().nullable(),
+  customerPhone: z.string().nullable(),
   lines: z.array(
     z.object({
       orderLineId: z.uuid(),
       title: Localized,
       optionLabels: z.array(Localized),
+      sku: z.string().nullable(),
+      value: z.number().int().openapi({ description: 'Unit price paid × quantity' }),
       quantity: z.number().int(),
       reason: z.enum(RETURN_REASONS).nullable(),
       restocked: z.number().int(),

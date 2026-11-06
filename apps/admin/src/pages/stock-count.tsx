@@ -7,7 +7,7 @@
 import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
-import { Check, CircleX, Minus, Plus, Printer, ScanBarcode } from 'lucide-react';
+import { Check, CircleX, FileText, Minus, Plus, Printer, ScanBarcode } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
@@ -24,6 +24,7 @@ import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
+import { useCountScope } from '../lib/count-scope';
 import { useRecordPage } from '../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateOnly, lineLabel, pickText } from '../lib/orders';
@@ -66,6 +67,7 @@ const value = (amount: number | undefined, locale: Locale) =>
 
 function CountView({ count }: { count: StockCount }) {
   const { t, locale } = useLocale();
+  const what = useCountScope();
   const toast = useToast();
   const queryClient = useQueryClient();
   const canWrite = usePermission('inventory.write');
@@ -143,6 +145,8 @@ function CountView({ count }: { count: StockCount }) {
 
   // Scans ahead of the server's answers: two quick scans of one item are two.
   const latest = useRef(new Map<string, number>());
+  /** The item scanned last, tinted green in the list as drawn. */
+  const [lastScanned, setLastScanned] = useState<string | null>(null);
   /** A scanned or typed code: one more of the item it names. */
   const scanned = (code: string) => {
     const wanted = code.trim().toLowerCase();
@@ -156,23 +160,16 @@ function CountView({ count }: { count: StockCount }) {
     }
     const next = (latest.current.get(line.variantId) ?? line.counted ?? 0) + 1;
     latest.current.set(line.variantId, next);
+    setLastScanned(line.variantId);
     save.mutate({ variantId: line.variantId, counted: next });
     toast(t('counts.added', { item: lineLabel(line, locale), n: next }));
   };
 
-  const [tab, setTab] = useState<'all' | 'left' | 'counted' | 'different'>(
-    review ? 'different' : 'all',
-  );
+  const [tab, setTab] = useState<'all' | 'left' | 'different'>(review ? 'different' : 'all');
   const lines = useMemo(
     () =>
       count.lines.filter((l) =>
-        tab === 'left'
-          ? l.counted === null
-          : tab === 'counted'
-            ? l.counted !== null
-            : tab === 'different'
-              ? Boolean(l.difference)
-              : true,
+        tab === 'left' ? l.counted === null : tab === 'different' ? Boolean(l.difference) : true,
       ),
     [count.lines, tab],
   );
@@ -190,7 +187,6 @@ function CountView({ count }: { count: StockCount }) {
     : ([
         ['all', t('counts.all'), count.lines.length],
         ['left', t('counts.tabLeft'), left],
-        ['counted', t('counts.tabCounted'), count.countedLines],
       ] as const);
   const open = count.status === 'counting' || count.status === 'review';
   const setCounted = (l: StockCountLine, next: number | null) => {
@@ -249,7 +245,11 @@ function CountView({ count }: { count: StockCount }) {
         </StatusBadge>
         <span className="flex-1" />
         {canWrite && count.status === 'counting' && (
-          <Button disabled={move.isPending} onClick={() => move.mutate('submit')}>
+          <Button
+            className="max-md:hidden"
+            disabled={move.isPending}
+            onClick={() => move.mutate('submit')}
+          >
             <Check aria-hidden />
             {t('counts.submit')}
           </Button>
@@ -258,12 +258,17 @@ function CountView({ count }: { count: StockCount }) {
           <>
             <Button
               variant="secondary"
+              className="max-md:hidden"
               disabled={move.isPending}
               onClick={() => move.mutate('reopen')}
             >
               {t('counts.reopen')}
             </Button>
-            <Button disabled={move.isPending} onClick={() => setConfirm('apply')}>
+            <Button
+              className="max-md:hidden"
+              disabled={move.isPending}
+              onClick={() => setConfirm('apply')}
+            >
               {t('counts.apply')}
             </Button>
           </>
@@ -271,12 +276,16 @@ function CountView({ count }: { count: StockCount }) {
         <span className="max-md:hidden">{menu('outline')}</span>
       </div>
       <p className="-mt-2 text-muted-foreground">
-        {[
-          t('counts.progress', { counted: count.countedLines, total: count.lineCount }),
-          t('counts.startedOn', { date: dateOnly(locale, count.createdAt) }),
-        ].join(' · ')}
+        {[what(count), t('counts.startedOn', { date: dateOnly(locale, count.createdAt) })].join(
+          ' · ',
+        )}
       </p>
-      {count.note && <Notice>{count.note}</Notice>}
+      {count.note && (
+        <div className="flex items-start gap-2.5 rounded-[10px] bg-muted px-3.5 py-3">
+          <FileText aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p>{count.note}</p>
+        </div>
+      )}
       {count.status === 'applying' && <Notice>{t('counts.applyingNote')}</Notice>}
       {count.status === 'applied' && <Notice>{t('counts.appliedNote')}</Notice>}
       {count.status === 'cancelled' && <Notice>{t('counts.cancelledNote')}</Notice>}
@@ -295,7 +304,7 @@ function CountView({ count }: { count: StockCount }) {
             <span className="font-semibold">
               {t('counts.progress', { counted: count.countedLines, total: count.lineCount })}
             </span>
-            <span className="text-muted-foreground">{t('counts.leftCount', { count: left })}</span>
+            <span className="text-muted-foreground">{t('counts.toGo', { count: left })}</span>
           </div>
           <span aria-hidden className="block h-2 overflow-hidden rounded-full bg-muted">
             <span
@@ -359,16 +368,24 @@ function CountView({ count }: { count: StockCount }) {
               <li
                 key={l.variantId}
                 className={cn(
-                  'flex min-h-14 items-center gap-3 border-b border-border py-2 pr-3 pl-4',
-                  l.counted !== null && 'bg-muted/40',
+                  'flex items-center gap-2.5 border-b border-border px-3 py-2.5 md:min-h-[73px] md:gap-3 md:py-2 md:pr-3 md:pl-4',
+                  lastScanned === l.variantId &&
+                    'bg-[color-mix(in_oklch,var(--color-success)_8%,transparent)]',
                 )}
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate">
                     <span className="font-medium">{pickText(l.title, locale)}</span>
-                    {options && <span className="text-muted-foreground"> · {options}</span>}
+                    {options && (
+                      <span className="text-muted-foreground max-md:hidden"> · {options}</span>
+                    )}
                   </span>
-                  <span className="truncate font-mono text-xs text-muted-foreground">
+                  {options && (
+                    <span className="truncate text-[13px] leading-[18px] text-muted-foreground md:hidden">
+                      {options}
+                    </span>
+                  )}
+                  <span className="truncate text-xs leading-4 text-muted-foreground md:font-mono">
                     {[l.sku, l.barcode].filter(Boolean).join(' · ')}
                   </span>
                 </span>
@@ -468,6 +485,39 @@ function CountView({ count }: { count: StockCount }) {
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {/* Phones: the main actions sit in a bar at the bottom, as drawn. */}
+      {canWrite && (count.status === 'counting' || count.status === 'review') && (
+        <div className="sticky bottom-0 z-20 -mx-3 -mb-3 flex gap-2 border-t border-border bg-background px-4 py-3 md:hidden">
+          {count.status === 'counting' ? (
+            <Button
+              className="flex-1"
+              disabled={move.isPending}
+              onClick={() => move.mutate('submit')}
+            >
+              {t('counts.submit')}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                disabled={move.isPending}
+                onClick={() => move.mutate('reopen')}
+              >
+                {t('counts.reopen')}
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={move.isPending}
+                onClick={() => setConfirm('apply')}
+              >
+                {t('counts.apply')}
+              </Button>
+            </>
+          )}
         </div>
       )}
 

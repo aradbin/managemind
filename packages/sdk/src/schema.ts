@@ -19231,6 +19231,7 @@ export interface components {
             rejectReason: string | null;
             /** Format: uuid */
             exchangeOrderId: string | null;
+            customerPhone: string | null;
             lines: {
                 /** Format: uuid */
                 orderLineId: string;
@@ -19240,6 +19241,9 @@ export interface components {
                 optionLabels: {
                     [key: string]: string;
                 }[];
+                sku: string | null;
+                /** @description Unit price paid × quantity */
+                value: number;
                 quantity: number;
                 /** @enum {string|null} */
                 reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door" | null;

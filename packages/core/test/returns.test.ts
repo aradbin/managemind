@@ -365,6 +365,14 @@ describe('the return machine and the shopper’s window', () => {
       shopperPaysReturn: true,
       requestedBy: 'shopper',
     });
+    // The board's Customer card and item rows: phone, SKU and what the units cost.
+    expect(ret.customerPhone).toBe('01712-345604');
+    expect(ret.lines[0]?.value).toBe(25_000); // one unit at ৳250
+    expect(ret.lines[0]).toHaveProperty('sku');
+    // Viewers see orders but not the shopper's phone.
+    expect((await run((tx) => getReturn(tx, actorAs('viewer'), asked.id))).customerPhone).toBe(
+      '01712-•••604',
+    );
     expect((await run((tx) => getOrder(tx, owner, placed.id))).returnStatus).toBe('requested');
     // Units asked for aren't returnable twice.
     expect((await run((tx) => shopperReturnable(tx, placed.id))).lines[0]?.returnable).toBe(1);

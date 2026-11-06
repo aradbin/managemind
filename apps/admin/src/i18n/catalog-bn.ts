@@ -217,6 +217,12 @@ export const catalogBn: Record<keyof typeof catalogEn, string> = {
   'variant.lowStock': 'কম স্টকের সতর্কতা',
   'variant.track': 'স্টকের হিসাব রাখুন',
   'variant.backorder': 'স্টক শেষ হলেও বিক্রি করুন',
+  'variant.notTracked': 'হিসাব রাখা হয় না',
+  'variant.profitEach': 'প্রতি বিক্রিতে লাভ {amount} ({percent}% মার্জিন)।',
+  'variant.profitAdd': 'দিলে প্রতি বিক্রির লাভ দেখা যাবে।',
+  'product.priceAndStock': 'দাম ও স্টক',
+  'product.morePricing': 'আরও দাম ও শিপিং',
+  'product.addOptions': 'সাইজ, রং বা অন্য অপশন যোগ করুন',
 
   'images.mainShort': 'প্রধান',
   'images.addShort': 'যোগ',

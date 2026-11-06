@@ -205,7 +205,11 @@ test('catalog flows', async ({ page }, info) => {
   });
 
   await test.step('they add sizes, which make variants', async () => {
-    await page.getByRole('button', { name: t('options.add') }).click();
+    // No options yet: the price sits in "Price and stock" (ADR 0034).
+    const priceCard = page.getByRole('region', { name: t('product.priceAndStock') });
+    await expect(priceCard.getByLabel(t('product.price'), { exact: true })).toHaveValue('1250');
+    await expectAccessible(page, 'price and stock');
+    await priceCard.getByRole('button', { name: t('product.addOptions') }).click();
     const option = page.getByRole('group', { name: t('options.option', { n: '১' }) });
     await option.getByLabel(`${t('options.name')} (বাংলা)`).fill('সাইজ');
     for (const size of ['ছোট', 'বড়']) {
