@@ -241,7 +241,7 @@ The second redesign approximated the boards. A side-by-side comparison of every 
 | 7d | `88e29c5` | Online store: overview, the theme editor, pages and a page, store settings |
 | 7e | `760ee12` | Platform: stores, a store, new store, dashboard, courier areas, terms, staff, audit log |
 | 7f | `26d9c11` | Imports, account, sign-in, two-factor, invitation, print |
-| 8 | step 8 | Old shapes removed: Load more, the text language switch, the old breadcrumb, 145 unused messages; ⋯ menus open as a drawer on phones |
+| 8 | `c60556a` | Old shapes removed: Load more, the text language switch, the old breadcrumb, 145 unused messages; ⋯ menus open as a drawer on phones |
 
 **API changes.** All are additive; existing callers are unchanged. The SDK is regenerated with each, and API or core tests cover each one.
 - **Lists:**
