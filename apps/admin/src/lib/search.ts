@@ -43,3 +43,6 @@ export function defined<T extends Record<string, unknown>>(o: T): { [K in keyof 
     [K in keyof T]?: T[K];
   };
 }
+
+/** `?new=1`: the Create menu asks a list page to open its panel for a new record. */
+export const searchNew = (value: unknown) => (value === 1 || value === '1' ? 1 : undefined);

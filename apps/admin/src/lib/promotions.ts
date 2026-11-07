@@ -3,12 +3,13 @@
 // and the plain-language summary ("15% off orders over ৳2,000 inside Dhaka,
 // until 30 Oct").
 import type { paths } from '@managemind/sdk';
-import { formatDateTime, type Locale, type Params } from '@managemind/shared/i18n';
+import type { Locale, Params } from '@managemind/shared/i18n';
 import type { PromotionAction, PromotionConditions } from '@managemind/shared/orders';
 import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
 import type { AdminKey } from '../i18n';
 import { api, unwrap } from './api';
 import { compact, formatPrice, priceInput, readPrice } from './catalog';
+import { formatDateTime } from './dates';
 
 export type Promotion =
   paths['/v1/admin/promotions/{id}']['get']['responses'][200]['content']['application/json'];

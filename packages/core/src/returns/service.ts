@@ -7,7 +7,7 @@
 // delivered, less what other returns cover; the order is locked while that
 // is checked, as stock is.
 import { schema } from '@managemind/db';
-import { AppError } from '@managemind/shared';
+import { AppError, formatPhone } from '@managemind/shared';
 import {
   exchangeInput,
   inspectInput,
@@ -30,6 +30,7 @@ import { applyMovements, type Movement } from '../inventory/service';
 import { recordHistory } from '../orders/history';
 import { lockOrder } from '../orders/lifecycle';
 import { type PlacedOrder, placeOrder } from '../orders/place';
+import { maskPhone } from '../orders/views';
 import { emit } from '../outbox';
 import { orderSettings, quote } from '../pricing/quote';
 import { restockAtLineCost } from '../purchasing/costs';
@@ -658,6 +659,11 @@ export interface ReturnSummary {
   reason: ReturnReason;
   requestedBy: string;
   units: number;
+  /** In the list: the first item's title, and how many items besides it. */
+  firstItem?: Record<string, string> | null;
+  moreItems?: number;
+  /** In the list: what the returned items sold for. */
+  value?: number;
   createdAt: string;
 }
 
@@ -667,10 +673,15 @@ export interface ReturnDetail extends ReturnSummary {
   resolution: ReturnResolution | null;
   rejectReason: string | null;
   exchangeOrderId: string | null;
+  /** The order's contact phone, formatted; masked without customers.read. */
+  customerPhone: string | null;
   lines: {
     orderLineId: string;
     title: Record<string, string>;
     optionLabels: Record<string, string>[];
+    sku: string | null;
+    /** The returned units at the price paid each: unit price × quantity. */
+    value: number;
     quantity: number;
     reason: ReturnReason | null;
     restocked: number;
@@ -691,21 +702,87 @@ export async function listReturns(
   tx: TenantTx,
   actor: Actor,
   query: unknown,
-): Promise<{ items: ReturnSummary[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: ReturnSummary[];
+  nextCursor: string | null;
+  total: number;
+  counts?: {
+    all: number;
+    requested: number;
+    inProgress: number;
+    resolved: number;
+    rejected: number;
+    open: number;
+    openValue: number;
+  };
+}> {
   authorize(actor, 'orders.read');
   const q = parseInput(returnListQuery, query);
-  const where: SQL[] = [];
-  if (q.status) where.push(eq(r.status, q.status));
-  if (q.reason?.length) where.push(inArray(r.reason, q.reason));
-  if (q.orderId) where.push(eq(r.orderId, q.orderId));
+  const o = schema.orders;
+  const value = sql<string>`(select coalesce(sum(rl.quantity * ol.unit_price), 0) from store.return_lines rl
+      join store.order_lines ol on ol.id = rl.order_line_id where rl.return_id = ${r.id})`;
+  const base: SQL[] = [];
+  if (q.reason?.length) base.push(inArray(r.reason, q.reason));
+  if (q.orderId) base.push(eq(r.orderId, q.orderId));
+  const text = q.q?.trim();
+  if (text) {
+    const digits = text.replace(/\D/g, '');
+    const parts: SQL[] = [
+      sql`app.search_text(coalesce(${o.contact} ->> 'name', '')) like app.search_text(${`%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`})`,
+    ];
+    if (digits && digits.length <= 9) {
+      parts.push(sql`${r.number} = ${Number(digits)}`, sql`${o.number} = ${Number(digits)}`);
+    }
+    base.push(sql`(${sql.join(parts, sql` or `)})`);
+  }
+  const progress = sql`${r.status} in ('approved', 'in_transit', 'received', 'inspected')`;
+  let counts:
+    | {
+        all: number;
+        requested: number;
+        inProgress: number;
+        resolved: number;
+        rejected: number;
+        open: number;
+        openValue: number;
+      }
+    | undefined;
+  if (q.counts) {
+    const [c] = await tx.db
+      .select({
+        all: sql<number>`count(*)::int`,
+        requested: sql<number>`count(*) filter (where ${r.status} = 'requested')::int`,
+        inProgress: sql<number>`count(*) filter (where ${progress})::int`,
+        resolved: sql<number>`count(*) filter (where ${r.status} = 'resolved')::int`,
+        rejected: sql<number>`count(*) filter (where ${r.status} = 'rejected')::int`,
+        openValue: sql<
+          string | null
+        >`sum(${value}) filter (where ${r.status} not in ('resolved', 'rejected'))`,
+      })
+      .from(r)
+      .innerJoin(o, eq(o.id, r.orderId))
+      .where(base.length ? and(...base) : undefined);
+    counts = {
+      all: Number(c?.all ?? 0),
+      requested: Number(c?.requested ?? 0),
+      inProgress: Number(c?.inProgress ?? 0),
+      resolved: Number(c?.resolved ?? 0),
+      rejected: Number(c?.rejected ?? 0),
+      open: Number(c?.requested ?? 0) + Number(c?.inProgress ?? 0),
+      openValue: Number(c?.openValue ?? 0),
+    };
+  }
+  const where: SQL[] = [...base];
+  if (q.status === 'in_progress') where.push(progress);
+  else if (q.status) where.push(eq(r.status, q.status));
   // How many match, for numbered pages: the filters without the cursor.
   const [counted] = await tx.db
     .select({ n: sql<number>`count(*)::int` })
     .from(r)
+    .innerJoin(o, eq(o.id, r.orderId))
     .where(where.length ? and(...where) : undefined);
   const total = Number(counted?.n ?? 0);
   if (q.before && q.offset === undefined) where.push(lt(r.createdAt, new Date(q.before)));
-  const o = schema.orders;
   const rows = await tx.db
     .select({
       id: r.id,
@@ -718,6 +795,13 @@ export async function listReturns(
       requestedBy: r.requestedBy,
       createdAt: r.createdAt,
       units: sql<number>`(select coalesce(sum(quantity), 0)::int from store.return_lines rl where rl.return_id = ${r.id})`,
+      value,
+      firstItem: sql<Record<string, string> | null>`(select ol.title from store.return_lines rl
+          join store.order_lines ol on ol.id = rl.order_line_id where rl.return_id = ${r.id}
+          order by ol.position limit 1)`,
+      firstQuantity: sql<number | null>`(select rl.quantity from store.return_lines rl
+          join store.order_lines ol on ol.id = rl.order_line_id where rl.return_id = ${r.id}
+          order by ol.position limit 1)`,
     })
     .from(r)
     .innerJoin(o, eq(o.id, r.orderId))
@@ -737,10 +821,13 @@ export async function listReturns(
     reason: x.reason,
     requestedBy: x.requestedBy,
     units: Number(x.units),
+    firstItem: x.firstItem,
+    moreItems: Math.max(0, Number(x.units) - Number(x.firstQuantity ?? 0)),
+    value: Number(x.value ?? 0),
     createdAt: x.createdAt.toISOString(),
   }));
   const last = rows.length > q.limit ? items[items.length - 1] : undefined;
-  return { items, nextCursor: last?.createdAt ?? null, total };
+  return { items, nextCursor: last?.createdAt ?? null, total, ...(counts ? { counts } : {}) };
 }
 
 export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise<ReturnDetail> {
@@ -756,12 +843,15 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     order_line_id: string;
     title: Record<string, string>;
     option_labels: Record<string, string>[];
+    sku: string | null;
+    value: string | number;
     quantity: number;
     reason: ReturnReason | null;
     restocked: number;
     written_off: number;
   }>(sql`
-    select rl.order_line_id, l.title, l.option_labels, rl.quantity, rl.reason, rl.restocked, rl.written_off
+    select rl.order_line_id, l.title, l.option_labels, l.sku, l.unit_price * rl.quantity as value,
+           rl.quantity, rl.reason, rl.restocked, rl.written_off
       from store.return_lines rl join store.order_lines l on l.id = rl.order_line_id
      where rl.return_id = ${id} order by l.position`);
   const photos = await tx.db
@@ -771,6 +861,7 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     .orderBy(schema.returnPhotos.createdAt);
   const { settings } = await orderSettings(tx);
   const x = row.ret;
+  const phone = (row.contact as { phone?: string }).phone;
   return {
     id: x.id,
     number: x.number,
@@ -788,10 +879,17 @@ export async function getReturn(tx: TenantTx, actor: Actor, id: string): Promise
     resolution: x.resolution,
     rejectReason: x.rejectReason,
     exchangeOrderId: x.exchangeOrderId,
+    customerPhone: phone
+      ? actor.permissions.has('customers.read')
+        ? formatPhone(phone)
+        : maskPhone(phone)
+      : null,
     lines: lines.map((l) => ({
       orderLineId: l.order_line_id,
       title: l.title,
       optionLabels: l.option_labels ?? [],
+      sku: l.sku,
+      value: Number(l.value),
       quantity: l.quantity,
       reason: l.reason,
       restocked: l.restocked,

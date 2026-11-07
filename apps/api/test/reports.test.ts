@@ -123,6 +123,7 @@ describe('reports over HTTP', () => {
     expect(await (await b.get('/api/admin/reports/cod-outstanding')).json()).toEqual({
       holders: [],
       total: 0,
+      oldest: [],
     });
   });
 

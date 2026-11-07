@@ -113,6 +113,9 @@ test('couriers', async ({ page }, info) => {
     // A run that is retried finds the courier connected: its keys are then changed.
     const change = card.getByRole('button', { name: m('couriers.change') });
     if (await change.isVisible()) await change.click();
+    // Not connected yet: the keys open from Connect (ADR 0034).
+    const connect = card.getByRole('button', { name: m('couriers.connect'), exact: true });
+    if (await connect.isVisible()) await connect.click();
     await card.getByLabel(m('couriers.field.apiKey')).fill('e2e-key');
     await card.getByRole('button', { name: m('couriers.save') }).click();
     await expect(toast(page, m('couriers.saved', { courier: FAKE }))).toBeVisible();

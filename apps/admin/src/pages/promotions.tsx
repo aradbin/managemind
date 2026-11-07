@@ -20,6 +20,7 @@ import {
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { StatusBadge, type Tone } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/promotions';
@@ -33,6 +34,7 @@ import {
   type PromotionFilters,
   type PromotionState,
   promotionsQuery,
+  summarize,
   toInput,
 } from '../lib/promotions';
 
@@ -43,23 +45,17 @@ const STATES = ['live', 'scheduled', 'draft', 'paused', 'ended'] as const;
 /** Where a promotion stands, as a status badge (design rule 9). */
 export function StateChip({ state }: { state: PromotionState }) {
   const { t } = useLocale();
-  const tone =
+  const tone: Tone =
     state === 'live'
-      ? 'bg-success-soft text-success'
+      ? 'good'
       : state === 'scheduled'
-        ? 'bg-info text-info-foreground'
+        ? 'progress'
         : state === 'paused'
-          ? 'bg-warning text-warning-foreground'
+          ? 'waiting'
           : state === 'ended'
-            ? 'border border-border text-muted-foreground'
-            : 'bg-muted text-muted-foreground';
-  return (
-    <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
-    >
-      {t(`promoState.${state}`)}
-    </span>
-  );
+            ? 'outline'
+            : 'ended';
+  return <StatusBadge tone={tone}>{t(`promoState.${state}`)}</StatusBadge>;
 }
 
 export function PromotionsPage() {
@@ -87,7 +83,12 @@ export function PromotionsPage() {
     }, 350);
     return () => clearTimeout(id);
   });
-  const promotions = useQuery(promotionsQuery(search));
+  // Every state at once: the tabs count them, and a tab shows its own.
+  const { state, ...rest } = search;
+  const all = useQuery(promotionsQuery(rest));
+  const shown = all.data?.filter((p) => !state || p.state === state);
+  const count = (s?: PromotionState) =>
+    all.data ? all.data.filter((p) => !s || p.state === s).length : undefined;
   const money = (n: number) => formatPrice(n, locale);
   const title = (p: Promotion) => pickText(p.title, locale) || '—';
   const open = (p: Promotion) => navigate({ to: '/promotions/$id', params: { id: p.id } });
@@ -134,23 +135,23 @@ export function PromotionsPage() {
         : p.endsAt
           ? t('promo.sum.until', { date: dateOnly(locale, p.endsAt) })
           : t('promo.noEnd');
+  const chip =
+    'inline-flex h-5 shrink-0 items-center rounded-md bg-muted px-1.5 text-xs font-medium whitespace-nowrap text-foreground';
   const how = (p: Promotion) =>
     p.kind === 'code' ? (
       p.code ? (
-        <span className="rounded-md bg-muted px-1.5 font-mono text-xs font-medium">{p.code}</span>
+        <span className={`${chip} font-mono`}>{p.code}</span>
       ) : (
-        <span className="rounded-md bg-muted px-1.5 text-xs font-medium">
-          {t('promo.codeTotal', { count: p.codeCount })}
-        </span>
+        <span className={chip}>{t('promo.codeTotal', { count: p.codeCount })}</span>
       )
     ) : (
-      <span className="rounded-md border border-border px-1.5 text-xs font-medium">
-        {t('promo.automatic')}
-      </span>
+      <span className={chip}>{t('promo.automatic')}</span>
     );
+  const what = (p: Promotion) =>
+    summarize(fromPromotion(p), locale, t, { items: () => [], zones: () => [] });
   const uses = (p: Promotion) =>
     p.usageLimit ? (
-      <span className="inline-flex flex-col items-end gap-1">
+      <span className="flex flex-col gap-1 tabular-nums">
         <span>
           {formatNumber(locale, p.usageCount)} / {formatNumber(locale, p.usageLimit)}
         </span>
@@ -162,31 +163,30 @@ export function PromotionsPage() {
         </span>
       </span>
     ) : (
-      formatNumber(locale, p.usageCount)
+      <span className="tabular-nums">{formatNumber(locale, p.usageCount)}</span>
     );
 
   const columns: Column<Promotion>[] = [
     {
       header: t('promo.title'),
+      skeleton: 'lines',
       cell: (p) => (
-        <span className="flex flex-col items-start gap-1">
-          <Link
-            to="/promotions/$id"
-            params={{ id: p.id }}
-            className="font-medium underline-offset-2 hover:underline"
-          >
+        <span className="flex min-w-0 flex-col gap-[3px]">
+          <Link to="/promotions/$id" params={{ id: p.id }} className="truncate font-medium">
             {title(p)}
           </Link>
-          {how(p)}
+          <span className="flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-muted-foreground">
+            {how(p)}
+            <span className="truncate">{what(p)}</span>
+          </span>
         </span>
       ),
     },
-    { header: t('promo.state'), cell: (p) => <StateChip state={p.state} /> },
-    { header: t('promo.uses'), numeric: true, cell: uses },
+    { header: t('promo.state'), skeleton: 'badge', cell: (p) => <StateChip state={p.state} /> },
+    { header: t('promo.uses'), cell: uses },
     {
       header: t('promo.orders'),
       numeric: true,
-      wide: true,
       cell: (p) => formatNumber(locale, p.orders),
     },
     {
@@ -197,16 +197,17 @@ export function PromotionsPage() {
     {
       header: t('promo.sales'),
       numeric: true,
-      wide: true,
       cell: (p) => (p.orders ? money(p.sales) : '—'),
     },
     {
       header: t('promo.dates'),
-      cell: (p) => <span className="whitespace-nowrap text-muted-foreground">{dates(p)}</span>,
+      cell: (p) => (
+        <span className="text-[13px] whitespace-nowrap text-muted-foreground">{dates(p)}</span>
+      ),
     },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('nav.promotions')}
@@ -225,15 +226,19 @@ export function PromotionsPage() {
       <StageTabs
         label={t('promo.state')}
         tabs={[
-          { key: 'all', label: t('list.all') },
-          ...STATES.map((s) => ({ key: s, label: t(`promoState.${s}`) })),
+          { key: 'all', label: t('list.all'), count: count() },
+          ...STATES.map((s) => ({
+            key: s,
+            label: t(`promoState.${s}`),
+            count: count(s) || undefined,
+          })),
         ]}
         value={search.state ?? 'all'}
         onChange={(key) => setFilter({ state: key === 'all' ? undefined : key })}
       />
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
           label={t('promo.search')}
           value={q}
           onChange={setQ}
@@ -256,13 +261,15 @@ export function PromotionsPage() {
       </div>
       <DataList
         label={t('nav.promotions')}
-        items={promotions.data}
+        items={shown}
         rowKey={(p) => p.id}
         columns={columns}
-        isPending={promotions.isPending}
-        error={promotions.isError ? errorMessage(promotions.error, t) : undefined}
-        onRetry={() => promotions.refetch()}
-        empty={filtered || search.state ? t('promo.noMatches') : t('promo.empty')}
+        grid="minmax(0,2fr) 96px 104px 60px 112px 116px 132px 40px"
+        rowHeight={60}
+        isPending={all.isPending}
+        error={all.isError ? errorMessage(all.error, t) : undefined}
+        onRetry={() => all.refetch()}
+        empty={filtered || state ? t('promo.noMatches') : t('promo.empty')}
         emptyAction={
           filtered ? (
             <Button variant="secondary" onClick={reset}>

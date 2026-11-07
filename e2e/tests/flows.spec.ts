@@ -50,8 +50,11 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     const html = owner.locator('html');
     const pick = async (label: string) => {
       if (phone) {
+        // The phone Menu has a Dark mode switch; off is the light theme.
         await owner.goto(`${API}/more`);
-        await owner.getByRole('radio', { name: label }).check();
+        await owner
+          .getByRole('switch', { name: t('more.darkMode') })
+          .setChecked(label === t('appearance.dark'));
       } else {
         await owner.getByRole('button', { name: t('account.menu') }).click();
         await owner.getByRole('menuitemradio', { name: label }).click();
@@ -93,17 +96,16 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
 
   await test.step('the owner makes them a viewer', async () => {
     await owner.reload();
-    const row = owner.getByRole('listitem').or(owner.getByRole('row')).filter({ hasText: p.staff });
-    await row
-      .locator('visible=true')
-      .getByRole('button', { name: t('staff.changeRole') })
-      .click();
+    // Each member's ⋯ menu holds Change role and Remove (ADR 0034).
+    const row = owner.getByRole('listitem').filter({ hasText: p.staff });
+    await row.getByRole('button', { name: /.+/ }).last().click();
+    await owner.getByRole('menuitem', { name: t('staff.changeRole') }).click();
     const dialog = owner.getByRole('dialog');
     await dialog.getByLabel(t('staff.role')).selectOption('viewer');
     await expectAccessible(owner, 'change role dialog');
     await dialog.getByRole('button', { name: t('action.save') }).click();
     await expect(owner.getByText(t('staff.roleChanged'))).toBeVisible();
-    await expect(row.locator('visible=true').getByText(t('role.viewer'))).toBeVisible();
+    await expect(row.getByText(t('role.viewer')).locator('visible=true').first()).toBeVisible();
   });
 
   await test.step('the super admin sets up two-factor login', async () => {
@@ -155,8 +157,15 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
       .click();
     await expect(admin.getByRole('heading', { name: p.storeName })).toBeVisible();
     await expectAccessible(admin, 'store detail');
-    await admin.getByRole('button', { name: t('tenant.suspend') }).click();
-    const dialog = admin.getByRole('dialog');
+    // Desktops show Suspend store beside Support access; phones keep it in ⋯ (ADR 0034).
+    const suspend = admin.getByRole('button', { name: t('tenant.suspend') });
+    if (await suspend.isVisible()) await suspend.click();
+    else {
+      await admin.getByRole('button', { name: t('tenant.more') }).click();
+      await admin.getByRole('menuitem', { name: t('tenant.suspend') }).click();
+    }
+    // Confirmations are alert dialogs (ADR 0034).
+    const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E suspension test');
     await dialog.getByLabel(t('confirm.typeToConfirm', { word: p.slug })).fill(p.slug);
     await expectAccessible(admin, 'suspend dialog');
@@ -166,17 +175,16 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     await owner.goto(`${API}/settings/store`);
     await expect(owner.getByText(t('banner.suspended', { store: p.storeName }))).toBeVisible();
     await expectAccessible(owner, 'store profile while suspended');
-    await owner.getByLabel(t('store.city'), { exact: false }).fill('ঢাকা');
-    // "Address (optional)", not "Address line 2 (optional)".
-    await owner
-      .getByRole('textbox', { name: `${t('store.addressLine1')} (${t('form.optional')})` })
-      .fill('E2E');
+    await owner.getByLabel(t('store.city'), { exact: true }).fill('ঢাকা');
+    // "Address", not "Address line 2" (ADR 0034 marks only the latter optional).
+    await owner.getByRole('textbox', { name: t('store.addressLine1'), exact: true }).fill('E2E');
+    // Save sits in the save bar once something changed.
     await owner.getByRole('button', { name: t('action.save') }).click();
     await expect(owner.getByText(t('error.suspended'))).toBeVisible();
 
     await admin.getByRole('button', { name: t('tenant.reactivate') }).click();
     await admin
-      .getByRole('dialog')
+      .getByRole('alertdialog')
       .getByRole('button', { name: t('tenant.reactivate') })
       .click();
     await expect(admin.getByText(t('tenant.reactivated', { name: p.storeName }))).toBeVisible();

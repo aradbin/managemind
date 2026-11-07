@@ -304,6 +304,8 @@ describe('templates, alert choices and the log', () => {
     expect(email?.recipient).toBe('m•••@example.test');
     const own = await run((tx) => listMessages(tx, owner, { orderId: placed.id }));
     expect(own.find((m) => m.channel === 'email')?.recipient).toBe('mask@example.test');
+    // The log names the order by its number, as staff read it.
+    expect(own[0]?.orderNumber).toMatch(/\d+$/);
   });
 
   it('send only a failed message again', async () => {

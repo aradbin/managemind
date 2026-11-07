@@ -186,26 +186,81 @@ export async function listPurchaseOrders(
   tx: TenantTx,
   actor: Actor,
   query: {
-    status?: PurchaseOrderStatus | undefined;
+    /** A status, or `to_receive`: ordered or partly received. */
+    status?: PurchaseOrderStatus | 'to_receive' | undefined;
     /** One supplier or several. */
     supplierId?: string | readonly string[] | undefined;
+    /** A PO number ("PO-0016" or 16) or part of the supplier's name. */
+    q?: string | undefined;
+    /** Also how many each tab holds, and what is still to receive. */
+    counts?: boolean | undefined;
     before?: string | undefined;
     /** Rows to skip, for numbered pages; the cursor is then ignored. */
     offset?: number | undefined;
     limit?: number | undefined;
   } = {},
-): Promise<{ items: PurchaseOrderSummary[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: PurchaseOrderSummary[];
+  nextCursor: string | null;
+  total: number;
+  counts?: PurchaseOrderCounts;
+}> {
   authorize(actor, 'purchasing.read');
   await requireBackOffice(tx);
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
-  const matching = [
-    query.status ? eq(po.status, query.status) : undefined,
+  const text = query.q?.trim();
+  const number = text ? /^(?:po-?)?0*(\d{1,9})$/i.exec(text)?.[1] : undefined;
+  const base = [
     asList(query.supplierId).length ? inArray(po.supplierId, asList(query.supplierId)) : undefined,
+    text
+      ? number
+        ? eq(po.number, Number(number))
+        : sql`app.search_text(${schema.suppliers.name}) like app.search_text(${`%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`})`
+      : undefined,
+  ].filter((f) => f !== undefined);
+  let counts: PurchaseOrderCounts | undefined;
+  if (query.counts) {
+    const [c] = await tx.db
+      .select({
+        all: sql<number>`count(*)::int`,
+        draft: sql<number>`count(*) filter (where ${po.status} = 'draft')::int`,
+        toReceive: sql<number>`count(*) filter (where ${po.status} in ('ordered', 'partially_received'))::int`,
+        received: sql<number>`count(*) filter (where ${po.status} = 'received')::int`,
+        closed: sql<number>`count(*) filter (where ${po.status} = 'closed')::int`,
+        cancelled: sql<number>`count(*) filter (where ${po.status} = 'cancelled')::int`,
+        owed: sql<
+          string | null
+        >`sum((select sum(greatest(l.quantity - l.received_quantity, 0) * l.unit_cost)
+          from store.purchase_order_lines l where l.purchase_order_id = ${po.id}))
+          filter (where ${po.status} in ('ordered', 'partially_received'))`,
+      })
+      .from(po)
+      .innerJoin(schema.suppliers, eq(schema.suppliers.id, po.supplierId))
+      .where(base.length ? and(...base) : undefined);
+    counts = {
+      all: Number(c?.all ?? 0),
+      draft: Number(c?.draft ?? 0),
+      toReceive: Number(c?.toReceive ?? 0),
+      received: Number(c?.received ?? 0),
+      closed: Number(c?.closed ?? 0),
+      cancelled: Number(c?.cancelled ?? 0),
+      // What is still to come, at cost: only for those who see costs.
+      ...(seesCost(actor) ? { toReceiveValue: Number(c?.owed ?? 0) } : {}),
+    };
+  }
+  const matching = [
+    query.status === 'to_receive'
+      ? inArray(po.status, ['ordered', 'partially_received'])
+      : query.status
+        ? eq(po.status, query.status)
+        : undefined,
+    ...base,
   ].filter((f) => f !== undefined);
   // How many match, for numbered pages: the filters without the cursor.
   const [counted] = await tx.db
     .select({ n: sql<number>`count(*)::int` })
     .from(po)
+    .innerJoin(schema.suppliers, eq(schema.suppliers.id, po.supplierId))
     .where(matching.length ? and(...matching) : undefined);
   const total = Number(counted?.n ?? 0);
   const filters = [
@@ -250,7 +305,19 @@ export async function listPurchaseOrders(
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
     total,
+    ...(counts ? { counts } : {}),
   };
+}
+
+/** How many purchase orders each tab holds, and the goods still to receive. */
+export interface PurchaseOrderCounts {
+  all: number;
+  draft: number;
+  toReceive: number;
+  received: number;
+  closed: number;
+  cancelled: number;
+  toReceiveValue?: number;
 }
 
 interface LineIn {

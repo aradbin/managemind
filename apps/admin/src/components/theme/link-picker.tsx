@@ -7,13 +7,13 @@ import { useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
 import { pagesQuery } from '../../lib/online-store';
+import { fieldLabel } from '../field-styles';
 import { Combobox } from '../ui/combobox';
 import { Input } from '../ui/input';
+import { chipClass } from '../ui/segmented';
 
 type Kind = ThemeLink['type'];
 const KINDS: Kind[] = ['category', 'collection', 'product', 'page', 'search', 'url'];
-const select =
-  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 export function LinkPicker({
   value,
@@ -69,29 +69,32 @@ export function LinkPicker({
   }
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${id}-kind`} className="text-sm font-medium">
+    <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col">
+        <span id={`${id}-kind`} className={fieldLabel}>
           {t('section.link')}
-        </label>
-        <select
-          id={`${id}-kind`}
-          className={select}
+        </span>
+        <fieldset
+          aria-labelledby={`${id}-kind`}
           disabled={disabled}
-          value={kind}
-          onChange={(e) => setKind(e.target.value)}
+          className="m-0 flex flex-wrap gap-1.5 border-0 p-0"
         >
-          <option value="none">{t('section.link.none')}</option>
-          {KINDS.map((k) => (
-            <option key={k} value={k}>
+          {(['none', ...KINDS] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={kind === k}
+              onClick={() => setKind(k)}
+              className={chipClass}
+            >
               {t(`section.link.${k}`)}
-            </option>
+            </button>
           ))}
-        </select>
+        </fieldset>
       </div>
       {value && value.type !== 'search' && value.type !== 'url' && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-target`} className="text-sm font-medium">
+        <div className="flex flex-col">
+          <label htmlFor={`${id}-target`} className={fieldLabel}>
             {t('section.linkTarget')}
           </label>
           <Combobox
@@ -106,8 +109,8 @@ export function LinkPicker({
         </div>
       )}
       {value?.type === 'search' && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-q`} className="text-sm font-medium">
+        <div className="flex flex-col">
+          <label htmlFor={`${id}-q`} className={fieldLabel}>
             {t('section.linkSearch')}
           </label>
           <Input
@@ -120,8 +123,8 @@ export function LinkPicker({
         </div>
       )}
       {value?.type === 'url' && (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-url`} className="text-sm font-medium">
+        <div className="flex flex-col">
+          <label htmlFor={`${id}-url`} className={fieldLabel}>
             {t('section.linkUrl')}
           </label>
           <Input

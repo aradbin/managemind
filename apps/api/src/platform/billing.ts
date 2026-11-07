@@ -5,6 +5,7 @@
 import { createRoute, type OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   countInvoices,
+  countInvoiceTabs,
   createManualInvoice,
   getInvoice,
   getIssuer,
@@ -103,6 +104,8 @@ export const PLATFORM_BILLING_ROUTES = {
       query: z.object({
         status: z.enum(INVOICE_STATUSES).optional(),
         tenantId: z.uuid().optional(),
+        /** An invoice number or part of the store's name. */
+        q: z.string().trim().max(100).optional(),
         /** overdue: issued and past due; week: issued and due within 7 days. */
         due: z.enum(['overdue', 'week']).optional(),
         before: z.iso.datetime().optional(),
@@ -115,6 +118,8 @@ export const PLATFORM_BILLING_ROUTES = {
         items: z.array(InvoiceSummary),
         next: z.string().nullable(),
         total: z.number().int(),
+        /** How many each tab holds, with the search and store. */
+        counts: z.record(z.string(), z.number().int()),
       }),
       'Invoices',
     ),
@@ -203,26 +208,34 @@ export function registerPlatformBilling(platform: OpenAPIHono<StaffEnv>): void {
   const today = () => dhakaDate(new Date());
 
   platform.openapi(R.invoices, async (c) => {
-    const { status, tenantId, due, before, offset, limit = 50 } = c.req.valid('query');
+    const { status, tenantId, q, due, before, offset, limit = 50 } = c.req.valid('query');
     if (!c.var.staff.actor.platformRole) throw new AppError('forbidden');
     const filter = {
       limit,
       ...(status ? { status } : {}),
       ...(tenantId ? { tenantId } : {}),
+      ...(q ? { q } : {}),
       ...(due === 'overdue' ? { overdue: true } : {}),
       ...(due === 'week' ? { dueThisWeek: true } : {}),
       ...(before ? { before } : {}),
       ...(offset !== undefined ? { offset } : {}),
     };
     const day = today();
-    const { items, total } = await withPlatform(c.var.staff.client, async (tx) => ({
+    const { items, total, counts } = await withPlatform(c.var.staff.client, async (tx) => ({
       items: await listInvoices(tx, c.var.staff.actor, filter, day),
       total: await countInvoices(tx, c.var.staff.actor, filter, day),
+      counts: await countInvoiceTabs(
+        tx,
+        c.var.staff.actor,
+        { ...(tenantId ? { tenantId } : {}), ...(q ? { q } : {}) },
+        day,
+      ),
     }));
     return c.json(
       {
         items: items.map((x) => ({ ...summaryOut(x), storeName: x.storeName })),
         next: items.length === limit ? (items.at(-1)?.createdAt.toISOString() ?? null) : null,
+        counts,
         total,
       },
       200,

@@ -1,7 +1,8 @@
 // Our invoices to the store (phase-5b-plan §3.7): queries and formatting
 // shared by Settings → Plan and billing, its print page and the dashboard.
-import { formatDateTime, type Locale } from '@managemind/shared/i18n';
+import type { Locale } from '@managemind/shared/i18n';
 import { api, unwrap } from './api';
+import { formatDateTime } from './dates';
 
 export const billingQuery = {
   queryKey: ['billing'] as const,

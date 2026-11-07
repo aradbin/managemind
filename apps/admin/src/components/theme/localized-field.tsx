@@ -3,8 +3,10 @@
 import { useId } from 'react';
 import type { AdminKey } from '../../i18n';
 import { useLocale } from '../../i18n';
+import { cn } from '../../lib/utils';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../catalog/language-tabs';
-import { Input } from '../ui/input';
+import { fieldLabel } from '../field-styles';
+import { Input, Textarea } from '../ui/input';
 
 export type Localized = { bn?: string; en?: string };
 
@@ -17,6 +19,8 @@ interface Props {
   maxLength: number;
   multiline?: boolean;
   disabled?: boolean;
+  /** One above the other, as in the theme editor's narrow column. */
+  stacked?: boolean;
 }
 
 export function LocalizedField({
@@ -27,11 +31,12 @@ export function LocalizedField({
   maxLength,
   multiline,
   disabled,
+  stacked,
 }: Props) {
   const { t } = useLocale();
   const id = useId();
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className={cn('grid gap-3.5', !stacked && 'md:grid-cols-2 md:gap-x-4')}>
       {[defaultLang, otherLang(defaultLang)].map((lang: Lang) => {
         const inputId = `${id}-${lang}`;
         const set = (text: string) => {
@@ -41,23 +46,21 @@ export function LocalizedField({
           onChange(next);
         };
         return (
-          <div key={lang} className="flex flex-col gap-1.5">
-            <label htmlFor={inputId} className="text-sm font-medium">
+          <div key={lang} className="flex flex-col">
+            <label htmlFor={inputId} className={fieldLabel}>
               {t(label, { language: LANGUAGE_NAMES[lang] })}
               {lang !== defaultLang && (
                 <span className="font-normal text-muted-foreground"> ({t('form.optional')})</span>
               )}
             </label>
             {multiline ? (
-              <textarea
+              <Textarea
                 id={inputId}
                 lang={lang}
-                rows={3}
                 maxLength={maxLength}
                 disabled={disabled}
                 value={value[lang] ?? ''}
                 onChange={(e) => set(e.target.value)}
-                className="w-full rounded-lg border border-border bg-background p-3 text-base disabled:opacity-50"
               />
             ) : (
               <Input

@@ -138,7 +138,6 @@ export function RefundDialog({
                   <input
                     type="radio"
                     name="refund-method"
-                    className="size-4 accent-primary"
                     checked={chosen === m}
                     onChange={() => setMethod(m)}
                   />

@@ -3,19 +3,23 @@
 // one, and our own invoice details, which every invoice carries.
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { paths } from '@managemind/sdk';
+import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { DataList } from '../../components/data-list';
 import { Form, SelectField, SwitchField, TextField } from '../../components/form';
 import { statusLabel } from '../../components/invoice-document';
+import { SearchInput, StageTabs, ToolbarSummary } from '../../components/list-tools';
 import { Notice } from '../../components/notice';
 import { PageHeader } from '../../components/page-header';
 import { useToast } from '../../components/toast';
+import { StatusBadge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
+import { Sheet, SheetBody, SheetFooter } from '../../components/ui/sheet';
 import { type AdminKey, useLocale } from '../../i18n';
 import { formatDay } from '../../lib/billing';
 import '../../i18n/billing';
@@ -27,7 +31,6 @@ import { cn } from '../../lib/utils';
 
 export const FILTERS = ['all', 'draft', 'overdue', 'week', 'paid', 'void'] as const;
 export type Filter = (typeof FILTERS)[number];
-const PAGE = 50;
 
 function filterQuery(filter: Filter) {
   switch (filter) {
@@ -50,9 +53,14 @@ export function PlatformBillingPage() {
   const { data: me } = useSuspenseQuery(meQuery);
   const superAdmin = me.user.platformRole === 'super_admin';
   const [creating, setCreating] = useState(false);
+  const [text, setText] = useState('');
+  const [q, setQ] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setQ(text.trim()), 350);
+    return () => clearTimeout(id);
+  }, [text]);
   const invoices = usePagedList({
-    queryKey: ['platform', 'invoices', filter, search.tenant ?? null] as const,
-    size: PAGE,
+    queryKey: ['platform', 'invoices', filter, search.tenant ?? null, q] as const,
     fetchPage: async (offset: number, limit: number) =>
       unwrap(
         await api.GET('/v1/platform/invoices', {
@@ -60,6 +68,7 @@ export function PlatformBillingPage() {
             query: {
               ...filterQuery(filter),
               ...(search.tenant ? { tenantId: search.tenant } : {}),
+              ...(q ? { q } : {}),
               offset,
               limit,
             },
@@ -83,56 +92,79 @@ export function PlatformBillingPage() {
   });
   const navigate = useNavigate();
   const items = invoices.items;
+  const counts = invoices.first?.counts;
+  const [issuerOpen, setIssuerOpen] = useState(false);
+  const setFilter = (f: Filter) =>
+    navigate({
+      to: '/platform/billing',
+      search: {
+        ...(f === 'all' ? {} : { filter: f }),
+        ...(search.tenant ? { tenant: search.tenant } : {}),
+      },
+    });
+  const period = (i: (typeof items)[number]) =>
+    i.periodStart && i.periodEnd
+      ? `${formatDay(locale, i.periodStart)} – ${formatDay(locale, i.periodEnd)}`
+      : null;
   return (
-    <div className="flex flex-col gap-4">
-      <PageHeader className="mb-0" title={t('pbilling.title')} />
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PageHeader
+        className="mb-0"
+        title={t('pbilling.title')}
+        actions={
+          superAdmin &&
+          issuer.isSuccess && (
+            <Button variant="secondary" onClick={() => setIssuerOpen(true)}>
+              {t('pbilling.issuer')}
+            </Button>
+          )
+        }
+      />
       {superAdmin && issuer.isSuccess && !issuer.data && (
         <Notice tone="error">{t('pbilling.issuerMissing')}</Notice>
       )}
-      <nav
-        aria-label={t('pbilling.filters')}
-        className="-mx-3 overflow-x-auto px-3 md:mx-0 md:px-0"
-      >
-        <div className="inline-flex h-9 items-center rounded-[10px] bg-muted p-[3px]">
-          {FILTERS.map((f) => (
-            <Link
-              key={f}
-              to="/platform/billing"
-              search={{
-                ...(f === 'all' ? {} : { filter: f }),
-                ...(search.tenant ? { tenant: search.tenant } : {}),
-              }}
-              {...(f === filter ? { 'aria-current': 'page' as const } : {})}
-              className={cn(
-                'inline-flex h-[30px] items-center whitespace-nowrap rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground',
-                f === filter &&
-                  'bg-background text-foreground shadow-sm dark:border-input dark:bg-input',
-              )}
-            >
-              {t(`pbilling.filter.${f}` as AdminKey)}
-            </Link>
-          ))}
-        </div>
-      </nav>
-      {search.tenant && (
-        <div className="flex flex-wrap items-center gap-2">
-          <p>{t('pbilling.forStore', { store: tenant.data?.name ?? '…' })}</p>
-          <Button variant="ghost" asChild>
-            <Link to="/platform/billing" search={filter === 'all' ? {} : { filter }}>
-              {t('pbilling.allStores')}
-            </Link>
-          </Button>
-          {superAdmin && tenant.data && (
-            <Button className="ml-auto" onClick={() => setCreating(true)}>
-              {t('pbilling.new')}
+      <StageTabs
+        label={t('pbilling.filters')}
+        tabs={FILTERS.map((f) => ({
+          key: f,
+          label: t(`pbilling.filter.${f}` as AdminKey),
+          count: f === 'all' ? counts?.all : counts?.[f] || undefined,
+        }))}
+        value={filter}
+        onChange={setFilter}
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
+          label={t('pbilling.search')}
+          value={text}
+          onChange={setText}
+        />
+        {search.tenant && (
+          <>
+            <span>{t('pbilling.forStore', { store: tenant.data?.name ?? '…' })}</span>
+            <Button variant="ghost" asChild>
+              <Link to="/platform/billing" search={filter === 'all' ? {} : { filter }}>
+                {t('pbilling.allStores')}
+              </Link>
             </Button>
-          )}
-        </div>
-      )}
+            {superAdmin && tenant.data && (
+              <Button onClick={() => setCreating(true)}>{t('pbilling.new')}</Button>
+            )}
+          </>
+        )}
+        {invoices.first && (
+          <ToolbarSummary>
+            {t('pbilling.count', { count: formatNumber(locale, invoices.total) })}
+          </ToolbarSummary>
+        )}
+      </div>
       <DataList
         label={t('pbilling.title')}
         items={items}
         rowKey={(i) => i.id}
+        grid="minmax(0,1.2fr) minmax(0,1.4fr) 110px 120px 110px 110px"
+        rowHeight={56}
         isPending={invoices.isPending}
         error={invoices.isError ? errorMessage(invoices.error, t) : undefined}
         onRetry={() => invoices.refetch()}
@@ -142,14 +174,20 @@ export function PlatformBillingPage() {
         columns={[
           {
             header: t('invoice.number'),
+            skeleton: 'lines',
             cell: (i) => (
-              <Link
-                to="/platform/billing/$id"
-                params={{ id: i.id }}
-                className="font-mono font-medium underline-offset-2 hover:underline"
-              >
-                {i.number ?? t('invoice.status.draft')}
-              </Link>
+              <span className="flex min-w-0 flex-col">
+                <Link
+                  to="/platform/billing/$id"
+                  params={{ id: i.id }}
+                  className="truncate font-mono font-medium tracking-[0.02em]"
+                >
+                  {i.number ?? t('invoice.status.draft')}
+                </Link>
+                {period(i) && (
+                  <span className="truncate text-xs text-muted-foreground">{period(i)}</span>
+                )}
+              </span>
             ),
           },
           {
@@ -158,7 +196,7 @@ export function PlatformBillingPage() {
               <Link
                 to="/platform/billing"
                 search={{ ...(filter === 'all' ? {} : { filter }), tenant: i.tenantId }}
-                className="underline-offset-2 hover:underline"
+                className="relative z-[1] block truncate"
               >
                 {i.storeName}
               </Link>
@@ -166,27 +204,32 @@ export function PlatformBillingPage() {
           },
           {
             header: t('invoice.status'),
+            skeleton: 'badge',
             cell: (i) => (
-              <span
-                className={cn(
-                  'inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium',
+              <StatusBadge
+                tone={
                   i.overdue
-                    ? 'bg-danger-soft text-danger'
+                    ? 'bad'
                     : i.status === 'paid'
-                      ? 'bg-success-soft text-success'
+                      ? 'good'
                       : i.status === 'draft' || i.status === 'void'
-                        ? 'bg-muted text-muted-foreground'
-                        : 'bg-info text-info-foreground',
-                )}
+                        ? 'ended'
+                        : 'progress'
+                }
               >
                 {statusLabel(locale, i)}
-              </span>
+              </StatusBadge>
             ),
           },
           {
             header: t('invoice.dueOn'),
             cell: (i) => (
-              <span className="whitespace-nowrap text-muted-foreground">
+              <span
+                className={cn(
+                  'whitespace-nowrap tabular-nums',
+                  i.overdue ? 'text-danger' : 'text-muted-foreground',
+                )}
+              >
                 {i.dueOn ? formatDay(locale, i.dueOn) : '—'}
               </span>
             ),
@@ -195,7 +238,14 @@ export function PlatformBillingPage() {
           {
             header: t('invoice.amountDue'),
             numeric: true,
-            cell: (i) => (i.amountDue ? formatPrice(i.amountDue, locale) : '—'),
+            cell: (i) =>
+              i.amountDue ? (
+                <span className={cn('font-medium', i.overdue && 'text-danger')}>
+                  {formatPrice(i.amountDue, locale)}
+                </span>
+              ) : (
+                '—'
+              ),
           },
         ]}
       />
@@ -207,7 +257,9 @@ export function PlatformBillingPage() {
           storeName={tenant.data.name}
         />
       )}
-      {superAdmin && issuer.isSuccess && <IssuerSection issuer={issuer.data} />}
+      {superAdmin && issuer.isSuccess && issuerOpen && (
+        <IssuerSheet issuer={issuer.data} onClose={() => setIssuerOpen(false)} />
+      )}
     </div>
   );
 }
@@ -350,7 +402,7 @@ const issuerSchema = z.object({
   nagad: text(30),
 });
 
-function IssuerSection({ issuer }: { issuer: Issuer | null }) {
+function IssuerSheet({ issuer, onClose }: { issuer: Issuer | null; onClose: () => void }) {
   const { t } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -409,45 +461,53 @@ function IssuerSection({ issuer }: { issuer: Issuer | null }) {
     onSuccess: async () => {
       toast(t('pbilling.issuerSaved'));
       await queryClient.invalidateQueries({ queryKey: ['platform', 'issuer'] });
+      onClose();
     },
   });
   return (
-    <section
-      aria-labelledby="issuer-h"
-      className="flex max-w-2xl flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+    <Sheet
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={t('pbilling.issuer')}
+      description={t('pbilling.issuerIntro')}
     >
-      <h2 id="issuer-h" className="font-semibold">
-        {t('pbilling.issuer')}
-      </h2>
-      <p className="text-muted-foreground">{t('pbilling.issuerIntro')}</p>
-      <Form form={form} onSubmit={(v) => save.mutate(v)}>
-        <TextField name="legalName" label={t('issuer.legalName')} maxLength={200} />
-        <TextField name="address" label={t('issuer.address')} maxLength={500} />
-        <TextField name="tradeLicense" label={t('issuer.tradeLicense')} optional />
-        <TextField name="bin" label={t('issuer.bin')} optional />
-        <TextField
-          name="vatRate"
-          label={t('issuer.vatRate')}
-          hint={t('issuer.vatRateHint')}
-          inputMode="decimal"
-          optional
-        />
-        <TextField name="email" label={t('issuer.email')} type="email" optional />
-        <TextField name="phone" label={t('issuer.phone')} type="tel" optional />
-        <TextField name="bankName" label={t('issuer.bankName')} optional />
-        <TextField name="bankAccountName" label={t('issuer.bankAccountName')} optional />
-        <TextField name="bankAccountNumber" label={t('issuer.bankAccountNumber')} optional />
-        <TextField name="bankBranch" label={t('issuer.bankBranch')} optional />
-        <TextField name="bankRouting" label={t('issuer.bankRouting')} optional />
-        <TextField name="bkash" label={t('issuer.bkash')} type="tel" optional />
-        <TextField name="nagad" label={t('issuer.nagad')} type="tel" optional />
-        {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-        <div>
-          <Button type="submit" disabled={save.isPending}>
+      <Form
+        form={form}
+        onSubmit={(v) => save.mutate(v)}
+        className="flex min-h-0 flex-1 flex-col gap-0"
+      >
+        <SheetBody>
+          <TextField name="legalName" label={t('issuer.legalName')} maxLength={200} />
+          <TextField name="address" label={t('issuer.address')} maxLength={500} />
+          <TextField name="tradeLicense" label={t('issuer.tradeLicense')} optional />
+          <TextField name="bin" label={t('issuer.bin')} optional />
+          <TextField
+            name="vatRate"
+            label={t('issuer.vatRate')}
+            hint={t('issuer.vatRateHint')}
+            inputMode="decimal"
+            optional
+          />
+          <TextField name="email" label={t('issuer.email')} type="email" optional />
+          <TextField name="phone" label={t('issuer.phone')} type="tel" optional />
+          <TextField name="bankName" label={t('issuer.bankName')} optional />
+          <TextField name="bankAccountName" label={t('issuer.bankAccountName')} optional />
+          <TextField name="bankAccountNumber" label={t('issuer.bankAccountNumber')} optional />
+          <TextField name="bankBranch" label={t('issuer.bankBranch')} optional />
+          <TextField name="bankRouting" label={t('issuer.bankRouting')} optional />
+          <TextField name="bkash" label={t('issuer.bkash')} type="tel" optional />
+          <TextField name="nagad" label={t('issuer.nagad')} type="tel" optional />
+          {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={onClose}>
+            {t('action.cancel')}
+          </Button>
+          <Button type="submit" size="lg" disabled={save.isPending}>
             {t('action.save')}
           </Button>
-        </div>
+        </SheetFooter>
       </Form>
-    </section>
+    </Sheet>
   );
 }

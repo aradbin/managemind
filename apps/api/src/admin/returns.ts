@@ -66,6 +66,9 @@ const ReturnSummary = z
     reason: z.enum(RETURN_REASONS),
     requestedBy: z.string(),
     units: z.number().int(),
+    firstItem: z.record(z.string(), z.string()).nullable().optional(),
+    moreItems: z.number().int().optional(),
+    value: z.number().int().optional(),
     createdAt: z.string(),
   })
   .openapi('ReturnSummary');
@@ -75,11 +78,14 @@ const ReturnDetail = ReturnSummary.extend({
   resolution: z.enum(RETURN_RESOLUTIONS).nullable(),
   rejectReason: z.string().nullable(),
   exchangeOrderId: z.uuid().nullable(),
+  customerPhone: z.string().nullable(),
   lines: z.array(
     z.object({
       orderLineId: z.uuid(),
       title: Localized,
       optionLabels: z.array(Localized),
+      sku: z.string().nullable(),
+      value: z.number().int().openapi({ description: 'Unit price paid × quantity' }),
       quantity: z.number().int(),
       reason: z.enum(RETURN_REASONS).nullable(),
       restocked: z.number().int(),
@@ -149,6 +155,17 @@ export const RETURN_ROUTES = {
         items: z.array(ReturnSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        counts: z
+          .object({
+            all: z.number().int(),
+            requested: z.number().int(),
+            inProgress: z.number().int(),
+            resolved: z.number().int(),
+            rejected: z.number().int(),
+            open: z.number().int(),
+            openValue: z.number(),
+          })
+          .optional(),
       }),
       'Returns',
     ),

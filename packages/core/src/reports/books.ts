@@ -8,6 +8,7 @@ import { sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { type Actor, authorize } from '../access';
 import { parseInput } from '../catalog/common';
+import { orderSettings } from '../pricing/quote';
 import { requireBackOffice, today } from '../purchasing/common';
 import { type SupplierDue, supplierDues } from '../purchasing/suppliers';
 import { type Localized, variantLabels } from '../purchasing/variants';
@@ -401,6 +402,17 @@ export interface CodOutstanding {
     oldestDays: number;
   }[];
   total: number;
+  /** The ten parcels waiting longest, oldest first. */
+  oldest: {
+    orderId: string;
+    orderNumber: string;
+    /** The courier's tracking or consignment code, if any. */
+    tracking: string | null;
+    courier: string | null;
+    deliveredOn: string;
+    amount: number;
+    days: number;
+  }[];
 }
 
 /**
@@ -419,21 +431,32 @@ export async function codOutstanding(
     courier: string | null;
     amount: string;
     days: number;
+    order_id: string;
+    number: string | number;
+    tracking: string | null;
+    delivered_on: string;
   }>(sql`
     select s.courier,
            coalesce(s.cod_collected, s.cod_amount, 0) - coalesce(s.courier_fee, 0) as amount,
-           (${on}::date - (s.delivered_at at time zone 'Asia/Dhaka')::date)::int as days
+           (${on}::date - (s.delivered_at at time zone 'Asia/Dhaka')::date)::int as days,
+           s.order_id, o.number, coalesce(s.tracking_code, s.consignment_id, s.tracking_number) as tracking,
+           to_char((s.delivered_at at time zone 'Asia/Dhaka')::date, 'YYYY-MM-DD') as delivered_on
       from store.shipments s
+      join store.orders o on o.id = s.order_id
      where s.courier is not null and s.status = 'delivered' and coalesce(s.cod_amount, 0) > 0
        and not exists (select 1 from store.courier_payout_lines l where l.shipment_id = s.id)
     union all
     select null, sum(p.amount),
-           (${on}::date - (min(s.delivered_at) at time zone 'Asia/Dhaka')::date)::int
+           (${on}::date - (min(s.delivered_at) at time zone 'Asia/Dhaka')::date)::int,
+           p.order_id, min(o.number), null,
+           to_char((min(s.delivered_at) at time zone 'Asia/Dhaka')::date, 'YYYY-MM-DD')
       from store.payments p
+      join store.orders o on o.id = p.order_id
       join store.shipments s on s.order_id = p.order_id and s.status = 'delivered' and s.courier is null
      where p.provider = 'cod' and p.status = 'pending'
        and not exists (select 1 from store.shipments c where c.order_id = p.order_id and c.courier is not null)
      group by p.order_id`);
+  const { settings } = await orderSettings(tx);
   const holders = new Map<string | null, CodOutstanding['holders'][number]>();
   for (const r of rows) {
     const h = holders.get(r.courier) ?? {
@@ -457,5 +480,17 @@ export async function codOutstanding(
   const list = [...holders.values()].sort(
     (a, b) => (a.courier === null ? 1 : 0) - (b.courier === null ? 1 : 0) || b.amount - a.amount,
   );
-  return { holders: list, total: list.reduce((a, h) => a + h.amount, 0) };
+  const oldest = [...rows]
+    .sort((a, b) => n(b.days) - n(a.days) || n(b.amount) - n(a.amount))
+    .slice(0, 10)
+    .map((r) => ({
+      orderId: r.order_id,
+      orderNumber: `${settings.checkout.orderNumberPrefix}${r.number}`,
+      tracking: r.tracking,
+      courier: r.courier,
+      deliveredOn: r.delivered_on,
+      amount: n(r.amount),
+      days: Math.max(0, n(r.days)),
+    }));
+  return { holders: list, total: list.reduce((a, h) => a + h.amount, 0), oldest };
 }

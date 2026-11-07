@@ -3,29 +3,23 @@ import { useLocale } from '../i18n';
 import { Button } from './ui/button';
 
 /**
- * Switches between Bangla and English; the label is in the other language.
- * In the header it is an icon button named by that label (ADR 0033).
+ * Switches between Bangla and English: the header's icon button, named in
+ * the other language (ADR 0033). Screens before the admin list both
+ * languages in their footer instead (ADR 0034).
  */
-export function LanguageSwitch({ icon = false }: { icon?: boolean }) {
+export function LanguageSwitch() {
   const { locale, setLocale, t } = useLocale();
   const other = locale === 'bn' ? 'en' : 'bn';
-  if (icon) {
-    return (
-      <Button
-        variant="secondary"
-        size="icon"
-        lang={other}
-        aria-label={t('language.switch')}
-        title={t('language.switch')}
-        onClick={() => setLocale(other)}
-      >
-        <Languages aria-hidden />
-      </Button>
-    );
-  }
   return (
-    <Button variant="ghost" lang={other} onClick={() => setLocale(other)}>
-      {t('language.switch')}
+    <Button
+      variant="secondary"
+      size="icon"
+      lang={other}
+      aria-label={t('language.switch')}
+      title={t('language.switch')}
+      onClick={() => setLocale(other)}
+    >
+      <Languages aria-hidden />
     </Button>
   );
 }

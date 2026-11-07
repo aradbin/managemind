@@ -6,13 +6,16 @@
 // Bangla or English, whatever the admin's own language.
 import type { Locale } from '@managemind/shared/i18n';
 import { useQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Notice } from '../components/notice';
+import { deskClass, PrintBar, paperClass } from '../components/print-bar';
 import { QrCode } from '../components/qr-code';
 import { Button } from '../components/ui/button';
+import { ChoiceChips } from '../components/ui/segmented';
 import { type AdminKey, translate, useLocale } from '../i18n';
+import { cn } from '../lib/utils';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
@@ -44,6 +47,7 @@ interface Profile {
 export function OrderPrintPage() {
   const { t, locale } = useLocale();
   const search = useSearch({ strict: false }) as PrintSearch;
+  const navigate = useNavigate();
   const ids = (search.ids ?? '').split(',').filter(Boolean).slice(0, 100);
   const doc = search.doc === 'slip' ? 'slip' : 'invoice';
   const [lang, setLang] = useState<Locale>(locale);
@@ -62,7 +66,7 @@ export function OrderPrintPage() {
 
   if (!ids.length) return <Notice tone="error">{t('print.none')}</Notice>;
   return (
-    <div className="print-root bg-background">
+    <div className="print-root min-h-dvh bg-muted print:bg-white">
       <style>{`
         @page { size: A4; margin: 12mm; }
         @media print {
@@ -72,26 +76,40 @@ export function OrderPrintPage() {
           body { background: #fff !important; color: #000 !important; }
         }
       `}</style>
-      <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background p-3">
-        <span className="font-medium">
-          {title} · {t('print.count', { count: ids.length })}
-        </span>
-        <label className="ml-auto flex items-center gap-2 text-sm">
-          {t('print.language')}
-          <select
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
-            value={lang}
-            onChange={(e) => setLang(e.target.value as Locale)}
-          >
-            <option value="bn">বাংলা</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-        <Button disabled={!data.data} onClick={() => window.print()}>
-          <Printer aria-hidden className="size-4" />
-          {t('print.print')}
-        </Button>
-      </div>
+      <PrintBar
+        back={{ to: '/orders', label: t('nav.orders') }}
+        title={`${title} · ${t('print.count', { count: ids.length })}`}
+        actions={
+          <>
+            <span className="text-[13px] text-muted-foreground">{t('print.language')}</span>
+            <ChoiceChips
+              label={t('print.language')}
+              value={lang}
+              options={[
+                { value: 'bn', label: 'বাংলা' },
+                { value: 'en', label: 'English' },
+              ]}
+              onChange={setLang}
+            />
+            <Button disabled={!data.data} onClick={() => window.print()}>
+              <Printer aria-hidden />
+              {t('print.print')}
+            </Button>
+          </>
+        }
+      >
+        <ChoiceChips
+          label={t('print.document')}
+          value={doc}
+          options={[
+            { value: 'invoice', label: t('print.invoices') },
+            { value: 'slip', label: t('print.slips') },
+          ]}
+          onChange={(next) =>
+            navigate({ to: '/print/orders', search: { ids: search.ids ?? '', doc: next } })
+          }
+        />
+      </PrintBar>
       {data.isPending && (
         <p role="status" className="p-4">
           {t('loading')}
@@ -103,10 +121,7 @@ export function OrderPrintPage() {
         </div>
       )}
       {data.data && (
-        <main
-          lang={lang}
-          className="flex flex-col items-center gap-6 bg-muted p-4 print:block print:bg-white print:p-0"
-        >
+        <main lang={lang} className={deskClass}>
           {data.data.orders.map((o) =>
             doc === 'invoice' ? (
               <Invoice key={o.id} order={o} store={data.data.store} lang={lang} />
@@ -120,7 +135,7 @@ export function OrderPrintPage() {
   );
 }
 
-const pageClass = 'print-page w-full bg-white text-black shadow-md';
+const pageClass = paperClass;
 
 function Invoice({
   order: o,
@@ -138,7 +153,7 @@ function Invoice({
   const vatOn = Boolean((store.tax as { vatEnabled?: boolean }).vatEnabled);
   const tt = o.totals;
   return (
-    <article className={`${pageClass} max-w-[210mm] p-8 text-sm print:max-w-none print:p-0`}>
+    <article className={pageClass}>
       <header className="mb-6 flex justify-between gap-6">
         <div>
           <h1 className="text-xl font-bold">{p.businessName ?? store.name}</h1>
@@ -254,9 +269,7 @@ function Slip({
     translate(lang, key, params);
   const p = store.profile as Profile;
   return (
-    <article
-      className={`${pageClass} flex h-[136mm] max-w-[210mm] flex-col gap-3 p-6 print:max-w-none print:p-0`}
-    >
+    <article className={cn(pageClass, 'flex h-[136mm] flex-col gap-3 md:py-8')}>
       <header className="flex items-start justify-between gap-4 border-b-2 border-black pb-2">
         <div>
           <p className="font-bold">{store.name}</p>

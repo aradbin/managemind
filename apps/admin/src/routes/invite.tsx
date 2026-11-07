@@ -2,8 +2,9 @@
 // which proves the mailbox, then post the token from the link.
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { Loader2 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { AuthLayout } from '../components/auth-layout';
+import { AuthHeading, AuthLayout } from '../components/auth-layout';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
@@ -57,7 +58,7 @@ function Invite() {
   const invalid = accept.error instanceof ApiError && [404, 410, 422].includes(accept.error.status);
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight">{t('invite.title')}</h1>
+      <AuthHeading title={t('invite.title')} />
       {!token ? (
         <Notice tone="error">{t('invite.missing')}</Notice>
       ) : accept.isError ? (
@@ -66,7 +67,7 @@ function Invite() {
             {invalid ? t('invite.invalid') : errorMessage(accept.error, t)}
           </Notice>
           {invalid ? (
-            <Button variant="secondary" onClick={signOut}>
+            <Button variant="secondary" className="w-full" onClick={signOut}>
               {t('action.signOut')}
             </Button>
           ) : (
@@ -74,7 +75,10 @@ function Invite() {
           )}
         </>
       ) : (
-        <p role="status">{t('invite.joining')}</p>
+        <p role="status" className="flex items-center gap-3">
+          <Loader2 aria-hidden className="size-4 animate-spin motion-reduce:animate-none" />
+          {t('invite.joining')}
+        </p>
       )}
     </AuthLayout>
   );

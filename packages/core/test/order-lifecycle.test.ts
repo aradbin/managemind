@@ -26,6 +26,7 @@ import {
   inventoryDrift,
   listOrders,
   placeOrder,
+  productActivity,
   receive,
   recordPayment,
   returnShipment,
@@ -389,6 +390,33 @@ describe('walk-ins', () => {
 });
 
 describe('reading orders', () => {
+  it("sums a product's last 30 days without cancelled orders, and lists its orders", async () => {
+    const p = await run((tx) =>
+      createProduct(tx, owner, {
+        status: 'active',
+        translations: { en: { title: `Activity ${++seq}` } },
+        variant: { price: 50_000 },
+      }),
+    );
+    const v = p.variants[0]?.id as string;
+    await run((tx) => receive(tx, owner, { variantId: v, quantity: 10, reason: 'received' }));
+    const kept = await shopperOrder([[v, 2]], '+8801700000301');
+    const dropped = await shopperOrder([[v, 1]], '+8801700000302');
+    await run((tx) => cancelOrder(tx, owner, dropped.id, { reason: 'test' }));
+
+    const seen = await run((tx) => productActivity(tx, owner, p.id));
+    expect(seen).toMatchObject({ sold: 2, revenue: 100_000, marginBp: null });
+    expect(seen.variants).toEqual([{ variantId: v, sold: 2 }]);
+    expect(seen.recentOrders.map((o) => o.id)).toEqual([dropped.id, kept.id]);
+    expect(seen.recentOrders[1]).toMatchObject({ customerName: 'Rahim', lines: [{ quantity: 2 }] });
+
+    // Without orders.read the figures stay, the orders don't.
+    const catalogOnly: Actor = { ...owner, permissions: new Set(['catalog.read']) as never };
+    const limited = await run((tx) => productActivity(tx, catalogOnly, p.id));
+    expect(limited.sold).toBe(2);
+    expect(limited.recentOrders).toEqual([]);
+  });
+
   it('masks shoppers’ details for a viewer, and lists with filters and search', async () => {
     const v = await product(10_000, 5);
     const placed = await shopperOrder([[v, 1]], '+8801712340210');
@@ -408,6 +436,14 @@ describe('reading orders', () => {
       listOrders(tx, owner, { q: '01712340210', paymentStatus: ['paid', 'unpaid'] }),
     );
     expect(either.items.map((o) => o.id)).toEqual([placed.id]);
+    // The tabs' counts leave the stage out; the value is what the matches come to.
+    const tabs = await run((tx) =>
+      listOrders(tx, owner, { q: '01712340210', status: 'cancelled', counts: true }),
+    );
+    expect(tabs.items).toEqual([]);
+    expect(tabs.value).toBe(0);
+    expect(tabs.counts).toMatchObject({ all: 1, cancelled: 0 });
+    expect(found.value).toBe(placed.total);
     const neither = await run((tx) =>
       listOrders(tx, owner, { q: '01712340210', source: ['instagram', 'exchange'] }),
     );

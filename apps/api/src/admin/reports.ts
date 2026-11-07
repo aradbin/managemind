@@ -54,6 +54,13 @@ const Reports = z
         revenue: z.number().int(),
       }),
     ),
+    totals: z
+      .object({
+        placed: z.number().int(),
+        delivered: z.number().int(),
+        returned: z.number().int(),
+      })
+      .openapi({ description: 'Orders placed in the range, delivered, and with a return' }),
   })
   .openapi('Reports');
 
@@ -116,6 +123,9 @@ const SalesReport = z
       }),
     ),
     totals: SalesFigures,
+    previous: SalesFigures.openapi({
+      description: 'The same number of days just before the range, for comparisons',
+    }),
   })
   .openapi('SalesReport');
 const ProductsReport = z
@@ -288,6 +298,19 @@ const CodOutstanding = z
       }),
     ),
     total: Money,
+    oldest: z
+      .array(
+        z.object({
+          orderId: z.uuid(),
+          orderNumber: z.string(),
+          tracking: z.string().nullable(),
+          courier: z.string().nullable(),
+          deliveredOn: z.string(),
+          amount: Money,
+          days: Count,
+        }),
+      )
+      .openapi({ description: 'The ten parcels waiting longest, oldest first' }),
   })
   .openapi('CodOutstanding');
 

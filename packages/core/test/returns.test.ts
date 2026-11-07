@@ -365,6 +365,14 @@ describe('the return machine and the shopper’s window', () => {
       shopperPaysReturn: true,
       requestedBy: 'shopper',
     });
+    // The board's Customer card and item rows: phone, SKU and what the units cost.
+    expect(ret.customerPhone).toBe('01712-345604');
+    expect(ret.lines[0]?.value).toBe(25_000); // one unit at ৳250
+    expect(ret.lines[0]).toHaveProperty('sku');
+    // Viewers see orders but not the shopper's phone.
+    expect((await run((tx) => getReturn(tx, actorAs('viewer'), asked.id))).customerPhone).toBe(
+      '01712-•••604',
+    );
     expect((await run((tx) => getOrder(tx, owner, placed.id))).returnStatus).toBe('requested');
     // Units asked for aren't returnable twice.
     expect((await run((tx) => shopperReturnable(tx, placed.id))).lines[0]?.returnable).toBe(1);
@@ -689,6 +697,10 @@ describe('failed deliveries, flagged phones and reports (§3.11, §3.15)', () =>
     );
     expect(reports.returnsByReason.length).toBeGreaterThan(0);
     expect(reports.payments.find((p) => p.kind === 'cod')?.orders).toBeGreaterThan(0);
+    // The stat strip: placed, delivered and returned orders.
+    expect(reports.totals.placed).toBeGreaterThanOrEqual(reports.totals.delivered);
+    expect(reports.totals.delivered).toBeGreaterThanOrEqual(1);
+    expect(reports.totals.returned).toBeGreaterThanOrEqual(1);
     await expect(
       run((tx) => getReports(tx, actorAs('staff'), { from: today, to: today })),
     ).rejects.toMatchObject({ code: 'forbidden' });

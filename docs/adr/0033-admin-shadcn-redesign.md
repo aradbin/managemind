@@ -5,6 +5,7 @@
 - Design: the canvas in `design/admin-redesign/` (desktop and phone boards for every admin page, and its "Design rules" board). Code: `apps/admin/src/styles.css`, `apps/admin/src/components/ui/`, `apps/admin/src/components/nav.tsx`, `apps/admin/src/routes/_shell.tsx`, `apps/admin/src/routes/_shell/more.tsx`
 - Amends: [ADR 0029](0029-admin-redesign.md) §1 (colours), §2 (sizes), §3 (status chips), §5 (the shell)
 - Phase: 5C, its second redesign: [phase-5c-report.md](../phases/phase-5c-report.md) §7
+- Amended by: [ADR 0034](0034-admin-matches-the-boards.md) (every page to its board; the boards' pager)
 
 ## Context
 

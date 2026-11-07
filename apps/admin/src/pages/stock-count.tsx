@@ -7,20 +7,27 @@
 import type { Locale } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import { Check, CircleX, FileText, Minus, Plus, Printer, ScanBarcode } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
+import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { PhoneRecordHeader } from '../components/record-header';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardPadded } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
+import { useCountScope } from '../lib/count-scope';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
-import { dateOnly, lineLabel } from '../lib/orders';
+import { dateOnly, lineLabel, pickText } from '../lib/orders';
 import {
   PURCHASING_KEYS,
   priceOrDash,
@@ -29,6 +36,7 @@ import {
   type StockCountLine,
   stockCountQuery,
 } from '../lib/purchasing';
+import { cn } from '../lib/utils';
 
 interface Detector {
   detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]>;
@@ -43,6 +51,7 @@ export function StockCountPage() {
     // While the queue applies a large count, look again every few seconds.
     refetchInterval: (q) => (q.state.data?.status === 'applying' ? 3000 : false),
   });
+  useRecordPage(count.data?.reference);
   if (count.isPending) return <p role="status">{t('loading')}</p>;
   if (count.isError) return <Notice tone="error">{errorMessage(count.error, t)}</Notice>;
   return <CountView count={count.data} />;
@@ -58,11 +67,11 @@ const value = (amount: number | undefined, locale: Locale) =>
 
 function CountView({ count }: { count: StockCount }) {
   const { t, locale } = useLocale();
+  const what = useCountScope();
   const toast = useToast();
   const queryClient = useQueryClient();
   const canWrite = usePermission('inventory.write');
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [onlyLeft, setOnlyLeft] = useState(false);
   const [confirm, setConfirm] = useState<'apply' | 'cancel' | null>(null);
   const editable = canWrite && (count.status === 'counting' || count.status === 'review');
   const review = count.status !== 'counting';
@@ -136,6 +145,8 @@ function CountView({ count }: { count: StockCount }) {
 
   // Scans ahead of the server's answers: two quick scans of one item are two.
   const latest = useRef(new Map<string, number>());
+  /** The item scanned last, tinted green in the list as drawn. */
+  const [lastScanned, setLastScanned] = useState<string | null>(null);
   /** A scanned or typed code: one more of the item it names. */
   const scanned = (code: string) => {
     const wanted = code.trim().toLowerCase();
@@ -149,69 +160,167 @@ function CountView({ count }: { count: StockCount }) {
     }
     const next = (latest.current.get(line.variantId) ?? line.counted ?? 0) + 1;
     latest.current.set(line.variantId, next);
+    setLastScanned(line.variantId);
     save.mutate({ variantId: line.variantId, counted: next });
     toast(t('counts.added', { item: lineLabel(line, locale), n: next }));
   };
 
+  const [tab, setTab] = useState<'all' | 'left' | 'different'>(review ? 'different' : 'all');
   const lines = useMemo(
-    () => (onlyLeft ? count.lines.filter((l) => l.counted === null) : count.lines),
-    [count.lines, onlyLeft],
+    () =>
+      count.lines.filter((l) =>
+        tab === 'left' ? l.counted === null : tab === 'different' ? Boolean(l.difference) : true,
+      ),
+    [count.lines, tab],
   );
   const d = count.differences;
   const overThreshold =
     count.approvalThreshold !== undefined &&
     count.lines.reduce((a, l) => a + Math.abs(l.value ?? 0), 0) > count.approvalThreshold;
+  const left = count.lineCount - count.countedLines;
+  const pct = count.lineCount ? Math.round((count.countedLines / count.lineCount) * 100) : 0;
+  const tabs = review
+    ? ([
+        ['different', t('counts.tabDifferent'), count.lines.filter((l) => l.difference).length],
+        ['all', t('counts.all'), count.lines.length],
+      ] as const)
+    : ([
+        ['all', t('counts.all'), count.lines.length],
+        ['left', t('counts.tabLeft'), left],
+      ] as const);
+  const open = count.status === 'counting' || count.status === 'review';
+  const setCounted = (l: StockCountLine, next: number | null) => {
+    latest.current.delete(l.variantId);
+    setDrafts(({ [l.variantId]: _x, ...rest }) => rest);
+    save.mutate({ variantId: l.variantId, counted: next });
+  };
+  const menu = (trigger: 'outline' | 'ghost') =>
+    canWrite &&
+    open && (
+      <RowMenu label={t('list.moreActions')} trigger={trigger} page>
+        <RowMenuItem onSelect={() => window.print()}>
+          <Printer aria-hidden />
+          {t('counts.print')}
+        </RowMenuItem>
+        <RowMenuSeparator />
+        <RowMenuItem danger onSelect={() => setConfirm('cancel')}>
+          <CircleX aria-hidden />
+          {t('counts.cancel')}
+        </RowMenuItem>
+      </RowMenu>
+    );
+  const field = (l: StockCountLine, label: string) => (
+    <Input
+      inputMode="numeric"
+      aria-label={`${t('counts.counted')}: ${label}`}
+      placeholder="—"
+      className="h-full w-[52px] rounded-none border-0 border-x border-input text-center font-medium tabular-nums shadow-none md:h-full"
+      value={drafts[l.variantId] ?? (l.counted === null ? '' : String(l.counted))}
+      onChange={(e) => setDrafts({ ...drafts, [l.variantId]: e.target.value })}
+      onBlur={() => commit(l)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') commit(l);
+      }}
+    />
+  );
 
   return (
-    <div className="flex max-w-5xl flex-col gap-6">
-      <PageHeader
-        className="mb-0"
-        parent={{ to: '/inventory/counts', label: t('counts.title') }}
+    <div className="mx-auto flex w-full max-w-[760px] flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader
+        to="/inventory/counts"
+        backLabel={t('counts.back')}
         title={count.reference}
-        description={`${t(`counts.status.${count.status}`)} · ${t('counts.progress', {
-          counted: count.countedLines,
-          total: count.lineCount,
-        })} · ${dateOnly(locale, count.createdAt)}`}
-        actions={
-          canWrite && (
-            <>
-              {count.status === 'counting' && (
-                <Button disabled={move.isPending} onClick={() => move.mutate('submit')}>
-                  {t('counts.submit')}
-                </Button>
-              )}
-              {count.status === 'review' && (
-                <>
-                  <Button disabled={move.isPending} onClick={() => setConfirm('apply')}>
-                    {t('counts.apply')}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    disabled={move.isPending}
-                    onClick={() => move.mutate('reopen')}
-                  >
-                    {t('counts.reopen')}
-                  </Button>
-                </>
-              )}
-              {(count.status === 'counting' || count.status === 'review') && (
-                <Button variant="quiet" onClick={() => setConfirm('cancel')}>
-                  {t('counts.cancel')}
-                </Button>
-              )}
-            </>
-          )
-        }
-      />
-      {count.note && <p className="whitespace-pre-line">{count.note}</p>}
-      {count.status === 'applying' && <Notice tone="info">{t('counts.applyingNote')}</Notice>}
+      >
+        {menu('ghost')}
+      </PhoneRecordHeader>
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="max-md:hidden">
+          <BackLink to="/inventory/counts" label={t('counts.back')} />
+        </span>
+        <h1 className="truncate font-mono text-xl leading-7 font-semibold tracking-[-0.01em] max-md:hidden">
+          {count.reference}
+        </h1>
+        <StatusBadge tone={countTone(count.status)}>
+          {t(`counts.status.${count.status}`)}
+        </StatusBadge>
+        <span className="flex-1" />
+        {canWrite && count.status === 'counting' && (
+          <Button
+            className="max-md:hidden"
+            disabled={move.isPending}
+            onClick={() => move.mutate('submit')}
+          >
+            <Check aria-hidden />
+            {t('counts.submit')}
+          </Button>
+        )}
+        {canWrite && count.status === 'review' && (
+          <>
+            <Button
+              variant="secondary"
+              className="max-md:hidden"
+              disabled={move.isPending}
+              onClick={() => move.mutate('reopen')}
+            >
+              {t('counts.reopen')}
+            </Button>
+            <Button
+              className="max-md:hidden"
+              disabled={move.isPending}
+              onClick={() => setConfirm('apply')}
+            >
+              {t('counts.apply')}
+            </Button>
+          </>
+        )}
+        <span className="max-md:hidden">{menu('outline')}</span>
+      </div>
+      <p className="-mt-2 text-muted-foreground">
+        {[what(count), t('counts.startedOn', { date: dateOnly(locale, count.createdAt) })].join(
+          ' · ',
+        )}
+      </p>
+      {count.note && (
+        <div className="flex items-start gap-2.5 rounded-[10px] bg-muted px-3.5 py-3">
+          <FileText aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p>{count.note}</p>
+        </div>
+      )}
+      {count.status === 'applying' && <Notice>{t('counts.applyingNote')}</Notice>}
+      {count.status === 'applied' && <Notice>{t('counts.appliedNote')}</Notice>}
+      {count.status === 'cancelled' && <Notice>{t('counts.cancelledNote')}</Notice>}
       {count.applyError && count.status === 'review' && (
         <Notice tone="error">{t('counts.applyError', { error: count.applyError })}</Notice>
       )}
       {move.isError && !confirm && <Notice tone="error">{saveErrorMessage(move.error, t)}</Notice>}
       {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+
+      {count.status === 'counting' && (
+        <section
+          aria-label={t('counts.progressLabel')}
+          className={cn(cardPadded, 'gap-2.5 md:gap-2.5')}
+        >
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">
+              {t('counts.progress', { counted: count.countedLines, total: count.lineCount })}
+            </span>
+            <span className="text-muted-foreground">{t('counts.toGo', { count: left })}</span>
+          </div>
+          <span aria-hidden className="block h-2 overflow-hidden rounded-full bg-muted">
+            <span
+              className={cn('block h-full rounded-full', left ? 'bg-primary' : 'bg-success')}
+              style={{ width: `${pct}%` }}
+            />
+          </span>
+        </section>
+      )}
+      {count.status === 'counting' && canWrite && <Scanner onCode={scanned} />}
+
       {review && d && (
-        <p className="font-medium">
+        <p
+          role="status"
+          className="flex items-start gap-2.5 rounded-[10px] border border-border bg-muted px-3.5 py-3 font-medium shadow-xs"
+        >
           {d.lines === 0
             ? t('counts.noDifferences')
             : t('counts.differences', { lines: d.lines, units: signed(d.units) })}
@@ -219,56 +328,88 @@ function CountView({ count }: { count: StockCount }) {
         </p>
       )}
 
-      {count.status === 'counting' && canWrite && <Scanner onCode={scanned} />}
+      <div
+        role="tablist"
+        aria-label={t('counts.show')}
+        className="inline-flex h-9 items-center self-start rounded-[10px] bg-muted p-[3px]"
+      >
+        {tabs.map(([key, label, n]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-transparent px-2.5 text-[13px] font-medium text-muted-foreground aria-selected:bg-background aria-selected:text-foreground aria-selected:shadow-sm dark:aria-selected:border-input dark:aria-selected:bg-input"
+          >
+            {label}
+            <span className="text-xs tabular-nums text-muted-foreground">{n}</span>
+          </button>
+        ))}
+      </div>
 
-      <section className="flex flex-col gap-3">
-        <label className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={onlyLeft}
-            onChange={(e) => setOnlyLeft(e.target.checked)}
-          />
-          {t('counts.onlyLeft')}
-        </label>
-        <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-background">
+      {lines.length === 0 ? (
+        <p className="rounded-[10px] border border-dashed border-border p-4 text-muted-foreground">
+          {t('counts.nothingHere')}
+        </p>
+      ) : !review ? (
+        <ul
+          aria-label={t('po.lines')}
+          className="overflow-hidden rounded-[10px] border border-b-0 border-border"
+        >
           {lines.map((l) => {
             const label = lineLabel(l, locale);
+            const options = l.optionLabels
+              .map((o) => pickText(o, locale))
+              .filter(Boolean)
+              .join(' / ');
+            const n = l.counted ?? 0;
             return (
-              <li key={l.variantId} className="flex flex-wrap items-center gap-3 p-3">
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="font-medium">{label}</span>
-                  <span className="text-sm text-muted-foreground">
+              <li
+                key={l.variantId}
+                className={cn(
+                  'flex items-center gap-2.5 border-b border-border px-3 py-2.5 md:min-h-[73px] md:gap-3 md:py-2 md:pr-3 md:pl-4',
+                  lastScanned === l.variantId &&
+                    'bg-[color-mix(in_oklch,var(--color-success)_8%,transparent)]',
+                )}
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate">
+                    <span className="font-medium">{pickText(l.title, locale)}</span>
+                    {options && (
+                      <span className="text-muted-foreground max-md:hidden"> · {options}</span>
+                    )}
+                  </span>
+                  {options && (
+                    <span className="truncate text-[13px] leading-[18px] text-muted-foreground md:hidden">
+                      {options}
+                    </span>
+                  )}
+                  <span className="truncate text-xs leading-4 text-muted-foreground md:font-mono">
                     {[l.sku, l.barcode].filter(Boolean).join(' · ')}
                   </span>
-                </div>
-                {review && l.expected !== undefined && (
-                  <dl className="grid grid-cols-3 gap-x-4 text-right text-sm tabular-nums">
-                    <dt className="text-muted-foreground">{t('counts.expected')}</dt>
-                    <dt className="text-muted-foreground">{t('counts.difference')}</dt>
-                    <dt className="text-muted-foreground">
-                      {l.value !== undefined ? t('counts.value') : ''}
-                    </dt>
-                    <dd>{l.expected}</dd>
-                    <dd className={l.difference ? 'font-semibold text-danger' : undefined}>
-                      {l.counted === null ? '—' : signed(l.difference ?? 0)}
-                    </dd>
-                    <dd>{l.difference ? value(l.value, locale) : ''}</dd>
-                  </dl>
-                )}
+                </span>
                 {editable && !l.applied ? (
-                  <Input
-                    className="w-24"
-                    inputMode="numeric"
-                    aria-label={`${t('counts.counted')}: ${label}`}
-                    placeholder="—"
-                    value={drafts[l.variantId] ?? (l.counted === null ? '' : String(l.counted))}
-                    onChange={(e) => setDrafts({ ...drafts, [l.variantId]: e.target.value })}
-                    onBlur={() => commit(l)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commit(l);
-                    }}
-                  />
+                  <span className="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-lg border border-input bg-background md:h-8">
+                    <button
+                      type="button"
+                      aria-label={t('order.oneLess')}
+                      disabled={!l.counted}
+                      onClick={() => setCounted(l, Math.max(0, n - 1))}
+                      className="inline-flex h-full w-10 items-center justify-center hover:bg-accent disabled:opacity-40 md:w-8"
+                    >
+                      <Minus aria-hidden className="size-4" />
+                    </button>
+                    {field(l, label)}
+                    <button
+                      type="button"
+                      aria-label={t('order.oneMore')}
+                      onClick={() => setCounted(l, n + 1)}
+                      className="inline-flex h-full w-10 items-center justify-center hover:bg-accent md:w-8"
+                    >
+                      <Plus aria-hidden className="size-4" />
+                    </button>
+                  </span>
                 ) : (
                   <span className="w-24 text-right tabular-nums">
                     {l.counted === null ? t('counts.notCounted') : l.counted}
@@ -278,7 +419,107 @@ function CountView({ count }: { count: StockCount }) {
             );
           })}
         </ul>
-      </section>
+      ) : (
+        <div className="overflow-hidden rounded-[10px] border border-border">
+          <div
+            aria-hidden
+            className="grid h-9 grid-cols-[minmax(0,1fr)_72px_88px_80px] items-center gap-x-3 bg-muted px-4 text-[13px] font-medium md:grid-cols-[minmax(0,1fr)_80px_96px_88px_96px]"
+          >
+            <span>{t('po.item')}</span>
+            <span className="text-right">{t('counts.expected')}</span>
+            <span className="text-center">{t('counts.counted')}</span>
+            <span className="text-right">{t('counts.difference')}</span>
+            <span className="text-right max-md:hidden">{t('counts.value')}</span>
+          </div>
+          <ul aria-label={t('po.lines')}>
+            {lines.map((l) => {
+              const label = lineLabel(l, locale);
+              const options = l.optionLabels
+                .map((o) => pickText(o, locale))
+                .filter(Boolean)
+                .join(' / ');
+              return (
+                <li
+                  key={l.variantId}
+                  className="grid min-h-[52px] grid-cols-[minmax(0,1fr)_72px_88px_80px] items-center gap-x-3 border-t border-border px-4 py-1.5 md:grid-cols-[minmax(0,1fr)_80px_96px_88px_96px]"
+                >
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate font-medium">{pickText(l.title, locale)}</span>
+                    {options && (
+                      <span className="truncate text-[13px] text-muted-foreground">{options}</span>
+                    )}
+                  </span>
+                  <span className="text-right text-muted-foreground tabular-nums">
+                    {l.expected ?? '—'}
+                  </span>
+                  <span className="flex justify-center">
+                    {editable && !l.applied ? (
+                      <Input
+                        inputMode="numeric"
+                        aria-label={`${t('counts.counted')}: ${label}`}
+                        placeholder="—"
+                        className="h-8 w-[72px] text-center tabular-nums md:h-8"
+                        value={drafts[l.variantId] ?? (l.counted === null ? '' : String(l.counted))}
+                        onChange={(e) => setDrafts({ ...drafts, [l.variantId]: e.target.value })}
+                        onBlur={() => commit(l)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commit(l);
+                        }}
+                      />
+                    ) : (
+                      <span className="tabular-nums">{l.counted === null ? '—' : l.counted}</span>
+                    )}
+                  </span>
+                  <span
+                    className={cn(
+                      'text-right tabular-nums',
+                      l.difference ? 'font-semibold text-danger' : 'text-muted-foreground',
+                    )}
+                  >
+                    {l.counted === null ? '—' : signed(l.difference ?? 0)}
+                  </span>
+                  <span className="text-right tabular-nums max-md:hidden">
+                    {l.difference ? value(l.value, locale) : ''}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Phones: the main actions sit in a bar at the bottom, as drawn. */}
+      {canWrite && (count.status === 'counting' || count.status === 'review') && (
+        <div className="sticky bottom-0 z-20 -mx-3 -mb-3 flex gap-2 border-t border-border bg-background px-4 py-3 md:hidden">
+          {count.status === 'counting' ? (
+            <Button
+              className="flex-1"
+              disabled={move.isPending}
+              onClick={() => move.mutate('submit')}
+            >
+              {t('counts.submit')}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                className="flex-1"
+                disabled={move.isPending}
+                onClick={() => move.mutate('reopen')}
+              >
+                {t('counts.reopen')}
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={move.isPending}
+                onClick={() => setConfirm('apply')}
+              >
+                {t('counts.apply')}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirm !== null}
@@ -310,6 +551,15 @@ function CountView({ count }: { count: StockCount }) {
     </div>
   );
 }
+
+const countTone = (status: StockCount['status']) =>
+  status === 'applied'
+    ? ('good' as const)
+    : status === 'cancelled'
+      ? ('outline' as const)
+      : status === 'review'
+        ? ('waiting' as const)
+        : ('progress' as const);
 
 /** The scan box, and the camera where the browser can read barcodes. */
 function Scanner({ onCode }: { onCode: (code: string) => void }) {
@@ -351,7 +601,7 @@ function Scanner({ onCode }: { onCode: (code: string) => void }) {
     };
   }, [camera, Detector]);
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
+    <section aria-label={t('counts.scanLabel')} className={cn(cardPadded, 'gap-3 md:gap-3')}>
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -360,21 +610,31 @@ function Scanner({ onCode }: { onCode: (code: string) => void }) {
           setCode('');
         }}
       >
-        <Input
-          aria-label={t('counts.scan')}
-          placeholder={t('counts.scan')}
-          value={code}
-          autoComplete="off"
-          autoFocus
-          onChange={(e) => setCode(e.target.value)}
-        />
+        <span className="relative block min-w-0 flex-1">
+          <ScanBarcode
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            aria-label={t('counts.scan')}
+            placeholder={t('counts.scan')}
+            className="pl-9"
+            value={code}
+            autoComplete="off"
+            autoFocus
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </span>
+        <Button type="submit" variant="secondary">
+          {t('counts.addScan')}
+        </Button>
         {Detector && (
-          <Button variant="secondary" onClick={() => setCamera(!camera)}>
+          <Button variant="secondary" aria-pressed={camera} onClick={() => setCamera(!camera)}>
             {camera ? t('counts.cameraStop') : t('counts.camera')}
           </Button>
         )}
       </form>
-      <p className="text-sm text-muted-foreground">{t('counts.scanHint')}</p>
+      <p className="text-[13px] text-muted-foreground">{t('counts.scanHint')}</p>
       {camera && (
         <video
           ref={video}

@@ -27,6 +27,7 @@ import {
   listMovements,
   listProducts,
   moveCategory,
+  productActivity,
   runIdempotent,
   setAttributeValues,
   setCategoryAttributes,
@@ -219,6 +220,27 @@ const Collection = z
     updatedAt: z.string(),
   })
   .openapi('Collection');
+const ProductActivity = z
+  .object({
+    sold: z.number().int(),
+    revenue: z.number().int(),
+    marginBp: z.number().int().nullable(),
+    variants: z.array(z.object({ variantId: z.uuid(), sold: z.number().int() })),
+    recentOrders: z.array(
+      z.object({
+        id: z.uuid(),
+        displayNumber: z.string(),
+        placedAt: z.string(),
+        customerName: z.string(),
+        status: z.string(),
+        total: z.number().int(),
+        lines: z.array(
+          z.object({ optionLabels: z.array(translated(z.string())), quantity: z.number().int() }),
+        ),
+      }),
+    ),
+  })
+  .openapi('ProductActivity');
 const CollectionProduct = z.object({
   id: z.uuid(),
   status: z.string(),
@@ -310,19 +332,38 @@ export const CATALOG_ROUTES = {
     request: {
       query: z.object({
         q: z.string().max(100).optional(),
-        status: z.enum(['draft', 'active', 'archived']).optional(),
+        /** `any` includes archived products; without it they are left out. */
+        status: z.enum(['draft', 'active', 'archived', 'any']).optional(),
         categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
         brandValueId: oneOrMany(z.uuid()),
         tag: z.string().max(50).optional(),
         attributeValueId: z.uuid().optional(),
         lowStock: flag,
+        /** A column, "-column" for the other way; newest first without it. */
+        sort: z
+          .enum(['title', '-title', 'price', '-price', 'variants', '-variants', 'stock', '-stock'])
+          .optional(),
+        /** Also how many match in each status, for the list's tabs. */
+        counts: flag,
         after: z.uuid().optional(),
         offset: pageOffset,
         limit,
       }),
     },
-    responses: json(counted(ProductSummary), 'Products'),
+    responses: json(
+      counted(ProductSummary).extend({
+        counts: z
+          .object({
+            any: z.number().int(),
+            draft: z.number().int(),
+            active: z.number().int(),
+            archived: z.number().int(),
+          })
+          .optional(),
+      }),
+      'Products',
+    ),
   }),
   exportProducts: r({
     method: 'get',
@@ -331,7 +372,7 @@ export const CATALOG_ROUTES = {
     request: {
       query: z.object({
         q: z.string().max(100).optional(),
-        status: z.enum(['draft', 'active', 'archived']).optional(),
+        status: z.enum(['draft', 'active', 'archived', 'any']).optional(),
         categoryId: oneOrMany(z.uuid()),
         collectionId: z.uuid().optional(),
         brandValueId: oneOrMany(z.uuid()),
@@ -359,6 +400,14 @@ export const CATALOG_ROUTES = {
     summary: 'A product with translations, options, variants, media, attributes and tags',
     request: { params: Id },
     responses: json(Product, 'Product'),
+  }),
+  productActivity: r({
+    method: 'get',
+    path: '/products/{id}/activity',
+    summary:
+      "A product's last 30 days (units, revenue, margin with catalog.cost) and its latest orders (orders.read)",
+    request: { params: Id },
+    responses: json(ProductActivity, 'ProductActivity'),
   }),
   updateProduct: r({
     method: 'patch',
@@ -588,12 +637,26 @@ export const CATALOG_ROUTES = {
         lowStock: flag,
         locationId: z.uuid().optional(),
         q: z.string().max(100).optional(),
+        /** Also the figures above the list. */
+        summary: flag,
         after: z.uuid().optional(),
         offset: pageOffset,
         limit,
       }),
     },
-    responses: json(counted(InventoryRow), 'Inventory'),
+    responses: json(
+      counted(InventoryRow).extend({
+        summary: z
+          .object({
+            tracked: z.number().int(),
+            units: z.number().int(),
+            lowStock: z.number().int(),
+            valueAtCost: z.number().optional(),
+          })
+          .optional(),
+      }),
+      'Inventory',
+    ),
   }),
   adjustInventory: r({
     method: 'post',
@@ -670,7 +733,11 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.products, async (c) => {
     const { lowStock, ...query } = c.req.valid('query');
     const result = await inStore(c, (tx) =>
-      listProducts(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
+      listProducts(tx, actor(c), {
+        ...query,
+        lowStock: lowStock === 'true',
+        counts: query.counts === 'true',
+      }),
     );
     return c.json(result, 200);
   });
@@ -693,6 +760,10 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
   admin.openapi(R.product, async (c) => {
     const { id } = c.req.valid('param');
     return c.json(await inStore(c, (tx) => getProduct(tx, actor(c), id)), 200);
+  });
+  admin.openapi(R.productActivity, async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(await inStore(c, (tx) => productActivity(tx, actor(c), id)), 200);
   });
   admin.openapi(R.updateProduct, async (c) => {
     const { id } = c.req.valid('param');
@@ -842,7 +913,11 @@ export function registerCatalog(admin: OpenAPIHono<StaffEnv>): void {
     const { lowStock, ...query } = c.req.valid('query');
     return c.json(
       await inStore(c, (tx) =>
-        listInventory(tx, actor(c), { ...query, lowStock: lowStock === 'true' }),
+        listInventory(tx, actor(c), {
+          ...query,
+          lowStock: lowStock === 'true',
+          summary: query.summary === 'true',
+        }),
       ),
       200,
     );

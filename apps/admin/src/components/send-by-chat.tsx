@@ -50,7 +50,7 @@ export function SendByChat({ orderId, canPay }: { orderId: string; canPay: boole
         }}
       >
         <MessageCircle aria-hidden className="size-4" />
-        {t('chat.send')}
+        {t('order.whatsapp')}
       </Button>
       {open && (
         <Dialog open onOpenChange={(o) => !o && setOpen(false)} title={t('chat.send')}>

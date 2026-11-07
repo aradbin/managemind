@@ -21,6 +21,7 @@ import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { promotionsBn } from '../../apps/admin/src/i18n/promotions-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
 import {
+  addProduct,
   choose,
   expectAccessible,
   expectScriptBudget,
@@ -89,10 +90,18 @@ async function stockOf(request: APIRequestContext, title: string, variantId: str
 }
 
 async function choosePlace(page: Page, ids: { division: string; district: string; area: string }) {
-  // Searchable selects: a district has dozens of areas.
-  await choose(page.getByLabel(m('place.division'), { exact: true }), { value: ids.division });
+  // Searchable selects: a district has dozens of areas. The new order board
+  // has no division to choose: the district names it.
+  const division = page.getByLabel(m('place.division'), { exact: true });
+  if (await division.isVisible()) await choose(division, { value: ids.division });
   await choose(page.getByLabel(m('place.district'), { exact: true }), { value: ids.district });
-  await choose(page.getByLabel(m('place.area'), { exact: true }), { value: ids.area });
+  const area = page.getByLabel(m('place.area'), { exact: true });
+  await choose(
+    (await area.isVisible()) ? area : page.getByLabel(m('place.areaShort'), { exact: true }),
+    {
+      value: ids.area,
+    },
+  );
 }
 
 test('orders, promotions and accounts', async ({
@@ -162,17 +171,24 @@ test('orders, promotions and accounts', async ({
     await page.getByLabel(m('promo.titleBn')).fill('ই২ই ৳৫০ ছাড়');
     await page.getByRole('radio', { name: new RegExp(m('promo.kind.code')) }).check();
     await page.getByLabel(m('promo.sharedCode')).fill(code);
-    await page.getByLabel(m('promo.actionType')).selectOption('amount_off_order');
+    await choose(page.getByLabel(m('promo.actionType'), { exact: true }), {
+      value: 'amount_off_order',
+    });
     await page.getByLabel(m('promo.amount'), { exact: true }).fill('50');
-    await page.getByLabel(m('promo.status')).selectOption('active');
+    // The status is the header's dropdown (ADR 0034).
+    await page
+      .getByRole('button', { name: m('product.statusIs', { status: m('promo.status.draft') }) })
+      .locator('visible=true')
+      .click();
+    await page
+      .getByRole('menuitemradio', { name: new RegExp(`^${m('promo.status.active')}`) })
+      .click();
+    // The test cart opens from its heading.
+    await page.getByRole('button', { name: m('promo.testCart') }).click();
     // The test cart: one of each product, Dhanmondi, the code.
     const cart = page.getByRole('region', { name: m('promo.testCart') });
     for (const item of products) {
-      await cart.getByLabel(m('order.addProduct')).fill(item.title);
-      await cart
-        .getByRole('list', { name: m('order.searchResults') })
-        .getByRole('button', { name: new RegExp(item.title) })
-        .click();
+      await addProduct(cart, item.title);
     }
     await choosePlace(page, DHAKA);
     await cart.getByLabel(m('newOrder.code')).fill(code);
@@ -323,14 +339,10 @@ test('orders, promotions and accounts', async ({
     await expect(page.getByRole('heading', { name: m('newOrder.title'), level: 1 })).toBeVisible();
     await page.getByRole('textbox', { name: m('newOrder.phone'), exact: true }).fill(phone);
     await page.getByRole('textbox', { name: m('newOrder.name'), exact: true }).fill('ই২ই ফোন ক্রেতা');
-    await page.getByLabel(m('order.addProduct')).fill(products[0]?.title as string);
-    await page
-      .getByRole('list', { name: m('order.searchResults') })
-      .getByRole('button', { name: new RegExp(products[0]?.title as string) })
-      .click();
+    await addProduct(page, products[0]?.title as string);
     await page.getByLabel(m('order.quantityOf', { item: products[0]?.title as string })).fill('2');
     await choosePlace(page, DHAKA);
-    await page.getByLabel(m('place.line')).fill('বাড়ি ৩, সড়ক ৪');
+    await page.getByLabel(m('place.street')).fill('বাড়ি ৩, সড়ক ৪');
     await expect(page.getByText(m('newOrder.summaryEmpty'))).toBeHidden();
     await expectAccessible(page, 'new order');
     // The shopper's cancelled order gave its unit back.
@@ -357,12 +369,14 @@ test('orders, promotions and accounts', async ({
     const manualNumber = /#?\S+$/.exec(title.trim())?.[0] ?? '';
 
     for (const [link, heading] of [
-      [m('print.invoices'), m('print.invoice')],
-      [m('print.slips'), manualNumber],
+      [m('orders.printInvoice'), m('print.invoice')],
+      [m('orders.printSlip'), manualNumber],
     ] as const) {
+      // Printing is in the order's ⋯ menu.
+      await page.getByRole('button', { name: m('list.moreActions') }).click();
       const [printed] = await Promise.all([
         page.context().waitForEvent('page'),
-        page.getByRole('link', { name: link }).click(),
+        page.getByRole('menuitem', { name: link }).click(),
       ]);
       await printed.waitForLoadState();
       await expect(printed.getByText(heading).first()).toBeVisible();
@@ -371,17 +385,20 @@ test('orders, promotions and accounts', async ({
       await printed.close();
     }
 
-    await page.goto(`${API}/orders`);
-    await page.getByRole('button', { name: m('export.button') }).click();
-    await page.getByRole('radio', { name: m('export.format.steadfast') }).check();
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByRole('button', { name: m('export.csv') }).click(),
-    ]);
-    const csv = await readFile((await download.path()) as string, 'utf8');
-    expect(csv.split('\n')[0]).toMatch(/Invoice/i);
-    expect(csv).toContain(manualNumber);
-    expect(csv).toContain(phone);
+    // The phone Orders board has no export: spreadsheets are a desktop job.
+    if (viewport !== 'phone') {
+      await page.goto(`${API}/orders`);
+      await page.getByRole('button', { name: m('export.button') }).click();
+      await page.getByRole('radio', { name: m('export.format.steadfast') }).check();
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByRole('button', { name: m('export.csv') }).click(),
+      ]);
+      const csv = await readFile((await download.path()) as string, 'utf8');
+      expect(csv.split('\n')[0]).toMatch(/Invoice/i);
+      expect(csv).toContain(manualNumber);
+      expect(csv).toContain(phone);
+    }
     await page.goto(orderUrl);
   });
 
@@ -411,7 +428,7 @@ test('orders, promotions and accounts', async ({
       .getByRole('button', { name: m('order.markDelivered') })
       .first()
       .click();
-    const deliver = page.getByRole('dialog', { name: m('order.markDelivered') });
+    const deliver = page.getByRole('alertdialog', { name: m('order.markDelivered') });
     await deliver.getByRole('checkbox', { name: pattern(m('order.cashCollected')) }).check();
     await deliver.getByRole('button', { name: m('order.markDelivered') }).click();
     await expect(toast(page, m('order.delivered'))).toBeVisible();
@@ -420,11 +437,15 @@ test('orders, promotions and accounts', async ({
       .first()
       .click();
     await page
-      .getByRole('dialog', { name: m('order.markDelivered') })
+      .getByRole('alertdialog', { name: m('order.markDelivered') })
       .getByRole('button', { name: m('order.markDelivered') })
       .click();
-    await expect(page.getByText(m('orderStatus.completed')).first()).toBeVisible();
-    await expect(page.getByText(m('paymentStatus.paid')).first()).toBeVisible();
+    await expect(
+      page.getByText(m('orderStatus.completed')).locator('visible=true').first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(m('paymentStatus.paid')).locator('visible=true').first(),
+    ).toBeVisible();
     expect(await stockOf(page.request, item, variantId)).toEqual({ onHand: 18, reserved: 0 });
     // The timeline has every step, from placed to completed.
     const timeline = page.getByRole('region', { name: m('order.timeline') });
@@ -437,7 +458,7 @@ test('orders, promotions and accounts', async ({
 
   await test.step('the owner turns accounts on and a shopper signs in with a code', async () => {
     await page.goto(`${API}/settings/checkout`);
-    await page.getByRole('checkbox', { name: new RegExp(m('checkoutSettings.accounts')) }).check();
+    await page.getByRole('switch', { name: new RegExp(m('checkoutSettings.accounts')) }).check();
     await expectAccessible(page, 'checkout settings');
     await page
       .getByRole('button', { name: m('action.save') })

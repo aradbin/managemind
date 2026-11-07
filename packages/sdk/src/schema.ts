@@ -3476,13 +3476,15 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "draft" | "active" | "archived";
+                    status?: "draft" | "active" | "archived" | "any";
                     categoryId?: string[] | string;
                     collectionId?: string;
                     brandValueId?: string[] | string;
                     tag?: string;
                     attributeValueId?: string;
                     lowStock?: "true" | "false";
+                    sort?: "title" | "-title" | "price" | "-price" | "variants" | "-variants" | "stock" | "-stock";
+                    counts?: "true" | "false";
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -3503,6 +3505,12 @@ export interface paths {
                             items: components["schemas"]["ProductSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                any: number;
+                                draft: number;
+                                active: number;
+                                archived: number;
+                            };
                         };
                     };
                 };
@@ -3625,7 +3633,7 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "draft" | "active" | "archived";
+                    status?: "draft" | "active" | "archived" | "any";
                     categoryId?: string[] | string;
                     collectionId?: string;
                     brandValueId?: string[] | string;
@@ -3804,6 +3812,44 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/v1/admin/products/{id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A product's last 30 days (units, revenue, margin with catalog.cost) and its latest orders (orders.read) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ProductActivity */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductActivity"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/products/{id}/options": {
@@ -5123,6 +5169,7 @@ export interface paths {
                     lowStock?: "true" | "false";
                     locationId?: string;
                     q?: string;
+                    summary?: "true" | "false";
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -5143,6 +5190,12 @@ export interface paths {
                             items: components["schemas"]["InventoryRow"][];
                             nextCursor: string | null;
                             total: number;
+                            summary?: {
+                                tracked: number;
+                                units: number;
+                                lowStock: number;
+                                valueAtCost?: number;
+                            };
                         };
                     };
                 };
@@ -6785,6 +6838,7 @@ export interface paths {
                     from?: string;
                     to?: string;
                     q?: string;
+                    counts?: boolean | ("true" | "false");
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -6805,6 +6859,15 @@ export interface paths {
                             items: components["schemas"]["OrderSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            value: number;
+                            counts?: {
+                                all: number;
+                                pending: number;
+                                toShip: number;
+                                shipped: number;
+                                delivered: number;
+                                cancelled: number;
+                            };
                         };
                     };
                 };
@@ -7374,6 +7437,8 @@ export interface paths {
             parameters: {
                 query?: {
                     tab?: "open" | "converted" | "recovered" | "dismissed";
+                    q?: string;
+                    counts?: boolean | ("true" | "false");
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -7394,6 +7459,13 @@ export interface paths {
                             items: components["schemas"]["IncompleteOrderSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                open: number;
+                                converted: number;
+                                recovered: number;
+                                dismissed: number;
+                                openValue: number;
+                            };
                         };
                     };
                 };
@@ -9099,7 +9171,9 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved";
+                    status?: "requested" | "approved" | "rejected" | "in_transit" | "received" | "inspected" | "resolved" | "in_progress";
+                    q?: string;
+                    counts?: boolean | ("true" | "false");
                     reason?: ("wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door")[] | string;
                     orderId?: string;
                     before?: string;
@@ -9122,6 +9196,15 @@ export interface paths {
                             items: components["schemas"]["ReturnSummary"][];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                all: number;
+                                requested: number;
+                                inProgress: number;
+                                resolved: number;
+                                rejected: number;
+                                open: number;
+                                openValue: number;
+                            };
                         };
                     };
                 };
@@ -11091,10 +11174,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Parcels the courier returned, waiting to be received (orders.read) */
+        /** Parcels a courier couldn’t deliver: coming back, or received (orders.read) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    tab?: "coming" | "received";
+                    q?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -11108,18 +11194,33 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** Format: uuid */
-                            shipmentId: string;
-                            /** Format: uuid */
-                            orderId: string;
-                            displayNumber: string;
-                            courier: string;
-                            consignmentId: string | null;
-                            name: string;
-                            failedReason: string | null;
-                            returnedByCourierAt: string;
-                            items: number;
-                        }[];
+                            items: {
+                                /** Format: uuid */
+                                shipmentId: string;
+                                /** Format: uuid */
+                                orderId: string;
+                                displayNumber: string;
+                                courier: string;
+                                consignmentId: string | null;
+                                name: string;
+                                failedReason: string | null;
+                                /** @enum {string} */
+                                state: "on_its_way" | "handed_back" | "received";
+                                since: string;
+                                returnedByCourierAt: string;
+                                items: number;
+                                firstItem: {
+                                    title: string;
+                                    quantity: number;
+                                } | null;
+                                value: number;
+                            }[];
+                            counts: {
+                                coming: number;
+                                received: number;
+                                comingValue: number;
+                            };
+                        };
                     };
                 };
             };
@@ -11806,8 +11907,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled";
+                    status?: "draft" | "ordered" | "partially_received" | "received" | "closed" | "cancelled" | "to_receive";
                     supplierId?: string[] | string;
+                    q?: string;
+                    counts?: "true" | "false";
                     before?: string;
                     limit?: number;
                     offset?: number | null;
@@ -11826,6 +11929,15 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["PurchaseOrderPage"] & {
                             total: number;
+                            counts?: {
+                                all: number;
+                                draft: number;
+                                toReceive: number;
+                                received: number;
+                                closed: number;
+                                cancelled: number;
+                                toReceiveValue?: number;
+                            };
                         };
                     };
                 };
@@ -12476,6 +12588,7 @@ export interface paths {
             parameters: {
                 query?: {
                     status?: "counting" | "review" | "applying" | "applied" | "cancelled";
+                    counts?: "true" | "false";
                     before?: string;
                     limit?: number;
                     offset?: number | null;
@@ -12507,11 +12620,16 @@ export interface paths {
                                 };
                                 lineCount: number;
                                 countedLines: number;
+                                differentLines: number;
+                                differenceUnits: number;
                                 createdAt: string;
                                 appliedAt: string | null;
                             }[];
                             nextCursor: string | null;
                             total: number;
+                            counts?: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };
@@ -14281,7 +14399,9 @@ export interface paths {
             parameters: {
                 query?: {
                     q?: string;
-                    status?: "active" | "suspended" | "closed" | "purged";
+                    status?: "active" | "suspended" | "closed" | "purged" | "setting_up";
+                    kind?: ("client" | "demo" | "test")[] | string;
+                    plan?: string[] | string;
                     after?: string;
                     offset?: number | null;
                     limit?: number;
@@ -14302,6 +14422,9 @@ export interface paths {
                             items: components["schemas"]["TenantSummary"][];
                             next: string | null;
                             total: number;
+                            counts: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };
@@ -15137,6 +15260,7 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             acceptedStores: number;
+                            storesAsked: number;
                         }[];
                     };
                 };
@@ -15670,12 +15794,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Platform audit log, newest first (super_admin) */
+        /** Platform audit log, newest first, with names (super_admin) */
         get: {
             parameters: {
                 query?: {
                     before?: string;
+                    offset?: number | null;
                     limit?: number;
+                    q?: string;
+                    action?: string;
+                    tenant?: string;
                 };
                 header?: never;
                 path?: never;
@@ -15695,6 +15823,13 @@ export interface paths {
                             }[];
                             /** Format: uuid */
                             next: string | null;
+                            total: number;
+                            actions: string[];
+                            stores: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                            }[];
                         };
                     };
                 };
@@ -15818,6 +15953,7 @@ export interface paths {
                 query?: {
                     status?: "draft" | "issued" | "paid" | "void";
                     tenantId?: string;
+                    q?: string;
                     due?: "overdue" | "week";
                     before?: string;
                     offset?: number | null;
@@ -15839,6 +15975,9 @@ export interface paths {
                             items: components["schemas"]["PlatformInvoiceSummary"][];
                             next: string | null;
                             total: number;
+                            counts: {
+                                [key: string]: number;
+                            };
                         };
                     };
                 };
@@ -17841,6 +17980,32 @@ export interface components {
                 }[];
             })[];
         };
+        ProductActivity: {
+            sold: number;
+            revenue: number;
+            marginBp: number | null;
+            variants: {
+                /** Format: uuid */
+                variantId: string;
+                sold: number;
+            }[];
+            recentOrders: {
+                /** Format: uuid */
+                id: string;
+                displayNumber: string;
+                placedAt: string;
+                customerName: string;
+                status: string;
+                total: number;
+                lines: {
+                    optionLabels: {
+                        bn?: string;
+                        en?: string;
+                    }[];
+                    quantity: number;
+                }[];
+            }[];
+        };
         StockMovement: {
             /** Format: uuid */
             id: string;
@@ -18468,6 +18633,7 @@ export interface components {
                 phone: string;
                 email: string | null;
                 orderCount: number;
+                totalSpent: number;
             };
             contact: {
                 name: string;
@@ -18810,6 +18976,12 @@ export interface components {
                 districtId?: number;
                 areaId?: number;
             } | null;
+            areaName: {
+                bn?: string;
+                en?: string;
+            } | null;
+            /** @enum {string} */
+            leftAt: "contact" | "delivery" | "payment";
             itemCount: number;
             subtotal: number;
             items: {
@@ -19056,6 +19228,11 @@ export interface components {
             reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door";
             requestedBy: string;
             units: number;
+            firstItem?: {
+                [key: string]: string;
+            } | null;
+            moreItems?: number;
+            value?: number;
             createdAt: string;
         };
         ReturnDetail: components["schemas"]["ReturnSummary"] & {
@@ -19066,6 +19243,7 @@ export interface components {
             rejectReason: string | null;
             /** Format: uuid */
             exchangeOrderId: string | null;
+            customerPhone: string | null;
             lines: {
                 /** Format: uuid */
                 orderLineId: string;
@@ -19075,6 +19253,9 @@ export interface components {
                 optionLabels: {
                     [key: string]: string;
                 }[];
+                sku: string | null;
+                /** @description Unit price paid × quantity */
+                value: number;
                 quantity: number;
                 /** @enum {string|null} */
                 reason: "wrong_size" | "damaged" | "wrong_item" | "not_as_described" | "changed_mind" | "other" | "refused_at_door" | null;
@@ -19246,6 +19427,12 @@ export interface components {
                 orders: number;
                 revenue: number;
             }[];
+            /** @description Orders placed in the range, delivered, and with a return */
+            totals: {
+                placed: number;
+                delivered: number;
+                returned: number;
+            };
         };
         SalesReport: {
             from: string;
@@ -19265,6 +19452,17 @@ export interface components {
                 start: string;
             }[];
             totals: {
+                ordersDelivered: number;
+                units: number;
+                grossSales: number;
+                discounts: number;
+                netSales: number;
+                returnedUnits: number;
+                returns: number;
+                deliveryIncome: number;
+            };
+            /** @description The same number of days just before the range, for comparisons */
+            previous: {
                 ordersDelivered: number;
                 units: number;
                 grossSales: number;
@@ -19505,6 +19703,17 @@ export interface components {
                 oldestDays: number;
             }[];
             total: number;
+            /** @description The ten parcels waiting longest, oldest first */
+            oldest: {
+                /** Format: uuid */
+                orderId: string;
+                orderNumber: string;
+                tracking: string | null;
+                courier: string | null;
+                deliveredOn: string;
+                amount: number;
+                days: number;
+            }[];
         };
         RecoveryReport: {
             from: string;
@@ -19631,6 +19840,8 @@ export interface components {
                 courier: string;
                 consignmentId: string | null;
                 deliveredAt: string;
+                collected: number;
+                fee: number;
                 net: number;
                 days: number;
             }[];
@@ -19767,6 +19978,10 @@ export interface components {
             openingBalance?: number;
             /** @description Only with purchasing.pay */
             balance?: number;
+            /** @description In the list */
+            openOrders?: number;
+            /** @description In the list */
+            ordersToReceive?: number;
         };
         ImportResult: {
             created: number;
@@ -20179,6 +20394,8 @@ export interface components {
             recipient: string;
             /** Format: uuid */
             orderId: string | null;
+            /** @description The order number, such as #1058 */
+            orderNumber: string | null;
             /** @enum {string} */
             status: "queued" | "sent" | "failed" | "skipped" | "waiting";
             /** @enum {string|null} */

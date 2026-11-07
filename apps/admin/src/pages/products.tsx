@@ -5,26 +5,30 @@
 import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { ImageOff, Plus, Search, SquarePen, Tag, X } from 'lucide-react';
+import { CircleCheck, Download, ImageOff, Plus, SquarePen, Tag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
 import {
-  barAction,
   FilterButtons,
+  FilterChips,
   type FilterDef,
   RowMenu,
   RowMenuItem,
+  SearchInput,
   SelectionBar,
+  SortDrawer,
   StageTabs,
 } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
+import { StatusBadge as Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Dialog } from '../components/ui/dialog';
+import { Dialog, DialogFooter } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
+import { Switch } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import {
@@ -34,6 +38,7 @@ import {
   formatRange,
   type Product,
   type ProductFilters,
+  type ProductSort,
   type ProductSummary,
   pick,
   priceInput,
@@ -45,7 +50,11 @@ import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { usePagedList } from '../lib/paged';
 import { ExportButton } from './export';
 
-export type ProductSearch = ProductFilters & { page?: number | undefined };
+export type ProductSearch = Omit<ProductFilters, 'status'> & {
+  status?: 'draft' | 'active' | 'archived' | undefined;
+  page?: number | undefined;
+  sort?: ProductSort | undefined;
+};
 
 const STATUSES = ['active', 'draft', 'archived'] as const;
 
@@ -53,12 +62,16 @@ export function ProductsPage() {
   const { t, locale } = useLocale();
   const search = useSearch({ strict: false }) as ProductSearch;
   const navigate = useNavigate();
+  const toast = useToast();
+  const queryClient = useQueryClient();
   const canWrite = usePermission('catalog.write');
   const canStock = usePermission('inventory.read');
   const [q, setQ] = useState(search.q ?? '');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   /** The products whose prices are being edited: the selection, or one row's. */
   const [bulk, setBulk] = useState<string[]>();
+  const [changing, setChanging] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const setFilter = (patch: Partial<ProductSearch>) =>
     navigate({
@@ -82,9 +95,11 @@ export function ProductsPage() {
     return () => clearTimeout(id);
   });
 
-  const { page, ...listFilters } = search;
+  const { page, sort, ...listFilters } = search;
+  // The All tab holds every product, archived ones too.
+  const apiFilters: ProductFilters = { ...listFilters, status: listFilters.status ?? 'any' };
   const products = usePagedList({
-    ...productsList(listFilters),
+    ...productsList(apiFilters, { sort, counts: true }),
     page,
     onPageChange: (next) =>
       navigate({
@@ -97,6 +112,7 @@ export function ProductsPage() {
   const attributes = useQuery(attributesQuery);
   const brand = attributes.data?.find((a) => a.key === 'brand');
   const items = products.items;
+  const counts = (products.first as { counts?: Record<string, number> } | undefined)?.counts;
   const title = (p: ProductSummary) => pick(p.titles, locale) ?? t('product.untitled');
 
   const toggle = (id: string) =>
@@ -146,34 +162,53 @@ export function ProductsPage() {
       lowStock: undefined,
     });
   };
+  const lowStock = canStock && (
+    <label className="ml-2 hidden cursor-pointer items-center gap-2 font-medium md:inline-flex">
+      <input
+        type="checkbox"
+        checked={Boolean(search.lowStock)}
+        onChange={(e) => setFilter({ lowStock: e.target.checked || undefined })}
+      />
+      {t('products.lowStockOnly')}
+    </label>
+  );
 
   const columns: Column<ProductSummary>[] = [
     {
       header: t('product.title'),
+      sortKey: 'title',
+      skeleton: 'lines',
       cell: (p) => (
         <span className="flex items-center gap-3">
           <Thumbnail file={p.imageFile} size="size-8" />
-          <Link
-            to="/products/$id"
-            params={{ id: p.id }}
-            className="truncate font-medium underline-offset-2 hover:underline"
-          >
+          <Link to="/products/$id" params={{ id: p.id }} className="truncate font-medium">
             {title(p)}
           </Link>
         </span>
       ),
     },
-    { header: t('product.status'), cell: (p) => <StatusBadge status={p.status} /> },
+    {
+      header: t('product.status'),
+      skeleton: 'badge',
+      cell: (p) => <StatusBadge status={p.status} />,
+    },
     {
       header: t('product.price'),
+      sortKey: 'price',
       numeric: true,
       cell: (p) => formatRange(p.minPrice, p.maxPrice, locale),
     },
-    { header: t('product.variants'), numeric: true, cell: (p) => p.variantCount },
+    {
+      header: t('product.variants'),
+      sortKey: 'variants',
+      numeric: true,
+      cell: (p) => p.variantCount,
+    },
     ...(canStock
       ? [
           {
             header: t('product.stock'),
+            sortKey: 'stock',
             numeric: true,
             cell: (p: ProductSummary) =>
               p.available === null || p.available === undefined ? (
@@ -188,15 +223,53 @@ export function ProductsPage() {
         ]
       : []),
   ];
+  const sorts = [
+    { value: 'title', label: t('products.sortTitle') },
+    { value: '-title', label: t('products.sortTitleDesc') },
+    { value: 'price', label: t('products.sortPriceLow') },
+    { value: '-price', label: t('products.sortPriceHigh') },
+    ...(canStock ? [{ value: 'stock', label: t('products.sortStockLow') }] : []),
+  ];
+
+  async function changeStatus(status: 'active' | 'draft' | 'archived') {
+    const ids = [...selected];
+    try {
+      for (const id of ids) {
+        if (status === 'archived') {
+          unwrap(await api.POST('/v1/admin/products/{id}/archive', { params: { path: { id } } }));
+        } else {
+          unwrap(
+            await api.PATCH('/v1/admin/products/{id}', {
+              params: { path: { id } },
+              body: { status },
+            }),
+          );
+        }
+      }
+      toast(t('products.statusApplied', { count: ids.length }));
+      setSelected(new Set());
+    } catch (e) {
+      toast(saveErrorMessage(e, t));
+    } finally {
+      setChanging(false);
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('catalog.products')}
         actions={
           <>
-            <ExportButton filters={listFilters} />
+            <ExportButton
+              filters={apiFilters}
+              selectedIds={[...selected]}
+              iconOnPhone
+              open={exporting}
+              onOpenChange={setExporting}
+            />
             {canWrite && (
               <Button asChild>
                 <Link to="/products/new">
@@ -211,50 +284,73 @@ export function ProductsPage() {
       <StageTabs
         label={t('product.status')}
         tabs={[
-          { key: 'all', label: t('list.all') },
-          ...STATUSES.map((s) => ({ key: s, label: t(`status.${s}`) })),
+          { key: 'all', label: t('list.all'), count: counts?.any },
+          ...STATUSES.map((s) => ({
+            key: s,
+            label: t(`status.${s}`),
+            count: counts?.[s] || undefined,
+          })),
         ]}
         value={search.status ?? 'all'}
         onChange={(key) => setFilter({ status: key === 'all' ? undefined : key })}
       />
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full md:w-64">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-2">
+        <SearchInput
+          label={t('products.search')}
+          value={q}
+          onChange={setQ}
+          className="w-full md:w-[260px]"
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterButtons
+            filters={filters}
+            drawerAlways
+            onReset={filtered ? reset : undefined}
+            showLabel={t('products.showCount', { count: products.total })}
+            drawerExtra={
+              canStock && (
+                <div className="flex min-h-10 items-center justify-between gap-4">
+                  <label htmlFor="products-low" className="cursor-pointer font-medium">
+                    {t('products.lowStockOnly')}
+                  </label>
+                  <Switch
+                    id="products-low"
+                    checked={Boolean(search.lowStock)}
+                    onCheckedChange={(on) => setFilter({ lowStock: on || undefined })}
+                  />
+                </div>
+              )
+            }
+            extra={
+              <>
+                {search.tag && (
+                  <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
+                    {t('products.tagFilter', { tag: search.tag })}
+                    <X aria-hidden />
+                  </Button>
+                )}
+                {lowStock}
+              </>
+            }
           />
-          <Input
-            type="search"
-            className="pl-9"
-            aria-label={t('products.search')}
-            placeholder={t('products.search')}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+          <SortDrawer
+            options={sorts}
+            value={sort}
+            onChange={(v) => setFilter({ sort: v as ProductSort | undefined })}
           />
         </div>
-        <FilterButtons
+        <FilterChips
           filters={filters}
-          onReset={filtered ? reset : undefined}
+          onReset={reset}
           extra={
-            <>
-              {search.tag && (
-                <Button variant="secondary" onClick={() => setFilter({ tag: undefined })}>
-                  {t('products.tagFilter', { tag: search.tag })}
-                  <X aria-hidden />
-                </Button>
-              )}
-              {canStock && (
-                <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
-                  <input
-                    type="checkbox"
-                    className="size-4 accent-primary"
-                    checked={Boolean(search.lowStock)}
-                    onChange={(e) => setFilter({ lowStock: e.target.checked || undefined })}
-                  />
-                  {t('products.lowStockOnly')}
-                </label>
-              )}
-            </>
+            search.lowStock
+              ? [
+                  {
+                    label: t('products.lowStock'),
+                    onRemove: () => setFilter({ lowStock: undefined }),
+                  },
+                ]
+              : []
           }
         />
       </div>
@@ -275,6 +371,9 @@ export function ProductsPage() {
           ) : undefined
         }
         pager={products.pager}
+        sort={{ value: sort, onChange: (v) => setFilter({ sort: v as ProductSort | undefined }) }}
+        summary={t('products.countLabel', { count: products.total })}
+        menuOnPhone={false}
         onOpen={(p) => navigate({ to: '/products/$id', params: { id: p.id } })}
         selection={
           canWrite
@@ -286,6 +385,25 @@ export function ProductsPage() {
                 label: (p) => t('products.select', { title: title(p) }),
               }
             : undefined
+        }
+        bar={
+          <SelectionBar
+            count={selected.size}
+            onClear={() => setSelected(new Set())}
+            actions={[
+              { label: t('products.editPrices'), icon: Tag, onClick: () => setBulk([...selected]) },
+              {
+                label: t('products.changeStatus'),
+                icon: CircleCheck,
+                onClick: () => setChanging(true),
+              },
+              {
+                label: t('products.exportSelected'),
+                icon: Download,
+                onClick: () => setExporting(true),
+              },
+            ]}
+          />
         }
         menu={(p) => (
           <RowMenu label={title(p)}>
@@ -302,13 +420,13 @@ export function ProductsPage() {
           </RowMenu>
         )}
         card={(p) => (
-          <div className="flex items-center gap-3">
-            <Thumbnail file={p.imageFile} />
+          <div className="flex min-h-12 items-center gap-2">
+            <Thumbnail file={p.imageFile} size="size-8" />
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <Link to="/products/$id" params={{ id: p.id }} className="truncate font-medium">
                 {title(p)}
               </Link>
-              <span className="truncate text-sm text-muted-foreground">
+              <span className="truncate text-[13px] leading-[18px] text-muted-foreground tabular-nums">
                 {formatRange(p.minPrice, p.maxPrice, locale)}
                 {canStock && p.available !== null && p.available !== undefined && (
                   <>
@@ -324,12 +442,13 @@ export function ProductsPage() {
           </div>
         )}
       />
-      <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
-        <button type="button" className={barAction} onClick={() => setBulk([...selected])}>
-          <Tag aria-hidden />
-          {t('products.editPrices')}
-        </button>
-      </SelectionBar>
+      {changing && (
+        <ChangeStatusDialog
+          count={selected.size}
+          onClose={() => setChanging(false)}
+          onPick={changeStatus}
+        />
+      )}
       {bulk && (
         <BulkPriceDialog
           productIds={bulk}
@@ -343,20 +462,64 @@ export function ProductsPage() {
   );
 }
 
+/** The selection's new status: active, draft or archived. */
+function ChangeStatusDialog({
+  count,
+  onClose,
+  onPick,
+}: {
+  count: number;
+  onClose: () => void;
+  onPick: (status: 'active' | 'draft' | 'archived') => Promise<void>;
+}) {
+  const { t } = useLocale();
+  const [status, setStatus] = useState<'active' | 'draft' | 'archived'>('active');
+  const [busy, setBusy] = useState(false);
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title={t('products.changeStatus')}
+      description={t('products.selectedCount', { count })}
+    >
+      <div role="radiogroup" aria-label={t('product.status')} className="flex flex-col gap-3">
+        {STATUSES.map((s) => (
+          <label key={s} className="flex cursor-pointer items-center gap-3">
+            <input
+              type="radio"
+              name="bulk-status"
+              checked={status === s}
+              onChange={() => setStatus(s)}
+            />
+            {t(`status.${s}`)}
+          </label>
+        ))}
+      </div>
+      <DialogFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          {t('action.cancel')}
+        </Button>
+        <Button
+          size="lg"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await onPick(status);
+          }}
+        >
+          {t('action.save')}
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+}
+
 export function StatusBadge({ status }: { status: 'draft' | 'active' | 'archived' }) {
   const { t } = useLocale();
-  const tone =
-    status === 'active'
-      ? 'bg-success-soft text-success'
-      : status === 'draft'
-        ? 'bg-muted text-muted-foreground'
-        : 'border border-border text-muted-foreground';
   return (
-    <span
-      className={`inline-flex h-[22px] shrink-0 items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${tone}`}
-    >
+    <Badge tone={status === 'active' ? 'good' : status === 'draft' ? 'ended' : 'outline'}>
       {t(`status.${status}`)}
-    </span>
+    </Badge>
   );
 }
 

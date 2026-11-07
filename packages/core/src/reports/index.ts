@@ -44,6 +44,11 @@ export interface Reports {
   }[];
   /** Orders and revenue (paid) by how they were paid. */
   payments: { kind: 'online' | 'cod' | 'manual' | 'mixed'; orders: number; revenue: number }[];
+  /**
+   * Orders placed in the range; of them, those delivered and those with a
+   * return (not rejected), for the stat strip's return rate.
+   */
+  totals: { placed: number; delivered: number; returned: number };
 }
 
 export async function getReports(tx: TenantTx, actor: Actor, query: unknown): Promise<Reports> {
@@ -55,7 +60,7 @@ export async function getReports(tx: TenantTx, actor: Actor, query: unknown): Pr
   const from = sql`(${q.from}::date)::timestamp at time zone 'Asia/Dhaka'`;
   const until = sql`((${q.to}::date + 1))::timestamp at time zone 'Asia/Dhaka'`;
 
-  const [byProduct, byReason, byMethod, byZone, byPayment] = await Promise.all([
+  const [byProduct, byReason, byMethod, byZone, byPayment, totals] = await Promise.all([
     tx.db.execute<{
       product_id: string;
       title: Record<string, string>;
@@ -129,6 +134,15 @@ export async function getReports(tx: TenantTx, actor: Actor, query: unknown): Pr
                   when online then 'online' when cod then 'cod' else 'manual' end as kind,
              count(*)::int as orders, coalesce(sum(revenue), 0) as revenue
         from paid group by 1 order by revenue desc`),
+    tx.db.execute<{ placed: number; delivered: number; returned: number }>(sql`
+      select count(*)::int as placed,
+             count(*) filter (where o.delivery_status = 'delivered')::int as delivered,
+             count(*) filter (where exists (
+               select 1 from store.returns r
+                where r.order_id = o.id and r.status <> 'rejected'
+                  and r.resolution is distinct from 'rejected'))::int as returned
+        from store.orders o
+       where o.placed_at >= ${from} and o.placed_at < ${until}`),
   ]);
 
   return {
@@ -150,6 +164,7 @@ export async function getReports(tx: TenantTx, actor: Actor, query: unknown): Pr
       cost: Number(r.cost),
     })),
     payments: byPayment.rows.map((r) => ({ ...r, revenue: Number(r.revenue) })),
+    totals: totals.rows[0] ?? { placed: 0, delivered: 0, returned: 0 },
   };
 }
 
