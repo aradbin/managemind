@@ -100,7 +100,6 @@ export const launchEn = {
   'subscription.setupFee': 'Setup fee',
   'subscription.billingDay': 'Billing day',
   'subscription.trialEnds': 'Free until',
-  'subscription.status': 'Status',
   'subscription.status.trialing': 'Free trial',
   'subscription.status.active': 'Active',
   'subscription.status.past_due': 'Payment overdue',

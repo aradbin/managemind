@@ -5,6 +5,7 @@
 - Decision: [ADR 0029](../adr/0029-admin-redesign.md)
 - Pull request: #69, one commit per step (§1). Merged and deployed on Oct 24: the deploy's smoke, shop API and cache checks passed
 - Second redesign (§7): the owner's second canvas, on shadcn/ui's neutral theme, with every admin page drawn. [ADR 0033](../adr/0033-admin-shadcn-redesign.md); pull request #92, Nov 1
+- Exact match (§8): every page brought to its board, desktop and phone. [ADR 0034](../adr/0034-admin-matches-the-boards.md); branch `ccr-4fa9341c-4i6fgp`, Nov 2–7
 
 > Phase 5C sits between launch readiness (5B) and the pilot. The pilot's clients use the admin every day, mostly on phones. No data model, API or storefront change: the admin's look, layout and navigation only.
 
@@ -222,3 +223,62 @@ The second API change: every paged list the admin shows answers with `total`, ho
 - **Numbered pages, if wanted:** totals and page offsets on the list endpoints (see the assessment in the PR).
 - **The pilot's feedback** on the compact sizes on phones.
 
+## 8. Every page to its board (Nov 2–7)
+
+The second redesign approximated the boards. A side-by-side comparison of every board with its page, on desktops and phones, showed the gaps: the shared controls' sizes, the list pattern, and the structure of nearly every page. The owner asked for an exact match. [ADR 0034](../adr/0034-admin-matches-the-boards.md) records the decisions: the boards' tints with text darkened for AA, the boards' pager, every board with the API it needs, and no counts beside filter choices.
+
+**Steps**
+
+| Step | Commit | What |
+| --- | --- | --- |
+| 1–3 | `06fea53` | Tokens and tints, controls at the boards' sizes, the shell, the ⌘K palette, Create, the phone Menu |
+| 4 | `b65d70b` | The list pattern: table, states, the boards' pager, the selection bar, sorting and tab counts |
+| 5a–c | `c0e91ad`, `38907a0`, `8393afa` | Every list page: columns, tabs, filters, row menus and phone rows |
+| 6 | `23b52f5`, `02479a6` | Record pages and editors: order, new order, customer, product view and editor, promotion, supplier, purchase order, receive, count, return, incomplete order |
+| 7a | `aa58f84` | Home: figures, the chart, recent orders, waiting, profit, setup |
+| 7b | `f6b7a9d` | Reports: ranges, stat strips, charts, tables |
+| 7c | `1e9d290`, `839fb4d` | Settings: the 200 px list, each page, switch rows and the save bar; the sign-in bundle kept under budget |
+| 7d | `88e29c5` | Online store: overview, the theme editor, pages and a page, store settings |
+| 7e | `760ee12` | Platform: stores, a store, new store, dashboard, courier areas, terms, staff, audit log |
+| 7f | `26d9c11` | Imports, account, sign-in, two-factor, invitation, print |
+| 8 | step 8 | Old shapes removed: Load more, the text language switch, the old breadcrumb, 145 unused messages; ⋯ menus open as a drawer on phones |
+
+**API changes.** All are additive; existing callers are unchanged. The SDK is regenerated with each, and API or core tests cover each one.
+- **Lists:**
+  - `sort`, `offset`/`size` and filter-aware tab `counts`;
+  - the orders' value and the inventory's figures;
+  - more filters on purchase orders, courier returns, returns, stores and invoices.
+- **Records:**
+  - a product's recent orders and 30-day activity;
+  - a customer's total spend;
+  - a return's customer phone and line SKUs and values.
+- **Reports:**
+  - `totals` and the previous period;
+  - COD outstanding's oldest parcels;
+  - collected and fee on unpaid parcels.
+- **Messages:** each message's order number.
+- **Platform:**
+  - the audit log's search, action and store filters, offset, names, total and filter choices;
+  - how many open stores were asked to accept each terms version.
+
+**Where the build differs from the boards** (data the app doesn't keep, or decisions):
+- Filter choices have no counts, as the owner decided.
+- A return has no "They asked for": returns don't record what the shopper wants back.
+- The stock report has no per-location variant rows.
+- Print shows only what the store profile holds.
+- An invitation can't name its store before it is accepted.
+- Theme and banner texts keep a field per language where a board draws one.
+
+**Tests and measurements**
+
+| Check | Result |
+| --- | --- |
+| Lint (Biome), typecheck, the admin build | Pass |
+| Admin unit tests | 26 pass |
+| API tests | 231 pass |
+| E2E (local, against `wrangler dev`, desktop and phone, axe on every screen) | Flows, catalog, online store, orders, returns, recovery, couriers and back office: 16 pass. Launch stops locally at choosing a plan, since no plans are seeded locally; it needs the preview |
+| Admin JavaScript before sign-in | 140 KiB; budget 150 KiB |
+
+**Follow-ups**
+- Run the launch E2E on a preview, which has plans.
+- The owner's review of the side-by-side pairs.

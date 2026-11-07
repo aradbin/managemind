@@ -205,7 +205,7 @@ function Shell() {
             </div>
             <div className="hidden items-center gap-2 md:flex">
               <ViewStore />
-              <LanguageSwitch icon />
+              <LanguageSwitch />
               <ThemeToggle />
               <HelpMenu />
               <span aria-hidden className="mx-1 h-4 w-px bg-border" />

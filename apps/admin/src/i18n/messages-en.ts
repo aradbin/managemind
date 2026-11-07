@@ -9,7 +9,6 @@ export const messagesEn = {
   'alerts.device.remove': 'Remove',
   'alerts.device.unknown': 'Unknown device',
   'alerts.device.none': 'No device gets alerts yet.',
-  'alerts.device.this': 'This device',
   'alerts.device.unsupported': 'This browser can’t receive alerts.',
   'alerts.device.ios':
     'On an iPhone or iPad, first add this app to the Home Screen (Share → Add to Home Screen), then open it from there.',
@@ -107,7 +106,6 @@ export const messagesEn = {
   'templates.default': 'The default wording.',
   'templates.subject': 'Subject',
   'templates.body': 'Message',
-  'templates.variables': 'Insert',
   'templates.unknown': 'Not a value this message can use: {names}',
   'templates.reset': 'Back to default',
   'templates.preview': 'Preview',

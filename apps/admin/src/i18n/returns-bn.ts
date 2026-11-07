@@ -2,7 +2,6 @@
 import type { returnsEn } from './returns-en';
 
 export const returnsBn: Record<keyof typeof returnsEn, string> = {
-  'orders.returns': 'ফেরত',
   'order.returnsAndRefunds': 'ফেরত ও টাকা ফেরত',
   'order.refundOverpaid': 'বেশি পাওয়া {amount} ফেরত দিন',
   'returns.title': 'ফেরত',
@@ -20,11 +19,8 @@ export const returnsBn: Record<keyof typeof returnsEn, string> = {
   'returns.col.return': 'ফেরত',
   'returns.col.order': 'অর্ডার',
   'returns.col.customer': 'ক্রেতা',
-  'returns.col.reason': 'কারণ',
-  'returns.col.units': 'পরিমাণ',
   'returns.col.asked': 'চাওয়া হয়েছে',
   'returns.openOrder': 'অর্ডারটি খুলুন',
-  'returns.more': 'আরও দেখুন',
   'returns.units': '{count}টি',
   'returns.byShopper': 'ক্রেতা চেয়েছেন',
   'return.back': 'রিটার্নের তালিকায় ফিরুন',

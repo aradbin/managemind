@@ -67,9 +67,6 @@ interface DataListProps<T> {
   empty?: string | undefined;
   /** One way out of an empty filtered list: Reset filters, Clear search. */
   emptyAction?: ReactNode | undefined;
-  hasMore?: boolean;
-  loadingMore?: boolean;
-  onLoadMore?: () => void;
   /** Pages and the count, from usePagedList. */
   pager?: Pager | undefined;
   /** The phone row's content, instead of each column as label and value. */
@@ -127,9 +124,6 @@ export function DataList<T>({
   onRetry,
   empty,
   emptyAction,
-  hasMore,
-  loadingMore,
-  onLoadMore,
   pager,
   card,
   selection,
@@ -496,13 +490,6 @@ export function DataList<T>({
         />
       )}
       {!pager && bar}
-      {!pager && hasMore && onLoadMore && state === 'rows' && (
-        <div className="flex justify-center">
-          <Button variant="secondary" disabled={loadingMore} onClick={onLoadMore}>
-            {t('list.more')}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

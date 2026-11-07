@@ -98,7 +98,6 @@ export const launchBn: Record<keyof typeof launchEn, string> = {
   'subscription.setupFee': 'সেটআপ ফি',
   'subscription.billingDay': 'বিলের তারিখ',
   'subscription.trialEnds': 'বিনা খরচে যত দিন',
-  'subscription.status': 'অবস্থা',
   'subscription.status.trialing': 'বিনা খরচে ট্রায়াল',
   'subscription.status.active': 'চালু',
   'subscription.status.past_due': 'টাকা বাকি',

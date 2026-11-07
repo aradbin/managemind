@@ -163,7 +163,6 @@ export const onlineStoreEn = {
   'pages.updated': 'Updated',
   'pages.countNote': '{count} of {max} pages. A store has at most {max} pages.',
   'pages.pageTitle': 'Title',
-  'pages.inStore': 'In the store',
   'pages.description':
     'About, contact, your policies and other pages. They’re listed in the store’s footer.',
   'pages.empty': 'No pages yet. Policy pages start with suggested headings to fill in.',
@@ -184,7 +183,6 @@ export const onlineStoreEn = {
     'This page is filled from your store’s details and settings (returns, delivery zones, payment) and changes when they do. Its wording is a draft for your own legal review.',
   'pages.publishedHint': 'Shown in the store and its footer',
   'pages.hidden': 'Hidden',
-  'pages.position': 'Order in the footer',
   'pages.delete': 'Delete page',
   'pages.deleteConfirm': 'Delete “{title}”?',
   'pages.deleteBody': 'Its address stops working.',
@@ -215,7 +213,6 @@ export const onlineStoreEn = {
   'storefront.pixelHint': '15 or 16 digits, from Meta Events Manager.',
   'storefront.ga4': 'Google Analytics 4 measurement ID',
   'storefront.ga4Hint': 'Looks like G-XXXXXXXXXX.',
-  'storefront.consent': 'Cookie banner',
   'storefront.consentHint':
     'Shown when you set a tracking ID. Leave empty for the standard wording.',
   'storefront.consentText': 'Banner text in {language}',

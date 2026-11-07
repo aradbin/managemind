@@ -1,6 +1,5 @@
 // Returns, refunds and the return policy (phase-5a-plan §7), loaded with their screens.
 export const returnsEn = {
-  'orders.returns': 'Returns',
   'order.returnsAndRefunds': 'Returns and refunds',
   'order.refundOverpaid': 'Refund {amount} overpaid',
   'returns.title': 'Returns',
@@ -18,11 +17,8 @@ export const returnsEn = {
   'returns.col.return': 'Return',
   'returns.col.order': 'Order',
   'returns.col.customer': 'Customer',
-  'returns.col.reason': 'Reason',
-  'returns.col.units': 'Units',
   'returns.col.asked': 'Asked on',
   'returns.openOrder': 'Open the order',
-  'returns.more': 'Show more',
   'returns.units': '{count} unit(s)',
   'returns.byShopper': 'asked by the customer',
   'return.back': 'Back to returns',

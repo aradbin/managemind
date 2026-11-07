@@ -15,7 +15,16 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import {
+  createContext,
+  type KeyboardEvent,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useLocale } from '../i18n';
 import { useWide } from '../lib/use-wide';
 import { cn } from '../lib/utils';
@@ -486,7 +495,14 @@ export function SortDrawer({
   );
 }
 
-/** The ⋯ button that ends a row: open or edit, other actions, then the destructive one. */
+/** Set inside a phone's menu drawer: closes it once an item is chosen. */
+const InDrawer = createContext<(() => void) | null>(null);
+
+/**
+ * The ⋯ button that ends a row: open or edit, other actions, then the
+ * destructive one. A popover on desktops; on phones a drawer from the
+ * bottom with 44 px rows (design rule 5).
+ */
 export function RowMenu({
   label,
   trigger = 'ghost',
@@ -501,18 +517,41 @@ export function RowMenu({
   children: ReactNode;
 }) {
   const { t } = useLocale();
+  const wide = useWide();
+  const [open, setOpen] = useState(false);
+  const button = (
+    <Button
+      variant={trigger === 'outline' ? 'secondary' : 'ghost'}
+      size="icon"
+      className={cn('relative z-[1]', trigger === 'ghost' && !page && 'size-8 md:size-8')}
+      aria-label={page ? label : `${t('list.rowActions')}: ${label}`}
+      {...(wide
+        ? {}
+        : {
+            'aria-haspopup': 'menu' as const,
+            'aria-expanded': open,
+            onClick: () => setOpen(true),
+          })}
+    >
+      <Ellipsis aria-hidden />
+    </Button>
+  );
+  if (!wide)
+    return (
+      <>
+        {button}
+        <Dialog open={open} onOpenChange={setOpen} title={label}>
+          <InDrawer.Provider value={() => setOpen(false)}>
+            <div role="menu" aria-label={label} className="-mx-4 -mt-2 -mb-2 flex flex-col">
+              {children}
+            </div>
+          </InDrawer.Provider>
+        </Dialog>
+      </>
+    );
   return (
     <Menu.Root>
-      <Menu.Trigger asChild>
-        <Button
-          variant={trigger === 'outline' ? 'secondary' : 'ghost'}
-          size="icon"
-          className={cn('relative z-[1]', trigger === 'ghost' && !page && 'size-8 md:size-8')}
-          aria-label={page ? label : `${t('list.rowActions')}: ${label}`}
-        >
-          <Ellipsis aria-hidden />
-        </Button>
-      </Menu.Trigger>
+      <Menu.Trigger asChild>{button}</Menu.Trigger>
       <Menu.Portal>
         <Menu.Content align="end" sideOffset={4} className={cn(menuContent, 'w-[200px]')}>
           {children}
@@ -521,6 +560,9 @@ export function RowMenu({
     </Menu.Root>
   );
 }
+
+const drawerItem =
+  "flex min-h-11 w-full items-center gap-3 px-4 text-left text-[15px] leading-5 hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground";
 
 export function RowMenuItem({
   onSelect,
@@ -533,6 +575,22 @@ export function RowMenuItem({
   disabled?: boolean;
   children: ReactNode;
 }) {
+  const close = useContext(InDrawer);
+  if (close)
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        disabled={disabled ?? false}
+        onClick={() => {
+          close();
+          onSelect();
+        }}
+        className={cn(drawerItem, danger && 'text-danger [&_svg]:!text-danger')}
+      >
+        {children}
+      </button>
+    );
   return (
     <Menu.Item
       disabled={disabled ?? false}
@@ -545,6 +603,8 @@ export function RowMenuItem({
 }
 
 export function RowMenuSeparator() {
+  const close = useContext(InDrawer);
+  if (close) return <div role="separator" className="my-1 h-px bg-border" />;
   return <Menu.Separator className={menuSeparator} />;
 }
 

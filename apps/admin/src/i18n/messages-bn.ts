@@ -11,7 +11,6 @@ export const messagesBn: Record<keyof typeof messagesEn, string> = {
   'alerts.device.remove': 'সরান',
   'alerts.device.unknown': 'অজানা ডিভাইস',
   'alerts.device.none': 'এখনো কোনো ডিভাইসে নোটিফিকেশন আসে না।',
-  'alerts.device.this': 'এই ডিভাইস',
   'alerts.device.unsupported': 'এই ব্রাউজারে নোটিফিকেশন আসে না।',
   'alerts.device.ios':
     'আইফোন বা আইপ্যাডে আগে অ্যাপটি হোম স্ক্রিনে যোগ করুন (শেয়ার → Add to Home Screen), তারপর সেখান থেকে খুলুন।',
@@ -104,7 +103,6 @@ export const messagesBn: Record<keyof typeof messagesEn, string> = {
   'templates.default': 'ডিফল্ট লেখা।',
   'templates.subject': 'বিষয়',
   'templates.body': 'বার্তা',
-  'templates.variables': 'বসান',
   'templates.unknown': 'এই বার্তায় এগুলো ব্যবহার করা যায় না: {names}',
   'templates.reset': 'ডিফল্টে ফেরত',
   'templates.preview': 'প্রিভিউ',
