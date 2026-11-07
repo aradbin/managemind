@@ -8,12 +8,17 @@ import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { RadioCard } from '../components/ui/choice';
 import { Input } from '../components/ui/input';
+import { SwitchRow } from '../components/ui/switch';
 import { WhatsappCard } from '../components/whatsapp-card';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/channels';
@@ -21,8 +26,9 @@ import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { dateTime } from '../lib/orders';
+import { cn } from '../lib/utils';
 
-const card = 'flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5';
+const card = cn(cardPadded, 'gap-4 md:gap-4');
 
 export const metaQuery = {
   queryKey: ['channels', 'meta'] as const,
@@ -32,7 +38,7 @@ export const metaQuery = {
 export function MetaSettingsPage() {
   const { t } = useLocale();
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('meta.title')}
@@ -103,7 +109,7 @@ function ConversionsCard() {
   if (!capi) return null;
   return (
     <section aria-labelledby="meta-capi" className={card}>
-      <h2 id="meta-capi" className="font-semibold">
+      <h2 id="meta-capi" className={cardTitle}>
         {t('meta.capi')}
       </h2>
       <p className="text-sm text-muted-foreground">{t('meta.capi.intro')}</p>
@@ -176,7 +182,7 @@ function RecentEvents() {
   if (!events) return null;
   return (
     <section aria-labelledby="meta-recent" className={card}>
-      <h2 id="meta-recent" className="font-semibold">
+      <h2 id="meta-recent" className={cardTitle}>
         {t('meta.events.recent')}
       </h2>
       {events.length === 0 ? (
@@ -227,8 +233,15 @@ function MetaForm() {
   const store = useQuery(storeSettingsQuery);
   const meta = useQuery(metaQuery);
   const [value, setValue] = useState<MetaSettings>(defaultMetaSettings);
+  // What was loaded or last saved: the save bar shows once something differs.
+  const [snapshot, setSnapshot] = useState('');
+  const pick = (m: MetaSettings) =>
+    JSON.stringify({ feed: m.feed.enabled, at: m.purchaseAt, delivered: m.deliveredEvent });
   useEffect(() => {
-    if (store.data) setValue(store.data.meta);
+    if (store.data) {
+      setValue(store.data.meta);
+      setSnapshot(pick(store.data.meta));
+    }
   }, [store.data]);
   const save = useMutation({
     // The feed's key is the server's: it is never sent.
@@ -246,6 +259,7 @@ function MetaForm() {
       ),
     onSuccess: (saved) => {
       queryClient.setQueryData(storeSettingsQuery.queryKey, saved);
+      setSnapshot(pick(saved.meta));
       void queryClient.invalidateQueries({ queryKey: metaQuery.queryKey });
       toast(t('meta.saved'));
     },
@@ -255,7 +269,7 @@ function MetaForm() {
   if (meta.isError) return <Notice tone="error">{errorMessage(meta.error, t)}</Notice>;
   return (
     <form
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-3 md:gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate();
@@ -263,61 +277,53 @@ function MetaForm() {
     >
       <fieldset disabled={!canEdit || save.isPending} className="contents">
         <section aria-labelledby="meta-feed" className={card}>
-          <h2 id="meta-feed" className="font-semibold">
+          <h2 id="meta-feed" className={cardTitle}>
             {t('meta.feed')}
           </h2>
-          <p className="text-sm text-muted-foreground">{t('meta.feed.intro')}</p>
-          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={value.feed.enabled}
-              onChange={(e) =>
-                setValue((v) => ({ ...v, feed: { ...v.feed, enabled: e.target.checked } }))
-              }
-            />
-            {t('meta.feed.on')}
-          </label>
+          <p className="-mt-3 text-[13px] text-muted-foreground">{t('meta.feed.intro')}</p>
+          <SwitchRow
+            label={t('meta.feed.on')}
+            checked={value.feed.enabled}
+            onCheckedChange={(on) => setValue((v) => ({ ...v, feed: { ...v.feed, enabled: on } }))}
+          />
           {meta.data?.feed.urls && <FeedState />}
         </section>
         <section aria-labelledby="meta-events" className={card}>
-          <h2 id="meta-events" className="font-semibold">
+          <h2 id="meta-events" className={cardTitle}>
             {t('meta.events')}
           </h2>
-          <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 text-sm font-medium">{t('meta.purchaseAt')}</legend>
+          <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
+            <legend className={fieldLabel}>{t('meta.purchaseAt')}</legend>
             {(['placed', 'confirmed'] as const).map((at) => (
-              <label key={at} className="flex min-h-10 items-start gap-3 md:min-h-9">
-                <input
-                  type="radio"
-                  name="purchase-at"
-                  className="mt-1 size-5"
-                  checked={value.purchaseAt === at}
-                  onChange={() => setValue((v) => ({ ...v, purchaseAt: at }))}
-                />
-                {t(`meta.purchaseAt.${at}` as AdminKey)}
-              </label>
+              <RadioCard
+                key={at}
+                name="purchase-at"
+                checked={value.purchaseAt === at}
+                onChange={() => setValue((v) => ({ ...v, purchaseAt: at }))}
+                label={t(`meta.purchaseAt.${at}` as AdminKey)}
+              />
             ))}
           </fieldset>
-          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="mt-1 size-5"
-              checked={value.deliveredEvent}
-              onChange={(e) => setValue((v) => ({ ...v, deliveredEvent: e.target.checked }))}
-            />
-            <span className="flex flex-col">
-              {t('meta.deliveredEvent')}
-              <span className="text-sm text-muted-foreground">{t('meta.deliveredEvent.hint')}</span>
-            </span>
-          </label>
+          <SwitchRow
+            label={t('meta.deliveredEvent')}
+            hint={t('meta.deliveredEvent.hint')}
+            checked={value.deliveredEvent}
+            onCheckedChange={(on) => setValue((v) => ({ ...v, deliveredEvent: on }))}
+          />
         </section>
         {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-        {canEdit && (
-          <Button type="submit" className="self-start">
-            {t('meta.save')}
-          </Button>
-        )}
+        <SaveBar
+          show={canEdit && pick(value) !== snapshot}
+          message={t('form.unsaved')}
+          discardLabel={t('action.discard')}
+          onDiscard={() => {
+            save.reset();
+            if (store.data) setValue(store.data.meta);
+          }}
+          saveLabel={t('meta.save')}
+          busy={save.isPending}
+          onSave={() => save.mutate()}
+        />
       </fieldset>
     </form>
   );

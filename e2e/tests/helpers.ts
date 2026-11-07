@@ -212,23 +212,23 @@ export async function createStore(page: Page, store: NewStore): Promise<void> {
       new RegExp(`^${literal(before)}${literal(store.slug)}\\.\\S+${literal(after)}$`),
     ),
   ).toBeVisible();
-  if (store.kind) await page.getByLabel(t('newStore.kind')).selectOption(store.kind);
+  // Kind, plan and starting design are radio cards (ADR 0034).
+  if (store.kind)
+    await page.getByRole('radio', { name: t(`kind.${store.kind}` as Key), exact: true }).check();
   await expectAccessible(page, 'new store');
   await next();
   await page.getByLabel(t('tenants.ownerEmail')).fill(store.ownerEmail);
   await page.getByLabel(t('tenants.ownerName')).fill(store.ownerName);
   await next();
   if (store.plan) {
-    const select = page.getByRole('combobox', { name: t('subscription.plan'), exact: true });
-    const value = await select
-      .locator('option', { hasText: store.plan })
-      .first()
-      .getAttribute('value');
-    await select.selectOption(value ?? '');
+    await page.getByRole('radio', { name: new RegExp(`^${literal(store.plan)}`) }).check();
     await expect(page.getByLabel(t('newStore.billingDay'))).toBeVisible();
   }
   await next();
-  if (store.preset) await page.getByLabel(t('newStore.preset')).selectOption(store.preset);
+  if (store.preset)
+    await page
+      .getByRole('radio', { name: t(`preset.${store.preset}` as Key), exact: true })
+      .check();
   await page.getByRole('button', { name: t('newStore.create') }).click();
   // Creating a store seeds its defaults and preset catalog: on a preview,
   // which has no Hyperdrive, that alone takes a few seconds.
@@ -239,6 +239,21 @@ export async function createStore(page: Page, store: NewStore): Promise<void> {
  * Picks from the admin's searchable select (a combobox that opens a list):
  * by an option's value, its exact name, or its place in the list.
  */
+/**
+ * Adds a product to an order, a purchase order or a count: the dashed
+ * "Add a product" row opens a search box, and the match is picked from the
+ * list under it (ADR 0034).
+ */
+export async function addProduct(scope: Page | Locator, title: string): Promise<void> {
+  await scope.getByRole('button', { name: t('order.addProduct'), exact: true }).click();
+  const page = 'page' in scope ? scope.page() : scope;
+  await page.getByRole('searchbox', { name: t('order.searchProducts') }).fill(title);
+  await page
+    .getByRole('listbox', { name: t('order.searchResults') })
+    .getByRole('option', { name: new RegExp(title) })
+    .click();
+}
+
 export async function choose(
   trigger: Locator,
   pick: { value: string } | { label: string } | { index: number },

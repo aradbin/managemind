@@ -18,13 +18,24 @@ export type RefundPreview = Json<'/v1/admin/orders/{id}/refunds/preview', 'post'
 export type ReturnStatus = ReturnSummary['status'];
 export type RefundMethod = Json<'/v1/admin/orders/{id}/refunds', 'post'>['method'];
 
-export const RETURN_STEPS = ['requested', 'approved', 'received', 'inspected', 'resolved'] as const;
+export const RETURN_STEPS = [
+  'requested',
+  'approved',
+  'in_transit',
+  'received',
+  'inspected',
+  'resolved',
+] as const;
 
 export type ReturnReason = ReturnSummary['reason'];
 
 /** Returns, a page at a time (usePagedList); `reason`: one or several, comma-separated. */
-export const returnsList = (status?: ReturnStatus, reason?: string) => ({
-  queryKey: ['returns', status ?? null, reason ?? null] as const,
+export const returnsList = (
+  status?: ReturnStatus | 'in_progress',
+  reason?: string,
+  q?: string,
+) => ({
+  queryKey: ['returns', status ?? null, reason ?? null, q ?? null] as const,
   fetchPage: async (offset: number, limit: number) =>
     unwrap(
       await api.GET('/v1/admin/returns', {
@@ -32,6 +43,8 @@ export const returnsList = (status?: ReturnStatus, reason?: string) => ({
           query: {
             ...(status ? { status } : {}),
             ...(reason ? { reason } : {}),
+            ...(q ? { q } : {}),
+            counts: 'true',
             offset,
             limit,
           },

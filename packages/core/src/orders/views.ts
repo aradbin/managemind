@@ -17,7 +17,6 @@ import { type Actor, authorize } from '../access';
 import { storeEntitlements } from '../billing/entitlements';
 import type { StoreImage } from '../catalog/published';
 import { type PhoneRisk, phoneRisks } from '../fraud/index';
-import { countWhere } from '../paging';
 import { orderSettings } from '../pricing/quote';
 import { incompleteCounts } from '../recovery/index';
 import { monthToDateProfit, orderProfits } from '../reports/back-office';
@@ -84,21 +83,40 @@ function decodeCursor(cursor: string): { placedAt: string; id: string } | null {
   }
 }
 
+/** How many orders each of the list's tabs holds, with the other filters. */
+export interface OrderStageCounts {
+  all: number;
+  pending: number;
+  toShip: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+}
+
 export async function listOrders(
   tx: TenantTx,
   actor: Actor,
-  query: OrderListQuery = {},
-): Promise<{ items: OrderSummary[]; nextCursor: string | null; total: number }> {
+  query: Omit<OrderListQuery, 'counts'> & { counts?: boolean | undefined } = {},
+): Promise<{
+  items: OrderSummary[];
+  nextCursor: string | null;
+  total: number;
+  /** What the matching orders come to, for "16 orders · ৳62,800". */
+  value: number;
+  counts?: OrderStageCounts;
+}> {
   authorize(actor, 'orders.read');
   const personal = actor.permissions.has('customers.read');
   const { checkout, settings } = await orderSettings(tx);
   const limit = query.limit ?? 50;
   const where: SQL[] = [sql`true`];
-  if (query.status) where.push(sql`o.status = ${query.status}`);
+  // The order and delivery statuses pick the tab; the counts leave them out.
+  const stage: SQL[] = [];
+  if (query.status) stage.push(sql`o.status = ${query.status}`);
   if (query.paymentStatus?.length)
     where.push(sql`o.payment_status = any(${sql.param(query.paymentStatus)}::text[])`);
   if (query.returnStatus) where.push(sql`o.return_status = ${query.returnStatus}`);
-  if (query.deliveryStatus) where.push(sql`o.delivery_status = ${query.deliveryStatus}`);
+  if (query.deliveryStatus) stage.push(sql`o.delivery_status = ${query.deliveryStatus}`);
   if (query.zoneId?.length) where.push(sql`o.zone_id = any(${sql.param(query.zoneId)}::uuid[])`);
   if (query.source?.length) where.push(sql`o.source = any(${sql.param(query.source)}::text[])`);
   if (query.tag) where.push(sql`${query.tag} = any(o.tags)`);
@@ -123,8 +141,33 @@ export async function listOrders(
     }
     where.push(parts.length ? sql`(${sql.join(parts, sql` or `)})` : sql`false`);
   }
-  // How many match, for numbered pages: the filters without the cursor.
-  const total = await countWhere(tx, sql`store.orders o`, where);
+  let counts: OrderStageCounts | undefined;
+  if (query.counts) {
+    const { rows } = await tx.db.execute<Record<keyof OrderStageCounts, number>>(sql`
+      select count(*)::int as "all",
+             count(*) filter (where o.status = 'pending')::int as "pending",
+             count(*) filter (where o.status = 'confirmed' and o.delivery_status = 'not_shipped')::int as "toShip",
+             count(*) filter (where o.delivery_status = 'shipped')::int as "shipped",
+             count(*) filter (where o.delivery_status = 'delivered')::int as "delivered",
+             count(*) filter (where o.status = 'cancelled')::int as "cancelled"
+        from store.orders o where ${sql.join(where, sql` and `)}`);
+    const r = rows[0];
+    counts = {
+      all: Number(r?.all ?? 0),
+      pending: Number(r?.pending ?? 0),
+      toShip: Number(r?.toShip ?? 0),
+      shipped: Number(r?.shipped ?? 0),
+      delivered: Number(r?.delivered ?? 0),
+      cancelled: Number(r?.cancelled ?? 0),
+    };
+  }
+  where.push(...stage);
+  // How many match, for numbered pages: the filters without the cursor, and their value.
+  const { rows: sums } = await tx.db.execute<{ n: number; value: string | null }>(
+    sql`select count(*)::int as n, sum(o.total) as value from store.orders o where ${sql.join(where, sql` and `)}`,
+  );
+  const total = Number(sums[0]?.n ?? 0);
+  const value = Number(sums[0]?.value ?? 0);
   const offset = query.offset;
   const cursor = offset === undefined && query.after ? decodeCursor(query.after) : null;
   if (cursor)
@@ -176,7 +219,13 @@ export async function listOrders(
     }
   }
   const last = rows.length > limit ? items[items.length - 1] : undefined;
-  return { items, nextCursor: last ? encodeCursor(last.placedAt, last.id) : null, total };
+  return {
+    items,
+    nextCursor: last ? encodeCursor(last.placedAt, last.id) : null,
+    total,
+    value,
+    ...(counts ? { counts } : {}),
+  };
 }
 
 export interface OrderLineView {
@@ -236,7 +285,14 @@ export interface OrderDetail {
   returnStatus: string;
   source: string;
   locale: string;
-  customer: { id: string; name: string; phone: string; email: string | null; orderCount: number };
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    orderCount: number;
+    totalSpent: number;
+  };
   contact: { name: string; phone: string; email?: string };
   address: OrderAddress | null;
   zone: { id: string | null; name: Localized | null };
@@ -395,7 +451,7 @@ const mask = (detail: OrderDetail): OrderDetail => ({
 export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDetail | null> {
   const { rows } = await tx.db.execute<Record<string, unknown>>(sql`
     select o.*, c.name as customer_name, c.phone as customer_phone, c.email as customer_email,
-           c.order_count as customer_orders
+           c.order_count as customer_orders, c.total_spent as customer_spent
       from store.orders o join store.customers c on c.id = o.customer_id where o.id = ${id}`);
   const r = rows[0];
   if (!r) return null;
@@ -506,6 +562,7 @@ export async function loadOrderDetail(tx: TenantTx, id: string): Promise<OrderDe
       phone: r.customer_phone as string,
       email: (r.customer_email as string) ?? null,
       orderCount: Number(r.customer_orders),
+      totalSpent: Number(r.customer_spent ?? 0),
     },
     contact: r.contact as OrderDetail['contact'],
     address: (r.address as OrderAddress) ?? null,

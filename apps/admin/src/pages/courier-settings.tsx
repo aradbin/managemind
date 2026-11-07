@@ -9,14 +9,21 @@ import {
   needsAreas,
 } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
+import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { ChoiceChips } from '../components/ui/segmented';
+import { SwitchRow } from '../components/ui/switch';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
 import { api, unwrap } from '../lib/api';
@@ -25,15 +32,16 @@ import { type ConnectedCourier, courierName, couriersQuery } from '../lib/courie
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { fieldErrors } from '../lib/messaging';
 import { dateTime } from '../lib/orders';
+import { cn } from '../lib/utils';
 
-const card = 'flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5';
+const card = cn(cardPadded, 'gap-4 md:gap-4');
 
 export function CourierSettingsPage() {
   const { t } = useLocale();
   const canConnect = usePermission('settings.credentials');
   const list = useQuery(couriersQuery);
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('couriers.title')}
@@ -42,14 +50,24 @@ export function CourierSettingsPage() {
       {!canConnect && <Notice>{t('couriers.ownersOnly')}</Notice>}
       {list.isPending && <p role="status">{t('loading')}</p>}
       {list.isError && <Notice tone="error">{errorMessage(list.error, t)}</Notice>}
-      {list.data?.available.map((courier) => (
-        <CourierCard
-          key={courier}
-          courier={courier}
-          saved={list.data.connected.find((c) => c.courier === courier) ?? null}
-          canConnect={canConnect}
-        />
-      ))}
+      {list.data && (
+        <section aria-labelledby="couriers-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+          <div className="flex flex-col gap-1">
+            <h2 id="couriers-h" className={cardTitle}>
+              {t('couriers.title')}
+            </h2>
+            <p className="text-[13px] text-muted-foreground">{t('couriers.cardHint')}</p>
+          </div>
+          {list.data.available.map((courier) => (
+            <CourierCard
+              key={courier}
+              courier={courier}
+              saved={list.data.connected.find((c) => c.courier === courier) ?? null}
+              canConnect={canConnect}
+            />
+          ))}
+        </section>
+      )}
       {list.data && <Defaults connected={list.data.connected.map((c) => c.courier)} />}
     </div>
   );
@@ -126,45 +144,64 @@ function CourierCard({
   });
 
   const refused = fieldErrors(save.error).secrets ?? fieldErrors(check.error).secrets;
-  const showForm = canConnect && (editing || !saved);
+  const showForm = canConnect && editing;
   const titleId = `courier-${courier}`;
   return (
-    <section aria-labelledby={titleId} className={card}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id={titleId} className="font-semibold">
+    <section
+      aria-labelledby={titleId}
+      className="flex flex-col gap-3 rounded-[10px] border border-border p-3.5"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Truck aria-hidden className="size-4 text-muted-foreground" />
+        <h3 id={titleId} className="font-medium">
           {name}
-        </h2>
-        <span className="text-sm text-muted-foreground">
+        </h3>
+        <StatusBadge tone={saved ? (saved.mode === 'sandbox' ? 'progress' : 'good') : 'outline'}>
           {saved
             ? saved.mode === 'sandbox'
               ? t('couriers.connectedSandbox')
               : t('couriers.connected')
             : t('couriers.notConnected')}
-        </span>
+        </StatusBadge>
+        <span className="flex-1" />
+        {canConnect && !editing && saved && (
+          <span className="flex gap-1">
+            <Button variant="ghost" className="h-8 md:h-8" onClick={() => setEditing(true)}>
+              {t('couriers.change')}
+            </Button>
+            <Button
+              variant="ghost"
+              className="h-8 text-danger hover:text-danger md:h-8"
+              onClick={() => setRemoving(true)}
+            >
+              {t('couriers.remove')}
+            </Button>
+          </span>
+        )}
+        {canConnect && !editing && !saved && (
+          <Button variant="secondary" className="h-8 md:h-8" onClick={() => setEditing(true)}>
+            {t('couriers.connect')}
+          </Button>
+        )}
       </div>
       {courier === 'fake' && <Notice>{t('couriers.testNotice')}</Notice>}
-      {saved && (
+      {saved ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-muted-foreground">
-            {saved.hint && t('couriers.keyEnds', { hint: saved.hint })}
-            {saved.checkedAt &&
-              ` · ${t('couriers.checked', { when: dateTime(locale, saved.checkedAt) })}`}
+          <p className="text-[13px] text-muted-foreground">
+            {[
+              saved.hint && t('couriers.keyEnds', { hint: saved.hint }),
+              saved.checkedAt && t('couriers.checked', { when: dateTime(locale, saved.checkedAt) }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
           </p>
           {saved.checkError && (
             <Notice tone="error">{t('couriers.failing', { reason: saved.checkError })}</Notice>
           )}
-          {canConnect && !editing && (
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                {t('couriers.change')}
-              </Button>
-              <Button variant="secondary" onClick={() => setRemoving(true)}>
-                {t('couriers.remove')}
-              </Button>
-            </div>
-          )}
           {canConnect && <Webhook courier={courier} name={name} />}
         </div>
+      ) : (
+        !editing && <p className="text-[13px] text-muted-foreground">{t('couriers.byHand')}</p>
       )}
       {showForm && (
         <form
@@ -179,7 +216,10 @@ function CourierCard({
             save.mutate();
           }}
         >
-          <fieldset disabled={save.isPending || check.isPending} className="flex flex-col gap-4">
+          <fieldset
+            disabled={save.isPending || check.isPending}
+            className="m-0 flex flex-col gap-4 border-0 p-0"
+          >
             {fields.map((f) => (
               <Field
                 key={f}
@@ -194,21 +234,18 @@ function CourierCard({
               />
             ))}
             {moded && (
-              <fieldset className="flex flex-col gap-1">
-                <legend className="mb-1 text-sm font-medium">{t('couriers.mode')}</legend>
-                {(['sandbox', 'live'] as const).map((m) => (
-                  <label key={m} className="flex min-h-10 items-center gap-3 md:min-h-9">
-                    <input
-                      type="radio"
-                      name={`${courier}-mode`}
-                      className="size-4 accent-primary"
-                      checked={mode === m}
-                      onChange={() => setMode(m)}
-                    />
-                    {t(`couriers.mode.${m}`)}
-                  </label>
-                ))}
-              </fieldset>
+              <div className="flex flex-col">
+                <span className={fieldLabel}>{t('couriers.mode')}</span>
+                <ChoiceChips<'sandbox' | 'live'>
+                  label={t('couriers.mode')}
+                  value={mode}
+                  options={(['sandbox', 'live'] as const).map((m) => ({
+                    value: m,
+                    label: t(`couriers.mode.${m}`),
+                  }))}
+                  onChange={setMode}
+                />
+              </div>
             )}
             {courier === 'pathao' && (
               <Field
@@ -228,7 +265,7 @@ function CourierCard({
                 {check.data?.pickupStores.length ? (
                   <select
                     id={`${courier}-pickup`}
-                    className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+                    className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
                     value={pickup ?? ''}
                     onChange={(e) => setPickup(Number(e.target.value))}
                   >
@@ -275,18 +312,17 @@ function CourierCard({
             <Button type="submit" disabled={save.isPending}>
               {save.isPending ? t('couriers.checking', { courier: name }) : t('couriers.save')}
             </Button>
-            {saved && (
-              <Button
-                variant="secondary"
-                disabled={save.isPending}
-                onClick={() => {
-                  setEditing(false);
-                  save.reset();
-                }}
-              >
-                {t('action.cancel')}
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              disabled={save.isPending}
+              onClick={() => {
+                setEditing(false);
+                setMissing(false);
+                save.reset();
+              }}
+            >
+              {t('action.cancel')}
+            </Button>
           </div>
         </form>
       )}
@@ -405,11 +441,22 @@ function Defaults({ connected }: { connected: Courier[] }) {
   const store = useQuery(storeSettingsQuery);
   const [value, setValue] = useState<CourierSettings>(defaultCourierSettings);
   const [weight, setWeight] = useState('500');
+  // What was loaded or last saved: the save bar shows once something differs.
+  const [snapshot, setSnapshot] = useState('');
+  const [loaded, setLoaded] = useState(false);
   useEffect(() => {
-    if (!store.data) return;
+    if (!store.data || loaded) return;
     setValue(store.data.couriers);
     setWeight(String(store.data.couriers.defaultWeightGrams));
-  }, [store.data]);
+    setSnapshot(
+      JSON.stringify({
+        value: store.data.couriers,
+        weight: String(store.data.couriers.defaultWeightGrams),
+      }),
+    );
+    setLoaded(true);
+  }, [store.data, loaded]);
+  const current = JSON.stringify({ value, weight });
   const save = useMutation({
     mutationFn: async () =>
       unwrap(
@@ -419,57 +466,33 @@ function Defaults({ connected }: { connected: Courier[] }) {
       ),
     onSuccess: (saved) => {
       queryClient.setQueryData(storeSettingsQuery.queryKey, saved);
+      setSnapshot(current);
       toast(t('couriers.defaultsSaved'));
     },
   });
-  if (!store.data) return null;
-  const toggle = (key: 'autoReceive', label: AdminKey, hint?: AdminKey) => (
-    <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-      <input
-        type="checkbox"
-        className="mt-1 size-5"
-        checked={value[key]}
-        onChange={(e) => setValue((v) => ({ ...v, [key]: e.target.checked }))}
-      />
-      <span className="flex flex-col">
-        {t(label)}
-        {hint && <span className="text-sm text-muted-foreground">{t(hint)}</span>}
-      </span>
-    </label>
-  );
+  if (!store.data || !loaded) return null;
   return (
     <section aria-labelledby="courier-defaults" className={card}>
-      <h2 id="courier-defaults" className="font-semibold">
+      <h2 id="courier-defaults" className={cardTitle}>
         {t('couriers.defaults')}
       </h2>
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          save.mutate();
-        }}
+      <fieldset
+        disabled={!canEdit || save.isPending}
+        className="m-0 flex flex-col gap-4 border-0 p-0"
       >
-        <fieldset disabled={!canEdit || save.isPending} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="courier-default" className="text-sm font-medium">
-              {t('couriers.default')}
-            </label>
-            <select
-              id="courier-default"
-              className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
-              value={value.default ?? ''}
-              onChange={(e) =>
-                setValue((v) => ({ ...v, default: (e.target.value || null) as Courier | null }))
-              }
-            >
-              <option value="">{t('couriers.default.first')}</option>
-              {connected.map((c) => (
-                <option key={c} value={c}>
-                  {courierName(c, t)}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-col">
+          <span className={fieldLabel}>{t('couriers.default')}</span>
+          <ChoiceChips<Courier | ''>
+            label={t('couriers.default')}
+            value={value.default ?? ''}
+            options={[
+              { value: '', label: t('couriers.default.first') },
+              ...connected.map((c) => ({ value: c, label: courierName(c, t) })),
+            ]}
+            onChange={(c) => setValue((v) => ({ ...v, default: c || null }))}
+          />
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
           <Field
             label={t('couriers.weight')}
             inputMode="numeric"
@@ -478,30 +501,39 @@ function Defaults({ connected }: { connected: Courier[] }) {
           />
           <Field
             label={t('couriers.note')}
+            optional
             value={value.note}
             maxLength={200}
             onChange={(e) => setValue((v) => ({ ...v, note: e.target.value }))}
           />
-          <label className="flex min-h-10 items-start gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="mt-1 size-5"
-              checked={value.autoBook === 'on_confirm'}
-              onChange={(e) =>
-                setValue((v) => ({ ...v, autoBook: e.target.checked ? 'on_confirm' : 'never' }))
-              }
-            />
-            {t('couriers.autoBook')}
-          </label>
-          {toggle('autoReceive', 'couriers.autoReceive', 'couriers.autoReceiveHint')}
-        </fieldset>
-        {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-        {canEdit && (
-          <Button type="submit" className="self-start" disabled={save.isPending}>
-            {t('couriers.save')}
-          </Button>
-        )}
-      </form>
+        </div>
+        <SwitchRow
+          label={t('couriers.autoBook')}
+          checked={value.autoBook === 'on_confirm'}
+          onCheckedChange={(on) =>
+            setValue((v) => ({ ...v, autoBook: on ? 'on_confirm' : 'never' }))
+          }
+        />
+        <SwitchRow
+          label={t('couriers.autoReceive')}
+          hint={t('couriers.autoReceiveHint')}
+          checked={value.autoReceive}
+          onCheckedChange={(on) => setValue((v) => ({ ...v, autoReceive: on }))}
+        />
+      </fieldset>
+      {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+      <SaveBar
+        show={canEdit && current !== snapshot}
+        message={t('form.unsaved')}
+        discardLabel={t('action.discard')}
+        onDiscard={() => {
+          save.reset();
+          setLoaded(false);
+        }}
+        saveLabel={t('action.save')}
+        busy={save.isPending}
+        onSave={() => save.mutate()}
+      />
     </section>
   );
 }

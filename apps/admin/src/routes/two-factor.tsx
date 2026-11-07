@@ -2,7 +2,7 @@
 // an authenticator code or a backup code, and "trust this device".
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { type FormEvent, useState } from 'react';
-import { AuthLayout } from '../components/auth-layout';
+import { AuthHeading, AuthLayout, otpClass } from '../components/auth-layout';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
@@ -49,21 +49,20 @@ function TwoFactor() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight">{t('twoFactor.title')}</h1>
+      <AuthHeading title={t('twoFactor.title')}>
+        {expired ? undefined : t(backup ? 'twoFactor.backupIntro' : 'twoFactor.intro')}
+      </AuthHeading>
       {expired ? (
         <>
           <Notice tone="error">{t('twoFactor.expired')}</Notice>
-          <Button asChild>
+          <Button asChild className="h-10 w-full md:h-10">
             <Link to="/sign-in" search={to ? { redirect: to } : {}}>
               {t('signIn.title')}
             </Link>
           </Button>
         </>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          <p className="text-muted-foreground">
-            {t(backup ? 'twoFactor.backupIntro' : 'twoFactor.intro')}
-          </p>
+        <form onSubmit={submit} className="flex flex-col gap-5">
           {backup ? (
             <Field
               key="backup"
@@ -74,8 +73,10 @@ function TwoFactor() {
               spellCheck={false}
               required
               maxLength={40}
+              placeholder="XXXX-XXXX"
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              className="h-11 text-center font-mono tracking-[.1em] md:h-11"
             />
           ) : (
             <Field
@@ -90,24 +91,25 @@ function TwoFactor() {
               autoFocus
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-              className="text-center text-2xl tracking-[0.5em]"
+              placeholder="••••••"
+              className={otpClass}
             />
           )}
-          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={trust}
-              onChange={(e) => setTrust(e.target.checked)}
-            />
+          <label className="flex items-center gap-2.5">
+            <input type="checkbox" checked={trust} onChange={(e) => setTrust(e.target.checked)} />
             {t('twoFactor.trust')}
           </label>
           {error && <Notice tone="error">{error}</Notice>}
-          <Button type="submit" disabled={busy || code.trim() === ''}>
+          <Button
+            type="submit"
+            className="h-10 w-full md:h-10"
+            disabled={busy || code.trim() === ''}
+          >
             {t('twoFactor.submit')}
           </Button>
           <Button
             variant="ghost"
+            className="self-center"
             onClick={() => {
               setBackup(!backup);
               setCode('');

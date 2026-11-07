@@ -241,7 +241,6 @@ function AttributeField({
             <label key={v.id} className="flex min-h-10 items-center gap-2 text-sm md:min-h-9">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={draft.valueIds.includes(v.id)}
                 onChange={(e) =>
                   onChange({
@@ -273,7 +272,7 @@ function AttributeField({
       <select
         id={id}
         disabled={disabled}
-        className="w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm"
+        className="w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
         value={draft.value === null ? '' : draft.value ? 'yes' : 'no'}
         onChange={(e) =>
           onChange({ ...draft, value: e.target.value === '' ? null : e.target.value === 'yes' })

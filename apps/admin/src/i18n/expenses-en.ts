@@ -38,7 +38,7 @@ export const expensesEn = {
   'expenses.method': 'Paid by',
   'expenses.payee': 'Paid to',
   'expenses.note': 'Note',
-  'expenses.receipt': 'Receipt photo',
+  'expenses.receiptShort': 'Receipt',
   'expenses.receiptAdd': 'Add a photo',
   'expenses.receiptReplace': 'Replace the photo',
   'expenses.receiptRemove': 'Remove the photo',

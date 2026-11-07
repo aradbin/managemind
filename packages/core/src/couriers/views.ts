@@ -105,14 +105,54 @@ export interface CourierReturn {
   consignmentId: string | null;
   name: string;
   failedReason: string | null;
+  /** On its way back, handed back to the store by the courier, or received. */
+  state: 'on_its_way' | 'handed_back' | 'received';
+  /** When it reached that state. */
+  since: string;
+  /** Kept for older callers: when the courier handed it back, else since. */
   returnedByCourierAt: string;
   items: number;
+  /** The parcel's first item and its quantity, and the parcel's value. */
+  firstItem: { title: string; quantity: number } | null;
+  value: number;
 }
 
-/** Parcels the courier says it brought back, not yet received in the store (§3.5, Q9). */
-export async function listCourierReturns(tx: TenantTx, actor: Actor): Promise<CourierReturn[]> {
+/**
+ * Parcels a courier couldn't deliver (§3.5, Q9): coming back (failed, on the
+ * way or handed back) or received in the store. Received puts them back in
+ * stock; nothing is restocked before staff see it.
+ */
+export async function listCourierReturns(
+  tx: TenantTx,
+  actor: Actor,
+  query: { tab?: 'coming' | 'received' | undefined; q?: string | undefined } = {},
+): Promise<{
+  items: CourierReturn[];
+  counts: { coming: number; received: number; comingValue: number };
+}> {
   authorize(actor, 'orders.read');
   const { checkout } = await orderSettings(tx);
+  const tab = query.tab ?? 'coming';
+  const text = query.q?.trim();
+  const search = text
+    ? sql`and (o.contact ->> 'name' ilike ${`%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`}
+           or s.consignment_id ilike ${`%${text}%`}
+           or o.number::text = ${text.replace(/\D/g, '') || '-'})`
+    : sql``;
+  const coming = sql`s.status = 'failed'`;
+  const received = sql`s.status = 'returned'`;
+  const value = sql`(select coalesce(sum(sl.quantity * l.unit_price), 0) from store.shipment_lines sl
+      join store.order_lines l on l.id = sl.order_line_id where sl.shipment_id = s.id)`;
+  const { rows: c } = await tx.db.execute<{
+    coming: number;
+    received: number;
+    value: string | null;
+  }>(sql`
+    select count(*) filter (where ${coming})::int as coming,
+           count(*) filter (where ${received})::int as received,
+           sum(${value}) filter (where ${coming}) as value
+      from store.shipments s join store.orders o on o.id = s.order_id
+     where s.courier is not null ${search}`);
   const { rows } = await tx.db.execute<{
     id: string;
     order_id: string;
@@ -121,27 +161,62 @@ export async function listCourierReturns(tx: TenantTx, actor: Actor): Promise<Co
     consignment_id: string | null;
     name: string;
     failed_reason: string | null;
-    courier_returned_at: Date;
+    status: string;
+    courier_returned_at: Date | null;
+    failed_at: Date | null;
+    returned_at: Date | null;
+    updated_at: Date;
     items: number;
+    first_title: string | null;
+    first_quantity: number | null;
+    value: string;
   }>(sql`
     select s.id, s.order_id, o.number, s.courier, s.consignment_id, o.contact ->> 'name' as name,
-           s.failed_reason, s.courier_returned_at,
-           (select coalesce(sum(sl.quantity), 0)::int from store.shipment_lines sl where sl.shipment_id = s.id) as items
+           s.failed_reason, s.status, s.courier_returned_at, s.failed_at, s.returned_at, s.updated_at,
+           (select coalesce(sum(sl.quantity), 0)::int from store.shipment_lines sl where sl.shipment_id = s.id) as items,
+           f.title as first_title, f.quantity as first_quantity, ${value} as value
       from store.shipments s join store.orders o on o.id = s.order_id
-     where s.status = 'failed' and s.courier_returned_at is not null
-     order by s.courier_returned_at
+      left join lateral (select l.title, sl.quantity from store.shipment_lines sl
+             join store.order_lines l on l.id = sl.order_line_id
+            where sl.shipment_id = s.id order by l.position limit 1) f on true
+     where s.courier is not null and ${tab === 'coming' ? coming : received} ${search}
+     order by ${tab === 'coming' ? sql`coalesce(s.courier_returned_at, s.failed_at, s.updated_at)` : sql`s.returned_at desc nulls last`}
      limit 200`);
-  return rows.map((r) => ({
-    shipmentId: r.id,
-    orderId: r.order_id,
-    displayNumber: formatOrderNumber(checkout.orderNumberPrefix, r.number),
-    courier: r.courier,
-    consignmentId: r.consignment_id,
-    name: r.name,
-    failedReason: r.failed_reason,
-    returnedByCourierAt: new Date(r.courier_returned_at).toISOString(),
-    items: r.items,
-  }));
+  const iso = (d: Date | null) => (d ? new Date(d).toISOString() : null);
+  return {
+    items: rows.map((r) => {
+      const state =
+        r.status === 'returned' ? 'received' : r.courier_returned_at ? 'handed_back' : 'on_its_way';
+      const since =
+        (state === 'received'
+          ? iso(r.returned_at)
+          : state === 'handed_back'
+            ? iso(r.courier_returned_at)
+            : iso(r.failed_at)) ?? (iso(r.updated_at) as string);
+      return {
+        shipmentId: r.id,
+        orderId: r.order_id,
+        displayNumber: formatOrderNumber(checkout.orderNumberPrefix, r.number),
+        courier: r.courier,
+        consignmentId: r.consignment_id,
+        name: r.name,
+        failedReason: r.failed_reason,
+        state,
+        since,
+        returnedByCourierAt: iso(r.courier_returned_at) ?? since,
+        items: r.items,
+        firstItem: r.first_title
+          ? { title: r.first_title, quantity: Number(r.first_quantity ?? 1) }
+          : null,
+        value: Number(r.value ?? 0),
+      };
+    }),
+    counts: {
+      coming: Number(c[0]?.coming ?? 0),
+      received: Number(c[0]?.received ?? 0),
+      comingValue: Number(c[0]?.value ?? 0),
+    },
+  };
 }
 
 /**

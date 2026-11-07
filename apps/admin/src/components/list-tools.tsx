@@ -1,17 +1,39 @@
-// The parts every list's toolbar is built from (ADR 0033, design rules 4 and 5):
-// stage tabs with counts, dashed "+ Name" filter buttons whose list has a
-// search box and "Clear filter", one Filters drawer on phones, the ⋯ menu that
-// ends a row, and the dark bar that appears while rows are selected.
+// The parts every list's toolbar is built from, as the canvas draws them
+// (ADR 0033 and 0034, design rules 4 and 5): stage tabs with counts, dashed
+// "+ Name" filter buttons whose list has a search box and "Clear filters", one
+// Filters drawer on phones, the count on the right, the ⋯ menu that ends a
+// row, and the dark bar that appears while rows are selected.
 import { formatNumber } from '@managemind/shared/i18n';
 import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Check, CirclePlus, Ellipsis, Search, SlidersHorizontal, X } from 'lucide-react';
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import {
+  ArrowDownUp,
+  Check,
+  CirclePlus,
+  Ellipsis,
+  type LucideIcon,
+  Search,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react';
+import {
+  createContext,
+  type KeyboardEvent,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { useLocale } from '../i18n';
+import { useWide } from '../lib/use-wide';
 import { cn } from '../lib/utils';
+import { SecondaryBadge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
 import { Input } from './ui/input';
-import { menuContent, menuItem, menuSeparator } from './ui/menu';
+import { menuContent, menuItem, menuItemDanger, menuSeparator } from './ui/menu';
+import { chipClass } from './ui/segmented';
 
 export interface StageTab<K extends string> {
   key: K;
@@ -32,20 +54,37 @@ export function StageTabs<K extends string>({
   label?: string;
 }) {
   const { t, locale } = useLocale();
+  const list = useRef<HTMLDivElement>(null);
+  /** The arrows move between the tabs, as in any tab row. */
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const all = [...(list.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [])];
+    const at = all.indexOf(document.activeElement as HTMLButtonElement);
+    const next = all[(at + (e.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length];
+    next?.focus();
+    next?.click();
+  };
   return (
-    <div className="-mx-3 overflow-x-auto px-3 [scrollbar-width:none] md:mx-0 md:px-0">
-      <fieldset className="inline-flex h-9 items-center rounded-[10px] bg-muted p-[3px]">
-        <legend className="sr-only">{label ?? t('list.stages')}</legend>
+    <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] md:mx-0 md:px-0">
+      <div
+        ref={list}
+        role="tablist"
+        aria-label={label ?? t('list.stages')}
+        onKeyDown={onKey}
+        className="inline-flex h-10 items-center rounded-[10px] bg-muted p-[3px] md:h-9"
+      >
         {tabs.map((tab) => {
           const on = tab.key === value;
           return (
             <button
               key={tab.key}
               type="button"
-              aria-pressed={on}
+              role="tab"
+              aria-selected={on}
+              tabIndex={on ? 0 : -1}
               onClick={() => onChange(tab.key)}
               className={cn(
-                'inline-flex h-[30px] items-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent px-2.5 text-sm font-medium text-muted-foreground hover:text-foreground',
+                'inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent px-3 text-sm font-medium text-muted-foreground hover:text-foreground md:h-[30px] md:px-2.5 md:text-[13px]',
                 on && 'bg-background text-foreground shadow-sm dark:border-input dark:bg-input',
               )}
             >
@@ -58,7 +97,7 @@ export function StageTabs<K extends string>({
             </button>
           );
         })}
-      </fieldset>
+      </div>
     </div>
   );
 }
@@ -105,24 +144,36 @@ export function FilterButtons({
   filters,
   onReset,
   extra,
+  showLabel,
+  width,
+  drawerExtra,
+  drawerAlways,
 }: {
   filters: readonly FilterDef[];
   /** Shown while anything is filtered. */
   onReset?: (() => void) | undefined;
   /** More toolbar controls, after the filters (a checkbox, a chip). */
   extra?: ReactNode;
+  /** The phone drawer's main button: "Show 16 orders". */
+  showLabel?: string | undefined;
+  /** The popover's width, as each board draws it (208 px by default). */
+  width?: number;
+  /** More in the phone drawer, after the filters (a switch). */
+  drawerExtra?: ReactNode;
+  /** On phones, the drawer even for one filter. */
+  drawerAlways?: boolean;
 }) {
   const { t } = useLocale();
   const shown = filters.filter((f) => f.options.length > 0);
-  const many = shown.length > 1;
+  const many = shown.length > 1 || Boolean(drawerAlways);
   return (
     <>
       <div className={cn('flex-wrap items-center gap-2', many ? 'hidden md:flex' : 'flex')}>
         {shown.map((f) => (
-          <FilterButton key={f.key} filter={f} />
+          <FilterButton key={f.key} filter={f} width={width} />
         ))}
       </div>
-      {many && <FilterDrawer filters={shown} />}
+      {many && <FilterDrawer filters={shown} showLabel={showLabel} extra={drawerExtra} />}
       {extra}
       {onReset && (
         <Button variant="ghost" onClick={onReset}>
@@ -134,7 +185,7 @@ export function FilterButtons({
   );
 }
 
-function FilterButton({ filter }: { filter: FilterDef }) {
+function FilterButton({ filter, width = 208 }: { filter: FilterDef; width?: number | undefined }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -199,25 +250,22 @@ function FilterButton({ filter }: { filter: FilterDef }) {
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => (open ? close(false) : setOpen(true))}
-        className={cn(
-          'inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-dashed border-input bg-background px-3 text-sm font-medium shadow-xs hover:bg-muted md:min-h-8 dark:bg-white/5',
-          picked.length > 0 && 'border-solid',
-        )}
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent md:h-8 dark:border-input dark:bg-white/[0.045]"
       >
-        {picked.length > 0 ? (
+        <CirclePlus aria-hidden className="size-4" />
+        {filter.label}
+        {picked.length > 0 && (
           <>
-            {filter.label}
-            <span aria-hidden className="h-4 w-px bg-border" />
-            <span className="max-w-40 truncate rounded-md bg-muted px-1 text-xs font-normal">
-              {picked.length === 1
-                ? picked[0]?.label
-                : t('list.selectedCount', { count: picked.length })}
-            </span>
-          </>
-        ) : (
-          <>
-            <CirclePlus aria-hidden className="size-4" />
-            {filter.label}
+            <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+            {picked.length > 2 ? (
+              <SecondaryBadge>{t('list.selectedCount', { count: picked.length })}</SecondaryBadge>
+            ) : (
+              picked.map((o) => (
+                <SecondaryBadge key={o.value} className="max-w-40 truncate">
+                  {o.label}
+                </SecondaryBadge>
+              ))
+            )}
           </>
         )}
       </button>
@@ -227,7 +275,8 @@ function FilterButton({ filter }: { filter: FilterDef }) {
           role="dialog"
           aria-label={filter.label}
           onKeyDown={onKey}
-          className="absolute top-full left-0 z-40 mt-1 w-60 overflow-hidden rounded-lg border border-border bg-background shadow-md"
+          style={{ width }}
+          className="absolute top-full left-0 z-40 mt-1 overflow-hidden rounded-lg border border-border bg-popover text-foreground shadow-md"
         >
           <div className="flex h-9 items-center gap-2 border-b border-border px-3">
             <Search aria-hidden className="size-4 shrink-0 opacity-50" />
@@ -243,11 +292,7 @@ function FilterButton({ filter }: { filter: FilterDef }) {
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">
-            {options.length === 0 && (
-              <p className="px-2 py-5 text-center text-sm text-muted-foreground">
-                {t('list.noOption')}
-              </p>
-            )}
+            {options.length === 0 && <p className="py-5 text-center">{t('list.noResults')}</p>}
             {options.map((o) => {
               const on = values.includes(o.value);
               return (
@@ -257,23 +302,19 @@ function FilterButton({ filter }: { filter: FilterDef }) {
                   data-filter-item
                   aria-pressed={on}
                   onClick={() => choose(o.value)}
-                  className="flex min-h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-muted focus-visible:bg-muted md:min-h-8"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm leading-5 outline-none hover:bg-accent focus-visible:bg-accent"
                 >
-                  {filter.multi ? (
-                    // A box to tick: several can be picked.
-                    <span
-                      aria-hidden
-                      className={cn(
-                        'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
-                        on && 'border-primary bg-primary text-primary-foreground',
-                      )}
-                    >
-                      {on && <Check className="size-3" />}
-                    </span>
-                  ) : (
-                    <Check aria-hidden className={cn('size-4 shrink-0', !on && 'invisible')} />
-                  )}
-                  <span className="truncate">{o.label}</span>
+                  {/* A box to tick, as the board draws it. */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
+                      on && 'border-primary bg-primary text-primary-foreground',
+                    )}
+                  >
+                    {on && <Check className="size-3" strokeWidth={3} />}
+                  </span>
+                  <span className="flex-1 truncate">{o.label}</span>
                 </button>
               );
             })}
@@ -284,9 +325,9 @@ function FilterButton({ filter }: { filter: FilterDef }) {
                 type="button"
                 data-filter-item
                 onClick={clear}
-                className="flex min-h-9 w-full items-center justify-center rounded-md text-sm outline-none hover:bg-muted focus-visible:bg-muted md:min-h-8"
+                className="flex w-full items-center justify-center rounded-md px-2 py-1.5 text-sm leading-5 outline-none hover:bg-accent focus-visible:bg-accent"
               >
-                {t('list.clearFilter')}
+                {t('list.clearFilters')}
               </button>
             </div>
           )}
@@ -297,7 +338,15 @@ function FilterButton({ filter }: { filter: FilterDef }) {
 }
 
 /** Phones with several filters: one button that says how many are set, and a drawer. */
-function FilterDrawer({ filters }: { filters: readonly FilterDef[] }) {
+function FilterDrawer({
+  filters,
+  showLabel,
+  extra,
+}: {
+  filters: readonly FilterDef[];
+  showLabel?: string | undefined;
+  extra?: ReactNode;
+}) {
   const { t, locale } = useLocale();
   const [open, setOpen] = useState(false);
   const set = filters.filter((f) => f.value !== undefined).length;
@@ -305,58 +354,49 @@ function FilterDrawer({ filters }: { filters: readonly FilterDef[] }) {
     <>
       <Button
         variant="secondary"
-        className="md:hidden"
+        className="h-10 md:hidden"
         aria-label={set ? t('list.filtersSet', { count: set }) : t('list.filters')}
         onClick={() => setOpen(true)}
       >
         <SlidersHorizontal aria-hidden />
         {t('list.filters')}
-        {set > 0 && (
-          <span className="rounded-md bg-muted px-1.5 text-xs tabular-nums">
-            {formatNumber(locale, set)}
-          </span>
-        )}
+        {set > 0 && <SecondaryBadge className="ml-0.5">{formatNumber(locale, set)}</SecondaryBadge>}
       </Button>
       <Dialog open={open} onOpenChange={setOpen} title={t('list.filters')}>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 md:gap-5">
           {filters.map((f) => (
             <fieldset key={f.key} className="flex flex-col gap-2">
-              <legend className="mb-2 text-sm font-medium">{f.label}</legend>
-              <div className="flex flex-wrap gap-2">
-                {f.options.map((o) => {
-                  const on = pickedValues(f).includes(o.value);
-                  return (
-                    <button
-                      key={o.value}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => toggleValue(f, o.value)}
-                      className={cn(
-                        'min-h-9 rounded-lg border border-input px-3 text-sm',
-                        on && 'border-primary bg-primary text-primary-foreground',
-                      )}
-                    >
-                      {o.label}
-                    </button>
-                  );
-                })}
+              <legend className="mb-2 text-sm leading-none font-medium">{f.label}</legend>
+              <div className="flex flex-wrap gap-1.5">
+                {f.options.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={pickedValues(f).includes(o.value)}
+                    onClick={() => toggleValue(f, o.value)}
+                    className={chipClass}
+                  >
+                    {o.label}
+                  </button>
+                ))}
               </div>
             </fieldset>
           ))}
+          {extra}
         </div>
-        <div className="grid grid-cols-[1fr_2fr] gap-2 pt-2">
+        <div className="-mx-4 flex gap-2 border-t border-border px-4 pt-3 md:mx-0 md:border-0 md:px-0 md:pt-0">
           <Button
             variant="secondary"
-            size="lg"
+            className="flex-1"
             disabled={set === 0}
             onClick={() => {
               for (const f of filters) if (f.value !== undefined) f.onChange(undefined);
             }}
           >
-            {t('list.clearAll')}
+            {t('list.clear')}
           </Button>
-          <Button size="lg" onClick={() => setOpen(false)}>
-            {t('list.showResults')}
+          <Button className="flex-[2]" onClick={() => setOpen(false)}>
+            {showLabel ?? t('list.showResults')}
           </Button>
         </div>
       </Dialog>
@@ -364,29 +404,165 @@ function FilterDrawer({ filters }: { filters: readonly FilterDef[] }) {
   );
 }
 
-/** The ⋯ button that ends a row: open or edit, other actions, then the destructive one. */
-export function RowMenu({ label, children }: { label: string; children: ReactNode }) {
+/** On phones, the picked filters as chips that remove themselves, then Clear all. */
+export function FilterChips({
+  filters,
+  onReset,
+  extra,
+}: {
+  filters: readonly FilterDef[];
+  onReset: () => void;
+  /** More chips, such as "Low stock". */
+  extra?: readonly { label: string; onRemove: () => void }[];
+}) {
   const { t } = useLocale();
+  const chips = [
+    ...filters.flatMap((f) =>
+      f.options
+        .filter((o) => pickedValues(f).includes(o.value))
+        .map((o) => ({ label: o.label, onRemove: () => toggleValue(f, o.value) })),
+    ),
+    ...(extra ?? []),
+  ];
+  if (!chips.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 md:hidden">
+      {chips.map((c) => (
+        <button
+          key={c.label}
+          type="button"
+          aria-label={t('list.removeFilter', { name: c.label })}
+          onClick={c.onRemove}
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-muted pr-1 pl-2 text-xs"
+        >
+          {c.label}
+          <X aria-hidden className="size-3.5 opacity-60" />
+        </button>
+      ))}
+      <Button variant="ghost" className="h-7 px-2 text-xs has-[>svg]:px-2" onClick={onReset}>
+        {t('list.clearAll')}
+      </Button>
+    </div>
+  );
+}
+
+/** On phones, the list's order in a drawer, since there are no column headings to press. */
+export function SortDrawer({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly { value: string; label: string }[];
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+}) {
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+  return (
+    <>
+      <Button variant="secondary" className="md:hidden" onClick={() => setOpen(true)}>
+        <ArrowDownUp aria-hidden />
+        {current?.label ?? t('list.sort')}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen} title={t('list.sortBy')}>
+        <fieldset aria-label={t('list.sortBy')} className="-mx-2 flex flex-col">
+          {options.map((o) => (
+            <label
+              key={o.value}
+              className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-accent has-[:focus-visible]:bg-accent"
+            >
+              <input
+                type="radio"
+                name="list-sort"
+                className="sr-only"
+                checked={o.value === value}
+                onChange={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+              />
+              <span className="flex-1">{o.label}</span>
+              <Check
+                aria-hidden
+                className={cn('size-[18px]', o.value === value ? 'opacity-100' : 'opacity-0')}
+              />
+            </label>
+          ))}
+        </fieldset>
+      </Dialog>
+    </>
+  );
+}
+
+/** Set inside a phone's menu drawer: closes it once an item is chosen. */
+const InDrawer = createContext<(() => void) | null>(null);
+
+/**
+ * The ⋯ button that ends a row: open or edit, other actions, then the
+ * destructive one. A popover on desktops; on phones a drawer from the
+ * bottom with 44 px rows (design rule 5).
+ */
+export function RowMenu({
+  label,
+  trigger = 'ghost',
+  page = trigger === 'outline',
+  children,
+}: {
+  label: string;
+  /** "outline" for a page's own ⋯ beside its header buttons. */
+  trigger?: 'ghost' | 'outline';
+  /** The page's own menu (named "More actions"), not a row's. */
+  page?: boolean;
+  children: ReactNode;
+}) {
+  const { t } = useLocale();
+  const wide = useWide();
+  const [open, setOpen] = useState(false);
+  const button = (
+    <Button
+      variant={trigger === 'outline' ? 'secondary' : 'ghost'}
+      size="icon"
+      className={cn('relative z-[1]', trigger === 'ghost' && !page && 'size-8 md:size-8')}
+      aria-label={page ? label : `${t('list.rowActions')}: ${label}`}
+      {...(wide
+        ? {}
+        : {
+            'aria-haspopup': 'menu' as const,
+            'aria-expanded': open,
+            onClick: () => setOpen(true),
+          })}
+    >
+      <Ellipsis aria-hidden />
+    </Button>
+  );
+  if (!wide)
+    return (
+      <>
+        {button}
+        <Dialog open={open} onOpenChange={setOpen} title={label}>
+          <InDrawer.Provider value={() => setOpen(false)}>
+            <div role="menu" aria-label={label} className="-mx-4 -mt-2 -mb-2 flex flex-col">
+              {children}
+            </div>
+          </InDrawer.Provider>
+        </Dialog>
+      </>
+    );
   return (
     <Menu.Root>
-      <Menu.Trigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          aria-label={`${t('list.rowActions')}: ${label}`}
-        >
-          <Ellipsis aria-hidden />
-        </Button>
-      </Menu.Trigger>
+      <Menu.Trigger asChild>{button}</Menu.Trigger>
       <Menu.Portal>
-        <Menu.Content align="end" sideOffset={4} className={cn(menuContent, 'min-w-44')}>
+        <Menu.Content align="end" sideOffset={4} className={cn(menuContent, 'w-[200px]')}>
           {children}
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
   );
 }
+
+const drawerItem =
+  "flex min-h-11 w-full items-center gap-3 px-4 text-left text-[15px] leading-5 hover:bg-accent focus-visible:bg-accent disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground";
 
 export function RowMenuItem({
   onSelect,
@@ -399,15 +575,27 @@ export function RowMenuItem({
   disabled?: boolean;
   children: ReactNode;
 }) {
+  const close = useContext(InDrawer);
+  if (close)
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        disabled={disabled ?? false}
+        onClick={() => {
+          close();
+          onSelect();
+        }}
+        className={cn(drawerItem, danger && 'text-danger [&_svg]:!text-danger')}
+      >
+        {children}
+      </button>
+    );
   return (
     <Menu.Item
       disabled={disabled ?? false}
       onSelect={onSelect}
-      className={cn(
-        menuItem,
-        '[&_svg]:size-4 [&_svg]:text-muted-foreground',
-        danger && 'text-danger [&_svg]:text-danger',
-      )}
+      className={cn(menuItem, danger && menuItemDanger)}
     >
       {children}
     </Menu.Item>
@@ -415,78 +603,168 @@ export function RowMenuItem({
 }
 
 export function RowMenuSeparator() {
+  const close = useContext(InDrawer);
+  if (close) return <hr className="my-1 h-px border-0 bg-border" />;
   return <Menu.Separator className={menuSeparator} />;
 }
 
+/** An action in the selection bar. */
+export interface BarAction {
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  disabled?: boolean;
+  title?: string | undefined;
+}
+
 /**
- * The dark bar shown while rows are selected: how many, the actions, then
- * Clear. It stays at the bottom of the screen (above the tab bar on phones).
+ * The dark bar shown while rows are selected (the canvas's .mm-bar): how
+ * many, the actions, then a way to clear. On desktops it sits in the list's
+ * footer; on phones it spans the screen above the tab bar, with the first
+ * action and the rest under ⋯.
  */
 export function SelectionBar({
   count,
+  label,
   onClear,
-  children,
+  actions,
+  clearText = false,
 }: {
   count: number;
+  /** "3 orders selected"; "3 selected" by default. */
+  label?: string;
   onClear: () => void;
-  children: ReactNode;
+  actions: readonly BarAction[];
+  /** "Clear" in words at the end, as the Orders board has it, instead of ×. */
+  clearText?: boolean;
 }) {
   const { t } = useLocale();
   if (count === 0) return null;
+  const text = label ?? t('list.selectedCount', { count });
+  const [main, ...more] = actions;
   return (
-    <div className="pointer-events-none sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 flex justify-center md:bottom-4">
-      <div
-        role="toolbar"
-        aria-label={t('list.selectedCount', { count })}
-        className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-primary py-1.5 pr-1.5 pl-3.5 text-sm text-primary-foreground shadow-lg [scrollbar-width:none]"
+    <div
+      role="toolbar"
+      aria-label={text}
+      className="fixed inset-x-3 bottom-[calc(4rem+0.75rem+env(safe-area-inset-bottom))] z-30 flex h-12 items-center gap-0.5 rounded-xl bg-primary pr-1 pl-3.5 text-sm text-primary-foreground shadow-lg md:static md:h-11 md:max-w-[calc(100%-1rem)] md:gap-1 md:pr-1.5"
+    >
+      <span
+        aria-live="polite"
+        className="flex-1 font-medium whitespace-nowrap tabular-nums md:flex-none"
       >
-        <span aria-live="polite" className="shrink-0 pr-2 font-medium whitespace-nowrap">
-          {t('list.selectedCount', { count })}
-        </span>
-        <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-primary-foreground/25" />
-        {children}
-        <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-primary-foreground/25" />
+        {text}
+      </span>
+      <span
+        aria-hidden
+        className="mx-1.5 hidden h-4 w-px shrink-0 bg-primary-foreground/25 md:block"
+      />
+      {actions.map((a, i) => (
+        <button
+          key={a.label}
+          type="button"
+          disabled={a.disabled}
+          title={a.title}
+          onClick={a.onClick}
+          className={cn(barAction, i > 0 && 'max-md:hidden')}
+        >
+          <a.icon aria-hidden />
+          {a.label}
+        </button>
+      ))}
+      {main && more.length > 0 && (
+        <Menu.Root>
+          <Menu.Trigger asChild>
+            <button
+              type="button"
+              aria-label={t('list.moreActions')}
+              className={cn(barAction, 'w-9 justify-center px-0 md:hidden')}
+            >
+              <Ellipsis aria-hidden />
+            </button>
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Content
+              align="end"
+              side="top"
+              sideOffset={8}
+              className={cn(menuContent, 'w-[200px]')}
+            >
+              {more.map((a) => (
+                <Menu.Item
+                  key={a.label}
+                  disabled={a.disabled}
+                  onSelect={a.onClick}
+                  className={menuItem}
+                >
+                  <a.icon aria-hidden />
+                  {a.label}
+                </Menu.Item>
+              ))}
+            </Menu.Content>
+          </Menu.Portal>
+        </Menu.Root>
+      )}
+      <span aria-hidden className="mx-1.5 h-4 w-px shrink-0 bg-primary-foreground/25" />
+      {clearText ? (
+        <button type="button" onClick={onClear} className={barAction}>
+          {t('list.clear')}
+        </button>
+      ) : (
         <button
           type="button"
           aria-label={t('list.clearSelection')}
           title={t('list.clearSelection')}
           onClick={onClear}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg hover:bg-primary-foreground/15"
+          className={cn(barAction, 'w-9 justify-center px-0 md:w-8')}
         >
-          <X aria-hidden className="size-4" />
+          <X aria-hidden />
         </button>
-      </div>
+      )}
     </div>
   );
 }
 
-/** An action in the selection bar. */
+/** An action's look in the selection bar. */
 export const barAction =
-  'inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 font-medium hover:bg-primary-foreground/15 disabled:opacity-50 [&_svg]:size-4';
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 font-medium hover:bg-primary-foreground/[0.14] disabled:pointer-events-none disabled:opacity-50 md:h-8 md:px-3 [&_svg]:size-4';
+
+/** The muted count at the right of the toolbar: "16 orders · ৳62,800". */
+export function ToolbarSummary({ children }: { children: ReactNode }) {
+  return (
+    <span className="ml-auto hidden text-[13px] text-muted-foreground tabular-nums md:inline">
+      {children}
+    </span>
+  );
+}
 
 /** A list's search box, with its magnifier. */
 export function SearchInput({
   label,
+  placeholder,
   value,
   onChange,
   className,
 }: {
   label: string;
+  /** A shorter hint on phones, as the phone boards write it. */
+  placeholder?: string | undefined;
   value: string;
   onChange: (value: string) => void;
+  /** The width, as each board gives it: `md:w-[260px]`. */
   className?: string;
 }) {
+  const wide = useWide();
   return (
     <div className={cn('relative', className)}>
       <Search
         aria-hidden
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground md:left-2.5"
       />
       <Input
         type="search"
-        className="pl-9"
+        className="pl-9 md:h-8 md:pl-8"
         aria-label={label}
-        placeholder={label}
+        placeholder={wide ? label : (placeholder ?? label)}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />

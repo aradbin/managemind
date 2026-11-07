@@ -6,15 +6,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import { useLocale } from '../../i18n';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
+import { cn } from '../../lib/utils';
 import { DescriptionField } from '../catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../catalog/language-tabs';
+import { fieldLabel } from '../field-styles';
 import { Button } from '../ui/button';
+import { control } from '../ui/input';
+import { chipClass } from '../ui/segmented';
 import { ImagePicker } from './image-picker';
 import { LinkPicker } from './link-picker';
 import { LocalizedField } from './localized-field';
-
-const select =
-  'w-full min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm disabled:opacity-50';
 
 /** A new section of a kind, with empty texts (the storefront hides empty ones). */
 export function newSection(type: ThemeSection['type']): ThemeSection {
@@ -58,22 +59,50 @@ function Choice<V extends string>({
   options,
   onChange,
   disabled,
+  chips,
 }: {
   label: string;
   value: V;
   options: { value: V; label: string }[];
   onChange: (value: V) => void;
   disabled?: boolean | undefined;
+  /** A few short choices, as chips (.mm-chipq). */
+  chips?: boolean;
 }) {
   const id = useId();
+  if (chips)
+    return (
+      <div className="flex flex-col">
+        <span id={id} className={fieldLabel}>
+          {label}
+        </span>
+        <fieldset
+          aria-labelledby={id}
+          disabled={disabled}
+          className="m-0 flex flex-wrap gap-1.5 border-0 p-0"
+        >
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              aria-pressed={o.value === value}
+              onClick={() => onChange(o.value)}
+              className={chipClass}
+            >
+              {o.label}
+            </button>
+          ))}
+        </fieldset>
+      </div>
+    );
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">
+    <div className="flex flex-col">
+      <label htmlFor={id} className={fieldLabel}>
         {label}
       </label>
       <select
         id={id}
-        className={select}
+        className={cn(control, 'h-10 md:h-9')}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as V)}
@@ -114,7 +143,6 @@ function CheckList({
         <label key={o.id} className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={selected.includes(o.id)}
             onChange={(e) =>
               onChange(
@@ -152,13 +180,14 @@ export function SectionEditor({
     id: c.id,
     label: pick(c.translations, locale)?.name ?? '—',
   }));
-  const common = { defaultLang, disabled: Boolean(disabled) };
+  const common = { defaultLang, disabled: Boolean(disabled), stacked: true };
 
   switch (section.type) {
     case 'hero':
       return (
         <div className="flex flex-col gap-4">
           <Choice
+            chips
             label={t('section.size')}
             value={section.size}
             disabled={disabled}
@@ -309,7 +338,7 @@ export function SectionEditor({
             value={section.heading}
             onChange={(heading) => onChange({ ...section, heading })}
           />
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="flex flex-col gap-3.5">
             <Choice
               label={t('section.collection')}
               value={section.collectionId ?? ''}
@@ -321,6 +350,7 @@ export function SectionEditor({
               onChange={(id) => onChange({ ...section, collectionId: id || null })}
             />
             <Choice
+              chips
               label={t('section.limit')}
               value={String(section.limit)}
               disabled={disabled}
@@ -328,6 +358,7 @@ export function SectionEditor({
               onChange={(n) => onChange({ ...section, limit: Number(n) })}
             />
             <Choice
+              chips
               label={t('section.layout')}
               value={section.layout}
               disabled={disabled}
@@ -351,6 +382,7 @@ export function SectionEditor({
             onChange={(mediaId) => onChange({ ...section, mediaId })}
           />
           <Choice
+            chips
             label={t('section.imagePosition')}
             value={section.imagePosition}
             disabled={disabled}

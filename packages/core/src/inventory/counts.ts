@@ -11,6 +11,7 @@ import {
   BACK_OFFICE_LIMITS,
   countLineInput,
   documentNumber,
+  STOCK_COUNT_STATUSES,
   type StockCountScope,
   type StockCountStatus,
   stockCountInput,
@@ -215,6 +216,9 @@ export interface StockCountSummary {
   scope: StockCountScope;
   lineCount: number;
   countedLines: number;
+  /** Counted items whose number differs from the system's, and the units in all. */
+  differentLines: number;
+  differenceUnits: number;
   createdAt: string;
   appliedAt: string | null;
 }
@@ -225,15 +229,35 @@ export async function listStockCounts(
   actor: Actor,
   query: {
     status?: StockCountStatus | undefined;
+    /** Also how many counts each status holds, for the tabs. */
+    counts?: boolean | undefined;
     before?: string | undefined;
     /** Rows to skip, for numbered pages; the cursor is then ignored. */
     offset?: number | undefined;
     limit?: number | undefined;
   } = {},
-): Promise<{ items: StockCountSummary[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: StockCountSummary[];
+  nextCursor: string | null;
+  total: number;
+  counts?: Record<StockCountStatus | 'all', number>;
+}> {
   authorize(actor, 'inventory.read');
   await requireBackOffice(tx);
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 200);
+  let counts: Record<StockCountStatus | 'all', number> | undefined;
+  if (query.counts) {
+    const by = await tx.db
+      .select({ status: sc.status, n: sql<number>`count(*)::int` })
+      .from(sc)
+      .groupBy(sc.status);
+    const base = Object.fromEntries(STOCK_COUNT_STATUSES.map((x) => [x, 0])) as Record<
+      StockCountStatus,
+      number
+    >;
+    for (const r of by) base[r.status] = Number(r.n);
+    counts = { ...base, all: by.reduce((n, r) => n + Number(r.n), 0) };
+  }
   const matching = query.status ? [eq(sc.status, query.status)] : [];
   // How many match, for numbered pages.
   const [counted] = await tx.db
@@ -249,13 +273,17 @@ export async function listStockCounts(
     .select({
       row: sc,
       counted: sql<number>`(select count(*)::int from store.stock_count_lines l where l.stock_count_id = ${sc.id} and l.counted is not null)`,
+      differentLines: sql<number>`(select count(*)::int from store.stock_count_lines l
+        where l.stock_count_id = ${sc.id} and l.counted is not null and coalesce(l.difference, l.counted - l.expected_at_count, 0) <> 0)`,
+      differenceUnits: sql<number>`(select coalesce(sum(coalesce(l.difference, l.counted - l.expected_at_count)), 0)::int
+        from store.stock_count_lines l where l.stock_count_id = ${sc.id} and l.counted is not null)`,
     })
     .from(sc)
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(sc.id))
     .limit(limit + 1)
     .offset(query.offset ?? 0);
-  const items = rows.slice(0, limit).map(({ row, counted }) => ({
+  const items = rows.slice(0, limit).map(({ row, counted, differentLines, differenceUnits }) => ({
     id: row.id,
     number: row.number,
     reference: documentNumber('SC', row.number),
@@ -264,6 +292,8 @@ export async function listStockCounts(
     scope: row.scope as StockCountScope,
     lineCount: row.lineCount,
     countedLines: counted,
+    differentLines: Number(differentLines),
+    differenceUnits: Number(differenceUnits),
     createdAt: row.createdAt.toISOString(),
     appliedAt: iso(row.appliedAt),
   }));
@@ -271,6 +301,7 @@ export async function listStockCounts(
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
     total,
+    ...(counts ? { counts } : {}),
   };
 }
 

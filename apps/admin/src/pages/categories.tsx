@@ -16,7 +16,7 @@ import {
   SquarePen,
   Trash2,
 } from 'lucide-react';
-import { type MouseEvent, useId, useMemo, useState } from 'react';
+import { type MouseEvent, useCallback, useId, useMemo, useState } from 'react';
 import { DescriptionField } from '../components/catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, LanguageTabs } from '../components/catalog/language-tabs';
 import { ConfirmDialog } from '../components/confirm-dialog';
@@ -41,6 +41,7 @@ import {
   storeSettingsQuery,
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { useOpenNew } from '../lib/open-new';
 import { cn } from '../lib/utils';
 
 type Editing =
@@ -56,6 +57,10 @@ export function CategoriesPage() {
   const categories = useQuery(categoriesQuery);
   const attributes = useQuery(attributesQuery);
   const [editing, setEditing] = useState<Editing>(null);
+  useOpenNew(
+    useCallback(() => setEditing({ mode: 'create', parentId: null }), []),
+    canWrite,
+  );
   const [deleting, setDeleting] = useState<Category | null>(null);
   const [q, setQ] = useState('');
   /** Open rows; the top level starts open. */
@@ -145,7 +150,6 @@ export function CategoriesPage() {
       <PageHeader
         className="mb-0"
         title={t('catalog.categories')}
-        description={t('categories.intro')}
         actions={
           canWrite && (
             <Button onClick={() => setEditing({ mode: 'create', parentId: null })}>
@@ -157,7 +161,7 @@ export function CategoriesPage() {
       />
       <div className="flex flex-wrap items-center gap-2">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
           label={t('categories.search')}
           value={q}
           onChange={setQ}
@@ -169,7 +173,7 @@ export function CategoriesPage() {
           </Button>
         )}
         {all.length > 0 && (
-          <span className="ml-auto text-sm text-muted-foreground">
+          <span className="ml-auto text-[13px] text-muted-foreground tabular-nums">
             {t('categories.count', { count: all.length, top })}
           </span>
         )}
@@ -342,6 +346,7 @@ export function CategoriesPage() {
       >
         <p>{t('categories.deleteBody', { name: name(deleting) })}</p>
       </ConfirmDialog>
+      <p className="text-[13px] text-muted-foreground">{t('categories.footnote')}</p>
     </div>
   );
 }
@@ -550,7 +555,6 @@ function CategorySheet({
                 <label key={a.id} className="flex min-h-9 items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    className="size-4 accent-primary"
                     checked={chosen.includes(a.id)}
                     onChange={(e) =>
                       setChosen(

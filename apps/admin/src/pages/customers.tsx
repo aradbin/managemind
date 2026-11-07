@@ -3,31 +3,55 @@
 // and note; customers and addresses edited in side panels; import through the
 // import screen; export.
 import { formatNumber } from '@managemind/shared/i18n';
-import { normalizePhone } from '@managemind/shared/phone';
+import { formatPhone, normalizePhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { FileUp, MessageCircle, Phone, Plus, SquarePen, UserRound } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Copy,
+  FileUp,
+  Flag,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Plus,
+  SquarePen,
+  Star,
+  Trash2,
+  UserRound,
+  UserX,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { Field } from '../components/field';
-import { FilterButtons, RowMenu, RowMenuItem, SearchInput } from '../components/list-tools';
+import {
+  FilterButtons,
+  RowMenu,
+  RowMenuItem,
+  RowMenuSeparator,
+  SearchInput,
+} from '../components/list-tools';
 import { Notice } from '../components/notice';
-import { StatusChip } from '../components/order-status';
-import { BackLink, PageHeader } from '../components/page-header';
+import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker, placeReady } from '../components/place-picker';
-import { RiskPanel } from '../components/risk';
+import { PhoneRecordHeader } from '../components/record-header';
+import { RiskPanel, ScoreBadge } from '../components/risk';
 import { initials } from '../components/store-switcher';
 import { useToast } from '../components/toast';
+import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardFrame, cardPadded, cardTitle } from '../components/ui/card';
 import { Textarea } from '../components/ui/input';
 import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
-import { useLocale } from '../i18n';
+import { StatRow } from '../components/ui/stat-row';
+import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
+import { useOpenNew } from '../lib/open-new';
 import {
   type Customer,
   type CustomerAddress,
@@ -59,6 +83,22 @@ export function CustomersPage() {
   const [q, setQ] = useState(search.q ?? '');
   /** The panel: a new customer, or one being edited. */
   const [panel, setPanel] = useState<{ customer?: CustomerSummary } | null>(null);
+  const [deleting, setDeleting] = useState<CustomerSummary | null>(null);
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(await api.DELETE('/v1/admin/customers/{id}', { params: { path: { id } } })),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast(t('customers.deleted'));
+      setDeleting(null);
+    },
+  });
+  useOpenNew(
+    useCallback(() => setPanel({}), []),
+    canWrite,
+  );
   const setFilter = (patch: Partial<CustomerSearch>) =>
     navigate({
       from: '/customers/',
@@ -100,14 +140,16 @@ export function CustomersPage() {
     setFilter({ q: undefined, tag: undefined });
   };
   const open = (c: CustomerSummary) => navigate({ to: '/customers/$id', params: { id: c.id } });
+  const picked = (search.tag ?? '').split(',').filter(Boolean);
   const tagChips = (c: CustomerSummary) =>
     c.tags.length > 0 && (
-      <span className="flex flex-wrap gap-1">
+      <span className="flex min-w-0 flex-wrap gap-1">
         {c.tags.map((tag) => (
           <button
             key={tag}
             type="button"
-            className="h-[22px] rounded-md bg-muted px-1.5 text-xs font-medium hover:bg-border"
+            aria-pressed={picked.includes(tag)}
+            className="relative z-[1] inline-flex h-[22px] items-center rounded-md bg-muted px-2 text-xs font-medium whitespace-nowrap hover:bg-accent aria-pressed:bg-primary aria-pressed:text-primary-foreground"
             onClick={() => setFilter({ tag })}
           >
             {tag}
@@ -118,14 +160,11 @@ export function CustomersPage() {
   const columns: Column<CustomerSummary>[] = [
     {
       header: t('order.customer'),
+      skeleton: 'text',
       cell: (c) => (
-        <span className="flex items-center gap-3">
+        <span className="flex min-w-0 items-center gap-2.5">
           <Avatar name={c.name} />
-          <Link
-            to="/customers/$id"
-            params={{ id: c.id }}
-            className="truncate font-medium underline-offset-2 hover:underline"
-          >
+          <Link to="/customers/$id" params={{ id: c.id }} className="truncate font-medium">
             {c.name}
           </Link>
           {c.flagged && <FlaggedBadge />}
@@ -134,7 +173,9 @@ export function CustomersPage() {
     },
     {
       header: t('customer.phone'),
-      cell: (c) => <span className="font-mono text-muted-foreground">{c.phone}</span>,
+      cell: (c) => (
+        <span className="text-muted-foreground tabular-nums">{formatPhone(c.phone)}</span>
+      ),
     },
     {
       header: t('customer.orders'),
@@ -154,23 +195,35 @@ export function CustomersPage() {
         </span>
       ),
     },
-    { header: t('customer.tags'), wide: true, cell: (c) => tagChips(c) },
+    { header: t('customer.tags'), skeleton: 'badge', cell: (c) => tagChips(c) },
   ];
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('nav.customers')}
         actions={
           <>
-            <CustomerExportButton filters={filters} />
+            <span className="hidden md:contents">
+              <CustomerExportButton filters={filters} />
+              {canWrite && (
+                <Button variant="secondary" asChild>
+                  <Link to="/customers/import">
+                    <FileUp aria-hidden />
+                    {t('customers.import')}
+                  </Link>
+                </Button>
+              )}
+            </span>
             {canWrite && (
-              <Button variant="secondary" asChild>
-                <Link to="/customers/import">
-                  <FileUp aria-hidden />
-                  {t('customers.import')}
-                </Link>
-              </Button>
+              <span className="md:hidden">
+                <RowMenu label={t('customers.importExport')} trigger="outline">
+                  <RowMenuItem onSelect={() => navigate({ to: '/customers/import' })}>
+                    <FileUp aria-hidden />
+                    {t('customers.import')}
+                  </RowMenuItem>
+                </RowMenu>
+              </span>
             )}
             {canWrite && (
               <Button onClick={() => setPanel({})}>
@@ -181,10 +234,11 @@ export function CustomersPage() {
           </>
         }
       />
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 md:flex-wrap">
         <SearchInput
-          className="min-w-0 flex-1 basis-48 md:w-64 md:flex-none"
+          className="min-w-0 flex-1 md:w-[280px] md:flex-none"
           label={t('customers.search')}
+          placeholder={t('customers.searchPhone')}
           value={q}
           onChange={setQ}
         />
@@ -199,6 +253,7 @@ export function CustomersPage() {
               onChange: (tag) => setFilter({ tag }),
             },
           ]}
+          width={220}
           onReset={filtered ? reset : undefined}
         />
       </div>
@@ -207,11 +262,25 @@ export function CustomersPage() {
         items={items}
         rowKey={(c) => c.id}
         onOpen={open}
+        grid="minmax(0,1.5fr) 124px 60px 104px 92px minmax(0,1fr) 40px"
+        rowHeight={52}
         menu={(c) => (
           <RowMenu label={c.name}>
             <RowMenuItem onSelect={() => open(c)}>
               <UserRound aria-hidden />
-              {t('list.open')}
+              {t('customers.view')}
+            </RowMenuItem>
+            <RowMenuItem onSelect={() => window.open(`tel:${c.phone}`, '_self')}>
+              <Phone aria-hidden />
+              {t('order.call')}
+            </RowMenuItem>
+            <RowMenuItem
+              onSelect={() =>
+                window.open(`https://wa.me/${c.phone.replace(/\D/g, '')}`, '_blank', 'noopener')
+              }
+            >
+              <MessageCircle aria-hidden />
+              {t('order.whatsapp')}
             </RowMenuItem>
             {canWrite && (
               <RowMenuItem onSelect={() => setPanel({ customer: c })}>
@@ -219,27 +288,41 @@ export function CustomersPage() {
                 {t('customers.edit')}
               </RowMenuItem>
             )}
+            {canWrite && (
+              <>
+                <RowMenuSeparator />
+                <RowMenuItem danger onSelect={() => setDeleting(c)}>
+                  <Trash2 aria-hidden />
+                  {t('action.delete')}
+                </RowMenuItem>
+              </>
+            )}
           </RowMenu>
         )}
         card={(c) => (
-          <div className="flex items-start gap-3">
-            <Avatar name={c.name} />
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <Avatar name={c.name} className="size-10 text-[13px]" />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="flex min-w-0 items-center gap-2">
                 <Link to="/customers/$id" params={{ id: c.id }} className="truncate font-medium">
                   {c.name}
                 </Link>
                 {c.flagged && <FlaggedBadge />}
               </span>
-              <span className="text-sm text-muted-foreground">
-                {c.phone} · {t('dashboard.orders', { count: c.orderCount })}
-                {c.lastOrderAt ? ` · ${dateOnly(locale, c.lastOrderAt)}` : ''}
+              <span className="truncate text-[13px] leading-[18px] text-muted-foreground tabular-nums">
+                {formatPhone(c.phone)} · {t('dashboard.orders', { count: c.orderCount })}
               </span>
-              {tagChips(c)}
             </div>
             {c.orderCount > 0 && (
-              <span className="shrink-0 font-medium tabular-nums">
-                {formatPrice(c.totalSpent, locale)}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className="font-medium tabular-nums">
+                  {formatPrice(c.totalSpent, locale)}
+                </span>
+                {c.lastOrderAt && (
+                  <span className="text-xs text-muted-foreground">
+                    {dateOnly(locale, c.lastOrderAt)}
+                  </span>
+                )}
               </span>
             )}
           </div>
@@ -258,6 +341,17 @@ export function CustomersPage() {
         }
         pager={customers.pager}
       />
+      {deleting && (
+        <ConfirmDialog
+          open
+          onOpenChange={(o) => !o && setDeleting(null)}
+          title={t('customers.deleteTitle', { name: deleting.name })}
+          confirmLabel={t('action.delete')}
+          busy={remove.isPending}
+          error={remove.error ? errorMessage(remove.error, t) : undefined}
+          onConfirm={() => remove.mutate(deleting.id)}
+        />
+      )}
       {panel && <CustomerSheet customer={panel.customer} onClose={() => setPanel(null)} />}
     </div>
   );
@@ -269,7 +363,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
     <span
       aria-hidden
       className={cn(
-        'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium',
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold',
         className,
       )}
     >
@@ -281,7 +375,7 @@ function Avatar({ name, className }: { name: string; className?: string }) {
 function FlaggedBadge() {
   const { t } = useLocale();
   return (
-    <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-danger-soft px-2 text-xs font-medium text-danger">
+    <span className="inline-flex h-[22px] shrink-0 items-center rounded-lg bg-danger-soft px-2 text-xs font-medium whitespace-nowrap text-danger">
       {t('customers.flagged')}
     </span>
   );
@@ -419,18 +513,54 @@ const customerError = (e: unknown, t: Parameters<typeof orderErrorMessage>[1]) =
 
 export function CustomerDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
+  const { t } = useLocale();
+  const customer = useQuery(customerQuery(id));
+  useRecordPage(customer.data?.name, { tabBar: true });
+  if (customer.isPending) return <p role="status">{t('loading')}</p>;
+  if (customer.isError) return <Notice tone="error">{errorMessage(customer.error, t)}</Notice>;
+  return <CustomerView customer={customer.data} />;
+}
+
+// Phones stack the cards as the phone board does: the record before the orders.
+const customerOrder = {
+  risk: 'max-md:order-1',
+  orders: 'max-md:order-2',
+  addresses: 'max-md:order-3',
+  note: 'max-md:order-4',
+} as const;
+
+/** Orders still moving are dark, finished ones grey, cancelled ones outlined (as drawn). */
+const orderTone = (status: string) =>
+  status === 'completed'
+    ? 'bg-secondary text-secondary-foreground'
+    : status === 'cancelled' || status === 'returned'
+      ? 'text-muted-foreground shadow-[inset_0_0_0_1px_var(--color-border)]'
+      : 'bg-primary text-primary-foreground';
+const deliveryDot = (status: string) =>
+  status === 'delivered'
+    ? 'bg-success'
+    : status === 'failed' || status === 'returned'
+      ? 'bg-danger'
+      : status === 'shipped' || status === 'partly_shipped'
+        ? 'bg-[var(--color-bar)]'
+        : 'bg-muted-foreground';
+
+/** At most this many orders on the page; "View all" lists the rest. */
+const SHOWN_ORDERS = 5;
+
+function CustomerView({ customer: c }: { customer: Customer }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const canWrite = usePermission('customers.write');
-  const customer = useQuery(customerQuery(id));
-  const [dialog, setDialog] = useState<'edit' | 'delete' | 'anonymize' | 'address' | null>(null);
+  const canOrder = usePermission('orders.write');
   const canAnonymize = usePermission('customers.delete');
+  const [dialog, setDialog] = useState<'edit' | 'delete' | 'anonymize' | 'address' | null>(null);
   const [address, setAddress] = useState<CustomerAddress | undefined>();
   const remove = useMutation({
     mutationFn: async () =>
-      unwrap(await api.DELETE('/v1/admin/customers/{id}', { params: { path: { id } } })),
+      unwrap(await api.DELETE('/v1/admin/customers/{id}', { params: { path: { id: c.id } } })),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast(t('customers.deleted'));
@@ -440,7 +570,9 @@ export function CustomerDetailPage() {
   // A shopper's deletion request (phase-5b-plan §3.13).
   const anonymize = useMutation({
     mutationFn: async () =>
-      unwrap(await api.POST('/v1/admin/customers/{id}/anonymize', { params: { path: { id } } })),
+      unwrap(
+        await api.POST('/v1/admin/customers/{id}/anonymize', { params: { path: { id: c.id } } }),
+      ),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       toast(t('customers.anonymized'));
@@ -452,69 +584,148 @@ export function CustomerDetailPage() {
     mutationFn: async (flagged: boolean) =>
       unwrap(
         await api.PUT('/v1/admin/customers/{id}/flag', {
-          params: { path: { id } },
+          params: { path: { id: c.id } },
           body: { flagged },
         }),
       ),
-    onSuccess: (saved) => queryClient.setQueryData(customerQuery(id).queryKey, saved),
+    onSuccess: (saved) => queryClient.setQueryData(customerQuery(c.id).queryKey, saved),
   });
-  if (customer.isPending) return <p role="status">{t('loading')}</p>;
-  if (customer.isError) return <Notice tone="error">{errorMessage(customer.error, t)}</Notice>;
-  const c = customer.data;
-  const average = c.orderCount ? Math.round(c.totalSpent / c.orderCount) : 0;
+  const average = c.orderCount ? Math.round(c.totalSpent / c.orderCount / 100) * 100 : 0;
   // Staff's flag and failed deliveries can be cleared; a low score can't (phase-6-plan §3.3).
   const clearable = c.risk.reasons.some((r) => r === 'flagged' || r === 'failed_deliveries');
-  const card = 'flex flex-col gap-3 rounded-xl border border-border bg-card p-4 md:p-5';
+  const meta = [
+    c.phone && formatPhone(c.phone),
+    c.email,
+    c.firstOrderAt
+      ? t('customer.since', { date: dateOnly(locale, c.firstOrderAt) })
+      : t('customer.noOrdersYet'),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const contact = c.phone && (
+    <>
+      <Button variant="secondary" asChild>
+        <a href={`tel:${c.phone}`}>
+          <Phone aria-hidden className="size-4" />
+          {t('order.call')}
+        </a>
+      </Button>
+      <Button variant="secondary" asChild>
+        <a
+          href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <MessageCircle aria-hidden className="size-4" />
+          {t('order.whatsapp')}
+        </a>
+      </Button>
+    </>
+  );
+  const menu = (trigger: 'ghost' | 'outline') => (
+    <RowMenu label={t('list.moreActions')} trigger={trigger} page>
+      {canOrder && (
+        <RowMenuItem
+          onSelect={() =>
+            navigate({ to: '/orders/new', search: { phone: c.phone ?? '', name: c.name } })
+          }
+        >
+          <Plus aria-hidden />
+          {t('customer.newOrder')}
+        </RowMenuItem>
+      )}
+      {c.phone && (
+        <RowMenuItem
+          onSelect={() =>
+            navigator.clipboard
+              ?.writeText(formatPhone(c.phone as string))
+              .then(() => toast(t('customer.phoneCopied')))
+          }
+        >
+          <Copy aria-hidden />
+          {t('customer.copyPhone')}
+        </RowMenuItem>
+      )}
+      {canWrite && (c.flagged || !c.phoneFlagged) && (
+        <RowMenuItem disabled={flag.isPending} onSelect={() => flag.mutate(!c.flagged)}>
+          <Flag aria-hidden />
+          {t(c.flagged ? 'customer.clearFlag' : 'customer.flag')}
+        </RowMenuItem>
+      )}
+      {canWrite && (
+        <>
+          <RowMenuSeparator />
+          <RowMenuItem danger onSelect={() => setDialog('delete')}>
+            <Trash2 aria-hidden />
+            {t('customers.delete')}
+          </RowMenuItem>
+          {canAnonymize && (
+            <RowMenuItem danger onSelect={() => setDialog('anonymize')}>
+              <UserX aria-hidden />
+              {t('customers.anonymize')}
+            </RowMenuItem>
+          )}
+        </>
+      )}
+    </RowMenu>
+  );
+  const shown = c.orders.slice(0, SHOWN_ORDERS);
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center gap-4">
-        <BackLink to="/customers" label={t('nav.customers')} />
-        <Avatar name={c.name} className="size-12 text-base" />
-        <div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
-          <h1 className="truncate text-xl font-semibold tracking-tight">{c.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            {[
-              c.phone,
-              c.email,
-              c.firstOrderAt && t('customer.since', { date: dateOnly(locale, c.firstOrderAt) }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader to="/customers" backLabel={t('customer.back')} title={t('customer.title')}>
+        {canWrite && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('customers.edit')}
+            onClick={() => setDialog('edit')}
+          >
+            <Pencil aria-hidden />
+          </Button>
+        )}
+        {menu('ghost')}
+      </PhoneRecordHeader>
+      <div className="flex flex-wrap items-center gap-4 max-md:hidden">
+        <Avatar name={c.name} className="size-14 text-lg" />
+        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="truncate text-[22px] leading-7 font-semibold tracking-[-0.01em]">
+              {c.name}
+            </h1>
+            <ScoreBadge risk={c.risk} />
+          </div>
+          <p className="text-muted-foreground">{meta}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {c.phone && (
-            <>
-              <Button variant="secondary" asChild>
-                <a href={`tel:${c.phone}`}>
-                  <Phone aria-hidden className="size-4" />
-                  {t('order.call')}
-                </a>
-              </Button>
-              <Button variant="secondary" asChild>
-                <a
-                  href={`https://wa.me/${c.phone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle aria-hidden className="size-4" />
-                  {t('order.whatsapp')}
-                </a>
-              </Button>
-            </>
-          )}
+          {contact}
           {canWrite && (
             <Button variant="secondary" onClick={() => setDialog('edit')}>
-              <SquarePen aria-hidden />
-              {t('customers.edit')}
+              <Pencil aria-hidden />
+              {t('customer.edit')}
             </Button>
           )}
+          {menu('outline')}
         </div>
       </div>
+      <section aria-labelledby="customer-name" className={cn(cardPadded, 'gap-3.5 md:hidden')}>
+        <div className="flex items-center gap-3">
+          <Avatar name={c.name} className="size-12 text-base" />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-2">
+              <p id="customer-name" className="truncate text-lg leading-6 font-semibold">
+                {c.name}
+              </p>
+              <ScoreBadge risk={c.risk} />
+            </div>
+            <p className="text-[13px] leading-[18px] text-muted-foreground">{meta}</p>
+          </div>
+        </div>
+        {contact && <div className="flex gap-2 [&>a]:flex-1">{contact}</div>}
+      </section>
       {c.phoneFlagged && (
         <Notice tone="error">
-          <span className="flex flex-wrap items-center justify-between gap-2">
-            <span>
+          <span className="flex flex-col gap-2.5 md:flex-row md:items-center">
+            <span className="flex-1">
               {c.flagged
                 ? t('customer.flaggedByHand')
                 : c.risk.reasons.includes('failed_deliveries')
@@ -524,6 +735,7 @@ export function CustomerDetailPage() {
             {canWrite && clearable && (
               <Button
                 variant="secondary"
+                className="self-start md:self-auto"
                 disabled={flag.isPending}
                 onClick={() => flag.mutate(false)}
               >
@@ -534,52 +746,79 @@ export function CustomerDetailPage() {
         </Notice>
       )}
       {flag.error && <Notice tone="error">{saveErrorMessage(flag.error, t)}</Notice>}
-      <dl className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-card md:grid-cols-4">
-        {[
-          [t('customer.totalSpent'), formatPrice(c.totalSpent, locale)],
-          [t('customer.orders'), formatNumber(locale, c.orderCount)],
-          [t('dashboard.average'), formatPrice(average, locale)],
-          [t('customer.lastOrder'), c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—'],
-        ].map(([label, value]) => (
-          <div
-            key={label}
-            className="flex flex-col gap-1.5 border-border p-4 not-first:border-l max-md:nth-3:border-l-0 max-md:nth-[n+3]:border-t md:p-5"
-          >
-            <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-semibold tracking-tight tabular-nums md:text-xl">
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <StatRow
+        stats={[
+          { label: t('customer.totalSpent'), value: formatPrice(c.totalSpent, locale) },
+          { label: t('customer.orders'), value: formatNumber(locale, c.orderCount) },
+          { label: t('dashboard.average'), value: formatPrice(average, locale) },
+          {
+            label: t('customer.lastOrder'),
+            value: c.lastOrderAt ? dateOnly(locale, c.lastOrderAt) : '—',
+          },
+        ]}
+      />
+      <div className="grid items-start gap-3 md:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <section
           aria-labelledby="orders-h"
-          className="overflow-hidden rounded-xl border border-border bg-card"
+          className={cn(cardFrame, 'flex flex-col', customerOrder.orders)}
         >
-          <h2 id="orders-h" className="px-4 py-4 font-semibold md:px-5">
-            {t('customer.orders')}
-          </h2>
-          {c.orders.length === 0 ? (
-            <p className="px-4 pb-5 text-muted-foreground md:px-5">{t('customer.noOrders')}</p>
+          <div className="flex min-h-5 items-center justify-between gap-3 px-4 py-4 md:px-5">
+            <h2 id="orders-h" className={cardTitle}>
+              {t('customer.orders')}
+            </h2>
+            {c.orderCount > shown.length && c.phone && (
+              <Button variant="ghost" className="-my-1.5 -mr-2 h-8 px-2" asChild>
+                <Link to="/orders" search={{ q: c.phone }}>
+                  <span className="md:hidden">{t('customer.viewAll')}</span>
+                  <span className="max-md:hidden">
+                    {t('customer.viewAllOrders', { count: formatNumber(locale, c.orderCount) })}
+                  </span>
+                </Link>
+              </Button>
+            )}
+          </div>
+          {shown.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 border-t border-border px-5 py-10 text-center">
+              <p className="text-muted-foreground">{t('customer.noOrders')}</p>
+              {canOrder && (
+                <Button variant="secondary" asChild>
+                  <Link to="/orders/new" search={{ phone: c.phone ?? '', name: c.name }}>
+                    {t('customer.newOrder')}
+                  </Link>
+                </Button>
+              )}
+            </div>
           ) : (
-            <ul className="divide-y divide-border border-t border-border">
-              {c.orders.map((o) => (
-                <li key={o.id}>
+            <ul className="border-t border-border">
+              {shown.map((o) => (
+                <li key={o.id} className="border-b border-border last:border-b-0">
                   <Link
                     to="/orders/$id"
                     params={{ id: o.id }}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-muted md:px-5"
+                    className="grid min-h-[80px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 hover:bg-muted/50 md:min-h-[68px] md:grid-cols-[72px_64px_minmax(0,1fr)_auto] md:px-5 md:py-2"
                   >
-                    <span className="font-mono font-medium">#{o.number}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {dateOnly(locale, o.placedAt)}
+                    <span className="flex items-baseline gap-2 md:contents">
+                      <span className="font-semibold tabular-nums">#{o.number}</span>
+                      <span className="text-muted-foreground">{dateOnly(locale, o.placedAt)}</span>
                     </span>
-                    <span className="flex flex-wrap gap-1.5">
-                      <StatusChip kind="order" status={o.status} />
-                      <StatusChip kind="delivery" status={o.deliveryStatus} />
+                    <span className="flex min-w-0 flex-wrap items-center gap-1.5 max-md:col-start-1 max-md:row-start-2">
+                      <span
+                        className={cn(
+                          'inline-flex h-[22px] items-center rounded-lg px-2 text-xs font-medium whitespace-nowrap',
+                          orderTone(o.status),
+                        )}
+                      >
+                        {t(`orderStatus.${o.status}` as AdminKey)}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-[13px] whitespace-nowrap text-muted-foreground">
+                        <span
+                          aria-hidden
+                          className={cn('size-2 rounded-full', deliveryDot(o.deliveryStatus))}
+                        />
+                        {t(`deliveryStatus.${o.deliveryStatus}` as AdminKey)}
+                      </span>
                     </span>
-                    <span className="ms-auto font-semibold tabular-nums">
+                    <span className="text-right font-medium tabular-nums max-md:row-span-2 max-md:row-start-1 max-md:col-start-2">
                       {formatPrice(o.total, locale)}
                     </span>
                   </Link>
@@ -588,34 +827,40 @@ export function CustomerDetailPage() {
             </ul>
           )}
         </section>
-        <div className="flex flex-col gap-5">
-          <RiskPanel risk={c.risk} failedDeliveries={c.failedDeliveries}>
-            {canWrite && !c.flagged && (
-              <Button
-                variant="secondary"
-                disabled={flag.isPending}
-                onClick={() => flag.mutate(true)}
-              >
-                {t('customer.flag')}
-              </Button>
-            )}
-          </RiskPanel>
-          <section aria-labelledby="addresses-h" className={card}>
-            <div className="flex items-center justify-between gap-2">
-              <h2 id="addresses-h" className="font-semibold">
+        <div className="flex flex-col gap-4 max-md:contents">
+          <div className={cn('flex flex-col', customerOrder.risk)}>
+            <RiskPanel risk={c.risk} failedDeliveries={c.failedDeliveries}>
+              {canWrite && !c.phoneFlagged && (
+                <Button
+                  variant="secondary"
+                  disabled={flag.isPending}
+                  onClick={() => flag.mutate(true)}
+                >
+                  {t('customer.flag')}
+                </Button>
+              )}
+            </RiskPanel>
+          </div>
+          <section
+            aria-labelledby="addresses-h"
+            className={cn(cardPadded, 'gap-3 md:gap-3', customerOrder.addresses)}
+          >
+            <div className="flex min-h-5 items-center justify-between gap-3">
+              <h2 id="addresses-h" className={cardTitle}>
                 {t('customer.addresses')}
               </h2>
               {canWrite && c.addresses.length < 10 && (
                 <Button
                   variant="ghost"
-                  className="-mr-2"
+                  className="-my-1.5 -mr-2 h-8 px-2"
+                  aria-haspopup="dialog"
                   onClick={() => {
                     setAddress(undefined);
                     setDialog('address');
                   }}
                 >
                   <Plus aria-hidden />
-                  {t('customer.addAddress')}
+                  {t('customer.add')}
                 </Button>
               )}
             </div>
@@ -627,32 +872,44 @@ export function CustomerDetailPage() {
               }}
             />
           </section>
-          {(c.tags.length > 0 || c.note) && (
-            <section aria-labelledby="note-h" className={card}>
-              <h2 id="note-h" className="font-semibold">
+          <section
+            aria-labelledby="note-h"
+            className={cn(cardPadded, 'gap-3 md:gap-3', customerOrder.note)}
+          >
+            <div className="flex min-h-5 items-center justify-between gap-3">
+              <h2 id="note-h" className={cardTitle}>
                 {t('customer.noteAndTags')}
               </h2>
-              {c.note && <p className="whitespace-pre-wrap text-sm">{c.note}</p>}
-              {c.tags.length > 0 && (
-                <p className="flex flex-wrap gap-1.5">
-                  {c.tags.map((tag) => (
-                    <span key={tag} className="rounded-md bg-muted px-2 py-1 text-xs font-medium">
-                      {tag}
-                    </span>
-                  ))}
-                </p>
+              {canWrite && (
+                <Button
+                  variant="ghost"
+                  className="-my-1.5 -mr-2 h-8 px-2"
+                  aria-haspopup="dialog"
+                  onClick={() => setDialog('edit')}
+                >
+                  {t('order.editShort')}
+                </Button>
               )}
-            </section>
-          )}
-          {canWrite && canAnonymize && (
-            <Button
-              variant="ghost"
-              className="self-start text-danger"
-              onClick={() => setDialog('anonymize')}
-            >
-              {t('customers.anonymize')}
-            </Button>
-          )}
+            </div>
+            {c.note && <p className="whitespace-pre-wrap">{c.note}</p>}
+            {c.tags.length > 0 && (
+              <p className="flex flex-wrap gap-1.5">
+                {c.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    to="/customers"
+                    search={{ tag }}
+                    className="inline-flex h-[22px] items-center rounded-md bg-secondary px-2 text-xs font-medium whitespace-nowrap text-secondary-foreground hover:bg-accent"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+              </p>
+            )}
+            {!c.note && c.tags.length === 0 && (
+              <p className="text-muted-foreground">{t('customer.noNote')}</p>
+            )}
+          </section>
         </div>
       </div>
       {dialog === 'edit' && (
@@ -700,55 +957,103 @@ function AddressList({
   onEdit: (a: CustomerAddress) => void;
 }) {
   const { t, locale } = useLocale();
+  const queryClient = useQueryClient();
   const canWrite = usePermission('customers.write');
   const geo = useQuery(geoQuery);
+  const [deleting, setDeleting] = useState<CustomerAddress | null>(null);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['customer', c.id] });
+  const makeDefault = useMutation({
+    mutationFn: async (addressId: string) =>
+      unwrap(
+        await api.PATCH('/v1/admin/customers/{id}/addresses/{addressId}', {
+          params: { path: { id: c.id, addressId } },
+          body: { isDefault: true },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: async (addressId: string) =>
+      unwrap(
+        await api.DELETE('/v1/admin/customers/{id}/addresses/{addressId}', {
+          params: { path: { id: c.id, addressId } },
+        }),
+      ),
+    onSuccess: async () => {
+      await refresh();
+      setDeleting(null);
+    },
+  });
   if (!c.addresses.length)
-    return (
-      <p className="rounded-[10px] border border-dashed border-border px-3 py-4 text-sm text-muted-foreground">
-        {t('customer.noAddresses')}
-      </p>
-    );
+    return <p className="text-muted-foreground">{t('customer.noAddresses')}</p>;
   const g = geo.data?.geoIndex();
   return (
-    <ul className="flex flex-col gap-2">
-      {c.addresses.map((a) => (
-        <li
-          key={a.id}
-          className="flex items-start gap-2 rounded-[10px] border border-border p-3 text-sm"
-        >
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="flex items-center gap-2 font-medium">
-              {a.label ?? a.name}
-              {a.isDefault && (
-                <span className="rounded-md border border-border px-1.5 text-xs font-medium text-muted-foreground">
-                  {t('customer.default')}
-                </span>
-              )}
-            </span>
-            <span className="text-muted-foreground">
-              {a.name} · {a.phone}
-            </span>
-            <span>{a.line}</span>
-            <span className="text-muted-foreground">
-              {[g?.area(a.areaId)?.[locale], g?.district(a.districtId)?.[locale]]
-                .filter(Boolean)
-                .join(', ')}
-            </span>
-          </div>
-          {canWrite && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="-mt-1 -mr-1 size-8"
-              aria-label={`${t('customer.editAddress')}: ${a.label ?? a.name}`}
-              onClick={() => onEdit(a)}
+    <>
+      <ul className="flex flex-col gap-2">
+        {c.addresses.map((a) => {
+          const title = a.label ?? a.name;
+          return (
+            <li
+              key={a.id}
+              className="flex items-start gap-2 rounded-[10px] border border-border px-3 py-2.5 text-[13px] leading-[18px]"
             >
-              <SquarePen aria-hidden />
-            </Button>
-          )}
-        </li>
-      ))}
-    </ul>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  {title}
+                  {a.isDefault && <Badge>{t('customer.default')}</Badge>}
+                </span>
+                <span>
+                  {a.name} · {formatPhone(a.phone)}
+                </span>
+                <span>{a.line}</span>
+                <span className="text-muted-foreground">
+                  {[g?.area(a.areaId)?.[locale], g?.district(a.districtId)?.[locale]]
+                    .filter(Boolean)
+                    .join(', ')}
+                </span>
+              </div>
+              {canWrite && (
+                <div className="-mt-1 -mr-1">
+                  <RowMenu label={`${t('customer.address')}: ${title}`}>
+                    <RowMenuItem onSelect={() => onEdit(a)}>
+                      <SquarePen aria-hidden />
+                      {t('order.editShort')}
+                    </RowMenuItem>
+                    {!a.isDefault && (
+                      <RowMenuItem onSelect={() => makeDefault.mutate(a.id)}>
+                        <Star aria-hidden />
+                        {t('customer.makeDefault')}
+                      </RowMenuItem>
+                    )}
+                    <RowMenuSeparator />
+                    <RowMenuItem danger onSelect={() => setDeleting(a)}>
+                      <Trash2 aria-hidden />
+                      {t('action.delete')}
+                    </RowMenuItem>
+                  </RowMenu>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {makeDefault.error && <Notice tone="error">{orderErrorMessage(makeDefault.error, t)}</Notice>}
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title={t('customer.deleteAddressTitle')}
+        confirmLabel={t('action.delete')}
+        busy={remove.isPending}
+        error={remove.error ? orderErrorMessage(remove.error, t) : undefined}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+      >
+        {deleting && (
+          <p>
+            {deleting.label ?? deleting.name} · {deleting.line}
+          </p>
+        )}
+      </ConfirmDialog>
+    </>
   );
 }
 
@@ -865,7 +1170,6 @@ function AddressSheet({
             <label className="flex min-h-9 items-center gap-3 text-sm">
               <input
                 type="checkbox"
-                className="size-4 accent-primary"
                 checked={isDefault}
                 onChange={(e) => setDefault(e.target.checked)}
               />

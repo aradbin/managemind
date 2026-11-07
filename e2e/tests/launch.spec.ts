@@ -54,6 +54,7 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
     code = await setUpTwoFactor(admin);
     await admin.goto(`${API}/platform/billing`);
     await expect(admin.getByRole('heading', { name: t('pbilling.title'), level: 1 })).toBeVisible();
+    await admin.getByRole('button', { name: t('pbilling.issuer') }).click();
     await admin.getByLabel(t('issuer.legalName')).fill('managemind Ltd');
     await admin.getByLabel(t('issuer.address')).fill('Gulshan, Dhaka');
     await admin.getByLabel(t('issuer.bkash')).fill('01700000000');
@@ -90,8 +91,10 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
   await test.step("the plan's limit shows its upgrade message", async () => {
     await owner.goto(`${API}/settings/domains`);
     const add = async (hostname: string) => {
-      await owner.getByLabel(t('domains.hostname')).fill(hostname);
       await owner.getByRole('button', { name: t('domains.add') }).click();
+      const dialog = owner.getByRole('dialog', { name: t('domains.add') });
+      await dialog.getByLabel(t('domains.hostname')).fill(hostname);
+      await dialog.getByRole('button', { name: t('domains.connect') }).click();
     };
     await add(`www.${p.launchSlug}.example.com`);
     await expect(owner.getByText(`www.${p.launchSlug}.example.com`).first()).toBeVisible();
@@ -140,8 +143,10 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
       .getByRole('link', { name: p.launchName, exact: true })
       .locator('visible=true')
       .click();
-    await admin.getByRole('button', { name: t('tenant.close') }).click();
-    const dialog = admin.getByRole('dialog');
+    // Close store sits in the page's ⋯ menu (ADR 0034).
+    await admin.getByRole('button', { name: t('tenant.more') }).click();
+    await admin.getByRole('menuitem', { name: t('tenant.close') }).click();
+    const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E: the test is over');
     await dialog.getByLabel(t('tenant.code')).fill(await code());
     await dialog.getByLabel(t('confirm.typeToConfirm', { word: p.launchSlug })).fill(p.launchSlug);

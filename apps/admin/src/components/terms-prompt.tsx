@@ -1,9 +1,10 @@
 // The platform terms prompt for owners (phase-5b-plan §3.4, Q7): from the day
 // a version is published, owners see it with Accept; from its effective date
 // their admin is read-only until one owner accepts. Loaded only for owners.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/launch';
 import { api, unwrap } from '../lib/api';
 import { saveErrorMessage } from '../lib/errors';

@@ -1,17 +1,14 @@
-// One way to page a long list (ADR 0033): numbered pages on desktops, where
-// people jump around and share a page's address, and "Load more" on phones,
-// where scrolling on is easier than aiming at small numbers. Both show how
-// many match. The API answers a page with `total` and takes an `offset`.
-import {
-  type InfiniteData,
-  keepPreviousData,
-  type QueryKey,
-  useInfiniteQuery,
-  useQuery,
-} from '@tanstack/react-query';
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+// One way to page a long list (ADR 0034, the canvas's pager): "Showing
+// 1–10", the rows per page, "Page N" and First, Previous and Next on
+// desktops; Previous, "Page N" and Next on phones. Lists that keep the page
+// in the address (?page=3) can be shared and come back to on Back; a new
+// filter starts again at page 1. The rows per page are remembered on the
+// device. The API answers a page with `total` and takes an `offset`.
+import { keepPreviousData, type QueryKey, useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
-export const PAGE_SIZE = 50;
+export const PAGE_SIZES = [10, 20, 30, 40, 50] as const;
+const SIZE_KEY = 'mm.rows';
 
 /** What a paged list endpoint answers. */
 export interface CountedPage<T> {
@@ -19,63 +16,27 @@ export interface CountedPage<T> {
   total: number;
 }
 
-export type Pager =
-  | {
-      mode: 'pages';
-      /** From 1. */
-      page: number;
-      pageCount: number;
-      total: number;
-      size: number;
-      /** A page is on its way; the last one stays on screen meanwhile. */
-      busy: boolean;
-      onPage: (page: number) => void;
-    }
-  | {
-      mode: 'more';
-      total: number;
-      shown: number;
-      hasMore: boolean;
-      loadingMore: boolean;
-      onLoadMore: () => void;
-    };
-
-/** The pages to offer: the first, the last, and two either side of this one. */
-export function pageList(page: number, count: number): (number | 'gap')[] {
-  const shown = new Set([1, count]);
-  for (let p = page - 1; p <= page + 1; p++) if (p >= 1 && p <= count) shown.add(p);
-  // Near an end, fill to five numbers so the row doesn't jump about.
-  if (page <= 3) for (let p = 2; p <= Math.min(4, count); p++) shown.add(p);
-  if (page >= count - 2) for (let p = Math.max(1, count - 3); p < count; p++) shown.add(p);
-  const sorted = [...shown].sort((a, b) => a - b);
-  const out: (number | 'gap')[] = [];
-  sorted.forEach((p, i) => {
-    const before = sorted[i - 1];
-    if (before !== undefined && p - before === 2) out.push(before + 1);
-    else if (before !== undefined && p - before > 2) out.push('gap');
-    out.push(p);
-  });
-  return out;
+export interface Pager {
+  /** From 1. */
+  page: number;
+  pageCount: number;
+  total: number;
+  size: number;
+  /** How many rows this page shows. */
+  shown: number;
+  /** A page is on its way; the last one stays on screen meanwhile. */
+  busy: boolean;
+  onPage: (page: number) => void;
+  onSize: (size: number) => void;
 }
 
-/** The md breakpoint, where lists become tables. */
-const WIDE = '(min-width: 48rem)';
-
-function subscribe(onChange: () => void) {
-  if (typeof window === 'undefined' || !window.matchMedia) return () => {};
-  const query = window.matchMedia(WIDE);
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
-}
-
-/** True on desktops and tablets, where the list is a table. */
-export function useWide(): boolean {
-  return useSyncExternalStore(
-    subscribe,
-    () =>
-      typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(WIDE).matches : true,
-    () => true,
-  );
+function savedSize(): number {
+  try {
+    const n = Number(localStorage.getItem(SIZE_KEY));
+    return (PAGE_SIZES as readonly number[]).includes(n) ? n : PAGE_SIZES[0];
+  } catch {
+    return PAGE_SIZES[0];
+  }
 }
 
 export interface PagedListOptions<P extends CountedPage<unknown>> {
@@ -86,25 +47,19 @@ export interface PagedListOptions<P extends CountedPage<unknown>> {
   /** The page from the address, for lists that keep it there; else the list keeps its own. */
   page?: number | undefined;
   onPageChange?: ((page: number) => void) | undefined;
-  rowKey?: ((item: P['items'][number]) => string) | undefined;
-  size?: number | undefined;
   enabled?: boolean | undefined;
 }
-
-const idOf = (item: unknown) => (item as { id: string }).id;
 
 export function usePagedList<P extends CountedPage<unknown>>({
   queryKey,
   fetchPage,
   page: urlPage,
   onPageChange,
-  rowKey = idOf,
-  size = PAGE_SIZE,
   enabled = true,
 }: PagedListOptions<P>) {
   type T = P['items'][number];
-  const wide = useWide();
   const filters = JSON.stringify(queryKey);
+  const [size, setSize] = useState(savedSize);
   // Lists that don't keep the page in the address start again at page 1
   // when their filters change.
   const [own, setOwn] = useState({ filters, page: 1 });
@@ -118,7 +73,7 @@ export function usePagedList<P extends CountedPage<unknown>>({
   const paged = useQuery<P>({
     queryKey: [...queryKey, 'page', page, size],
     queryFn: () => fetchPage((page - 1) * size, size),
-    enabled: enabled && wide,
+    enabled,
     // Keep the last page on screen while the next one loads, but not the
     // rows of other filters.
     placeholderData: (previous, previousQuery) =>
@@ -126,73 +81,45 @@ export function usePagedList<P extends CountedPage<unknown>>({
         ? keepPreviousData(previous)
         : undefined,
   });
-  const more = useInfiniteQuery<P, Error, InfiniteData<P, number>, QueryKey, number>({
-    queryKey: [...queryKey, 'more', size],
-    queryFn: ({ pageParam }) => fetchPage(pageParam, size),
-    initialPageParam: 0,
-    getNextPageParam: (last, all) => {
-      const loaded = all.reduce((n, p) => n + p.items.length, 0);
-      return last.items.length > 0 && loaded < last.total ? loaded : undefined;
-    },
-    enabled: enabled && !wide,
-  });
 
-  // Rows can shift between one load and the next when orders arrive; a row
-  // already shown isn't shown twice.
-  const moreItems = useMemo(() => {
-    const seen = new Set<string>();
-    const rows: T[] = [];
-    for (const p of more.data?.pages ?? []) {
-      for (const item of p.items) {
-        const key = rowKey(item);
-        if (!seen.has(key)) {
-          seen.add(key);
-          rows.push(item);
-        }
-      }
-    }
-    return rows;
-  }, [more.data, rowKey]);
-
-  const active = wide ? paged : more;
-  const first: P | undefined = wide ? paged.data : more.data?.pages[0];
-  const total = (wide ? paged.data?.total : more.data?.pages.at(-1)?.total) ?? 0;
+  const total = paged.data?.total ?? 0;
   const pageCount = Math.max(1, Math.ceil(total / size));
 
   // A page past the end, after rows were deleted or filtered away: the last page.
-  const pastEnd = wide && paged.data && !paged.isPlaceholderData && page > pageCount;
+  const pastEnd = paged.data && !paged.isPlaceholderData && page > pageCount;
   useEffect(() => {
     if (pastEnd) setPage(pageCount);
   });
 
-  const pager: Pager = wide
-    ? {
-        mode: 'pages',
-        page,
-        pageCount,
-        total,
-        size,
-        busy: paged.isPlaceholderData,
-        onPage: setPage,
+  const items = (paged.data?.items ?? []) as T[];
+  const pager: Pager = {
+    page,
+    pageCount,
+    total,
+    size,
+    shown: items.length,
+    busy: paged.isPlaceholderData,
+    onPage: setPage,
+    onSize: (next) => {
+      try {
+        localStorage.setItem(SIZE_KEY, String(next));
+      } catch {
+        // Not remembered on this device.
       }
-    : {
-        mode: 'more',
-        total,
-        shown: moreItems.length,
-        hasMore: more.hasNextPage,
-        loadingMore: more.isFetchingNextPage,
-        onLoadMore: () => void more.fetchNextPage(),
-      };
+      setSize(next);
+      setPage(1);
+    },
+  };
 
   return {
-    items: ((wide ? paged.data?.items : moreItems) ?? []) as T[],
+    items,
     total,
-    /** The first page's whole answer, for lists that show totals beside the rows. */
-    first,
+    /** The page's whole answer, for lists that show totals beside the rows. */
+    first: paged.data,
     pager,
-    isPending: active.isPending && enabled,
-    isError: active.isError,
-    error: active.error,
-    refetch: () => void active.refetch(),
+    isPending: paged.isPending && enabled,
+    isError: paged.isError,
+    error: paged.error,
+    refetch: () => void paged.refetch(),
   };
 }

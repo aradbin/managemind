@@ -1,13 +1,15 @@
-// Side panels on Radix Dialog (ADR 0033, design rule 1): for creating or
-// editing from a list, up to about eight fields. A panel from the right on
-// desktops, a drawer 92% tall from the bottom on phones. The footer stays in
-// view: Cancel · Save on the right, and on desktops Delete at its left.
+// Side panels on Radix Dialog (ADR 0033, design rule 1, the canvas's
+// .mm-panel): for creating or editing from a list, up to about eight fields.
+// A 440 px panel from the right on desktops, a drawer 92% tall from the
+// bottom on phones. The footer stays in view: Cancel · Save on the right,
+// and Delete at its left.
 import * as RadixDialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { useLocale } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import { DrawerHandle } from './dialog';
 
 export function Sheet({
   open,
@@ -19,7 +21,7 @@ export function Sheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  description?: string | undefined;
+  description?: ReactNode;
   /** A SheetBody and a SheetFooter, often inside a SheetForm. */
   children: ReactNode;
 }) {
@@ -30,33 +32,30 @@ export function Sheet({
         <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
         <RadixDialog.Content
           {...(description ? {} : { 'aria-describedby': undefined })}
-          className="fixed inset-x-0 bottom-0 z-50 flex h-[92dvh] flex-col rounded-t-xl border border-border bg-background shadow-lg md:inset-y-0 md:right-0 md:left-auto md:h-dvh md:w-full md:max-w-md md:rounded-none md:border-y-0 md:border-r-0"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[92dvh] flex-col rounded-t-[10px] border-t border-border bg-background md:inset-y-0 md:right-0 md:left-auto md:h-dvh md:w-[440px] md:max-w-[90%] md:rounded-none md:border-t-0 md:border-l md:shadow-lg"
         >
-          <span
-            aria-hidden
-            className="mx-auto mt-2 h-1.5 w-24 shrink-0 rounded-full bg-muted md:hidden"
-          />
-          <div className="flex shrink-0 items-start gap-2 px-4 pt-3 pb-2 md:px-4 md:pt-4">
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-center md:text-left">
-              <RadixDialog.Title className="font-semibold">{title}</RadixDialog.Title>
-              {description && (
-                <RadixDialog.Description className="text-sm text-muted-foreground">
-                  {description}
-                </RadixDialog.Description>
-              )}
-            </div>
-            <RadixDialog.Close asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="-mt-1 -mr-1 hidden md:inline-flex"
-                aria-label={t('action.close')}
-              >
-                <X aria-hidden />
-              </Button>
-            </RadixDialog.Close>
+          <DrawerHandle />
+          <div className="flex shrink-0 flex-col gap-0.5 px-4 pt-3 pb-2 text-center md:gap-1.5 md:py-4 md:pr-12 md:pl-4 md:text-left">
+            <RadixDialog.Title className="text-base leading-6 font-semibold">
+              {title}
+            </RadixDialog.Title>
+            {description && (
+              <RadixDialog.Description className="text-sm text-muted-foreground">
+                {description}
+              </RadixDialog.Description>
+            )}
           </div>
           {children}
+          <RadixDialog.Close asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3 hidden size-7 opacity-70 hover:opacity-100 md:inline-flex md:size-7"
+              aria-label={t('action.close')}
+            >
+              <X aria-hidden />
+            </Button>
+          </RadixDialog.Close>
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
@@ -72,18 +71,22 @@ export function SheetForm({ className, ...props }: ComponentProps<'form'>) {
 export function SheetBody({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
-      className={cn('flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-2', className)}
+      className={cn(
+        'flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pt-2 pb-4 md:pt-1',
+        className,
+      )}
       {...props}
     />
   );
 }
 
-/** Cancel · Save on the right; `start` (Delete) at the left on desktops. */
+/** Delete at the left, then Cancel · Save. */
 export function SheetFooter({ start, children }: { start?: ReactNode; children: ReactNode }) {
   return (
-    <div className="flex shrink-0 flex-col gap-2 border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:flex-row md:items-center md:pb-4">
-      {start && <div className="order-last md:order-first md:mr-auto">{start}</div>}
-      <div className="grid grid-cols-[1fr_2fr] gap-2 md:ml-auto md:flex">{children}</div>
+    <div className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-3">
+      {start}
+      <span className="flex-1" />
+      <div className="flex gap-2 [&>*]:max-md:flex-1">{children}</div>
     </div>
   );
 }
@@ -94,7 +97,7 @@ export function SheetDelete({ className, ...props }: ComponentProps<typeof Butto
     <Button
       variant="ghost"
       size="lg"
-      className={cn('w-full text-danger hover:bg-danger-soft md:-ml-2 md:w-auto', className)}
+      className={cn('-ml-2 px-2 text-danger hover:bg-danger-soft hover:text-danger', className)}
       {...props}
     />
   );

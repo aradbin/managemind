@@ -1,25 +1,48 @@
 // Platform: stores (phase-1-plan §7.3), searched by name or address and
 // filtered by status, with their plan and setup progress (phase-5b-plan
 // §3.2); super admins open the New store page.
-import { useSuspenseQuery } from '@tanstack/react-query';
+
+import { TENANT_KINDS } from '@managemind/shared/billing';
+import { formatNumber } from '@managemind/shared/i18n';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Pause, Play, Plus, ReceiptText, Store } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DataList } from '../../components/data-list';
-import { SearchInput, StageTabs } from '../../components/list-tools';
+import {
+  FilterButtons,
+  RowMenu,
+  RowMenuItem,
+  SearchInput,
+  StageTabs,
+  ToolbarSummary,
+} from '../../components/list-tools';
 import { PageHeader } from '../../components/page-header';
+import { StoreTile } from '../../components/store-switcher';
+import { SecondaryBadge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useLocale } from '../../i18n';
 import '../../i18n/launch';
 import { api, meQuery, unwrap } from '../../lib/api';
+import { formatDateTime } from '../../lib/dates';
 import { errorMessage } from '../../lib/errors';
-import { dateOnly } from '../../lib/orders';
+import { pickText } from '../../lib/orders';
 import { usePagedList } from '../../lib/paged';
-import { StatusBadge, TENANT_STATUSES, type TenantStatus } from './status';
+import '../../i18n/billing';
+import { StatusBadge, type TenantStatus } from './status';
+import { Lifecycle } from './tenant';
 
 type Tenant = Awaited<ReturnType<typeof fetchTenants>>['items'][number];
 
-async function fetchTenants(q: string, status: TenantStatus | '', offset = 0, limit = 50) {
+type Tab = TenantStatus | 'setting_up' | '';
+
+async function fetchTenants(
+  q: string,
+  status: Tab,
+  offset = 0,
+  limit = 50,
+  filters: { kind?: string | undefined; plan?: string | undefined } = {},
+) {
   return unwrap(
     await api.GET('/v1/platform/tenants', {
       params: {
@@ -28,6 +51,8 @@ async function fetchTenants(q: string, status: TenantStatus | '', offset = 0, li
           offset,
           ...(q ? { q } : {}),
           ...(status ? { status } : {}),
+          ...(filters.kind ? { kind: filters.kind } : {}),
+          ...(filters.plan ? { plan: filters.plan } : {}),
         },
       },
     }),
@@ -44,22 +69,43 @@ function useDebounced<T>(value: T, ms = 300): T {
   return settled;
 }
 
+const plansQuery = {
+  queryKey: ['platform', 'plans'] as const,
+  queryFn: async () => unwrap(await api.GET('/v1/platform/plans')),
+};
+
+/** The tabs: each status, with active stores still setting up as their own. */
+const TABS = ['', 'active', 'setting_up', 'suspended', 'closed', 'purged'] as const;
+
 export function TenantsPage() {
   const { t, locale } = useLocale();
   const navigate = useNavigate();
   const { data: me } = useSuspenseQuery(meQuery);
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<TenantStatus | ''>('');
+  const [status, setStatus] = useState<Tab>('');
+  const [kind, setKind] = useState<string>();
+  const [planCode, setPlanCode] = useState<string>();
+  const plans = useQuery(plansQuery);
   const q = useDebounced(query.trim());
   const tenants = usePagedList({
-    queryKey: ['platform', 'tenants', q, status],
-    fetchPage: (offset: number, limit: number) => fetchTenants(q, status, offset, limit),
+    queryKey: ['platform', 'tenants', q, status, kind ?? null, planCode ?? null],
+    fetchPage: (offset: number, limit: number) =>
+      fetchTenants(q, status, offset, limit, { kind, plan: planCode }),
   });
+  const counts = tenants.first?.counts;
+  const filtered = Boolean(q || kind || planCode);
+  const reset = () => {
+    setQuery('');
+    setKind(undefined);
+    setPlanCode(undefined);
+  };
   const open = (x: Tenant) => navigate({ to: '/platform/tenants/$id', params: { id: x.id } });
+  const superAdmin = me.user.platformRole === 'super_admin';
+  const [changing, setChanging] = useState<Tenant | null>(null);
   const setup = (x: Tenant) =>
     x.setup ? (
-      <span className="flex flex-col gap-1">
-        <span className="text-xs">
+      <span className="flex min-w-0 flex-col gap-1.5">
+        <span className="text-[13px] leading-4 tabular-nums">
           {t('tenants.setupProgress', { done: x.setup.done, total: x.setup.total })}
         </span>
         <span aria-hidden className="block h-1 w-24 overflow-hidden rounded-full bg-muted">
@@ -70,29 +116,24 @@ export function TenantsPage() {
         </span>
       </span>
     ) : (
-      <span className="text-muted-foreground">{t('tenants.setupUnknown')}</span>
+      <span className="text-[13px] text-muted-foreground">{t('tenants.setupUnknown')}</span>
     );
+  const planName = (x: Tenant) =>
+    pickText(plans.data?.find((p) => p.code === x.plan)?.name, locale) || x.plan;
   const plan = (x: Tenant) => (
-    <span className="flex items-center gap-2 whitespace-nowrap" lang="en">
-      {x.plan}
-      {x.kind !== 'client' && (
-        <span
-          lang={locale}
-          className="rounded-md border border-border px-1.5 text-xs font-medium text-muted-foreground"
-        >
-          {t(`kind.${x.kind}`)}
-        </span>
-      )}
+    <span className="flex items-center gap-2 whitespace-nowrap">
+      {planName(x)}
+      {x.kind !== 'client' && <SecondaryBadge>{t(`kind.${x.kind}`)}</SecondaryBadge>}
     </span>
   );
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('platform.tenants')}
         actions={
           me.user.platformRole === 'super_admin' && (
-            <Button asChild>
+            <Button asChild className="max-md:hidden">
               <Link to="/platform/tenants/new">
                 <Plus aria-hidden />
                 {t('newStore.title')}
@@ -103,80 +144,175 @@ export function TenantsPage() {
       />
       <StageTabs
         label={t('tenants.status')}
-        tabs={[
-          { key: '', label: t('tenants.allStatuses') },
-          ...TENANT_STATUSES.map((s) => ({ key: s, label: t(`status.${s}`) })),
-        ]}
+        tabs={TABS.map((x) => ({
+          key: x,
+          label:
+            x === ''
+              ? t('tenants.allStatuses')
+              : x === 'setting_up'
+                ? t('tenants.settingUp')
+                : t(`status.${x}`),
+          count: x === '' ? counts?.all : counts?.[x] || undefined,
+        }))}
         value={status}
-        onChange={(key) => setStatus(key as TenantStatus | '')}
+        onChange={(key) => setStatus(key)}
       />
-      <SearchInput
-        className="w-full md:w-72"
-        label={t('tenants.search')}
-        value={query}
-        onChange={setQuery}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <SearchInput
+          className="min-w-0 flex-1 basis-48 md:w-[260px] md:flex-none"
+          label={t('tenants.search')}
+          value={query}
+          onChange={setQuery}
+        />
+        {me.user.platformRole === 'super_admin' && (
+          <Button asChild size="icon" className="md:hidden">
+            <Link
+              to="/platform/tenants/new"
+              aria-label={t('newStore.title')}
+              title={t('newStore.title')}
+            >
+              <Plus aria-hidden />
+            </Link>
+          </Button>
+        )}
+        <FilterButtons
+          filters={[
+            {
+              key: 'kind',
+              multi: true,
+              label: t('tenants.kind'),
+              value: kind,
+              options: TENANT_KINDS.map((k) => ({ value: k, label: t(`kind.${k}`) })),
+              onChange: setKind,
+            },
+            {
+              key: 'plan',
+              multi: true,
+              label: t('tenants.plan'),
+              value: planCode,
+              options: (plans.data ?? []).map((p) => ({
+                value: p.code,
+                label: pickText(p.name, locale) || p.code,
+              })),
+              onChange: setPlanCode,
+            },
+          ]}
+          onReset={filtered ? reset : undefined}
+        />
+        {tenants.first && (
+          <ToolbarSummary>
+            {t('tenants.count', { count: formatNumber(locale, tenants.total) })}
+          </ToolbarSummary>
+        )}
+      </div>
       <DataList<Tenant>
         label={t('platform.tenants')}
         items={tenants.items}
         rowKey={(x) => x.id}
+        grid="minmax(0,1.7fr) 104px minmax(0,1fr) 150px 112px 36px"
+        rowHeight={60}
         isPending={tenants.isPending}
         error={tenants.isError ? errorMessage(tenants.error, t) : undefined}
         onRetry={() => tenants.refetch()}
         empty={t('tenants.none')}
         pager={tenants.pager}
         onOpen={open}
+        menu={(x) => (
+          <RowMenu label={x.name}>
+            <RowMenuItem onSelect={() => open(x)}>
+              <Store aria-hidden />
+              {t('list.open')}
+            </RowMenuItem>
+            <RowMenuItem
+              onSelect={() => navigate({ to: '/platform/billing', search: { tenant: x.id } })}
+            >
+              <ReceiptText aria-hidden />
+              {t('tenant.invoices')}
+            </RowMenuItem>
+            {superAdmin && x.status === 'suspended' && (
+              <RowMenuItem onSelect={() => setChanging(x)}>
+                <Play aria-hidden />
+                {t('tenant.reactivate')}
+              </RowMenuItem>
+            )}
+            {superAdmin && x.status === 'active' && (
+              <RowMenuItem danger onSelect={() => setChanging(x)}>
+                <Pause aria-hidden />
+                {t('tenant.suspend')}
+              </RowMenuItem>
+            )}
+          </RowMenu>
+        )}
+        menuOnPhone={false}
         card={(x) => (
-          <div className="flex items-start gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <Link to="/platform/tenants/$id" params={{ id: x.id }} className="font-medium">
+          <div className="flex items-center gap-3">
+            <StoreTile
+              name={x.name}
+              className="size-8 rounded-lg bg-muted text-xs text-foreground"
+            />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Link
+                to="/platform/tenants/$id"
+                params={{ id: x.id }}
+                className="truncate font-medium"
+              >
                 {x.name}
               </Link>
-              <span className="font-mono text-xs text-muted-foreground" lang="en">
-                {x.slug}
+              <span className="truncate text-[13px] text-muted-foreground">
+                {planName(x)} ·{' '}
+                {x.setup
+                  ? t('tenants.setupShort', { done: x.setup.done, total: x.setup.total })
+                  : t('tenants.setupUnknown')}
               </span>
-              {setup(x)}
             </div>
-            <span className="flex shrink-0 flex-col items-end gap-1 text-sm">
-              <StatusBadge status={x.status} />
-              {plan(x)}
-            </span>
+            <StatusBadge status={x.status} />
           </div>
         )}
         columns={[
           {
-            header: t('store.name'),
+            header: t('tenants.store'),
+            skeleton: 'lines',
             cell: (x) => (
-              <Link
-                to="/platform/tenants/$id"
-                params={{ id: x.id }}
-                className="font-medium underline-offset-2 hover:underline"
-              >
-                {x.name}
-              </Link>
-            ),
-          },
-          {
-            header: t('tenants.slug'),
-            cell: (x) => (
-              <span lang="en" className="font-mono text-xs text-muted-foreground">
-                {x.slug}
+              <span className="flex min-w-0 items-center gap-2.5">
+                <StoreTile
+                  name={x.name}
+                  className="size-8 rounded-lg bg-muted text-xs font-semibold text-foreground"
+                />
+                <span className="flex min-w-0 flex-col">
+                  <Link
+                    to="/platform/tenants/$id"
+                    params={{ id: x.id }}
+                    className="truncate font-medium"
+                  >
+                    {x.name}
+                  </Link>
+                  <span lang="en" className="truncate text-[13px] text-muted-foreground">
+                    {x.slug}
+                  </span>
+                </span>
               </span>
             ),
           },
-          { header: t('tenants.status'), cell: (x) => <StatusBadge status={x.status} /> },
+          {
+            header: t('tenants.status'),
+            skeleton: 'badge',
+            cell: (x) => <StatusBadge status={x.status} />,
+          },
           { header: t('tenants.plan'), cell: plan },
-          { header: t('tenants.setup'), cell: setup },
+          { header: t('tenants.setup'), skeleton: 'lines', cell: setup },
           {
             header: t('tenants.createdAt'),
             cell: (x) => (
-              <span className="whitespace-nowrap text-muted-foreground">
-                {dateOnly(locale, x.createdAt)}
+              <span className="whitespace-nowrap text-[13px] text-muted-foreground tabular-nums">
+                {formatDateTime(locale, new Date(x.createdAt), { dateStyle: 'medium' })}
               </span>
             ),
           },
         ]}
       />
+      {changing && (
+        <Lifecycle tenant={changing} open onOpenChange={(o) => !o && setChanging(null)} />
+      )}
     </div>
   );
 }

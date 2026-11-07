@@ -25,7 +25,7 @@ import { type Actor, auditActor, authorize } from '../access';
 import { recordAudit } from '../audit';
 import { requireWithinLimit } from '../billing/entitlements';
 import { emit } from '../outbox';
-import { countWhere } from '../paging';
+import { countBy, countWhere } from '../paging';
 import { recordCostCorrections } from '../purchasing/costs';
 import type { TenantTx } from '../tenant';
 import { replaceProductAttributes, replaceProductTags } from './attributes';
@@ -227,7 +227,8 @@ function redact(product: ProductDetail, actor: Actor): ProductDetail {
 
 export interface ProductListQuery {
   q?: string | undefined;
-  status?: 'draft' | 'active' | 'archived' | undefined;
+  /** `any` includes archived products; without a status they are left out. */
+  status?: 'draft' | 'active' | 'archived' | 'any' | undefined;
   /** One category, or several (any of them); each takes the categories under it. */
   categoryId?: string | readonly string[] | undefined;
   collectionId?: string | undefined;
@@ -236,11 +237,32 @@ export interface ProductListQuery {
   tag?: string | undefined;
   attributeValueId?: string | undefined;
   lowStock?: boolean | undefined;
+  /** A column, "-column" for the other way; newest first without it. */
+  sort?: ProductSort | undefined;
+  /** Also how many match in each status, for the list's tabs. */
+  counts?: boolean | undefined;
   /** The last id of the previous page. */
   after?: string | undefined;
   /** Rows to skip, for numbered pages; the cursor is then ignored. */
   offset?: number | undefined;
   limit?: number | undefined;
+}
+
+export type ProductSort =
+  | 'title'
+  | '-title'
+  | 'price'
+  | '-price'
+  | 'variants'
+  | '-variants'
+  | 'stock'
+  | '-stock';
+
+export interface ProductStatusCounts {
+  any: number;
+  draft: number;
+  active: number;
+  archived: number;
 }
 
 export type ProductSummary = {
@@ -268,11 +290,15 @@ export async function listProducts(
   tx: TenantTx,
   actor: Actor,
   query: ProductListQuery = {},
-): Promise<{ items: ProductSummary[]; nextCursor: string | null; total: number }> {
+): Promise<{
+  items: ProductSummary[];
+  nextCursor: string | null;
+  total: number;
+  counts?: ProductStatusCounts;
+}> {
   authorize(actor, 'catalog.read');
   const limit = Math.min(Math.max(query.limit ?? 50, 1), 100);
   const where: SQL[] = [];
-  where.push(query.status ? sql`p.status = ${query.status}` : sql`p.status <> 'archived'`);
   if (query.q?.trim()) {
     const text = query.q.trim().normalize('NFC');
     const like = `%${likeEscape(text)}%`;
@@ -306,9 +332,24 @@ export async function listProducts(
     );
   }
   if (query.lowStock) where.push(sql`${LOW_STOCK} `);
+  // The tabs' counts: every filter but the status.
+  let counts: ProductStatusCounts | undefined;
+  if (query.counts) {
+    const by = await countBy(tx, sql`store.products p`, where, sql`p.status`);
+    const draft = by.draft ?? 0;
+    const active = by.active ?? 0;
+    const archived = by.archived ?? 0;
+    counts = { any: draft + active + archived, draft, active, archived };
+  }
+  if (query.status !== 'any') {
+    where.push(query.status ? sql`p.status = ${query.status}` : sql`p.status <> 'archived'`);
+  }
   // How many match, for numbered pages: the filters without the cursor.
   const total = await countWhere(tx, sql`store.products p`, where);
-  if (query.after && query.offset === undefined) where.push(sql`p.id < ${query.after}`);
+  if (query.after && query.offset === undefined && !query.sort) {
+    where.push(sql`p.id < ${query.after}`);
+  }
+  const order = productOrder(query.sort);
 
   const { rows } = await tx.db.execute<ProductSummary>(sql`
     select p.id, p.status,
@@ -331,8 +372,8 @@ export async function listProducts(
     left join lateral (
       select min(price) as min_price, max(price) as max_price, count(*)::int as n
         from store.variants sv where sv.product_id = p.id and sv.archived_at is null) agg on true
-    where ${sql.join(where, sql` and `)}
-    order by p.id desc
+    where ${where.length ? sql.join(where, sql` and `) : sql`true`}
+    order by ${order}
     limit ${limit + 1} offset ${query.offset ?? 0}`);
   const stock = actor.permissions.has('inventory.read');
   const items = rows.slice(0, limit).map((row) => {
@@ -350,7 +391,28 @@ export async function listProducts(
     items,
     nextCursor: rows.length > limit ? (items[items.length - 1]?.id ?? null) : null,
     total,
+    ...(counts ? { counts } : {}),
   };
+}
+
+/** The list's order: a column either way, then newest first so pages don't shift. */
+function productOrder(sort: ProductSort | undefined): SQL {
+  if (!sort) return sql`p.id desc`;
+  const desc = sort.startsWith('-');
+  const dir = desc ? sql`desc nulls last` : sql`asc nulls last`;
+  const key = desc ? sort.slice(1) : sort;
+  const column =
+    key === 'title'
+      ? sql`(select app.search_text(t.title) from store.product_translations t
+              where t.product_id = p.id order by t.locale limit 1)`
+      : key === 'price'
+        ? sql`agg.min_price`
+        : key === 'variants'
+          ? sql`agg.n`
+          : sql`(select sum(l.on_hand - l.reserved) from store.inventory_levels l
+               join store.variants sv on sv.id = l.variant_id
+              where sv.product_id = p.id and sv.archived_at is null and sv.track_inventory)`;
+  return sql`${column} ${dir}, p.id desc`;
 }
 
 /**

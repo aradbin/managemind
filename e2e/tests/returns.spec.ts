@@ -223,14 +223,18 @@ test('returns and refunds', async ({
     await expectAccessible(page, 'return detail');
 
     await page.getByRole('button', { name: m('return.approve') }).click();
-    await expect(page.getByText(m('return.status.approved')).first()).toBeVisible();
+    await expect(
+      page.getByText(m('return.status.approved')).locator('visible=true').first(),
+    ).toBeVisible();
     await page.getByRole('button', { name: m('return.receive') }).click();
     await expect(page.getByRole('button', { name: m('return.inspect') })).toBeVisible();
     await page.getByRole('button', { name: m('return.inspect') }).click();
     const inspect = page.getByRole('dialog', { name: m('return.inspect') });
     await expectAccessible(page, 'inspect');
     await inspect.getByRole('button', { name: m('return.inspectSave') }).click();
-    await expect(page.getByText(m('return.status.inspected')).first()).toBeVisible();
+    await expect(
+      page.getByText(m('return.status.inspected')).locator('visible=true').first(),
+    ).toBeVisible();
 
     const res = await page.request.get(`${API}/v1/admin/inventory?q=${encodeURIComponent(title)}`);
     const { items } = (await res.json()) as {
@@ -251,7 +255,9 @@ test('returns and refunds', async ({
     // The item and the delivery charge: the whole order came back damaged.
     await dialog.getByRole('button', { name: pattern(m('refund.confirm')) }).click();
     await expect(toast(page, m('refund.done'))).toBeVisible();
-    await expect(page.getByText(m('return.status.resolved')).first()).toBeVisible();
+    await expect(
+      page.getByText(m('return.status.resolved')).locator('visible=true').first(),
+    ).toBeVisible();
 
     // The return's earlier emails can still be arriving: this is the one about the refund.
     const mail = await nextMail(email, before, (m) => m.text.includes(orderNumber));
@@ -267,16 +273,12 @@ test('returns and refunds', async ({
     await expect(byMethod.first()).toBeVisible();
     await expectAccessible(page, 'reports');
 
+    await page
+      .getByRole('button', { name: m('reports.exportWhat', { what: m('reports.refunds') }) })
+      .click();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page
-        .getByRole('button', {
-          name: m('reports.exportOf', {
-            what: m('reports.refunds'),
-            format: m('reports.export.csv'),
-          }),
-        })
-        .click(),
+      page.getByRole('menuitem', { name: m('reports.export.csv') }).click(),
     ]);
     expect(download.suggestedFilename()).toMatch(
       /^refunds-by-method-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}-\d{4}-\d{2}-\d{2}\.csv$/,

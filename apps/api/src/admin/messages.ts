@@ -52,6 +52,7 @@ const Message = z
     recipientType: z.enum(['shopper', 'staff']),
     recipient: z.string().openapi({ description: 'Masked without customers.read' }),
     orderId: z.uuid().nullable(),
+    orderNumber: z.string().nullable().openapi({ description: 'The order number, such as #1058' }),
     status: z.enum(['queued', 'sent', 'failed', 'skipped', 'waiting']),
     /** WhatsApp: what Meta last reported (phase-9-plan §3.2.4). */
     deliveryStatus: z.enum(['sent', 'delivered', 'read', 'failed']).nullable(),

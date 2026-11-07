@@ -307,5 +307,11 @@ describe('COD outstanding', () => {
       },
     ]);
     expect(r.total).toBe(940_00 + rider.total);
+    // The parcels waiting longest come first, each with its order.
+    expect(r.oldest.map((p) => [p.courier, p.days, p.amount])).toEqual([
+      ['steadfast', 10, 940_00],
+      [null, 3, rider.total],
+    ]);
+    expect(r.oldest[0]?.orderNumber).toMatch(/\d+$/);
   });
 });

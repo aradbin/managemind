@@ -2,6 +2,7 @@
 // payment, its delivery and, for shipments, the shipment's. Colour is never
 // the only signal: each chip says its status in words.
 import { type AdminKey, useLocale } from '../i18n';
+import { StatusBadge, type Tone } from './ui/badge';
 
 type Kind = 'order' | 'payment' | 'delivery' | 'shipment';
 
@@ -12,17 +13,7 @@ const PREFIX: Record<Kind, string> = {
   shipment: 'shipmentStatus',
 };
 
-/** Each tone is a soft tint and its text, from the colour tokens (ADR 0033). */
-const TONES = {
-  waiting: 'bg-warning text-warning-foreground',
-  progress: 'bg-info text-info-foreground',
-  moving: 'bg-shipped text-shipped-foreground',
-  good: 'bg-success-soft text-success',
-  bad: 'bg-danger-soft text-danger',
-  ended: 'bg-muted text-muted-foreground',
-};
-
-const TONE: Record<string, keyof typeof TONES> = {
+const TONE: Record<string, Tone> = {
   pending: 'waiting',
   partially_paid: 'waiting',
   requested: 'waiting',
@@ -53,10 +44,8 @@ const TONE: Record<string, keyof typeof TONES> = {
 export function StatusChip({ kind, status }: { kind: Kind; status: string }) {
   const { t } = useLocale();
   return (
-    <span
-      className={`inline-flex h-[22px] items-center whitespace-nowrap rounded-md px-2 text-xs font-medium ${TONES[TONE[status] ?? 'progress']}`}
-    >
+    <StatusBadge tone={TONE[status] ?? 'progress'}>
       {t(`${PREFIX[kind]}.${status}` as AdminKey)}
-    </span>
+    </StatusBadge>
   );
 }

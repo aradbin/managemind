@@ -3,37 +3,54 @@
 // specifications, VAT, SEO; images; options and variants; stock. Content
 // saves in one request; images, options and variants each save on their own,
 // since they change other rows (options regenerate variants).
-import type { RichTextDoc } from '@managemind/shared/rich-text';
+import { formatNumber } from '@managemind/shared/i18n';
+import { type RichTextDoc, richTextToPlainText } from '@managemind/shared/rich-text';
+import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Archive, ArchiveRestore, Trash2 } from 'lucide-react';
-import { useId, useMemo, useState } from 'react';
+import {
+  Archive,
+  ArchiveRestore,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 import {
   type AttributeDraft,
   AttributeFields,
   draftsFrom,
   toInput,
 } from '../components/catalog/attribute-fields';
+import { ChipPicker } from '../components/catalog/chip-picker';
 import { DescriptionField } from '../components/catalog/description-field';
 import { ImageManager } from '../components/catalog/image-manager';
 import {
   LANGUAGE_NAMES,
   type Lang,
-  LanguageTabs,
+  LanguageSwitch,
   otherLang,
 } from '../components/catalog/language-tabs';
 import { OptionEditor } from '../components/catalog/option-editor';
 import { TagInput } from '../components/catalog/tag-input';
-import { VariantTable } from '../components/catalog/variant-table';
+import { SimpleVariant, VariantTable } from '../components/catalog/variant-table';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { Field } from '../components/field';
+import { fieldHint, fieldLabel } from '../components/field-styles';
 import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
+import { BackLink, PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
+import { PhoneRecordHeader } from '../components/record-header';
 import { SaveBar } from '../components/save-bar';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
+import { Combobox } from '../components/ui/combobox';
+import { Input, Textarea } from '../components/ui/input';
+import { menuContent, menuItem } from '../components/ui/menu';
 import { useLocale } from '../i18n';
 import { ApiError, api, unwrap } from '../lib/api';
 import {
@@ -46,6 +63,7 @@ import {
   productQuery,
   storeSettingsQuery,
 } from '../lib/catalog';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { cn } from '../lib/utils';
 import { StatusBadge } from './products';
@@ -142,6 +160,8 @@ function Editor({
   const archived = product.status === 'archived';
   const disabled = !canWrite || archived;
   const title = pick(product.translations, locale)?.title ?? t('product.untitled');
+  // Records ends the breadcrumb ("Catalog › Products › …"); phones drop the tab bar here.
+  useRecordPage(title);
 
   const update = (patch: Partial<Content>) => {
     setContent((c) => ({ ...c, ...patch }));
@@ -246,8 +266,39 @@ function Editor({
     },
   });
 
+  const menu = (trigger: 'outline' | 'ghost') => (
+    <RowMenu label={t('list.moreActions')} trigger={trigger} page>
+      {product.status === 'active' && (
+        <RowMenuItem onSelect={() => navigate({ to: '/products/$id', params: { id: product.id } })}>
+          <Eye aria-hidden />
+          {t('product.viewProduct')}
+        </RowMenuItem>
+      )}
+      {archived ? (
+        <RowMenuItem onSelect={() => lifecycle.mutate('restore')}>
+          <ArchiveRestore aria-hidden />
+          {t('product.restore')}
+        </RowMenuItem>
+      ) : (
+        <>
+          {product.status === 'active' && <RowMenuSeparator />}
+          <RowMenuItem onSelect={() => setConfirm('archive')}>
+            <Archive aria-hidden />
+            {t('product.archive')}
+          </RowMenuItem>
+        </>
+      )}
+      {product.status === 'draft' && (
+        <RowMenuItem danger onSelect={() => setConfirm('delete')}>
+          <Trash2 aria-hidden />
+          {t('product.deleteDraft')}
+        </RowMenuItem>
+      )}
+    </RowMenu>
+  );
   const present = new Set((['bn', 'en'] as const).filter((l) => content.translations[l]));
   const tr = content.translations[lang];
+  const other = otherLang(defaultLang);
   const options = useMemo(
     () => categoryOptions(categories.data ?? [], locale),
     [categories.data, locale],
@@ -259,199 +310,237 @@ function Editor({
       : save.isError
         ? saveErrorMessage(save.error, t)
         : undefined;
+  // Collections, VAT and specifications stay folded until they hold something.
+  const [moreOpen, setMoreOpen] = useState(
+    () =>
+      product.collectionIds.length > 0 ||
+      product.attributes.length > 0 ||
+      Boolean(product.vatCategory),
+  );
+  const [seoOpen, setSeoOpen] = useState(false);
+  // No options: the canvas's "Price and stock" card, until options are added.
+  const [addingOptions, setAddingOptions] = useState(false);
+  const simple = !product.options.length && product.variants.length === 1 && !addingOptions;
+  const store = useQuery(storeSettingsQuery);
+  const storeBase = store.data
+    ? (() => {
+        const url = new URL(store.data.storeUrl);
+        url.pathname = `${url.pathname.replace(/\/$/, '')}/products/`;
+        return url;
+      })()
+    : null;
+  const shown = tr ?? emptyTranslation;
+  const slugNow = shown.slug || product.translations[lang]?.slug || '';
+  const listingUrl = storeBase
+    ? `${storeBase.host}${storeBase.pathname}${slugNow}${storeBase.search}`
+    : slugNow;
+  const plainDescription = shown.description ? richTextToPlainText(shown.description).trim() : '';
 
   return (
-    <div className="flex flex-col gap-5 pb-28 md:pb-8">
-      <div>
-        <PageHeader
-          className="mb-3"
-          parent={{ to: '/products', label: t('catalog.products') }}
-          title={title}
-          actions={
-            canWrite && (
-              <RowMenu label={title}>
-                {archived ? (
-                  <RowMenuItem onSelect={() => lifecycle.mutate('restore')}>
-                    <ArchiveRestore aria-hidden />
-                    {t('product.restore')}
-                  </RowMenuItem>
-                ) : (
-                  <RowMenuItem onSelect={() => setConfirm('archive')}>
-                    <Archive aria-hidden />
-                    {t('product.archive')}
-                  </RowMenuItem>
-                )}
-                {product.status === 'draft' && (
-                  <>
-                    <RowMenuSeparator />
-                    <RowMenuItem danger onSelect={() => setConfirm('delete')}>
-                      <Trash2 aria-hidden />
-                      {t('product.delete')}
-                    </RowMenuItem>
-                  </>
-                )}
-              </RowMenu>
-            )
-          }
-        />
-        <div className="flex items-center gap-2">
-          <StatusBadge status={product.status} />
-          {archived && (
-            <span className="text-sm text-muted-foreground">{t('product.archivedHint')}</span>
-          )}
-        </div>
-        {!canWrite && (
-          <div className="mt-3">
-            <Notice>{t('product.readOnly')}</Notice>
-          </div>
+    <div className="mx-auto flex w-full max-w-[760px] flex-col gap-3 pb-28 md:gap-4 md:pb-8">
+      <PhoneRecordHeader
+        to="/products/$id"
+        params={{ id: product.id }}
+        backLabel={t('productView.backToProduct')}
+        title={title}
+      >
+        {canWrite && !archived && (
+          <StatusMenu status={content.status} onChange={(status) => update({ status })} compact />
         )}
+        {menu('ghost')}
+      </PhoneRecordHeader>
+      <div className="flex items-center gap-3 pb-1 max-md:hidden">
+        <BackLink
+          to="/products/$id"
+          params={{ id: product.id }}
+          label={t('productView.backToProduct')}
+        />
+        <h1 className="min-w-0 flex-1 truncate text-xl leading-7 font-semibold tracking-[-0.01em]">
+          {title}
+        </h1>
+        {archived ? (
+          <StatusBadge status="archived" />
+        ) : (
+          canWrite && (
+            <StatusMenu status={content.status} onChange={(status) => update({ status })} />
+          )
+        )}
+        {canWrite && menu('outline')}
       </div>
-
+      {archived && <Notice>{t('product.archivedHint')}</Notice>}
+      {!canWrite && <Notice>{t('product.readOnly')}</Notice>}
       {saveError && <Notice tone="error">{saveError}</Notice>}
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <section
-            aria-labelledby="content-heading"
-            className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
-          >
-            <h2 id="content-heading" className="font-semibold">
-              {t('product.content')}
-            </h2>
-            <LanguageTabs
-              defaultLang={defaultLang}
-              active={lang}
-              onChange={setLang}
-              present={present}
-            >
-              {(l) =>
-                tr || l === defaultLang ? (
-                  <TranslationFields
-                    key={l}
-                    lang={l}
-                    value={tr ?? emptyTranslation}
-                    onChange={(patch) => setTranslation(l, patch)}
-                    disabled={disabled}
-                    onRemove={l === defaultLang ? undefined : () => setTranslation(l, null)}
-                  />
-                ) : (
-                  <div className="flex flex-col items-start gap-2">
-                    <p className="text-muted-foreground">
-                      {t('product.noTranslation', { language: LANGUAGE_NAMES[l] })}
-                    </p>
-                    {!disabled && (
-                      <Button variant="secondary" onClick={() => setTranslation(l, {})}>
-                        {t('product.addTranslation', { language: LANGUAGE_NAMES[l] })}
-                      </Button>
-                    )}
-                  </div>
-                )
-              }
-            </LanguageTabs>
-          </section>
-
-          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
-            <ImageManager product={product} defaultLang={defaultLang} disabled={disabled} />
-          </div>
-          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
-            <OptionEditor
-              key={`options-${product.updatedAt}`}
-              product={product}
-              defaultLang={defaultLang}
-              disabled={disabled}
-            />
-          </div>
-          <div className="min-w-0 overflow-x-auto rounded-xl border border-border bg-background p-4 md:p-5">
-            <VariantTable
-              key={product.variants.map((v) => v.id).join()}
-              product={product}
-              disabled={disabled}
-            />
-          </div>
-        </div>
-        <div className="flex min-w-0 flex-col gap-5">
-          {!archived && (
-            <div className="rounded-xl border border-border bg-background p-4 md:p-5">
-              <fieldset className="flex flex-col gap-2" disabled={disabled}>
-                <legend className="mb-2 font-semibold">{t('product.status')}</legend>
-                {(['draft', 'active'] as const).map((s) => (
-                  <label
-                    key={s}
-                    className={cn(
-                      'flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-border p-3',
-                      content.status === s && 'border-primary bg-primary-soft',
-                    )}
+      <section aria-label={t('product.basics')} className={cardPadded}>
+        <fieldset
+          disabled={disabled}
+          className="m-0 flex min-w-0 flex-col gap-5 border-0 p-0 md:gap-5"
+        >
+          <div className="flex flex-col">
+            <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+              <label htmlFor="product-title" className={cn(fieldLabel, 'mb-0')}>
+                {t('product.titleLabel')}
+              </label>
+              {present.size > 1 || lang !== defaultLang ? (
+                <LanguageSwitch defaultLang={defaultLang} active={lang} onChange={setLang} />
+              ) : (
+                !disabled && (
+                  <Button
+                    variant="ghost"
+                    className="-mr-2 h-7 px-2 text-muted-foreground md:h-7"
+                    onClick={() => {
+                      setTranslation(other, {});
+                      setLang(other);
+                    }}
                   >
-                    <input
-                      type="radio"
-                      name="status"
-                      className="mt-0.5 size-5 accent-primary"
-                      checked={content.status === s}
-                      onChange={() => update({ status: s })}
-                    />
-                    <span className="flex flex-col">
-                      <span className="font-medium">{t(`status.${s}`)}</span>
-                      <span className="text-sm text-muted-foreground">
-                        — {t(`status.${s}.hint`)}
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
+                    {t('product.addLang', { language: LANGUAGE_NAMES[other] })}
+                  </Button>
+                )
+              )}
+            </div>
+            <Input
+              id="product-title"
+              lang={lang}
+              aria-label={t('product.titleIn', { language: LANGUAGE_NAMES[lang] })}
+              value={shown.title}
+              maxLength={200}
+              onChange={(e) => setTranslation(lang, { title: e.target.value })}
+            />
+            {lang !== defaultLang && !disabled && (
+              <Button
+                variant="ghost"
+                className="mt-1 -ml-2 h-7 self-start px-2 text-muted-foreground md:h-7"
+                onClick={() => {
+                  setTranslation(lang, null);
+                  setLang(defaultLang);
+                }}
+              >
+                {t('product.removeTranslation', { language: LANGUAGE_NAMES[lang] })}
+              </Button>
+            )}
+          </div>
+          <DescriptionField
+            key={lang}
+            label={t('product.description')}
+            lang={lang}
+            value={shown.description}
+            onChange={(description) => setTranslation(lang, { description })}
+            disabled={disabled}
+          />
+          <ImageManager product={product} defaultLang={defaultLang} disabled={disabled} />
+        </fieldset>
+      </section>
+
+      {simple ? (
+        <section aria-labelledby="price-heading" className={cardPadded}>
+          <h2 id="price-heading" className={cardTitle}>
+            {t('product.priceAndStock')}
+          </h2>
+          <SimpleVariant
+            key={`${product.variants[0]?.id}-${product.updatedAt}`}
+            product={product}
+            disabled={disabled}
+            onAddOptions={() => setAddingOptions(true)}
+          />
+        </section>
+      ) : (
+        <section aria-labelledby="variants-heading" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+          <div className="flex min-h-5 items-center justify-between gap-3">
+            <h2 id="variants-heading" className={cardTitle}>
+              {t('product.variants')}
+            </h2>
+            <span className="text-[13px] text-muted-foreground">
+              {[
+                t('product.variantCount', { count: formatNumber(locale, product.variants.length) }),
+                product.variants.some((v) => v.trackInventory && v.stock) &&
+                  t('product.availableCount', {
+                    count: formatNumber(
+                      locale,
+                      product.variants.reduce(
+                        (n, v) => n + (v.trackInventory && v.stock ? v.stock.available : 0),
+                        0,
+                      ),
+                    ),
+                  }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </span>
+          </div>
+          <OptionEditor
+            key={`options-${product.updatedAt}`}
+            product={product}
+            defaultLang={defaultLang}
+            disabled={disabled}
+            startWithOne={addingOptions}
+          />
+          {product.options.length > 0 && (
+            <div className="-mx-4 -mb-4 min-w-0 overflow-x-auto border-t border-border md:-mx-5 md:-mb-5">
+              <VariantTable
+                key={product.variants.map((v) => v.id).join()}
+                product={product}
+                disabled={disabled}
+              />
             </div>
           )}
-          <section
-            aria-labelledby="organize-heading"
-            className="flex flex-col gap-4 rounded-xl border border-border bg-background p-4 md:p-5"
-          >
-            <h2 id="organize-heading" className="font-semibold">
-              {t('product.organize')}
-            </h2>
-            <CheckboxList
-              legend={t('catalog.categories')}
-              empty={t('product.noCategories')}
-              items={options.map((o) => ({ id: o.id, label: o.label }))}
-              checked={content.categoryIds}
-              onChange={(categoryIds) => update({ categoryIds })}
-              disabled={disabled}
-            />
-            <CheckboxList
-              legend={t('catalog.collections')}
+        </section>
+      )}
+
+      <section aria-labelledby="organize-heading" className={cardPadded}>
+        <h2 id="organize-heading" className={cardTitle}>
+          {t('product.organise')}
+        </h2>
+        <ChipPicker
+          label={t('catalog.categories')}
+          searchLabel={t('product.findCategory')}
+          empty={t('product.noCategories')}
+          options={options.map((o) => ({ id: o.id, label: o.label }))}
+          value={content.categoryIds}
+          onChange={(categoryIds) => update({ categoryIds })}
+          disabled={disabled}
+        />
+        <TagInput value={content.tags} onChange={(tags) => update({ tags })} disabled={disabled} />
+        <button
+          type="button"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen(!moreOpen)}
+          className="-my-1 flex w-full items-center gap-1.5 py-1.5 text-left font-medium text-muted-foreground hover:text-foreground [&[aria-expanded=true]>svg]:rotate-90"
+        >
+          <ChevronRight aria-hidden className="size-4 transition-transform duration-200" />
+          {t('product.moreOrganise')}
+        </button>
+        {moreOpen && (
+          <div className="flex flex-col gap-4 border-t border-dashed border-border pt-4">
+            <ChipPicker
+              label={t('catalog.collections')}
+              searchLabel={t('product.findCollection')}
               empty={t('product.noCollections')}
-              items={manualCollections.map((c) => ({
+              options={manualCollections.map((c) => ({
                 id: c.id,
                 label: pick(c.translations, locale)?.name ?? '—',
               }))}
-              checked={content.collectionIds}
+              value={content.collectionIds}
               onChange={(collectionIds) => update({ collectionIds })}
               disabled={disabled}
             />
-            <TagInput
-              value={content.tags}
-              onChange={(tags) => update({ tags })}
-              disabled={disabled}
-            />
             {vat.vatEnabled && vat.categories.length > 0 && (
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                {t('product.vatCategory')}
-                <select
+              <div className="flex flex-col md:max-w-[calc(50%-8px)]">
+                <label htmlFor="product-vat" className={fieldLabel}>
+                  {t('product.vatCategory')}
+                </label>
+                <Combobox
+                  id="product-vat"
+                  searchLabel={t('product.findVat')}
                   disabled={disabled}
-                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
                   value={content.vatCategory}
-                  onChange={(e) => update({ vatCategory: e.target.value })}
-                >
-                  <option value="">{t('product.vatStandard')}</option>
-                  {vat.categories.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  options={[
+                    { value: '', label: t('product.vatStandard') },
+                    ...vat.categories.map((c) => ({ value: c.key, label: c.name })),
+                  ]}
+                  onChange={(vatCategory) => update({ vatCategory })}
+                />
+              </div>
             )}
-          </section>
-
-          <div className="rounded-xl border border-border bg-background p-4 md:p-5">
             <AttributeFields
               categoryIds={content.categoryIds}
               value={content.attributes}
@@ -460,8 +549,85 @@ function Editor({
               disabled={disabled}
             />
           </div>
+        )}
+      </section>
+
+      <section aria-labelledby="seo-heading" className={cardPadded}>
+        <div className="flex min-h-5 items-center justify-between gap-3">
+          <h2 id="seo-heading" className={cardTitle}>
+            {t('product.seoListing')}
+          </h2>
+          {!disabled && tr && (
+            <Button
+              variant="ghost"
+              className="-my-1.5 -mr-2.5 h-8 px-2.5"
+              aria-expanded={seoOpen}
+              onClick={() => setSeoOpen(!seoOpen)}
+            >
+              {t(seoOpen ? 'product.seoDone' : 'product.seoEdit')}
+            </Button>
+          )}
         </div>
-      </div>
+        {seoOpen && tr ? (
+          <fieldset disabled={disabled} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
+            <div className="flex flex-col">
+              <label htmlFor="product-slug" className={fieldLabel}>
+                {t('product.slug')}
+              </label>
+              <div className="flex items-stretch">
+                {storeBase && (
+                  <span className="inline-flex items-center rounded-l-lg border border-r-0 border-input bg-muted px-2.5 text-[13px] whitespace-nowrap text-muted-foreground">
+                    {storeBase.host}
+                    {storeBase.pathname}
+                  </span>
+                )}
+                <Input
+                  id="product-slug"
+                  className={cn(storeBase && 'rounded-l-none')}
+                  value={shown.slug}
+                  onChange={(e) => setTranslation(lang, { slug: e.target.value })}
+                />
+              </div>
+              <p className={fieldHint}>{t('product.slugHint')}</p>
+            </div>
+            <Field
+              label={t('product.seoTitleShort')}
+              placeholder={shown.title}
+              value={shown.seoTitle}
+              maxLength={120}
+              onChange={(e) => setTranslation(lang, { seoTitle: e.target.value })}
+            />
+            <div className="flex flex-col">
+              <label htmlFor="product-seo-description" className={fieldLabel}>
+                {t('product.seoDescriptionShort')}
+              </label>
+              <Textarea
+                id="product-seo-description"
+                aria-describedby="product-seo-count"
+                maxLength={320}
+                value={shown.seoDescription}
+                onChange={(e) => setTranslation(lang, { seoDescription: e.target.value })}
+              />
+              <p id="product-seo-count" className={fieldHint}>
+                {t('product.seoCount', {
+                  count: formatNumber(locale, shown.seoDescription.length),
+                  max: formatNumber(locale, 320),
+                })}
+              </p>
+            </div>
+          </fieldset>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-[13px] text-muted-foreground">{listingUrl}</span>
+            <span className="truncate font-medium">{shown.seoTitle || shown.title || title}</span>
+            {(shown.seoDescription || plainDescription) && (
+              <span className="line-clamp-2 text-muted-foreground">
+                {shown.seoDescription || plainDescription}
+              </span>
+            )}
+          </div>
+        )}
+      </section>
 
       <SaveBar
         show={canWrite && !archived && dirty}
@@ -490,6 +656,67 @@ function Editor({
   );
 }
 
+/**
+ * Active or Draft, as the canvas draws it: an outline button with a dot that
+ * opens the two choices with their hints. Saved with the rest of the page.
+ */
+function StatusMenu({
+  status,
+  onChange,
+  compact = false,
+}: {
+  status: 'draft' | 'active' | 'archived';
+  onChange: (status: 'draft' | 'active') => void;
+  compact?: boolean;
+}) {
+  const { t } = useLocale();
+  const dot = (s: 'draft' | 'active') =>
+    s === 'active' ? (
+      <span aria-hidden className="size-2 shrink-0 rounded-full bg-success" />
+    ) : (
+      <span
+        aria-hidden
+        className="size-2 shrink-0 rounded-full border-[1.5px] border-dashed border-muted-foreground"
+      />
+    );
+  const current = status === 'active' ? 'active' : 'draft';
+  return (
+    <Menu.Root>
+      <Menu.Trigger asChild>
+        <Button
+          variant={compact ? 'ghost' : 'secondary'}
+          className="gap-2 pr-2 pl-2.5"
+          aria-label={t('product.statusIs', { status: t(`status.${current}`) })}
+        >
+          {dot(current)}
+          {t(`status.${current}`)}
+          <ChevronDown aria-hidden className="size-4 opacity-50" />
+        </Button>
+      </Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Content align="end" sideOffset={4} className={cn(menuContent, 'w-[260px]')}>
+          <Menu.RadioGroup value={current} onValueChange={(v) => onChange(v as 'draft' | 'active')}>
+            {(['active', 'draft'] as const).map((s) => (
+              <Menu.RadioItem key={s} value={s} className={cn(menuItem, 'items-start py-1.5')}>
+                <span className="mt-1.5 mx-1">{dot(s)}</span>
+                <span className="flex flex-1 flex-col">
+                  <span className="font-medium">{t(`status.${s}`)}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {t(`status.${s}.menuHint`)}
+                  </span>
+                </span>
+                <Menu.ItemIndicator>
+                  <Check aria-hidden className="mt-0.5 size-4" />
+                </Menu.ItemIndicator>
+              </Menu.RadioItem>
+            ))}
+          </Menu.RadioGroup>
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
 const emptyTranslation: Translation = {
   title: '',
   slug: '',
@@ -497,122 +724,6 @@ const emptyTranslation: Translation = {
   seoTitle: '',
   seoDescription: '',
 };
-
-function TranslationFields({
-  lang,
-  value,
-  onChange,
-  disabled,
-  onRemove,
-}: {
-  lang: Lang;
-  value: Translation;
-  onChange: (patch: Partial<Translation>) => void;
-  disabled: boolean;
-  onRemove: (() => void) | undefined;
-}) {
-  const { t } = useLocale();
-  return (
-    <fieldset disabled={disabled} className="flex flex-col gap-4">
-      <Field
-        label={t('product.titleIn', { language: LANGUAGE_NAMES[lang] })}
-        value={value.title}
-        maxLength={200}
-        onChange={(e) => onChange({ title: e.target.value })}
-      />
-      <DescriptionField
-        label={t('product.description')}
-        lang={lang}
-        value={value.description}
-        onChange={(description) => onChange({ description })}
-        disabled={disabled}
-      />
-      <details className="rounded-lg border border-border bg-background p-3">
-        <summary className="min-h-11 cursor-pointer content-center font-medium">
-          {t('product.seo')}
-        </summary>
-        <div className="mt-3 flex flex-col gap-4">
-          <Field
-            label={t('product.slug')}
-            hint={t('product.slugHint')}
-            value={value.slug}
-            onChange={(e) => onChange({ slug: e.target.value })}
-          />
-          <Field
-            label={t('product.seoTitle')}
-            value={value.seoTitle}
-            maxLength={120}
-            onChange={(e) => onChange({ seoTitle: e.target.value })}
-          />
-          <Field
-            label={t('product.seoDescription')}
-            value={value.seoDescription}
-            maxLength={320}
-            onChange={(e) => onChange({ seoDescription: e.target.value })}
-          />
-        </div>
-      </details>
-      {onRemove && (
-        <div>
-          <Button variant="ghost" onClick={onRemove}>
-            {t('product.removeTranslation', { language: LANGUAGE_NAMES[lang] })}
-          </Button>
-        </div>
-      )}
-    </fieldset>
-  );
-}
-
-/** A labelled group of checkboxes, scrolling when long. */
-function CheckboxList({
-  legend,
-  empty,
-  items,
-  checked,
-  onChange,
-  disabled,
-}: {
-  legend: string;
-  empty: string;
-  items: { id: string; label: string }[];
-  checked: string[];
-  onChange: (ids: string[]) => void;
-  disabled: boolean;
-}) {
-  const id = useId();
-  return (
-    <fieldset
-      className="flex flex-col gap-1"
-      disabled={disabled}
-      aria-describedby={items.length ? undefined : `${id}-empty`}
-    >
-      <legend className="mb-1 text-sm font-medium">{legend}</legend>
-      {items.length === 0 ? (
-        <p id={`${id}-empty`} className="text-sm text-muted-foreground">
-          {empty}
-        </p>
-      ) : (
-        <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-background p-2">
-          {items.map((item) => (
-            <label key={item.id} className="flex min-h-10 items-center gap-3 text-sm md:min-h-9">
-              <input
-                type="checkbox"
-                className="size-4 accent-primary"
-                checked={checked.includes(item.id)}
-                onChange={(e) =>
-                  onChange(
-                    e.target.checked ? [...checked, item.id] : checked.filter((x) => x !== item.id),
-                  )
-                }
-              />
-              {item.label}
-            </label>
-          ))}
-        </div>
-      )}
-    </fieldset>
-  );
-}
 
 /** A new product: the essentials, then the full editor. */
 export function NewProductPage() {
@@ -649,7 +760,7 @@ export function NewProductPage() {
     onSuccess: async (product) => {
       queryClient.setQueryData(['product', product.id], product);
       await queryClient.invalidateQueries({ queryKey: ['products'] });
-      await navigate({ to: '/products/$id', params: { id: product.id }, replace: true });
+      await navigate({ to: '/products/$id/edit', params: { id: product.id }, replace: true });
     },
   });
   if (store.isPending) return <p role="status">{t('loading')}</p>;

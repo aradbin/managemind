@@ -2,7 +2,7 @@
 // the 6-digit code. A user with two-factor login goes on to /two-factor.
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { type FormEvent, useEffect, useState } from 'react';
-import { AuthLayout } from '../components/auth-layout';
+import { AuthHeading, AuthLayout, otpClass } from '../components/auth-layout';
 import { Field } from '../components/field';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
@@ -94,11 +94,12 @@ function SignIn() {
   }
 
   return (
-    <AuthLayout step={step === 'email' ? 1 : 2} steps={2}>
-      <h1 className="text-xl font-semibold tracking-tight">{t('signIn.title')}</h1>
+    <AuthLayout>
+      <AuthHeading title={t('signIn.title')}>
+        {step === 'email' ? t('signIn.intro') : t('signIn.codeSent', { email: email.trim() })}
+      </AuthHeading>
       {step === 'email' ? (
-        <form onSubmit={send} className="flex flex-col gap-4">
-          <p className="text-muted-foreground">{t('signIn.intro')}</p>
+        <form onSubmit={send} className="flex flex-col gap-5">
           <Field
             label={t('signIn.email')}
             type="email"
@@ -107,17 +108,17 @@ function SignIn() {
             inputMode="email"
             required
             maxLength={254}
+            placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
           {error && <Notice tone="error">{error}</Notice>}
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" className="h-10 w-full md:h-10" disabled={busy}>
             {t('signIn.send')}
           </Button>
         </form>
       ) : (
-        <form onSubmit={verify} className="flex flex-col gap-4">
-          <Notice>{t('signIn.codeSent', { email: email.trim() })}</Notice>
+        <form onSubmit={verify} className="flex flex-col gap-5">
           <Field
             label={t('signIn.code')}
             name="code"
@@ -129,24 +130,30 @@ function SignIn() {
             autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            className="text-center text-2xl tracking-[0.5em]"
+            placeholder="••••••"
+            className={otpClass}
           />
           {error && <Notice tone="error">{error}</Notice>}
-          <Button type="submit" disabled={busy || code.length !== 6}>
+          <Button
+            type="submit"
+            className="h-10 w-full md:h-10"
+            disabled={busy || code.length !== 6}
+          >
             {t('signIn.submit')}
           </Button>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-1">
             {wait > 0 ? (
-              <p className="text-sm text-muted-foreground" aria-live="off">
+              <p className="text-[13px] text-muted-foreground" aria-live="off">
                 {t('signIn.resendIn', { seconds: wait })}
               </p>
             ) : (
-              <Button variant="secondary" disabled={busy} onClick={() => send()}>
+              <Button variant="ghost" disabled={busy} onClick={() => send()}>
                 {t('signIn.resend')}
               </Button>
             )}
             <Button
               variant="ghost"
+              className="h-8 md:h-8"
               onClick={() => {
                 setStep('email');
                 setError(undefined);

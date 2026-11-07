@@ -226,6 +226,8 @@ const IncompleteSummary = z
     name: z.string().nullable(),
     phone: z.string(),
     area: IncompleteArea.nullable(),
+    areaName: Localized.nullable(),
+    leftAt: z.enum(['contact', 'delivery', 'payment']),
     itemCount: z.number().int(),
     subtotal: z.number().int(),
     items: z.array(z.object({ title: Localized, quantity: z.number().int() })),
@@ -393,6 +395,7 @@ export const OrderDetail = z
       phone: z.string(),
       email: z.string().nullable(),
       orderCount: z.number().int(),
+      totalSpent: Money,
     }),
     contact: z.object({ name: z.string(), phone: z.string(), email: z.string().optional() }),
     address: Address.nullable(),
@@ -763,6 +766,19 @@ export const ORDER_ROUTES = {
         items: z.array(OrderSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        /** What the matching orders come to. */
+        value: z.number(),
+        /** With `counts=true`: how many each tab holds, with the other filters. */
+        counts: z
+          .object({
+            all: z.number().int(),
+            pending: z.number().int(),
+            toShip: z.number().int(),
+            shipped: z.number().int(),
+            delivered: z.number().int(),
+            cancelled: z.number().int(),
+          })
+          .optional(),
       }),
       'Orders',
     ),
@@ -886,6 +902,15 @@ export const ORDER_ROUTES = {
         items: z.array(IncompleteSummary),
         nextCursor: z.string().nullable(),
         total: z.number().int(),
+        counts: z
+          .object({
+            open: z.number().int(),
+            converted: z.number().int(),
+            recovered: z.number().int(),
+            dismissed: z.number().int(),
+            openValue: z.number(),
+          })
+          .optional(),
       }),
       'Incomplete orders',
     ),

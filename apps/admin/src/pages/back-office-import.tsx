@@ -13,10 +13,9 @@ import {
   type RowIssue,
 } from '@managemind/shared/back-office';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileUp } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { DropZone, ImportFrame, type Sample } from '../components/import-frame';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { dhakaDay } from '../components/report-range';
 import { Button } from '../components/ui/button';
@@ -27,7 +26,7 @@ import '../i18n/purchasing';
 import { api, unwrap } from '../lib/api';
 import { saveErrorMessage } from '../lib/errors';
 import { expenseCategoriesQuery } from '../lib/expenses';
-import { downloadErrors, ErrorTable, type Parsed, parseFile, type RowError } from './import';
+import { downloadErrors, ErrorTable, type Parsed, type RowError } from './import';
 
 type Result = { created: number; skipped: { row: number; reason: 'exists' }[] };
 
@@ -82,6 +81,23 @@ export function SupplierImportPage() {
     <ImportPage
       title={t('boImport.supplierTitle')}
       intro={t('boImport.supplierIntro')}
+      parent="/inventory/suppliers"
+      sample={{
+        name: 'suppliers-sample.csv',
+        header: ['name', 'contact', 'phone', 'email', 'address', 'city', 'note', 'opening balance'],
+        rows: [
+          [
+            'Tangail Weavers',
+            'Karim Mia',
+            '01812345678',
+            '',
+            'Tangail Sadar',
+            'Tangail',
+            '',
+            '12500',
+          ],
+        ],
+      }}
       columns={t('boImport.supplierColumns')}
       missingText={t('boImport.missingSupplier')}
       allowed={allowed}
@@ -128,6 +144,12 @@ export function ExpenseImportPage() {
     <ImportPage
       title={t('boImport.expenseTitle')}
       intro={t('boImport.expenseIntro')}
+      parent="/expenses"
+      sample={{
+        name: 'expenses-sample.csv',
+        header: ['date', 'category', 'amount', 'paid by', 'paid to', 'note'],
+        rows: [['2026-09-15', 'Rent', '25000', 'bKash', 'Landlord', 'September rent']],
+      }}
       columns={t('boImport.expenseColumns')}
       missingText={t('boImport.missingExpense')}
       allowed={allowed}
@@ -148,6 +170,8 @@ export function ExpenseImportPage() {
 function ImportPage({
   title,
   intro,
+  parent,
+  sample,
   columns,
   missingText,
   allowed,
@@ -157,6 +181,8 @@ function ImportPage({
 }: {
   title: string;
   intro: string;
+  parent: '/inventory/suppliers' | '/expenses';
+  sample: Sample;
   columns: string;
   missingText: string;
   allowed: boolean;
@@ -168,8 +194,14 @@ function ImportPage({
   const [parsed, setParsed] = useState<Parsed | null>(null);
   const [done, setDone] = useState<{ created: number; skipped: number } | null>(null);
   return (
-    <div className="flex max-w-5xl flex-col gap-4">
-      <PageHeader title={title} description={intro} />
+    <ImportFrame
+      title={title}
+      intro={intro}
+      parent={{ to: parent, label: t(parent === '/expenses' ? 'nav.expenses' : 'nav.suppliers') }}
+      sample={sample}
+      steps={[t('import.step.choose'), t('import.step.check'), t('import.step.import')]}
+      step={done ? 2 : parsed ? 1 : 0}
+    >
       {!allowed ? (
         <Notice>{t('boImport.notAllowed')}</Notice>
       ) : done ? (
@@ -200,50 +232,9 @@ function ImportPage({
           }}
         />
       ) : (
-        <Choose columns={columns} onParsed={setParsed} />
+        <DropZone hint={columns} onParsed={setParsed} />
       )}
-    </div>
-  );
-}
-
-function Choose({ columns, onParsed }: { columns: string; onParsed: (p: Parsed) => void }) {
-  const { t } = useLocale();
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  return (
-    <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border p-6">
-      <p className="text-sm text-muted-foreground">{columns}</p>
-      <input
-        ref={input}
-        type="file"
-        accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          setBusy(true);
-          setError(undefined);
-          try {
-            const result = await parseFile(file);
-            if (!result.rows.length) throw new Error('empty');
-            onParsed(result);
-          } catch {
-            setError(t('import.unreadable'));
-          } finally {
-            setBusy(false);
-            if (input.current) input.current.value = '';
-          }
-        }}
-      />
-      <Button disabled={busy} onClick={() => input.current?.click()}>
-        <FileUp aria-hidden className="size-4" />
-        {busy ? t('loading') : t('import.chooseFile')}
-      </Button>
-      {error && <Notice tone="error">{error}</Notice>}
-    </div>
+    </ImportFrame>
   );
 }
 

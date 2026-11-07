@@ -19,9 +19,9 @@ import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { useLocale } from '../../i18n';
 import '../../i18n/billing';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { formatPrice, priceInput, readPrice } from '../../lib/catalog';
+import { formatDateTime } from '../../lib/dates';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
 
 const METHODS = ['bank', 'bkash', 'nagad', 'cash'] as const;

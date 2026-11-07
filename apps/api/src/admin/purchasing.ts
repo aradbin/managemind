@@ -98,6 +98,8 @@ const Supplier = z
     updatedAt: z.string(),
     openingBalance: Money.optional().openapi({ description: 'Only with purchasing.pay' }),
     balance: Money.optional().openapi({ description: 'Only with purchasing.pay' }),
+    openOrders: z.number().int().optional().openapi({ description: 'In the list' }),
+    ordersToReceive: z.number().int().optional().openapi({ description: 'In the list' }),
   })
   .openapi('Supplier');
 
@@ -335,14 +337,35 @@ export const PURCHASING_ROUTES = {
     summary: 'Purchase orders, newest first (purchasing.read)',
     request: {
       query: z.object({
-        status: z.enum(PURCHASE_ORDER_STATUSES).optional(),
+        /** A status, or to_receive: ordered or partly received. */
+        status: z.enum([...PURCHASE_ORDER_STATUSES, 'to_receive']).optional(),
         supplierId: oneOrMany(z.uuid()),
+        /** A PO number or part of the supplier's name. */
+        q: z.string().trim().max(100).optional(),
+        /** Also how many each tab holds, and what is still to receive. */
+        counts: z
+          .enum(['true', 'false'])
+          .optional()
+          .transform((v) => v === 'true'),
         ...cursor,
         offset: pageOffset,
       }),
     },
     responses: json(
-      Page(PurchaseOrderSummary, 'PurchaseOrderPage').extend({ total: z.number().int() }),
+      Page(PurchaseOrderSummary, 'PurchaseOrderPage').extend({
+        total: z.number().int(),
+        counts: z
+          .object({
+            all: z.number().int(),
+            draft: z.number().int(),
+            toReceive: z.number().int(),
+            received: z.number().int(),
+            closed: z.number().int(),
+            cancelled: z.number().int(),
+            toReceiveValue: z.number().optional(),
+          })
+          .optional(),
+      }),
       'Purchase orders',
     ),
   }),

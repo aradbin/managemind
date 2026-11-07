@@ -3,7 +3,7 @@
 // read it; nothing here reaches into the store schema.
 import { schema } from '@managemind/db';
 import { AppError } from '@managemind/shared';
-import { and, asc, count, desc, eq, gt, ilike, lt, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, ilike, inArray, lt, or, sql } from 'drizzle-orm';
 import { type Actor, requirePlatformRole } from '../access';
 import type { PlatformTx } from '../platform';
 
@@ -53,18 +53,31 @@ const fromTenants = (tx: PlatformTx) =>
 
 export interface TenantQuery {
   q?: string;
-  status?: TenantSummary['status'];
+  /** A status, or setting_up: active stores whose setup checklist isn't done. */
+  status?: TenantSummary['status'] | 'setting_up';
+  /** One kind or several. */
+  kind?: readonly TenantSummary['kind'][];
+  /** One plan code or several. */
+  plan?: readonly string[];
   after?: string;
   /** Rows to skip, for numbered pages; `after` is then ignored. */
   offset?: number;
   limit?: number;
 }
 
-const tenantFilters = (query: TenantQuery, withCursor: boolean) => {
+const settingUp = sql`(${t.status} = 'active' and coalesce((${schema.storeHealth.checklist}->>'done')::int < (${schema.storeHealth.checklist}->>'total')::int, false))`;
+const planCode = sql`coalesce(${schema.plans.code}, ${t.plan})`;
+
+const tenantFilters = (query: TenantQuery, withCursor: boolean, withStatus = true) => {
   const q = query.q?.trim().replace(/[\\%_]/g, (c) => `\\${c}`);
   return and(
     q ? or(ilike(t.slug, `%${q}%`), ilike(t.name, `%${q}%`)) : undefined,
-    query.status ? eq(t.status, query.status) : undefined,
+    withStatus && query.status === 'setting_up' ? settingUp : undefined,
+    withStatus && query.status && query.status !== 'setting_up'
+      ? eq(t.status, query.status)
+      : undefined,
+    query.kind?.length ? inArray(t.kind, [...query.kind]) : undefined,
+    query.plan?.length ? sql`${planCode} = any(${sql.param([...query.plan])}::text[])` : undefined,
     withCursor && query.after && query.offset === undefined ? gt(t.slug, query.after) : undefined,
   );
 };
@@ -91,8 +104,45 @@ export async function countTenants(
   query: TenantQuery = {},
 ): Promise<number> {
   requirePlatformRole(actor, 'support');
-  const [row] = await tx.db.select({ n: count() }).from(t).where(tenantFilters(query, false));
+  const [row] = await tx.db
+    .select({ n: count() })
+    .from(t)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.tenantId, t.id))
+    .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
+    .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id))
+    .where(tenantFilters(query, false));
   return row?.n ?? 0;
+}
+
+/** How many stores each of the list's tabs holds, with the search and other filters. */
+export async function countTenantTabs(
+  tx: PlatformTx,
+  actor: Actor,
+  query: TenantQuery = {},
+): Promise<Record<'all' | 'active' | 'setting_up' | 'suspended' | 'closed' | 'purged', number>> {
+  requirePlatformRole(actor, 'support');
+  const [row] = await tx.db
+    .select({
+      all: count(),
+      active: sql<number>`count(*) filter (where ${t.status} = 'active')::int`,
+      setting_up: sql<number>`count(*) filter (where ${settingUp})::int`,
+      suspended: sql<number>`count(*) filter (where ${t.status} = 'suspended')::int`,
+      closed: sql<number>`count(*) filter (where ${t.status} = 'closed')::int`,
+      purged: sql<number>`count(*) filter (where ${t.status} = 'purged')::int`,
+    })
+    .from(t)
+    .leftJoin(schema.subscriptions, eq(schema.subscriptions.tenantId, t.id))
+    .leftJoin(schema.plans, eq(schema.plans.id, schema.subscriptions.planId))
+    .leftJoin(schema.storeHealth, eq(schema.storeHealth.tenantId, t.id))
+    .where(tenantFilters(query, false, false));
+  return {
+    all: Number(row?.all ?? 0),
+    active: Number(row?.active ?? 0),
+    setting_up: Number(row?.setting_up ?? 0),
+    suspended: Number(row?.suspended ?? 0),
+    closed: Number(row?.closed ?? 0),
+    purged: Number(row?.purged ?? 0),
+  };
 }
 
 export interface TenantDetail extends TenantSummary {
@@ -138,8 +188,12 @@ export async function getTenantDetail(
 export interface PlatformAuditRow {
   id: string;
   tenantId: string | null;
+  /** The store's name, when the entry is about one. */
+  tenantName: string | null;
   actorType: string;
   actorId: string | null;
+  /** The person's name, for a user. */
+  actorName: string | null;
   action: string;
   entityType: string | null;
   entityId: string | null;
@@ -148,22 +202,53 @@ export interface PlatformAuditRow {
   createdAt: Date;
 }
 
-/** The platform audit log, newest first (super admins). Pass the last id as `before`. */
+export interface PlatformAuditQuery {
+  /** Older than this entry (uuidv7 ids sort by time); or `offset`. */
+  before?: string;
+  offset?: number;
+  limit?: number;
+  /** Words in the action, the person's name or email, the store's name. */
+  q?: string;
+  actions?: readonly string[];
+  tenantIds?: readonly string[];
+}
+
+function auditWhere(page: PlatformAuditQuery) {
+  const a = schema.platformAuditLog;
+  const u = schema.users;
+  const tn = schema.tenants;
+  const q = page.q?.trim();
+  const like = q ? `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%` : undefined;
+  return and(
+    page.before ? lt(a.id, page.before) : undefined,
+    page.actions?.length ? inArray(a.action, [...page.actions]) : undefined,
+    page.tenantIds?.length ? inArray(a.tenantId, [...page.tenantIds]) : undefined,
+    like
+      ? or(ilike(a.action, like), ilike(u.name, like), ilike(u.email, like), ilike(tn.name, like))
+      : undefined,
+  );
+}
+
+/** The platform audit log, newest first (super admins), with names for people and stores. */
 export async function listPlatformAudit(
   tx: PlatformTx,
   actor: Actor,
-  page: { before?: string; limit?: number } = {},
+  page: PlatformAuditQuery = {},
 ): Promise<PlatformAuditRow[]> {
   requirePlatformRole(actor, 'super_admin');
   const a = schema.platformAuditLog;
+  const u = schema.users;
+  const tn = schema.tenants;
   const limit = Math.min(Math.max(page.limit ?? 50, 1), 100);
   // Ids are uuidv7, so they sort by time.
   return tx.db
     .select({
       id: a.id,
       tenantId: a.tenantId,
+      tenantName: tn.name,
       actorType: a.actorType,
       actorId: a.actorId,
+      actorName: u.name,
       action: a.action,
       entityType: a.entityType,
       entityId: a.entityId,
@@ -172,7 +257,39 @@ export async function listPlatformAudit(
       createdAt: a.createdAt,
     })
     .from(a)
-    .where(page.before ? lt(a.id, page.before) : undefined)
+    .leftJoin(u, eq(u.id, a.actorId))
+    .leftJoin(tn, eq(tn.id, a.tenantId))
+    .where(auditWhere(page))
     .orderBy(desc(a.id))
-    .limit(limit);
+    .limit(limit)
+    .offset(page.before ? 0 : Math.max(page.offset ?? 0, 0));
+}
+
+/** How many entries match, and the actions and stores the filters offer. */
+export async function platformAuditSummary(
+  tx: PlatformTx,
+  actor: Actor,
+  page: PlatformAuditQuery = {},
+): Promise<{ total: number; actions: string[]; stores: { id: string; name: string }[] }> {
+  requirePlatformRole(actor, 'super_admin');
+  const a = schema.platformAuditLog;
+  const u = schema.users;
+  const tn = schema.tenants;
+  const [totalRow] = await tx.db
+    .select({ n: count() })
+    .from(a)
+    .leftJoin(u, eq(u.id, a.actorId))
+    .leftJoin(tn, eq(tn.id, a.tenantId))
+    .where(auditWhere({ ...page, before: '' }));
+  const actions = await tx.db.selectDistinct({ action: a.action }).from(a).orderBy(asc(a.action));
+  const stores = await tx.db
+    .selectDistinct({ id: tn.id, name: tn.name })
+    .from(a)
+    .innerJoin(tn, eq(tn.id, a.tenantId))
+    .orderBy(asc(tn.name));
+  return {
+    total: Number(totalRow?.n ?? 0),
+    actions: actions.map((x) => x.action),
+    stores,
+  };
 }

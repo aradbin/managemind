@@ -2,6 +2,7 @@
 // phone like product photos (banners up to 1600 px wide), or remove it.
 import { BANNER_WIDTHS, MEDIA_WIDTHS } from '@managemind/shared/catalog';
 import { useQuery } from '@tanstack/react-query';
+import { ImageIcon } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 import { useLocale } from '../../i18n';
 import { fileName, prepareImage, uploadImage } from '../../lib/images';
@@ -43,17 +44,30 @@ export function ImagePicker({ label, mediaId, onChange, banner = false, disabled
     }
   }
 
+  const info = mediaId ? media.data?.[0] : undefined;
   return (
     <div className="flex flex-col gap-2">
-      <span id={`${id}-label`} className="text-sm font-medium">
-        {label} <span className="font-normal text-muted-foreground">({t('form.optional')})</span>
-      </span>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex size-20 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-          {file && (
+      <div className="flex items-center gap-3 rounded-[10px] border border-dashed border-input p-3">
+        <span
+          aria-hidden
+          className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground"
+        >
+          {file ? (
             <img src={`/api/admin/media/files/${file}`} alt="" className="size-full object-cover" />
+          ) : (
+            <ImageIcon className="size-4" />
           )}
-        </div>
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span id={`${id}-label`} className="font-medium">
+            {label}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {info
+              ? `${info.ext.toUpperCase()} · ${info.width} × ${info.height}`
+              : t('form.optional')}
+          </span>
+        </span>
         <input
           ref={input}
           id={`${id}-file`}
@@ -64,8 +78,19 @@ export function ImagePicker({ label, mediaId, onChange, banner = false, disabled
           disabled={disabled || busy}
           onChange={(e) => upload(e.target.files)}
         />
+        {mediaId && (
+          <Button
+            variant="ghost"
+            className="h-8 md:h-8"
+            disabled={disabled || busy}
+            onClick={() => onChange(null)}
+          >
+            {t('theme.image.remove')}
+          </Button>
+        )}
         <Button
           variant="secondary"
+          className="h-8 md:h-8"
           disabled={disabled || busy}
           onClick={() => input.current?.click()}
         >
@@ -75,11 +100,6 @@ export function ImagePicker({ label, mediaId, onChange, banner = false, disabled
               ? t('theme.image.replace')
               : t('theme.image.choose')}
         </Button>
-        {mediaId && (
-          <Button variant="ghost" disabled={disabled || busy} onClick={() => onChange(null)}>
-            {t('theme.image.remove')}
-          </Button>
-        )}
       </div>
       {failed && <Notice tone="error">{t('theme.image.failed')}</Notice>}
     </div>

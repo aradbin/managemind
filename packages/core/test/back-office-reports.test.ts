@@ -288,6 +288,10 @@ describe('the hand-computed fixture', () => {
     // 1 September 2026 is a Tuesday: its week starts on Monday the 31st.
     expect(weekly.buckets.map((x) => x.start)).toEqual(['2026-08-31']);
     expect(weekly.totals).toMatchObject({ units: 4, netSales: 1_690_00, returnedUnits: 1 });
+    // "vs. before": the same number of days just before the range.
+    const later = await run((tx) => salesReport(tx, owner, { from: D2, to: D3 }));
+    const first = await run((tx) => salesReport(tx, owner, { from: D1, to: D1 }));
+    expect(later.previous).toEqual(first.totals);
     const products = await run((tx) => productsReport(tx, owner, { from: D1, to: D3 }));
     expect(products.items.map((x) => [x.variantId, x.units, x.netSales])).toEqual([
       [a, 3, 1_490_00],

@@ -91,12 +91,15 @@ export interface NavItem {
   /** An area's own overview page, which the sidebar doesn't list. */
   overview?: NavTo;
   toConfirm?: boolean;
+  /** What the area holds, under its name on the phone's Menu. */
+  summary?: AdminKey;
 }
 
 const SELL: NavItem[] = [
   { key: 'home', to: '/', label: 'nav.home', icon: Home },
   {
     key: 'orders',
+    summary: 'nav.summary.orders',
     to: '/orders',
     label: 'nav.orders',
     icon: ShoppingBag,
@@ -112,6 +115,7 @@ const SELL: NavItem[] = [
   },
   {
     key: 'catalog',
+    summary: 'nav.summary.catalog',
     to: '/products',
     label: 'nav.catalog',
     icon: Package,
@@ -126,6 +130,7 @@ const SELL: NavItem[] = [
   },
   {
     key: 'inventory',
+    summary: 'nav.summary.inventory',
     to: '/inventory',
     label: 'nav.inventory',
     icon: Warehouse,
@@ -170,6 +175,7 @@ const SELL: NavItem[] = [
   },
   {
     key: 'reports',
+    summary: 'nav.summary.reports',
     to: '/reports',
     label: 'nav.reports',
     icon: ChartLine,
@@ -189,6 +195,7 @@ const SELL: NavItem[] = [
 const STORE: NavItem[] = [
   {
     key: 'online-store',
+    summary: 'nav.summary.onlineStore',
     to: '/online-store',
     overview: '/online-store',
     label: 'nav.onlineStore',
@@ -206,6 +213,7 @@ const STORE: NavItem[] = [
 
 const PLATFORM: NavItem = {
   key: 'platform',
+  summary: 'nav.summary.platform',
   to: '/platform',
   label: 'nav.platform',
   icon: Shield,

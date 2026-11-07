@@ -3,20 +3,23 @@
 // table from md that open the order, a ⋯ menu per row, and selection for
 // bulk confirm, booking and printing in the selection bar.
 
-import { formatDateTime } from '@managemind/shared/i18n';
+import { formatNumber } from '@managemind/shared/i18n';
+import { formatPhone } from '@managemind/shared/phone';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { Check, FileText, Plus, Printer, Search, Truck, X } from 'lucide-react';
+import { Check, CircleX, FileText, Flag, Plus, Printer, Truck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
 import {
-  barAction,
   FilterButtons,
   type FilterDef,
   RowMenu,
   RowMenuItem,
+  RowMenuSeparator,
+  SearchInput,
   SelectionBar,
   StageTabs,
+  ToolbarSummary,
 } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
@@ -26,8 +29,8 @@ import { ScoreBadge } from '../components/risk';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
+import { formatDateTime } from '../lib/dates';
 import '../i18n/back-office-reports';
 import '../i18n/orders';
 import '../i18n/couriers';
@@ -38,17 +41,18 @@ import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import {
-  dashboardQuery,
   dateRangeFilter,
   idempotencyKey,
   type OrderFilters,
   type OrderSummary,
+  orderQuery,
   ordersList,
   pickText,
   withKey,
   zonesQuery,
 } from '../lib/orders';
 import { usePagedList } from '../lib/paged';
+import { CancelDialog } from './order-detail';
 import { OrderExportButton } from './order-export';
 
 export type OrderSearch = OrderFilters & { page?: number | undefined };
@@ -102,14 +106,7 @@ export function OrdersPage() {
   const [bulkBooking, setBulkBooking] = useState(false);
   /** The pending orders being confirmed: the selection's, or one row's. */
   const [confirming, setConfirming] = useState<OrderSummary[]>();
-  const dashboard = useQuery(dashboardQuery).data;
-  const counts = dashboard?.counts;
-  const tabCount = (key: string) =>
-    key === 'pending'
-      ? counts?.awaitingConfirmation
-      : key === 'toShip'
-        ? counts?.toShip
-        : undefined;
+  const [cancelling, setCancelling] = useState<OrderSummary>();
 
   const setFilter = (patch: Partial<OrderSearch>) =>
     navigate({
@@ -134,7 +131,7 @@ export function OrdersPage() {
 
   const { page, ...listFilters } = search;
   const orders = usePagedList({
-    ...ordersList(listFilters),
+    ...ordersList(listFilters, { counts: true }),
     page,
     // A page is a step back can return to, so it isn't replaced.
     onPageChange: (next) =>
@@ -146,6 +143,10 @@ export function OrdersPage() {
   });
   const zones = useQuery(zonesQuery);
   const items = orders.items;
+  const answer = orders.first as
+    | { value?: number; counts?: Record<(typeof TABS)[number]['key'], number> }
+    | undefined;
+  const counts = answer?.counts;
 
   const tab = TABS.find(
     (x) => x.status === search.status && x.deliveryStatus === search.deliveryStatus,
@@ -203,7 +204,7 @@ export function OrdersPage() {
     {
       key: 'zone',
       multi: true,
-      label: t('order.zone'),
+      label: t('orders.zoneFilter'),
       value: search.zoneId,
       options: (zones.data ?? []).map((z) => ({ value: z.id, label: pickText(z.name, locale) })),
       onChange: (v) => setFilter({ zoneId: v }),
@@ -216,14 +217,19 @@ export function OrdersPage() {
       options: FLAGS.map((f) => ({ value: f, label: t(`orders.flag.${f}`) })),
       onChange: (v) => setFilter({ flag: v as OrderSearch['flag'] }),
     },
-    dateRangeFilter({
-      key: 'placed',
-      label: t('order.placedAt'),
-      from: search.from,
-      to: search.to,
-      onChange: setFilter,
-      t,
-    }),
+    // Dates come from Home and the reports; the list itself offers none.
+    ...(search.from || search.to
+      ? [
+          dateRangeFilter({
+            key: 'placed',
+            label: t('order.placedAt'),
+            from: search.from,
+            to: search.to,
+            onChange: setFilter,
+            t,
+          }),
+        ]
+      : []),
   ];
 
   const toggle = (id: string) =>
@@ -235,22 +241,8 @@ export function OrdersPage() {
     });
   const allSelected = items.length > 0 && items.every((o) => selected.has(o.id));
 
-  const showProfit = items.some((o) => o.grossProfit !== undefined);
-  const profitText = (o: OrderSummary) =>
-    o.grossProfit == null ? (
-      '—'
-    ) : (
-      <>
-        {formatPrice(o.grossProfit, locale)}
-        {o.missingCostUnits ? (
-          <span title={t('orders.profitNoCost')}>
-            <span aria-hidden> *</span>
-            <span className="sr-only">{t('orders.profitNoCost')}</span>
-          </span>
-        ) : null}
-      </>
-    );
   const area = (o: OrderSummary) => pickText(o.area, locale);
+  const phone = (o: OrderSummary) => formatPhone(o.phone);
   const placed = (o: OrderSummary) => {
     const at = new Date(o.placedAt);
     return {
@@ -262,36 +254,34 @@ export function OrdersPage() {
       time: formatDateTime(locale, at, { timeStyle: 'short' }),
     };
   };
+  const canShip = (o: OrderSummary) =>
+    o.status === 'confirmed' || (o.status === 'processing' && o.deliveryStatus === 'not_shipped');
 
   const columns: Column<OrderSummary>[] = [
     {
       header: t('order.number'),
       cell: (o) => (
-        <span className="flex flex-col items-start">
-          <Link
-            to="/orders/$id"
-            params={{ id: o.id }}
-            className="font-mono font-medium underline-offset-2 hover:underline"
-          >
-            {o.displayNumber}
-          </Link>
-          {o.cancelledBy === 'shopper' && (
-            <span className="text-xs text-danger">{t('orders.cancelledByShopper')}</span>
-          )}
-        </span>
+        <Link
+          to="/orders/$id"
+          params={{ id: o.id }}
+          className="font-mono font-medium tracking-[0.02em]"
+        >
+          {o.displayNumber}
+        </Link>
       ),
     },
     {
       header: t('order.customer'),
+      skeleton: 'lines',
       cell: (o) => (
-        <span className="flex flex-col items-start gap-0.5">
-          <span className="flex flex-wrap items-center gap-1.5">
-            <span className="font-medium">{o.name}</span>
-            {o.risk.risky && <ScoreBadge risk={o.risk} className="h-5 px-1.5" />}
-            <FlagChips flags={o.flags} />
+        <span className="flex min-w-0 flex-col">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate font-medium">{o.name}</span>
+            {o.risk.risky && <ScoreBadge risk={o.risk} />}
+            <Flags flags={o.flags} />
           </span>
-          <span className="text-xs text-muted-foreground">
-            {o.phone}
+          <span className="truncate text-[13px] text-muted-foreground tabular-nums">
+            {phone(o)}
             {area(o) ? ` · ${area(o)}` : ''}
           </span>
         </span>
@@ -299,38 +289,39 @@ export function OrdersPage() {
     },
     {
       header: t('order.placedAt'),
+      skeleton: 'lines',
       cell: (o) => (
-        <span className="flex flex-col whitespace-nowrap">
+        <span className="flex flex-col whitespace-nowrap tabular-nums">
           <span>{placed(o).day}</span>
           <span className="text-xs text-muted-foreground">{placed(o).time}</span>
         </span>
       ),
     },
-    { header: t('order.status'), cell: (o) => <StatusChip kind="order" status={o.status} /> },
+    {
+      header: t('order.status'),
+      skeleton: 'badge',
+      cell: (o) => <StatusChip kind="order" status={o.status} />,
+    },
     {
       header: t('order.payment'),
+      skeleton: 'badge',
       cell: (o) => <StatusChip kind="payment" status={o.paymentStatus} />,
     },
     {
       header: t('order.delivery'),
+      skeleton: 'badge',
       cell: (o) => <StatusChip kind="delivery" status={o.deliveryStatus} />,
     },
-    { header: t('order.total'), numeric: true, cell: (o) => formatPrice(o.total, locale) },
-    // Gross profit for cost holders (phase-8-plan §3.8): the server leaves it out otherwise.
-    ...(showProfit
-      ? [
-          {
-            header: t('orders.col.profit'),
-            numeric: true,
-            wide: true,
-            cell: (o: OrderSummary) => profitText(o),
-          },
-        ]
-      : []),
+    {
+      header: t('order.total'),
+      numeric: true,
+      cell: (o) => <span className="font-medium">{formatPrice(o.total, locale)}</span>,
+    },
   ];
 
   const ids = [...selected];
   const pendingSelected = items.filter((o) => selected.has(o.id) && o.status === 'pending');
+  const shippable = items.filter((o) => selected.has(o.id) && canShip(o));
   const open = (o: OrderSummary) => navigate({ to: '/orders/$id', params: { id: o.id } });
   const print = (ids: string[], doc: 'invoice' | 'slip') =>
     window.open(
@@ -338,15 +329,24 @@ export function OrdersPage() {
       '_blank',
       'noopener',
     );
+  const emptyText = filtered
+    ? t('orders.noMatches')
+    : tab?.key === 'pending'
+      ? t('orders.emptyConfirm')
+      : tab?.key === 'toShip'
+        ? t('orders.emptyShip')
+        : t('orders.emptyHere');
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         className="mb-0"
         title={t('nav.orders')}
         actions={
           <>
-            <OrderExportButton filters={listFilters} selected={ids} />
+            <span className="hidden md:contents">
+              <OrderExportButton filters={listFilters} selected={ids} />
+            </span>
             {canWrite && (
               <Button asChild>
                 <Link to="/orders/new">
@@ -361,7 +361,11 @@ export function OrdersPage() {
       />
       <StageTabs
         label={t('order.status')}
-        tabs={TABS.map((x) => ({ key: x.key, label: t(x.label), count: tabCount(x.key) }))}
+        tabs={TABS.map((x) => ({
+          key: x.key,
+          label: t(x.label),
+          count: x.key === 'all' ? counts?.all : counts?.[x.key] || undefined,
+        }))}
         value={tab?.key}
         onChange={(key) => {
           const next = TABS.find((x) => x.key === key);
@@ -372,24 +376,19 @@ export function OrdersPage() {
           });
         }}
       />
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-0 flex-1 basis-48 md:w-64 md:flex-none">
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            className="pl-9"
-            aria-label={t('orders.search')}
-            placeholder={t('orders.search')}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        </div>
+      <div className="flex items-center gap-2 md:flex-wrap">
+        <SearchInput
+          label={t('orders.search')}
+          placeholder={t('orders.searchPhone')}
+          value={q}
+          onChange={setQ}
+          className="min-w-0 flex-1 md:w-[300px] md:flex-none"
+        />
         <FilterButtons
           filters={filters}
+          width={230}
           onReset={filtered ? reset : undefined}
+          showLabel={t('orders.showCount', { count: orders.total })}
           extra={
             <>
               {odd.length > 0 && (
@@ -408,10 +407,9 @@ export function OrdersPage() {
                 </Button>
               )}
               {(tab?.key === 'cancelled' || search.cancelledByShopper) && (
-                <label className="flex min-h-9 items-center gap-2 px-1 text-sm md:min-h-8">
+                <label className="ml-2 hidden cursor-pointer items-center gap-2 font-medium md:inline-flex">
                   <input
                     type="checkbox"
-                    className="size-4 accent-primary"
                     checked={Boolean(search.cancelledByShopper)}
                     onChange={(e) =>
                       setFilter({ cancelledByShopper: e.target.checked || undefined })
@@ -423,20 +421,26 @@ export function OrdersPage() {
             </>
           }
         />
+        {orders.first && (
+          <ToolbarSummary>
+            {t('orders.summary', {
+              count: formatNumber(locale, orders.total),
+              value: formatPrice(answer?.value ?? 0, locale),
+            })}
+          </ToolbarSummary>
+        )}
       </div>
       <DataList
         label={t('nav.orders')}
         items={items}
         rowKey={(o) => o.id}
         columns={columns}
+        grid="24px 76px minmax(0,1.7fr) 112px 100px 104px 120px 88px 36px"
+        rowHeight={56}
         isPending={orders.isPending}
         error={orders.isError ? errorMessage(orders.error, t) : undefined}
         onRetry={() => orders.refetch()}
-        empty={
-          filtered || search.status || search.deliveryStatus
-            ? t('orders.noMatches')
-            : t('orders.empty')
-        }
+        empty={emptyText}
         emptyAction={
           filtered ? (
             <Button variant="secondary" onClick={reset}>
@@ -446,12 +450,56 @@ export function OrdersPage() {
         }
         pager={orders.pager}
         onOpen={open}
+        selectOnPhone={false}
+        cardClassName="py-3 pr-1 pl-3"
         selection={{
           isSelected: (o) => selected.has(o.id),
           toggle: (o) => toggle(o.id),
           toggleAll: () => setSelected(allSelected ? new Set() : new Set(items.map((o) => o.id))),
           label: (o) => t('orders.select', { number: o.displayNumber }),
         }}
+        bar={
+          <SelectionBar
+            count={selected.size}
+            label={t('orders.selectedCount', { count: selected.size })}
+            clearText
+            onClear={() => setSelected(new Set())}
+            actions={[
+              ...(canWrite && pendingSelected.length > 0
+                ? [
+                    {
+                      label: t('orders.bulkConfirm', { count: pendingSelected.length }),
+                      icon: Check,
+                      onClick: () => setConfirming(pendingSelected),
+                    },
+                  ]
+                : []),
+              ...(canWrite && shippable.length > 0
+                ? [
+                    {
+                      label: t('couriers.bulk.book'),
+                      icon: Truck,
+                      onClick: () => setBulkBooking(true),
+                    },
+                  ]
+                : []),
+              {
+                label: t('print.invoices'),
+                icon: Printer,
+                disabled: ids.length > 100,
+                title: ids.length > 100 ? t('print.tooMany') : undefined,
+                onClick: () => print(ids, 'invoice'),
+              },
+              {
+                label: t('print.slips'),
+                icon: FileText,
+                disabled: ids.length > 100,
+                title: ids.length > 100 ? t('print.tooMany') : undefined,
+                onClick: () => print(ids, 'slip'),
+              },
+            ]}
+          />
+        }
         menu={(o) => (
           <RowMenu label={o.displayNumber}>
             <RowMenuItem onSelect={() => open(o)}>
@@ -464,78 +512,62 @@ export function OrdersPage() {
                 {t('order.confirm')}
               </RowMenuItem>
             )}
+            {canWrite && canShip(o) && (
+              <RowMenuItem
+                onSelect={() => {
+                  setSelected(new Set([o.id]));
+                  setBulkBooking(true);
+                }}
+              >
+                <Truck aria-hidden />
+                {t('orders.bookCourier')}
+              </RowMenuItem>
+            )}
             <RowMenuItem onSelect={() => print([o.id], 'invoice')}>
               <Printer aria-hidden />
               {t('orders.printInvoice')}
             </RowMenuItem>
-            <RowMenuItem onSelect={() => print([o.id], 'slip')}>
-              <Printer aria-hidden />
-              {t('orders.printSlip')}
-            </RowMenuItem>
+            {canWrite && (o.status === 'pending' || o.status === 'confirmed') && (
+              <>
+                <RowMenuSeparator />
+                <RowMenuItem danger onSelect={() => setCancelling(o)}>
+                  <CircleX aria-hidden />
+                  {t('orders.cancelOrder')}
+                </RowMenuItem>
+              </>
+            )}
           </RowMenu>
         )}
         card={(o) => (
-          <div className="flex items-start gap-3">
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="flex flex-wrap items-center gap-2">
-                <Link to="/orders/$id" params={{ id: o.id }} className="font-mono font-medium">
-                  {o.displayNumber}
-                </Link>
-                <StatusChip kind="order" status={o.status} />
+          <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-2">
+              <Link
+                to="/orders/$id"
+                params={{ id: o.id }}
+                className="font-mono font-semibold tracking-[0.02em]"
+              >
+                {o.displayNumber}
+              </Link>
+              <StatusChip kind="order" status={o.status} />
+              <span className="ml-auto font-semibold tabular-nums">
+                {formatPrice(o.total, locale)}
               </span>
-              <span className="truncate text-sm">
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate">
                 {o.name}
                 {area(o) ? ` · ${area(o)}` : ''}
               </span>
-              <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                {placed(o).day}, {placed(o).time}
-                {o.risk.risky && <ScoreBadge risk={o.risk} className="h-5 px-1.5" />}
-                <FlagChips flags={o.flags} />
-              </span>
-            </div>
-            <span className="flex shrink-0 flex-col items-end gap-1">
-              <span className="font-medium tabular-nums">{formatPrice(o.total, locale)}</span>
               <StatusChip kind="payment" status={o.paymentStatus} />
-              {showProfit && o.grossProfit != null && (
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  {t('orders.col.profit')} {profitText(o)}
-                </span>
-              )}
+            </span>
+            <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground tabular-nums">
+              {placed(o).day}, {placed(o).time}
+              {o.risk.risky && <ScoreBadge risk={o.risk} />}
+              <Flags flags={o.flags} />
             </span>
           </div>
         )}
       />
-      <SelectionBar count={selected.size} onClear={() => setSelected(new Set())}>
-        {canWrite && pendingSelected.length > 0 && (
-          <button
-            type="button"
-            className={barAction}
-            onClick={() => setConfirming(pendingSelected)}
-          >
-            <Check aria-hidden />
-            {t('orders.bulkConfirm', { count: pendingSelected.length })}
-          </button>
-        )}
-        {canWrite && (
-          <button type="button" className={barAction} onClick={() => setBulkBooking(true)}>
-            <Truck aria-hidden />
-            {t('couriers.bulk.book')}
-          </button>
-        )}
-        {(['invoice', 'slip'] as const).map((doc) => (
-          <button
-            key={doc}
-            type="button"
-            className={barAction}
-            disabled={ids.length > 100}
-            title={ids.length > 100 ? t('print.tooMany') : undefined}
-            onClick={() => print(ids, doc)}
-          >
-            <Printer aria-hidden />
-            {t(doc === 'invoice' ? 'print.invoices' : 'print.slips')}
-          </button>
-        ))}
-      </SelectionBar>
       {confirming && (
         <BulkConfirmDialog
           orders={confirming}
@@ -544,6 +576,9 @@ export function OrdersPage() {
             if (done) setSelected(new Set());
           }}
         />
+      )}
+      {cancelling && (
+        <CancelOrderDialog order={cancelling} onClose={() => setCancelling(undefined)} />
       )}
       {bulkBooking && (
         <BulkBookDialog
@@ -558,8 +593,24 @@ export function OrdersPage() {
   );
 }
 
-/** What staff should look at: a possible duplicate, an order nobody answered for. */
-function FlagChips({ flags }: { flags: readonly string[] }) {
+/** Cancel from the list: the order's own cancel dialog, once the order has loaded. */
+function CancelOrderDialog({ order, onClose }: { order: OrderSummary; onClose: () => void }) {
+  const detail = useQuery(orderQuery(order.id));
+  const queryClient = useQueryClient();
+  if (!detail.data) return null;
+  return (
+    <CancelDialog
+      order={detail.data}
+      onClose={() => {
+        void queryClient.invalidateQueries({ queryKey: ['orders'] });
+        onClose();
+      }}
+    />
+  );
+}
+
+/** What staff should look at, as the board marks it: a flag and its words. */
+function Flags({ flags }: { flags: readonly string[] }) {
   const { t } = useLocale();
   return (
     <>
@@ -568,8 +619,9 @@ function FlagChips({ flags }: { flags: readonly string[] }) {
         .map((f) => (
           <span
             key={f}
-            className="inline-flex h-[22px] items-center whitespace-nowrap rounded-md bg-warning px-2 text-xs font-medium text-warning-foreground"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-medium whitespace-nowrap text-warning-foreground"
           >
+            <Flag aria-hidden className="size-3" />
             {t(`orders.flag.${f}`)}
           </span>
         ))}

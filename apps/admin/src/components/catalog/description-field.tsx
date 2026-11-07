@@ -56,12 +56,21 @@ export function DescriptionField({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <label id={`${id}-label`} htmlFor={plain ? id : undefined} className="text-sm font-medium">
-          {label} <span className="font-normal text-muted-foreground">({t('form.optional')})</span>
+    <div className="flex flex-col gap-2">
+      <div className="flex min-h-5 items-center justify-between gap-2">
+        <label
+          id={`${id}-label`}
+          htmlFor={plain ? id : undefined}
+          className="text-sm leading-none font-medium"
+        >
+          {label}
         </label>
-        <Button variant="ghost" className="text-primary" disabled={disabled} onClick={switchMode}>
+        <Button
+          variant="ghost"
+          className="-my-1 -mr-2 h-7 px-2 text-[13px] text-muted-foreground md:h-7"
+          disabled={disabled}
+          onClick={switchMode}
+        >
           {plain ? t('editor.useFormatted') : t('editor.usePlain')}
         </Button>
       </div>

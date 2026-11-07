@@ -12,7 +12,9 @@ import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { emptyPlace, type PlaceDraft, PlacePicker } from '../components/place-picker';
 import { useToast } from '../components/toast';
+import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
@@ -27,6 +29,7 @@ import {
   type Zone,
   zonesQuery,
 } from '../lib/orders';
+import { cn } from '../lib/utils';
 
 const MAX_ZONES = 20;
 
@@ -53,48 +56,47 @@ export function DeliverySettingsPage() {
       : shown;
   };
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         className="mb-0"
         title={t('delivery.title')}
         description={t('delivery.intro')}
-        actions={
-          canEdit &&
-          zones.data.length < MAX_ZONES && (
-            <Button onClick={() => setEditing('new')}>
-              <Plus aria-hidden className="size-4" />
-              {t('delivery.add')}
-            </Button>
-          )
-        }
       />
       {!canEdit && <Notice>{t('store.readOnly')}</Notice>}
       {!zones.data.some((z) => z.isFallback && z.active) && (
         <Notice tone="error">{t('delivery.noFallback')}</Notice>
       )}
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <ul
-          aria-label={t('delivery.title')}
-          className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-background"
-        >
+      <section aria-labelledby="zones-h" className={cn(cardPadded, 'gap-1 md:gap-1')}>
+        <div className="flex items-start gap-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <h2 id="zones-h" className={cardTitle}>
+              {t('delivery.zones')}
+            </h2>
+            <p className="text-[13px] text-muted-foreground">{t('delivery.zonesHint')}</p>
+          </div>
+          {canEdit && zones.data.length < MAX_ZONES && (
+            <Button variant="secondary" onClick={() => setEditing('new')}>
+              <Plus aria-hidden />
+              {t('delivery.add')}
+            </Button>
+          )}
+        </div>
+        <ul aria-label={t('delivery.title')} className="-mx-4 mt-2 md:-mx-5">
           {zones.data.map((z) => (
-            <li key={z.id} className="flex items-center gap-4 px-4 py-4 md:px-5">
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{pickText(z.name, locale)}</span>
-                  {z.isFallback && (
-                    <span className="rounded-md border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                      {t('delivery.fallbackShort')}
-                    </span>
-                  )}
-                  {!z.active && (
-                    <span className="rounded-md bg-warning px-2 py-0.5 text-xs font-medium text-warning-foreground">
-                      {t('delivery.inactive')}
-                    </span>
-                  )}
+            <li
+              key={z.id}
+              className="flex items-center gap-3 border-t border-border py-3 pr-3 pl-4 md:pl-5"
+            >
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-medium">{pickText(z.name, locale)}</span>
+                  {!z.active && <SecondaryBadge>{t('delivery.inactive')}</SecondaryBadge>}
+                  {z.isFallback && <SecondaryBadge>{t('delivery.fallbackShort')}</SecondaryBadge>}
                 </span>
-                <span className="text-sm text-muted-foreground">{coverage(z)}</span>
+                <span className="text-[13px] text-muted-foreground">
+                  {[coverage(z), pickText(z.estimate, locale)].filter(Boolean).join(' · ')}
+                </span>
                 {z.freeWeightGrams !== null && z.feePerExtraKg !== null && (
                   <span className="text-xs text-muted-foreground">
                     {t('delivery.weightRule', {
@@ -104,17 +106,12 @@ export function DeliverySettingsPage() {
                   </span>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-0.5">
-                <span className="font-semibold tabular-nums">{formatPrice(z.fee, locale)}</span>
-                {pickText(z.estimate, locale) && (
-                  <span className="text-xs text-muted-foreground">
-                    {pickText(z.estimate, locale)}
-                  </span>
-                )}
-              </div>
+              <span className="shrink-0 font-semibold tabular-nums">
+                {formatPrice(z.fee, locale)}
+              </span>
               {canEdit && (
                 <Button
-                  variant="secondary"
+                  variant="ghost"
                   aria-label={`${t('action.edit')}: ${pickText(z.name, locale)}`}
                   onClick={() => setEditing(z)}
                 >
@@ -124,8 +121,8 @@ export function DeliverySettingsPage() {
             </li>
           ))}
         </ul>
-        <FeeCalculator />
-      </div>
+      </section>
+      <FeeCalculator />
       {editing && g && (
         <ZoneDialog
           zone={editing === 'new' ? undefined : editing}
@@ -156,35 +153,37 @@ function FeeCalculator() {
     enabled: place.areaId !== null && Number.isFinite(grams) && grams >= 0,
   });
   return (
-    <section
-      aria-labelledby="calc-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <h2 id="calc-h" className="font-semibold">
-        {t('delivery.calculator')}
-      </h2>
-      <PlacePicker value={place} onChange={setPlace} withLine={false} />
-      <Field
-        label={t('delivery.weightKg')}
-        inputMode="decimal"
-        value={kg}
-        onChange={(e) => setKg(e.target.value)}
-      />
-      <p
-        role="status"
-        className={
-          quote.data ? 'rounded-lg bg-primary-soft px-4 py-3 font-semibold text-primary' : ''
+    <section aria-labelledby="calc-h" className={cn(cardPadded, 'gap-4 md:gap-4')}>
+      <div className="flex flex-col gap-1">
+        <h2 id="calc-h" className={cardTitle}>
+          {t('delivery.calculator')}
+        </h2>
+        <p className="text-[13px] text-muted-foreground">{t('delivery.calculatorHint')}</p>
+      </div>
+      <PlacePicker
+        row
+        value={place}
+        onChange={setPlace}
+        withLine={false}
+        trailing={
+          <Field
+            label={t('delivery.weightKg')}
+            inputMode="decimal"
+            value={kg}
+            onChange={(e) => setKg(e.target.value)}
+          />
         }
-      >
-        {quote.data
-          ? quote.data.zone && quote.data.fee !== null
+      />
+      {quote.data && (
+        <p role="status" className="rounded-[10px] bg-muted px-3.5 py-3 font-medium">
+          {quote.data.zone && quote.data.fee !== null
             ? t('delivery.feeIs', {
                 zone: pickText(quote.data.zone.name, locale),
                 fee: formatPrice(quote.data.fee, locale),
               })
-            : t('delivery.notCovered')
-          : ''}
-      </p>
+            : t('delivery.notCovered')}
+        </p>
+      )}
     </section>
   );
 }
@@ -336,7 +335,6 @@ function ZoneDialog({
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={weighted}
             onChange={(e) => setWeighted(e.target.checked)}
           />
@@ -378,7 +376,6 @@ function ZoneDialog({
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input
             type="checkbox"
-            className="size-4 accent-primary"
             checked={fallback}
             disabled={otherFallback && !fallback}
             onChange={(e) => setFallback(e.target.checked)}
@@ -411,7 +408,6 @@ function ZoneDialog({
                         >
                           <input
                             type="checkbox"
-                            className="size-4 accent-primary"
                             disabled={taken.has(`d${d.id}`)}
                             checked={districtIds.includes(d.id)}
                             onChange={() => toggle(districtIds, setDistrictIds, d.id)}
@@ -429,7 +425,7 @@ function ZoneDialog({
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 {t('delivery.areasIn')}
                 <select
-                  className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
                   value={pickDistrict ?? ''}
                   onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
                 >
@@ -452,7 +448,6 @@ function ZoneDialog({
                     >
                       <input
                         type="checkbox"
-                        className="size-4 accent-primary"
                         disabled={taken.has(`a${a.id}`)}
                         checked={areaIds.includes(a.id)}
                         onChange={() => toggle(areaIds, setAreaIds, a.id)}
@@ -474,12 +469,7 @@ function ZoneDialog({
           </fieldset>
         )}
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            className="size-4 accent-primary"
-            checked={active}
-            onChange={(e) => setActive(e.target.checked)}
-          />
+          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
           {t('delivery.active')}
         </label>
         {invalid && <Notice tone="error">{t('delivery.invalid')}</Notice>}

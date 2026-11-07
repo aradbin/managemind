@@ -3,13 +3,14 @@
 // through a support grant show until when. The trigger takes the look of
 // where it sits (ADR 0033): the top of the sidebar, the phone header, or a
 // row on the Menu page.
-import { formatDateTime } from '@managemind/shared/i18n';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
 import type { Me } from '../lib/api';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage } from '../lib/errors';
 import { switchStore } from '../lib/store';
 import { cn } from '../lib/utils';
@@ -30,6 +31,7 @@ export function initials(name: string): string {
     .toUpperCase();
 }
 
+/** A store's tile in the store list: its initials. */
 export function StoreTile({ name, className }: { name: string; className?: string }) {
   return (
     <span
@@ -40,6 +42,21 @@ export function StoreTile({ name, className }: { name: string; className?: strin
       )}
     >
       {initials(name)}
+    </span>
+  );
+}
+
+/** The platform's mark, as the canvas draws it at the top of the sidebar and the phone header. */
+export function BrandMark({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-sidebar-primary text-sm font-semibold text-primary-foreground dark:text-white',
+        className,
+      )}
+    >
+      m
     </span>
   );
 }
@@ -88,13 +105,13 @@ export function StoreSwitcher({
       {look === 'header' ? (
         <Button
           variant="ghost"
-          className="min-w-0 max-w-full justify-start gap-2 px-1.5"
+          className="min-w-0 max-w-full justify-start gap-2 pr-2 pl-1 has-[>svg]:pr-2 has-[>svg]:pl-1"
           aria-label={label}
           onClick={() => setOpen(true)}
         >
-          {current && <StoreTile name={current.name} className="size-7" />}
+          <BrandMark className="size-7 rounded-lg" />
           <span className="truncate font-semibold">{current?.name ?? t('store.switch')}</span>
-          <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronsUpDown aria-hidden className="!size-4 shrink-0" />
         </Button>
       ) : (
         <button
@@ -102,28 +119,38 @@ export function StoreSwitcher({
           aria-label={label}
           onClick={() => setOpen(true)}
           className={cn(
-            'flex w-full min-w-0 items-center text-left hover:bg-muted',
-            look === 'sidebar' ? 'min-h-12 gap-2 rounded-lg p-2' : 'min-h-14 gap-3 px-3.5 py-2',
+            'flex w-full min-w-0 items-center text-left hover:bg-accent',
+            look === 'sidebar' ? 'h-12 gap-2 rounded-lg p-2' : 'min-h-16 gap-3 px-3 py-2',
           )}
         >
-          {current && <StoreTile name={current.name} />}
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-semibold">
+          {look === 'sidebar' ? (
+            <BrandMark />
+          ) : (
+            current && (
+              <StoreTile
+                name={current.name}
+                className="size-10 rounded-full text-[13px] font-medium"
+              />
+            )
+          )}
+          <span className="flex min-w-0 flex-1 flex-col leading-4">
+            <span className="truncate text-sm leading-5 font-semibold">
               {current?.name ?? t('store.switch')}
             </span>
             {current && (
-              <span className="truncate text-xs text-muted-foreground">
-                {t(`role.${current.role}`)}
+              <span
+                className={cn(
+                  'truncate text-muted-foreground',
+                  look === 'sidebar' ? 'text-xs' : 'text-[13px] leading-[18px]',
+                )}
+              >
+                {look === 'sidebar'
+                  ? t(`role.${current.role}`)
+                  : `${t(`role.${current.role}`)} · ${t('store.switch')}`}
               </span>
             )}
           </span>
-          {look === 'sidebar' ? (
-            <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-          ) : (
-            <span aria-hidden className="text-sm font-medium text-primary">
-              {t('store.switch')}
-            </span>
-          )}
+          <ChevronsUpDown aria-hidden className="size-4 shrink-0" />
         </button>
       )}
       <Dialog

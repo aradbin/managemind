@@ -3,23 +3,45 @@
 // actions the state machines allow (the API lists them). Every command sends
 // an Idempotency-Key, kept for the dialog's life, so a retry after a dropped
 // connection doesn't do it twice.
+
 import { type CancelCode, type Courier, MANUAL_METHODS } from '@managemind/shared/orders';
+import { formatPhone } from '@managemind/shared/phone';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
-import { ChevronRight, Phone } from 'lucide-react';
+import {
+  Banknote,
+  Check,
+  CircleX,
+  FileText,
+  Link2,
+  Package,
+  PackageOpen,
+  Phone,
+  Plus,
+  Printer,
+  SquarePen,
+  Truck,
+  Undo2,
+  X,
+} from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { ConfirmDialog } from '../components/confirm-dialog';
 import { BookDialog, CourierPanel } from '../components/courier-booking';
 import { Field } from '../components/field';
+import { fieldLabel } from '../components/field-styles';
+import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { StatusChip } from '../components/order-status';
+import { BackLink } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
-import { RiskPanel } from '../components/risk';
+import { PhoneRecordHeader } from '../components/record-header';
+import { ScoreBadge, useRiskCounts } from '../components/risk';
 import { SendByChat } from '../components/send-by-chat';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
+import { CardSection, cardFrame, cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
-import { Input } from '../components/ui/input';
+import { Input, Textarea } from '../components/ui/input';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/returns';
@@ -27,6 +49,7 @@ import { RefundDialog } from '../components/refund-dialog';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
 import { courierName, couriersQuery, orderedCouriers } from '../lib/couriers';
+import { useRecordPage } from '../lib/crumb';
 import { errorMessage } from '../lib/errors';
 import {
   dateTime,
@@ -40,8 +63,8 @@ import {
   type Shipment,
   withKey,
 } from '../lib/orders';
+import { cn } from '../lib/utils';
 import { EditOrderDialog } from './order-edit';
-import { PrintLinks } from './orders';
 import { Thumbnail } from './products';
 import { CreateReturnDialog } from './return-detail';
 import { ReturnStatusChip } from './returns';
@@ -64,45 +87,76 @@ function useCommand<T>(orderId: string, run: (key: string, input: T) => Promise<
   return mutation;
 }
 
-const section = 'flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5';
+const section = cardPadded;
 
 export function OrderDetailPage() {
   const { id } = useParams({ strict: false }) as { id: string };
-  const { t, locale } = useLocale();
+  const { t } = useLocale();
   const order = useQuery(orderQuery(id));
+  useRecordPage(order.data && t('order.title', { number: order.data.displayNumber }));
   if (order.isPending) return <p role="status">{t('loading')}</p>;
   if (order.isError) return <Notice tone="error">{errorMessage(order.error, t)}</Notice>;
-  const o = order.data;
+  return <OrderView order={order.data} />;
+}
+
+// Where each card sits on phones, where the two columns become one (the
+// canvas's phone order board); desktops keep the columns' own order.
+const phoneOrder = {
+  customer: 'max-md:order-1',
+  lines: 'max-md:order-2',
+  payments: 'max-md:order-3',
+  shipments: 'max-md:order-4',
+  returns: 'max-md:order-5',
+  confirmation: 'max-md:order-6',
+  tags: 'max-md:order-7',
+  others: 'max-md:order-8',
+  timeline: 'max-md:order-9',
+} as const;
+const slot = (at: keyof typeof phoneOrder) => cn('flex flex-col empty:hidden', phoneOrder[at]);
+
+function OrderView({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  const actions = useOrderActions(o);
+  const title = t('order.title', { number: o.displayNumber });
+  const placed = t('order.placedOn', {
+    date: dateTime(locale, o.placedAt),
+    source: t(`source.${o.source}` as AdminKey),
+  });
+  const chips = (
+    <span className="flex flex-wrap gap-1.5">
+      <StatusChip kind="order" status={o.status} />
+      <StatusChip kind="payment" status={o.paymentStatus} />
+      <StatusChip kind="delivery" status={o.deliveryStatus} />
+    </span>
+  );
   return (
-    <div className="flex flex-col gap-5 pb-20 md:pb-0">
-      <nav aria-label={t('nav.breadcrumb')} className="flex items-center gap-1.5 text-sm">
-        <Link to="/orders" className="font-medium text-primary underline underline-offset-2">
-          {t('nav.orders')}
-        </Link>
-        <ChevronRight aria-hidden className="size-4 text-muted-foreground" />
-        <span className="text-muted-foreground">{o.displayNumber}</span>
-      </nav>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <h1 className="text-xl font-semibold tracking-tight">
-              {t('order.title', { number: o.displayNumber })}
-            </h1>
-            <div className="flex flex-wrap gap-1.5">
-              <StatusChip kind="order" status={o.status} />
-              <StatusChip kind="payment" status={o.paymentStatus} />
-              <StatusChip kind="delivery" status={o.deliveryStatus} />
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {t('order.placedOn', {
-              date: dateTime(locale, o.placedAt),
-              source: t(`source.${o.source}` as AdminKey),
-            })}
-          </p>
+    <div className="flex flex-col gap-3 md:gap-4">
+      <PhoneRecordHeader to="/orders" backLabel={t('order.backToOrders')} title={title}>
+        {actions.menu('ghost')}
+      </PhoneRecordHeader>
+      <div className="flex flex-wrap items-center gap-3 max-md:hidden">
+        <BackLink to="/orders" label={t('order.backToOrders')} />
+        <h1 className="text-xl leading-7 font-semibold tracking-[-0.01em]">{title}</h1>
+        {chips}
+        <span className="flex-1" />
+        <div className="flex items-center gap-2">
+          {actions.primary}
+          {actions.menu('outline')}
         </div>
-        <OrderActions order={o} />
       </div>
+      <p className="-mt-2 text-muted-foreground max-md:hidden">{placed}</p>
+      <section aria-label={t('order.summary')} className={cn(cardPadded, 'gap-2.5 md:hidden')}>
+        {chips}
+        <div className="flex flex-col">
+          <p className="text-2xl leading-8 font-semibold tracking-[-0.02em] tabular-nums">
+            {formatPrice(o.totals.total, locale)}
+          </p>
+          <p className="text-[13px] text-muted-foreground">{dueLine(o, t, locale)}</p>
+        </div>
+        <p className="text-xs text-muted-foreground">{placed}</p>
+        {actions.primary && <div className="flex [&>button]:flex-1">{actions.primary}</div>}
+      </section>
+      {actions.overlays}
       {o.flags.includes('payment_risk') && <Notice tone="error">{t('order.flag.risk')}</Notice>}
       {o.flags.includes('flagged_phone') && (
         <Notice tone="error">
@@ -115,55 +169,89 @@ export function OrderDetailPage() {
       {o.flags.includes('late_payment') && <Notice tone="error">{t('order.flag.late')}</Notice>}
       {o.flags.includes('possible_duplicate') && o.duplicateOf && <DuplicateBanner order={o} />}
       {o.status === 'cancelled' && (
-        <Notice tone="error">
+        <Notice>
           {t(o.cancelledBy === 'shopper' ? 'order.cancelledByShopper' : 'order.cancelledByStaff', {
             reason: o.cancelReason ?? '—',
           })}
           {o.cancelCode && o.cancelledBy !== 'shopper' && ` (${t(`cancelCode.${o.cancelCode}`)})`}
         </Notice>
       )}
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {/* The customer first on phones, where calling them is the next step; beside the items on desktops. */}
-        <div className="flex flex-col gap-5 lg:col-start-2 lg:row-start-1">
-          <CustomerCard order={o} />
-          {o.confirmation && <ConfirmationCard order={o} />}
-          <RiskPanel risk={o.risk} atPlacement={o.phoneScoreAtPlacement}>
-            {o.otherOpenOrders.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <h3 className="text-sm font-semibold">{t('risk.otherOpen')}</h3>
-                <ul className="flex flex-col gap-1 text-sm">
-                  {o.otherOpenOrders.map((other) => (
-                    <li key={other.id} className="flex flex-wrap items-center gap-2">
-                      <Link
-                        to="/orders/$id"
-                        params={{ id: other.id }}
-                        className="font-medium text-primary underline underline-offset-2"
-                      >
-                        {other.displayNumber}
-                      </Link>
-                      <StatusChip kind="order" status={other.status} />
-                      <span className="ms-auto tabular-nums">
-                        {formatPrice(other.total, locale)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </RiskPanel>
+      <div className="grid items-start gap-3 md:gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-4 max-md:contents lg:col-start-2 lg:row-start-1">
+          <div className={slot('customer')}>
+            <CustomerCard order={o} />
+          </div>
+          <div className={slot('confirmation')}>
+            <ConfirmationCard order={o} />
+          </div>
+          <div className={slot('tags')}>
+            <Tags order={o} />
+          </div>
+          <div className={slot('others')}>
+            <OtherOpenOrders order={o} />
+          </div>
         </div>
-        <div className="flex min-w-0 flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-          <Lines order={o} />
-          <Payments order={o} />
-          <Shipments order={o} />
-          <ReturnsAndRefunds order={o} />
-          <Timeline order={o} />
-        </div>
-        <div className="lg:col-start-2 lg:row-start-2">
-          <Tags order={o} />
+        <div className="flex min-w-0 flex-col gap-4 max-md:contents lg:col-start-1 lg:row-start-1">
+          <div className={slot('lines')}>
+            <Lines order={o} />
+          </div>
+          <div className={slot('payments')}>
+            <Payments order={o} />
+          </div>
+          <div className={slot('shipments')}>
+            <Shipments order={o} />
+          </div>
+          <div className={slot('returns')}>
+            <ReturnsAndRefunds order={o} />
+          </div>
+          <div className={slot('timeline')}>
+            <Timeline order={o} />
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+/** What is left to settle, under the total on phones. */
+function dueLine(
+  o: OrderDetail,
+  t: ReturnType<typeof useLocale>['t'],
+  locale: ReturnType<typeof useLocale>['locale'],
+): string {
+  const tt = o.totals;
+  const money = (n: number) => formatPrice(n, locale);
+  if (o.status === 'cancelled') return t('orderStatus.cancelled');
+  if (tt.codDue > 0)
+    return o.address
+      ? t('order.toCollectLine', { amount: money(tt.codDue) })
+      : t('order.stillToPay', { amount: money(tt.codDue) });
+  if (tt.refundDue > 0) return t('order.dueBack', { amount: money(tt.refundDue) });
+  return t('order.paidInFull');
+}
+
+/** The phone's other open orders, when it has any: worth a look before confirming. */
+function OtherOpenOrders({ order: o }: { order: OrderDetail }) {
+  const { t, locale } = useLocale();
+  if (!o.otherOpenOrders.length) return null;
+  return (
+    <CardSection title={t('risk.otherOpen')}>
+      <ul className="-my-2.5 flex flex-col divide-y divide-border">
+        {o.otherOpenOrders.map((other) => (
+          <li key={other.id} className="flex items-center gap-2 py-2.5">
+            <Link
+              to="/orders/$id"
+              params={{ id: other.id }}
+              className="font-mono font-medium tracking-[0.02em]"
+            >
+              {other.displayNumber}
+            </Link>
+            <StatusChip kind="order" status={other.status} />
+            <span className="ms-auto tabular-nums">{formatPrice(other.total, locale)}</span>
+          </li>
+        ))}
+      </ul>
+    </CardSection>
   );
 }
 
@@ -253,7 +341,12 @@ function DuplicateBanner({ order: o }: { order: OrderDetail }) {
   );
 }
 
-function OrderActions({ order: o }: { order: OrderDetail }) {
+/**
+ * The order's next step and its ⋯ menu (the canvas: one primary action plus
+ * ⋯). The page places them in the desktop header, and on phones in the
+ * record header and the summary card; the panels they open render once.
+ */
+function useOrderActions(o: OrderDetail) {
   const { t } = useLocale();
   const toast = useToast();
   const [dialog, setDialog] = useState<'cancel' | 'edit' | 'ship' | 'pay' | null>(null);
@@ -276,78 +369,94 @@ function OrderActions({ order: o }: { order: OrderDetail }) {
   const has = (a: string) => o.actions.includes(a);
   const error = confirm.error ?? process.error;
   const canShip = has('create_shipment') && o.lines.some((l) => l.shippedQuantity < l.quantity);
-  // The next step in the order's life: on phones it is pinned above the tab bar.
+  // The next step in the order's life.
   const primary = has('confirm') ? (
     <Button
       disabled={confirm.isPending}
       onClick={() => confirm.mutate(undefined, { onSuccess: () => toast(t('order.confirmed')) })}
     >
+      <Check aria-hidden />
       {t('order.confirm')}
     </Button>
   ) : canShip && couriers[0] ? (
     <Button onClick={() => setBooking(couriers[0] as Courier)}>
+      <Truck aria-hidden />
       {t('couriers.book', { courier: courierName(couriers[0], t) })}
     </Button>
   ) : canShip ? (
     <Button onClick={() => setDialog('ship')}>{t('order.createShipment')}</Button>
   ) : null;
-  return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="flex flex-wrap gap-2">
-        <PrintLinks ids={[o.id]} />
-        {has('edit') && (
-          <Button variant="secondary" onClick={() => setDialog('edit')}>
-            {t('order.edit')}
-          </Button>
-        )}
-        {has('cancel') && (
-          <Button variant="quiet" onClick={() => setDialog('cancel')}>
-            {t('order.cancel')}
-          </Button>
-        )}
-        {has('record_payment') && o.paymentStatus !== 'paid' && (
-          <Button variant="secondary" onClick={() => setDialog('pay')}>
-            {t('order.recordPayment')}
-          </Button>
-        )}
-        {has('process') && (
-          <Button
-            variant="secondary"
-            disabled={process.isPending}
-            onClick={() =>
-              process.mutate(undefined, { onSuccess: () => toast(t('order.processed')) })
-            }
-          >
-            {t('order.process')}
-          </Button>
-        )}
-        {canShip &&
-          !has('confirm') &&
-          couriers.slice(1).map((c) => (
-            <Button key={c} variant="secondary" onClick={() => setBooking(c)}>
-              {t('couriers.book', { courier: courierName(c, t) })}
-            </Button>
-          ))}
-        {canShip && (has('confirm') || couriers.length > 0) && (
-          <Button variant="secondary" onClick={() => setDialog('ship')}>
-            {t('order.createShipment')}
-          </Button>
-        )}
-        {primary && <div className="hidden md:contents">{primary}</div>}
-      </div>
-      {primary && (
-        <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 flex border-t border-border bg-background p-3 md:hidden [&>button]:min-h-12 [&>button]:flex-1 [&>button]:text-base">
-          {primary}
-        </div>
+  const print = (doc: 'invoice' | 'slip') =>
+    window.open(`/print/orders?${new URLSearchParams({ ids: o.id, doc })}`, '_blank', 'noopener');
+  const menu = (trigger: 'outline' | 'ghost') => (
+    <RowMenu label={t('list.moreActions')} trigger={trigger} page>
+      {has('edit') && (
+        <RowMenuItem onSelect={() => setDialog('edit')}>
+          <SquarePen aria-hidden />
+          {t('order.editOrder')}
+        </RowMenuItem>
       )}
+      {has('record_payment') && o.paymentStatus !== 'paid' && (
+        <RowMenuItem onSelect={() => setDialog('pay')}>
+          <Banknote aria-hidden />
+          {t('order.recordPayment')}
+        </RowMenuItem>
+      )}
+      {has('process') && (
+        <RowMenuItem
+          disabled={process.isPending}
+          onSelect={() =>
+            process.mutate(undefined, { onSuccess: () => toast(t('order.processed')) })
+          }
+        >
+          <PackageOpen aria-hidden />
+          {t('order.startProcessing')}
+        </RowMenuItem>
+      )}
+      {canShip &&
+        !has('confirm') &&
+        couriers.slice(1).map((c) => (
+          <RowMenuItem key={c} onSelect={() => setBooking(c)}>
+            <Truck aria-hidden />
+            {t('couriers.book', { courier: courierName(c, t) })}
+          </RowMenuItem>
+        ))}
+      {canShip && (has('confirm') || couriers.length > 0) && (
+        <RowMenuItem onSelect={() => setDialog('ship')}>
+          <Package aria-hidden />
+          {t('order.createShipment')}
+        </RowMenuItem>
+      )}
+      <RowMenuItem onSelect={() => print('invoice')}>
+        <Printer aria-hidden />
+        {t('orders.printInvoice')}
+      </RowMenuItem>
+      <RowMenuItem onSelect={() => print('slip')}>
+        <FileText aria-hidden />
+        {t('orders.printSlip')}
+      </RowMenuItem>
+      {has('cancel') && (
+        <>
+          <RowMenuSeparator />
+          <RowMenuItem danger onSelect={() => setDialog('cancel')}>
+            <CircleX aria-hidden />
+            {t('orders.cancelOrder')}
+          </RowMenuItem>
+        </>
+      )}
+    </RowMenu>
+  );
+  const overlays = (
+    <>
       {error && <Notice tone="error">{orderErrorMessage(error, t)}</Notice>}
       {dialog === 'cancel' && <CancelDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'ship' && <ShipmentDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'pay' && <PaymentDialog order={o} onClose={() => setDialog(null)} />}
       {dialog === 'edit' && <EditOrderDialog order={o} onClose={() => setDialog(null)} />}
       {booking && <BookDialog order={o} courier={booking} onClose={() => setBooking(null)} />}
-    </div>
+    </>
   );
+  return { primary, menu, overlays };
 }
 
 /** The couriers staff can book with, the store's default first (phase-7-plan §3.8). */
@@ -391,75 +500,111 @@ function Lines({ order: o }: { order: OrderDetail }) {
       : []),
     ...(tt.rounding ? [[t('order.rounding'), money(tt.rounding)] as [string, ReactNode]] : []),
   ];
+  const canEdit = o.actions.includes('edit');
+  const [editing, setEditing] = useState(false);
+  const count = o.lines.reduce((n, l) => n + l.quantity, 0);
+  const kv = 'flex justify-between gap-3 tabular-nums';
   return (
-    <section aria-labelledby="lines-title" className={section}>
-      <h2 id="lines-title" className="font-semibold">
-        {t('order.items')}
-      </h2>
-      <ul className="flex flex-col divide-y divide-border">
+    <section
+      aria-labelledby="lines-title"
+      className={cn(cardFrame, 'flex flex-col gap-2 pt-4 pb-4 md:gap-3 md:pt-5')}
+    >
+      <div className="flex min-h-5 items-center gap-3 px-4 md:px-5">
+        <h2 id="lines-title" className={cardTitle}>
+          {t('order.items')}
+        </h2>
+        <span className="flex-1 text-[13px] text-muted-foreground">
+          <span className="max-md:hidden">
+            {count === 1 ? t('order.oneItem') : t('order.itemCount', { count })}
+          </span>
+        </span>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            className="-my-1 -mr-2 h-7 px-2 md:h-7"
+            onClick={() => setEditing(true)}
+          >
+            {t('order.editShort')}
+          </Button>
+        )}
+      </div>
+      <ul aria-label={t('order.items')}>
         {o.lines.map((l) => (
-          <li key={l.id} className="flex gap-3 py-2">
-            <Thumbnail file={l.image?.files[0]?.file} />
-            <div className="flex flex-1 flex-col">
+          <li
+            key={l.id}
+            className="mx-4 grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-2.5 border-b border-border py-2.5 last:border-b-0 md:mx-0 md:min-h-15 md:grid-cols-[40px_minmax(0,1fr)_120px_96px] md:gap-x-3 md:border-t md:border-b-0 md:px-5 md:py-2"
+          >
+            <Thumbnail file={l.image?.files[0]?.file} size="size-10" />
+            <span className="flex min-w-0 flex-col">
               <Link
                 to="/products/$id"
                 params={{ id: l.productId }}
-                className="underline-offset-2 hover:underline"
+                className="truncate font-medium"
               >
-                {lineLabel(l, locale)}
+                {pickText(l.title, locale)}
               </Link>
-              <span className="text-xs text-muted-foreground">
-                {[l.sku, t('order.shippedOf', { shipped: l.shippedQuantity, count: l.quantity })]
+              <span className="truncate text-xs text-muted-foreground md:hidden">
+                {l.quantity} × {money(l.unitPrice)}
+              </span>
+              <span className="truncate text-[13px] text-muted-foreground max-md:hidden">
+                {[
+                  l.optionLabels
+                    .map((x) => pickText(x, locale))
+                    .filter(Boolean)
+                    .join(' / '),
+                  l.sku,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
-            </div>
-            <div className="flex flex-col items-end text-sm">
-              <span>
-                {money(l.unitPrice)} × {l.quantity}
-              </span>
-              {l.discount > 0 && <span className="text-success">−{money(l.discount)}</span>}
-              <span className="font-medium">{money(l.total)}</span>
-            </div>
+            </span>
+            <span className="hidden text-right text-muted-foreground tabular-nums md:block">
+              {l.quantity} × {money(l.unitPrice)}
+            </span>
+            <span className="text-right font-medium tabular-nums">
+              {money(l.total)}
+              {l.discount > 0 && (
+                <span className="block text-xs font-normal text-success-foreground">
+                  −{money(l.discount)}
+                </span>
+              )}
+            </span>
           </li>
         ))}
       </ul>
-      <dl className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd>{value}</dd>
+      <div className="mx-4 border-t border-border pt-2.5 md:mx-0 md:ml-auto md:w-full md:max-w-[340px] md:px-5 md:pt-3">
+        <dl className="flex flex-col gap-1.5">
+          {rows.map(([label, value]) => (
+            <div key={label} className={kv}>
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+          <div className={cn(kv, 'mt-1.5 border-t border-border pt-2.5 font-semibold')}>
+            <dt>{t('order.total')}</dt>
+            <dd>{money(tt.total)}</dd>
           </div>
-        ))}
-        <div className="flex justify-between gap-4 text-base font-semibold">
-          <dt>{t('order.total')}</dt>
-          <dd>{money(tt.total)}</dd>
-        </div>
-        {tt.paidTotal > 0 && (
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">{t('order.paid')}</dt>
-            <dd>{money(tt.paidTotal)}</dd>
-          </div>
-        )}
-        {tt.codDue > 0 && (
-          <div className="flex justify-between gap-4 font-medium">
-            <dt>{t('order.codDue')}</dt>
-            <dd>{money(tt.codDue)}</dd>
-          </div>
-        )}
-        {tt.refundDue > 0 && (
-          <div className="flex justify-between gap-4 font-medium text-danger">
-            <dt>{t('order.refundDue')}</dt>
-            <dd>{money(tt.refundDue)}</dd>
-          </div>
-        )}
-      </dl>
-      {o.customerNote && (
-        <p className="rounded-md bg-muted p-3 text-sm">
-          <span className="font-medium">{t('order.customerNote')}: </span>
-          {o.customerNote}
-        </p>
-      )}
+          {tt.paidTotal > 0 && (
+            <div className={kv}>
+              <dt className="text-muted-foreground">{t('order.paid')}</dt>
+              <dd className="text-success-foreground">−{money(tt.paidTotal)}</dd>
+            </div>
+          )}
+          {tt.codDue > 0 && (
+            <div className={cn(kv, 'font-semibold')}>
+              <dt>{t('order.codDue')}</dt>
+              <dd>{money(tt.codDue)}</dd>
+            </div>
+          )}
+          {tt.refundDue > 0 && (
+            <div className={cn(kv, 'font-semibold text-danger')}>
+              <dt>{t('order.refundDue')}</dt>
+              <dd>{money(tt.refundDue)}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+      {editing && <EditOrderDialog order={o} onClose={() => setEditing(false)} />}
     </section>
   );
 }
@@ -472,57 +617,74 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
   const canCustomers = usePermission('customers.read');
   const canPay = usePermission('payments.read') && usePermission('orders.write');
+  const block = 'flex flex-col gap-1 border-t border-border pt-3';
   return (
-    <section aria-labelledby="customer-title" className={section}>
-      <h2 id="customer-title" className="font-semibold">
+    <section aria-labelledby="customer-title" className={cn(section, 'gap-3.5 md:gap-3.5')}>
+      <h2 id="customer-title" className={cardTitle}>
         {t('order.customer')}
       </h2>
-      <div className="flex flex-col gap-1 text-sm">
+      <div className="flex flex-col gap-0.5">
         {canCustomers ? (
           <Link
             to="/customers/$id"
             params={{ id: o.customer.id }}
-            className="font-medium underline-offset-2 hover:underline"
+            className="font-medium underline decoration-border underline-offset-[3px]"
           >
             {o.contact.name}
           </Link>
         ) : (
           <span className="font-medium">{o.contact.name}</span>
         )}
-        {canCustomers ? (
-          <a href={`tel:${o.contact.phone}`} className="underline-offset-2 hover:underline">
-            {o.contact.phone}
-          </a>
-        ) : (
-          <span>{o.contact.phone}</span>
-        )}
-        {o.contact.email && <span>{o.contact.email}</span>}
-        <span className="text-muted-foreground">
-          {o.customer.orderCount <= 1
-            ? t('order.firstOrder')
-            : t('order.orderCount', { count: o.customer.orderCount })}
+        <span className="text-[13px] text-muted-foreground tabular-nums">
+          {[
+            canCustomers ? formatPhone(o.contact.phone) : o.contact.phone,
+            o.customer.orderCount <= 1
+              ? t('order.firstOrder')
+              : t('order.orderCount', {
+                  count: o.customer.orderCount,
+                  amount: formatPrice(o.customer.totalSpent, locale),
+                }),
+          ].join(' · ')}
         </span>
+        {o.contact.email && (
+          <span className="text-[13px] text-muted-foreground">{o.contact.email}</span>
+        )}
       </div>
       {canCustomers && (
         <div className="grid grid-cols-2 gap-2">
           <Button variant="secondary" asChild>
             <a href={`tel:${o.contact.phone}`}>
-              <Phone aria-hidden className="size-4" />
+              <Phone aria-hidden />
               {t('order.call')}
             </a>
           </Button>
           <SendByChat orderId={o.id} canPay={canPay && unpaid(o)} />
         </div>
       )}
-      <h3 className="text-sm font-semibold">{t('order.address')}</h3>
-      {o.address ? (
-        <address className="text-sm not-italic">
-          {o.address.line}
-          <br />
-          {placeLine(o.address.names, locale)}, {pickText(o.address.names.division, locale)}
-        </address>
-      ) : (
-        <p className="text-sm text-muted-foreground">{t('order.noDelivery')}</p>
+      <div className={block}>
+        <span className={fieldLabel}>{t('order.deliveryAddress')}</span>
+        {o.address ? (
+          <>
+            <address className="not-italic">
+              {o.address.line}, {placeLine(o.address.names, locale)},{' '}
+              {pickText(o.address.names.division, locale)}
+            </address>
+            {o.zone.name && (
+              <span className="text-[13px] text-muted-foreground">
+                {pickText(o.zone.name, locale)} ·{' '}
+                {t('order.deliveryFee', { amount: formatPrice(o.totals.deliveryFee, locale) })}
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-muted-foreground">{t('order.noDelivery')}</span>
+        )}
+      </div>
+      {o.customerNote && (
+        <div className={block}>
+          <span className={fieldLabel}>{t('order.customerNoteLabel')}</span>
+          <span className="whitespace-pre-line">{o.customerNote}</span>
+        </div>
       )}
       {!canCustomers && <p className="text-xs text-muted-foreground">{t('order.masked')}</p>}
     </section>
@@ -532,7 +694,8 @@ function CustomerCard({ order: o }: { order: OrderDetail }) {
 /** Where the order is in the confirmation queue, or how it was confirmed (phase-6-plan §3.5). */
 function ConfirmationCard({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
-  const c = o.confirmation as NonNullable<OrderDetail['confirmation']>;
+  const c = o.confirmation;
+  const counts = useRiskCounts();
   const toast = useToast();
   const canWrite = usePermission('orders.write');
   const resend = useCommand(o.id, async () =>
@@ -541,34 +704,42 @@ function ConfirmationCard({ order: o }: { order: OrderDetail }) {
     ),
   );
   return (
-    <section aria-labelledby="confirmation-title" className={section}>
-      <h2 id="confirmation-title" className="font-semibold">
-        {t('confirmSettings.title')}
+    <section aria-labelledby="confirmation-title" className={cn(section, 'gap-3 md:gap-3')}>
+      <h2 id="confirmation-title" className={cardTitle}>
+        {t('order.confirmationRecord')}
       </h2>
-      <p className="text-sm">
-        {c.confirmedVia
-          ? t(`confirmedVia.${c.confirmedVia}` as AdminKey)
-          : o.flags.includes('unreachable')
-            ? t('queue.tab.unreachable')
-            : c.inQueue
-              ? c.dueAt && Date.parse(c.dueAt) > Date.now()
-                ? t('queue.dueAt', { time: dateTime(locale, c.dueAt) })
-                : t('queue.tab.to_call')
-              : t('confirmation.notQueued')}
-      </p>
-      {c.attempts > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {t('queue.attempts', { count: c.attempts })}
-        </p>
+      {c && (
+        <div className="flex flex-col gap-0.5">
+          <span>
+            {c.confirmedVia
+              ? t(`confirmedVia.${c.confirmedVia}` as AdminKey)
+              : o.flags.includes('unreachable')
+                ? t('queue.tab.unreachable')
+                : c.inQueue
+                  ? c.dueAt && Date.parse(c.dueAt) > Date.now()
+                    ? t('queue.dueAt', { time: dateTime(locale, c.dueAt) })
+                    : t('queue.tab.to_call')
+                  : t('confirmation.notQueued')}
+          </span>
+          {c.attempts > 0 && (
+            <span className="text-[13px] text-muted-foreground">
+              {t('queue.attempts', { count: c.attempts })}
+            </span>
+          )}
+          {c.linkSentAt && (
+            <span className="text-[13px] text-muted-foreground">
+              {c.linkAnswer
+                ? t(
+                    c.linkAnswer === 'confirm'
+                      ? 'queue.linkConfirmed'
+                      : 'confirmation.linkCancelled',
+                  )
+                : t('confirmation.linkSent', { time: dateTime(locale, c.linkSentAt) })}
+            </span>
+          )}
+        </div>
       )}
-      {c.linkSentAt && (
-        <p className="text-sm text-muted-foreground">
-          {c.linkAnswer
-            ? t(c.linkAnswer === 'confirm' ? 'queue.linkConfirmed' : 'confirmation.linkCancelled')
-            : t('confirmation.linkSent', { time: dateTime(locale, c.linkSentAt) })}
-        </p>
-      )}
-      {c.inQueue && !c.confirmedVia && (
+      {c?.inQueue && !c.confirmedVia && (
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" asChild>
             <Link to="/orders/confirm">{t('confirmation.openQueue')}</Link>
@@ -586,6 +757,10 @@ function ConfirmationCard({ order: o }: { order: OrderDetail }) {
           )}
         </div>
       )}
+      <div className={cn('flex flex-wrap items-center gap-2', c && 'border-t border-border pt-3')}>
+        <ScoreBadge risk={o.risk} />
+        <span className="text-[13px] text-muted-foreground">{counts(o.risk)}</span>
+      </div>
       {resend.error && <Notice tone="error">{orderErrorMessage(resend.error, t)}</Notice>}
     </section>
   );
@@ -593,17 +768,42 @@ function ConfirmationCard({ order: o }: { order: OrderDetail }) {
 
 function Shipments({ order: o }: { order: OrderDetail }) {
   const { t } = useLocale();
-  if (!o.shipments.length) return null;
+  const couriers = useBookingCouriers();
+  const [dialog, setDialog] = useState(false);
+  const [booking, setBooking] = useState<Courier | null>(null);
+  const canShip =
+    o.actions.includes('create_shipment') && o.lines.some((l) => l.shippedQuantity < l.quantity);
+  if (!o.shipments.length && !canShip) return null;
   return (
-    <section aria-labelledby="shipments-title" className={section}>
-      <h2 id="shipments-title" className="font-semibold">
+    <section aria-labelledby="shipments-title" className={cn(section, 'gap-3 md:gap-3')}>
+      <h2 id="shipments-title" className={cardTitle}>
         {t('order.shipments')}
       </h2>
-      <ul className="flex flex-col gap-3">
-        {o.shipments.map((s, i) => (
-          <ShipmentRow key={s.id} order={o} shipment={s} n={i + 1} />
-        ))}
-      </ul>
+      {o.shipments.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {o.shipments.map((s, i) => (
+            <ShipmentRow key={s.id} order={o} shipment={s} n={i + 1} />
+          ))}
+        </ul>
+      )}
+      {canShip && (
+        <div className="flex flex-wrap items-center gap-2">
+          {o.shipments.length === 0 && (
+            <p className="min-w-36 flex-1 text-muted-foreground">{t('order.notShippedYet')}</p>
+          )}
+          <Button variant="secondary" onClick={() => setDialog(true)}>
+            {t('order.createShipment')}
+          </Button>
+          {couriers[0] && (
+            <Button onClick={() => setBooking(couriers[0] as Courier)}>
+              <Truck aria-hidden />
+              {t('couriers.book', { courier: courierName(couriers[0], t) })}
+            </Button>
+          )}
+        </div>
+      )}
+      {dialog && <ShipmentDialog order={o} onClose={() => setDialog(false)} />}
+      {booking && <BookDialog order={o} courier={booking} onClose={() => setBooking(null)} />}
     </section>
   );
 }
@@ -670,7 +870,7 @@ function ShipmentRow({
     return `${line ? lineLabel(line, locale) : '?'} × ${sl.quantity}`;
   });
   return (
-    <li className="flex flex-col gap-2 rounded-md bg-muted/50 p-3">
+    <li className="flex flex-col gap-2.5 rounded-[10px] border border-border px-3.5 py-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{t('order.shipmentN', { n })}</span>
         <StatusChip kind="shipment" status={s.status} />
@@ -754,12 +954,7 @@ function ShipmentRow({
       >
         {o.totals.codDue > 0 && (
           <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-            <input
-              type="checkbox"
-              className="size-4 accent-primary"
-              checked={cash}
-              onChange={(e) => setCash(e.target.checked)}
-            />
+            <input type="checkbox" checked={cash} onChange={(e) => setCash(e.target.checked)} />
             {t('order.cashCollected', { amount: formatPrice(o.totals.codDue, locale) })}
           </label>
         )}
@@ -831,27 +1026,43 @@ function Payments({ order: o }: { order: OrderDetail }) {
   const { t, locale } = useLocale();
   const canLink = usePermission('payments.read') && usePermission('orders.write');
   const [linking, setLinking] = useState(false);
-  if (!o.payments.length && !unpaid(o)) return null;
+  const [paying, setPaying] = useState(false);
+  const canRecord = o.actions.includes('record_payment') && o.paymentStatus !== 'paid';
+  const ghost = 'h-7 px-2 has-[>svg]:px-2 md:h-7';
   return (
-    <section aria-labelledby="payments-title" className={section}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="payments-title" className="font-semibold">
+    <section aria-labelledby="payments-title" className={cn(section, 'gap-2 md:gap-2')}>
+      <div className="flex min-h-5 items-center justify-between gap-3">
+        <h2 id="payments-title" className={cardTitle}>
           {t('order.payments')}
         </h2>
-        {canLink && unpaid(o) && (
-          <Button variant="secondary" onClick={() => setLinking(true)}>
-            {t('order.paymentLink')}
-          </Button>
-        )}
+        <span className="-my-1 -mr-2 flex gap-1 max-md:hidden">
+          {canLink && unpaid(o) && (
+            <Button variant="ghost" className={ghost} onClick={() => setLinking(true)}>
+              <Link2 aria-hidden />
+              {t('order.paymentLink')}
+            </Button>
+          )}
+          {canRecord && (
+            <Button variant="ghost" className={ghost} onClick={() => setPaying(true)}>
+              <Plus aria-hidden />
+              {t('order.recordPayment')}
+            </Button>
+          )}
+        </span>
       </div>
       {linking && <PaymentLinkDialog order={o} onClose={() => setLinking(false)} />}
-      <ul className="flex flex-col divide-y divide-border text-sm">
+      {paying && <PaymentDialog order={o} onClose={() => setPaying(false)} />}
+      {o.payments.length === 0 && <p className="text-muted-foreground">{t('order.noPayments')}</p>}
+      <ul className="flex flex-col divide-y divide-border">
         {o.payments.map((p) => (
-          <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+          <li key={p.id} className="flex flex-wrap items-center justify-between gap-2.5 py-2.5">
             <span className="flex flex-col">
               <span className="font-medium">{t(`method.${p.method}` as AdminKey)}</span>
-              <span className="text-xs text-muted-foreground">
-                {[p.reference, dateTime(locale, p.settledAt ?? p.createdAt)]
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {[
+                  p.reference && `TrxID ${p.reference}`,
+                  dateTime(locale, p.settledAt ?? p.createdAt),
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
@@ -871,13 +1082,29 @@ function Payments({ order: o }: { order: OrderDetail }) {
                 <span className="text-xs font-medium text-destructive">{t('order.risky')}</span>
               )}
             </span>
-            <span className="flex items-center gap-2">
-              <StatusChip kind="payment" status={p.status} />
+            <span className="flex items-center gap-2 font-medium tabular-nums">
+              {p.status !== 'paid' && p.status !== 'succeeded' && (
+                <StatusChip kind="payment" status={p.status} />
+              )}
               {formatPrice(p.amount, locale)}
             </span>
           </li>
         ))}
       </ul>
+      {((canLink && unpaid(o)) || canRecord) && (
+        <div className="mt-2 flex gap-2 md:hidden [&>button]:flex-1">
+          {canLink && unpaid(o) && (
+            <Button variant="secondary" onClick={() => setLinking(true)}>
+              {t('order.paymentLink')}
+            </Button>
+          )}
+          {canRecord && (
+            <Button variant="secondary" onClick={() => setPaying(true)}>
+              {t('order.record')}
+            </Button>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -966,34 +1193,42 @@ function ReturnsAndRefunds({ order: o }: { order: OrderDetail }) {
   const overpaid = canRefund && o.totals.refundDue > 0;
   if (!o.returns.length && !o.refunds.length && !canReturn && !overpaid) return null;
   return (
-    <section aria-labelledby="returns-title" className={section}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="returns-title" className="font-semibold">
+    <section aria-labelledby="returns-title" className={cn(section, 'gap-2 md:gap-2')}>
+      <div className="flex min-h-5 flex-wrap items-center justify-between gap-3">
+        <h2 id="returns-title" className={cardTitle}>
           {t('order.returnsAndRefunds')}
         </h2>
-        <div className="flex flex-wrap gap-2">
+        <div className="-my-1 -mr-2 flex flex-wrap gap-1">
           {canReturn && (
-            <Button variant="secondary" onClick={() => setDialog('return')}>
+            <Button
+              variant="ghost"
+              className="h-7 px-2 has-[>svg]:px-2 md:h-7"
+              onClick={() => setDialog('return')}
+            >
+              <Undo2 aria-hidden />
               {t('return.create')}
             </Button>
           )}
           {overpaid && (
-            <Button variant="secondary" onClick={() => setDialog('refund')}>
+            <Button variant="ghost" className="h-7 px-2 md:h-7" onClick={() => setDialog('refund')}>
               {t('order.refundOverpaid', { amount: formatPrice(o.totals.refundDue, locale) })}
             </Button>
           )}
         </div>
       </div>
+      {o.returns.length === 0 && o.refunds.length === 0 && canReturn && (
+        <p className="text-muted-foreground">{t('order.noReturns')}</p>
+      )}
       {o.returns.length > 0 && (
-        <ul className="flex flex-col divide-y divide-border text-sm">
+        <ul className="flex flex-col divide-y divide-border">
           {o.returns.map((r) => (
             <li key={r.id}>
               <Link
                 to="/returns/$id"
                 params={{ id: r.id }}
-                className="flex min-h-11 items-center justify-between gap-2 py-2 hover:underline"
+                className="flex min-h-11 items-center justify-between gap-2.5 py-2.5"
               >
-                <span>R{r.number}</span>
+                <span className="font-mono font-medium tracking-[0.02em]">R{r.number}</span>
                 <ReturnStatusChip status={r.status} />
               </Link>
             </li>
@@ -1051,8 +1286,8 @@ function Timeline({ order: o }: { order: OrderDetail }) {
   const actor = (e: OrderDetail['timeline'][number]) =>
     e.kind === 'note' ? t('history.note') : t(`actor.${e.actorType ?? 'system'}` as AdminKey);
   return (
-    <section aria-labelledby="timeline-title" className={section}>
-      <h2 id="timeline-title" className="font-semibold">
+    <section aria-labelledby="timeline-title" className={cn(section, 'gap-3.5 md:gap-3.5')}>
+      <h2 id="timeline-title" className={cardTitle}>
         {t('order.timeline')}
       </h2>
       {canWrite && (
@@ -1069,33 +1304,51 @@ function Timeline({ order: o }: { order: OrderDetail }) {
             });
           }}
         >
-          <label htmlFor="order-note" className="text-sm font-medium">
+          <label htmlFor="order-note" className="sr-only">
             {t('order.addNote')}
           </label>
-          <textarea
+          <Textarea
             id="order-note"
-            rows={2}
             maxLength={2000}
             value={body}
+            placeholder={t('order.notePlaceholder')}
             onChange={(e) => setBody(e.target.value)}
-            className="rounded-lg border border-border bg-background p-3 text-base"
+            className="min-h-16 md:min-h-16"
           />
-          <div>
-            <Button type="submit" variant="secondary" disabled={note.isPending || !body.trim()}>
-              {t('order.saveNote')}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            variant="secondary"
+            className="self-end"
+            disabled={note.isPending || !body.trim()}
+          >
+            {t('order.saveNote')}
+          </Button>
           {note.error && <Notice tone="error">{orderErrorMessage(note.error, t)}</Notice>}
         </form>
       )}
-      <ol className="flex flex-col gap-3 border-l border-border pl-4">
+      <ol className="flex flex-col">
         {[...o.timeline].reverse().map((e) => (
-          <li key={e.id} className="flex flex-col text-sm">
-            <span className={e.kind === 'note' ? 'whitespace-pre-wrap' : 'font-medium'}>
-              {describe(e)}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {actor(e)} · {dateTime(locale, e.createdAt)}
+          <li
+            key={e.id}
+            className="relative flex gap-3 pb-3.5 before:absolute before:top-3.5 before:bottom-0 before:left-[5px] before:w-px before:bg-border last:pb-0 last:before:hidden"
+          >
+            <span
+              aria-hidden
+              className="mt-1 size-[11px] shrink-0 rounded-full border-2 border-background bg-muted-foreground shadow-[0_0_0_1px_var(--color-border)]"
+            />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span
+                className={
+                  e.kind === 'note'
+                    ? 'rounded-lg bg-muted px-2.5 py-2 whitespace-pre-line'
+                    : undefined
+                }
+              >
+                {describe(e)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {actor(e)} · {dateTime(locale, e.createdAt)}
+              </span>
             </span>
           </li>
         ))}
@@ -1145,52 +1398,68 @@ function historyText(
 function Tags({ order: o }: { order: OrderDetail }) {
   const { t } = useLocale();
   const canWrite = usePermission('orders.write');
-  const [text, setText] = useState(o.tags.join(', '));
+  const [text, setText] = useState('');
   const save = useCommand(o.id, async (_key, tags: string[]) =>
     unwrap(
       await api.PATCH('/v1/admin/orders/{id}', { params: { path: { id: o.id } }, body: { tags } }),
     ),
   );
+  const add = () => {
+    const tag = text.trim();
+    if (!tag || o.tags.includes(tag)) return setText('');
+    save.mutate([...o.tags, tag], { onSuccess: () => setText('') });
+  };
   return (
-    <section aria-labelledby="tags-title" className={section}>
-      <h2 id="tags-title" className="font-semibold">
+    <section aria-labelledby="tags-title" className={cn(section, 'gap-2.5 md:gap-2.5')}>
+      <h2 id="tags-title" className={cardTitle}>
         {t('order.tags')}
       </h2>
-      {canWrite ? (
-        <form
-          className="flex flex-col gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            save.mutate(
-              text
-                .split(',')
-                .map((x) => x.trim())
-                .filter(Boolean),
-            );
-          }}
-        >
-          <Input
-            aria-label={t('order.tags')}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder={t('order.tagsHint')}
-          />
-          <div>
-            <Button type="submit" variant="secondary" disabled={save.isPending}>
-              {t('action.save')}
-            </Button>
-          </div>
-          {save.isSuccess && <p className="text-sm text-muted-foreground">{t('account.saved')}</p>}
-          {save.error && <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>}
-        </form>
-      ) : (
-        <p className="text-sm">{o.tags.join(', ') || '—'}</p>
+      {o.tags.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {o.tags.map((tag) => (
+            <li
+              key={tag}
+              className="inline-flex h-6 items-center gap-0.5 rounded-md bg-muted pr-0.5 pl-2 text-xs font-medium"
+            >
+              {tag}
+              {canWrite && (
+                <button
+                  type="button"
+                  aria-label={t('order.removeTag', { tag })}
+                  disabled={save.isPending}
+                  onClick={() => save.mutate(o.tags.filter((x) => x !== tag))}
+                  className="inline-flex size-5 items-center justify-center rounded opacity-60 hover:opacity-100"
+                >
+                  <X aria-hidden className="size-3" />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
+      {canWrite ? (
+        <Input
+          aria-label={t('order.addTag')}
+          placeholder={t('order.addTagHint')}
+          value={text}
+          disabled={save.isPending}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ',') {
+              e.preventDefault();
+              add();
+            }
+          }}
+          className="md:h-8"
+        />
+      ) : (
+        o.tags.length === 0 && <p className="text-muted-foreground">—</p>
+      )}
+      {save.error && <Notice tone="error">{orderErrorMessage(save.error, t)}</Notice>}
     </section>
   );
 }
 
-/** The codes staff pick from the order page; duplicates have their own actions, expiry is the system's. */
 const STAFF_CANCEL_CODES = [
   'shopper_request',
   'no_answer',
@@ -1200,7 +1469,7 @@ const STAFF_CANCEL_CODES = [
   'other',
 ] as const satisfies readonly CancelCode[];
 
-function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
+export function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () => void }) {
   const { t, locale } = useLocale();
   const toast = useToast();
   const [reason, setReason] = useState('');
@@ -1243,7 +1512,6 @@ function CancelDialog({ order: o, onClose }: { order: OrderDetail; onClose: () =
             <input
               type="radio"
               name="cancel-code"
-              className="size-4 accent-primary"
               checked={code === c}
               onChange={() => setCode(c)}
             />
@@ -1439,7 +1707,7 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
           <select
-            className="min-h-10 rounded-lg border border-input bg-background px-3 text-base shadow-xs md:min-h-9 md:text-sm font-normal"
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
             value={method}
             onChange={(e) => setMethod(e.target.value as typeof method)}
           >

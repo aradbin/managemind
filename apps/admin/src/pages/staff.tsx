@@ -2,7 +2,6 @@
 // removing someone and leaving the store. Only roles you could hold
 // yourself can be given (no escalation); the server enforces the same rule.
 import { zodResolver } from '@hookform/resolvers/zod';
-import { formatDateTime } from '@managemind/shared/i18n';
 import { canManageRole, STORE_ROLES, type StoreRole } from '@managemind/shared/permissions';
 import {
   useInfiniteQuery,
@@ -12,22 +11,28 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { Plus, UserCog, UserMinus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { ConfirmDialog } from '../components/confirm-dialog';
-import { DataList } from '../components/data-list';
 import { Form, SelectField, TextField } from '../components/form';
+import { RowMenu, RowMenuItem, RowMenuSeparator } from '../components/list-tools';
 import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { PermissionGate } from '../components/permission-gate';
+import { initials } from '../components/store-switcher';
 import { useToast } from '../components/toast';
+import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { cardFrame, cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { refreshAccess } from '../lib/store';
+import { cn } from '../lib/utils';
 
 type Member = Awaited<ReturnType<typeof fetchMembers>>['items'][number];
 type Invitation = Awaited<ReturnType<typeof fetchInvitations>>[number];
@@ -78,69 +83,96 @@ export function StaffPage() {
 
   const date = (d: string) => formatDateTime(locale, new Date(d), { dateStyle: 'medium' });
   return (
-    <div className="flex max-w-4xl flex-col gap-8">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
         parent={{ to: '/settings', label: t('settings.title') }}
         title={t('settings.staff')}
         description={t('settings.staff.description')}
         actions={
           manageable.length > 0 && (
-            <Button onClick={() => setInviting(true)}>{t('staff.invite')}</Button>
+            <Button onClick={() => setInviting(true)}>
+              <Plus aria-hidden />
+              {t('staff.invite')}
+            </Button>
           )
         }
       />
       <section
         aria-labelledby="members-h"
-        className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
+        className={cn(cardFrame, 'flex flex-col gap-2 pt-4 md:pt-5')}
       >
-        <h2 id="members-h" className="font-semibold">
+        <h2 id="members-h" className={cn(cardTitle, 'px-4 pb-1 md:px-5')}>
           {t('staff.members')}
         </h2>
-        <DataList<Member>
-          label={t('staff.members')}
-          items={members.data?.pages.flatMap((p) => p.items)}
-          rowKey={(m) => m.id}
-          isPending={members.isPending}
-          error={members.isError ? errorMessage(members.error, t) : undefined}
-          onRetry={() => members.refetch()}
-          hasMore={members.hasNextPage}
-          loadingMore={members.isFetchingNextPage}
-          onLoadMore={() => members.fetchNextPage()}
-          columns={[
-            {
-              header: t('staff.name'),
-              cell: (m) => (
-                <>
-                  {m.name}
-                  {m.userId === me.user.id && (
-                    <span className="ms-2 rounded bg-muted px-2 py-0.5 text-xs">
-                      {t('staff.you')}
-                    </span>
-                  )}
-                </>
-              ),
-            },
-            { header: t('staff.email'), cell: (m) => <span className="break-all">{m.email}</span> },
-            { header: t('staff.role'), cell: (m) => t(`role.${m.role}`) },
-            { header: t('staff.joined'), cell: (m) => date(m.createdAt) },
-            {
-              header: t('staff.changeRole'),
-              actions: true,
-              cell: (m) =>
-                m.userId !== me.user.id &&
-                manageable.includes(m.role) && (
-                  <span className="inline-flex flex-wrap justify-end gap-2">
-                    <Button variant="secondary" onClick={() => setChanging(m)}>
-                      {t('staff.changeRole')}
-                    </Button>
-                    <Button variant="secondary" onClick={() => setRemoving(m)}>
-                      {t('staff.remove')}
-                    </Button>
+        {members.isPending && (
+          <p role="status" className="px-4 pb-4 md:px-5">
+            {t('loading')}
+          </p>
+        )}
+        {members.isError && (
+          <div className="px-4 pb-4 md:px-5">
+            <Notice tone="error">{errorMessage(members.error, t)}</Notice>
+          </div>
+        )}
+        <ul aria-label={t('staff.members')}>
+          {members.data?.pages
+            .flatMap((p) => p.items)
+            .map((m) => {
+              const you = m.userId === me.user.id;
+              return (
+                <li
+                  key={m.id}
+                  className="grid min-h-14 grid-cols-[32px_minmax(0,1fr)_36px] items-center gap-3 border-t border-border py-2 pr-3 pl-4 md:grid-cols-[32px_minmax(0,1fr)_110px_120px_36px] md:pl-5"
+                >
+                  <span
+                    aria-hidden
+                    className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold"
+                  >
+                    {initials(m.name)}
                   </span>
-                ),
-            },
-          ]}
-        />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate font-medium">{m.name}</span>
+                      {you && <SecondaryBadge>{t('staff.you')}</SecondaryBadge>}
+                    </span>
+                    <span className="truncate text-[13px] text-muted-foreground">{m.email}</span>
+                    <span className="text-[13px] text-muted-foreground md:hidden">
+                      {t(`role.${m.role}`)} · {date(m.createdAt)}
+                    </span>
+                  </span>
+                  <span className="max-md:hidden">{t(`role.${m.role}`)}</span>
+                  <span className="text-[13px] text-muted-foreground max-md:hidden">
+                    {date(m.createdAt)}
+                  </span>
+                  <span className="flex justify-end">
+                    {!you && manageable.includes(m.role) && (
+                      <RowMenu label={t('staff.memberActions', { name: m.name })}>
+                        <RowMenuItem onSelect={() => setChanging(m)}>
+                          <UserCog aria-hidden />
+                          {t('staff.changeRole')}
+                        </RowMenuItem>
+                        <RowMenuSeparator />
+                        <RowMenuItem danger onSelect={() => setRemoving(m)}>
+                          <UserMinus aria-hidden />
+                          {t('staff.remove')}
+                        </RowMenuItem>
+                      </RowMenu>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+        </ul>
+        {members.hasNextPage && (
+          <Button
+            variant="ghost"
+            className="mx-2 mb-2 self-start"
+            disabled={members.isFetchingNextPage}
+            onClick={() => members.fetchNextPage()}
+          >
+            {t('list.more')}
+          </Button>
+        )}
       </section>
 
       <PermissionGate allow="staff.read">
@@ -148,11 +180,13 @@ export function StaffPage() {
       </PermissionGate>
 
       {me.role && !me.supportGrant && (
-        <section className="border-t border-border pt-6">
-          <Button variant="secondary" onClick={() => setLeaving(true)}>
-            {t('staff.leave')}
-          </Button>
-        </section>
+        <Button
+          variant="ghost"
+          className="-ml-2.5 self-start px-2.5 text-danger hover:text-danger"
+          onClick={() => setLeaving(true)}
+        >
+          {t('staff.leave')}
+        </Button>
       )}
 
       <InviteDialog open={inviting} onOpenChange={setInviting} roles={manageable} />
@@ -424,46 +458,50 @@ function Invitations({
     },
   });
   return (
-    <section
-      aria-labelledby="invitations-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <h2 id="invitations-h" className="font-semibold">
+    <section aria-labelledby="invitations-h" className={cn(cardPadded, 'gap-2 md:gap-2')}>
+      <h2 id="invitations-h" className={cardTitle}>
         {t('staff.invitations')}
       </h2>
-      <DataList<Invitation>
-        label={t('staff.invitations')}
-        items={invitations.data}
-        rowKey={(i) => i.id}
-        isPending={invitations.isPending}
-        error={invitations.isError ? errorMessage(invitations.error, t) : undefined}
-        onRetry={() => invitations.refetch()}
-        empty={t('staff.noInvitations')}
-        columns={[
-          { header: t('staff.email'), cell: (i) => <span className="break-all">{i.email}</span> },
-          { header: t('staff.role'), cell: (i) => t(`role.${i.role}`) },
-          { header: t('staff.expiresHeader'), cell: (i) => date(i.expiresAt) },
-          {
-            header: t('staff.resend'),
-            actions: true,
-            cell: (i) =>
-              canManage(i.role) && (
-                <span className="inline-flex flex-wrap justify-end gap-2">
+      {invitations.isPending && <p role="status">{t('loading')}</p>}
+      {invitations.isError && <Notice tone="error">{errorMessage(invitations.error, t)}</Notice>}
+      {invitations.data?.length === 0 && (
+        <p className="text-muted-foreground">{t('staff.noInvitations')}</p>
+      )}
+      {invitations.data && invitations.data.length > 0 && (
+        <ul aria-label={t('staff.invitations')} className="-mx-4 md:-mx-5">
+          {invitations.data.map((i) => (
+            <li
+              key={i.id}
+              className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-2 border-t border-border px-4 py-2 md:px-5"
+            >
+              <span className="flex min-w-40 flex-1 flex-col">
+                <span className="truncate font-medium">{i.email}</span>
+                <span className="text-[13px] text-muted-foreground">
+                  {t('staff.inviteLine', { role: t(`role.${i.role}`), date: date(i.expiresAt) })}
+                </span>
+              </span>
+              {canManage(i.role) && (
+                <>
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     disabled={resend.isPending}
                     onClick={() => resend.mutate(i.id)}
                   >
                     {t('staff.resend')}
                   </Button>
-                  <Button variant="secondary" onClick={() => setRevoking(i)}>
+                  <Button
+                    variant="ghost"
+                    className="text-danger hover:text-danger"
+                    onClick={() => setRevoking(i)}
+                  >
                     {t('staff.revoke')}
                   </Button>
-                </span>
-              ),
-          },
-        ]}
-      />
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {revoking && (
         <ConfirmDialog
           open

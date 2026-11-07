@@ -38,13 +38,22 @@ export interface Supplier {
   openingBalance?: number;
   /** Owed to the supplier now; below zero is an advance. With purchasing.pay only. */
   balance?: number;
+  /** In the list: purchase orders still open (drafts and those to receive). */
+  openOrders?: number;
+  /** In the list: purchase orders still to receive. */
+  ordersToReceive?: number;
 }
 
 const s = schema.suppliers;
 
 type Row = typeof s.$inferSelect;
 
-const toSupplier = (row: Row, actor: Actor, balance?: number): Supplier => ({
+const toSupplier = (
+  row: Row,
+  actor: Actor,
+  balance?: number,
+  orders?: { open: number; toReceive: number },
+): Supplier => ({
   id: row.id,
   name: row.name,
   contactName: row.contactName,
@@ -58,6 +67,7 @@ const toSupplier = (row: Row, actor: Actor, balance?: number): Supplier => ({
   ...(actor.permissions.has('purchasing.pay')
     ? { openingBalance: row.openingBalance, balance: balance ?? row.openingBalance }
     : {}),
+  ...(orders ? { openOrders: orders.open, ordersToReceive: orders.toReceive } : {}),
 });
 
 /** Every supplier's received and paid totals, or one's. */
@@ -93,7 +103,18 @@ export async function listSuppliers(
     .orderBy(sql`lower(${s.name})`, s.id)
     .limit(500);
   const owed = actor.permissions.has('purchasing.pay') ? await balances(tx) : new Map();
-  return { items: rows.map((r) => toSupplier(r, actor, owed.get(r.id))) };
+  // Each supplier's purchase orders still open: drafts, and those to receive.
+  const { rows: open } = await tx.db.execute<{ id: string; open: number; to_receive: number }>(sql`
+    select supplier_id as id,
+           count(*) filter (where status in ('draft', 'ordered', 'partially_received'))::int as open,
+           count(*) filter (where status in ('ordered', 'partially_received'))::int as to_receive
+      from store.purchase_orders group by supplier_id`);
+  const orders = new Map(open.map((o) => [o.id, { open: o.open, toReceive: o.to_receive }]));
+  return {
+    items: rows.map((r) =>
+      toSupplier(r, actor, owed.get(r.id), orders.get(r.id) ?? { open: 0, toReceive: 0 }),
+    ),
+  };
 }
 
 async function loadSupplier(tx: TenantTx, id: string, lock = false): Promise<Row> {

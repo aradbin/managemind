@@ -121,14 +121,14 @@ export function Combobox({
           disabled={disabled}
           data-value={value}
           className={cn(
-            'flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-base shadow-xs hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger md:min-h-9 md:text-sm dark:bg-white/5',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent pr-2.5 pl-3 text-left text-base shadow-xs hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-danger md:h-9 md:text-sm dark:bg-white/[0.045] dark:hover:bg-accent',
             className,
           )}
         >
           <span className={cn('truncate', !chosen && 'text-muted-foreground')}>
             {chosen?.label ?? placeholder ?? t('form.choose')}
           </span>
-          <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronsUpDown aria-hidden className="size-4 shrink-0 opacity-50" />
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -136,7 +136,7 @@ export function Combobox({
           align="start"
           sideOffset={4}
           collisionPadding={8}
-          className="z-50 flex max-h-[min(22rem,var(--radix-popover-content-available-height))] w-[max(var(--radix-popover-trigger-width),14rem)] flex-col overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-md"
+          className="z-50 flex max-h-[var(--radix-popover-content-available-height)] w-[max(var(--radix-popover-trigger-width),15rem)] flex-col overflow-hidden rounded-lg border border-border bg-popover text-foreground shadow-md"
         >
           <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3 md:h-9">
             <Search aria-hidden className="size-4 shrink-0 opacity-50" />
@@ -164,7 +164,7 @@ export function Combobox({
             id={listId}
             role="listbox"
             aria-label={searchLabel}
-            className="min-h-0 flex-1 overflow-y-auto p-1"
+            className="max-h-60 min-h-0 flex-1 overflow-y-auto p-1"
           >
             {shown.length === 0 && (
               <p className="px-2 py-5 text-center text-sm text-muted-foreground">
@@ -185,21 +185,21 @@ export function Combobox({
                 onClick={() => pick(o)}
                 onPointerMove={() => setActive(i)}
                 className={cn(
-                  'flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm',
-                  i === active && 'bg-muted',
+                  'flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm leading-5',
+                  i === active && 'bg-accent',
                   o.disabled && 'cursor-not-allowed opacity-50',
                 )}
               >
-                <Check
-                  aria-hidden
-                  className={cn('mt-0.5 size-4 shrink-0', o.value !== value && 'invisible')}
-                />
-                <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate">{o.label}</span>
                   {o.hint && (
                     <span className="truncate text-xs text-muted-foreground">{o.hint}</span>
                   )}
                 </span>
+                <Check
+                  aria-hidden
+                  className={cn('mt-0.5 size-4 shrink-0', o.value !== value && 'opacity-0')}
+                />
               </div>
             ))}
             {matches.length > SHOWN && (

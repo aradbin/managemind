@@ -11,25 +11,16 @@ import {
 } from '@managemind/shared/orders/customer-import';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { FileUp } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
-import { Breadcrumb } from '../components/breadcrumb';
+import { useMemo, useState } from 'react';
+import { DropZone, ImportFrame } from '../components/import-frame';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
 import { saveErrorMessage } from '../lib/errors';
-import {
-  downloadErrors,
-  ErrorTable,
-  JobProgress,
-  type Parsed,
-  parseFile,
-  type RowError,
-} from './import';
+import { downloadErrors, ErrorTable, JobProgress, type Parsed, type RowError } from './import';
 
 export function CustomerImportPage() {
   const { t } = useLocale();
@@ -39,9 +30,29 @@ export function CustomerImportPage() {
   const [parsed, setParsed] = useState<Parsed | null>(null);
   if (!canWrite) return <Notice>{t('customerImport.notAllowed')}</Notice>;
   return (
-    <div className="flex max-w-5xl flex-col gap-4">
-      <Breadcrumb to="/customers" label={t('nav.customers')} current={t('customers.import')} />
-      <PageHeader title={t('customers.import')} description={t('customerImport.intro')} />
+    <ImportFrame
+      title={t('customerImport.title')}
+      intro={t('customerImport.intro')}
+      parent={{ to: '/customers', label: t('nav.customers') }}
+      sample={{
+        name: 'customers-sample.csv',
+        header: ['name', 'phone', 'email', 'address', 'area', 'district', 'tags', 'note'],
+        rows: [
+          [
+            'Rafiq Ahmed',
+            '01712345678',
+            'rafiq@example.com',
+            'House 12, Road 5',
+            'Dhanmondi',
+            'Dhaka',
+            'vip',
+            '',
+          ],
+        ],
+      }}
+      steps={[t('import.step.choose'), t('import.step.check'), t('import.step.import')]}
+      step={search.job ? 2 : parsed ? 1 : 0}
+    >
       {search.job ? (
         <JobProgress
           kind="customers"
@@ -58,51 +69,9 @@ export function CustomerImportPage() {
           onStarted={(job) => navigate({ to: '/customers/import', search: { job } })}
         />
       ) : (
-        <Choose onParsed={setParsed} />
+        <DropZone hint={t('customerImport.columns')} onParsed={setParsed} />
       )}
-    </div>
-  );
-}
-
-function Choose({ onParsed }: { onParsed: (p: Parsed) => void }) {
-  const { t } = useLocale();
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  return (
-    <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border p-6">
-      <p>{t('customerImport.choose')}</p>
-      <p className="text-sm text-muted-foreground">{t('customerImport.columns')}</p>
-      <input
-        ref={input}
-        type="file"
-        accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          setBusy(true);
-          setError(undefined);
-          try {
-            const result = await parseFile(file);
-            if (!result.rows.length) throw new Error('empty');
-            onParsed(result);
-          } catch {
-            setError(t('import.unreadable'));
-          } finally {
-            setBusy(false);
-            if (input.current) input.current.value = '';
-          }
-        }}
-      />
-      <Button disabled={busy} onClick={() => input.current?.click()}>
-        <FileUp aria-hidden className="size-4" />
-        {busy ? t('loading') : t('import.chooseFile')}
-      </Button>
-      {error && <Notice tone="error">{error}</Notice>}
-    </div>
+    </ImportFrame>
   );
 }
 
