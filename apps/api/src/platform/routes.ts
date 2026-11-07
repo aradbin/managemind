@@ -26,6 +26,7 @@ import {
   listTenants,
   listTermsVersions,
   type PurgeRecord,
+  platformAuditSummary,
   platformDashboard,
   publishTerms,
   readStoreHealth,
@@ -455,6 +456,7 @@ export const PLATFORM_ROUTES = {
           sha256: z.string(),
           createdAt: z.date(),
           acceptedStores: z.number().int(),
+          storesAsked: z.number().int(),
         }),
       ),
       'Versions',
@@ -600,15 +602,30 @@ export const PLATFORM_ROUTES = {
   auditLog: r({
     method: 'get',
     path: '/audit-log',
-    summary: 'Platform audit log, newest first (super_admin)',
+    summary: 'Platform audit log, newest first, with names (super_admin)',
     request: {
       query: z.object({
         before: z.uuid().optional(),
+        offset: z.coerce.number().int().min(0).optional(),
         limit: z.coerce.number().int().min(1).max(100).optional(),
+        q: z.string().trim().max(100).optional(),
+        /** Comma-separated actions. */
+        action: z.string().max(2000).optional(),
+        /** Comma-separated store ids. */
+        tenant: z.string().max(4000).optional(),
       }),
     },
     responses: json(
-      z.object({ items: z.array(z.record(z.string(), z.unknown())), next: z.uuid().nullable() }),
+      z.object({
+        items: z.array(z.record(z.string(), z.unknown())),
+        next: z.uuid().nullable(),
+        /** Entries matching the search and filters. */
+        total: z.number().int(),
+        /** Every action in the log, for the filter. */
+        actions: z.array(z.string()),
+        /** Every store in the log, for the filter. */
+        stores: z.array(z.object({ id: z.uuid(), name: z.string() })),
+      }),
       'Entries',
     ),
   }),
@@ -1115,11 +1132,29 @@ export function registerPlatform(app: OpenAPIHono<AppEnv>): void {
     return c.body(null, 204);
   });
   platform.openapi(R.auditLog, async (c) => {
-    const { before, limit = 50 } = c.req.valid('query');
-    const items = await withPlatform(c.var.staff.client, (tx) =>
-      listPlatformAudit(tx, c.var.staff.actor, { limit, ...(before ? { before } : {}) }),
+    const { before, offset, limit = 50, q, action, tenant } = c.req.valid('query');
+    const list = (v?: string) => (v ? v.split(',').filter(Boolean) : undefined);
+    const tenantIds = list(tenant)?.filter((id) => z.uuid().safeParse(id).success);
+    const query = {
+      limit,
+      ...(before ? { before } : {}),
+      ...(offset ? { offset } : {}),
+      ...(q ? { q } : {}),
+      ...(action ? { actions: list(action) ?? [] } : {}),
+      ...(tenantIds?.length ? { tenantIds } : {}),
+    };
+    const [items, summary] = await withPlatform(
+      c.var.staff.client,
+      async (tx) =>
+        [
+          await listPlatformAudit(tx, c.var.staff.actor, query),
+          await platformAuditSummary(tx, c.var.staff.actor, query),
+        ] as const,
     );
-    return c.json({ items, next: items.length === limit ? (items.at(-1)?.id ?? null) : null }, 200);
+    return c.json(
+      { items, next: items.length === limit ? (items.at(-1)?.id ?? null) : null, ...summary },
+      200,
+    );
   });
   platform.openapi(R.courierAreas, async (c) => {
     const { courier, unmatched, districtId } = c.req.valid('query');

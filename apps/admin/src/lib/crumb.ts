@@ -18,8 +18,12 @@ const emit = () => {
 };
 
 /** Marks the page as a record's, named `title` once it has loaded. */
-export function useRecordPage(title: string | undefined, { tabBar = false } = {}): void {
+export function useRecordPage(
+  title: string | undefined,
+  { tabBar = false, enabled = true } = {},
+): void {
   useEffect(() => {
+    if (!enabled) return;
     const mine: RecordPage = { path: window.location.pathname, title, tabBar };
     current = mine;
     emit();
@@ -29,7 +33,7 @@ export function useRecordPage(title: string | undefined, { tabBar = false } = {}
         emit();
       }
     };
-  }, [title, tabBar]);
+  }, [title, tabBar, enabled]);
 }
 
 /** The record page at this address, if one is open. */

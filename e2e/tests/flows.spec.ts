@@ -157,7 +157,13 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
       .click();
     await expect(admin.getByRole('heading', { name: p.storeName })).toBeVisible();
     await expectAccessible(admin, 'store detail');
-    await admin.getByRole('button', { name: t('tenant.suspend') }).click();
+    // Desktops show Suspend store beside Support access; phones keep it in ⋯ (ADR 0034).
+    const suspend = admin.getByRole('button', { name: t('tenant.suspend') });
+    if (await suspend.isVisible()) await suspend.click();
+    else {
+      await admin.getByRole('button', { name: t('tenant.more') }).click();
+      await admin.getByRole('menuitem', { name: t('tenant.suspend') }).click();
+    }
     // Confirmations are alert dialogs (ADR 0034).
     const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E suspension test');

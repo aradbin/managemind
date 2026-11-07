@@ -143,7 +143,9 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
       .getByRole('link', { name: p.launchName, exact: true })
       .locator('visible=true')
       .click();
-    await admin.getByRole('button', { name: t('tenant.close') }).click();
+    // Close store sits in the page's ⋯ menu (ADR 0034).
+    await admin.getByRole('button', { name: t('tenant.more') }).click();
+    await admin.getByRole('menuitem', { name: t('tenant.close') }).click();
     const dialog = admin.getByRole('alertdialog');
     await dialog.getByLabel(t('tenant.reason'), { exact: false }).fill('E2E: the test is over');
     await dialog.getByLabel(t('tenant.code')).fill(await code());

@@ -104,6 +104,8 @@ interface DataListProps<T> {
    * between columns, 8 px out. The rows keep the table's roles.
    */
   grid?: string;
+  /** Grid rows only: content under a row's cells, across the row (the audit log's details). */
+  detail?: ((item: T) => ReactNode) | undefined;
 }
 
 /** A press on a control inside the row is that control's, not the row's. */
@@ -142,6 +144,7 @@ export function DataList<T>({
   selectOnPhone = true,
   menuOnPhone = true,
   grid,
+  detail,
 }: DataListProps<T>) {
   const { t } = useLocale();
   const top = useRef<HTMLDivElement>(null);
@@ -387,6 +390,11 @@ export function DataList<T>({
                     {menu && (
                       <td className={cn('text-right', cell, pad(span - 1))} {...role('cell')}>
                         {menu(item)}
+                      </td>
+                    )}
+                    {grid && detail?.(item) && (
+                      <td className="col-span-full pb-2" {...role('cell')}>
+                        {detail(item)}
                       </td>
                     )}
                   </tr>

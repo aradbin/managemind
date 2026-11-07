@@ -2,21 +2,26 @@
 // zones and RedX's areas. The weekly sync matches names within a district;
 // a super admin matches the rest from the closest names, and the match then
 // serves every store's bookings.
+import { formatNumber } from '@managemind/shared/i18n';
 import type { AreaCourier } from '@managemind/shared/orders';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { Info } from 'lucide-react';
 import { useState } from 'react';
 import { Notice } from '../../components/notice';
 import { PageHeader } from '../../components/page-header';
 import { useToast } from '../../components/toast';
 import { Button } from '../../components/ui/button';
+import { chipClass, Segmented } from '../../components/ui/segmented';
+import { Switch } from '../../components/ui/switch';
 import { useLocale } from '../../i18n';
 import '../../i18n/couriers';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { courierName } from '../../lib/couriers';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
+import { cn } from '../../lib/utils';
 
 export function CourierAreasPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
   const { data: me } = useSuspenseQuery(meQuery);
@@ -47,79 +52,99 @@ export function CourierAreasPage() {
     },
   });
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader title={t('platform.courierAreas')} description={t('courierAreas.description')} />
-      {!canEdit && <Notice>{t('courierAreas.superAdminOnly')}</Notice>}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <label htmlFor="areas-courier" className="text-sm font-medium">
-            {t('courierAreas.courier')}
-          </label>
-          <select
-            id="areas-courier"
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-            value={courier}
-            onChange={(e) => setCourier(e.target.value as AreaCourier)}
-          >
-            {(['pathao', 'redx'] as const).map((c) => (
-              <option key={c} value={c}>
-                {courierName(c, t)}
-              </option>
-            ))}
-          </select>
+    <div className="flex w-full max-w-[860px] flex-col gap-3 md:gap-4">
+      <PageHeader
+        className="mb-0"
+        title={t('platform.courierAreas')}
+        description={t('courierAreas.description')}
+      />
+      {!canEdit && (
+        <div className="flex items-start gap-2.5 rounded-[10px] bg-muted px-3.5 py-3">
+          <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <p>{t('courierAreas.superAdminOnly')}</p>
         </div>
-        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            checked={unmatched}
-            onChange={(e) => setUnmatched(e.target.checked)}
-          />
-          {t('courierAreas.unmatchedOnly')}
-        </label>
+      )}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        <Segmented
+          label={t('courierAreas.courier')}
+          value={courier}
+          options={(['pathao', 'redx'] as const).map((c) => ({
+            value: c,
+            label: courierName(c, t),
+          }))}
+          onChange={setCourier}
+        />
+        <span className="flex items-center gap-2.5">
+          <Switch id="areas-unmatched" checked={unmatched} onCheckedChange={setUnmatched} />
+          <label htmlFor="areas-unmatched">{t('courierAreas.unmatchedOnly')}</label>
+        </span>
+        {areas.data && (
+          <span className="ml-auto text-[13px] text-muted-foreground">
+            {t('courierAreas.count', { count: formatNumber(locale, areas.data.length) })}
+          </span>
+        )}
       </div>
       {areas.isPending && <p role="status">{t('loading')}</p>}
       {areas.isError && <Notice tone="error">{errorMessage(areas.error, t)}</Notice>}
       {save.error && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
       {areas.data?.length === 0 && (
-        <p className="text-muted-foreground">{t('courierAreas.none')}</p>
+        <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center">
+          <p className="text-muted-foreground">{t('courierAreas.none')}</p>
+        </div>
       )}
       {areas.data && areas.data.length > 0 && (
-        <ul className="flex flex-col divide-y divide-border rounded-xl border border-border bg-background">
+        <ul
+          aria-label={t('courierAreas.areas')}
+          className="overflow-hidden rounded-xl border border-border bg-card"
+        >
           {areas.data.map((a) => (
-            <li key={a.areaId} className="flex flex-col gap-2 p-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <li
+              key={a.areaId}
+              className="flex flex-col gap-2.5 border-t border-border px-4 py-3.5 first:border-t-0"
+            >
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="font-medium">
-                  {a.name} <span className="text-muted-foreground">· {a.district}</span>
+                  {a.name} <span className="font-normal text-muted-foreground">· {a.district}</span>
                 </span>
-                {a.match && (
-                  <span className="text-sm">
-                    {t('courierAreas.matched', { name: a.match.name })} (
-                    {a.match.how === 'manual' ? t('courierAreas.manual') : t('courierAreas.byName')}
-                    )
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    'text-[13px]',
+                    a.match ? 'text-success-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  {a.match
+                    ? `${t('courierAreas.matched', { name: a.match.name })} (${
+                        a.match.how === 'manual'
+                          ? t('courierAreas.manual')
+                          : t('courierAreas.byName')
+                      })`
+                    : t('courierAreas.noMatch')}
+                </span>
               </div>
               {canEdit && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {a.suggestions.length === 0 && (
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-[13px] text-muted-foreground">
                       {t('courierAreas.noSuggestions')}
                     </span>
                   )}
                   {a.suggestions.map((s) => (
-                    <Button
+                    <button
                       key={s.externalId}
-                      variant={a.match?.externalId === s.externalId ? 'primary' : 'secondary'}
+                      type="button"
+                      aria-pressed={a.match?.externalId === s.externalId}
                       disabled={save.isPending}
                       onClick={() => save.mutate({ areaId: a.areaId, externalId: s.externalId })}
+                      className={chipClass}
                     >
                       {s.name}
                       {s.parent ? ` · ${s.parent}` : ''}
-                    </Button>
+                    </button>
                   ))}
                   {a.match && (
                     <Button
-                      variant="quiet"
+                      variant="ghost"
+                      className="h-7 px-2 md:h-7"
                       disabled={save.isPending}
                       onClick={() => save.mutate({ areaId: a.areaId, externalId: null })}
                     >

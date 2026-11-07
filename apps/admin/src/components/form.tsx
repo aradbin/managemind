@@ -162,14 +162,50 @@ interface TextFieldProps extends Omit<ComponentProps<'input'>, 'name'> {
   label: string;
   hint?: string | undefined;
   optional?: boolean;
+  /** Text inside the box (.mm-affix): "৳" before an amount, a domain after an address. */
+  before?: string;
+  after?: string | undefined;
 }
 
-export function TextField({ name, label, hint, optional, ...props }: TextFieldProps) {
+export function TextField({
+  name,
+  label,
+  hint,
+  optional,
+  before,
+  after,
+  className,
+  ...props
+}: TextFieldProps) {
   const { register } = useFormContext();
   const error = useFieldError(name);
+  const affix = 'pointer-events-none absolute top-1/2 -translate-y-1/2 text-muted-foreground';
   return (
     <FieldShell label={label} hint={hint} optional={optional ?? false} error={error}>
-      {(a11y) => <Input {...a11y} {...props} {...register(name)} />}
+      {(a11y) =>
+        before || after ? (
+          <span className="relative block min-w-0">
+            {before && (
+              <span aria-hidden className={cn(affix, 'left-3')}>
+                {before}
+              </span>
+            )}
+            <Input
+              {...a11y}
+              {...props}
+              className={cn(before && 'pl-7', after && 'pr-36', className)}
+              {...register(name)}
+            />
+            {after && (
+              <span aria-hidden className={cn(affix, 'right-3 text-sm')}>
+                {after}
+              </span>
+            )}
+          </span>
+        ) : (
+          <Input {...a11y} {...props} className={className} {...register(name)} />
+        )
+      }
     </FieldShell>
   );
 }

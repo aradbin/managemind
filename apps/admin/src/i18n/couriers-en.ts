@@ -211,6 +211,9 @@ export const couriersEn = {
   'cod.notAllowed': 'Only owners and managers can record payouts.',
   'courierAreas.description':
     "Our areas against each courier's own. The weekly sync matches names within a district; match the rest here. A match is used by every store.",
+  'courierAreas.noMatch': 'No match yet',
+  'courierAreas.count': { one: '{count} area', other: '{count} areas' },
+  'courierAreas.areas': 'Areas',
   'courierAreas.courier': 'Courier',
   'courierAreas.unmatchedOnly': 'Only areas without a match',
   'courierAreas.none': 'Every area has a match.',

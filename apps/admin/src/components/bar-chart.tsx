@@ -20,7 +20,8 @@ export interface Bar {
 
 /** A round top for the scale, in poisha: 55,000 taka → 60,000 (one significant step). */
 export function niceMax(max: number) {
-  const v = Math.max(max, 1);
+  // At least ৳1, so a scale over days of nothing still reads in whole taka.
+  const v = Math.max(max, 100);
   const p = 10 ** Math.floor(Math.log10(v));
   const m = v / p;
   return ([1.2, 1.6, 2, 3, 4, 6, 8, 10].find((x) => x >= m) ?? 10) * p;
@@ -30,7 +31,7 @@ export function niceMax(max: number) {
 export function axisLabel(poisha: number, locale: Locale, thousands: (n: string) => string) {
   return poisha >= 1_000_000
     ? thousands(formatNumber(locale, Math.round(poisha / 100_000)))
-    : formatPrice(poisha, locale);
+    : formatPrice(Math.round(poisha), locale);
 }
 
 export function BarChart({

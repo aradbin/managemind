@@ -98,6 +98,8 @@ describe('platform terms', () => {
     expect(((await (await o.get('/v1/admin/terms/pending')).json()) as Json).pending).toBeNull();
     const versions = (await (await support.get('/api/platform/terms')).json()) as Json[];
     expect(versions.find((v) => v.id === version.id)?.acceptedStores).toBe(1);
+    // Every open store is asked; the accepting one is among them (ADR 0034).
+    expect(versions.find((v) => v.id === version.id)?.storesAsked).toBeGreaterThanOrEqual(1);
   });
 
   it("refuses an owner's writes with terms_required while blocked, and reads still work", async () => {

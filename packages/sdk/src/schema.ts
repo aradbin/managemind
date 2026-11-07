@@ -15260,6 +15260,7 @@ export interface paths {
                             /** Format: date-time */
                             createdAt: string;
                             acceptedStores: number;
+                            storesAsked: number;
                         }[];
                     };
                 };
@@ -15793,12 +15794,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Platform audit log, newest first (super_admin) */
+        /** Platform audit log, newest first, with names (super_admin) */
         get: {
             parameters: {
                 query?: {
                     before?: string;
+                    offset?: number | null;
                     limit?: number;
+                    q?: string;
+                    action?: string;
+                    tenant?: string;
                 };
                 header?: never;
                 path?: never;
@@ -15818,6 +15823,13 @@ export interface paths {
                             }[];
                             /** Format: uuid */
                             next: string | null;
+                            total: number;
+                            actions: string[];
+                            stores: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                            }[];
                         };
                     };
                 };

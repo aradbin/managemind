@@ -202,6 +202,9 @@ export const couriersBn: Record<keyof typeof couriersEn, string> = {
   'cod.notAllowed': 'শুধু মালিক ও ম্যানেজার পরিশোধ লিখতে পারেন।',
   'courierAreas.description':
     'প্রতিটি কুরিয়ারের নিজের এলাকার সাথে আমাদের এলাকা। সাপ্তাহিক সিঙ্ক জেলার ভেতরে নাম মিলিয়ে দেয়; বাকিগুলো এখানে মেলান। একটি মিল সব দোকানে কাজে লাগে।',
+  'courierAreas.noMatch': 'এখনও মেলানো হয়নি',
+  'courierAreas.count': '{count}টি এলাকা',
+  'courierAreas.areas': 'এলাকা',
   'courierAreas.courier': 'কুরিয়ার',
   'courierAreas.unmatchedOnly': 'শুধু যেসব এলাকার মিল নেই',
   'courierAreas.none': 'সব এলাকার মিল আছে।',

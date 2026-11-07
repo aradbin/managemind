@@ -4,8 +4,16 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Check, Circle } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  PauseCircle,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { ConfirmDialog } from '../../components/confirm-dialog';
@@ -13,7 +21,9 @@ import { Field } from '../../components/field';
 import { Form, SelectField, TextField } from '../../components/form';
 import { Notice } from '../../components/notice';
 import { useToast } from '../../components/toast';
+import { StatusBadge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { cardPadded, cardTitle } from '../../components/ui/card';
 import { Dialog } from '../../components/ui/dialog';
 import { type AdminKey, useLocale } from '../../i18n';
 import { formatDateTime } from '../../lib/dates';
@@ -22,6 +32,7 @@ import '../../i18n/launch';
 import { api, unwrap } from '../../lib/api';
 import { formatPrice, priceInput, readPrice } from '../../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
+import { cn } from '../../lib/utils';
 
 interface TenantRef {
   id: string;
@@ -46,28 +57,48 @@ export type ChecklistItem = {
   optional: boolean;
 };
 
-/** The checklist's items, done or to do, with "optional" where it applies. */
-export function ChecklistItems({ items }: { items: readonly ChecklistItem[] }) {
+/** The checklist's items, done (a green tick) or to do, with "optional" where it applies. */
+export function ChecklistItems({
+  items,
+  className,
+}: {
+  items: readonly ChecklistItem[];
+  className?: string;
+}) {
   const { t } = useLocale();
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className={cn('flex flex-col gap-2', className)}>
       {items.map((i) => (
-        <li key={i.item} className="flex items-start gap-2">
-          {i.done ? (
-            <Check aria-hidden className="mt-0.5 size-5 shrink-0 text-success-foreground" />
-          ) : (
-            <Circle aria-hidden className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-          )}
+        <li key={i.item} className="flex items-start gap-2 text-[13px] leading-[18px]">
+          <span
+            aria-hidden
+            className={cn(
+              'inline-flex size-[18px] shrink-0 items-center justify-center rounded-full border border-border',
+              i.done && 'border-success-fill bg-success-fill text-white',
+            )}
+          >
+            {i.done && <Check className="size-3" strokeWidth={3} />}
+          </span>
           <span>
             <span className="sr-only">{t(i.done ? 'checklist.done' : 'checklist.todo')}: </span>
             {t(`checklist.item.${i.item}` as AdminKey)}
             {i.optional && (
-              <span className="text-sm text-muted-foreground"> ({t('checklist.optional')})</span>
+              <span className="text-muted-foreground"> ({t('checklist.optional')})</span>
             )}
           </span>
         </li>
       ))}
     </ul>
+  );
+}
+
+/** A label and its value, apart on one row (.mm-kv). */
+export function KV({ k, children }: { k: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex justify-between gap-3 tabular-nums">
+      <dt className="text-muted-foreground">{k}</dt>
+      <dd className="text-right">{children}</dd>
+    </div>
   );
 }
 
@@ -99,32 +130,43 @@ export function SetupSection({ tenantId }: { tenantId: string }) {
   const list =
     health.data?.checklist && 'items' in health.data.checklist ? health.data.checklist : null;
   return (
-    <section
-      aria-labelledby="setup-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="setup-h" className="font-semibold">
-          {t('checklist.title')}
-        </h2>
-        <Button variant="secondary" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
+    <section aria-labelledby="setup-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <div className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 id="setup-h" className={cardTitle}>
+            {t('checklist.title')}
+          </h2>
+          {list && health.data && (
+            <p className="text-[13px] text-muted-foreground">
+              {t('checklist.progress', { done: list.done, total: list.total })} ·{' '}
+              {t('checklist.checkedAt', {
+                when: formatDateTime(locale, new Date(health.data.checkedAt)),
+              })}
+            </p>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          className="-mt-1 -mr-2 h-[30px] px-2 md:h-[30px]"
+          disabled={refresh.isPending}
+          onClick={() => refresh.mutate()}
+        >
+          <RefreshCw aria-hidden />
           {t('checklist.refresh')}
         </Button>
       </div>
       {health.isError && <Notice tone="error">{errorMessage(health.error, t)}</Notice>}
       {refresh.isError && <Notice tone="error">{saveErrorMessage(refresh.error, t)}</Notice>}
       {health.isSuccess && !list && <p className="text-muted-foreground">{t('checklist.never')}</p>}
-      {list && health.data && (
+      {list && (
         <>
-          <p>
-            {t('checklist.progress', { done: list.done, total: list.total })} ·{' '}
-            <span className="text-muted-foreground">
-              {t('checklist.checkedAt', {
-                when: formatDateTime(locale, new Date(health.data.checkedAt)),
-              })}
-            </span>
-          </p>
-          <ChecklistItems items={list.items} />
+          <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-muted">
+            <span
+              className="block h-full rounded-full bg-primary"
+              style={{ width: `${list.total ? (list.done / list.total) * 100 : 0}%` }}
+            />
+          </span>
+          <ChecklistItems items={list.items} className="grid gap-x-4 gap-y-2 md:grid-cols-2" />
         </>
       )}
     </section>
@@ -232,84 +274,87 @@ export function SubscriptionSection({
     },
   });
   const s = sub.data;
+  const statusTone = {
+    trialing: 'progress',
+    active: 'good',
+    past_due: 'bad',
+    cancelled: 'outline',
+  } as const;
   return (
-    <section
-      aria-labelledby="subscription-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="subscription-h" className="font-semibold">
+    <section aria-labelledby="subscription-h" className={cn(cardPadded, 'gap-3.5 md:gap-3.5')}>
+      <div className="flex items-start gap-3">
+        <h2 id="subscription-h" className={cn(cardTitle, 'flex-1')}>
           {t('subscription.title')}
         </h2>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" asChild>
-            <Link to="/platform/billing" search={{ tenant: tenant.id }}>
-              {t('tenant.invoices')}
-            </Link>
-          </Button>
-          {superAdmin && sub.isSuccess && s && !s.holdUntil && (
-            <Button variant="secondary" onClick={() => setHolding(true)}>
-              {t('subscription.hold')}
-            </Button>
-          )}
-          {superAdmin && sub.isSuccess && (
-            <Button variant="secondary" onClick={() => setEditing(true)}>
-              {t(s ? 'subscription.edit' : 'subscription.set')}
-            </Button>
-          )}
-        </div>
+        {s && (
+          <StatusBadge tone={statusTone[s.status]}>
+            {t(`subscription.status.${s.status}`)}
+          </StatusBadge>
+        )}
       </div>
       {sub.isError && <Notice tone="error">{errorMessage(sub.error, t)}</Notice>}
       {sub.isSuccess && !s && <p className="text-muted-foreground">{t('subscription.none')}</p>}
       {s && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-          <dt className="text-muted-foreground">{t('subscription.plan')}</dt>
-          <dd>{s.plan.name[locale]}</dd>
-          <dt className="text-muted-foreground">{t('subscription.status')}</dt>
-          <dd>{t(`subscription.status.${s.status}`)}</dd>
-          <dt className="text-muted-foreground">{t('subscription.price')}</dt>
-          <dd>
+        <dl className="flex flex-col gap-2.5">
+          <KV k={t('subscription.price')}>
             {s.priceOverride === null
               ? formatPrice(s.plan.monthlyPrice, locale)
               : t('subscription.negotiated', { price: formatPrice(s.priceOverride, locale) })}
-          </dd>
-          <dt className="text-muted-foreground">{t('subscription.setupFee')}</dt>
-          <dd>{formatPrice(s.setupFeeOverride ?? s.plan.setupFee, locale)}</dd>
-          <dt className="text-muted-foreground">{t('subscription.billingDay')}</dt>
-          <dd>{s.billingDay}</dd>
-          {s.trialEndsOn && (
-            <>
-              <dt className="text-muted-foreground">{t('subscription.trialEnds')}</dt>
-              <dd>
-                {formatDateTime(locale, new Date(`${s.trialEndsOn}T00:00:00+06:00`), {
+          </KV>
+          <KV k={t('subscription.setupFee')}>
+            {formatPrice(s.setupFeeOverride ?? s.plan.setupFee, locale)}
+          </KV>
+          <KV k={t('subscription.billingDay')}>{s.billingDay}</KV>
+          <KV k={t('subscription.trialEnds')}>
+            {s.trialEndsOn
+              ? formatDateTime(locale, new Date(`${s.trialEndsOn}T00:00:00+06:00`), {
                   dateStyle: 'medium',
-                })}
-              </dd>
-            </>
-          )}
+                })
+              : '—'}
+          </KV>
         </dl>
       )}
       {s?.holdUntil && (
-        <Notice tone="info">
-          <span className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 rounded-[10px] bg-muted px-3.5 py-3">
+          <PauseCircle aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          <p className="flex-1">
             {t('subscription.holding', {
               date: formatDateTime(locale, new Date(`${s.holdUntil}T00:00:00+06:00`), {
                 dateStyle: 'medium',
               }),
               reason: s.holdReason ?? '',
             })}
-            {superAdmin && (
-              <Button
-                variant="ghost"
-                disabled={hold.isPending}
-                onClick={() => hold.mutate({ until: null })}
-              >
-                {t('subscription.endHold')}
-              </Button>
-            )}
-          </span>
-        </Notice>
+          </p>
+          {superAdmin && (
+            <Button
+              variant="secondary"
+              className="h-[30px] bg-background md:h-[30px]"
+              disabled={hold.isPending}
+              onClick={() => hold.mutate({ until: null })}
+            >
+              {t('subscription.endHold')}
+            </Button>
+          )}
+        </div>
       )}
+      <div className="flex flex-wrap gap-2">
+        {superAdmin && sub.isSuccess && (
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            {t(s ? 'subscription.edit' : 'subscription.set')}
+          </Button>
+        )}
+        {superAdmin && sub.isSuccess && s && !s.holdUntil && (
+          <Button variant="secondary" onClick={() => setHolding(true)}>
+            {t('subscription.hold')}
+          </Button>
+        )}
+        <Button variant="ghost" asChild>
+          <Link to="/platform/billing" search={{ tenant: tenant.id }}>
+            {t('tenant.invoices')}
+            <ChevronRight aria-hidden />
+          </Link>
+        </Button>
+      </div>
       <Dialog open={editing} onOpenChange={setEditing} title={t('subscription.edit')}>
         <Form form={form} onSubmit={(v) => save.mutate(v)}>
           <SelectField
@@ -323,8 +368,20 @@ export function SubscriptionSection({
               })),
             ]}
           />
-          <TextField name="price" label={t('newStore.price')} inputMode="decimal" optional />
-          <TextField name="setupFee" label={t('newStore.setupFee')} inputMode="decimal" optional />
+          <TextField
+            name="price"
+            label={t('newStore.price')}
+            inputMode="decimal"
+            before="৳"
+            optional
+          />
+          <TextField
+            name="setupFee"
+            label={t('newStore.setupFee')}
+            inputMode="decimal"
+            before="৳"
+            optional
+          />
           <TextField
             name="billingDay"
             label={t('newStore.billingDay')}
@@ -365,12 +422,23 @@ export function SubscriptionSection({
   );
 }
 
-/** Close (an active or suspended store) or reopen (a closed one), for super admins. */
-export function CloseOrReopen({ tenant }: { tenant: TenantRef }) {
+/**
+ * Closing (an active or suspended store) or reopening (a closed one), for
+ * super admins: the confirmation, opened from the page's ⋯ menu or its
+ * Reopen button.
+ */
+export function CloseOrReopen({
+  tenant,
+  open,
+  onOpenChange: setOpen,
+}: {
+  tenant: TenantRef;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const { t } = useLocale();
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [code, setCode] = useState('');
   const closing = tenant.status === 'active' || tenant.status === 'suspended';
@@ -401,46 +469,41 @@ export function CloseOrReopen({ tenant }: { tenant: TenantRef }) {
   });
   if (tenant.status === 'purged') return null;
   return (
-    <>
-      <Button variant={closing ? 'danger' : 'primary'} onClick={() => setOpen(true)}>
-        {t(closing ? 'tenant.close' : 'tenant.reopen')}
-      </Button>
-      <ConfirmDialog
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) change.reset();
-        }}
-        title={t(closing ? 'tenant.closeTitle' : 'tenant.reopenTitle', { name: tenant.name })}
-        confirmLabel={t(closing ? 'tenant.close' : 'tenant.reopen')}
-        destructive={closing}
-        confirmText={closing ? tenant.slug : undefined}
-        canConfirm={reason.trim().length >= 3 && (!closing || /^\d{6}$/.test(code))}
-        busy={change.isPending}
-        error={change.isError ? saveErrorMessage(change.error, t) : undefined}
-        onConfirm={() => change.mutate()}
-      >
-        <p>{t(closing ? 'tenant.closeBody' : 'tenant.reopenBody')}</p>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) change.reset();
+      }}
+      title={t(closing ? 'tenant.closeTitle' : 'tenant.reopenTitle', { name: tenant.name })}
+      confirmLabel={t(closing ? 'tenant.close' : 'tenant.reopen')}
+      destructive={closing}
+      confirmText={closing ? tenant.slug : undefined}
+      canConfirm={reason.trim().length >= 3 && (!closing || /^\d{6}$/.test(code))}
+      busy={change.isPending}
+      error={change.isError ? saveErrorMessage(change.error, t) : undefined}
+      onConfirm={() => change.mutate()}
+    >
+      <p>{t(closing ? 'tenant.closeBody' : 'tenant.reopenBody')}</p>
+      <Field
+        label={t('tenant.reason')}
+        hint={t('tenant.reasonHint')}
+        maxLength={500}
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+      />
+      {closing && (
         <Field
-          label={t('tenant.reason')}
-          hint={t('tenant.reasonHint')}
-          maxLength={500}
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          label={t('tenant.code')}
+          hint={t('tenant.codeHint')}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
         />
-        {closing && (
-          <Field
-            label={t('tenant.code')}
-            hint={t('tenant.codeHint')}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          />
-        )}
-      </ConfirmDialog>
-    </>
+      )}
+    </ConfirmDialog>
   );
 }
 
@@ -512,43 +575,101 @@ export function JobsSection({
   const rebuilding = jobs.data?.some(
     (j) => j.kind === 'reports_backfill' && (j.status === 'pending' || j.status === 'running'),
   );
+  const jobTone = {
+    pending: 'waiting',
+    running: 'progress',
+    succeeded: 'good',
+    failed: 'bad',
+  } as const;
   return (
-    <section
-      aria-labelledby="jobs-h"
-      className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 md:p-5"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="jobs-h" className="font-semibold">
-          {t('jobs.title')}
-        </h2>
-        {superAdmin && (
-          <div className="flex flex-wrap gap-2">
-            {resettable && (
-              <Button variant="danger" onClick={() => setResetting(true)}>
-                {t('jobs.reset')}
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              disabled={rebuild.isPending || rebuilding}
-              onClick={() => rebuild.mutate()}
-            >
-              {t('jobs.rebuildReports')}
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={exportNow.isPending || open}
-              onClick={() => exportNow.mutate()}
-            >
-              {t('jobs.export')}
-            </Button>
-          </div>
-        )}
-      </div>
+    <section aria-labelledby="jobs-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <h2 id="jobs-h" className={cardTitle}>
+        {t('jobs.title')}
+      </h2>
       {jobs.isError && <Notice tone="error">{errorMessage(jobs.error, t)}</Notice>}
       {exportNow.isError && <Notice tone="error">{errorMessage(exportNow.error, t)}</Notice>}
       {rebuild.isError && <Notice tone="error">{errorMessage(rebuild.error, t)}</Notice>}
       {jobs.data?.length === 0 && <p className="text-muted-foreground">{t('jobs.none')}</p>}
+      {!!jobs.data?.length && (
+        <ul className="-mx-4 md:-mx-5">
+          {jobs.data.map((j) => {
+            const p = j.progress as { done?: number; total?: number };
+            return (
+              <li
+                key={j.id}
+                className="flex min-h-[52px] items-center gap-3 border-t border-border px-4 py-1.5 md:px-5"
+              >
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium">
+                    {t(`jobs.kind.${j.kind}` as AdminKey)}{' '}
+                    <span className="text-[13px] font-normal text-muted-foreground">
+                      · {formatDateTime(locale, new Date(j.createdAt))}
+                      {j.attempts > 1 ? ` · ${t('jobs.attempt', { n: j.attempts })}` : ''}
+                    </span>
+                  </span>
+                  {j.status === 'running' &&
+                    typeof p.done === 'number' &&
+                    typeof p.total === 'number' && (
+                      <span className="text-[13px] text-muted-foreground">
+                        {t('jobs.progress', { done: p.done, total: p.total })}
+                      </span>
+                    )}
+                  {j.expiresAt && (
+                    <span className="text-[13px] text-muted-foreground">
+                      {t('jobs.until', { date: formatDateTime(locale, new Date(j.expiresAt)) })}
+                    </span>
+                  )}
+                  {j.error && (
+                    <span lang="en" className="text-[13px] text-danger">
+                      {j.error}
+                    </span>
+                  )}
+                </span>
+                <StatusBadge tone={jobTone[j.status]}>
+                  {t(`jobs.status.${j.status}` as AdminKey)}
+                </StatusBadge>
+                {j.downloadUrl && (
+                  <Button variant="secondary" className="h-[30px] md:h-[30px]" asChild>
+                    <a href={j.downloadUrl} rel="noopener noreferrer">
+                      <Download aria-hidden />
+                      {t('jobs.download')}
+                    </a>
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {superAdmin && (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            disabled={exportNow.isPending || open}
+            onClick={() => exportNow.mutate()}
+          >
+            <Download aria-hidden />
+            {t('jobs.export')}
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={rebuild.isPending || rebuilding}
+            onClick={() => rebuild.mutate()}
+          >
+            <RefreshCw aria-hidden />
+            {t('jobs.rebuildReports')}
+          </Button>
+          {resettable && (
+            <Button
+              variant="secondary"
+              className="text-danger hover:text-danger"
+              onClick={() => setResetting(true)}
+            >
+              {t('jobs.reset')}
+            </Button>
+          )}
+        </div>
+      )}
       {resettable && (
         <ConfirmDialog
           open={resetting}
@@ -565,47 +686,6 @@ export function JobsSection({
         >
           <p>{t('jobs.resetBody')}</p>
         </ConfirmDialog>
-      )}
-      {!!jobs.data?.length && (
-        <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-          {jobs.data.map((j) => {
-            const p = j.progress as { done?: number; total?: number };
-            return (
-              <li key={j.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 p-3">
-                <span className="flex flex-1 flex-col">
-                  <span className="font-medium">
-                    {t(`jobs.kind.${j.kind}` as AdminKey)} ·{' '}
-                    {t(`jobs.status.${j.status}` as AdminKey)}
-                    {j.status === 'running' &&
-                    typeof p.done === 'number' &&
-                    typeof p.total === 'number'
-                      ? ` (${t('jobs.progress', { done: p.done, total: p.total })})`
-                      : ''}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {formatDateTime(locale, new Date(j.createdAt))}
-                    {j.attempts > 1 ? ` · ${t('jobs.attempt', { n: j.attempts })}` : ''}
-                    {j.expiresAt
-                      ? ` · ${t('jobs.until', { date: formatDateTime(locale, new Date(j.expiresAt)) })}`
-                      : ''}
-                  </span>
-                  {j.error && (
-                    <span lang="en" className="text-sm text-danger">
-                      {j.error}
-                    </span>
-                  )}
-                </span>
-                {j.downloadUrl && (
-                  <Button variant="secondary" asChild>
-                    <a href={j.downloadUrl} rel="noopener noreferrer">
-                      {t('jobs.download')}
-                    </a>
-                  </Button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
       )}
     </section>
   );
@@ -636,6 +716,7 @@ export function PurgeSection({
   const toast = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [tables, setTables] = useState(false);
   const [code, setCode] = useState('');
   const key = ['platform', 'tenant', tenant.id, 'purge'] as const;
   const purge = useQuery({
@@ -681,11 +762,8 @@ export function PurgeSection({
   const date = (d: string | Date) => formatDateTime(locale, new Date(d), { dateStyle: 'medium' });
   const step = (p?.job?.progress as { step?: string; table?: string } | undefined) ?? {};
   return (
-    <section
-      aria-labelledby="purge-h"
-      className="flex flex-col gap-3 rounded-xl border border-danger/40 bg-background p-4 md:p-5"
-    >
-      <h2 id="purge-h" className="font-semibold">
+    <section aria-labelledby="purge-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <h2 id="purge-h" className={cardTitle}>
         {t('purge.title')}
       </h2>
       {purge.isError && <Notice tone="error">{errorMessage(purge.error, t)}</Notice>}
@@ -698,11 +776,14 @@ export function PurgeSection({
         <p>{t('purge.notYet', { date: date(purgeAfter) })}</p>
       )}
       {!p && purge.isSuccess && !notYet && superAdmin && (
-        <div>
-          <Button variant="danger" disabled={start.isPending} onClick={() => start.mutate()}>
-            {t('purge.start')}
-          </Button>
-        </div>
+        <Button
+          variant="secondary"
+          className="self-start"
+          disabled={start.isPending}
+          onClick={() => start.mutate()}
+        >
+          {t('purge.start')}
+        </Button>
       )}
       {start.isError && <Notice tone="error">{errorMessage(start.error, t)}</Notice>}
       {p && !p.dryRun && <Notice>{t('purge.counting')}</Notice>}
@@ -716,39 +797,52 @@ export function PurgeSection({
       )}
       {dry && !p?.finishedAt && (
         <>
-          <h3 className="font-semibold">{t('purge.report')}</h3>
-          <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-            <dt>{t('purge.storeRows')}</dt>
-            <dd className="text-end">{sum(dry.storeRows)}</dd>
-            <dt>{t('purge.files')}</dt>
-            <dd className="text-end">{sum(dry.files)}</dd>
-            <dt>{t('purge.kvKeys')}</dt>
-            <dd className="text-end">{dry.kvKeys ?? 0}</dd>
-            <dt>{t('purge.staffAccounts')}</dt>
-            <dd className="text-end">{dry.staffAccounts ?? 0}</dd>
-            <dt>{t('purge.domains')}</dt>
-            <dd className="text-end">{dry.customDomains?.notReleased ?? 0}</dd>
-            <dt>{t('purge.exportsKept')}</dt>
-            <dd className="text-end">{dry.exportsKept ?? 0}</dd>
-          </dl>
-          <details>
-            <summary className="cursor-pointer">{t('purge.tables')}</summary>
-            <ul lang="en" className="mt-2 columns-2 text-sm">
-              {Object.entries(dry.storeRows ?? {})
-                .filter(([, n]) => n > 0)
-                .map(([table, n]) => (
-                  <li key={table}>
-                    {table}: {n}
-                  </li>
-                ))}
-            </ul>
-          </details>
+          <div className="flex flex-col gap-2.5 rounded-[10px] border border-border px-4 py-3.5">
+            <h3 className="font-semibold">{t('purge.report')}</h3>
+            <dl className="flex flex-col gap-2.5">
+              <KV k={t('purge.storeRows')}>{sum(dry.storeRows)}</KV>
+              <KV k={t('purge.files')}>{sum(dry.files)}</KV>
+              <KV k={t('purge.kvKeys')}>{dry.kvKeys ?? 0}</KV>
+              <KV k={t('purge.staffAccounts')}>{dry.staffAccounts ?? 0}</KV>
+              <KV k={t('purge.domains')}>{dry.customDomains?.notReleased ?? 0}</KV>
+              <KV k={t('purge.exportsKept')}>{dry.exportsKept ?? 0}</KV>
+            </dl>
+            <Button
+              variant="ghost"
+              className="-ml-2 h-[30px] self-start px-2 md:h-[30px]"
+              aria-expanded={tables}
+              onClick={() => setTables(!tables)}
+            >
+              {t('purge.tables')}
+              <ChevronDown
+                aria-hidden
+                className={cn('transition-transform', tables && 'rotate-180')}
+              />
+            </Button>
+            {tables && (
+              <dl className="flex flex-col gap-2.5">
+                {Object.entries(dry.storeRows ?? {})
+                  .filter(([, n]) => n > 0)
+                  .map(([table, n]) => (
+                    <KV
+                      key={table}
+                      k={
+                        <span lang="en" className="font-mono text-[13px]">
+                          {table}
+                        </span>
+                      }
+                    >
+                      {n}
+                    </KV>
+                  ))}
+              </dl>
+            )}
+          </div>
           {superAdmin && p && !p.approvedAt && (
-            <div>
-              <Button variant="danger" onClick={() => setOpen(true)}>
-                {t('purge.approve')}
-              </Button>
-            </div>
+            <Button variant="danger" className="self-start" onClick={() => setOpen(true)}>
+              <Trash2 aria-hidden />
+              {t('purge.approve')}
+            </Button>
           )}
         </>
       )}

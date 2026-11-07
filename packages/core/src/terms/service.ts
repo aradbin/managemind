@@ -26,6 +26,8 @@ export interface TermsVersion {
 export interface TermsVersionWithCount extends TermsVersion {
   /** Stores with an owner who accepted this version. */
   acceptedStores: number;
+  /** Open stores asked to accept it: those open now that existed by its effective date. */
+  storesAsked: number;
 }
 
 const columns = {
@@ -48,6 +50,9 @@ export async function listTermsVersions(
       ...columns,
       acceptedStores: sql<number>`(select count(distinct ta.tenant_id)::int
         from platform.terms_acceptances ta where ta.version_id = "terms_versions"."id")`,
+      storesAsked: sql<number>`(select count(*)::int from platform.tenants t
+        where t.status in ('active', 'suspended')
+          and t.created_at <= least("terms_versions"."effective_at", now()))`,
     })
     .from(v)
     .orderBy(desc(v.effectiveAt));

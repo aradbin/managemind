@@ -101,6 +101,19 @@ describe('platform API for super admins', () => {
     const audit = (await (await admin.get('/api/platform/audit-log?limit=100')).json()) as Json;
     const mine = audit.items.filter((e: Json) => e.tenantId === id).map((e: Json) => e.action);
     expect(mine).toEqual(['tenant.reactivate', 'tenant.suspend', 'tenant.created']);
+    // Entries carry the store's name, and the filters narrow them (ADR 0034).
+    expect(audit.items.find((e: Json) => e.tenantId === id)?.tenantName).toBe('New Shop');
+    expect(audit.actions).toContain('tenant.suspend');
+    expect(audit.stores).toContainEqual({ id, name: 'New Shop' });
+    const narrowed = (await (
+      await admin.get(`/api/platform/audit-log?action=tenant.suspend&tenant=${id}`)
+    ).json()) as Json;
+    expect(narrowed.total).toBe(1);
+    expect(narrowed.items.map((e: Json) => e.action)).toEqual(['tenant.suspend']);
+    const found = (await (
+      await admin.get(`/api/platform/audit-log?q=${encodeURIComponent('New Shop')}&tenant=${id}`)
+    ).json()) as Json;
+    expect(found.total).toBe(3);
   });
 
   it('lists platform staff and changes roles', async () => {
