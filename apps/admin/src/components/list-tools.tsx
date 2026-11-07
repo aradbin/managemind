@@ -604,7 +604,7 @@ export function RowMenuItem({
 
 export function RowMenuSeparator() {
   const close = useContext(InDrawer);
-  if (close) return <div role="separator" className="my-1 h-px bg-border" />;
+  if (close) return <hr className="my-1 h-px border-0 bg-border" />;
   return <Menu.Separator className={menuSeparator} />;
 }
 
