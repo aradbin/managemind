@@ -354,6 +354,7 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
   'print.tooMany': 'প্রিন্টের জন্য সর্বোচ্চ ১০০টি অর্ডার বাছাই করুন।',
   'print.none': 'প্রিন্টের জন্য কোনো অর্ডার বাছাই করা হয়নি।',
   'print.count': '{count}টি অর্ডার',
+  'print.document': 'কাগজ',
   'print.language': 'প্রিন্টের ভাষা',
   'print.print': 'প্রিন্ট',
   'print.invoice': 'ইনভয়েস',
@@ -450,6 +451,7 @@ export const ordersBn: Record<keyof typeof ordersEn, string> = {
 
   'customerImport.intro':
     'স্প্রেডশিট থেকে ক্রেতা যোগ বা হালনাগাদ করুন। ফোন নম্বর দিয়ে ক্রেতা মেলানো হয়; WooCommerce-এর ক্রেতা এক্সপোর্ট যেমন আছে তেমনই চলে।',
+  'customerImport.title': 'গ্রাহক ইমপোর্ট',
   'customerImport.choose': '.xlsx বা .csv ফাইল বেছে নিন।',
   'customerImport.columns':
     'কলামের নাম বাংলা বা ইংরেজিতে চেনা যায়: নাম (বা নামের প্রথম ও শেষ অংশ), ফোন, ইমেইল, ঠিকানা, এলাকা, জেলা, ট্যাগ, নোট।',

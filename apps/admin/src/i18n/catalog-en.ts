@@ -518,6 +518,9 @@ export const catalogEn = {
 
   'import.intro': 'Add or update many products at once from an Excel or CSV file.',
   'import.notAllowed': 'Your role can’t import products.',
+  'import.title': 'Import products',
+  'import.dropHint':
+    'One row per variant, with a header row. Excel (.xlsx) or CSV. Our product export works as it is, in Bangla or English.',
   'import.choose': 'Choose a spreadsheet: one row per variant, with a header row.',
   'import.formatHint':
     'Excel (.xlsx) or CSV. The export’s columns work as they are, in Bangla or English.',

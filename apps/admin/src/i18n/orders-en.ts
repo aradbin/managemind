@@ -360,6 +360,7 @@ export const ordersEn = {
   'print.tooMany': 'Select at most 100 orders to print.',
   'print.none': 'No orders were chosen to print.',
   'print.count': 'Orders: {count}',
+  'print.document': 'Document',
   'print.language': 'Print in',
   'print.print': 'Print',
   'print.invoice': 'Invoice',
@@ -456,6 +457,7 @@ export const ordersEn = {
 
   'customerImport.intro':
     'Add or update customers from a spreadsheet. Customers are matched by phone; a WooCommerce customer export works as it is.',
+  'customerImport.title': 'Import customers',
   'customerImport.choose': 'Choose a .xlsx or .csv file.',
   'customerImport.columns':
     'Columns are recognized in English or Bangla: name (or first and last name), phone, email, address, area, district, tags, note.',

@@ -1,11 +1,13 @@
 // A purchase order to send the supplier (phase-8-plan §3.2, §3.12): an A4
 // page the browser prints or saves as PDF, or a WhatsApp message with the
 // lines. Opened in its own tab, outside the shell, like the invoices.
+import { formatPhone } from '@managemind/shared/phone';
 import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { Printer, Share2 } from 'lucide-react';
+import { MessageCircle, Printer } from 'lucide-react';
 import { useEffect } from 'react';
 import { Notice } from '../components/notice';
+import { deskClass, PrintBar, paperClass } from '../components/print-bar';
 import { Button } from '../components/ui/button';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
@@ -14,6 +16,7 @@ import { storeSettingsQuery } from '../lib/catalog';
 import { errorMessage } from '../lib/errors';
 import { dateOnly, lineLabel } from '../lib/orders';
 import { priceOrDash, purchaseOrderQuery, supplierQuery } from '../lib/purchasing';
+import { cn } from '../lib/utils';
 
 export function PurchaseOrderPrintPage() {
   const { t, locale } = useLocale();
@@ -32,6 +35,14 @@ export function PurchaseOrderPrintPage() {
   if (order.isPending) return <p role="status">{t('loading')}</p>;
   if (order.isError) return <Notice tone="error">{errorMessage(order.error, t)}</Notice>;
   const o = order.data;
+  // The store's profile, as the invoices print it.
+  const profile = store.data?.profile as
+    | {
+        businessName?: string;
+        contactPhone?: string;
+        address?: { line1: string; city?: string };
+      }
+    | undefined;
   const costs = o.total !== undefined;
   const phone = supplier.data?.phones[0]?.replace(/^\+/, '');
   const message = [
@@ -42,7 +53,7 @@ export function PurchaseOrderPrintPage() {
   ].join('\n');
   const whatsapp = `https://wa.me/${phone ?? ''}?text=${encodeURIComponent(message)}`;
   return (
-    <div className="print-root bg-background">
+    <div className="print-root min-h-dvh bg-muted print:bg-white">
       <style>{`
         @page { size: A4; margin: 12mm; }
         @media print {
@@ -50,116 +61,140 @@ export function PurchaseOrderPrintPage() {
           body { background: #fff !important; color: #000 !important; }
         }
       `}</style>
-      <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background p-3">
-        <span className="font-medium">{title}</span>
-        <span className="ml-auto flex gap-2">
-          <Button variant="secondary" asChild>
-            <a href={whatsapp} target="_blank" rel="noopener noreferrer">
-              <Share2 aria-hidden className="size-4" />
-              {t('printPo.share')}
-            </a>
-          </Button>
-          <Button onClick={() => window.print()}>
-            <Printer aria-hidden className="size-4" />
-            {t('printPo.print')}
-          </Button>
-        </span>
-      </div>
-      <main className="mx-auto flex max-w-[210mm] flex-col gap-6 p-6 text-sm">
-        <header className="flex flex-wrap justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">{title}</h1>
+      <PrintBar
+        back={{
+          to: '/inventory/purchase-orders/$id',
+          params: { id: o.id },
+          label: t('nav.purchaseOrders'),
+        }}
+        title={title}
+        actions={
+          <>
+            <Button variant="secondary" asChild>
+              <a href={whatsapp} target="_blank" rel="noopener noreferrer">
+                <MessageCircle aria-hidden />
+                {t('printPo.share')}
+              </a>
+            </Button>
+            <Button onClick={() => window.print()}>
+              <Printer aria-hidden />
+              {t('printPo.print')}
+            </Button>
+          </>
+        }
+      />
+      <main className={deskClass}>
+        <article className={cn(paperClass, 'flex flex-col gap-6')}>
+          <header className="flex flex-col gap-0.5">
+            <h1 className="text-[22px] leading-7 font-bold">{title}</h1>
             <p>
               {t('printPo.date')}: {dateOnly(locale, o.placedAt ?? o.createdAt)}
+              {o.expectedOn && ` · ${t('po.expectedOn')}: ${dateOnly(locale, o.expectedOn)}`}
             </p>
-            {o.expectedOn && (
-              <p>
-                {t('po.expectedOn')}: {dateOnly(locale, o.expectedOn)}
-              </p>
-            )}
             {o.supplierRef && (
-              <p>
+              <p className="text-[#555]">
                 {t('po.supplierRef')}: {o.supplierRef}
               </p>
             )}
-          </div>
-          <div className="text-right">
-            <p className="text-muted-foreground">{t('printPo.from')}</p>
-            <p className="font-semibold">{store.data?.name}</p>
-          </div>
-        </header>
-        <section>
-          <p className="text-muted-foreground">{t('printPo.to')}</p>
-          <p className="font-semibold">{o.supplier.name}</p>
-          {supplier.data && (
-            <p>
-              {[supplier.data.contactName, ...supplier.data.phones, supplier.data.address?.line1]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          )}
-        </section>
-        <table className="w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b border-foreground">
-              <th scope="col" className="py-2">
-                {t('po.lines')}
-              </th>
-              <th scope="col" className="py-2">
-                SKU
-              </th>
-              <th scope="col" className="py-2 text-right">
-                {t('po.ordered')}
-              </th>
-              {costs && (
+          </header>
+          <div className="grid grid-cols-2 gap-6">
+            <section>
+              <p className="mb-1 font-semibold">{t('printPo.from')}</p>
+              <p>{profile?.businessName ?? store.data?.name}</p>
+              {(profile?.address || profile?.contactPhone) && (
+                <p>
+                  {[
+                    profile.address?.line1,
+                    profile.address?.city,
+                    profile.contactPhone && formatPhone(profile.contactPhone),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
+            </section>
+            <section>
+              <p className="mb-1 font-semibold">{t('printPo.to')}</p>
+              <p>{o.supplier.name}</p>
+              {supplier.data && (
                 <>
-                  <th scope="col" className="py-2 text-right">
-                    {t('po.unitCost')}
-                  </th>
-                  <th scope="col" className="py-2 text-right">
-                    {t('po.lineTotal')}
-                  </th>
+                  <p>
+                    {[supplier.data.contactName, ...supplier.data.phones]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                  {supplier.data.address?.line1 && <p>{supplier.data.address.line1}</p>}
                 </>
               )}
-            </tr>
-          </thead>
-          <tbody>
-            {o.lines.map((l) => (
-              <tr key={l.id} className="border-b border-border">
-                <td className="py-2">{lineLabel(l, locale)}</td>
-                <td className="py-2">{l.sku ?? ''}</td>
-                <td className="py-2 text-right tabular-nums">{l.quantity}</td>
+            </section>
+          </div>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-[#111] text-xs">
+                <th scope="col" className="py-1.5 font-semibold">
+                  {t('po.lines')}
+                </th>
+                <th scope="col" className="py-1.5 text-right font-semibold">
+                  {t('po.ordered')}
+                </th>
                 {costs && (
                   <>
-                    <td className="py-2 text-right tabular-nums">
-                      {priceOrDash(l.unitCost, locale)}
-                    </td>
-                    <td className="py-2 text-right tabular-nums">
-                      {priceOrDash((l.unitCost ?? 0) * l.quantity, locale)}
-                    </td>
+                    <th scope="col" className="py-1.5 text-right font-semibold">
+                      {t('po.unitCost')}
+                    </th>
+                    <th scope="col" className="py-1.5 text-right font-semibold">
+                      {t('po.lineTotal')}
+                    </th>
                   </>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {costs && (
-          <dl className="ml-auto grid w-64 grid-cols-2 gap-1">
-            <dt>{t('po.subtotal')}</dt>
-            <dd className="text-right tabular-nums">{priceOrDash(o.subtotal, locale)}</dd>
-            {o.otherCosts?.map((c) => (
-              <div key={c.label} className="contents">
-                <dt>{c.label}</dt>
-                <dd className="text-right tabular-nums">{priceOrDash(c.amount, locale)}</dd>
+            </thead>
+            <tbody>
+              {o.lines.map((l) => (
+                <tr key={l.id} className="border-b border-[#ddd] align-top">
+                  <td className="py-[7px]">
+                    {lineLabel(l, locale)}
+                    {l.sku && (
+                      <span lang="en" className="block text-[11px] text-[#666]">
+                        {l.sku}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-[7px] text-right tabular-nums">{l.quantity}</td>
+                  {costs && (
+                    <>
+                      <td className="py-[7px] text-right tabular-nums">
+                        {priceOrDash(l.unitCost, locale)}
+                      </td>
+                      <td className="py-[7px] text-right tabular-nums">
+                        {priceOrDash((l.unitCost ?? 0) * l.quantity, locale)}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {costs && (
+            <dl className="ml-auto flex w-[300px] max-w-full flex-col gap-1">
+              <div className="flex justify-between">
+                <dt>{t('po.subtotal')}</dt>
+                <dd className="tabular-nums">{priceOrDash(o.subtotal, locale)}</dd>
               </div>
-            ))}
-            <dt className="font-semibold">{t('po.total')}</dt>
-            <dd className="text-right font-semibold tabular-nums">
-              {priceOrDash(o.total, locale)}
-            </dd>
-          </dl>
-        )}
-        {o.note && <p className="whitespace-pre-line">{o.note}</p>}
+              {o.otherCosts?.map((c) => (
+                <div key={c.label} className="flex justify-between">
+                  <dt>{c.label}</dt>
+                  <dd className="tabular-nums">{priceOrDash(c.amount, locale)}</dd>
+                </div>
+              ))}
+              <div className="flex justify-between border-t border-[#111] pt-1.5 font-bold">
+                <dt>{t('po.total')}</dt>
+                <dd className="tabular-nums">{priceOrDash(o.total, locale)}</dd>
+              </div>
+            </dl>
+          )}
+          {o.note && <p className="whitespace-pre-line">{o.note}</p>}
+        </article>
       </main>
     </div>
   );

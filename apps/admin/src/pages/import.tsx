@@ -11,6 +11,7 @@ import {
   dryRunImport,
   exportHeader,
   IMPORT_FIELDS,
+  IMPORT_HEADERS,
   type ImportField,
   isLocalizedField,
   type MappedRow,
@@ -18,17 +19,20 @@ import {
 } from '@managemind/shared/catalog/import';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { FileUp } from 'lucide-react';
+import { FileSpreadsheet } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { DropZone, ImportFrame } from '../components/import-frame';
 import { Notice } from '../components/notice';
-import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { Button } from '../components/ui/button';
+import { cardPadded, cardTitle } from '../components/ui/card';
 import { useLocale } from '../i18n';
 import { ApiError, api, unwrap } from '../lib/api';
 import { attributesQuery, type ImportJob, storeSettingsQuery } from '../lib/catalog';
+import { formatDateTime } from '../lib/dates';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { prepareImage, uploadImage } from '../lib/images';
+import { cn } from '../lib/utils';
 import { download, toCsv } from './export';
 
 const CHUNK = 10;
@@ -45,9 +49,49 @@ export function ImportPage() {
   const canWrite = usePermission('catalog.write');
   const [parsed, setParsed] = useState<Parsed | null>(null);
   if (!canWrite) return <Notice>{t('import.notAllowed')}</Notice>;
+  const fields = [
+    'handle',
+    'title',
+    'categories',
+    'option1Name',
+    'option1Value',
+    'sku',
+    'price',
+    'compareAtPrice',
+    'costPrice',
+    'stock',
+  ] as const;
   return (
-    <div className="flex max-w-5xl flex-col">
-      <PageHeader title={t('catalog.import')} description={t('import.intro')} />
+    <ImportFrame
+      title={t('import.title')}
+      intro={t('import.intro')}
+      sample={{
+        name: 'products-sample.csv',
+        header: fields.map((f) => IMPORT_HEADERS[f].en),
+        rows: [
+          [
+            'cotton-panjabi',
+            'Cotton Panjabi',
+            'Panjabi',
+            'Size',
+            'M',
+            'PNJ-M',
+            '1450',
+            '1800',
+            '655',
+            '12',
+          ],
+          ['cotton-panjabi', '', '', 'Size', 'L', 'PNJ-L', '1450', '1800', '655', '8'],
+        ],
+      }}
+      steps={[
+        t('import.step.choose'),
+        t('import.step.match'),
+        t('import.step.check'),
+        t('import.step.import'),
+      ]}
+      step={search.job ? 3 : parsed ? 1 : 0}
+    >
       {search.job ? (
         <JobProgress
           jobId={search.job}
@@ -63,89 +107,79 @@ export function ImportPage() {
           onStarted={(job) => navigate({ to: '/catalog/import', search: { job } })}
         />
       ) : (
-        <ChooseFile onParsed={setParsed} />
+        <>
+          <DropZone hint={t('import.dropHint')} onParsed={setParsed} />
+          <RecentImports />
+        </>
       )}
-    </div>
+    </ImportFrame>
   );
 }
 
-function ChooseFile({ onParsed }: { onParsed: (p: Parsed) => void }) {
-  const { t } = useLocale();
-  const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
+function RecentImports() {
+  const { t, locale } = useLocale();
   const jobs = useQuery({
     queryKey: ['imports'],
     queryFn: async () => unwrap(await api.GET('/v1/admin/imports')),
   });
+  if (!jobs.data?.length) return null;
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-start gap-3 rounded-md border border-dashed border-border p-6">
-        <p>{t('import.choose')}</p>
-        <p className="text-sm text-muted-foreground">{t('import.formatHint')}</p>
-        <input
-          ref={input}
-          type="file"
-          accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          className="sr-only"
-          // The button below opens it; screen readers meet only the button.
-          tabIndex={-1}
-          aria-hidden
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setBusy(true);
-            setError(undefined);
-            try {
-              const result = await parseFile(file);
-              if (!result.rows.length) throw new Error('empty');
-              onParsed(result);
-            } catch {
-              setError(t('import.unreadable'));
-            } finally {
-              setBusy(false);
-              if (input.current) input.current.value = '';
-            }
-          }}
-        />
-        <Button disabled={busy} onClick={() => input.current?.click()}>
-          <FileUp aria-hidden className="size-4" />
-          {busy ? t('loading') : t('import.chooseFile')}
-        </Button>
-        {error && <Notice tone="error">{error}</Notice>}
-      </div>
-      {(jobs.data?.length ?? 0) > 0 && (
-        <section
-          aria-labelledby="recent-imports"
-          className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4 md:p-5"
-        >
-          <h2 id="recent-imports" className="font-semibold">
-            {t('import.recent')}
-          </h2>
-          <ul className="flex flex-col divide-y divide-border rounded-md border border-border">
-            {jobs.data?.map((job) => (
-              <li
-                key={job.id}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <span>
-                  <span className="font-medium">{job.fileName}</span> ·{' '}
-                  {t(`import.status.${job.status}`)} ·{' '}
-                  {t('import.counts', {
-                    created: job.created,
-                    updated: job.updated,
-                    failed: job.failed,
-                  })}
-                </span>
-                <Link to="/catalog/import" search={{ job: job.id }} className="underline">
-                  {t('import.open')}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </div>
+    <section aria-labelledby="recent-imports" className={cn(cardPadded, 'gap-3 md:gap-3')}>
+      <h2 id="recent-imports" className={cardTitle}>
+        {t('import.recent')}
+      </h2>
+      <ul className="overflow-hidden rounded-[10px] border border-border">
+        {jobs.data.map((job) => (
+          <li
+            key={job.id}
+            className="flex min-h-14 items-center gap-3 border-t border-border px-3 py-2 first:border-t-0"
+          >
+            <span
+              aria-hidden
+              className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
+            >
+              <FileSpreadsheet className="size-3.5" />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-medium">{job.fileName}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {formatDateTime(locale, new Date(job.createdAt), {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}{' '}
+                ·{' '}
+                {t('import.counts', {
+                  created: job.created,
+                  updated: job.updated,
+                  failed: job.failed,
+                })}
+              </span>
+            </span>
+            <span className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+              <span
+                aria-hidden
+                className={cn(
+                  'size-1.5 rounded-full',
+                  job.status === 'done'
+                    ? 'bg-success-fill'
+                    : job.status === 'failed'
+                      ? 'bg-danger-fill'
+                      : 'bg-[var(--tone-info)]',
+                )}
+              />
+              {t(`import.status.${job.status}`)}
+            </span>
+            <Button asChild variant="ghost" className="h-8 md:h-8">
+              <Link to="/catalog/import" search={{ job: job.id }}>
+                {t('import.open')}
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
