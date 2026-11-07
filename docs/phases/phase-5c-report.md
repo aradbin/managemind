@@ -5,7 +5,7 @@
 - Decision: [ADR 0029](../adr/0029-admin-redesign.md)
 - Pull request: #69, one commit per step (§1). Merged and deployed on Oct 24: the deploy's smoke, shop API and cache checks passed
 - Second redesign (§7): the owner's second canvas, on shadcn/ui's neutral theme, with every admin page drawn. [ADR 0033](../adr/0033-admin-shadcn-redesign.md); pull request #92, Nov 1
-- Exact match (§8): every page brought to its board, desktop and phone. [ADR 0034](../adr/0034-admin-matches-the-boards.md); branch `ccr-4fa9341c-4i6fgp`, Nov 2–7
+- Exact match (§8): every page brought to its board, desktop and phone. [ADR 0034](../adr/0034-admin-matches-the-boards.md); pull request #94, Nov 2–7
 
 > Phase 5C sits between launch readiness (5B) and the pilot. The pilot's clients use the admin every day, mostly on phones. No data model, API or storefront change: the admin's look, layout and navigation only.
 
@@ -241,7 +241,7 @@ The second redesign approximated the boards. A side-by-side comparison of every 
 | 7d | `88e29c5` | Online store: overview, the theme editor, pages and a page, store settings |
 | 7e | `760ee12` | Platform: stores, a store, new store, dashboard, courier areas, terms, staff, audit log |
 | 7f | `26d9c11` | Imports, account, sign-in, two-factor, invitation, print |
-| 8 | `c60556a` | Old shapes removed: Load more, the text language switch, the old breadcrumb, 145 unused messages; ⋯ menus open as a drawer on phones |
+| 8 | `c60556a`, `2b39fbc` | Old shapes removed: Load more, the text language switch, the old breadcrumb, 145 unused messages; ⋯ menus open as a drawer on phones |
 
 **API changes.** All are additive; existing callers are unchanged. The SDK is regenerated with each, and API or core tests cover each one.
 - **Lists:**
