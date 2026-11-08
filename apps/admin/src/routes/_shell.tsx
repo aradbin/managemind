@@ -4,9 +4,7 @@
 // View store, language, theme, help and the account. On phones, a five-tab bar
 // whose Menu tab lists the rest. Search opens from the header or Ctrl+K. It
 // loads /me once; without a session it sends the user to sign in.
-
 import type { Permission } from '@managemind/shared/permissions';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import {
   createFileRoute,
@@ -56,7 +54,7 @@ import { StoreSwitcher } from '../components/store-switcher';
 import { ThemeMenu } from '../components/theme-choice';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
-import { menuContent, menuItem, menuSeparator } from '../components/ui/menu';
+import { Menu, menuContent, menuItem, menuSeparator } from '../components/ui/menu';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';

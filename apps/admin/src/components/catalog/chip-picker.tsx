@@ -2,12 +2,12 @@
 // searchable list (ADR 0034, the canvas's .mm-chipbox): categories and
 // collections on the product editor. The list marks what is chosen; picking
 // a chosen one takes it off.
-import * as Popover from '@radix-ui/react-popover';
 import { Check, Plus, Search, X } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import { useLocale } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { fieldLabel } from '../field-styles';
+import { Popover } from '../ui/popover';
 
 const fold = (text: string) => text.normalize('NFC').toLowerCase();
 

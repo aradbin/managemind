@@ -2,7 +2,6 @@
 // counts, search and filter buttons kept in the URL, rows on phones and a
 // table from md that open the order, a ⋯ menu per row, and selection for
 // bulk confirm, booking and printing in the selection bar.
-
 import { formatNumber } from '@managemind/shared/i18n';
 import { formatPhone } from '@managemind/shared/phone';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

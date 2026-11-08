@@ -1,6 +1,5 @@
 // Store settings for Phase 2 (phase-2-plan §3.9, §7): VAT, and the default
 // stock location's name and address.
-
 import { money, splitVat } from '@managemind/shared/money';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Info, Plus, X } from 'lucide-react';

@@ -1,8 +1,7 @@
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Check, Languages } from 'lucide-react';
 import { LANGUAGES, useLocale } from '../i18n';
 import { Button } from './ui/button';
-import { menuContent, menuItem } from './ui/menu';
+import { Menu, menuContent, menuItem } from './ui/menu';
 
 /**
  * The header's language button (ADR 0033): it opens a menu of the languages,

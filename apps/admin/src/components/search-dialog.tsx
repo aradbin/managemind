@@ -3,13 +3,13 @@
 // customers in their own lists (each already searches by number, name and
 // phone); below, every page the sidebar reaches, grouped as it groups them.
 // The arrows move through the results, Enter opens one, Escape closes.
-import * as RadixDialog from '@radix-ui/react-dialog';
 import { useNavigate } from '@tanstack/react-router';
 import { type LucideIcon, Package, Search, ShoppingBag, Users } from 'lucide-react';
 import { Fragment, type KeyboardEvent, useState } from 'react';
 import { useLocale } from '../i18n';
 import { type NavTo, useNav } from './nav';
 import { usePermission } from './permission-gate';
+import { DialogContent, DialogTitle, Dialog as ShadDialog } from './ui/shadcn/dialog';
 
 type Target = { key: string; label: string; icon: LucideIcon; go: () => Promise<void> };
 type Group = { key: string; label: string; items: Target[] };
@@ -115,96 +115,88 @@ export function SearchDialog({
   }
 
   return (
-    <RadixDialog.Root open={open} onOpenChange={close}>
-      <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <RadixDialog.Content
-          aria-describedby={undefined}
-          onKeyDown={onKey}
-          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[10px] border border-border bg-popover text-foreground shadow-lg"
+    <ShadDialog open={open} onOpenChange={close}>
+      <DialogContent
+        aria-describedby={undefined}
+        onKeyDown={onKey}
+        showCloseButton={false}
+        className="block gap-0 overflow-hidden rounded-[10px] border-border bg-popover p-0 text-foreground sm:max-w-lg"
+      >
+        <DialogTitle className="sr-only">{t('search.open')}</DialogTitle>
+        <form
+          className="flex h-12 items-center gap-2 border-b border-border px-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void pick(first);
+          }}
         >
-          <RadixDialog.Title className="sr-only">{t('search.open')}</RadixDialog.Title>
-          <form
-            className="flex h-12 items-center gap-2 border-b border-border px-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void pick(first);
-            }}
-          >
-            <Search aria-hidden className="size-4 shrink-0 opacity-50" />
-            <input
-              type="text"
-              autoComplete="off"
-              aria-label={t('search.open')}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search.placeholder')}
-              className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none md:text-sm"
-            />
-          </form>
-          <div className="max-h-[300px] overflow-y-auto">
-            {searches.length > 0 && (
-              <fieldset aria-label={t('search.open')} className="p-1">
+          <Search aria-hidden className="size-4 shrink-0 opacity-50" />
+          <input
+            type="text"
+            autoComplete="off"
+            aria-label={t('search.open')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('search.placeholder')}
+            className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none md:text-sm"
+          />
+        </form>
+        <div className="max-h-[300px] overflow-y-auto">
+          {searches.length > 0 && (
+            <fieldset aria-label={t('search.open')} className="p-1">
+              <p className="px-2 py-1.5 text-xs leading-4 font-medium text-muted-foreground">
+                {t('search.open')}
+              </p>
+              {searches.map((s) => (
+                <button key={s.key} type="button" data-cmd className={item} onClick={() => pick(s)}>
+                  <s.icon aria-hidden />
+                  {s.label}
+                </button>
+              ))}
+            </fieldset>
+          )}
+          {groups.map((g, i) => (
+            <Fragment key={g.key}>
+              {(i > 0 || searches.length > 0) && <div className="h-px bg-border" />}
+              <fieldset aria-label={g.label} className="p-1">
                 <p className="px-2 py-1.5 text-xs leading-4 font-medium text-muted-foreground">
-                  {t('search.open')}
+                  {g.label}
                 </p>
-                {searches.map((s) => (
+                {g.items.map((p) => (
                   <button
-                    key={s.key}
+                    key={p.key}
                     type="button"
                     data-cmd
                     className={item}
-                    onClick={() => pick(s)}
+                    onClick={() => pick(p)}
                   >
-                    <s.icon aria-hidden />
-                    {s.label}
+                    <p.icon aria-hidden />
+                    {p.label}
                   </button>
                 ))}
               </fieldset>
-            )}
-            {groups.map((g, i) => (
-              <Fragment key={g.key}>
-                {(i > 0 || searches.length > 0) && <div className="h-px bg-border" />}
-                <fieldset aria-label={g.label} className="p-1">
-                  <p className="px-2 py-1.5 text-xs leading-4 font-medium text-muted-foreground">
-                    {g.label}
-                  </p>
-                  {g.items.map((p) => (
-                    <button
-                      key={p.key}
-                      type="button"
-                      data-cmd
-                      className={item}
-                      onClick={() => pick(p)}
-                    >
-                      <p.icon aria-hidden />
-                      {p.label}
-                    </button>
-                  ))}
-                </fieldset>
-              </Fragment>
-            ))}
-            {groups.length === 0 && searches.length === 0 && (
-              <p className="py-6 text-center text-sm">{t('list.noResults')}</p>
-            )}
-          </div>
-          <div className="hidden h-10 items-center gap-4 border-t border-border px-3 text-xs text-muted-foreground md:flex">
-            <span className="inline-flex items-center gap-1.5">
-              <kbd className={kbd}>↑</kbd>
-              <kbd className={kbd}>↓</kbd>
-              {t('search.navigate')}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <kbd className={kbd}>↵</kbd>
-              {t('search.enter')}
-            </span>
-            <span className="ml-auto inline-flex items-center gap-1.5">
-              <kbd className={kbd}>esc</kbd>
-              {t('action.close')}
-            </span>
-          </div>
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
-    </RadixDialog.Root>
+            </Fragment>
+          ))}
+          {groups.length === 0 && searches.length === 0 && (
+            <p className="py-6 text-center text-sm">{t('list.noResults')}</p>
+          )}
+        </div>
+        <div className="hidden h-10 items-center gap-4 border-t border-border px-3 text-xs text-muted-foreground md:flex">
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className={kbd}>↑</kbd>
+            <kbd className={kbd}>↓</kbd>
+            {t('search.navigate')}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <kbd className={kbd}>↵</kbd>
+            {t('search.enter')}
+          </span>
+          <span className="ml-auto inline-flex items-center gap-1.5">
+            <kbd className={kbd}>esc</kbd>
+            {t('action.close')}
+          </span>
+        </div>
+      </DialogContent>
+    </ShadDialog>
   );
 }

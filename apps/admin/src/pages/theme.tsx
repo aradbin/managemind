@@ -18,7 +18,6 @@ import {
   type ThemePreset,
   type ThemeSection,
 } from '@managemind/shared/storefront';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import {
@@ -48,7 +47,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { RadioCard } from '../components/ui/choice';
 import { Input } from '../components/ui/input';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { chipClass } from '../components/ui/segmented';
 import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';

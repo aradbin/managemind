@@ -2,7 +2,6 @@
 // English or Bangla (WooCommerce's customer export works as it is), checked
 // row by row in the browser before anything is sent, then the same import
 // job as products, 500 customers a chunk. Customers match by phone.
-
 import {
   CUSTOMER_IMPORT_LIMITS,
   type ImportCustomer,

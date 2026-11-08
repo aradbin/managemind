@@ -1,7 +1,6 @@
 // Online store > Pages (phase-3-plan §3.5, §7): about, contact, the policies
 // and custom pages, with Bangla and English tabs and the description editor
 // from Phase 2. Policy pages start with suggested headings (Q12).
-
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import {
   MAX_PAGES,
@@ -10,7 +9,6 @@ import {
   type PageKind,
   storePath,
 } from '@managemind/shared/storefront';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, ExternalLink, Eye, EyeOff, Plus, SquarePen, Trash2 } from 'lucide-react';
@@ -31,7 +29,7 @@ import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { ChoiceChips } from '../components/ui/segmented';
 import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';

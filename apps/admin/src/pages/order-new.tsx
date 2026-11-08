@@ -2,10 +2,8 @@
 // placed with the same placeOrder as the storefront. One column on phones.
 // The totals come from the API's quote as the order is typed, so they are
 // exactly what saving will charge; a blocked phone is warned about first.
-
 import { MANUAL_METHODS, MANUAL_ORDER_SOURCES } from '@managemind/shared/orders';
 import { formatPhone, normalizePhone } from '@managemind/shared/phone';
-import * as Popover from '@radix-ui/react-popover';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { ChevronsUpDown, Minus, Plus, Search, X } from 'lucide-react';
@@ -24,6 +22,7 @@ import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { ButtonChoices, MoneyInput, RadioCard } from '../components/ui/choice';
 import { Input, Textarea } from '../components/ui/input';
+import { Popover } from '../components/ui/popover';
 import { chipClass } from '../components/ui/segmented';
 import { VariantPicker } from '../components/variant-picker';
 import { type AdminKey, useLocale } from '../i18n';

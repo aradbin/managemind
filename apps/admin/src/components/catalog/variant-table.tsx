@@ -1,7 +1,6 @@
 // A product's variants: a grid from md, a card per variant on phones
 // (phase-2-plan §7). Prices accept Bangla digits, ৳ and separators; cost
 // prices show only with catalog.cost; stock only with inventory.read.
-
 import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';

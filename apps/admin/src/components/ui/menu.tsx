@@ -1,6 +1,38 @@
-// The look of dropdown menus and popovers on Radix (shadcn/ui, ADR 0033 and
-// 0034): the canvas's .mm-menu, a bordered popover with 8 px corners, items
-// with a 16 px muted icon, 40 px rows on phones.
+// Dropdown menus on shadcn/ui's DropdownMenu (components/ui/shadcn), so they
+// fade and zoom in from where they open (ADR 0033 and 0034). `Menu` keeps the
+// Radix names the admin used (Menu.Root, Menu.Content…). Its Content brings
+// its own portal, so Menu.Portal only passes its children through. Radio
+// items keep the admin's layout: the label first, the check at the end.
+import * as Primitive from '@radix-ui/react-dropdown-menu';
+import type { ReactNode } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './shadcn/dropdown-menu';
+
+export const Menu = {
+  Root: DropdownMenu,
+  Trigger: DropdownMenuTrigger,
+  Portal: ({ children }: { children: ReactNode }) => children,
+  Content: DropdownMenuContent,
+  Group: DropdownMenuGroup,
+  Item: DropdownMenuItem,
+  Label: DropdownMenuLabel,
+  Separator: DropdownMenuSeparator,
+  RadioGroup: DropdownMenuRadioGroup,
+  RadioItem: Primitive.RadioItem,
+  ItemIndicator: Primitive.ItemIndicator,
+};
+
+// The look of dropdown menus and popovers (shadcn/ui, ADR 0033 and 0034):
+// the canvas's .mm-menu, a bordered popover with 8 px corners, items with a
+// 16 px muted icon, 40 px rows on phones.
 export const menuContent =
   'z-50 min-w-[200px] rounded-lg border border-border bg-popover p-1 text-foreground shadow-md';
 export const menuItem =

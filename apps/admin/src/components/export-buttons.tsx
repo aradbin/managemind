@@ -1,10 +1,10 @@
 // Export ▾ for a report table or a list (phase-8-plan §3.8, the canvas's
 // export menu): Excel or CSV. `rows` builds the cells when asked, so a list
 // can read all its pages first. Counts and money stay numbers in Excel.
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { ChevronDown, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
+import { Menu } from './ui/menu';
 import '../i18n/back-office-reports';
 import { errorMessage } from '../lib/errors';
 import { type ReportCell, type ReportFormat, saveReport } from '../lib/report-export';

@@ -1,7 +1,6 @@
 // Orders → Courier returns (phase-7-plan §3.5, Q9): parcels a courier says
 // it brought back, as a list (ADR 0033). Received puts them back in stock, as Phase 5A's return
 // of a failed shipment does; nothing is restocked before staff see it.
-
 import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';

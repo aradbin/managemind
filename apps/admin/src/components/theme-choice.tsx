@@ -1,7 +1,6 @@
 // Light, dark or the device's setting (lib/theme.ts), the device's by
 // default: a menu behind the header's theme button, one row of three icons in
 // the account menu, and the same row on the phone's Menu page.
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import { useId } from 'react';
 import { useLocale } from '../i18n';
@@ -15,7 +14,7 @@ import {
 } from '../lib/theme';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
-import { menuContent, menuItem } from './ui/menu';
+import { Menu, menuContent, menuItem } from './ui/menu';
 
 const ICONS = { system: Monitor, light: Sun, dark: Moon } satisfies Record<ThemeChoice, unknown>;
 

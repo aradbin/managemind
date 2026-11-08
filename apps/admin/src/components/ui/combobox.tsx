@@ -1,13 +1,14 @@
 // A searchable select (ADR 0033, design rule 3): for eight or more options,
-// or names people would type. A button shows the choice; it opens a list
-// with a search box. Arrows move through what matches, Enter picks, Escape
-// closes. Each option carries its value as data-value, so tests can pick by
-// value as they did with native selects.
-import * as Popover from '@radix-ui/react-popover';
-import { Check, ChevronsUpDown, Search } from 'lucide-react';
-import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
+// or names people would type. A button shows the choice; it opens shadcn/ui's
+// Command (cmdk) in a popover, with a search box. Arrows move through what
+// matches, Enter picks, Escape closes. Each option carries its value as
+// data-value, so tests can pick by value as they did with native selects.
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useLocale } from '../../i18n';
 import { cn } from '../../lib/utils';
+import { Popover } from './popover';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from './shadcn/command';
 
 export interface ComboboxOption {
   value: string;
@@ -23,6 +24,16 @@ export interface ComboboxOption {
 const SHOWN = 200;
 
 const fold = (text: string) => text.normalize('NFC').toLowerCase();
+
+/** Every typed word somewhere in the label, the hint or the keywords. */
+export function matchOptions<T extends ComboboxOption>(options: readonly T[], query: string): T[] {
+  const words = fold(query.trim()).split(/\s+/).filter(Boolean);
+  if (!words.length) return [...options];
+  return options.filter((o) => {
+    const text = fold(`${o.label} ${o.hint ?? ''} ${o.keywords ?? ''}`);
+    return words.every((w) => text.includes(w));
+  });
+}
 
 export function Combobox({
   id,
@@ -54,66 +65,26 @@ export function Combobox({
   ariaLabel?: string | undefined;
 }) {
   const { t } = useLocale();
-  const listId = useId();
-  const optionId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
-  const list = useRef<HTMLDivElement>(null);
   const chosen = options.find((o) => o.value === value);
-
-  const matches = useMemo(() => {
-    const words = fold(query.trim()).split(/\s+/).filter(Boolean);
-    if (!words.length) return options;
-    return options.filter((o) => {
-      const text = fold(`${o.label} ${o.hint ?? ''} ${o.keywords ?? ''}`);
-      return words.every((w) => text.includes(w));
-    });
-  }, [options, query]);
+  const matches = useMemo(() => matchOptions(options, query), [options, query]);
   const shown = matches.slice(0, SHOWN);
 
-  const show = (next: boolean) => {
-    setOpen(next);
-    setQuery('');
-    // Start on the current choice, so the list opens where you are.
-    setActive(
-      Math.max(
-        0,
-        options.findIndex((o) => o.value === value),
-      ),
-    );
-  };
-  const pick = (o: ComboboxOption | undefined) => {
-    if (!o || o.disabled) return;
-    onChange(o.value);
-    setOpen(false);
-  };
-  const move = (to: number) => {
-    const next = Math.min(Math.max(to, 0), shown.length - 1);
-    setActive(next);
-    list.current
-      ?.querySelector<HTMLElement>(`[data-index="${next}"]`)
-      ?.scrollIntoView({ block: 'nearest' });
-  };
-  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown') move(active + 1);
-    else if (e.key === 'ArrowUp') move(active - 1);
-    else if (e.key === 'Home') move(0);
-    else if (e.key === 'End') move(shown.length - 1);
-    else if (e.key === 'Enter') pick(shown[active]);
-    else return;
-    e.preventDefault();
-  };
-
   return (
-    <Popover.Root open={open} onOpenChange={show}>
+    <Popover.Root
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        setQuery('');
+      }}
+    >
       <Popover.Trigger asChild>
         <button
           id={id}
           type="button"
           role="combobox"
           aria-expanded={open}
-          aria-controls={listId}
           aria-haspopup="listbox"
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
@@ -131,64 +102,39 @@ export function Combobox({
           <ChevronsUpDown aria-hidden className="size-4 shrink-0 opacity-50" />
         </button>
       </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content
-          align="start"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-50 flex max-h-[var(--radix-popover-content-available-height)] w-[max(var(--radix-popover-trigger-width),15rem)] flex-col overflow-hidden rounded-lg border border-border bg-popover text-foreground shadow-md"
+      <Popover.Content
+        align="start"
+        collisionPadding={8}
+        className="flex max-h-[var(--radix-popover-content-available-height)] w-[max(var(--radix-popover-trigger-width),15rem)] flex-col overflow-hidden rounded-lg border-border"
+      >
+        {/* Our own matching (both languages' names, a word anywhere), so cmdk doesn't filter. */}
+        <Command
+          shouldFilter={false}
+          loop
+          className="rounded-none"
+          {...(chosen ? { defaultValue: chosen.value } : {})}
         >
-          <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3 md:h-9">
-            <Search aria-hidden className="size-4 shrink-0 opacity-50" />
-            <input
-              // biome-ignore lint/a11y/noAutofocus: the list opened to be searched.
-              autoFocus
-              role="combobox"
-              aria-label={searchLabel}
-              aria-controls={listId}
-              aria-expanded
-              aria-autocomplete="list"
-              aria-activedescendant={shown[active] ? `${optionId}-${active}` : undefined}
-              placeholder={searchLabel}
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={onKey}
-              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none focus-visible:outline-none md:text-sm"
-            />
-          </div>
-          <div
-            ref={list}
-            id={listId}
-            role="listbox"
+          <CommandInput
             aria-label={searchLabel}
-            className="max-h-60 min-h-0 flex-1 overflow-y-auto p-1"
-          >
-            {shown.length === 0 && (
-              <p className="px-2 py-5 text-center text-sm text-muted-foreground">
-                {t('list.noOption')}
-              </p>
-            )}
-            {shown.map((o, i) => (
-              // biome-ignore lint/a11y/useKeyWithClickEvents: the search box's arrows and Enter pick from the keyboard.
-              <div
+            placeholder={searchLabel}
+            value={query}
+            onValueChange={setQuery}
+            className="h-10 text-base focus-visible:shadow-none md:h-9 md:text-sm"
+          />
+          <CommandList aria-label={searchLabel} className="max-h-60 p-1">
+            <CommandEmpty className="px-2 py-5 text-center text-sm text-muted-foreground">
+              {t('list.noOption')}
+            </CommandEmpty>
+            {shown.map((o) => (
+              <CommandItem
                 key={o.value}
-                id={`${optionId}-${i}`}
-                role="option"
-                tabIndex={-1}
-                aria-selected={o.value === value}
-                aria-disabled={o.disabled ? true : undefined}
-                data-value={o.value}
-                data-index={i}
-                onClick={() => pick(o)}
-                onPointerMove={() => setActive(i)}
-                className={cn(
-                  'flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm leading-5',
-                  i === active && 'bg-accent',
-                  o.disabled && 'cursor-not-allowed opacity-50',
-                )}
+                value={o.value}
+                {...(o.disabled ? { disabled: true } : {})}
+                onSelect={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className="cursor-pointer items-start rounded-md leading-5"
               >
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate">{o.label}</span>
@@ -200,16 +146,16 @@ export function Combobox({
                   aria-hidden
                   className={cn('mt-0.5 size-4 shrink-0', o.value !== value && 'opacity-0')}
                 />
-              </div>
+              </CommandItem>
             ))}
             {matches.length > SHOWN && (
               <p className="px-2 py-1.5 text-xs text-muted-foreground">
                 {t('form.typeToNarrow', { count: matches.length - SHOWN })}
               </p>
             )}
-          </div>
-        </Popover.Content>
-      </Popover.Portal>
+          </CommandList>
+        </Command>
+      </Popover.Content>
     </Popover.Root>
   );
 }

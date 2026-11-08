@@ -2,7 +2,6 @@
 // with what is available to sell, so staff see stock before they promise it.
 // As the canvas draws it (ADR 0034, .mm-addrow): a dashed "Add a product"
 // row that opens a search box and the matching products under it.
-import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
@@ -10,6 +9,7 @@ import { useLocale } from '../i18n';
 import type { InventoryRow } from '../lib/catalog';
 import { lineLabel, variantSearchQuery } from '../lib/orders';
 import { cn } from '../lib/utils';
+import { Popover } from './ui/popover';
 
 export function VariantPicker({
   onPick,

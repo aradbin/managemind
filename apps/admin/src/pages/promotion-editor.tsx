@@ -2,9 +2,7 @@
 // as a guided form, the plain-language summary as it is built, the test
 // cart (which promotions a cart gets, and why the others don't, with this
 // one tried as if live), and, for code promotions, batches of unique codes.
-
 import { formatNumber } from '@managemind/shared/i18n';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Check, ChevronDown, ChevronRight, CircleStop, Copy, Sparkles, X } from 'lucide-react';
@@ -27,7 +25,7 @@ import { RadioCard } from '../components/ui/choice';
 import { Combobox } from '../components/ui/combobox';
 import { Dialog } from '../components/ui/dialog';
 import { Input, Textarea } from '../components/ui/input';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { chipClass } from '../components/ui/segmented';
 import { StatRow } from '../components/ui/stat-row';
 import { Switch } from '../components/ui/switch';

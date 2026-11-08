@@ -4,11 +4,11 @@
 // panel. Phones scroll the presets sideways and put the dates under them,
 // with Change for custom dates. Dates are Dhaka dates, as the server reads.
 import type { Locale } from '@managemind/shared/i18n';
-import * as Popover from '@radix-ui/react-popover';
 import { CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
 import { formatDateTime } from '../lib/dates';
+import { Popover } from './ui/popover';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
 import { DateField } from './date-field';

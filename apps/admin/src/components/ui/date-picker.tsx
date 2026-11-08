@@ -3,13 +3,13 @@
 // to pick from. The value stays the string a native date input gives,
 // "2026-10-29" (and "2026-10-29T09:30" with a time), so forms and the API
 // read it as before.
-import * as Popover from '@radix-ui/react-popover';
 import { CalendarDays } from 'lucide-react';
 import { type Ref, useState } from 'react';
 import { useLocale } from '../../i18n';
 import { cn } from '../../lib/utils';
 import { Calendar } from './calendar';
 import { control, Input } from './input';
+import { Popover } from './popover';
 
 /** "2026-10-29" as a local date, or undefined. */
 function parseDay(value: string | undefined): Date | undefined {

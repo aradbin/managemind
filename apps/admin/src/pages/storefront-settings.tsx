@@ -1,7 +1,6 @@
 // Online store > Settings (phase-3-plan §3.6–§3.10, §7): search-engine
 // indexing, digits, tracking IDs, the cookie banner's text, chat buttons and
 // holiday mode. Saved through PATCH /store with the rest of the settings.
-
 import { formatPhone, normalizePhone } from '@managemind/shared/phone';
 import {
   CHAT_PLACEMENTS,
