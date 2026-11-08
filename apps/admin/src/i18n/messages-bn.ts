@@ -46,7 +46,7 @@ export const messagesBn: Record<keyof typeof messagesEn, string> = {
   'payments.mode.sandbox': 'স্যান্ডবক্স (পরীক্ষা)',
   'payments.mode.live': 'লাইভ',
   'payments.changeTitle': 'SSLCommerz অ্যাকাউন্ট বদলান',
-  'payments.keysNote': 'সেভের আগে SSLCommerz-এ যাচাই হয়, আর কখনো দেখানো হয় না।',
+  'payments.keysNote': 'সেভের আগে SSLCommerz-এ যাচাই করা হয়।',
   'payments.save': 'যাচাই করে সংরক্ষণ',
   'payments.checking': 'প্রোভাইডারের সাথে যাচাই হচ্ছে…',
   'payments.saved': 'যুক্ত হয়েছে। ক্রেতারা এখন অনলাইনে টাকা দিতে পারবেন।',

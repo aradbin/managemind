@@ -87,7 +87,7 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
             <div key={g.label} className="contents">
               <p
                 className={cn(
-                  'mb-1 px-2.5 text-xs font-medium text-muted-foreground',
+                  'mb-1 shrink-0 px-2.5 text-xs font-medium text-muted-foreground',
                   i > 0 && 'mt-3.5',
                 )}
               >
@@ -100,7 +100,7 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
                     key={p.to}
                     to={p.to}
                     aria-current={current ? 'page' : undefined}
-                    className="flex h-8 items-center rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+                    className="flex h-8 shrink-0 items-center rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
                   >
                     {t(p.label)}
                   </Link>

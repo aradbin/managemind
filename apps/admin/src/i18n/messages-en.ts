@@ -46,7 +46,7 @@ export const messagesEn = {
   'payments.mode.sandbox': 'Sandbox (testing)',
   'payments.mode.live': 'Live',
   'payments.changeTitle': 'Change SSLCommerz account',
-  'payments.keysNote': 'Checked with SSLCommerz before saving, and never shown again.',
+  'payments.keysNote': 'Checked with SSLCommerz before it is saved.',
   'payments.save': 'Check and save',
   'payments.checking': 'Checking with the provider…',
   'payments.saved': 'Connected. Customers can now pay online.',

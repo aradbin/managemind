@@ -120,7 +120,7 @@ export function ThemeSwitch({ labelledBy }: { labelledBy?: string }) {
       {...(labelledBy
         ? { 'aria-labelledby': labelledBy }
         : { 'aria-label': t('appearance.title') })}
-      className={cn(track, 'p-1')}
+      className={cn(track, 'h-9 p-[3px]')}
     >
       {THEME_CHOICES.map((c) => {
         const Icon = ICONS[c];
