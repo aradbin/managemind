@@ -46,6 +46,7 @@ import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/returns';
 import { RefundDialog } from '../components/refund-dialog';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, priceInput, readPrice, storeSettingsQuery } from '../lib/catalog';
 import { courierName, couriersQuery, orderedCouriers } from '../lib/couriers';
@@ -1706,17 +1707,12 @@ function PaymentDialog({ order: o, onClose }: { order: OrderDetail; onClose: () 
       >
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('order.method')}
-          <select
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
+          <Select
+            className="font-normal"
             value={method}
-            onChange={(e) => setMethod(e.target.value as typeof method)}
-          >
-            {MANUAL_METHODS.map((m) => (
-              <option key={m} value={m}>
-                {t(`method.${m}`)}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setMethod(next as typeof method)}
+            options={MANUAL_METHODS.map((m) => ({ value: m, label: t(`method.${m}`) }))}
+          />
         </label>
         <Field
           label={t('order.amount')}

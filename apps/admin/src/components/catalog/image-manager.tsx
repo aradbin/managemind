@@ -17,6 +17,7 @@ import { Notice } from '../notice';
 import { useToast } from '../toast';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Select } from '../ui/select';
 import { LANGUAGE_NAMES, type Lang, otherLang } from './language-tabs';
 
 interface Item {
@@ -258,21 +259,21 @@ export function ImageManager({
           {product.variants.map((v) => (
             <label key={v.id} className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
               <span>{variantLabel(product, v.id, locale)}</span>
-              <select
-                className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
+              <Select
+                className="w-auto"
                 value={variantImages[v.id] ?? ''}
-                onChange={(e) => {
-                  setVariantImages({ ...variantImages, [v.id]: e.target.value || null });
+                onChange={(next) => {
+                  setVariantImages({ ...variantImages, [v.id]: next || null });
                   setDirty(true);
                 }}
-              >
-                <option value="">{t('images.none')}</option>
-                {items.map((item, i) => (
-                  <option key={item.mediaId} value={item.mediaId}>
-                    {i === 0 ? t('images.main') : t('images.position', { n: i + 1 })}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: t('images.none') },
+                  ...items.map((item, i) => ({
+                    value: item.mediaId,
+                    label: i === 0 ? t('images.main') : t('images.position', { n: i + 1 }),
+                  })),
+                ]}
+              />
             </label>
           ))}
         </fieldset>

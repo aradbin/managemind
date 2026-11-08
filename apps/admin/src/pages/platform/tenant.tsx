@@ -25,6 +25,7 @@ import { Input } from '../../components/ui/input';
 import { useLocale } from '../../i18n';
 import { formatDateTime } from '../../lib/dates';
 import '../../i18n/launch';
+import { Select } from '../../components/ui/select';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { useRecordPage } from '../../lib/crumb';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
@@ -384,19 +385,16 @@ export function Lifecycle({
           <label htmlFor="lifecycle-category" className="text-sm font-medium">
             {t('tenant.category')}
           </label>
-          <select
+          {/* Overdue suspensions come from billing (phase-5b-plan §3.8). */}
+          <Select
             id="lifecycle-category"
             value={category}
-            onChange={(e) => setCategory(e.target.value as typeof category)}
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-          >
-            {/* Overdue suspensions come from billing (phase-5b-plan §3.8). */}
-            {(['abuse', 'client_request', 'other'] as const).map((r) => (
-              <option key={r} value={r}>
-                {t(`reason.${r}`)}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setCategory(next as typeof category)}
+            options={(['abuse', 'client_request', 'other'] as const).map((r) => ({
+              value: r,
+              label: t(`reason.${r}`),
+            }))}
+          />
         </div>
       )}
       <div className="flex flex-col gap-1.5">

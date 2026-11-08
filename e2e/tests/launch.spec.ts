@@ -9,7 +9,16 @@
 // Runs once per viewport, with its own seeded super admin, and axe on every
 // new screen.
 import { type Browser, expect, type Page, test } from '@playwright/test';
-import { createStore, expectAccessible, nextMail, signIn, signInHere, t, totp } from './helpers';
+import {
+  choose,
+  createStore,
+  expectAccessible,
+  nextMail,
+  signIn,
+  signInHere,
+  t,
+  totp,
+} from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API, STOREFRONT } from './urls';
 
@@ -127,7 +136,7 @@ test('onboarding, billing and closing a store', async ({ browser, viewport }, in
 
     await admin.getByRole('button', { name: t('pbilling.record') }).click();
     const pay = admin.getByRole('dialog');
-    await pay.getByLabel(t('pbilling.method')).selectOption('bkash');
+    await choose(pay.getByLabel(t('pbilling.method')), { value: 'bkash' });
     await pay.getByLabel(t('pbilling.reference')).fill('TX-E2E');
     await expectAccessible(admin, 'record a payment');
     await pay.getByRole('button', { name: t('pbilling.record') }).click();

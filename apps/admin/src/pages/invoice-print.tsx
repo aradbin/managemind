@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 import { InvoiceDocument } from '../components/invoice-document';
 import { Notice } from '../components/notice';
 import { Button } from '../components/ui/button';
-import { translate, useLocale } from '../i18n';
+import { LANGUAGES, translate, useLocale } from '../i18n';
 import '../i18n/billing';
 import '../i18n/orders';
+import { Select } from '../components/ui/select';
 import { storeInvoiceQuery } from '../lib/billing';
 import { errorMessage } from '../lib/errors';
 
@@ -36,14 +37,12 @@ export function InvoicePrintPage() {
       <div className="no-print sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b border-border bg-background p-3">
         <label className="ml-auto flex items-center gap-2 text-sm">
           {t('print.language')}
-          <select
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
+          <Select
+            className="w-auto"
             value={lang}
-            onChange={(e) => setLang(e.target.value as Locale)}
-          >
-            <option value="bn">বাংলা</option>
-            <option value="en">English</option>
-          </select>
+            onChange={(next) => setLang(next as Locale)}
+            options={LANGUAGES}
+          />
         </label>
         <Button disabled={!invoice.data} onClick={() => window.print()}>
           <Printer aria-hidden className="size-4" />

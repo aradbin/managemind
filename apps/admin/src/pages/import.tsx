@@ -38,6 +38,7 @@ import { download, toCsv } from './export';
 const CHUNK = 10;
 const IMAGE_CONCURRENCY = 3;
 
+import { Select } from '../components/ui/select';
 import { type Parsed, parseFile } from '../lib/sheet';
 
 export { type Parsed, parseFile };
@@ -335,29 +336,32 @@ function Mapping({
                   {parsed.rows[0]?.[i] ?? ''}
                 </span>
               </span>
-              <select
-                aria-label={t('import.mapTo', { column: header || String(i + 1) })}
-                className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
+              <Select
+                ariaLabel={t('import.mapTo', { column: header || String(i + 1) })}
+                className="w-auto"
                 value={refValue(choices[i] ?? null)}
-                onChange={(e) => {
-                  setChoices(choices.map((c, j) => (j === i ? refFrom(e.target.value) : c)));
+                onChange={(next) => {
+                  setChoices(choices.map((c, j) => (j === i ? refFrom(next) : c)));
                   setDry(null);
                 }}
-              >
-                <option value="">{t('import.ignore')}</option>
-                {/* A recognized attribute column the store doesn't have yet keeps its choice. */}
-                {choices[i]?.field === 'attribute' &&
-                  !known.has(choices[i]?.attributeKey ?? '') && (
-                    <option value={refValue(choices[i] ?? null)}>
-                      {exportHeader(choices[i] as ColumnRef, locale)}
-                    </option>
-                  )}
-                {targets.map((ref) => (
-                  <option key={columnId(ref)} value={columnId(ref)}>
-                    {exportHeader(ref, locale)}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: t('import.ignore') },
+                  // A recognized attribute column the store doesn't have yet keeps its choice.
+                  ...(choices[i]?.field === 'attribute' &&
+                  !known.has(choices[i]?.attributeKey ?? '')
+                    ? [
+                        {
+                          value: refValue(choices[i] ?? null),
+                          label: exportHeader(choices[i] as ColumnRef, locale),
+                        },
+                      ]
+                    : []),
+                  ...targets.map((ref) => ({
+                    value: columnId(ref),
+                    label: exportHeader(ref, locale),
+                  })),
+                ]}
+              />
             </li>
           ))}
         </ul>

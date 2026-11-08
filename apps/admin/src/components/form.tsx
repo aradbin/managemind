@@ -10,6 +10,7 @@ import {
   FormProvider,
   type Path,
   type UseFormReturn,
+  useController,
   useFormContext,
 } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,6 +19,7 @@ import { ApiError } from '../lib/api';
 import { cn } from '../lib/utils';
 import { fieldHint, fieldLabel } from './field-styles';
 import { Input } from './ui/input';
+import { Select } from './ui/select';
 import { switchLook } from './ui/switch';
 
 export { fieldHint, fieldLabel };
@@ -236,23 +238,22 @@ export function SelectField({
   options: readonly { value: string; label: string; disabled?: boolean }[];
   disabled?: boolean;
 }) {
-  const { register } = useFormContext();
+  const { field } = useController({ name });
   const error = useFieldError(name);
   return (
     <FieldShell label={label} hint={hint} error={error}>
       {(a11y) => (
-        <select
-          {...a11y}
-          {...register(name)}
+        <Select
+          id={a11y.id}
+          invalid={a11y['aria-invalid']}
+          describedBy={a11y['aria-describedby']}
+          ref={field.ref}
+          value={field.value == null ? '' : String(field.value)}
+          onChange={field.onChange}
+          onBlur={field.onBlur}
           disabled={disabled}
-          className="w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] disabled:opacity-50"
-        >
-          {options.map((o) => (
-            <option key={o.value} value={o.value} disabled={o.disabled}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          options={options}
+        />
       )}
     </FieldShell>
   );

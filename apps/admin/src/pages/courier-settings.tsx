@@ -26,6 +26,7 @@ import { ChoiceChips } from '../components/ui/segmented';
 import { SwitchRow } from '../components/ui/switch';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { type ConnectedCourier, courierName, couriersQuery } from '../lib/couriers';
@@ -263,18 +264,15 @@ function CourierCard({
                   {t('couriers.pickupStore')}
                 </label>
                 {check.data?.pickupStores.length ? (
-                  <select
+                  <Select
                     id={`${courier}-pickup`}
-                    className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-                    value={pickup ?? ''}
-                    onChange={(e) => setPickup(Number(e.target.value))}
-                  >
-                    {check.data.pickupStores.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
+                    value={pickup == null ? '' : String(pickup)}
+                    onChange={(next) => setPickup(Number(next))}
+                    options={check.data.pickupStores.map((p) => ({
+                      value: String(p.id),
+                      label: p.name,
+                    }))}
+                  />
                 ) : (
                   <p id={`${courier}-pickup`} className="text-sm text-muted-foreground">
                     {t('couriers.pickupNone')}

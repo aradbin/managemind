@@ -15,6 +15,7 @@ import { useToast } from '../components/toast';
 import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
+import { Combobox } from '../components/ui/combobox';
 import { Dialog } from '../components/ui/dialog';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
@@ -422,23 +423,25 @@ function ZoneDialog({
             </details>
             <div className="flex flex-col gap-2">
               <span className="text-sm">{t('delivery.areas', { count: areaIds.length })}</span>
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                {t('delivery.areasIn')}
-                <select
-                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
-                  value={pickDistrict ?? ''}
-                  onChange={(e) => setPickDistrict(e.target.value ? Number(e.target.value) : null)}
-                >
-                  <option value="">{t('place.choose')}</option>
-                  {[...geo.GEOGRAPHY.districts]
+              <div className="flex flex-col gap-1.5 text-sm font-medium">
+                <label htmlFor="zone-district">{t('delivery.areasIn')}</label>
+                {/* 64 districts: the searchable select (design rule 3). */}
+                <Combobox
+                  id="zone-district"
+                  className="font-normal"
+                  searchLabel={t('place.findDistrict')}
+                  placeholder={t('place.choose')}
+                  value={pickDistrict === null ? '' : String(pickDistrict)}
+                  onChange={(v) => setPickDistrict(v ? Number(v) : null)}
+                  options={[...geo.GEOGRAPHY.districts]
                     .sort((a, b) => a[locale].localeCompare(b[locale], locale))
-                    .map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d[locale]}
-                      </option>
-                    ))}
-                </select>
-              </label>
+                    .map((d) => ({
+                      value: String(d.id),
+                      label: d[locale],
+                      keywords: `${d.bn} ${d.en}`,
+                    }))}
+                />
+              </div>
               {pickDistrict !== null && (
                 <div className="grid max-h-60 grid-cols-2 gap-x-3 overflow-y-auto md:grid-cols-3">
                   {idx.areasOf(pickDistrict).map((a) => (

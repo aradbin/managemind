@@ -50,7 +50,7 @@ test('catalog flows', async ({ page }, info) => {
     let dialog = page.getByRole('dialog');
     await dialog.getByLabel(`${t('attributes.name')} (বাংলা)`).fill('কাপড়');
     await dialog.getByLabel(t('attributes.key')).fill('fabric');
-    await dialog.getByLabel(t('attributes.type')).selectOption('choice');
+    await choose(dialog.getByLabel(t('attributes.type')), { value: 'choice' });
     for (const value of ['সুতি', 'সিল্ক']) {
       await dialog.getByLabel(t('attributes.newValue')).fill(value);
       await dialog.getByRole('button', { name: t('options.addValue') }).click();

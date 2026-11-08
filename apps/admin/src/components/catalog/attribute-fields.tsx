@@ -11,6 +11,7 @@ import { type Attribute, attributesQuery, pick } from '../../lib/catalog';
 import { Button } from '../ui/button';
 import { Combobox } from '../ui/combobox';
 import { Input } from '../ui/input';
+import { Select } from '../ui/select';
 import { LANGUAGE_NAMES, type Lang, otherLang } from './language-tabs';
 
 /** The editor's state for one attribute: what the API's ProductAttributeInput carries. */
@@ -269,19 +270,17 @@ function AttributeField({
     );
   } else if (draft.type === 'boolean') {
     input = (
-      <select
+      <Select
         id={id}
         disabled={disabled}
-        className="w-full h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
         value={draft.value === null ? '' : draft.value ? 'yes' : 'no'}
-        onChange={(e) =>
-          onChange({ ...draft, value: e.target.value === '' ? null : e.target.value === 'yes' })
-        }
-      >
-        <option value="">—</option>
-        <option value="yes">{t('specs.yes')}</option>
-        <option value="no">{t('specs.no')}</option>
-      </select>
+        onChange={(v) => onChange({ ...draft, value: v === '' ? null : v === 'yes' })}
+        options={[
+          { value: '', label: '—' },
+          { value: 'yes', label: t('specs.yes') },
+          { value: 'no', label: t('specs.no') },
+        ]}
+      />
     );
   } else {
     const textDraft = draft as Extract<AttributeDraft, { type: 'text' }>;

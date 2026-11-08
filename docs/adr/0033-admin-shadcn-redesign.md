@@ -77,7 +77,7 @@ The build comes in steps. This first step changes what every page shares, so eve
 
   The full-page editors (product, promotion, collection) end in a save bar (`components/save-bar.tsx`): Discard · Save once something changes, Cancel · Create … for a new record. Delete and archive sit in the header's ⋯. Date presets are one shared filter (`dateRangeFilter`).
 - Form controls follow design rules 3 and 10:
-  - native selects are drawn like the design's select, with the up-down chevron, and stay native, so phones keep their own picker;
+  - short selects (`components/ui/select.tsx`) are shadcn/ui's Select on Radix on desktops, so their open list is drawn in the admin's colours in both themes (native lists were unreadable in the dark theme), and stay native on phones, so phones keep their own picker; the native options take the popover colours;
   - checkboxes and radios are 16 px;
   - `SwitchField` and `Switch` are drawn as switches; `SwitchField` stays a checkbox to assistive tech, so its forms and the E2E keep working;
   - the বাংলা | English tabs are a segmented control.
@@ -86,7 +86,7 @@ The build comes in steps. This first step changes what every page shares, so eve
   - a product's choice specifications and "Add a specification";
   - collection rules and the theme editor's link target.
 
-  Typing matches either language's name. Short fixed lists stay native selects, which phones show with their own picker. The E2E picks through a `choose()` helper.
+  Typing matches either language's name. Short fixed lists use `Select`, native on phones. The E2E picks through a `choose()` helper, which also picks from a native select.
 - Filters pick several values (design rule 4). The list endpoints read a comma-separated filter as "any of these" (`oneOrMany` in `@managemind/shared/query`), for:
   - orders' payment, source, zone and flag;
   - products' category and brand;

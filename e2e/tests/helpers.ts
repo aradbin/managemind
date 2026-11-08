@@ -258,6 +258,17 @@ export async function choose(
   trigger: Locator,
   pick: { value: string } | { label: string } | { index: number },
 ): Promise<void> {
+  // Short selects stay native on phones (components/ui/select.tsx).
+  if (await trigger.evaluate((el) => el instanceof HTMLSelectElement)) {
+    await trigger.selectOption(
+      'value' in pick
+        ? pick.value
+        : 'label' in pick
+          ? { label: pick.label }
+          : { index: pick.index },
+    );
+    return;
+  }
   await trigger.click();
   const list = trigger.page().getByRole('listbox');
   const option =

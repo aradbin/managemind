@@ -10,7 +10,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { couriersBn } from '../../apps/admin/src/i18n/couriers-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
-import { expectAccessible, signIn } from './helpers';
+import { choose, expectAccessible, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -144,7 +144,7 @@ test('couriers', async ({ page }, info) => {
       ['picked_up', 'shipped'],
       ['delivered', 'delivered'],
     ] as const) {
-      await page.getByLabel(m('couriers.fake.move')).selectOption(status);
+      await choose(page.getByLabel(m('couriers.fake.move')), { value: status });
       await page.getByRole('button', { name: m('couriers.fake.move') }).click();
       // The toast of the move before may still show: wait for the order itself.
       await expect
@@ -241,7 +241,7 @@ test('couriers', async ({ page }, info) => {
     await expectAccessible(page, 'COD reconciliation');
     await page.getByRole('button', { name: m('cod.record') }).click();
     const dialog = page.getByRole('dialog', { name: m('cod.record') });
-    await dialog.getByLabel(m('cod.courier'), { exact: true }).selectOption('fake');
+    await choose(dialog.getByLabel(m('cod.courier'), { exact: true }), { value: 'fake' });
     await dialog.getByLabel(m('cod.reference')).fill(`e2e-${stamp}`);
     await dialog.getByLabel(m('cod.record.consignments')).fill(delivered);
     await dialog.getByRole('button', { name: m('cod.preview') }).click();
