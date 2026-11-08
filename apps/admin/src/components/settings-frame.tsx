@@ -79,7 +79,9 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
       <div className="flex flex-col gap-4 md:grid md:grid-cols-[200px_minmax(0,780px)] md:items-start md:gap-8">
         <nav
           aria-label={t('settings.title')}
-          className="sticky top-0 flex flex-col gap-px max-md:hidden"
+          // Scrolls by itself once its links outgrow the window: the page
+          // scrolls in #main, under the 48 px header and the inset's margins.
+          className="sticky top-0 flex max-h-[calc(100dvh-5.5rem)] flex-col gap-px overflow-y-auto overscroll-contain pr-1 pb-1 [scrollbar-width:thin] max-md:hidden"
         >
           {groups.map((g, i) => (
             <div key={g.label} className="contents">

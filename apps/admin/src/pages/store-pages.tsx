@@ -172,7 +172,7 @@ export function StorePagesPage() {
     },
   ];
   return (
-    <div className="flex w-full max-w-[860px] flex-col gap-3 md:gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PhoneRecordHeader to="/online-store" backLabel={t('theme.back')} title={t('pages.title')}>
         {newMenu(true)}
       </PhoneRecordHeader>

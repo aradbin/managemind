@@ -259,8 +259,9 @@ export function NewOrderPage() {
         }),
       ),
     // Both the form and its debounced copy: the copy lags the first item by 300 ms.
-    enabled:
-      linesValid && debounced.lines.length > 0 && (!delivery || address !== null || zone !== ''),
+    // Quoted from the first item: before an address or a zone the server
+    // leaves delivery out, so the items' prices and the subtotal show at once.
+    enabled: linesValid && debounced.lines.length > 0,
     retry: false,
     placeholderData: (prev) => prev,
   });
@@ -330,6 +331,8 @@ export function NewOrderPage() {
     ? geo.data?.geoIndex().district(place.districtId)?.[locale]
     : undefined;
   const autoZone = q?.zone?.id ?? null;
+  // A delivery order with no address or zone yet: its quote has no delivery.
+  const deliveryLater = delivery && address === null && zone === '';
   const chosenZone = zone || autoZone;
   const zoneName = (id: string | null) => {
     const z = zones.data?.find((x) => x.id === id);
@@ -959,7 +962,13 @@ export function NewOrderPage() {
                       : t('order.delivery')
                   }
                 >
-                  {money(q.totals.deliveryFee - q.totals.deliveryDiscount)}
+                  {deliveryLater ? (
+                    <span className="font-normal text-muted-foreground">
+                      {t('newOrder.deliveryLater')}
+                    </span>
+                  ) : (
+                    money(q.totals.deliveryFee - q.totals.deliveryDiscount)
+                  )}
                 </Row>
                 {q.totals.vatTotal > 0 && (
                   <Row label={t(q.totals.vatIncluded ? 'order.vatIncluded' : 'order.vat')}>

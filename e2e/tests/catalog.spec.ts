@@ -306,11 +306,13 @@ test('catalog flows', async ({ page }, info) => {
 
   if (big) {
     await test.step('the imported products read in English too', async () => {
-      await page.getByRole('button', { name: t('language.switch') }).click();
+      await page.getByRole('button', { name: t('more.language') }).click();
+      await page.getByRole('menuitemradio', { name: 'English' }).click();
       await page.getByLabel(en['products.search']).fill('Fixture Panjabi 7');
       await expect(visible(page, 'Fixture Panjabi 7')).toBeVisible();
       await expectAccessible(page, 'product list in English');
-      await page.getByRole('button', { name: en['language.switch'] }).click();
+      await page.getByRole('button', { name: en['more.language'] }).click();
+      await page.getByRole('menuitemradio', { name: 'বাংলা' }).click();
     });
   }
 

@@ -1,6 +1,6 @@
 // The account menu in the header, behind the person's initials (ADR 0033):
 // who is signed in, the account page,
-// the dev mailbox outside production, light or dark, and sign out.
+// the dev mailbox outside production, the appearance on one row, and sign out.
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -8,7 +8,7 @@ import { useLocale } from '../i18n';
 import { healthQuery, type Me } from '../lib/api';
 import { auth } from '../lib/auth';
 import { initials } from './store-switcher';
-import { ThemeMenuItems } from './theme-choice';
+import { ThemeMenuRow } from './theme-choice';
 import { menuContent, menuItem, menuSeparator } from './ui/menu';
 
 /** Signs out, forgets this account's data, and goes back to sign-in. */
@@ -56,7 +56,7 @@ export function AccountMenu({ me }: { me: Me }) {
             </Menu.Item>
           )}
           <Menu.Separator className={menuSeparator} />
-          <ThemeMenuItems item={item} />
+          <ThemeMenuRow />
           <Menu.Separator className={menuSeparator} />
           <Menu.Item className={item} onSelect={signOut}>
             {t('action.signOut')}

@@ -50,11 +50,9 @@ test('owner, staff and super admin flows', async ({ browser, viewport }, info) =
     const html = owner.locator('html');
     const pick = async (label: string) => {
       if (phone) {
-        // The phone Menu has a Dark mode switch; off is the light theme.
+        // The phone Menu has an Appearance row: device, light or dark.
         await owner.goto(`${API}/more`);
-        await owner
-          .getByRole('switch', { name: t('more.darkMode') })
-          .setChecked(label === t('appearance.dark'));
+        await owner.getByRole('radio', { name: label }).check();
       } else {
         await owner.getByRole('button', { name: t('account.menu') }).click();
         await owner.getByRole('menuitemradio', { name: label }).click();

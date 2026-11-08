@@ -66,6 +66,12 @@ export async function loadLocale(locale: Locale): Promise<void> {
 
 const STORAGE_KEY = 'mm.locale';
 
+/** The admin's languages, each named in itself. */
+export const LANGUAGES: readonly { value: Locale; label: string }[] = [
+  { value: 'bn', label: 'বাংলা' },
+  { value: 'en', label: 'English' },
+];
+
 export function initialLocale(): Locale {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);

@@ -7,9 +7,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ConfirmDialog } from '../components/confirm-dialog';
 import { type Column, DataList } from '../components/data-list';
 import { SearchInput, StageTabs, ToolbarSummary } from '../components/list-tools';
-import { Notice } from '../components/notice';
 import { PageHeader } from '../components/page-header';
 import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
@@ -38,6 +38,8 @@ export function CourierReturnsPage() {
   }, [text]);
   const list = useQuery(courierReturnsQuery(tab, q));
   const counts = list.data?.counts;
+  // Received restocks the parcel's items, so it asks first.
+  const [confirming, setConfirming] = useState<CourierReturn | null>(null);
   const receive = useMutation({
     mutationFn: async (id: string) =>
       unwrap(
@@ -47,6 +49,7 @@ export function CourierReturnsPage() {
         }),
       ),
     onSuccess: async () => {
+      setConfirming(null);
       toast(t('couriers.receivedDone'));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['courier-returns'] }),
@@ -61,8 +64,11 @@ export function CourierReturnsPage() {
       <Button
         variant="secondary"
         className="relative z-[1]"
-        disabled={receive.isPending}
-        onClick={() => receive.mutate(r.shipmentId)}
+        disabled={receive.isPending && receive.variables === r.shipmentId}
+        onClick={() => {
+          receive.reset();
+          setConfirming(r);
+        }}
       >
         <Check aria-hidden />
         {t('couriers.received')}
@@ -168,7 +174,6 @@ export function CourierReturnsPage() {
           </ToolbarSummary>
         )}
       </div>
-      {receive.error && <Notice tone="error">{saveErrorMessage(receive.error, t)}</Notice>}
       <DataList
         label={t('couriers.returns.title')}
         items={list.data?.items}
@@ -204,6 +209,20 @@ export function CourierReturnsPage() {
         )}
       />
       <p className="text-[13px] text-muted-foreground">{t('couriers.returns.footnote')}</p>
+      {confirming && (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => !open && !receive.isPending && setConfirming(null)}
+          title={t('couriers.receiveTitle', { number: confirming.displayNumber })}
+          confirmLabel={t('couriers.received')}
+          destructive={false}
+          busy={receive.isPending}
+          error={receive.error ? saveErrorMessage(receive.error, t) : undefined}
+          onConfirm={() => receive.mutate(confirming.shipmentId)}
+        >
+          <p>{t('couriers.receiveBody', { parcel: parcel(confirming) })}</p>
+        </ConfirmDialog>
+      )}
     </div>
   );
 }

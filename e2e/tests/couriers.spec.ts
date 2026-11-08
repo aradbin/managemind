@@ -189,6 +189,11 @@ test('couriers', async ({ page }, info) => {
       .locator('visible=true')
       .first();
     await row.getByRole('button', { name: m('couriers.received') }).click();
+    // It asks first: the parcel's items go back into stock.
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: m('couriers.received') })
+      .click();
     await expect(toast(page, m('couriers.receivedDone'))).toBeVisible();
     expect((await order(`/v1/admin/orders/${placed.id}`)).shipments[0]?.status).toBe('returned');
   });

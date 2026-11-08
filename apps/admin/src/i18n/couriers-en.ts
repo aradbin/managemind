@@ -106,6 +106,9 @@ export const couriersEn = {
   'couriers.returnedByCourier': '{courier} says the parcel is back with you.',
   'couriers.received': 'Received',
   'couriers.receivedDone': 'Back in stock.',
+  'couriers.receiveTitle': 'Mark {number} as received?',
+  'couriers.receiveBody':
+    'Only once the parcel is in your hands: {parcel}. Its items go back into stock.',
   'couriers.events': 'Courier updates',
   'couriers.collected': 'Collected {amount}',
   'couriers.fee': 'Courier fee {amount}',

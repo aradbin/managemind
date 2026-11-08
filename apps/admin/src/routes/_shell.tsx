@@ -27,13 +27,11 @@ import {
   LayoutGrid,
   type LucideIcon,
   Menu as MenuIcon,
-  Moon,
   Package,
   PanelLeft,
   Plus,
   Search,
   ShoppingBag,
-  Sun,
   Truck,
   Users,
   Wallet,
@@ -55,6 +53,7 @@ import {
 import { usePermission } from '../components/permission-gate';
 import { SearchDialog } from '../components/search-dialog';
 import { StoreSwitcher } from '../components/store-switcher';
+import { ThemeMenu } from '../components/theme-choice';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { menuContent, menuItem, menuSeparator } from '../components/ui/menu';
@@ -65,7 +64,6 @@ import { useRecord } from '../lib/crumb';
 import { formatDateTime } from '../lib/dates';
 import { errorMessage } from '../lib/errors';
 import { chooseStore, refreshAccess } from '../lib/store';
-import { setThemeChoice, useThemeChoice } from '../lib/theme';
 import { cn } from '../lib/utils';
 
 // Only owners are asked to accept the platform terms (phase-5b-plan §3.4).
@@ -206,7 +204,7 @@ function Shell() {
             <div className="hidden items-center gap-2 md:flex">
               <ViewStore />
               <LanguageSwitch />
-              <ThemeToggle />
+              <ThemeMenu />
               <HelpMenu />
               <span aria-hidden className="mx-1 h-4 w-px bg-border" />
               <AccountMenu me={me} />
@@ -250,6 +248,7 @@ function Shell() {
         )}
         <main
           id="main"
+          data-scroll-restoration-id="main"
           className={cn(
             'flex min-w-0 flex-1 flex-col p-4 md:min-h-0 md:overflow-y-auto md:bg-canvas md:px-6 md:pt-5 md:pb-6',
             record && 'max-md:p-3',
@@ -633,29 +632,6 @@ type CreateTo =
   | '/inventory/suppliers'
   | '/inventory/counts'
   | '/online-store/pages';
-
-/** Light or dark in one press; the account menu also offers the device's setting. */
-function ThemeToggle() {
-  const { t } = useLocale();
-  const choice = useThemeChoice();
-  const dark =
-    choice === 'dark' ||
-    (choice === 'system' &&
-      typeof document !== 'undefined' &&
-      document.documentElement.dataset.theme === 'dark');
-  const label = t(dark ? 'appearance.toLight' : 'appearance.toDark');
-  return (
-    <Button
-      variant="secondary"
-      size="icon"
-      aria-label={label}
-      title={label}
-      onClick={() => setThemeChoice(dark ? 'light' : 'dark')}
-    >
-      {dark ? <Sun aria-hidden /> : <Moon aria-hidden />}
-    </Button>
-  );
-}
 
 /** A tab in the phone's bar: the icon in a pill when it's the current page. */
 function Tab({

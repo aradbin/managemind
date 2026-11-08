@@ -97,6 +97,8 @@ export const couriersBn: Record<keyof typeof couriersEn, string> = {
   'couriers.returnedByCourier': '{courier} বলছে পার্সেলটি আপনার কাছে ফিরেছে।',
   'couriers.received': 'পেয়েছি',
   'couriers.receivedDone': 'স্টকে ফিরেছে।',
+  'couriers.receiveTitle': '{number} পেয়েছেন?',
+  'couriers.receiveBody': 'পার্সেলটি হাতে পাওয়ার পরই করুন: {parcel}। এর পণ্যগুলো স্টকে ফিরে যাবে।',
   'couriers.events': 'কুরিয়ারের আপডেট',
   'couriers.collected': 'আদায় {amount}',
   'couriers.fee': 'কুরিয়ার চার্জ {amount}',
