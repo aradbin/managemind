@@ -45,6 +45,8 @@ export const messagesEn = {
   'payments.mode': 'Account',
   'payments.mode.sandbox': 'Sandbox (testing)',
   'payments.mode.live': 'Live',
+  'payments.changeTitle': 'Change SSLCommerz account',
+  'payments.keysNote': 'Checked with SSLCommerz before saving, and never shown again.',
   'payments.save': 'Check and save',
   'payments.checking': 'Checking with the provider…',
   'payments.saved': 'Connected. Customers can now pay online.',
@@ -144,6 +146,7 @@ export const messagesEn = {
   'log.empty': 'No messages yet.',
   'log.more': 'Show more',
   'sms.title': 'SMS gateway',
+  'sms.panelNote': 'Each message is charged to your account.',
   'sms.connect': 'Connect a gateway',
   'notify.useOwnAddress': 'Use your own address',
   'sms.hint':

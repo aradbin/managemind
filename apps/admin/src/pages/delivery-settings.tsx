@@ -16,7 +16,7 @@ import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { Combobox } from '../components/ui/combobox';
-import { Dialog } from '../components/ui/dialog';
+import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import { api, unwrap } from '../lib/api';
@@ -299,200 +299,202 @@ function ZoneDialog({
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(v) => !v && onClose()}
       title={t(zone ? 'delivery.edit' : 'delivery.add')}
     >
-      <form
-        className="flex flex-col gap-4"
+      <SheetForm
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
       >
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field
-            label={t('delivery.nameBn')}
-            lang="bn"
-            value={nameBn}
-            maxLength={60}
-            onChange={(e) => setNameBn(e.target.value)}
-          />
-          <Field
-            label={t('delivery.nameEn')}
-            lang="en"
-            value={nameEn}
-            maxLength={60}
-            onChange={(e) => setNameEn(e.target.value)}
-          />
-        </div>
-        <Field
-          label={t('delivery.fee')}
-          inputMode="decimal"
-          value={fee}
-          onChange={(e) => setFee(e.target.value)}
-        />
-        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            checked={weighted}
-            onChange={(e) => setWeighted(e.target.checked)}
-          />
-          {t('delivery.byWeight')}
-        </label>
-        {weighted && (
+        <SheetBody>
           <div className="grid gap-3 md:grid-cols-2">
             <Field
-              label={t('delivery.freeKg')}
-              inputMode="decimal"
-              value={freeKg}
-              onChange={(e) => setFreeKg(e.target.value)}
+              label={t('delivery.nameBn')}
+              lang="bn"
+              value={nameBn}
+              maxLength={60}
+              onChange={(e) => setNameBn(e.target.value)}
             />
             <Field
-              label={t('delivery.perKg')}
-              inputMode="decimal"
-              value={perKg}
-              onChange={(e) => setPerKg(e.target.value)}
+              label={t('delivery.nameEn')}
+              lang="en"
+              value={nameEn}
+              maxLength={60}
+              onChange={(e) => setNameEn(e.target.value)}
             />
           </div>
-        )}
-        <div className="grid gap-3 md:grid-cols-2">
           <Field
-            label={t('delivery.estimateBn')}
-            lang="bn"
-            hint={t('delivery.estimateHint')}
-            value={estBn}
-            maxLength={60}
-            onChange={(e) => setEstBn(e.target.value)}
+            label={t('delivery.fee')}
+            inputMode="decimal"
+            value={fee}
+            onChange={(e) => setFee(e.target.value)}
           />
-          <Field
-            label={t('delivery.estimateEn')}
-            lang="en"
-            value={estEn}
-            maxLength={60}
-            onChange={(e) => setEstEn(e.target.value)}
-          />
-        </div>
-        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input
-            type="checkbox"
-            checked={fallback}
-            disabled={otherFallback && !fallback}
-            onChange={(e) => setFallback(e.target.checked)}
-          />
-          <span>
-            {t('delivery.fallback')}
-            {otherFallback && !fallback && (
-              <span className="block text-sm text-muted-foreground">
-                {t('delivery.fallbackTaken')}
-              </span>
-            )}
-          </span>
-        </label>
-        {!fallback && (
-          <fieldset className="flex flex-col gap-3">
-            <legend className="mb-1 font-medium">{t('delivery.coverage')}</legend>
-            <details>
-              <summary className="min-h-11 cursor-pointer py-2 text-sm">
-                {t('delivery.districts', { count: districtIds.length })}
-              </summary>
-              <div className="flex max-h-72 flex-col gap-3 overflow-y-auto">
-                {geo.GEOGRAPHY.divisions.map((div) => (
-                  <div key={div.id}>
-                    <p className="text-sm font-medium">{div[locale]}</p>
-                    <div className="grid grid-cols-2 gap-x-3 md:grid-cols-3">
-                      {idx.districtsOf(div.id).map((d) => (
-                        <label
-                          key={d.id}
-                          className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
-                        >
-                          <input
-                            type="checkbox"
-                            disabled={taken.has(`d${d.id}`)}
-                            checked={districtIds.includes(d.id)}
-                            onChange={() => toggle(districtIds, setDistrictIds, d.id)}
-                          />
-                          {d[locale]}
-                        </label>
-                      ))}
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
+            <input
+              type="checkbox"
+              checked={weighted}
+              onChange={(e) => setWeighted(e.target.checked)}
+            />
+            {t('delivery.byWeight')}
+          </label>
+          {weighted && (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Field
+                label={t('delivery.freeKg')}
+                inputMode="decimal"
+                value={freeKg}
+                onChange={(e) => setFreeKg(e.target.value)}
+              />
+              <Field
+                label={t('delivery.perKg')}
+                inputMode="decimal"
+                value={perKg}
+                onChange={(e) => setPerKg(e.target.value)}
+              />
+            </div>
+          )}
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field
+              label={t('delivery.estimateBn')}
+              lang="bn"
+              hint={t('delivery.estimateHint')}
+              value={estBn}
+              maxLength={60}
+              onChange={(e) => setEstBn(e.target.value)}
+            />
+            <Field
+              label={t('delivery.estimateEn')}
+              lang="en"
+              value={estEn}
+              maxLength={60}
+              onChange={(e) => setEstEn(e.target.value)}
+            />
+          </div>
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
+            <input
+              type="checkbox"
+              checked={fallback}
+              disabled={otherFallback && !fallback}
+              onChange={(e) => setFallback(e.target.checked)}
+            />
+            <span>
+              {t('delivery.fallback')}
+              {otherFallback && !fallback && (
+                <span className="block text-sm text-muted-foreground">
+                  {t('delivery.fallbackTaken')}
+                </span>
+              )}
+            </span>
+          </label>
+          {!fallback && (
+            <fieldset className="flex flex-col gap-3">
+              <legend className="mb-1 font-medium">{t('delivery.coverage')}</legend>
+              <details>
+                <summary className="min-h-11 cursor-pointer py-2 text-sm">
+                  {t('delivery.districts', { count: districtIds.length })}
+                </summary>
+                <div className="flex max-h-72 flex-col gap-3 overflow-y-auto">
+                  {geo.GEOGRAPHY.divisions.map((div) => (
+                    <div key={div.id}>
+                      <p className="text-sm font-medium">{div[locale]}</p>
+                      <div className="grid grid-cols-2 gap-x-3 md:grid-cols-3">
+                        {idx.districtsOf(div.id).map((d) => (
+                          <label
+                            key={d.id}
+                            className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                          >
+                            <input
+                              type="checkbox"
+                              disabled={taken.has(`d${d.id}`)}
+                              checked={districtIds.includes(d.id)}
+                              onChange={() => toggle(districtIds, setDistrictIds, d.id)}
+                            />
+                            {d[locale]}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </details>
-            <div className="flex flex-col gap-2">
-              <span className="text-sm">{t('delivery.areas', { count: areaIds.length })}</span>
-              <div className="flex flex-col gap-1.5 text-sm font-medium">
-                <label htmlFor="zone-district">{t('delivery.areasIn')}</label>
-                {/* 64 districts: the searchable select (design rule 3). */}
-                <Combobox
-                  id="zone-district"
-                  className="font-normal"
-                  searchLabel={t('place.findDistrict')}
-                  placeholder={t('place.choose')}
-                  value={pickDistrict === null ? '' : String(pickDistrict)}
-                  onChange={(v) => setPickDistrict(v ? Number(v) : null)}
-                  options={[...geo.GEOGRAPHY.districts]
-                    .sort((a, b) => a[locale].localeCompare(b[locale], locale))
-                    .map((d) => ({
-                      value: String(d.id),
-                      label: d[locale],
-                      keywords: `${d.bn} ${d.en}`,
-                    }))}
-                />
-              </div>
-              {pickDistrict !== null && (
-                <div className="grid max-h-60 grid-cols-2 gap-x-3 overflow-y-auto md:grid-cols-3">
-                  {idx.areasOf(pickDistrict).map((a) => (
-                    <label
-                      key={a.id}
-                      className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
-                    >
-                      <input
-                        type="checkbox"
-                        disabled={taken.has(`a${a.id}`)}
-                        checked={areaIds.includes(a.id)}
-                        onChange={() => toggle(areaIds, setAreaIds, a.id)}
-                      />
-                      {a[locale]}
-                    </label>
                   ))}
                 </div>
-              )}
-              {areaIds.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {areaIds
-                    .map((id) => idx.area(id)?.[locale])
-                    .filter(Boolean)
-                    .join(', ')}
-                </p>
-              )}
-            </div>
-          </fieldset>
-        )}
-        <label className="flex min-h-10 items-center gap-3 md:min-h-9">
-          <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-          {t('delivery.active')}
-        </label>
-        {invalid && <Notice tone="error">{t('delivery.invalid')}</Notice>}
-        {(save.error ?? remove.error) && (
-          <Notice tone="error">{orderErrorMessage(save.error ?? remove.error, t)}</Notice>
-        )}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          {zone && (
-            <Button variant="ghost" className="md:mr-auto" onClick={() => setConfirmDelete(true)}>
-              {t('action.delete')}
-            </Button>
+              </details>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm">{t('delivery.areas', { count: areaIds.length })}</span>
+                <div className="flex flex-col gap-1.5 text-sm font-medium">
+                  <label htmlFor="zone-district">{t('delivery.areasIn')}</label>
+                  {/* 64 districts: the searchable select (design rule 3). */}
+                  <Combobox
+                    id="zone-district"
+                    className="font-normal"
+                    searchLabel={t('place.findDistrict')}
+                    placeholder={t('place.choose')}
+                    value={pickDistrict === null ? '' : String(pickDistrict)}
+                    onChange={(v) => setPickDistrict(v ? Number(v) : null)}
+                    options={[...geo.GEOGRAPHY.districts]
+                      .sort((a, b) => a[locale].localeCompare(b[locale], locale))
+                      .map((d) => ({
+                        value: String(d.id),
+                        label: d[locale],
+                        keywords: `${d.bn} ${d.en}`,
+                      }))}
+                  />
+                </div>
+                {pickDistrict !== null && (
+                  <div className="grid max-h-60 grid-cols-2 gap-x-3 overflow-y-auto md:grid-cols-3">
+                    {idx.areasOf(pickDistrict).map((a) => (
+                      <label
+                        key={a.id}
+                        className="flex min-h-10 items-center gap-2 text-sm md:min-h-9"
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={taken.has(`a${a.id}`)}
+                          checked={areaIds.includes(a.id)}
+                          onChange={() => toggle(areaIds, setAreaIds, a.id)}
+                        />
+                        {a[locale]}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {areaIds.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {areaIds
+                      .map((id) => idx.area(id)?.[locale])
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                )}
+              </div>
+            </fieldset>
           )}
-          <Button variant="ghost" onClick={onClose}>
+          <label className="flex min-h-10 items-center gap-3 md:min-h-9">
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+            {t('delivery.active')}
+          </label>
+          {invalid && <Notice tone="error">{t('delivery.invalid')}</Notice>}
+          {(save.error ?? remove.error) && (
+            <Notice tone="error">{orderErrorMessage(save.error ?? remove.error, t)}</Notice>
+          )}
+        </SheetBody>
+        <SheetFooter
+          start={
+            zone && (
+              <SheetDelete onClick={() => setConfirmDelete(true)}>{t('action.delete')}</SheetDelete>
+            )
+          }
+        >
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={save.isPending}>
+          <Button type="submit" size="lg" disabled={save.isPending}>
             {t('action.save')}
           </Button>
-        </div>
-      </form>
+        </SheetFooter>
+      </SheetForm>
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
@@ -503,6 +505,6 @@ function ZoneDialog({
       >
         <p>{t('delivery.deleteBody')}</p>
       </ConfirmDialog>
-    </Dialog>
+    </Sheet>
   );
 }

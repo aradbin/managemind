@@ -15,6 +15,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { ChoiceChips } from '../components/ui/segmented';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import '../i18n/messages';
 import { api, unwrap } from '../lib/api';
@@ -89,8 +90,13 @@ export function PaymentSettingsPage() {
   if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
 
   const refused = fieldErrors(save.error).secrets;
-  // The form opens from "Connect SSLCommerz" or "Change", as drawn.
-  const showForm = editing;
+  // The form opens in a side panel from "Connect SSLCommerz" or "Change" (design rule 1).
+  const close = () => {
+    if (save.isPending) return;
+    setEditing(false);
+    setMissing(false);
+    save.reset();
+  };
   return (
     <div className="flex flex-col gap-3 md:gap-4">
       <PageHeader
@@ -105,7 +111,7 @@ export function PaymentSettingsPage() {
           </h2>
           <p className="text-[13px] text-muted-foreground">{t('payments.intro')}</p>
         </div>
-        {saved && !editing && (
+        {saved && (
           <>
             <div className="flex gap-2.5">
               {saved.checkError ? (
@@ -144,7 +150,7 @@ export function PaymentSettingsPage() {
             </div>
           </>
         )}
-        {!saved && !editing && (
+        {!saved && (
           <>
             <p className="text-muted-foreground">{t('payments.none')}</p>
             <Button className="self-start" onClick={() => setEditing(true)}>
@@ -152,20 +158,33 @@ export function PaymentSettingsPage() {
             </Button>
           </>
         )}
-        {showForm && (
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!storeId.trim() || !password.trim()) {
-                setMissing(true);
-                return;
-              }
-              setMissing(false);
-              save.mutate();
-            }}
-          >
-            <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-4 border-0 p-0">
+      </section>
+      <p className="text-[13px] text-muted-foreground">
+        {t('payments.advanceLink')}{' '}
+        <Link to="/settings/checkout" className="text-foreground underline underline-offset-[3px]">
+          {t('checkoutSettings.title')}
+        </Link>
+        .
+      </p>
+      <Sheet
+        open={editing}
+        onOpenChange={(open) => !open && close()}
+        title={saved ? t('payments.changeTitle') : t('payments.connect')}
+        description={t('payments.keysNote')}
+      >
+        <SheetForm
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!storeId.trim() || !password.trim()) {
+              setMissing(true);
+              return;
+            }
+            setMissing(false);
+            save.mutate();
+          }}
+        >
+          <SheetBody>
+            <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-5 border-0 p-0">
               <Field
                 label={t('payments.storeId')}
                 autoComplete="off"
@@ -203,32 +222,17 @@ export function PaymentSettingsPage() {
             {save.error && !refused && (
               <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
             )}
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={save.isPending}>
-                {save.isPending ? t('payments.checking') : t('payments.save')}
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={save.isPending}
-                onClick={() => {
-                  setEditing(false);
-                  setMissing(false);
-                  save.reset();
-                }}
-              >
-                {t('action.cancel')}
-              </Button>
-            </div>
-          </form>
-        )}
-      </section>
-      <p className="text-[13px] text-muted-foreground">
-        {t('payments.advanceLink')}{' '}
-        <Link to="/settings/checkout" className="text-foreground underline underline-offset-[3px]">
-          {t('checkoutSettings.title')}
-        </Link>
-        .
-      </p>
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="secondary" size="lg" disabled={save.isPending} onClick={close}>
+              {t('action.cancel')}
+            </Button>
+            <Button type="submit" size="lg" disabled={save.isPending}>
+              {save.isPending ? t('payments.checking') : t('payments.save')}
+            </Button>
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}

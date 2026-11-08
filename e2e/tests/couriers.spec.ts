@@ -116,8 +116,10 @@ test('couriers', async ({ page }, info) => {
     // Not connected yet: the keys open from Connect (ADR 0034).
     const connect = card.getByRole('button', { name: m('couriers.connect'), exact: true });
     if (await connect.isVisible()) await connect.click();
-    await card.getByLabel(m('couriers.field.apiKey')).fill('e2e-key');
-    await card.getByRole('button', { name: m('couriers.save') }).click();
+    // The keys open in a side panel (design rule 1).
+    const panel = page.getByRole('dialog');
+    await panel.getByLabel(m('couriers.field.apiKey')).fill('e2e-key');
+    await panel.getByRole('button', { name: m('couriers.save') }).click();
     await expect(toast(page, m('couriers.saved', { courier: FAKE }))).toBeVisible();
     await card.getByRole('button', { name: m('couriers.webhook.show') }).click();
     await expect(card.getByText('/v1/webhooks/couriers/fake/')).toBeVisible();
