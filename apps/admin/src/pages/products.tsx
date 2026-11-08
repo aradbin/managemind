@@ -8,7 +8,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { CircleCheck, Download, ImageOff, Plus, SquarePen, Tag, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { type Column, DataList } from '../components/data-list';
-import { Field } from '../components/field';
+import { DateField } from '../components/date-field';
 import {
   FilterButtons,
   FilterChips,
@@ -763,18 +763,13 @@ function BulkPriceDialog({
             <legend className="px-1 text-sm font-medium">{t('products.sale')}</legend>
             <p className="text-sm text-muted-foreground">{t('products.saleHint')}</p>
             <div className="grid gap-2 md:grid-cols-2">
-              <Field
+              <DateField
+                time
                 label={t('products.saleStart')}
-                type="datetime-local"
                 value={saleStart}
-                onChange={(e) => setSaleStart(e.target.value)}
+                onChange={setSaleStart}
               />
-              <Field
-                label={t('products.saleEnd')}
-                type="datetime-local"
-                value={saleEnd}
-                onChange={(e) => setSaleEnd(e.target.value)}
-              />
+              <DateField time label={t('products.saleEnd')} value={saleEnd} onChange={setSaleEnd} />
             </div>
             <div className="flex items-end gap-2">
               <div className="flex flex-1 flex-col gap-1.5">

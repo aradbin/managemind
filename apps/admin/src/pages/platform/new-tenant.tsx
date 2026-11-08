@@ -22,6 +22,7 @@ import { RadioCard } from '../../components/ui/choice';
 import { ChoiceChips } from '../../components/ui/segmented';
 import { useLocale } from '../../i18n';
 import '../../i18n/launch';
+import { FormDateField } from '../../components/date-field';
 import { ApiError, api, unwrap } from '../../lib/api';
 import { formatPrice, readPrice } from '../../lib/catalog';
 import { useRecordPage } from '../../lib/crumb';
@@ -352,11 +353,10 @@ export function NewTenantPage() {
                       max={28}
                       inputMode="numeric"
                     />
-                    <TextField
+                    <FormDateField
                       name="trialEndsOn"
                       label={t('newStore.trialEnds')}
                       hint={t('newStore.trialHint')}
-                      type="date"
                       optional
                     />
                   </div>

@@ -19,6 +19,7 @@ import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { useLocale } from '../../i18n';
 import '../../i18n/billing';
+import { FormDateField } from '../../components/date-field';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { formatPrice, priceInput, readPrice } from '../../lib/catalog';
 import { formatDateTime } from '../../lib/dates';
@@ -223,7 +224,7 @@ function PaymentDialog({
           maxLength={100}
           optional
         />
-        <TextField name="paidOn" label={t('pbilling.paidOn')} type="date" />
+        <FormDateField name="paidOn" label={t('pbilling.paidOn')} />
         {record.isError && <Notice tone="error">{saveErrorMessage(record.error, t)}</Notice>}
         <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

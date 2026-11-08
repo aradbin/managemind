@@ -26,6 +26,7 @@ import '../i18n/couriers';
 import '../i18n/orders';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
+import { DateField } from '../components/date-field';
 import { ReportBlocks, ReportControls, Table } from '../components/report-table';
 import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
@@ -410,12 +411,7 @@ function PayoutDialog({
           maxLength={100}
           onChange={(e) => setReference(e.target.value)}
         />
-        <Field
-          label={t('cod.paidAt')}
-          type="date"
-          value={paidAt}
-          onChange={(e) => setPaidAt(e.target.value)}
-        />
+        <DateField label={t('cod.paidAt')} value={paidAt} onChange={setPaidAt} />
         {mode === 'import' ? (
           <>
             <label className="flex flex-col gap-1">

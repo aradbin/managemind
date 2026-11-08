@@ -45,6 +45,7 @@ import { Switch } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/expenses';
 import '../i18n/purchasing';
+import { DateField } from '../components/date-field';
 import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { priceInput, readPrice } from '../lib/catalog';
@@ -758,12 +759,11 @@ function ExpenseSheet({
       >
         <SheetBody>
           <div className="flex flex-col gap-2">
-            <Field
+            <DateField
               label={t('expenses.date')}
-              type="date"
               value={spentOn}
               max={today}
-              onChange={(e) => setSpentOn(e.target.value)}
+              onChange={setSpentOn}
             />
             {/* Chips fill the date; they aren't a choice (design rule 3). */}
             <div className="flex gap-2">
@@ -1142,18 +1142,13 @@ function RecurringSheet({
             />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={t('recurring.startsOn')}
-              type="date"
-              value={startsOn}
-              onChange={(e) => setStartsOn(e.target.value)}
-            />
-            <Field
-              label={optional(t('recurring.endsOn'), t)}
-              type="date"
+            <DateField label={t('recurring.startsOn')} value={startsOn} onChange={setStartsOn} />
+            <DateField
+              label={t('recurring.endsOn')}
+              optional
               value={endsOn}
               min={startsOn}
-              onChange={(e) => setEndsOn(e.target.value)}
+              onChange={setEndsOn}
             />
           </div>
           {entry && (

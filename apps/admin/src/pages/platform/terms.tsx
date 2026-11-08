@@ -19,6 +19,7 @@ import { Dialog } from '../../components/ui/dialog';
 import { useLocale } from '../../i18n';
 import { formatDateTime } from '../../lib/dates';
 import '../../i18n/launch';
+import { FormDateField } from '../../components/date-field';
 import { api, meQuery, unwrap } from '../../lib/api';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
 import { cn } from '../../lib/utils';
@@ -150,7 +151,7 @@ export function PlatformTermsPage() {
       <Dialog open={publishing} onOpenChange={setPublishing} title={t('pterms.publish')}>
         <Form form={form} onSubmit={(v) => publish.mutate(v)}>
           <TextField name="version" label={t('pterms.version')} maxLength={40} />
-          <TextField name="effectiveAt" label={t('pterms.effectiveAt')} type="date" />
+          <FormDateField name="effectiveAt" label={t('pterms.effectiveAt')} />
           <TextField name="url" label={t('pterms.url')} type="url" inputMode="url" />
           <TextField
             name="sha256"

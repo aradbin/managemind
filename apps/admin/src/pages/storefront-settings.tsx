@@ -28,6 +28,7 @@ import { RadioCard } from '../components/ui/choice';
 import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/online-store';
+import { DateField } from '../components/date-field';
 import { ApiError, api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { useRecordPage } from '../lib/crumb';
@@ -316,18 +317,18 @@ function SettingsForm({ store }: { store: Store }) {
           {holidayOn && (
             <>
               <div className="grid gap-3 md:grid-cols-2 md:gap-x-4">
-                <Field
+                <DateField
+                  time
                   label={t('storefront.holidayStart')}
-                  type="datetime-local"
                   value={start}
-                  onChange={(e) => setStart(e.target.value)}
+                  onChange={setStart}
                 />
-                <Field
+                <DateField
+                  time
                   label={t('storefront.holidayEnd')}
-                  type="datetime-local"
                   value={end}
                   error={errors.holiday}
-                  onChange={(e) => setEnd(e.target.value)}
+                  onChange={setEnd}
                 />
               </div>
               <LocalizedField
