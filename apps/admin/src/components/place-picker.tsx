@@ -1,6 +1,7 @@
 // Division, district and area from the list, then the street line
 // (phase-4-plan §3.2): couriers need an area from the list, never typed text.
 // Each is a searchable select (ADR 0033): a district has dozens of areas.
+
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { useId } from 'react';

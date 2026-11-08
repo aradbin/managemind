@@ -2,6 +2,7 @@
 // writes the file, so no Worker CPU is spent building it. The columns are
 // the import's, so an exported file imports back unchanged (products match
 // by SKU, or by handle, which is the default language's slug).
+
 import { type ColumnRef, columnId, exportHeader } from '@managemind/shared/catalog/import';
 import { amountToDecimal } from '@managemind/shared/money';
 import { type RichTextDoc, richTextToMarkdown } from '@managemind/shared/rich-text';

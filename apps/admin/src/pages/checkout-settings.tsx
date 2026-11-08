@@ -1,6 +1,7 @@
 // Settings → Checkout (phase-4-plan §3.5, §3.8, §3.15, §7): the email field,
 // the quantity limit, the order number prefix, cash on delivery, rate limits,
 // the phone blocklist and shopper accounts.
+
 import {
   type CheckoutSettings,
   COD_ADVANCE_RULES,

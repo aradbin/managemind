@@ -1,6 +1,7 @@
 // Online store > Pages (phase-3-plan §3.5, §7): about, contact, the policies
 // and custom pages, with Bangla and English tabs and the description editor
 // from Phase 2. Policy pages start with suggested headings (Q12).
+
 import type { RichTextDoc } from '@managemind/shared/rich-text';
 import {
   MAX_PAGES,

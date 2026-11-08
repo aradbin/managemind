@@ -7,6 +7,7 @@
 // `exportName` it saves itself as Excel or CSV (phase-8-plan §3.8), from
 // `exportRows` (counts and money as numbers) or else the cells as shown.
 // Report pages lay their tables out two by two with ReportBlocks.
+
 import type { Locale } from '@managemind/shared/i18n';
 import { formatNumber } from '@managemind/shared/i18n';
 import { Link } from '@tanstack/react-router';

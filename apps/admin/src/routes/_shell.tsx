@@ -4,6 +4,7 @@
 // View store, language, theme, help and the account. On phones, a five-tab bar
 // whose Menu tab lists the rest. Search opens from the header or Ctrl+K. It
 // loads /me once; without a session it sends the user to sign in.
+
 import type { Permission } from '@managemind/shared/permissions';
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import {

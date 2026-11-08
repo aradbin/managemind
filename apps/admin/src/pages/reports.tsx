@@ -4,6 +4,7 @@
 // §3.9): incomplete orders, confirmation, delivery by score and duplicates.
 // Computed when asked. Each table saves itself as Excel or CSV, as the back
 // office's reports do (phase-8-plan §3.8).
+
 import { formatNumber } from '@managemind/shared/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';

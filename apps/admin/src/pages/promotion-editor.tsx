@@ -2,6 +2,7 @@
 // as a guided form, the plain-language summary as it is built, the test
 // cart (which promotions a cart gets, and why the others don't, with this
 // one tried as if live), and, for code promotions, batches of unique codes.
+
 import { formatNumber } from '@managemind/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';

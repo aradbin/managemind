@@ -1,6 +1,7 @@
 // The product list (phase-2-plan §7, PR 9; ADR 0033): status tabs, search
 // and filter buttons, rows on phones and a table from md that open the
 // product, and selection for a bulk price edit in the selection bar.
+
 import { dhakaToUtc, utcToDhaka } from '@managemind/shared/storefront';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
