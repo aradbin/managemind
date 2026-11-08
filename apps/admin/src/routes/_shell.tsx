@@ -133,7 +133,10 @@ function Shell() {
   }, []);
 
   return (
-    <div className="min-h-dvh md:flex md:h-dvh md:overflow-hidden">
+    // Positioned on desktops (with #main below), so screen-reader-only text,
+    // which is absolute, is laid out and clipped inside the shell instead of
+    // stretching the window into a second, empty scrollbar.
+    <div className="min-h-dvh md:relative md:flex md:h-dvh md:overflow-hidden">
       {sidebar && <Sidebar me={me} groups={nav.groups} toConfirm={toConfirm} />}
 
       <div
@@ -250,7 +253,7 @@ function Shell() {
           id="main"
           data-scroll-restoration-id="main"
           className={cn(
-            'flex min-w-0 flex-1 flex-col p-4 md:min-h-0 md:overflow-y-auto md:bg-canvas md:px-6 md:pt-5 md:pb-6',
+            'flex min-w-0 flex-1 flex-col p-4 md:relative md:min-h-0 md:overflow-y-auto md:bg-canvas md:px-6 md:pt-5 md:pb-6',
             record && 'max-md:p-3',
           )}
         >
