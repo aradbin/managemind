@@ -288,7 +288,7 @@ function FilterButton({ filter, width = 208 }: { filter: FilterDef; width?: numb
               placeholder={filter.label}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
+              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none focus-visible:outline-none md:text-sm"
             />
           </div>
           <div className="max-h-60 overflow-y-auto p-1">

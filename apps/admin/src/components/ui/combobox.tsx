@@ -156,7 +156,7 @@ export function Combobox({
                 setActive(0);
               }}
               onKeyDown={onKey}
-              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
+              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:shadow-none focus-visible:outline-none md:text-sm"
             />
           </div>
           <div
