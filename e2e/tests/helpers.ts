@@ -110,6 +110,15 @@ export function totp(secret: string, at = Date.now()): string {
 
 /** No serious or critical WCAG 2.1 A/AA violations on what's on screen (phase-1-plan §7.3). */
 export async function expectAccessible(page: Page, screen: string): Promise<void> {
+  // Dialogs, panels and menus fade, zoom and slide in (shadcn/ui, ADR 0033).
+  // Axe reads colours as painted, so a half-faded dialog would fail contrast:
+  // let the opening animations end first. A loading placeholder's endless
+  // pulse never ends, so it doesn't count.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity),
+  );
   const result = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
