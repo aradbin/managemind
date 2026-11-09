@@ -25,6 +25,10 @@ import { initSentry, rootErrorHandlers } from './sentry';
 initTheme();
 initSentry();
 
+// Set before each navigation renders: only a new page resets or restores the
+// scroll. A filter, a page of a list or a dialog in the address keeps it.
+let pathChanged = true;
+
 // The error screen is part of the entry chunk, so it shows even when a
 // route's own chunk can't load.
 const router = createRouter({
@@ -32,6 +36,13 @@ const router = createRouter({
   context: { queryClient },
   defaultPreload: 'intent',
   defaultErrorComponent: AppError,
+  // A new page starts at the top and Back returns to where you were. On
+  // desktops the page scrolls in the shell's <main>, not the window.
+  scrollRestoration: () => pathChanged,
+  scrollToTopSelectors: ['window', '#main'],
+});
+router.subscribe('onBeforeLoad', (event) => {
+  pathChanged = !event.fromLocation || event.pathChanged;
 });
 
 // A session that ends mid-visit (expired, or signed out from another device)

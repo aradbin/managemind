@@ -3,8 +3,11 @@
 // `size="lg"` (panel and dialog footers), 8 px corners.
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, lazy, Suspense } from 'react';
 import { cn } from '../../lib/utils';
+
+/** An icon button's tooltip, in its own chunk (components/ui/icon-tip.tsx). */
+const IconTip = lazy(() => import('./icon-tip'));
 
 const buttonVariants = cva(
   "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-transparent text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
@@ -36,6 +39,11 @@ const buttonVariants = cva(
 export interface ButtonProps extends ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   /** Render the child element (e.g. a link) with button styles. */
   asChild?: boolean;
+  /**
+   * An icon button shows its name in shadcn/ui's tooltip on hover and focus
+   * (its aria-label, else its title). False leaves it out.
+   */
+  tooltip?: boolean;
 }
 
 export function Button({
@@ -44,14 +52,25 @@ export function Button({
   size,
   asChild,
   type = 'button',
+  tooltip = true,
+  title,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : 'button';
-  return (
+  const tip = size === 'icon' && tooltip ? (props['aria-label'] ?? title) : undefined;
+  const button = (
     <Comp
       className={cn(buttonVariants({ variant, size }), className)}
       {...(asChild ? {} : { type })}
+      // The tooltip replaces the browser's own, so it doesn't show twice.
+      {...(tip ? {} : { title })}
       {...props}
     />
+  );
+  if (!tip) return button;
+  return (
+    <Suspense fallback={button}>
+      <IconTip tip={String(tip)}>{button}</IconTip>
+    </Suspense>
   );
 }

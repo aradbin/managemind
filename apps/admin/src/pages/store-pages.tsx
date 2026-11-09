@@ -10,7 +10,6 @@ import {
   type PageKind,
   storePath,
 } from '@managemind/shared/storefront';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, ExternalLink, Eye, EyeOff, Plus, SquarePen, Trash2 } from 'lucide-react';
@@ -31,7 +30,7 @@ import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { Dialog } from '../components/ui/dialog';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { ChoiceChips } from '../components/ui/segmented';
 import { SwitchRow } from '../components/ui/switch';
 import { useLocale } from '../i18n';
@@ -172,7 +171,7 @@ export function StorePagesPage() {
     },
   ];
   return (
-    <div className="flex w-full max-w-[860px] flex-col gap-3 md:gap-4">
+    <div className="flex flex-col gap-3 md:gap-4">
       <PhoneRecordHeader to="/online-store" backLabel={t('theme.back')} title={t('pages.title')}>
         {newMenu(true)}
       </PhoneRecordHeader>

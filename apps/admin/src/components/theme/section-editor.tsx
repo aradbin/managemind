@@ -6,13 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import { useLocale } from '../../i18n';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
-import { cn } from '../../lib/utils';
 import { DescriptionField } from '../catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../catalog/language-tabs';
 import { fieldLabel } from '../field-styles';
 import { Button } from '../ui/button';
-import { control } from '../ui/input';
 import { chipClass } from '../ui/segmented';
+import { Select } from '../ui/select';
 import { ImagePicker } from './image-picker';
 import { LinkPicker } from './link-picker';
 import { LocalizedField } from './localized-field';
@@ -100,19 +99,13 @@ function Choice<V extends string>({
       <label htmlFor={id} className={fieldLabel}>
         {label}
       </label>
-      <select
+      <Select
         id={id}
-        className={cn(control, 'h-10 md:h-9')}
         value={value}
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value as V)}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+        onChange={(next) => onChange(next as V)}
+        options={options}
+      />
     </div>
   );
 }

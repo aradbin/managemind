@@ -23,6 +23,7 @@ import { StatRow } from '../components/ui/stat-row';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
+import { DateField } from '../components/date-field';
 import { api, unwrap } from '../lib/api';
 import { readPrice } from '../lib/catalog';
 import { useRecordPage } from '../lib/crumb';
@@ -385,12 +386,11 @@ function PaymentDialog({ supplierId, onClose }: { supplierId: string; onClose: (
           if (valid) save.mutate();
         }}
       >
-        <Field
+        <DateField
           label={t('payment.date')}
-          type="date"
           value={paidOn}
           max={dhakaToday()}
-          onChange={(e) => setPaidOn(e.target.value)}
+          onChange={setPaidOn}
         />
         <Field
           label={t('payment.amount')}

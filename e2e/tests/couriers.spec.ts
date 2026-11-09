@@ -10,7 +10,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { couriersBn } from '../../apps/admin/src/i18n/couriers-bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
-import { expectAccessible, signIn } from './helpers';
+import { choose, expectAccessible, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API } from './urls';
 
@@ -116,8 +116,10 @@ test('couriers', async ({ page }, info) => {
     // Not connected yet: the keys open from Connect (ADR 0034).
     const connect = card.getByRole('button', { name: m('couriers.connect'), exact: true });
     if (await connect.isVisible()) await connect.click();
-    await card.getByLabel(m('couriers.field.apiKey')).fill('e2e-key');
-    await card.getByRole('button', { name: m('couriers.save') }).click();
+    // The keys open in a side panel (design rule 1).
+    const panel = page.getByRole('dialog');
+    await panel.getByLabel(m('couriers.field.apiKey')).fill('e2e-key');
+    await panel.getByRole('button', { name: m('couriers.save') }).click();
     await expect(toast(page, m('couriers.saved', { courier: FAKE }))).toBeVisible();
     await card.getByRole('button', { name: m('couriers.webhook.show') }).click();
     await expect(card.getByText('/v1/webhooks/couriers/fake/')).toBeVisible();
@@ -144,7 +146,7 @@ test('couriers', async ({ page }, info) => {
       ['picked_up', 'shipped'],
       ['delivered', 'delivered'],
     ] as const) {
-      await page.getByLabel(m('couriers.fake.move')).selectOption(status);
+      await choose(page.getByLabel(m('couriers.fake.move')), { value: status });
       await page.getByRole('button', { name: m('couriers.fake.move') }).click();
       // The toast of the move before may still show: wait for the order itself.
       await expect
@@ -189,6 +191,11 @@ test('couriers', async ({ page }, info) => {
       .locator('visible=true')
       .first();
     await row.getByRole('button', { name: m('couriers.received') }).click();
+    // It asks first: the parcel's items go back into stock.
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: m('couriers.received') })
+      .click();
     await expect(toast(page, m('couriers.receivedDone'))).toBeVisible();
     expect((await order(`/v1/admin/orders/${placed.id}`)).shipments[0]?.status).toBe('returned');
   });
@@ -236,7 +243,7 @@ test('couriers', async ({ page }, info) => {
     await expectAccessible(page, 'COD reconciliation');
     await page.getByRole('button', { name: m('cod.record') }).click();
     const dialog = page.getByRole('dialog', { name: m('cod.record') });
-    await dialog.getByLabel(m('cod.courier'), { exact: true }).selectOption('fake');
+    await choose(dialog.getByLabel(m('cod.courier'), { exact: true }), { value: 'fake' });
     await dialog.getByLabel(m('cod.reference')).fill(`e2e-${stamp}`);
     await dialog.getByLabel(m('cod.record.consignments')).fill(delivered);
     await dialog.getByRole('button', { name: m('cod.preview') }).click();

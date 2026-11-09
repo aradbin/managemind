@@ -18,7 +18,7 @@ import { useToast } from '../components/toast';
 import { SecondaryBadge, StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
-import { Dialog } from '../components/ui/dialog';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { useLocale } from '../i18n';
 import '../i18n/online-store';
 import { ApiError, api, unwrap } from '../lib/api';
@@ -131,36 +131,37 @@ function AddDomain({ onClose }: { onClose: () => void }) {
                 ? t('form.invalid')
                 : saveErrorMessage(add.error, t);
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()} title={t('domains.add')}>
-      <form
-        className="flex flex-col gap-4"
+    <Sheet open onOpenChange={(open) => !open && onClose()} title={t('domains.add')}>
+      <SheetForm
         onSubmit={(e) => {
           e.preventDefault();
           if (hostname.trim()) add.mutate();
         }}
       >
-        <Field
-          label={t('domains.hostname')}
-          hint={t('domains.hostnameHint')}
-          placeholder="www.yourshop.com.bd"
-          inputMode="url"
-          autoComplete="off"
-          dir="ltr"
-          maxLength={253}
-          value={hostname}
-          error={message}
-          onChange={(e) => setHostname(e.target.value)}
-        />
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="secondary" onClick={onClose}>
+        <SheetBody>
+          <Field
+            label={t('domains.hostname')}
+            hint={t('domains.hostnameHint')}
+            placeholder="www.yourshop.com.bd"
+            inputMode="url"
+            autoComplete="off"
+            dir="ltr"
+            maxLength={253}
+            value={hostname}
+            error={message}
+            onChange={(e) => setHostname(e.target.value)}
+          />
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={!hostname.trim() || add.isPending}>
+          <Button type="submit" size="lg" disabled={!hostname.trim() || add.isPending}>
             {t('domains.connect')}
           </Button>
-        </div>
-      </form>
-    </Dialog>
+        </SheetFooter>
+      </SheetForm>
+    </Sheet>
   );
 }
 

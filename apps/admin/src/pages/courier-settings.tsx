@@ -23,9 +23,11 @@ import { StatusBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { ChoiceChips } from '../components/ui/segmented';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { SwitchRow } from '../components/ui/switch';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/couriers';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { storeSettingsQuery } from '../lib/catalog';
 import { type ConnectedCourier, courierName, couriersQuery } from '../lib/couriers';
@@ -145,6 +147,13 @@ function CourierCard({
 
   const refused = fieldErrors(save.error).secrets ?? fieldErrors(check.error).secrets;
   const showForm = canConnect && editing;
+  const close = () => {
+    if (save.isPending) return;
+    setEditing(false);
+    setMissing(false);
+    save.reset();
+    check.reset();
+  };
   const titleId = `courier-${courier}`;
   return (
     <section
@@ -164,7 +173,7 @@ function CourierCard({
             : t('couriers.notConnected')}
         </StatusBadge>
         <span className="flex-1" />
-        {canConnect && !editing && saved && (
+        {canConnect && saved && (
           <span className="flex gap-1">
             <Button variant="ghost" className="h-8 md:h-8" onClick={() => setEditing(true)}>
               {t('couriers.change')}
@@ -178,7 +187,7 @@ function CourierCard({
             </Button>
           </span>
         )}
-        {canConnect && !editing && !saved && (
+        {canConnect && !saved && (
           <Button variant="secondary" className="h-8 md:h-8" onClick={() => setEditing(true)}>
             {t('couriers.connect')}
           </Button>
@@ -201,11 +210,16 @@ function CourierCard({
           {canConnect && <Webhook courier={courier} name={name} />}
         </div>
       ) : (
-        !editing && <p className="text-[13px] text-muted-foreground">{t('couriers.byHand')}</p>
+        <p className="text-[13px] text-muted-foreground">{t('couriers.byHand')}</p>
       )}
-      {showForm && (
-        <form
-          className="flex flex-col gap-4"
+      {/* The keys open in a side panel (design rule 1), as the board draws them. */}
+      <Sheet
+        open={showForm}
+        onOpenChange={(open) => !open && close()}
+        title={t(saved ? 'couriers.changeTitle' : 'couriers.connectTitle', { courier: name })}
+        description={t('couriers.keysNote')}
+      >
+        <SheetForm
           onSubmit={(e) => {
             e.preventDefault();
             if (fields.some((f) => !(secrets[f] ?? '').trim())) {
@@ -216,86 +230,89 @@ function CourierCard({
             save.mutate();
           }}
         >
-          <fieldset
-            disabled={save.isPending || check.isPending}
-            className="m-0 flex flex-col gap-4 border-0 p-0"
-          >
-            {fields.map((f) => (
-              <Field
-                key={f}
-                label={t(`couriers.field.${f}` as AdminKey)}
-                hint={f === 'password' ? t('couriers.passwordHint') : undefined}
-                type={f === 'username' ? 'email' : 'password'}
-                autoComplete={f === 'username' ? 'off' : 'new-password'}
-                value={secrets[f] ?? ''}
-                maxLength={2000}
-                onChange={(e) => setSecrets((s) => ({ ...s, [f]: e.target.value }))}
-                error={missing && !(secrets[f] ?? '').trim() ? t('form.required') : undefined}
-              />
-            ))}
-            {moded && (
-              <div className="flex flex-col">
-                <span className={fieldLabel}>{t('couriers.mode')}</span>
-                <ChoiceChips<'sandbox' | 'live'>
-                  label={t('couriers.mode')}
-                  value={mode}
-                  options={(['sandbox', 'live'] as const).map((m) => ({
-                    value: m,
-                    label: t(`couriers.mode.${m}`),
-                  }))}
-                  onChange={setMode}
+          <SheetBody>
+            <fieldset
+              disabled={save.isPending || check.isPending}
+              className="m-0 flex flex-col gap-5 border-0 p-0"
+            >
+              {fields.map((f) => (
+                <Field
+                  key={f}
+                  label={t(`couriers.field.${f}` as AdminKey)}
+                  hint={f === 'password' ? t('couriers.passwordHint') : undefined}
+                  type={f === 'username' ? 'email' : 'password'}
+                  autoComplete={f === 'username' ? 'off' : 'new-password'}
+                  value={secrets[f] ?? ''}
+                  maxLength={2000}
+                  onChange={(e) => setSecrets((s) => ({ ...s, [f]: e.target.value }))}
+                  error={missing && !(secrets[f] ?? '').trim() ? t('form.required') : undefined}
                 />
-              </div>
+              ))}
+              {moded && (
+                <div className="flex flex-col">
+                  <span className={fieldLabel}>{t('couriers.mode')}</span>
+                  <ChoiceChips<'sandbox' | 'live'>
+                    label={t('couriers.mode')}
+                    value={mode}
+                    options={(['sandbox', 'live'] as const).map((m) => ({
+                      value: m,
+                      label: t(`couriers.mode.${m}`),
+                    }))}
+                    onChange={setMode}
+                  />
+                </div>
+              )}
+              {courier === 'pathao' && (
+                <Field
+                  label={t('couriers.integration')}
+                  hint={t('couriers.integrationHint')}
+                  autoComplete="off"
+                  value={integration}
+                  maxLength={100}
+                  onChange={(e) => setIntegration(e.target.value)}
+                />
+              )}
+              {needsAreas(courier) && (
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={`${courier}-pickup`} className="text-sm font-medium">
+                    {t('couriers.pickupStore')}
+                  </label>
+                  {check.data?.pickupStores.length ? (
+                    <Select
+                      id={`${courier}-pickup`}
+                      value={pickup == null ? '' : String(pickup)}
+                      onChange={(next) => setPickup(Number(next))}
+                      options={check.data.pickupStores.map((p) => ({
+                        value: String(p.id),
+                        label: p.name,
+                      }))}
+                    />
+                  ) : (
+                    <p id={`${courier}-pickup`} className="text-sm text-muted-foreground">
+                      {t('couriers.pickupNone')}
+                    </p>
+                  )}
+                </div>
+              )}
+            </fieldset>
+            {refused && (
+              <Notice tone="error">
+                {t('couriers.refused', { courier: name, reason: refused.message })}
+              </Notice>
             )}
-            {courier === 'pathao' && (
-              <Field
-                label={t('couriers.integration')}
-                hint={t('couriers.integrationHint')}
-                autoComplete="off"
-                value={integration}
-                maxLength={100}
-                onChange={(e) => setIntegration(e.target.value)}
-              />
+            {save.error && !refused && (
+              <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
             )}
-            {needsAreas(courier) && (
-              <div className="flex flex-col gap-2">
-                <label htmlFor={`${courier}-pickup`} className="text-sm font-medium">
-                  {t('couriers.pickupStore')}
-                </label>
-                {check.data?.pickupStores.length ? (
-                  <select
-                    id={`${courier}-pickup`}
-                    className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-                    value={pickup ?? ''}
-                    onChange={(e) => setPickup(Number(e.target.value))}
-                  >
-                    {check.data.pickupStores.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <p id={`${courier}-pickup`} className="text-sm text-muted-foreground">
-                    {t('couriers.pickupNone')}
-                  </p>
-                )}
-              </div>
-            )}
-          </fieldset>
-          {refused && (
-            <Notice tone="error">
-              {t('couriers.refused', { courier: name, reason: refused.message })}
-            </Notice>
-          )}
-          {save.error && !refused && (
-            <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
-          )}
-          <div className="flex flex-wrap gap-2">
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="secondary" size="lg" disabled={save.isPending} onClick={close}>
+              {t('action.cancel')}
+            </Button>
             {needsAreas(courier) && (
               <Button
                 variant="secondary"
-                disabled={check.isPending}
+                size="lg"
+                disabled={check.isPending || save.isPending}
                 onClick={() => {
                   if (fields.some((f) => !(secrets[f] ?? '').trim())) {
                     setMissing(true);
@@ -309,23 +326,12 @@ function CourierCard({
                   : t('couriers.checkKeys')}
               </Button>
             )}
-            <Button type="submit" disabled={save.isPending}>
+            <Button type="submit" size="lg" disabled={save.isPending || check.isPending}>
               {save.isPending ? t('couriers.checking', { courier: name }) : t('couriers.save')}
             </Button>
-            <Button
-              variant="ghost"
-              disabled={save.isPending}
-              onClick={() => {
-                setEditing(false);
-                setMissing(false);
-                save.reset();
-              }}
-            >
-              {t('action.cancel')}
-            </Button>
-          </div>
-        </form>
-      )}
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}

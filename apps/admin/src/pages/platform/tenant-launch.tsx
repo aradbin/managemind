@@ -29,6 +29,7 @@ import { type AdminKey, useLocale } from '../../i18n';
 import { formatDateTime } from '../../lib/dates';
 import '../../i18n/billing';
 import '../../i18n/launch';
+import { FormDateField } from '../../components/date-field';
 import { api, unwrap } from '../../lib/api';
 import { formatPrice, priceInput, readPrice } from '../../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../../lib/errors';
@@ -390,7 +391,7 @@ export function SubscriptionSection({
             min={1}
             max={28}
           />
-          <TextField name="trialEndsOn" label={t('newStore.trialEnds')} type="date" optional />
+          <FormDateField name="trialEndsOn" label={t('newStore.trialEnds')} optional />
           {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
             <Button variant="ghost" onClick={() => setEditing(false)}>
@@ -405,7 +406,7 @@ export function SubscriptionSection({
       <Dialog open={holding} onOpenChange={setHolding} title={t('subscription.hold')}>
         <Form form={holdForm} onSubmit={(v) => hold.mutate(v)}>
           <p className="text-muted-foreground">{t('subscription.holdHint')}</p>
-          <TextField name="until" label={t('subscription.holdUntil')} type="date" />
+          <FormDateField name="until" label={t('subscription.holdUntil')} />
           <TextField name="reason" label={t('subscription.holdReason')} maxLength={500} />
           {hold.isError && <Notice tone="error">{saveErrorMessage(hold.error, t)}</Notice>}
           <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">

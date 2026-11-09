@@ -21,6 +21,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { Combobox } from '../components/ui/combobox';
 import { Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
 import { useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import {
@@ -37,9 +38,6 @@ import {
 } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { cn } from '../lib/utils';
-
-const selectClass =
-  'h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]';
 
 export function CollectionsPage() {
   const { t, locale } = useLocale();
@@ -296,18 +294,13 @@ function ConditionRow({
   return (
     <li className="flex flex-col gap-2 rounded-lg border border-border bg-background p-3">
       <div className="flex items-center gap-2">
-        <select
-          aria-label={t('rules.type')}
-          className={`${selectClass} flex-1`}
+        <Select
+          ariaLabel={t('rules.type')}
+          className="flex-1"
           value={condition.type}
-          onChange={(e) => onChange(blank(e.target.value as Condition['type']))}
-        >
-          {CONDITION_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {t(`rules.${type}`)}
-            </option>
-          ))}
-        </select>
+          onChange={(next) => onChange(blank(next as Condition['type']))}
+          options={CONDITION_TYPES.map((type) => ({ value: type, label: t(`rules.${type}`) }))}
+        />
         <Button variant="ghost" size="icon" aria-label={t('rules.remove')} onClick={onRemove}>
           <X aria-hidden className="size-4" />
         </Button>
@@ -409,15 +402,15 @@ function ConditionRow({
         </div>
       )}
       {condition.type === 'attribute_boolean' && (
-        <select
-          aria-label={t('rules.value')}
-          className={selectClass}
+        <Select
+          ariaLabel={t('rules.value')}
           value={condition.value ? 'yes' : 'no'}
-          onChange={(e) => onChange({ ...condition, value: e.target.value === 'yes' })}
-        >
-          <option value="yes">{t('specs.yes')}</option>
-          <option value="no">{t('specs.no')}</option>
-        </select>
+          onChange={(next) => onChange({ ...condition, value: next === 'yes' })}
+          options={[
+            { value: 'yes', label: t('specs.yes') },
+            { value: 'no', label: t('specs.no') },
+          ]}
+        />
       )}
     </li>
   );
@@ -607,16 +600,15 @@ function CollectionEditor({
         )}
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           {t('collections.sort')}
-          <select className={selectClass} value={sort} onChange={(e) => setSort(e.target.value)}>
-            {(kind === 'manual'
+          <Select
+            className="font-normal"
+            value={sort}
+            onChange={setSort}
+            options={(kind === 'manual'
               ? ['manual', 'newest', 'price_asc', 'price_desc', 'title_asc']
               : ['newest', 'price_asc', 'price_desc', 'title_asc']
-            ).map((s) => (
-              <option key={s} value={s}>
-                {t(`sort.${s}` as 'sort.manual')}
-              </option>
-            ))}
-          </select>
+            ).map((s) => ({ value: s, label: t(`sort.${s}` as 'sort.manual') }))}
+          />
         </label>
         <label className="flex min-h-10 items-center gap-3 md:min-h-9">
           <input

@@ -41,6 +41,7 @@ import { usePermission } from '../components/permission-gate';
 import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { control, Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
 import { Sheet, SheetBody, SheetDelete, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { Switch } from '../components/ui/switch';
 import { useLocale } from '../i18n';
@@ -481,23 +482,17 @@ function AttributeSheet({
                 <label htmlFor={typeId} className="text-sm font-medium">
                   {t('attributes.type')}
                 </label>
-                <select
+                <Select
                   id={typeId}
-                  className={cn(control, 'h-10 md:h-9')}
                   value={type}
                   disabled={Boolean(attribute)}
-                  onChange={(e) => {
-                    const next = e.target.value as AttrType;
+                  onChange={(value) => {
+                    const next = value as AttrType;
                     setType(next);
                     if (!FILTERABLE_TYPES.includes(next)) setFilterable(false);
                   }}
-                >
-                  {TYPES.map((x) => (
-                    <option key={x} value={x}>
-                      {t(`attributes.type.${x}`)}
-                    </option>
-                  ))}
-                </select>
+                  options={TYPES.map((x) => ({ value: x, label: t(`attributes.type.${x}`) }))}
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor={keyId} className="text-sm font-medium">

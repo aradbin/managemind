@@ -4,14 +4,14 @@
 // panel. Phones scroll the presets sideways and put the dates under them,
 // with Change for custom dates. Dates are Dhaka dates, as the server reads.
 import type { Locale } from '@managemind/shared/i18n';
-import * as Popover from '@radix-ui/react-popover';
 import { CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 import { useLocale } from '../i18n';
 import { formatDateTime } from '../lib/dates';
+import { Popover } from './ui/popover';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
-import { Field } from './field';
+import { DateField } from './date-field';
 import { Button } from './ui/button';
 import { Segmented } from './ui/segmented';
 
@@ -117,18 +117,16 @@ export function ReportRange({ value, onChange }: { value: Range; onChange: (r: R
           className="z-50 flex w-[320px] max-w-[calc(100vw-16px)] flex-col gap-3 rounded-lg border border-border bg-popover p-3 text-foreground shadow-md"
         >
           <div className="grid grid-cols-2 gap-3">
-            <Field
+            <DateField
               label={t('reports.from')}
-              type="date"
               value={value.from}
-              onChange={(e) => onChange({ ...value, from: e.target.value })}
+              onChange={(from) => onChange({ ...value, from })}
             />
-            <Field
+            <DateField
               label={t('reports.to')}
-              type="date"
               value={value.to}
-              aria-invalid={!valid}
-              onChange={(e) => onChange({ ...value, to: e.target.value })}
+              invalid={!valid}
+              onChange={(to) => onChange({ ...value, to })}
             />
           </div>
           {!valid && <p className="text-[13px] text-danger">{t('reports.endBeforeStart')}</p>}

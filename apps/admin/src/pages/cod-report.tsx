@@ -26,7 +26,9 @@ import '../i18n/couriers';
 import '../i18n/orders';
 import '../i18n/back-office-reports';
 import '../i18n/returns';
+import { DateField } from '../components/date-field';
 import { ReportBlocks, ReportControls, Table } from '../components/report-table';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { formatPrice, readPrice } from '../lib/catalog';
 import { courierName } from '../lib/couriers';
@@ -367,22 +369,18 @@ function PayoutDialog({
       <label htmlFor={`payout-col-${key}`} className="text-sm font-medium">
         {t(label)}
       </label>
-      <select
+      <Select
         id={`payout-col-${key}`}
-        className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
-        value={cols[key]}
-        onChange={(e) => {
-          setCols((c) => ({ ...c, [key]: Number(e.target.value) }));
+        value={String(cols[key])}
+        onChange={(next) => {
+          setCols((c) => ({ ...c, [key]: Number(next) }));
           check.reset();
         }}
-      >
-        {optional && <option value={-1}>{t('cod.import.none')}</option>}
-        {parsed?.header.map((h, i) => (
-          <option key={`${h}-${i}`} value={i}>
-            {h || `#${i + 1}`}
-          </option>
-        ))}
-      </select>
+        options={[
+          ...(optional ? [{ value: '-1', label: t('cod.import.none') }] : []),
+          ...(parsed?.header.map((h, i) => ({ value: String(i), label: h || `#${i + 1}` })) ?? []),
+        ]}
+      />
     </div>
   );
   return (
@@ -397,21 +395,15 @@ function PayoutDialog({
           <label htmlFor="payout-courier" className="text-sm font-medium">
             {t('cod.courier')}
           </label>
-          <select
+          <Select
             id="payout-courier"
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
             value={courier}
-            onChange={(e) => {
-              setCourier(e.target.value as Courier);
+            onChange={(next) => {
+              setCourier(next as Courier);
               check.reset();
             }}
-          >
-            {COURIERS.map((c) => (
-              <option key={c} value={c}>
-                {courierName(c, t)}
-              </option>
-            ))}
-          </select>
+            options={COURIERS.map((c) => ({ value: c, label: courierName(c, t) }))}
+          />
         </div>
         <Field
           label={t('cod.reference')}
@@ -419,12 +411,7 @@ function PayoutDialog({
           maxLength={100}
           onChange={(e) => setReference(e.target.value)}
         />
-        <Field
-          label={t('cod.paidAt')}
-          type="date"
-          value={paidAt}
-          onChange={(e) => setPaidAt(e.target.value)}
-        />
+        <DateField label={t('cod.paidAt')} value={paidAt} onChange={setPaidAt} />
         {mode === 'import' ? (
           <>
             <label className="flex flex-col gap-1">

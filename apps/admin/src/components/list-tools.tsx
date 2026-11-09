@@ -4,7 +4,6 @@
 // Filters drawer on phones, the count on the right, the ⋯ menu that ends a
 // row, and the dark bar that appears while rows are selected.
 import { formatNumber } from '@managemind/shared/i18n';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import {
   ArrowDownUp,
   Check,
@@ -20,8 +19,6 @@ import {
   type KeyboardEvent,
   type ReactNode,
   useContext,
-  useEffect,
-  useId,
   useRef,
   useState,
 } from 'react';
@@ -32,8 +29,18 @@ import { SecondaryBadge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
 import { Input } from './ui/input';
-import { menuContent, menuItem, menuItemDanger, menuSeparator } from './ui/menu';
+import { Menu, menuContent, menuItem, menuItemDanger, menuSeparator } from './ui/menu';
+import { Popover } from './ui/popover';
 import { chipClass } from './ui/segmented';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from './ui/shadcn/command';
 
 export interface StageTab<K extends string> {
   key: K;
@@ -189,9 +196,6 @@ function FilterButton({ filter, width = 208 }: { filter: FilterDef; width?: numb
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const wrap = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const listId = useId();
   const values = pickedValues(filter);
   const picked = filter.options.filter((o) => values.includes(o.value));
   const q = query.trim().toLowerCase();
@@ -199,141 +203,108 @@ function FilterButton({ filter, width = 208 }: { filter: FilterDef; width?: numb
     ? filter.options.filter((o) => o.label.toLowerCase().includes(q))
     : filter.options;
 
-  const close = (refocus: boolean) => {
-    setOpen(false);
+  const show = (next: boolean) => {
+    setOpen(next);
     setQuery('');
-    if (refocus) trigger.current?.focus();
   };
-
-  // Closes on a press outside, like a popover.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => {
-      if (!wrap.current?.contains(e.target as Node)) close(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    return () => document.removeEventListener('pointerdown', onDown);
-  });
-
   /** One choice closes the list; with several allowed, it stays open for more. */
   const choose = (value: string) => {
     toggleValue(filter, value);
-    if (!filter.multi) close(true);
+    if (!filter.multi) show(false);
   };
   const clear = () => {
     filter.onChange(undefined);
-    close(true);
+    show(false);
   };
 
-  /** Escape closes; the arrows move between the search box and the choices. */
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close(true);
-      return;
-    }
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    const items = [...(wrap.current?.querySelectorAll<HTMLElement>('[data-filter-item]') ?? [])];
-    if (!items.length) return;
-    e.preventDefault();
-    const at = items.indexOf(document.activeElement as HTMLElement);
-    const next = e.key === 'ArrowDown' ? Math.min(at + 1, items.length - 1) : Math.max(at - 1, 0);
-    items[next]?.focus();
-  };
-
+  // shadcn/ui's faceted filter: a dashed button, then a searchable list of
+  // boxes to tick in a popover (Popover and Command, components/ui/shadcn).
   return (
-    <div ref={wrap} className="relative">
-      <button
-        ref={trigger}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-controls={listId}
-        onClick={() => (open ? close(false) : setOpen(true))}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent md:h-8 dark:border-input dark:bg-white/[0.045]"
-      >
-        <CirclePlus aria-hidden className="size-4" />
-        {filter.label}
-        {picked.length > 0 && (
-          <>
-            <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
-            {picked.length > 2 ? (
-              <SecondaryBadge>{t('list.selectedCount', { count: picked.length })}</SecondaryBadge>
-            ) : (
-              picked.map((o) => (
-                <SecondaryBadge key={o.value} className="max-w-40 truncate">
-                  {o.label}
-                </SecondaryBadge>
-              ))
-            )}
-          </>
-        )}
-      </button>
-      {open && (
-        <div
-          id={listId}
-          role="dialog"
-          aria-label={filter.label}
-          onKeyDown={onKey}
-          style={{ width }}
-          className="absolute top-full left-0 z-40 mt-1 overflow-hidden rounded-lg border border-border bg-popover text-foreground shadow-md"
+    <Popover.Root open={open} onOpenChange={show}>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-border bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent md:h-8 dark:border-input dark:bg-white/[0.045]"
         >
-          <div className="flex h-9 items-center gap-2 border-b border-border px-3">
-            <Search aria-hidden className="size-4 shrink-0 opacity-50" />
-            <input
-              // biome-ignore lint/a11y/noAutofocus: the list opened to be searched.
-              autoFocus
-              data-filter-item
-              aria-label={t('list.findOption', { name: filter.label })}
-              placeholder={filter.label}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground focus-visible:outline-none md:text-sm"
-            />
-          </div>
-          <div className="max-h-60 overflow-y-auto p-1">
-            {options.length === 0 && <p className="py-5 text-center">{t('list.noResults')}</p>}
-            {options.map((o) => {
-              const on = values.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  data-filter-item
-                  aria-pressed={on}
-                  onClick={() => choose(o.value)}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm leading-5 outline-none hover:bg-accent focus-visible:bg-accent"
-                >
-                  {/* A box to tick, as the board draws it. */}
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
-                      on && 'border-primary bg-primary text-primary-foreground',
-                    )}
-                  >
-                    {on && <Check className="size-3" strokeWidth={3} />}
-                  </span>
-                  <span className="flex-1 truncate">{o.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <CirclePlus aria-hidden className="size-4" />
+          {filter.label}
           {picked.length > 0 && (
-            <div className="border-t border-border p-1">
-              <button
-                type="button"
-                data-filter-item
-                onClick={clear}
-                className="flex w-full items-center justify-center rounded-md px-2 py-1.5 text-sm leading-5 outline-none hover:bg-accent focus-visible:bg-accent"
-              >
-                {t('list.clearFilters')}
-              </button>
-            </div>
+            <>
+              <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />
+              {picked.length > 2 ? (
+                <SecondaryBadge>{t('list.selectedCount', { count: picked.length })}</SecondaryBadge>
+              ) : (
+                picked.map((o) => (
+                  <SecondaryBadge key={o.value} className="max-w-40 truncate">
+                    {o.label}
+                  </SecondaryBadge>
+                ))
+              )}
+            </>
           )}
-        </div>
-      )}
-    </div>
+        </button>
+      </Popover.Trigger>
+      <Popover.Content
+        align="start"
+        aria-label={filter.label}
+        style={{ width }}
+        className="overflow-hidden rounded-lg border-border"
+      >
+        {/* Matches as typed; cmdk only moves through them. */}
+        <Command shouldFilter={false} loop className="rounded-none">
+          <CommandInput
+            aria-label={t('list.findOption', { name: filter.label })}
+            placeholder={filter.label}
+            value={query}
+            onValueChange={setQuery}
+            className="text-base focus-visible:shadow-none md:text-sm"
+          />
+          <CommandList className="max-h-60">
+            <CommandEmpty className="py-5 text-center text-sm">{t('list.noResults')}</CommandEmpty>
+            <CommandGroup>
+              {options.map((o) => {
+                const on = values.includes(o.value);
+                return (
+                  <CommandItem
+                    key={o.value}
+                    value={o.value}
+                    data-checked={on}
+                    onSelect={() => choose(o.value)}
+                    className="cursor-pointer rounded-md leading-5"
+                  >
+                    {/* A box to tick, as the board draws it. */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-input',
+                        on && 'border-primary bg-primary text-primary-foreground',
+                      )}
+                    >
+                      {on && <Check className="size-3 text-primary-foreground" strokeWidth={3} />}
+                    </span>
+                    <span className="flex-1 truncate">{o.label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+            {picked.length > 0 && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    value="__clear"
+                    onSelect={clear}
+                    className="cursor-pointer justify-center rounded-md leading-5"
+                  >
+                    {t('list.clearFilters')}
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
+      </Popover.Content>
+    </Popover.Root>
   );
 }
 

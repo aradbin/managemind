@@ -27,6 +27,7 @@ import { VariantPicker } from '../components/variant-picker';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/returns';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { useRecordPage } from '../lib/crumb';
@@ -758,17 +759,15 @@ export function CreateReturnDialog({ orderId, onClose }: { orderId: string; onCl
           </fieldset>
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t('return.reason')}
-            <select
-              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045] font-normal"
+            <Select
+              className="font-normal"
               value={reason}
-              onChange={(e) => setReason(e.target.value as typeof reason)}
-            >
-              {RETURN_REASONS.map((r) => (
-                <option key={r} value={r}>
-                  {t(`return.reason.${r}` as AdminKey)}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setReason(next as typeof reason)}
+              options={RETURN_REASONS.map((r) => ({
+                value: r,
+                label: t(`return.reason.${r}` as AdminKey),
+              }))}
+            />
           </label>
           <Field
             label={t('return.note')}

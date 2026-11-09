@@ -26,7 +26,7 @@ import { useToast } from '../components/toast';
 import { SecondaryBadge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { cardFrame, cardPadded, cardTitle } from '../components/ui/card';
-import { Dialog } from '../components/ui/dialog';
+import { Sheet, SheetBody, SheetFooter } from '../components/ui/sheet';
 import { type AdminKey, useLocale } from '../i18n';
 import { ApiError, api, type Me, meQuery, unwrap } from '../lib/api';
 import { formatDateTime } from '../lib/dates';
@@ -269,34 +269,39 @@ function InviteDialog({
     onOpenChange(next);
   }
   return (
-    <Dialog
+    <Sheet
       open={open}
       onOpenChange={close}
       title={t('staff.inviteTitle')}
       description={t('staff.inviteHint')}
     >
-      <Form form={form} onSubmit={(v) => invite.mutate(v)}>
-        <TextField
-          name="email"
-          label={t('staff.email')}
-          type="email"
-          inputMode="email"
-          autoComplete="off"
-        />
-        <RoleField roles={roles} />
-        {invite.isError && <Notice tone="error">{staffError(invite.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={() => close(false)}>
+      <Form form={form} onSubmit={(v) => invite.mutate(v)} className={sheetForm}>
+        <SheetBody>
+          <TextField
+            name="email"
+            label={t('staff.email')}
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+          />
+          <RoleField roles={roles} />
+          {invite.isError && <Notice tone="error">{staffError(invite.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={() => close(false)}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={invite.isPending}>
+          <Button type="submit" size="lg" disabled={invite.isPending}>
             {t('staff.invite')}
           </Button>
-        </div>
+        </SheetFooter>
       </Form>
-    </Dialog>
+    </Sheet>
   );
 }
+
+/** The react-hook-form <Form> as a panel's form: its body scrolls, its footer stays. */
+const sheetForm = 'min-h-0 flex-1 gap-0';
 
 const roleSchema = z.object({ role: z.enum(STORE_ROLES) });
 
@@ -331,24 +336,26 @@ function RoleDialog({
     },
   });
   return (
-    <Dialog
+    <Sheet
       open
       onOpenChange={(next) => !next && onClose()}
       title={t('staff.changeRoleTitle', { name: member.name })}
     >
-      <Form form={form} onSubmit={(v) => change.mutate(v)}>
-        <RoleField roles={roles} />
-        {change.isError && <Notice tone="error">{staffError(change.error, t)}</Notice>}
-        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
-          <Button variant="ghost" onClick={onClose}>
+      <Form form={form} onSubmit={(v) => change.mutate(v)} className={sheetForm}>
+        <SheetBody>
+          <RoleField roles={roles} />
+          {change.isError && <Notice tone="error">{staffError(change.error, t)}</Notice>}
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="secondary" size="lg" onClick={onClose}>
             {t('action.cancel')}
           </Button>
-          <Button type="submit" disabled={change.isPending || !form.formState.isDirty}>
+          <Button type="submit" size="lg" disabled={change.isPending || !form.formState.isDirty}>
             {t('action.save')}
           </Button>
-        </div>
+        </SheetFooter>
       </Form>
-    </Dialog>
+    </Sheet>
   );
 }
 

@@ -42,7 +42,7 @@ The build comes in steps. This first step changes what every page shares, so eve
 
 ## Options considered
 
-- **Pull in shadcn/ui's components wholesale** (its Sidebar, Select, Sheet). The admin already follows their patterns on Radix. Copying each one in would add JavaScript to the sign-in budget and churn every page at once, for the same look.
+- **Pull in shadcn/ui's components wholesale** (its Sidebar, Select, Sheet). The admin already follows their patterns on Radix. Copying each one in would add JavaScript to the sign-in budget and churn every page at once, for the same look. *Revisited on 8 Nov: the hand-made parts lacked shadcn's open and close motion and other details; see the last consequence.*
 - **Keep the section tabs beside the new sidebar.** The design rules drop them: two navigations for the same pages, and on phones a strip that scrolls sideways.
 
 ## Consequences
@@ -77,7 +77,7 @@ The build comes in steps. This first step changes what every page shares, so eve
 
   The full-page editors (product, promotion, collection) end in a save bar (`components/save-bar.tsx`): Discard · Save once something changes, Cancel · Create … for a new record. Delete and archive sit in the header's ⋯. Date presets are one shared filter (`dateRangeFilter`).
 - Form controls follow design rules 3 and 10:
-  - native selects are drawn like the design's select, with the up-down chevron, and stay native, so phones keep their own picker;
+  - short selects (`components/ui/select.tsx`) are shadcn/ui's Select on Radix on desktops, so their open list is drawn in the admin's colours in both themes (native lists were unreadable in the dark theme), and stay native on phones, so phones keep their own picker; the native options take the popover colours;
   - checkboxes and radios are 16 px;
   - `SwitchField` and `Switch` are drawn as switches; `SwitchField` stays a checkbox to assistive tech, so its forms and the E2E keep working;
   - the বাংলা | English tabs are a segmented control.
@@ -86,7 +86,7 @@ The build comes in steps. This first step changes what every page shares, so eve
   - a product's choice specifications and "Add a specification";
   - collection rules and the theme editor's link target.
 
-  Typing matches either language's name. Short fixed lists stay native selects, which phones show with their own picker. The E2E picks through a `choose()` helper.
+  Typing matches either language's name. Short fixed lists use `Select`, native on phones. The E2E picks through a `choose()` helper, which also picks from a native select.
 - Filters pick several values (design rule 4). The list endpoints read a comma-separated filter as "any of these" (`oneOrMany` in `@managemind/shared/query`), for:
   - orders' payment, source, zone and flag;
   - products' category and brand;
@@ -102,3 +102,13 @@ The build comes in steps. This first step changes what every page shares, so eve
   The list endpoints answer with `total` and take `offset` for this; the cursor still works for the exports.
 - Filter choices have no count beside them, as the boards draw: the owner decided they aren't needed.
 - The E2E no longer looks for the reports' section tabs; it checks each report's title instead.
+- Settings forms follow design rule 1 too: the keys and accounts on Couriers, Payments, Notifications (email sender, SMS gateway) and Facebook and Instagram (Conversions API) open in side panels from Connect or Change, and the cards only show their state. Delivery zones, Connect a domain, Invite someone and Change role moved from dialogs to side panels, as their boards draw them. The Payments board now draws its panel as well. Disconnecting the Conversions API asks first (design rule 7).
+- Dates are picked on a calendar (`components/ui/calendar.tsx`, shadcn/ui's Calendar on react-day-picker) from a box showing the date day first (`components/ui/date-picker.tsx`); date-and-time values add a time box. Values stay the strings native inputs gave. The calendar loads only with the pages that ask for a date.
+- The header's language and theme buttons open menus. The account menu and the phone's Menu show Appearance on one row of three icons (device, light, dark); the device's setting is the default, and choices saved by the old one-press toggle were dropped once (`mm.theme.v2`).
+- The admin's overlays now run on shadcn/ui's own source (revisiting "Pull in shadcn/ui's components wholesale" above). Its dialog, sheet, dropdown-menu, popover, select, calendar, command and button sit in `components/ui/shadcn/`, as published in its registry (new-york-v4) apart from imports, with `tw-animate-css` for their enter and exit animations. The admin's own parts keep their props and wrap them, so no page changed:
+  - `Dialog` (centred; a drawer from the bottom on phones) and `Sheet` (from the right; 92% tall from the bottom on phones);
+  - `Menu` and `Popover`, which keep the Radix names the pages used;
+  - `Select` on desktops, `Calendar` and the date picker, `Combobox`, and the list filters, which became shadcn's faceted filter (Popover and Command); the Ctrl K search uses shadcn's Dialog.
+
+  shadcn's other token names (`popover-foreground`, `destructive`…) are aliases of ours, and a bare `border` takes the border token, as in shadcn's base. Motion stops when the device asks for less. The sign-in JavaScript is unchanged (141 KiB). To refresh a part, fetch `https://ui.shadcn.com/r/styles/new-york-v4/<name>.json` and point its imports at the separate `@radix-ui/react-*` packages, `../../../lib/utils` and `./<sibling>`. The CLI is not used, because it would rewrite `styles.css`.
+- Icon buttons (`Button size="icon"`) show their name in shadcn/ui's Tooltip on hover and keyboard focus, in place of the browser's title; `tooltip={false}` leaves it out. The tooltip loads in its own chunk with the first icon button (`components/ui/icon-tip.tsx`): imported directly, Radix Tooltip and its positioning took the sign-in JavaScript from 141 to 159 KiB, over the 150 KiB budget.

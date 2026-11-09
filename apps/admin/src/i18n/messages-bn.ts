@@ -45,6 +45,8 @@ export const messagesBn: Record<keyof typeof messagesEn, string> = {
   'payments.mode': 'অ্যাকাউন্ট',
   'payments.mode.sandbox': 'স্যান্ডবক্স (পরীক্ষা)',
   'payments.mode.live': 'লাইভ',
+  'payments.changeTitle': 'SSLCommerz অ্যাকাউন্ট বদলান',
+  'payments.keysNote': 'সেভের আগে SSLCommerz-এ যাচাই করা হয়।',
   'payments.save': 'যাচাই করে সংরক্ষণ',
   'payments.checking': 'প্রোভাইডারের সাথে যাচাই হচ্ছে…',
   'payments.saved': 'যুক্ত হয়েছে। ক্রেতারা এখন অনলাইনে টাকা দিতে পারবেন।',
@@ -141,6 +143,7 @@ export const messagesBn: Record<keyof typeof messagesEn, string> = {
   'log.empty': 'এখনো কোনো বার্তা নেই।',
   'log.more': 'আরও দেখুন',
   'sms.title': 'এসএমএস গেটওয়ে',
+  'sms.panelNote': 'প্রতিটি মেসেজের খরচ আপনার অ্যাকাউন্ট থেকে যায়।',
   'sms.connect': 'গেটওয়ে যুক্ত করুন',
   'notify.useOwnAddress': 'নিজের ঠিকানা ব্যবহার করুন',
   'sms.hint':

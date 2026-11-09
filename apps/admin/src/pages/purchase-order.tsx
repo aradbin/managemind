@@ -39,6 +39,7 @@ import { VariantPicker } from '../components/variant-picker';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
+import { DateField } from '../components/date-field';
 import { api, unwrap } from '../lib/api';
 import { priceInput, readPrice } from '../lib/catalog';
 import { useRecordPage } from '../lib/crumb';
@@ -401,13 +402,12 @@ function PurchaseOrderEditor({ order }: { order?: PurchaseOrder }) {
                 )}
               </div>
             )}
-            <Field
+            <DateField
               label={t('po.expectedOn')}
               optional
-              type="date"
               value={expectedOn}
               disabled={!editable}
-              onChange={(e) => setExpectedOn(e.target.value)}
+              onChange={setExpectedOn}
             />
             <Field
               label={t('po.supplierRef')}

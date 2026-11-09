@@ -109,20 +109,24 @@ def vat():
     spage('SettingsVat', 'vat', 'VAT', 'Whether you charge VAT, and the rates.', body, js=sread('vat.js'))
 
 def payments():
-    form_html = ('<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">' + '\n'.join([
+    # The account's form is a side panel, like the couriers' keys (design rule 1).
+    pb = '\n'.join([
         '<div class="mm-field"><label class="mm-label" for="mm-py-id">Store ID</label><input id="mm-py-id" class="mm-input" value="{{p.id}}" onChange="{{p.onId}}" placeholder="nakshi0live"></div>',
-        '<div class="mm-field"><label class="mm-label" for="mm-py-pw">Store password</label><input id="mm-py-pw" class="mm-input" type="password" value="{{p.pw}}" onChange="{{p.onPw}}"><p class="mm-hint">From SSLCommerz’s welcome email. It’s encrypted and never shown again.</p></div>',
+        '<div class="mm-field"><label class="mm-label" for="mm-py-pw">Store password</label><input id="mm-py-pw" class="mm-input" type="password" value="{{p.pw}}" onChange="{{p.onPw}}"><p class="mm-hint">From SSLCommerz’s welcome email.</p></div>',
         '<div class="mm-field"><span class="mm-label" id="mm-l-pm">Account</span>' + chipsb('p.modes', 'pmd', 2, 'mm-l-pm') + '</div>',
-        '<sc-if value="{{p.refused}}" hint-placeholder-val="{{false}}"><div class="mm-alert mm-alert-bad" role="alert">' + svg(ICONS['alert']) + '<p style="margin: 0">{{p.refusedText}}</p></div></sc-if>',
-        '<div style="display: flex; gap: 8px"><sc-if value="{{p.notChecking}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-primary" onClick="{{p.save}}">Check and save</button></sc-if><sc-if value="{{p.checking}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" disabled="{{true}}">' + svg(ICONS['refresh'], 16) + 'Checking with the provider…</button></sc-if><button type="button" class="mm-btn mm-ghost" onClick="{{cancelEdit}}">Cancel</button></div>']) + '</sc-if>')
+        '<sc-if value="{{p.checking}}" hint-placeholder-val="{{false}}"><p class="mm-muted" role="status" style="margin: 0; display: flex; gap: 8px; align-items: center">' + svg(ICONS['refresh'], 16) + 'Checking with the provider…</p></sc-if>',
+        '<sc-if value="{{p.refused}}" hint-placeholder-val="{{false}}"><div class="mm-alert mm-alert-bad" role="alert">' + svg(ICONS['alert']) + '<p style="margin: 0">{{p.refusedText}}</p></div></sc-if>'])
     body = '\n'.join([
         card('mm-c-ssl', 'SSLCommerz', '\n'.join([
-            '<sc-if value="{{conn}}" hint-placeholder-val="{{true}}">' + statusline('{{status}}', '{{meta}}') + '<div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" onClick="{{change}}">Change</button><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{askRemove}}">Remove</button></div></sc-if>',
-            '<sc-if value="{{notConn}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">Not connected. Customers can only pay on delivery.</p><button type="button" class="mm-btn mm-primary" style="align-self: flex-start" onClick="{{connect}}">Connect SSLCommerz</button></sc-if>', form_html]),
+            '<sc-if value="{{conn}}" hint-placeholder-val="{{true}}">' + statusline('{{status}}', '{{meta}}') + '<div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{change}}">Change</button><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{askRemove}}">Remove</button></div></sc-if>',
+            '<sc-if value="{{notConn}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">Not connected. Customers can only pay on delivery.</p><button type="button" class="mm-btn mm-primary" style="align-self: flex-start" aria-haspopup="dialog" onClick="{{connect}}">Connect SSLCommerz</button></sc-if>']),
              sub='Customers pay by card, bKash, Nagad or bank through your own SSLCommerz account. The money goes straight to you.'),
         '<p class="mm-muted" style="margin: 0; font-size: 13px">To ask some customers for the delivery charge in advance, see <a href="@@CHECKOUT@@" style="color: var(--foreground); text-decoration: underline; text-underline-offset: 3px">Checkout</a>.</p>'])
-    extra_d = '\n' + palert('dl.open', 'Disconnect SSLCommerz?', '<p style="margin: 0">Customers won’t be able to pay online. Orders already paid are not affected.</p>', 'closeAll', 'dl.confirm', 'Disconnect')
-    extra_p = '\n' + phalert('dl.open', 'Disconnect SSLCommerz?', '<p style="margin: 0">Customers won’t be able to pay online. Orders already paid are not affected.</p>', 'closeAll', 'dl.confirm', 'Disconnect')
+    note = 'Checked with SSLCommerz before saving, and never shown again.'
+    a, sv = dfoot_buttons('closeAll', 'p.save', 'Check and save', 'p.checking')
+    disc = '<p style="margin: 0">Customers won’t be able to pay online. Orders already paid are not affected.</p>'
+    extra_d = '\n' + dpanel('pp.open', 'closeAll', 'mm-pp-title', '{{pp.title}}', note, pb, '', a, sv) + '\n' + palert('dl.open', 'Disconnect SSLCommerz?', disc, 'closeAll', 'dl.confirm', 'Disconnect')
+    extra_p = '\n' + pdrawer('pp.open', 'closeAll', 'mm-pp-title', '{{pp.title}}', note, pbody(pb), pfoot('closeAll', 'p.save', 'Check and save', 'p.checking'), tall=False) + '\n' + phalert('dl.open', 'Disconnect SSLCommerz?', disc, 'closeAll', 'dl.confirm', 'Disconnect')
     spage('SettingsPayments', 'payments', 'Payments', 'Online payment with your SSLCommerz account.', body.replace('@@CHECKOUT@@', 'SettingsCheckout.dc.html'), body.replace('@@CHECKOUT@@', 'SettingsCheckoutPhone.dc.html'), js=sread('payments.js'), extra_d=extra_d, extra_p=extra_p, bar=False)
 
 

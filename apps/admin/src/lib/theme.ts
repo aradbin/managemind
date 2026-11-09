@@ -6,7 +6,11 @@ import { useSyncExternalStore } from 'react';
 export type ThemeChoice = 'system' | 'light' | 'dark';
 export const THEME_CHOICES: readonly ThemeChoice[] = ['system', 'light', 'dark'];
 
-const KEY = 'mm.theme';
+// v2: the header's old one-press toggle could only save light or dark, so
+// choices saved under the first key are dropped and everyone starts on the
+// device's setting again.
+const KEY = 'mm.theme.v2';
+const OLD_KEY = 'mm.theme';
 const listeners = new Set<() => void>();
 
 /** A stored value as a choice; anything else follows the device. */
@@ -24,6 +28,7 @@ function deviceDark() {
 
 function stored(): ThemeChoice {
   try {
+    localStorage.removeItem(OLD_KEY);
     return parseThemeChoice(localStorage.getItem(KEY));
   } catch {
     return 'system';
@@ -31,20 +36,29 @@ function stored(): ThemeChoice {
 }
 
 let current: ThemeChoice = 'system';
+let resolved: 'light' | 'dark' = 'light';
 
 function themeChoice(): ThemeChoice {
   return current;
 }
 
+function resolvedTheme(): 'light' | 'dark' {
+  return resolved;
+}
+
 function apply(choice: ThemeChoice) {
-  document.documentElement.dataset.theme = resolveTheme(choice, deviceDark().matches);
+  resolved = resolveTheme(choice, deviceDark().matches);
+  document.documentElement.dataset.theme = resolved;
 }
 
 /** Applies the choice, and follows the device while it is "system". */
 export function initTheme(): void {
   current = stored();
   apply(current);
-  deviceDark().addEventListener('change', () => apply(current));
+  deviceDark().addEventListener('change', () => {
+    apply(current);
+    for (const listener of listeners) listener();
+  });
 }
 
 export function setThemeChoice(choice: ThemeChoice): void {
@@ -66,4 +80,9 @@ function subscribe(listener: () => void) {
 
 export function useThemeChoice(): ThemeChoice {
   return useSyncExternalStore(subscribe, themeChoice);
+}
+
+/** The theme on screen: the choice, or the device's while it is "system". */
+export function useResolvedTheme(): 'light' | 'dark' {
+  return useSyncExternalStore(subscribe, resolvedTheme);
 }

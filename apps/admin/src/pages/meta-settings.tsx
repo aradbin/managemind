@@ -18,6 +18,7 @@ import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { RadioCard } from '../components/ui/choice';
 import { Input } from '../components/ui/input';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { SwitchRow } from '../components/ui/switch';
 import { WhatsappCard } from '../components/whatsapp-card';
 import { type AdminKey, useLocale } from '../i18n';
@@ -67,6 +68,8 @@ function ConversionsCard() {
   const [pixelId, setPixelId] = useState('');
   const [token, setToken] = useState('');
   const [testCode, setTestCode] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [removing, setRemoving] = useState(false);
   useEffect(() => {
     if (!capi) return;
     setPixelId(capi.pixelId ?? store.data?.storefront.tracking.metaPixelId ?? '');
@@ -90,6 +93,7 @@ function ConversionsCard() {
       ),
     onSuccess: () => {
       setToken('');
+      setEditing(false);
       void refresh();
       toast(t('meta.capi.saved'));
     },
@@ -102,6 +106,7 @@ function ConversionsCard() {
         }),
       ),
     onSuccess: () => {
+      setRemoving(false);
       void refresh();
       toast(t('meta.capi.removed'));
     },
@@ -123,53 +128,96 @@ function ConversionsCard() {
       )}
       {!canConnect ? (
         <Notice>{t('meta.capi.ownersOnly')}</Notice>
+      ) : capi.connected ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            {t('meta.capi.change')}
+          </Button>
+          <Button
+            variant="ghost"
+            className="text-danger hover:text-danger"
+            onClick={() => setRemoving(true)}
+          >
+            {t('meta.capi.remove')}
+          </Button>
+        </div>
       ) : (
-        <form
-          className="flex flex-col gap-4"
+        <Button className="self-start" onClick={() => setEditing(true)}>
+          {t('meta.capi.open')}
+        </Button>
+      )}
+      {/* The token opens in a side panel (design rule 1). */}
+      <Sheet
+        open={canConnect && editing}
+        onOpenChange={(open) => {
+          if (open || save.isPending) return;
+          setEditing(false);
+          setToken('');
+          save.reset();
+        }}
+        title={t('meta.capi')}
+        description={t('meta.capi.steps')}
+      >
+        <SheetForm
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate();
           }}
         >
-          <p className="text-sm text-muted-foreground">{t('meta.capi.steps')}</p>
-          <Field
-            label={t('meta.capi.pixel')}
-            inputMode="numeric"
-            value={pixelId}
-            onChange={(e) => setPixelId(e.target.value.replace(/\D/g, ''))}
-          />
-          <Field
-            label={t('meta.capi.token')}
-            type="password"
-            autoComplete="off"
-            value={token}
-            hint={capi.connected ? t('meta.capi.tokenKeep') : undefined}
-            onChange={(e) => setToken(e.target.value)}
-          />
-          <Field
-            label={t('meta.capi.testCode')}
-            hint={t('meta.capi.testCodeHint')}
-            value={testCode}
-            onChange={(e) => setTestCode(e.target.value)}
-          />
-          {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={!token.trim() || !pixelId || save.isPending}>
+          <SheetBody>
+            <Field
+              label={t('meta.capi.pixel')}
+              inputMode="numeric"
+              value={pixelId}
+              onChange={(e) => setPixelId(e.target.value.replace(/\D/g, ''))}
+            />
+            <Field
+              label={t('meta.capi.token')}
+              type="password"
+              autoComplete="off"
+              value={token}
+              hint={capi.connected ? t('meta.capi.tokenKeep') : undefined}
+              onChange={(e) => setToken(e.target.value)}
+            />
+            <Field
+              label={t('meta.capi.testCode')}
+              hint={t('meta.capi.testCodeHint')}
+              value={testCode}
+              onChange={(e) => setTestCode(e.target.value)}
+            />
+            {save.isError && <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>}
+          </SheetBody>
+          <SheetFooter>
+            <Button
+              variant="secondary"
+              size="lg"
+              disabled={save.isPending}
+              onClick={() => {
+                setEditing(false);
+                setToken('');
+                save.reset();
+              }}
+            >
+              {t('action.cancel')}
+            </Button>
+            <Button type="submit" size="lg" disabled={!token.trim() || !pixelId || save.isPending}>
               {t('meta.capi.connect')}
             </Button>
-            {capi.connected && (
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={remove.isPending}
-                onClick={() => remove.mutate()}
-              >
-                {t('meta.capi.remove')}
-              </Button>
-            )}
-          </div>
-        </form>
-      )}
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
+      {/* Every delete asks first (design rule 7). */}
+      <ConfirmDialog
+        open={removing}
+        onOpenChange={setRemoving}
+        title={t('meta.capi.removeTitle')}
+        confirmLabel={t('meta.capi.remove')}
+        busy={remove.isPending}
+        error={remove.error ? saveErrorMessage(remove.error, t) : undefined}
+        onConfirm={() => remove.mutate()}
+      >
+        <p>{t('meta.capi.removeBody')}</p>
+      </ConfirmDialog>
     </section>
   );
 }

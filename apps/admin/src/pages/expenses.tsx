@@ -45,6 +45,8 @@ import { Switch } from '../components/ui/switch';
 import { useLocale } from '../i18n';
 import '../i18n/expenses';
 import '../i18n/purchasing';
+import { DateField } from '../components/date-field';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { priceInput, readPrice } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
@@ -757,12 +759,11 @@ function ExpenseSheet({
       >
         <SheetBody>
           <div className="flex flex-col gap-2">
-            <Field
+            <DateField
               label={t('expenses.date')}
-              type="date"
               value={spentOn}
               max={today}
-              onChange={(e) => setSpentOn(e.target.value)}
+              onChange={setSpentOn}
             />
             {/* Chips fill the date; they aren't a choice (design rule 3). */}
             <div className="flex gap-2">
@@ -1116,19 +1117,18 @@ function RecurringSheet({
               <label htmlFor={dayId} className="text-sm font-medium">
                 {t('recurring.dayOfMonth')}
               </label>
-              <select
+              <Select
                 id={dayId}
-                className={cn(control, 'h-10 md:h-9')}
-                value={day}
-                onChange={(e) => setDay(Number(e.target.value))}
-              >
-                {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-                <option value={0}>{t('recurring.lastDay')}</option>
-              </select>
+                value={String(day)}
+                onChange={(next) => setDay(Number(next))}
+                options={[
+                  ...Array.from({ length: 28 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: String(i + 1),
+                  })),
+                  { value: '0', label: t('recurring.lastDay') },
+                ]}
+              />
             </div>
           ) : (
             <ChoiceButtons
@@ -1142,18 +1142,13 @@ function RecurringSheet({
             />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <Field
-              label={t('recurring.startsOn')}
-              type="date"
-              value={startsOn}
-              onChange={(e) => setStartsOn(e.target.value)}
-            />
-            <Field
-              label={optional(t('recurring.endsOn'), t)}
-              type="date"
+            <DateField label={t('recurring.startsOn')} value={startsOn} onChange={setStartsOn} />
+            <DateField
+              label={t('recurring.endsOn')}
+              optional
               value={endsOn}
               min={startsOn}
-              onChange={(e) => setEndsOn(e.target.value)}
+              onChange={setEndsOn}
             />
           </div>
           {entry && (

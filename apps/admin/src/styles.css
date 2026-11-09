@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* shadcn/ui's enter and exit animations (animate-in, fade-in-0, zoom-in-95, slide-in-from-*). */
+@import "tw-animate-css";
 
 /*
  * Colour tokens: shadcn/ui's neutral theme as the design canvas draws it
@@ -53,6 +55,16 @@
   --color-success: var(--tone-success);
   --color-success-soft: color-mix(in oklch, var(--tone-success) 14%, transparent);
   --color-success-foreground: oklch(0.473 0.219 149.579);
+  /*
+   * The other names shadcn/ui's components use (components/ui/shadcn), as
+   * aliases of the tokens above, so they follow the theme too.
+   */
+  --color-popover-foreground: var(--color-foreground);
+  --color-card-foreground: var(--color-foreground);
+  --color-accent-foreground: var(--color-foreground);
+  --color-secondary: var(--color-muted);
+  --color-secondary-foreground: var(--color-foreground);
+  --color-destructive: var(--color-danger);
 }
 
 /*
@@ -100,6 +112,13 @@
 }
 
 @layer base {
+  /* shadcn/ui's base: a bare `border` takes the border token, not the text colour. */
+  *,
+  ::before,
+  ::after,
+  ::backdrop {
+    border-color: var(--color-border);
+  }
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
@@ -245,6 +264,11 @@
   @media (prefers-reduced-motion: reduce) {
     .mm-skel {
       animation: none;
+    }
+    /* Menus, dialogs and panels appear without moving. */
+    [data-state] {
+      /* biome-ignore lint/complexity/noImportantStyles: beats each component's own duration. */
+      animation-duration: 1ms !important;
     }
   }
 }

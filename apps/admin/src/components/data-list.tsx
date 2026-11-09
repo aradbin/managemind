@@ -9,7 +9,6 @@ import { formatNumber } from '@managemind/shared/i18n';
 import {
   ArrowDown,
   ArrowUp,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -22,6 +21,7 @@ import { useLocale } from '../i18n';
 import { PAGE_SIZES, type Pager } from '../lib/paged';
 import { cn } from '../lib/utils';
 import { Button } from './ui/button';
+import { Select } from './ui/select';
 
 export interface Column<T> {
   header: string;
@@ -624,24 +624,12 @@ function PagerRow({
       <div className="hidden flex-wrap items-center gap-x-6 gap-y-4 md:flex">
         <label className="flex items-center gap-2">
           <span className="font-medium">{t('list.rowsPerPage')}</span>
-          <span className="relative">
-            <select
-              value={size}
-              onChange={(e) => pager.onSize(Number(e.target.value))}
-              className="h-8 w-[70px] appearance-none rounded-lg border border-border bg-background pr-7 pl-3 shadow-xs hover:bg-accent dark:border-input dark:bg-white/[0.045]"
-              style={{ backgroundImage: 'none' }}
-            >
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {n(s)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 opacity-50"
-            />
-          </span>
+          <Select
+            className="h-8 w-[76px] md:h-8"
+            value={String(size)}
+            onChange={(next) => pager.onSize(Number(next))}
+            options={PAGE_SIZES.map((s) => ({ value: String(s), label: n(s) }))}
+          />
         </label>
         <span className="font-medium tabular-nums">{t('list.pageN', { page: n(page) })}</span>
         <nav aria-label={t('list.pages')} className="flex items-center gap-2">

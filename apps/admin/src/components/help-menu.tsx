@@ -1,14 +1,13 @@
 // The help menu in the header (phase-5b-plan §7): the Bangla help guide,
 // support by email and WhatsApp, and the platform's terms, privacy notice
 // and data processing agreement, as far as the platform has set them.
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
 import { CircleHelp } from 'lucide-react';
 import { useState } from 'react';
 import { type AdminKey, useLocale } from '../i18n';
 import { api, unwrap } from '../lib/api';
 import { Button } from './ui/button';
-import { menuContent, menuItem } from './ui/menu';
+import { Menu, menuContent, menuItem } from './ui/menu';
 
 /** The help links the platform has set, loaded once `enabled` turns true. */
 export function useHelpLinks(enabled: boolean) {

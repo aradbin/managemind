@@ -424,13 +424,8 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px"><div style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><h1 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em">Payments</h1><p class="mm-muted" style="margin: 0">Online payment with your SSLCommerz account.</p></div><div style="display: flex; gap: 8px"></div></div>
 <sc-if value="{{readOnly}}" hint-placeholder-val="{{false}}"><div class="mm-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><p style="margin: 0">You can see these settings but not change them.</p></div></sc-if>
 <section class="mm-card" aria-labelledby="mm-c-ssl" style="gap: 16px"><div style="display: flex; align-items: flex-start; gap: 12px"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px"><h2 id="mm-c-ssl" class="mm-ctitle">SSLCommerz</h2><p class="mm-muted" style="margin: 0; font-size: 13px">Customers pay by card, bKash, Nagad or bank through your own SSLCommerz account. The money goes straight to you.</p></div></div>
-<sc-if value="{{conn}}" hint-placeholder-val="{{true}}"><div style="display: flex; gap: 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--success)"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 500">{{status}}</span><span class="mm-muted" style="font-size: 13px">{{meta}}</span></div></div><div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" onClick="{{change}}">Change</button><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{askRemove}}">Remove</button></div></sc-if>
-<sc-if value="{{notConn}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">Not connected. Customers can only pay on delivery.</p><button type="button" class="mm-btn mm-primary" style="align-self: flex-start" onClick="{{connect}}">Connect SSLCommerz</button></sc-if>
-<sc-if value="{{editing}}" hint-placeholder-val="{{false}}"><div class="mm-field"><label class="mm-label" for="mm-py-id">Store ID</label><input id="mm-py-id" class="mm-input" value="{{p.id}}" onChange="{{p.onId}}" placeholder="nakshi0live"></div>
-<div class="mm-field"><label class="mm-label" for="mm-py-pw">Store password</label><input id="mm-py-pw" class="mm-input" type="password" value="{{p.pw}}" onChange="{{p.onPw}}"><p class="mm-hint">From SSLCommerz’s welcome email. It’s encrypted and never shown again.</p></div>
-<div class="mm-field"><span class="mm-label" id="mm-l-pm">Account</span><div role="radiogroup" aria-labelledby="mm-l-pm" class="mm-chips"><sc-for list="{{p.modes}}" as="pmd" hint-placeholder-count="2"><button type="button" role="radio" class="mm-chipq" aria-checked="{{pmd.aria}}" aria-pressed="{{pmd.pressed}}" onClick="{{pmd.pick}}">{{pmd.label}}</button></sc-for></div></div>
-<sc-if value="{{p.refused}}" hint-placeholder-val="{{false}}"><div class="mm-alert mm-alert-bad" role="alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{p.refusedText}}</p></div></sc-if>
-<div style="display: flex; gap: 8px"><sc-if value="{{p.notChecking}}" hint-placeholder-val="{{true}}"><button type="button" class="mm-btn mm-primary" onClick="{{p.save}}">Check and save</button></sc-if><sc-if value="{{p.checking}}" hint-placeholder-val="{{false}}"><button type="button" class="mm-btn mm-primary" disabled="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Checking with the provider…</button></sc-if><button type="button" class="mm-btn mm-ghost" onClick="{{cancelEdit}}">Cancel</button></div></sc-if>
+<sc-if value="{{conn}}" hint-placeholder-val="{{true}}"><div style="display: flex; gap: 10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px; color: var(--success)"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: 500">{{status}}</span><span class="mm-muted" style="font-size: 13px">{{meta}}</span></div></div><div style="display: flex; gap: 8px"><button type="button" class="mm-btn mm-outline" aria-haspopup="dialog" onClick="{{change}}">Change</button><button type="button" class="mm-btn mm-ghost mm-danger" onClick="{{askRemove}}">Remove</button></div></sc-if>
+<sc-if value="{{notConn}}" hint-placeholder-val="{{false}}"><p class="mm-muted" style="margin: 0">Not connected. Customers can only pay on delivery.</p><button type="button" class="mm-btn mm-primary" style="align-self: flex-start" aria-haspopup="dialog" onClick="{{connect}}">Connect SSLCommerz</button></sc-if>
 </section>
 <p class="mm-muted" style="margin: 0; font-size: 13px">To ask some customers for the delivery charge in advance, see <a href="SettingsCheckout.dc.html" style="color: var(--foreground); text-decoration: underline; text-underline-offset: 3px">Checkout</a>.</p>
 
@@ -438,6 +433,28 @@ button.mm-snav-a{width:100%;border:0;background:transparent;font:inherit;text-al
 </main>
 </div>
 
+<sc-if value="{{pp.open}}" hint-placeholder-val="{{false}}">
+<div style="position: fixed; inset: 0; z-index: 50">
+<button type="button" tabindex="-1" class="mm-scrim" aria-label="Close" onClick="{{closeAll}}" style="position: absolute; background: rgb(0 0 0 / .5)"></button>
+<div role="dialog" aria-modal="true" aria-labelledby="mm-pp-title" onKeyDown="{{escClose}}" class="mm-panel">
+<div class="mm-phead"><h2 id="mm-pp-title" style="margin: 0; font-size: 16px; font-weight: 600; line-height: 24px">{{pp.title}}</h2><p id="mm-pp-title-sub" class="mm-muted" style="margin: 0">Checked with SSLCommerz before saving, and never shown again.</p></div>
+<div class="mm-pbody">
+<div class="mm-field"><label class="mm-label" for="mm-py-id">Store ID</label><input id="mm-py-id" class="mm-input" value="{{p.id}}" onChange="{{p.onId}}" placeholder="nakshi0live"></div>
+<div class="mm-field"><label class="mm-label" for="mm-py-pw">Store password</label><input id="mm-py-pw" class="mm-input" type="password" value="{{p.pw}}" onChange="{{p.onPw}}"><p class="mm-hint">From SSLCommerz’s welcome email.</p></div>
+<div class="mm-field"><span class="mm-label" id="mm-l-pm">Account</span><div role="radiogroup" aria-labelledby="mm-l-pm" class="mm-chips"><sc-for list="{{p.modes}}" as="pmd" hint-placeholder-count="2"><button type="button" role="radio" class="mm-chipq" aria-checked="{{pmd.aria}}" aria-pressed="{{pmd.pressed}}" onClick="{{pmd.pick}}">{{pmd.label}}</button></sc-for></div></div>
+<sc-if value="{{p.checking}}" hint-placeholder-val="{{false}}"><p class="mm-muted" role="status" style="margin: 0; display: flex; gap: 8px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>Checking with the provider…</p></sc-if>
+<sc-if value="{{p.refused}}" hint-placeholder-val="{{false}}"><div class="mm-alert mm-alert-bad" role="alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg><p style="margin: 0">{{p.refusedText}}</p></div></sc-if>
+</div>
+<div class="mm-pfoot">
+
+<span style="flex: 1"></span>
+<button type="button" class="mm-btn mm-outline" style="height: 36px; padding: 0 16px" onClick="{{closeAll}}">Cancel</button>
+<button type="button" class="mm-btn mm-primary" style="height: 36px; padding: 0 16px" disabled="{{p.checking}}" onClick="{{p.save}}">Check and save</button>
+</div>
+<button type="button" class="mm-btn mm-ghost mm-icon" aria-label="Close" onClick="{{closeAll}}" style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; opacity: .7"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+</div>
+</div>
+</sc-if>
 <sc-if value="{{dl.open}}" hint-placeholder-val="{{false}}">
 <div style="position: fixed; inset: 0; z-index: 80">
 <div aria-hidden="true" style="position: absolute; inset: 0; background: rgb(0 0 0 / .5)"></div>
@@ -831,24 +848,24 @@ function settingsVals(vals, s, up) {
   vals.escClose = function (e) { if (e.key === 'Escape') { e.preventDefault(); up({ panel: null, dlg: null, menu: null }); } };
   vals.readOnly = Boolean(s.viewer); vals.canEdit = !s.viewer;
 }
-var START = { Payments: {}, 'Not connected': { conn: false }, 'Connect': { conn: false, editing: true }, Checking: { conn: false, editing: true, checking: true }, Refused: { conn: false, editing: true, refused: true }, Disconnect: { dlg: true } };
+var START = { Payments: {}, 'Not connected': { conn: false }, 'Connect': { conn: false, panel: 'ssl' }, Checking: { conn: false, panel: 'ssl', checking: true }, Refused: { conn: false, panel: 'ssl', refused: true }, Disconnect: { dlg: true } };
 class Component extends DCLogic {
   renderVals() {
     var b = boot(this, START, 'Payments');
     var s = b.s, up = b.up, toast = b.toast, vals = b.vals;
     settingsVals(vals, s, up);
     var conn = s.conn !== false;
-    vals.conn = conn && !s.editing; vals.notConn = !conn && !s.editing; vals.editing = Boolean(s.editing);
+    vals.conn = conn; vals.notConn = !conn;
+    vals.pp = { open: s.panel === 'ssl', title: conn ? 'Change SSLCommerz account' : 'Connect SSLCommerz' };
     vals.status = 'Connected: taking real payments'; vals.meta = 'Store ID ending 4f2a · checked ' + when('2026-10-29 08:00');
     var p = s.p || { id: '', pw: '', mode: 'live' };
     var setP = function (k, v) { var n = Object.assign({}, p); n[k] = v; up({ p: n, refused: false }); };
     vals.p = { id: p.id, onId: function (e) { setP('id', e.target.value); }, pw: p.pw, onPw: function (e) { setP('pw', e.target.value); },
       modes: [['sandbox', 'Sandbox (testing)'], ['live', 'Live']].map(function (m) { var on = p.mode === m[0]; return { label: m[1], aria: on ? 'true' : 'false', pressed: on ? 'true' : 'false', pick: function () { setP('mode', m[0]); } }; }),
       checking: Boolean(s.checking), notChecking: !s.checking, refused: Boolean(s.refused), refusedText: 'The provider refused: Invalid Store ID or password.',
-      save: function () { up({ checking: false, editing: false, conn: true, p: null, toast: toast('Connected. Customers can now pay online.') }); } };
-    vals.change = function () { up({ editing: true, p: null }); };
-    vals.cancelEdit = function () { up({ editing: false, p: null, refused: false }); };
-    vals.connect = function () { up({ editing: true, p: null }); };
+      save: function () { up({ checking: false, panel: null, conn: true, p: null, toast: toast('Connected. Customers can now pay online.') }); } };
+    vals.change = function () { up({ panel: 'ssl', p: null, refused: false }); };
+    vals.connect = function () { up({ panel: 'ssl', p: null, refused: false }); };
     vals.askRemove = function () { up({ dlg: true }); };
     vals.dl = { open: Boolean(s.dlg), confirm: function () { up({ dlg: false, conn: false, toast: toast('SSLCommerz is disconnected.') }); } };
     return vals;

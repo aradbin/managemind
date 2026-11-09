@@ -4,7 +4,6 @@
 // one tried as if live), and, for code promotions, batches of unique codes.
 
 import { formatNumber } from '@managemind/shared/i18n';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Check, ChevronDown, ChevronRight, CircleStop, Copy, Sparkles, X } from 'lucide-react';
@@ -27,7 +26,7 @@ import { RadioCard } from '../components/ui/choice';
 import { Combobox } from '../components/ui/combobox';
 import { Dialog } from '../components/ui/dialog';
 import { Input, Textarea } from '../components/ui/input';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { chipClass } from '../components/ui/segmented';
 import { StatRow } from '../components/ui/stat-row';
 import { Switch } from '../components/ui/switch';
@@ -35,6 +34,7 @@ import { VariantPicker } from '../components/variant-picker';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/promotions';
+import { DateField } from '../components/date-field';
 import { api, unwrap } from '../lib/api';
 import { formatPrice } from '../lib/catalog';
 import { useRecordPage } from '../lib/crumb';
@@ -604,19 +604,19 @@ function Editor({ promotion }: { promotion: Promotion | undefined }) {
               {t('promo.scheduleLimits')}
             </h2>
             <div className="grid gap-3 md:grid-cols-2">
-              <Field
+              <DateField
+                time
                 label={t('promo.startsAt')}
-                type="datetime-local"
                 hint={t('promo.startsHint')}
                 value={d.startsAt}
-                onChange={(e) => set({ startsAt: e.target.value })}
+                onChange={(startsAt) => set({ startsAt })}
               />
-              <Field
+              <DateField
+                time
                 label={t('promo.endsAt')}
-                type="datetime-local"
                 hint={t('promo.endsHint')}
                 value={d.endsAt}
-                onChange={(e) => set({ endsAt: e.target.value })}
+                onChange={(endsAt) => set({ endsAt })}
                 error={problem('dates')}
               />
               <Field

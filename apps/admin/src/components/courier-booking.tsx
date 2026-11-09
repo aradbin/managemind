@@ -25,6 +25,7 @@ import { useToast } from './toast';
 import { Button } from './ui/button';
 import { Dialog } from './ui/dialog';
 import { Input } from './ui/input';
+import { Select } from './ui/select';
 
 /** Refreshes what a courier change touches. */
 function useRefresh(orderId: string) {
@@ -371,18 +372,15 @@ export function CourierPanel({
           <label htmlFor={`fake-${s.id}`} className="sr-only">
             {t('couriers.fake.move')}
           </label>
-          <select
+          <Select
             id={`fake-${s.id}`}
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
+            className="w-auto"
             value={fakeStatus}
-            onChange={(e) => setFakeStatus(e.target.value as typeof fakeStatus)}
-          >
-            {COURIER_UPDATES.filter((u) => u !== 'unknown' && u !== 'paid_out').map((u) => (
-              <option key={u} value={u}>
-                {t(`couriers.update.${u}` as AdminKey)}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setFakeStatus(next as typeof fakeStatus)}
+            options={COURIER_UPDATES.filter((u) => u !== 'unknown' && u !== 'paid_out').map(
+              (u) => ({ value: u, label: t(`couriers.update.${u}` as AdminKey) }),
+            )}
+          />
           <Button variant="secondary" disabled={move.isPending} onClick={() => move.mutate()}>
             {t('couriers.fake.move')}
           </Button>
@@ -503,18 +501,12 @@ export function BulkBookDialog({ orderIds, onClose }: { orderIds: string[]; onCl
             <label htmlFor="bulk-courier" className="text-sm font-medium">
               {t('couriers.bulk.courier')}
             </label>
-            <select
+            <Select
               id="bulk-courier"
-              className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs md:h-9 md:text-sm dark:bg-white/[0.045]"
               value={chosen ?? ''}
-              onChange={(e) => setCourier(e.target.value as Courier)}
-            >
-              {connected.map((c) => (
-                <option key={c} value={c}>
-                  {courierName(c, t)}
-                </option>
-              ))}
-            </select>
+              onChange={(next) => setCourier(next as Courier)}
+              options={connected.map((c) => ({ value: c, label: courierName(c, t) }))}
+            />
           </div>
           {checks.isPending && <p role="status">{t('loading')}</p>}
           {checks.isError && <Notice tone="error">{errorMessage(checks.error, t)}</Notice>}

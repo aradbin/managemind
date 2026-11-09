@@ -79,13 +79,15 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
       <div className="flex flex-col gap-4 md:grid md:grid-cols-[200px_minmax(0,780px)] md:items-start md:gap-8">
         <nav
           aria-label={t('settings.title')}
-          className="sticky top-0 flex flex-col gap-px max-md:hidden"
+          // Scrolls by itself once its links outgrow the window: the page
+          // scrolls in #main, under the 48 px header and the inset's margins.
+          className="sticky top-0 flex max-h-[calc(100dvh-5.5rem)] flex-col gap-px overflow-y-auto overscroll-contain pr-1 pb-1 [scrollbar-width:thin] max-md:hidden"
         >
           {groups.map((g, i) => (
             <div key={g.label} className="contents">
               <p
                 className={cn(
-                  'mb-1 px-2.5 text-xs font-medium text-muted-foreground',
+                  'mb-1 shrink-0 px-2.5 text-xs font-medium text-muted-foreground',
                   i > 0 && 'mt-3.5',
                 )}
               >
@@ -98,7 +100,7 @@ export function SettingsFrame({ children }: { children: ReactNode }) {
                     key={p.to}
                     to={p.to}
                     aria-current={current ? 'page' : undefined}
-                    className="flex h-8 items-center rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
+                    className="flex h-8 shrink-0 items-center rounded-lg px-2.5 text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:bg-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground"
                   >
                     {t(p.label)}
                   </Link>

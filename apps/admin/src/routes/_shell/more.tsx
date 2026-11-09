@@ -6,7 +6,7 @@
 // page works there too.
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouterState } from '@tanstack/react-router';
-import { ChevronRight, CircleHelp, ExternalLink, Languages, LogOut, Moon, Sun } from 'lucide-react';
+import { ChevronRight, CircleHelp, ExternalLink, Languages, LogOut, SunMoon } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 import { useSignOut } from '../../components/account-menu';
 import { useHelpLinks } from '../../components/help-menu';
@@ -20,14 +20,13 @@ import {
 } from '../../components/nav';
 import { usePermission } from '../../components/permission-gate';
 import { initials, StoreSwitcher } from '../../components/store-switcher';
+import { ThemeSwitch } from '../../components/theme-choice';
 import { Button } from '../../components/ui/button';
 import { Dialog } from '../../components/ui/dialog';
 import { Segmented } from '../../components/ui/segmented';
-import { Switch } from '../../components/ui/switch';
-import { useLocale } from '../../i18n';
+import { LANGUAGES, useLocale } from '../../i18n';
 import { meQuery } from '../../lib/api';
 import { storeSettingsQuery } from '../../lib/catalog';
-import { setThemeChoice, useThemeChoice } from '../../lib/theme';
 import { cn } from '../../lib/utils';
 
 export const Route = createFileRoute('/_shell/more')({ component: MorePage });
@@ -56,12 +55,7 @@ function MorePage() {
   const { links: help } = useHelpLinks(true);
   const signOut = useSignOut();
   const [confirming, setConfirming] = useState(false);
-  const choice = useThemeChoice();
-  const dark =
-    choice === 'dark' ||
-    (choice === 'system' &&
-      typeof document !== 'undefined' &&
-      document.documentElement.dataset.theme === 'dark');
+  const appearanceId = useId();
   const helpLink = help[0];
 
   return (
@@ -111,16 +105,12 @@ function MorePage() {
       <Section label={t('more.preferences')}>
         <div className={cn(row, 'hover:bg-transparent')}>
           <span aria-hidden className={tile}>
-            {dark ? <Sun /> : <Moon />}
+            <SunMoon />
           </span>
-          <label htmlFor="menu-dark" className="flex-1 cursor-pointer font-medium">
-            {t('more.darkMode')}
-          </label>
-          <Switch
-            id="menu-dark"
-            checked={dark}
-            onCheckedChange={(on) => setThemeChoice(on ? 'dark' : 'light')}
-          />
+          <span id={appearanceId} className="flex-1 font-medium">
+            {t('appearance.title')}
+          </span>
+          <ThemeSwitch labelledBy={appearanceId} />
         </div>
         <div className={cn(row, 'hover:bg-transparent')}>
           <span aria-hidden className={tile}>
@@ -131,10 +121,7 @@ function MorePage() {
             label={t('more.language')}
             value={locale}
             onChange={setLocale}
-            options={[
-              { value: 'bn', label: 'বাংলা' },
-              { value: 'en', label: 'English' },
-            ]}
+            options={LANGUAGES}
             className="h-9 [&>button]:h-[30px] [&>button]:px-2.5 [&>button]:text-[13px]"
           />
         </div>

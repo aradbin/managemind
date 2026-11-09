@@ -5,7 +5,6 @@
 // since they change other rows (options regenerate variants).
 import { formatNumber } from '@managemind/shared/i18n';
 import { type RichTextDoc, richTextToPlainText } from '@managemind/shared/rich-text';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -50,7 +49,7 @@ import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { Combobox } from '../components/ui/combobox';
 import { Input, Textarea } from '../components/ui/input';
-import { menuContent, menuItem } from '../components/ui/menu';
+import { Menu, menuContent, menuItem } from '../components/ui/menu';
 import { useLocale } from '../i18n';
 import { ApiError, api, unwrap } from '../lib/api';
 import {

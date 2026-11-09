@@ -25,6 +25,7 @@ import { VariantPicker } from '../components/variant-picker';
 import { useLocale } from '../i18n';
 import '../i18n/orders';
 import '../i18n/purchasing';
+import { DatePicker } from '../components/ui/date-picker';
 import { api, unwrap } from '../lib/api';
 import { priceInput, readPrice } from '../lib/catalog';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
@@ -301,12 +302,11 @@ function ReceiveForm({ order }: { order?: PurchaseOrder | undefined }) {
                   {t('receive.date')}
                 </label>
                 <div className="flex gap-2">
-                  <Input
+                  <DatePicker
                     id="receive-date"
-                    type="date"
                     value={receivedOn}
                     max={dhakaToday()}
-                    onChange={(e) => setReceivedOn(e.target.value)}
+                    onChange={setReceivedOn}
                   />
                   <Button
                     variant={receivedOn === dhakaToday() ? 'primary' : 'secondary'}

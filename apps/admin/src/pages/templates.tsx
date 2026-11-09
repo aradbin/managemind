@@ -18,6 +18,7 @@ import { Textarea } from '../components/ui/input';
 import { ChoiceChips } from '../components/ui/segmented';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/messages';
+import { Select } from '../components/ui/select';
 import { api, unwrap } from '../lib/api';
 import { errorMessage, saveErrorMessage } from '../lib/errors';
 import { fieldErrors, type Template, templatesQuery } from '../lib/messaging';
@@ -83,17 +84,11 @@ export function TemplatesPage() {
         </nav>
         <label className="flex flex-col md:hidden">
           <span className={fieldLabel}>{t('templates.message')}</span>
-          <select
-            className="h-10 rounded-lg border border-input bg-transparent px-3 text-base shadow-xs dark:bg-white/[0.045]"
+          <Select
             value={chosenEvent ?? ''}
-            onChange={(e) => setEvent(e.target.value)}
-          >
-            {events.map((e) => (
-              <option key={e} value={e}>
-                {t(eventLabel(e))}
-              </option>
-            ))}
-          </select>
+            onChange={setEvent}
+            options={events.map((e) => ({ value: e, label: t(eventLabel(e)) }))}
+          />
         </label>
         {template && chosenEvent && (
           <Editor

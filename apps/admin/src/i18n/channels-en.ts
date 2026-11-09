@@ -52,6 +52,11 @@ export const channelsEn = {
     'From Events Manager’s Test events tab. While it is set, events show there only; remove it when done.',
   'meta.capi.connect': 'Check and save',
   'meta.capi.saved': 'Connected. Meta accepted the token.',
+  'meta.capi.open': 'Connect',
+  'meta.capi.change': 'Change',
+  'meta.capi.removeTitle': 'Disconnect the Conversions API?',
+  'meta.capi.removeBody':
+    'Purchases stop being sent to Meta from the server until you connect again.',
   'meta.capi.remove': 'Disconnect',
   'meta.capi.removed': 'Disconnected.',
   'meta.capi.ownersOnly': 'Only owners and managers can connect the Conversions API.',

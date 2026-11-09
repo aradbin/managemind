@@ -1,12 +1,22 @@
-// Dialogs on Radix (focus trap, Escape, aria-modal) as the canvas draws them
-// (ADR 0033 and 0034): a centred dialog from the md breakpoint (.mm-dialog:
-// 512 px, 24 px padding, 10 px corners, a bare × at the top right), and a
-// drawer from the bottom on phones (.mm-drawer: a handle, a centred title).
-import * as RadixDialog from '@radix-ui/react-dialog';
+// Dialogs as the canvas draws them (ADR 0033 and 0034), on shadcn/ui's
+// Dialog and Sheet (components/ui/shadcn), so they open and close with its
+// fade and zoom: a centred dialog from the md breakpoint (512 px, 24 px
+// padding, 10 px corners, a bare × at the top right), and a drawer that
+// slides up from the bottom on phones (a handle, a centred title). A
+// confirmation stays a centred alert on phones too.
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocale } from '../../i18n';
+import { useWide } from '../../lib/use-wide';
 import { cn } from '../../lib/utils';
+import {
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  Dialog as ShadDialog,
+} from './shadcn/dialog';
+import { Sheet as ShadSheet, SheetContent, SheetDescription, SheetTitle } from './shadcn/sheet';
 
 interface DialogProps {
   open: boolean;
@@ -33,6 +43,22 @@ export function DrawerHandle() {
   );
 }
 
+/** The × at the top right, named in the admin's language. */
+export function CloseX({ className }: { className?: string }) {
+  const { t } = useLocale();
+  return (
+    <DialogClose
+      aria-label={t('action.close')}
+      className={cn(
+        'absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden',
+        className,
+      )}
+    >
+      <X aria-hidden className="size-4" />
+    </DialogClose>
+  );
+}
+
 export function Dialog({
   open,
   onOpenChange,
@@ -42,68 +68,53 @@ export function Dialog({
   alert = false,
   children,
 }: DialogProps) {
-  const { t } = useLocale();
-  if (alert)
+  const wide = useWide();
+  const describedBy = description ? {} : { 'aria-describedby': undefined };
+  if (alert || wide)
     return (
-      <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
-        <RadixDialog.Portal>
-          <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
-          <RadixDialog.Content
-            role="alertdialog"
-            {...(description ? {} : { 'aria-describedby': undefined })}
-            className={cn(
-              'fixed top-1/2 left-1/2 z-50 flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-[460px] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-[10px] border border-border bg-background p-6 shadow-lg',
-              className,
-            )}
-          >
-            <div className="flex flex-col gap-2">
-              <RadixDialog.Title className="text-lg leading-[1.3] font-semibold">
-                {title}
-              </RadixDialog.Title>
-              {description && (
-                <RadixDialog.Description className="text-sm text-muted-foreground">
-                  {description}
-                </RadixDialog.Description>
-              )}
-            </div>
-            {children}
-          </RadixDialog.Content>
-        </RadixDialog.Portal>
-      </RadixDialog.Root>
-    );
-  return (
-    <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
-      <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-40 bg-black/50" />
-        <RadixDialog.Content
-          {...(description ? {} : { 'aria-describedby': undefined })}
+      <ShadDialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          {...describedBy}
+          {...(alert ? { role: 'alertdialog' } : {})}
+          showCloseButton={false}
           className={cn(
-            'fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col overflow-y-auto rounded-t-[10px] border-t border-border bg-background pb-[env(safe-area-inset-bottom)]',
-            'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[90dvh] md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:gap-4 md:rounded-[10px] md:border md:p-6 md:pb-6 md:shadow-lg',
+            'flex max-h-[90dvh] flex-col gap-4 overflow-y-auto rounded-[10px] border-border p-6',
+            alert ? 'max-w-[calc(100%-2rem)] sm:max-w-[460px]' : 'sm:max-w-lg',
             className,
           )}
         >
-          <DrawerHandle />
-          <div className="flex flex-col gap-0.5 px-4 pt-3 pb-2 text-center md:gap-2 md:p-0 md:pr-6 md:text-left">
-            <RadixDialog.Title className="text-base leading-6 font-semibold md:text-lg md:leading-none">
+          <div className={cn('flex flex-col gap-2', !alert && 'pr-6')}>
+            <DialogTitle
+              className={cn('text-lg font-semibold', alert ? 'leading-[1.3]' : 'leading-none')}
+            >
               {title}
-            </RadixDialog.Title>
-            {description && (
-              <RadixDialog.Description className="text-sm text-muted-foreground">
-                {description}
-              </RadixDialog.Description>
-            )}
+            </DialogTitle>
+            {description && <DialogDescription>{description}</DialogDescription>}
           </div>
-          <div className="flex flex-col gap-4 px-4 pt-2 pb-6 md:contents">{children}</div>
-          <RadixDialog.Close
-            aria-label={t('action.close')}
-            className="absolute top-4 right-4 hidden rounded-sm opacity-70 transition-opacity hover:opacity-100 md:inline-flex"
-          >
-            <X aria-hidden className="size-4" />
-          </RadixDialog.Close>
-        </RadixDialog.Content>
-      </RadixDialog.Portal>
-    </RadixDialog.Root>
+          {children}
+          {!alert && <CloseX />}
+        </DialogContent>
+      </ShadDialog>
+    );
+  return (
+    <ShadSheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        {...describedBy}
+        side="bottom"
+        showCloseButton={false}
+        className={cn(
+          'max-h-[85dvh] gap-0 overflow-y-auto rounded-t-[10px] border-border pb-[env(safe-area-inset-bottom)]',
+          className,
+        )}
+      >
+        <DrawerHandle />
+        <div className="flex flex-col gap-0.5 px-4 pt-3 pb-2 text-center">
+          <SheetTitle className="text-base leading-6 font-semibold">{title}</SheetTitle>
+          {description && <SheetDescription>{description}</SheetDescription>}
+        </div>
+        <div className="flex flex-col gap-4 px-4 pt-2 pb-6">{children}</div>
+      </SheetContent>
+    </ShadSheet>
   );
 }
 

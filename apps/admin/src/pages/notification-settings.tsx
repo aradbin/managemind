@@ -21,6 +21,7 @@ import { useToast } from '../components/toast';
 import { Button } from '../components/ui/button';
 import { cardPadded, cardTitle } from '../components/ui/card';
 import { ChoiceChips } from '../components/ui/segmented';
+import { Sheet, SheetBody, SheetFooter, SheetForm } from '../components/ui/sheet';
 import { Switch, SwitchRow } from '../components/ui/switch';
 import { type AdminKey, useLocale } from '../i18n';
 import '../i18n/messages';
@@ -261,7 +262,12 @@ function StoreEmail() {
   if (list.isPending) return <p role="status">{t('loading')}</p>;
   if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
   const errors = fieldErrors(save.error);
-  const showForm = editing;
+  const close = () => {
+    if (save.isPending) return;
+    setEditing(false);
+    setMissing(false);
+    save.reset();
+  };
   const savedFrom = saved ? String(saved.config.from ?? '') : '';
   return (
     <section aria-labelledby="email-h" className={cn(cardPadded, 'gap-3 md:gap-3')}>
@@ -271,7 +277,7 @@ function StoreEmail() {
         </h2>
         <p className="text-[13px] text-muted-foreground">{t('notify.storeEmailHint')}</p>
       </div>
-      {saved && !editing && (
+      {saved && (
         <>
           <ConnectedLine
             failing={Boolean(saved.checkError)}
@@ -291,15 +297,18 @@ function StoreEmail() {
           <ChangeOrRemove onChange={() => setEditing(true)} onRemove={() => setRemoving(true)} />
         </>
       )}
-      {!saved && !editing && (
+      {!saved && (
         <Button variant="secondary" className="self-start" onClick={() => setEditing(true)}>
           <Plus aria-hidden />
           {t('notify.useOwnAddress')}
         </Button>
       )}
-      {showForm && (
-        <form
-          className="flex flex-col gap-4"
+      <Sheet
+        open={editing}
+        onOpenChange={(open) => !open && close()}
+        title={t('notify.storeEmail')}
+      >
+        <SheetForm
           onSubmit={(e) => {
             e.preventDefault();
             if (!apiKey.trim() || !from.trim()) {
@@ -310,78 +319,72 @@ function StoreEmail() {
             save.mutate();
           }}
         >
-          <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-4 border-0 p-0">
-            <div className="flex flex-col">
-              <span className={fieldLabel}>{t('notify.provider')}</span>
-              <ChoiceChips<EmailProvider>
-                label={t('notify.provider')}
-                value={provider}
-                options={[
-                  { value: 'resend', label: 'Resend' },
-                  { value: 'brevo', label: 'Brevo' },
-                ]}
-                onChange={setProvider}
+          <SheetBody>
+            <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-5 border-0 p-0">
+              <div className="flex flex-col">
+                <span className={fieldLabel}>{t('notify.provider')}</span>
+                <ChoiceChips<EmailProvider>
+                  label={t('notify.provider')}
+                  value={provider}
+                  options={[
+                    { value: 'resend', label: 'Resend' },
+                    { value: 'brevo', label: 'Brevo' },
+                  ]}
+                  onChange={setProvider}
+                />
+              </div>
+              <Field
+                label={t('notify.apiKey')}
+                type="password"
+                autoComplete="off"
+                value={apiKey}
+                maxLength={200}
+                onChange={(e) => setApiKey(e.target.value)}
+                error={missing && !apiKey.trim() ? t('form.required') : undefined}
               />
-            </div>
-            <Field
-              label={t('notify.apiKey')}
-              type="password"
-              autoComplete="off"
-              value={apiKey}
-              maxLength={200}
-              onChange={(e) => setApiKey(e.target.value)}
-              error={missing && !apiKey.trim() ? t('form.required') : undefined}
-            />
-            <Field
-              label={t('notify.from')}
-              hint={t('notify.fromHint')}
-              type="email"
-              autoComplete="off"
-              value={from}
-              maxLength={254}
-              onChange={(e) => setFrom(e.target.value)}
-              error={
-                missing && !from.trim()
-                  ? t('form.required')
-                  : errors['config.from']
-                    ? t('form.invalid')
-                    : undefined
-              }
-            />
-            <Field
-              label={t('notify.fromName')}
-              hint={t('notify.fromNameHint')}
-              value={fromName}
-              maxLength={100}
-              onChange={(e) => setFromName(e.target.value)}
-            />
-          </fieldset>
-          {errors.secrets && (
-            <Notice tone="error">
-              {t('payments.refused', { reason: errors.secrets.message })}
-            </Notice>
-          )}
-          {save.error && !errors.secrets && (
-            <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? t('payments.checking') : t('payments.save')}
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={save.isPending}
-              onClick={() => {
-                setEditing(false);
-                setMissing(false);
-                save.reset();
-              }}
-            >
+              <Field
+                label={t('notify.from')}
+                hint={t('notify.fromHint')}
+                type="email"
+                autoComplete="off"
+                value={from}
+                maxLength={254}
+                onChange={(e) => setFrom(e.target.value)}
+                error={
+                  missing && !from.trim()
+                    ? t('form.required')
+                    : errors['config.from']
+                      ? t('form.invalid')
+                      : undefined
+                }
+              />
+              <Field
+                label={t('notify.fromName')}
+                hint={t('notify.fromNameHint')}
+                value={fromName}
+                maxLength={100}
+                onChange={(e) => setFromName(e.target.value)}
+              />
+            </fieldset>
+            {errors.secrets && (
+              <Notice tone="error">
+                {t('payments.refused', { reason: errors.secrets.message })}
+              </Notice>
+            )}
+            {save.error && !errors.secrets && (
+              <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="secondary" size="lg" disabled={save.isPending} onClick={close}>
               {t('action.cancel')}
             </Button>
-          </div>
-        </form>
-      )}
+            <Button type="submit" size="lg" disabled={save.isPending}>
+              {save.isPending ? t('payments.checking') : t('payments.save')}
+            </Button>
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}
@@ -481,7 +484,12 @@ function SmsGateway() {
   if (list.isPending) return <p role="status">{t('loading')}</p>;
   if (list.isError) return <Notice tone="error">{errorMessage(list.error, t)}</Notice>;
   const errors = fieldErrors(save.error);
-  const showForm = editing;
+  const close = () => {
+    if (save.isPending) return;
+    setEditing(false);
+    setMissing(false);
+    save.reset();
+  };
   const incomplete =
     provider === 'sms_http'
       ? !http.url.trim().startsWith('https://') || !http.toField.trim() || !http.messageField.trim()
@@ -495,7 +503,7 @@ function SmsGateway() {
         </h2>
         <p className="text-[13px] text-muted-foreground">{t('sms.hint')}</p>
       </div>
-      {saved && !editing && (
+      {saved && (
         <>
           <ConnectedLine
             failing={Boolean(balance.data?.error)}
@@ -514,15 +522,19 @@ function SmsGateway() {
           <ChangeOrRemove onChange={() => setEditing(true)} onRemove={() => setRemoving(true)} />
         </>
       )}
-      {!saved && !editing && (
+      {!saved && (
         <Button variant="secondary" className="self-start" onClick={() => setEditing(true)}>
           <Plus aria-hidden />
           {t('sms.connect')}
         </Button>
       )}
-      {showForm && (
-        <form
-          className="flex flex-col gap-4"
+      <Sheet
+        open={editing}
+        onOpenChange={(open) => !open && close()}
+        title={t('sms.title')}
+        description={t('sms.panelNote')}
+      >
+        <SheetForm
           onSubmit={(e) => {
             e.preventDefault();
             if (incomplete) {
@@ -533,140 +545,134 @@ function SmsGateway() {
             save.mutate();
           }}
         >
-          <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-4 border-0 p-0">
-            <div className="flex flex-col">
-              <span className={fieldLabel}>{t('notify.provider')}</span>
-              <ChoiceChips<SmsProviderName>
-                label={t('notify.provider')}
-                value={provider}
-                options={(['sms_net_bd', 'bulksmsbd', 'sms_http'] as const).map((p) => ({
-                  value: p,
-                  label: name(p),
-                }))}
-                onChange={setProvider}
-              />
-            </div>
-            {provider !== 'sms_http' && (
-              <>
-                <Field
-                  label={t('notify.apiKey')}
-                  type="password"
-                  autoComplete="off"
-                  value={apiKey}
-                  maxLength={200}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  error={missing && !apiKey.trim() ? t('form.required') : undefined}
+          <SheetBody>
+            <fieldset disabled={save.isPending} className="m-0 flex flex-col gap-5 border-0 p-0">
+              <div className="flex flex-col">
+                <span className={fieldLabel}>{t('notify.provider')}</span>
+                <ChoiceChips<SmsProviderName>
+                  label={t('notify.provider')}
+                  value={provider}
+                  options={(['sms_net_bd', 'bulksmsbd', 'sms_http'] as const).map((p) => ({
+                    value: p,
+                    label: name(p),
+                  }))}
+                  onChange={setProvider}
                 />
-                <Field
-                  label={t('sms.senderId')}
-                  hint={t(
-                    provider === 'bulksmsbd' ? 'sms.senderIdRequired' : 'sms.senderIdOptional',
-                  )}
-                  value={senderId}
-                  maxLength={20}
-                  onChange={(e) => setSenderId(e.target.value)}
-                  error={
-                    missing && provider === 'bulksmsbd' && !senderId.trim()
-                      ? t('form.required')
-                      : undefined
-                  }
-                />
-                {provider === 'bulksmsbd' && <Notice>{t('sms.bulksmsbdIp')}</Notice>}
-              </>
-            )}
-            {provider === 'sms_http' && (
-              <>
-                <Field
-                  label={t('sms.url')}
-                  hint={t('sms.urlHint')}
-                  type="url"
-                  value={http.url}
-                  maxLength={500}
-                  onChange={(e) => setHttp({ ...http, url: e.target.value })}
-                  error={
-                    missing && !http.url.trim().startsWith('https://')
-                      ? t('form.invalid')
-                      : undefined
-                  }
-                />
-                <fieldset className="flex gap-4">
-                  <legend className="mb-1 text-sm font-medium">{t('sms.method')}</legend>
-                  {(['POST', 'GET'] as const).map((m) => (
-                    <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
-                      <input
-                        type="radio"
-                        name="sms-method"
-                        checked={http.method === m}
-                        onChange={() => setHttp({ ...http, method: m })}
-                      />
-                      {m}
-                    </label>
-                  ))}
-                </fieldset>
-                <div className="grid gap-3 sm:grid-cols-2">
+              </div>
+              {provider !== 'sms_http' && (
+                <>
                   <Field
-                    label={t('sms.toField')}
-                    value={http.toField}
-                    maxLength={50}
-                    onChange={(e) => setHttp({ ...http, toField: e.target.value })}
-                  />
-                  <Field
-                    label={t('sms.messageField')}
-                    value={http.messageField}
-                    maxLength={50}
-                    onChange={(e) => setHttp({ ...http, messageField: e.target.value })}
-                  />
-                  <Field
-                    label={t('sms.authHeader')}
-                    value={http.authHeader}
-                    maxLength={50}
-                    onChange={(e) => setHttp({ ...http, authHeader: e.target.value })}
-                  />
-                  <Field
-                    label={t('sms.authValue')}
+                    label={t('notify.apiKey')}
                     type="password"
                     autoComplete="off"
-                    value={http.authValue}
-                    maxLength={500}
-                    onChange={(e) => setHttp({ ...http, authValue: e.target.value })}
+                    value={apiKey}
+                    maxLength={200}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    error={missing && !apiKey.trim() ? t('form.required') : undefined}
                   />
-                </div>
-                <Field
-                  label={t('sms.successText')}
-                  hint={t('sms.successTextHint')}
-                  value={http.successText}
-                  maxLength={100}
-                  onChange={(e) => setHttp({ ...http, successText: e.target.value })}
-                />
-              </>
+                  <Field
+                    label={t('sms.senderId')}
+                    hint={t(
+                      provider === 'bulksmsbd' ? 'sms.senderIdRequired' : 'sms.senderIdOptional',
+                    )}
+                    value={senderId}
+                    maxLength={20}
+                    onChange={(e) => setSenderId(e.target.value)}
+                    error={
+                      missing && provider === 'bulksmsbd' && !senderId.trim()
+                        ? t('form.required')
+                        : undefined
+                    }
+                  />
+                  {provider === 'bulksmsbd' && <Notice>{t('sms.bulksmsbdIp')}</Notice>}
+                </>
+              )}
+              {provider === 'sms_http' && (
+                <>
+                  <Field
+                    label={t('sms.url')}
+                    hint={t('sms.urlHint')}
+                    type="url"
+                    value={http.url}
+                    maxLength={500}
+                    onChange={(e) => setHttp({ ...http, url: e.target.value })}
+                    error={
+                      missing && !http.url.trim().startsWith('https://')
+                        ? t('form.invalid')
+                        : undefined
+                    }
+                  />
+                  <fieldset className="flex gap-4">
+                    <legend className="mb-1 text-sm font-medium">{t('sms.method')}</legend>
+                    {(['POST', 'GET'] as const).map((m) => (
+                      <label key={m} className="flex min-h-10 items-center gap-2 md:min-h-9">
+                        <input
+                          type="radio"
+                          name="sms-method"
+                          checked={http.method === m}
+                          onChange={() => setHttp({ ...http, method: m })}
+                        />
+                        {m}
+                      </label>
+                    ))}
+                  </fieldset>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field
+                      label={t('sms.toField')}
+                      value={http.toField}
+                      maxLength={50}
+                      onChange={(e) => setHttp({ ...http, toField: e.target.value })}
+                    />
+                    <Field
+                      label={t('sms.messageField')}
+                      value={http.messageField}
+                      maxLength={50}
+                      onChange={(e) => setHttp({ ...http, messageField: e.target.value })}
+                    />
+                    <Field
+                      label={t('sms.authHeader')}
+                      value={http.authHeader}
+                      maxLength={50}
+                      onChange={(e) => setHttp({ ...http, authHeader: e.target.value })}
+                    />
+                    <Field
+                      label={t('sms.authValue')}
+                      type="password"
+                      autoComplete="off"
+                      value={http.authValue}
+                      maxLength={500}
+                      onChange={(e) => setHttp({ ...http, authValue: e.target.value })}
+                    />
+                  </div>
+                  <Field
+                    label={t('sms.successText')}
+                    hint={t('sms.successTextHint')}
+                    value={http.successText}
+                    maxLength={100}
+                    onChange={(e) => setHttp({ ...http, successText: e.target.value })}
+                  />
+                </>
+              )}
+            </fieldset>
+            {errors.secrets && (
+              <Notice tone="error">
+                {t('payments.refused', { reason: errors.secrets.message })}
+              </Notice>
             )}
-          </fieldset>
-          {errors.secrets && (
-            <Notice tone="error">
-              {t('payments.refused', { reason: errors.secrets.message })}
-            </Notice>
-          )}
-          {save.error && !errors.secrets && (
-            <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={save.isPending}>
-              {save.isPending ? t('payments.checking') : t('payments.save')}
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={save.isPending}
-              onClick={() => {
-                setEditing(false);
-                setMissing(false);
-                save.reset();
-              }}
-            >
+            {save.error && !errors.secrets && (
+              <Notice tone="error">{saveErrorMessage(save.error, t)}</Notice>
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <Button variant="secondary" size="lg" disabled={save.isPending} onClick={close}>
               {t('action.cancel')}
             </Button>
-          </div>
-        </form>
-      )}
+            <Button type="submit" size="lg" disabled={save.isPending}>
+              {save.isPending ? t('payments.checking') : t('payments.save')}
+            </Button>
+          </SheetFooter>
+        </SheetForm>
+      </Sheet>
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}

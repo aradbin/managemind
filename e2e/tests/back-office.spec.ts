@@ -316,7 +316,7 @@ test('back office', async ({ page }, info) => {
     const rent = page.getByRole('dialog', { name: m('recurring.new') });
     await choose(rent.getByLabel(m('expenses.category')), { index: 0 });
     await rent.getByLabel(m('expenses.amount')).fill('25000');
-    await rent.getByLabel(m('recurring.dayOfMonth')).selectOption('5');
+    await choose(rent.getByLabel(m('recurring.dayOfMonth')), { value: '5' });
     await expectAccessible(page, 'recurring expense form');
     await rent.getByRole('button', { name: m('recurring.new') }).click();
     await expect(toast(page, m('recurring.saved'))).toBeVisible();
