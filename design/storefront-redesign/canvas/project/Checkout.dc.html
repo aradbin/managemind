@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Checkout, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#f4f6f9}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; min-height: 100vh; font-size: 15px; line-height: 1.5">
+<header style="background: #ffffff; border-bottom: 1px solid #dde2ea">
+<div style="max-width: 1120px; margin: 0 auto; padding: 14px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px">
+<a href="Main.dc.html" style="font-size: 24px; font-weight: 700; color: {{primary}}; text-decoration: none">Your Store</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: #1d6b3a; font-weight: 600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Secure checkout</span>
+<a href="Cart.dc.html" style="min-height: 44px; display: flex; align-items: center; font-weight: 600; text-decoration: none">Back to cart</a>
+</div>
+</div>
+</header>
+
+<sc-if value="{{notPlaced}}" hint-placeholder-val="{{ true }}">
+<main style="max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; box-sizing: border-box">
+<h1 style="margin: 0 0 20px; font-size: 32px; font-weight: 700; letter-spacing: -0.015em">Checkout</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 24px 32px; align-items: flex-start">
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<sc-if value="{{showErrorSummary}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="padding: 14px 16px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600">{{errorSummary}}</div>
+</sc-if>
+
+<section aria-labelledby="d-contact" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="d-contact" style="margin: 0; font-size: 20px; font-weight: 700">Contact</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="d-phone" style="font-weight: 600; font-size: 14px">Mobile number</label>
+<input id="d-phone" type="tel" inputmode="tel" autocomplete="tel" value="{{phone}}" onChange="{{setPhone}}" aria-invalid="{{phoneBad}}" aria-describedby="d-phone-h d-phone-e" placeholder="01712-345678" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{phoneBorder}}; border-radius: 8px; box-sizing: border-box">
+<span id="d-phone-h" style="font-size: 13px; color: #545b69">We call or text this number to confirm your order.</span>
+<sc-if value="{{phoneBad}}" hint-placeholder-val="{{ false }}"><span id="d-phone-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{phoneErr}}</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="d-name" style="font-weight: 600; font-size: 14px">Full name</label>
+<input id="d-name" type="text" autocomplete="name" value="{{name}}" onChange="{{setName}}" aria-invalid="{{nameBad}}" aria-describedby="d-name-e" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{nameBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{nameBad}}" hint-placeholder-val="{{ false }}"><span id="d-name-e" style="font-size: 13px; color: #b42318; font-weight: 600">Enter your full name.</span></sc-if>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 480px">
+<label for="d-email" style="font-weight: 600; font-size: 14px">Email <span style="font-weight: 400; color: #545b69">(optional)</span></label>
+<input id="d-email" type="email" autocomplete="email" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+</div>
+</section>
+
+<section aria-labelledby="d-addr" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="d-addr" style="margin: 0; font-size: 20px; font-weight: 700">Delivery address</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<label for="d-division" style="font-weight: 600; font-size: 14px">Division</label>
+<select id="d-division" value="{{division}}" onChange="{{setDivision}}" aria-invalid="{{divisionBad}}" aria-describedby="d-division-e" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: {{divisionBorder}}; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0">
+<option value="">Choose</option>
+<option value="dhaka">Dhaka</option>
+<option value="chattogram">Chattogram</option>
+<option value="khulna">Khulna</option>
+<option value="rajshahi">Rajshahi</option>
+<option value="sylhet">Sylhet</option>
+<option value="barishal">Barishal</option>
+<option value="rangpur">Rangpur</option>
+<option value="mymensingh">Mymensingh</option>
+</select>
+<sc-if value="{{divisionBad}}" hint-placeholder-val="{{ false }}"><span id="d-division-e" style="font-size: 13px; color: #b42318; font-weight: 600">Choose your division.</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<label for="d-district" style="font-weight: 600; font-size: 14px">District</label>
+<select id="d-district" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0"><option>Choose</option></select>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<label for="d-area" style="font-weight: 600; font-size: 14px">Area (thana or upazila)</label>
+<select id="d-area" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0"><option>Choose</option></select>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="d-line" style="font-weight: 600; font-size: 14px">House, road and landmark</label>
+<textarea id="d-line" rows="2" autocomplete="street-address" value="{{line}}" onChange="{{setLine}}" aria-invalid="{{lineBad}}" aria-describedby="d-line-e" style="padding: 12px 14px; font: inherit; font-size: 16px; border: {{lineBorder}}; border-radius: 8px; resize: vertical; box-sizing: border-box"></textarea>
+<sc-if value="{{lineBad}}" hint-placeholder-val="{{ false }}"><span id="d-line-e" style="font-size: 13px; color: #b42318; font-weight: 600">Enter your house, road and a landmark.</span></sc-if>
+</div>
+<div style="border-radius: 8px; background: #e8f0fa; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center">
+<span style="color: {{primary}}; display: flex; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<span>{{zoneText}}</span>
+</div>
+<details>
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Add a note for the delivery</summary>
+<label for="d-note" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Note for the delivery</label>
+<textarea id="d-note" rows="2" style="width: 100%; padding: 12px 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box"></textarea>
+</details>
+</section>
+
+<section aria-labelledby="d-pay" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<h2 id="d-pay" style="margin: 0 0 6px; font-size: 20px; font-weight: 700">Payment</h2>
+<sc-for list="{{payments}}" as="pm" hint-placeholder-count="3">
+<label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 8px; border: {{pm.border}}; background: {{pm.bg}}; cursor: pointer">
+<input type="radio" name="d-payment" value="{{pm.id}}" checked="{{pm.on}}" onChange="{{pm.pick}}" style="width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: {{primary}}">
+<span style="display: flex; flex-direction: column; gap: 2px"><strong style="font-weight: 600">{{pm.name}}</strong><span style="font-size: 14px; color: #545b69">{{pm.hint}}</span></span>
+</label>
+</sc-for>
+</section>
+</div>
+
+<aside aria-labelledby="d-sum" style="flex: 1 1 340px; min-width: 0; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 id="d-sum" style="margin: 0; font-size: 20px; font-weight: 700">Order summary</h2>
+<a href="Cart.dc.html" style="font-size: 14px; font-weight: 600; min-height: 44px; display: flex; align-items: center">Edit cart</a>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+<li style="display: flex; gap: 12px; align-items: center">
+<span style="position: relative; width: 56px; height: 56px; flex: none; border-radius: 8px; background: #f1f3f6"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #545b69; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">1</span></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; font-size: 14px"><span>Non-stick frying pan with glass lid</span><span style="color: #545b69">26 cm · Black</span></span>
+<span style="font-weight: 600">৳1,250</span>
+</li>
+<li style="display: flex; gap: 12px; align-items: center">
+<span style="position: relative; width: 56px; height: 56px; flex: none; border-radius: 8px; background: #e6f4ef"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #545b69; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; font-size: 14px"><span>Stainless steel water bottle</span><span style="color: #545b69">1 litre · ৳590 each</span></span>
+<span style="font-weight: 600">৳1,180</span>
+</li>
+</ul>
+<details>
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Have a promo code?</summary>
+<div style="display: flex; gap: 8px; padding-top: 4px">
+<label for="d-promo" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Promo code</label>
+<input id="d-promo" type="text" placeholder="Promo code" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 12px; font: inherit; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<button type="button" style="height: 44px; padding: 0 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Apply</button>
+</div>
+</details>
+<div style="border-top: 1px solid #dde2ea; padding-top: 12px; display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Subtotal (3 items)</span><span>৳2,430</span></span>
+<span style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #3c4350">Delivery</span><span style="text-align: right">{{deliveryLine}}</span></span>
+<span style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; padding-top: 6px"><span>{{totalLabel}}</span><span>{{totalText}}</span></span>
+<span style="display: flex; justify-content: space-between; font-size: 14px; color: #3c4350"><span>{{payLine}}</span><span style="font-weight: 600; color: #1a1f29">{{payNowText}}</span></span>
+</div>
+<label style="display: flex; gap: 10px; align-items: flex-start; min-height: 44px; font-size: 14px; cursor: pointer"><input type="checkbox" checked="{{terms}}" onChange="{{toggleTerms}}" aria-invalid="{{termsBad}}" aria-describedby="d-terms-e" style="width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: {{primary}}"><span>I agree to the <a href="#">terms and return policy</a></span></label>
+<sc-if value="{{termsBad}}" hint-placeholder-val="{{ false }}"><span id="d-terms-e" style="margin-top: -8px; font-size: 13px; color: #b42318; font-weight: 600">Please agree to the terms to place your order.</span></sc-if>
+<button type="button" onClick="{{place}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer">{{placeLabel}}</button>
+</aside>
+</div>
+</main>
+</sc-if>
+
+<sc-if value="{{placed}}" hint-placeholder-val="{{ false }}">
+<main style="max-width: 640px; margin: 0 auto; padding: 72px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
+<span style="width: 80px; height: 80px; border-radius: 50%; background: #e7f4ec; color: #1d6b3a; display: flex; align-items: center; justify-content: center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Thank you, your order is placed</h1>
+<p style="margin: 0; color: #3c4350; font-size: 17px">Order [number]. We will call you to confirm, then send updates on WhatsApp.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px">
+<a href="Track.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box; background: #ffffff">Track your order</a>
+<a href="Main.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">Continue shopping</a>
+</div>
+</main>
+</sc-if>
+
+<footer style="max-width: 1120px; margin: 0 auto; padding: 16px 24px 32px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px 20px; color: #545b69; font-size: 13px">
+<span>© Your Store</span><a href="#" style="color: #545b69">Terms</a><a href="#" style="color: #545b69">Privacy</a><a href="#" style="color: #545b69">Returns</a><span>Help: [hotline number]</span>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { phone: '', name: '', division: '', line: '', pay: 'cod', terms: false, tried: false, placed: false };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var subtotal = 2430;
+    var chosen = s.division !== '';
+    var inside = s.division === 'dhaka';
+    var delivery = chosen ? (inside ? 60 : 120) : 0;
+    var total = subtotal + delivery;
+    var digits = s.phone.replace(/\D/g, '');
+    var phoneErr = !digits ? 'Enter your mobile number.' : (/^01\d{9}$/.test(digits) ? '' : 'Enter an 11-digit number starting with 01, like 01712-345678.');
+    var errs = { phone: phoneErr, name: s.name.trim() ? '' : 'x', division: chosen ? '' : 'x', line: s.line.trim() ? '' : 'x', terms: s.terms ? '' : 'x' };
+    var n = Object.keys(errs).filter(function (k) { return errs[k]; }).length;
+    var show = function (k) { return s.tried && !!errs[k]; };
+    var border = function (k) { return show(k) ? '2px solid #b42318' : '1.5px solid #c5ccd8'; };
+    var set = function (key) { return function (e) { var o = {}; o[key] = e.target.value; self.setState(o); }; };
+    var pays = [
+      { id: 'cod', name: 'Cash on delivery', hint: 'Pay the courier when your order arrives.' },
+      { id: 'online', name: 'Pay online', hint: 'Card, bKash, Nagad or bank, through SSLCommerz.' },
+      { id: 'cod_with_advance', name: 'Delivery charge online, the rest on delivery', hint: chosen ? 'Pay ' + fmt(delivery) + ' now and ' + fmt(subtotal) + ' when it arrives.' : 'Pay the delivery charge now and the rest when it arrives.' }
+    ];
+    return {
+      primary: primary,
+      notPlaced: !s.placed,
+      placed: s.placed,
+      deliveryLine: chosen ? fmt(delivery) + (inside ? ' (inside Dhaka)' : ' (outside Dhaka)') : 'Choose your division',
+      totalLabel: chosen ? 'Total' : 'Total before delivery',
+      totalText: fmt(total),
+      zoneText: chosen ? (inside ? 'Inside Dhaka: 1–2 days · ৳60' : 'Outside Dhaka: 3–5 days · ৳120') : 'Delivery: ৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).',
+      phone: s.phone, setPhone: set('phone'), phoneBad: show('phone'), phoneErr: phoneErr, phoneBorder: border('phone'),
+      name: s.name, setName: set('name'), nameBad: show('name'), nameBorder: border('name'),
+      division: s.division, setDivision: set('division'), divisionBad: show('division'), divisionBorder: border('division'),
+      line: s.line, setLine: set('line'), lineBad: show('line'), lineBorder: border('line'),
+      terms: s.terms, termsBad: show('terms'),
+      toggleTerms: function () { self.setState({ terms: !self.state.terms }); },
+      showErrorSummary: s.tried && n > 0,
+      errorSummary: n === 1 ? 'Please fix 1 thing to place your order.' : 'Please fix ' + n + ' things to place your order.',
+      payments: pays.map(function (p) {
+        var on = p.id === s.pay;
+        return Object.assign({}, p, { on: on, border: on ? '2px solid ' + primary : '1.5px solid #dde2ea', bg: on ? '#f3f7fc' : '#ffffff', pick: function () { self.setState({ pay: p.id }); } });
+      }),
+      payLine: s.pay === 'cod' ? 'Pay on delivery' : s.pay === 'online' ? 'Pay now' : 'Pay now (delivery charge)',
+      payNowText: s.pay === 'cod_with_advance' ? (chosen ? fmt(delivery) : 'Choose division') : fmt(total),
+      placeLabel: s.pay === 'cod' ? 'Place order' : s.pay === 'online' ? 'Pay and place order' : 'Pay delivery charge and place order',
+      place: function () { if (n > 0) { self.setState({ tried: true }); return; } self.setState({ placed: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

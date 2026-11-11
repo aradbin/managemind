@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Category listing, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: 1.5">
+<dc-import name="SiteHeader" primary="{{primary}}" cart-count="{{cartCount}}" hint-size="100%,176px"></dc-import>
+
+<main id="list-top" style="max-width: 1280px; margin: 0 auto; padding: 20px 24px 64px; box-sizing: border-box">
+<nav aria-label="Breadcrumb" style="font-size: 14px; color: #545b69">
+<ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<li><a href="Main.dc.html" style="color: #545b69">Home</a></li>
+<li aria-hidden="true">/</li>
+<li aria-current="page" style="color: #1a1f29">Kitchen &amp; dining</li>
+</ol>
+</nav>
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin-top: 12px">
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2">Kitchen &amp; dining</h1>
+<span role="status" style="color: #545b69">{{countText}}</span>
+</div>
+<nav aria-label="Shop by category" style="margin-top: 16px; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px">
+<sc-for list="{{subcats}}" as="c" hint-placeholder-count="6">
+<a href="#" style="flex: none; height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #c5ccd8; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500; font-size: 14px; box-sizing: border-box">{{c.name}}</a>
+</sc-for>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; gap: 32px; margin-top: 28px; align-items: flex-start">
+<aside aria-label="Filters" style="flex: 1 1 248px; max-width: 100%; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; justify-content: space-between; min-height: 44px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Filters</h2>
+<sc-if value="{{hasApplied}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{clearAll}}" style="height: 44px; padding: 0 8px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">Clear all</button></sc-if>
+</div>
+
+<fieldset style="margin: 0; padding: 0 0 16px; border: 0; border-bottom: 1px solid #dde2ea; display: flex; flex-direction: column">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 4px">Price</legend>
+<sc-for list="{{priceOpts}}" as="o" hint-placeholder-count="5">
+<label style="min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: {{o.color}}"><input type="radio" name="d-price" checked="{{o.on}}" disabled="{{o.disabled}}" onChange="{{o.pick}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{primary}}"><span style="flex: 1 1 auto">{{o.label}}</span><span style="color: {{o.countColor}}; font-size: 13px">{{o.n}}</span></label>
+</sc-for>
+<div style="display: flex; align-items: center; gap: 8px; margin-top: 8px">
+<label for="pmin" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Lowest price</label>
+<input id="pmin" type="number" inputmode="numeric" placeholder="৳ Min" value="{{minDraft}}" onChange="{{setMinDraft}}" style="flex: 1 1 0; min-width: 0; height: 44px; padding: 0 10px; font: inherit; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<span aria-hidden="true" style="color: #545b69">–</span>
+<label for="pmax" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Highest price</label>
+<input id="pmax" type="number" inputmode="numeric" placeholder="৳ Max" value="{{maxDraft}}" onChange="{{setMaxDraft}}" style="flex: 1 1 0; min-width: 0; height: 44px; padding: 0 10px; font: inherit; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<button type="button" onClick="{{applyCustom}}" style="height: 44px; padding: 0 12px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Go</button>
+</div>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0 0 16px; border: 0; border-bottom: 1px solid #dde2ea; display: flex; flex-direction: column">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 4px">Availability</legend>
+<sc-for list="{{avail}}" as="b" hint-placeholder-count="2">
+<label style="min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: {{b.color}}"><input type="checkbox" checked="{{b.on}}" disabled="{{b.disabled}}" onChange="{{b.toggle}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{primary}}"><span style="flex: 1 1 auto">{{b.name}}</span><span style="color: {{b.countColor}}; font-size: 13px">{{b.n}}</span></label>
+</sc-for>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0 0 16px; border: 0; border-bottom: 1px solid #dde2ea; display: flex; flex-direction: column">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 4px">Brand</legend>
+<sc-for list="{{brands}}" as="b" hint-placeholder-count="4">
+<label style="min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: {{b.color}}"><input type="checkbox" checked="{{b.on}}" disabled="{{b.disabled}}" onChange="{{b.toggle}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{primary}}"><span style="flex: 1 1 auto">{{b.name}}</span><span style="color: {{b.countColor}}; font-size: 13px">{{b.n}}</span></label>
+</sc-for>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0 0 16px; border: 0; border-bottom: 1px solid #dde2ea; display: flex; flex-direction: column">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 4px">Colour</legend>
+<sc-for list="{{colors}}" as="b" hint-placeholder-count="5">
+<label style="min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: {{b.color}}"><input type="checkbox" checked="{{b.on}}" disabled="{{b.disabled}}" onChange="{{b.toggle}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{primary}}"><span aria-hidden="true" style="width: 18px; height: 18px; flex: none; border-radius: 9px; background: {{b.swatch}}; box-shadow: inset 0 0 0 1px rgba(26,31,41,0.25)"></span><span style="flex: 1 1 auto">{{b.name}}</span><span style="color: {{b.countColor}}; font-size: 13px">{{b.n}}</span></label>
+</sc-for>
+</fieldset>
+
+<fieldset style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column">
+<legend style="padding: 0; font-weight: 600; margin-bottom: 4px">Material</legend>
+<sc-for list="{{materials}}" as="b" hint-placeholder-count="4">
+<label style="min-height: 44px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: {{b.color}}"><input type="checkbox" checked="{{b.on}}" disabled="{{b.disabled}}" onChange="{{b.toggle}}" style="width: 20px; height: 20px; margin: 0; accent-color: {{primary}}"><span style="flex: 1 1 auto">{{b.name}}</span><span style="color: {{b.countColor}}; font-size: 13px">{{b.n}}</span></label>
+</sc-for>
+<button type="button" onClick="{{toggleMaterials}}" aria-expanded="{{allMaterials}}" style="align-self: flex-start; height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{materialToggle}}</button>
+</fieldset>
+</aside>
+
+<section aria-label="Products" style="flex: 999 1 640px; min-width: 0">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding-bottom: 16px; border-bottom: 1px solid #dde2ea">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 44px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="0">
+<button type="button" onClick="{{c.remove}}" aria-label="Remove filter: {{c.label}}" style="height: 44px; padding: 0 12px 0 16px; border: 0; border-radius: 22px; background: #e8f0fa; color: #1a1f29; font: inherit; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer">{{c.label}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</sc-for>
+<sc-if value="{{hasApplied}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{clearAll}}" style="height: 44px; padding: 0 8px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">Clear all</button></sc-if>
+<sc-if value="{{noApplied}}" hint-placeholder-val="{{ true }}"><span style="color: #545b69; font-size: 14px">{{shownText}}</span></sc-if>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<label for="sort" style="font-size: 14px; color: #545b69">Sort by</label>
+<select id="sort" onChange="{{setSort}}" value="{{sort}}" style="height: 44px; padding: 0 12px; font: inherit; font-weight: 500; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29">
+<option value="featured">Featured</option>
+<option value="newest">Newest</option>
+<option value="price_asc">Price: low to high</option>
+<option value="price_desc">Price: high to low</option>
+</select>
+</div>
+</div>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 56px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<strong style="font-size: 18px">No products match these filters.</strong>
+<span style="color: #3c4350">Try removing one of them:</span>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px">
+<sc-for list="{{suggestions}}" as="g" hint-placeholder-count="2">
+<button type="button" onClick="{{g.apply}}" style="height: 44px; padding: 0 18px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{g.label}}</button>
+</sc-for>
+<button type="button" onClick="{{clearAll}}" style="height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 600; cursor: pointer">Clear all filters</button>
+</div>
+</div>
+</sc-if>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 32px 20px; margin-top: 24px">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="24">
+<dc-import name="ProductCard" item="{{p}}" added="{{p.added}}" on-add="{{addOne}}" on-choose="{{choose}}" primary="{{primary}}" hint-size="100%,440px"></dc-import>
+</sc-for>
+</div>
+
+<sc-if value="{{noApplied}}" hint-placeholder-val="{{ true }}">
+<div style="margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 12px">
+<span role="status" style="color: #545b69; font-size: 14px">{{shownText}}</span>
+<span aria-hidden="true" style="display: block; width: 240px; height: 4px; border-radius: 2px; background: #dde2ea; overflow: hidden"><span style="display: block; height: 4px; width: {{progress}}; background: {{primary}}"></span></span>
+<sc-if value="{{canLoadMore}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{loadMore}}" style="height: 48px; padding: 0 32px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Load 24 more products</button></sc-if>
+</div>
+</sc-if>
+</section>
+</div>
+</main>
+
+<dc-import name="SiteFooter" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+
+<sc-if value="{{showTop}}" hint-placeholder-val="{{ false }}">
+<a href="#list-top" aria-label="Back to top" style="position: fixed; right: 24px; bottom: 24px; z-index: 40; width: 52px; height: 52px; border-radius: 26px; background: #ffffff; border: 1px solid #c5ccd8; box-shadow: 0 6px 20px rgba(26,31,41,0.14); color: #1a1f29; display: flex; align-items: center; justify-content: center; box-sizing: border-box"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></a>
+</sc-if>
+
+<sc-if value="{{picking}}" hint-placeholder-val="{{ false }}">
+<dc-import name="QuickAdd" item="{{pick}}" on-close="{{closePick}}" on-add="{{addPicked}}" primary="{{primary}}" hint-size="100%,0px"></dc-import>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":3700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { stock: false, sale: false, price: '', min: '', max: '', minDraft: '', maxDraft: '', brands: {}, colors: {}, materials: {}, sort: 'featured', count: 0, added: {}, more: 0, pick: null, allMaterials: false, scrolled: false };
+    this.onScroll = this.onScroll.bind(this);
+  }
+  componentDidMount() { if (typeof window !== 'undefined') window.addEventListener('scroll', this.onScroll, { passive: true }); }
+  componentWillUnmount() { if (typeof window !== 'undefined') window.removeEventListener('scroll', this.onScroll); }
+  onScroll() { var past = window.scrollY > window.innerHeight * 2; if (past !== this.state.scrolled) this.setState({ scrolled: past }); }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var SW = { Black: '#23262d', Red: '#a3302a', Grey: '#8a8f98', White: '#f4f4f2', Silver: '#c0c4ca', Blue: '#3a6ea5', Green: '#3d7a4f' };
+    var SHOW = { Grey: 'Granite grey' };
+    var sz = function (rows) { return rows.map(function (r) { return { name: r[0], price: r[1], compare: r[2] || 0, soldOut: !!r[3] }; }); };
+    var base = [
+      { id: 1, brand: 'Brand A', title: 'Non-stick frying pan with glass lid', price: 990, compare: 1190, tone: '#f1f3f6', mat: 'Aluminium', cols: ['Black', 'Red', 'Grey'], sizes: sz([['22 cm', 990, 1190], ['24 cm', 1150, 1350], ['26 cm', 1250, 1490], ['28 cm', 1450, 1690, 1]]) },
+      { id: 2, brand: 'Brand D', title: 'Glass food containers, set of 5', price: 980, compare: 1150, tone: '#fdf0e1', mat: 'Glass' },
+      { id: 3, brand: 'Brand C', title: 'Ceramic dinner set, 24 pieces', price: 3800, compare: 4500, tone: '#e8f0fa', mat: 'Ceramic', cols: ['White', 'Blue'] },
+      { id: 4, brand: 'Brand A', title: 'Pressure cooker', price: 2650, tone: '#eceaf8', mat: 'Aluminium', sizes: sz([['3 litre', 2650], ['5 litre', 3150]]) },
+      { id: 5, brand: 'Brand D', title: 'Stainless steel water bottle, 1 L', price: 590, compare: 690, tone: '#e6f4ef', mat: 'Stainless steel', cols: ['Silver', 'Blue', 'Black'] },
+      { id: 6, brand: 'Brand C', title: 'Melamine serving bowls, set of 3', price: 650, tone: '#fff4dd', mat: 'Plastic', soldOut: true },
+      { id: 7, brand: 'Brand A', title: 'Wooden spatula and spoon set', price: 420, tone: '#eef5e4', mat: 'Wood' },
+      { id: 8, brand: 'Brand B', title: 'Electric kettle, 1.8 litre', price: 1690, tone: '#f8e9ee', mat: 'Stainless steel', cols: ['Black', 'White'] },
+      { id: 9, brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: 790, tone: '#f1f3f6', mat: 'Plastic' },
+      { id: 10, brand: 'Brand B', title: 'Hand blender, 300 W', price: 2250, compare: 2600, tone: '#e8f0fa', mat: 'Plastic' },
+      { id: 11, brand: 'Brand C', title: 'Glass tumblers, set of 6', price: 540, tone: '#fdf0e1', mat: 'Glass' },
+      { id: 12, brand: 'Brand A', title: 'Knife set with block, 6 pieces', price: 1350, tone: '#e6f4ef', mat: 'Stainless steel' },
+      { id: 13, brand: 'Brand B', title: 'Rice cooker, 1.8 litre', price: 2890, tone: '#eceaf8', mat: 'Aluminium', cols: ['White'] },
+      { id: 14, brand: 'Brand D', title: 'Lunch box with 3 containers', price: 650, compare: 750, tone: '#fdf0e1', mat: 'Plastic', cols: ['Blue', 'Green'] },
+      { id: 15, brand: 'Brand C', title: 'Bamboo serving tray', price: 480, tone: '#eef5e4', mat: 'Wood' },
+      { id: 16, brand: 'Brand A', title: 'Stainless steel tiffin carrier, 3 tier', price: 890, tone: '#f1f3f6', mat: 'Stainless steel' },
+      { id: 17, brand: 'Brand B', title: 'Blender and grinder, 500 W', price: 3650, compare: 3990, tone: '#e8f0fa', mat: 'Plastic' },
+      { id: 18, brand: 'Brand C', title: 'Tea cups and saucers, set of 6', price: 720, tone: '#f8e9ee', mat: 'Ceramic', cols: ['White'] },
+      { id: 19, brand: 'Brand D', title: 'Spice rack with 8 jars', price: 990, tone: '#fff4dd', mat: 'Glass' },
+      { id: 20, brand: 'Brand A', title: 'Cast iron tawa, 26 cm', price: 1150, tone: '#e6f4ef', mat: 'Cast iron' },
+      { id: 21, brand: 'Brand B', title: 'Sandwich maker', price: 1590, tone: '#eceaf8', mat: 'Plastic', cols: ['Black'] },
+      { id: 22, brand: 'Brand D', title: 'Water jug, 2 litre', price: 380, tone: '#e6f4ef', mat: 'Plastic', cols: ['Blue', 'Green'] },
+      { id: 23, brand: 'Brand C', title: 'Dinner plates, set of 6', price: 1250, compare: 1450, tone: '#e8f0fa', mat: 'Ceramic', cols: ['White'] },
+      { id: 24, brand: 'Brand A', title: 'Large chopping board', price: 450, tone: '#f1f3f6', mat: 'Wood' }
+    ];
+    var TOTAL = 132;
+    var loadedN = Math.min(TOTAL, 24 * (s.more + 1));
+    var all = [];
+    for (var i = 0; i < loadedN; i++) {
+      var p0 = base[i % 24];
+      var cyc = Math.floor(i / 24);
+      all.push(Object.assign({}, p0, { id: p0.id + cyc * 100, rank: i + 1, age: ((p0.id * 7) % 24) + cyc * 100 }));
+    }
+    var on = function (o) { return Object.keys(o).filter(function (k) { return o[k]; }); };
+    var PR = { u500: [0, 499], '500-1000': [500, 1000], '1000-2000': [1001, 2000], o2000: [2001, 1e9] };
+    var make = function (st) {
+      var range = st.price === 'custom' ? [Number(st.min) || 0, st.max ? Number(st.max) : 1e9] : PR[st.price];
+      var b = on(st.brands), c = on(st.colors), m = on(st.materials);
+      var test = {
+        stock: function (p) { return !st.stock || !p.soldOut; },
+        sale: function (p) { return !st.sale || !!p.compare; },
+        price: function (p) { return !range || (p.price >= range[0] && p.price <= range[1]); },
+        brand: function (p) { return !b.length || b.indexOf(p.brand) >= 0; },
+        color: function (p) { return !c.length || (p.cols || []).some(function (x) { return c.indexOf(x) >= 0; }); },
+        material: function (p) { return !m.length || m.indexOf(p.mat) >= 0; }
+      };
+      return function (p, except) { return Object.keys(test).every(function (k) { return k === except || test[k](p); }); };
+    };
+    var pass = make(s);
+    var count = function (except, fn) { return all.filter(function (p) { return pass(p, except) && fn(p); }).length; };
+    var row = function (name, n, isOn, toggle, extra) {
+      var disabled = n === 0 && !isOn;
+      return Object.assign({ name: name, n: String(n), on: isOn, disabled: disabled, color: disabled ? '#8a93a3' : '#1a1f29', countColor: disabled ? '#8a93a3' : '#545b69', toggle: toggle }, extra || {});
+    };
+    var flip = function (key, val) { var o = Object.assign({}, self.state[key]); o[val] = !o[val]; var st = {}; st[key] = o; self.setState(st); };
+    var sorts = { featured: function (a, b) { return a.rank - b.rank; }, newest: function (a, b) { return a.age - b.age; }, price_asc: function (a, b) { return a.price - b.price; }, price_desc: function (a, b) { return b.price - a.price; } };
+    var list = all.filter(function (p) { return pass(p); }).sort(sorts[s.sort]);
+    var toCard = function (p) {
+      var cols = (p.cols || []).length > 1 ? p.cols.map(function (c) { return { name: SHOW[c] || c, swatch: SW[c] }; }) : [];
+      return {
+        id: p.id, added: !!s.added[p.id], brand: p.brand, title: p.title, tone: p.tone, soldOut: !!p.soldOut, href: 'Product.dc.html',
+        price: ((p.sizes || []).length > 1 ? 'From ' : '') + fmt(p.price),
+        compare: p.compare ? fmt(p.compare) : '',
+        off: p.compare ? '−' + Math.round((1 - p.price / p.compare) * 100) + '%' : '',
+        value: p.price, compareValue: p.compare || 0,
+        variants: { sizes: p.sizes || [], colors: cols }
+      };
+    };
+    var priceDefs = [
+      { key: '', label: 'Any price', fn: function () { return true; } },
+      { key: 'u500', label: 'Under ৳500', fn: function (p) { return p.price < 500; } },
+      { key: '500-1000', label: '৳500 to ৳1,000', fn: function (p) { return p.price >= 500 && p.price <= 1000; } },
+      { key: '1000-2000', label: '৳1,000 to ৳2,000', fn: function (p) { return p.price > 1000 && p.price <= 2000; } },
+      { key: 'o2000', label: 'Over ৳2,000', fn: function (p) { return p.price > 2000; } }
+    ];
+    var brandNames = ['Brand A', 'Brand B', 'Brand C', 'Brand D'];
+    var colorNames = ['Black', 'White', 'Silver', 'Grey', 'Red', 'Blue', 'Green'];
+    var matNames = ['Plastic', 'Stainless steel', 'Aluminium', 'Glass', 'Ceramic', 'Wood', 'Cast iron'];
+    var matRows = matNames.map(function (m) { return row(m, count('material', function (p) { return p.mat === m; }), !!s.materials[m], function () { flip('materials', m); }); });
+    var matShown = s.allMaterials ? matRows : matRows.filter(function (r, i) { return i < 4 || r.on; });
+    var priceLabel = function () {
+      if (s.price === 'custom') return (s.min ? fmt(Number(s.min)) : '৳0') + ' to ' + (s.max ? fmt(Number(s.max)) : 'any');
+      var d = priceDefs.filter(function (x) { return x.key === s.price; })[0];
+      return d ? d.label : '';
+    };
+    var chips = [];
+    var without = function (patch) { return Object.assign({}, s, patch); };
+    if (s.price) chips.push({ label: priceLabel(), st: without({ price: '', min: '', max: '' }) });
+    if (s.stock) chips.push({ label: 'In stock', st: without({ stock: false }) });
+    if (s.sale) chips.push({ label: 'On sale', st: without({ sale: false }) });
+    on(s.brands).forEach(function (b) { var o = Object.assign({}, s.brands); o[b] = false; chips.push({ label: b, st: without({ brands: o }) }); });
+    on(s.colors).forEach(function (c) { var o = Object.assign({}, s.colors); o[c] = false; chips.push({ label: c, st: without({ colors: o }) }); });
+    on(s.materials).forEach(function (m) { var o = Object.assign({}, s.materials); o[m] = false; chips.push({ label: m, st: without({ materials: o }) }); });
+    var chipVals = chips.map(function (c) {
+      var n = all.filter(function (p) { return make(c.st)(p); }).length;
+      var patch = {};
+      ['stock', 'sale', 'price', 'min', 'max', 'brands', 'colors', 'materials'].forEach(function (k) { patch[k] = c.st[k]; });
+      return { label: c.label, n: n, remove: function () { self.setState(patch); } };
+    });
+    var suggestions = chipVals.filter(function (c) { return c.n > 0; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 2).map(function (c) {
+      return { label: 'Remove “' + c.label + '” (' + c.n + (c.n === 1 ? ' product)' : ' products)'), apply: c.remove };
+    });
+    var filtered = chips.length > 0;
+    return {
+      primary: primary,
+      cartCount: s.count,
+      subcats: ['Cookware', 'Tableware', 'Food storage', 'Kitchen tools', 'Water bottles', 'Small appliances'].map(function (n) { return { name: n }; }),
+      countText: filtered ? list.length + (list.length === 1 ? ' product matches' : ' products match') : TOTAL + ' products',
+      shownText: 'Showing ' + loadedN + ' of ' + TOTAL + ' products',
+      progress: Math.round(loadedN / TOTAL * 100) + '%',
+      canLoadMore: loadedN < TOTAL,
+      loadMore: function () { self.setState({ more: self.state.more + 1 }); },
+      showTop: s.scrolled || s.more > 0,
+      products: list.map(toCard),
+      empty: list.length === 0,
+      suggestions: suggestions,
+      chips: chipVals,
+      hasApplied: filtered,
+      noApplied: !filtered,
+      clearAll: function () { self.setState({ stock: false, sale: false, price: '', min: '', max: '', minDraft: '', maxDraft: '', brands: {}, colors: {}, materials: {} }); },
+      priceOpts: priceDefs.map(function (d) {
+        var n = count('price', d.fn);
+        var r = row(d.label, n, s.price === d.key, null);
+        r.label = d.label;
+        r.pick = function () { self.setState({ price: d.key, min: '', max: '' }); };
+        return r;
+      }),
+      minDraft: s.minDraft,
+      maxDraft: s.maxDraft,
+      setMinDraft: function (e) { self.setState({ minDraft: e.target.value }); },
+      setMaxDraft: function (e) { self.setState({ maxDraft: e.target.value }); },
+      applyCustom: function () { var st = self.state; if (st.minDraft || st.maxDraft) self.setState({ price: 'custom', min: st.minDraft, max: st.maxDraft }); },
+      avail: [
+        row('In stock only', count('stock', function (p) { return !p.soldOut; }), s.stock, function () { self.setState({ stock: !self.state.stock }); }),
+        row('On sale', count('sale', function (p) { return !!p.compare; }), s.sale, function () { self.setState({ sale: !self.state.sale }); })
+      ],
+      brands: brandNames.map(function (b) { return row(b, count('brand', function (p) { return p.brand === b; }), !!s.brands[b], function () { flip('brands', b); }); }),
+      colors: colorNames.map(function (c) { return row(c, count('color', function (p) { return (p.cols || []).indexOf(c) >= 0; }), !!s.colors[c], function () { flip('colors', c); }, { swatch: SW[c] }); }),
+      materials: matShown,
+      allMaterials: s.allMaterials,
+      materialToggle: s.allMaterials ? 'Show fewer' : 'Show all ' + matNames.length + ' materials',
+      toggleMaterials: function () { self.setState({ allMaterials: !self.state.allMaterials }); },
+      sort: s.sort,
+      setSort: function (e) { self.setState({ sort: e.target.value }); },
+      addOne: function (it) { var a = Object.assign({}, self.state.added); a[it.id] = true; self.setState({ count: self.state.count + 1, added: a }); },
+      choose: function (it) { self.setState({ pick: it }); },
+      picking: !!s.pick,
+      pick: s.pick,
+      closePick: function () { self.setState({ pick: null }); },
+      addPicked: function (it) { var a = Object.assign({}, self.state.added); a[it.id] = true; self.setState({ count: self.state.count + 1, added: a, pick: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

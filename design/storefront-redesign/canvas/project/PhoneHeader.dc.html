@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site header, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div lang="{{lang}}" style="width: 100%; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+<a href="ListingPhone.dc.html" style="display: block; background: #1a1f29; color: #ffffff; font-size: 12px; padding: 6px 16px; text-align: center; text-decoration: none">{{announce}}</a>
+<header style="border-bottom: 1px solid #dde2ea; padding: 6px 8px 12px">
+<div style="display: flex; align-items: center; gap: 2px">
+<sc-if value="{{hasBack}}" hint-placeholder-val="{{ false }}"><a href="{{back}}" aria-label="{{backLabel}}" style="width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: #1a1f29"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a></sc-if>
+<sc-if value="{{noBack}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{menu}}" aria-label="{{menuLabel}}" style="width: 44px; height: 44px; flex: none; border: 0; background: transparent; color: #1a1f29; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></sc-if>
+<a href="{{homeHref}}" style="flex: 1 1 auto; min-width: 0; padding-left: 4px; font-size: 21px; font-weight: 700; color: {{primary}}; text-decoration: none">Your Store</a>
+<a href="{{otherHref}}" lang="{{otherLang}}" style="height: 44px; padding: 0 8px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 600; font-size: 14px">{{otherName}}</a>
+<a href="CartPhone.dc.html" aria-label="{{cartLabel}}" style="width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: #1a1f29; position: relative">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
+<sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: #f59e0b; color: #1a1f29; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
+</a>
+</div>
+<form role="search" style="display: flex; margin: 4px 8px 0">
+<label for="phone-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{searchLabel}}</label>
+<input id="phone-q" type="search" enterkeyhint="search" autocomplete="off" value="{{q}}" onChange="{{setQ}}" placeholder="{{searchLabel}}" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 12px; font: inherit; font-size: 16px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff; box-sizing: border-box">
+<a href="SearchPhone.dc.html" style="height: 44px; padding: 0 14px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; font-size: 15px; text-decoration: none; display: flex; align-items: center; gap: 6px; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>{{searchButton}}</a>
+</form>
+</header>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"back":{"editor":null},"onMenu":{"editor":null},"query":{"editor":null},"onQuery":{"editor":null},"$preview":{"width":390,"height":132}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: '' };
+  }
+  renderVals() {
+    var self = this;
+    var count = this.props.cartCount ?? 2;
+    var bn = !!this.props.bn;
+    var back = this.props.back || '';
+    var external = typeof this.props.onQuery === 'function';
+    var digits = function (n) { var s = String(n); return bn ? s.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : s; };
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      lang: bn ? 'bn' : 'en',
+      announce: bn ? '[এই সপ্তাহের অফার বা ঘোষণা]' : '[Announcement: this week’s offer]',
+      back: back,
+      hasBack: !!back,
+      noBack: !back,
+      backLabel: bn ? 'পেছনে যান' : 'Back',
+      menuLabel: bn ? 'মেনু খুলুন' : 'Open menu',
+      menu: function () { if (self.props.onMenu) self.props.onMenu(); },
+      homeHref: bn ? 'HomePhoneBn.dc.html' : 'HomePhone.dc.html',
+      otherHref: bn ? 'HomePhone.dc.html' : 'HomePhoneBn.dc.html',
+      otherLang: bn ? 'en' : 'bn',
+      otherName: bn ? 'English' : 'বাংলা',
+      searchLabel: bn ? 'পণ্য খুঁজুন' : 'Search products',
+      searchButton: bn ? 'খুঁজুন' : 'Search',
+      q: external ? (this.props.query || '') : this.state.q,
+      setQ: function (e) { if (external) self.props.onQuery(e.target.value); else self.setState({ q: e.target.value }); },
+      hasCount: count > 0,
+      countText: digits(count),
+      cartLabel: bn ? 'কার্ট, ' + digits(count) + 'টি পণ্য' : 'Cart, ' + count + (count === 1 ? ' item' : ' items')
+    };
+  }
+}
+</script>
+</body>
+</html>

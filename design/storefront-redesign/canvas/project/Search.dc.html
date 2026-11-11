@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Search results</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: 1.5">
+<dc-import name="SiteHeader" primary="{{primary}}" cart-count="{{cartCount}}" query="{{q}}" on-query="{{setQuery}}" hint-size="100%,176px"></dc-import>
+
+<main style="max-width: 1280px; margin: 0 auto; padding: 24px 24px 64px; box-sizing: border-box">
+<sc-if value="{{hasResults}}" hint-placeholder-val="{{ true }}">
+<div style="margin-top: 28px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em">Results for “{{qShown}}”</h1>
+<span role="status" style="color: #545b69">{{countText}}</span>
+</div>
+<div style="margin-top: 16px; padding-bottom: 16px; border-bottom: 1px solid #dde2ea; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px">
+<div role="group" aria-label="Filter by category" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{facets}}" as="f" hint-placeholder-count="3">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="height: 44px; padding: 0 16px; border-radius: 22px; border: {{f.border}}; background: {{f.bg}}; color: #1a1f29; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; gap: 10px">
+<label for="sr-sort" style="font-size: 14px; color: #545b69">Sort by</label>
+<select id="sr-sort" value="{{sort}}" onChange="{{setSort}}" style="height: 44px; padding: 0 12px; font: inherit; font-weight: 500; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29">
+<option value="best">Best match</option>
+<option value="price_asc">Price: low to high</option>
+<option value="price_desc">Price: high to low</option>
+</select>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 32px 20px; margin-top: 24px">
+<sc-for list="{{results}}" as="p" hint-placeholder-count="5">
+<dc-import name="ProductCard" item="{{p}}" added="{{p.added}}" on-add="{{addOne}}" on-choose="{{choose}}" primary="{{primary}}" hint-size="100%,440px"></dc-import>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}">
+<div style="margin-top: 28px; display: flex; flex-direction: column; gap: 16px; max-width: 760px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em">No results for “{{qShown}}”</h1>
+<sc-if value="{{hasSuggestion}}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 17px">Did you mean <button type="button" onClick="{{useSuggestion}}" style="min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer">{{suggestion}}</button>?</p>
+</sc-if>
+<ul style="margin: 0; padding-left: 20px; color: #3c4350; display: flex; flex-direction: column; gap: 4px">
+<li>Check the spelling, or try the Bangla name.</li>
+<li>Use fewer or more general words, like “pan” instead of “26 cm frying pan”.</li>
+<li>Browse a category below, or ask us on WhatsApp and we will help you find it.</li>
+</ul>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+<span style="font-weight: 600; margin-right: 4px">Popular searches:</span>
+<sc-for list="{{popular}}" as="w" hint-placeholder-count="4">
+<button type="button" onClick="{{w.pick}}" style="height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid #c5ccd8; background: #ffffff; color: #1a1f29; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer">{{w.word}}</button>
+</sc-for>
+</div>
+</div>
+<section aria-labelledby="sr-cats" style="margin-top: 40px">
+<h2 id="sr-cats" style="margin: 0 0 16px; font-size: 24px; font-weight: 700">Browse categories</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px">
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="8">
+<a href="Listing.dc.html" style="min-height: 56px; padding: 0 16px; border-radius: 8px; background: {{c.tone}}; color: #1a1f29; text-decoration: none; font-weight: 600; display: flex; align-items: center">{{c.name}}</a>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="sr-pop" style="margin-top: 40px">
+<h2 id="sr-pop" style="margin: 0 0 16px; font-size: 24px; font-weight: 700">Popular right now</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 32px 20px">
+<sc-for list="{{fallback}}" as="p" hint-placeholder-count="4">
+<dc-import name="ProductCard" item="{{p}}" added="{{p.added}}" on-add="{{addOne}}" on-choose="{{choose}}" primary="{{primary}}" hint-size="100%,440px"></dc-import>
+</sc-for>
+</div>
+</section>
+</sc-if>
+</main>
+
+<dc-import name="SiteFooter" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+
+<sc-if value="{{picking}}" hint-placeholder-val="{{ false }}">
+<dc-import name="QuickAdd" item="{{pick}}" on-close="{{closePick}}" on-add="{{addPicked}}" primary="{{primary}}" hint-size="100%,0px"></dc-import>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: 'pan', cat: '', sort: 'best', count: 0, added: {}, pick: null };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var catalog = [
+      { id: 'pan', cat: 'Kitchen & dining', brand: 'Brand A', title: 'Non-stick frying pan with glass lid', price: 990, compare: 1190, tone: '#f1f3f6', cols: ['Black', 'Red', 'Grey'], sizes: [{ name: '22 cm', price: 990, compare: 1190 }, { name: '24 cm', price: 1150, compare: 1350 }, { name: '26 cm', price: 1250, compare: 1490 }, { name: '28 cm', price: 1450, compare: 1690, soldOut: true }] },
+      { id: 'saucepan', cat: 'Kitchen & dining', brand: 'Brand A', title: 'Stainless steel saucepan with lid, 18 cm', price: 1450, tone: '#e8f0fa' },
+      { id: 'kadai', cat: 'Kitchen & dining', brand: 'Brand B', title: 'Non-stick kadai pan, 24 cm', price: 1650, compare: 1890, tone: '#fdf0e1' },
+      { id: 'scrub', cat: 'Home & living', brand: 'Brand D', title: 'Pan scrubbers, pack of 6', price: 180, tone: '#eef5e4' },
+      { id: 'panjabi', cat: 'Fashion', brand: 'Brand C', title: 'Men’s cotton panjabi, regular fit', price: 1850, soldOut: true, tone: '#f8e9ee' },
+      { id: 'cooker', cat: 'Kitchen & dining', brand: 'Brand A', title: 'Pressure cooker, 5 litre', price: 3150, tone: '#eceaf8' },
+      { id: 'bottle', cat: 'Kitchen & dining', brand: 'Brand D', title: 'Stainless steel water bottle, 1 L', price: 590, compare: 690, tone: '#e6f4ef', cols: ['Silver', 'Blue', 'Black'] },
+      { id: 'kettle', cat: 'Electronics', brand: 'Brand B', title: 'Electric kettle, 1.8 litre', price: 1690, tone: '#f8e9ee', cols: ['Black', 'White'] },
+      { id: 'fan', cat: 'Electronics', brand: 'Brand B', title: 'Rechargeable table fan, 12 inch', price: 3450, compare: 3990, tone: '#eceaf8' },
+      { id: 'lamp', cat: 'Electronics', brand: 'Brand B', title: 'LED desk lamp with USB charging', price: 1100, tone: '#eceaf8' },
+      { id: 'rice', cat: 'Groceries', brand: 'Brand D', title: 'Miniket rice, 5 kg', price: 420, tone: '#eef5e4' },
+      { id: 'ricebox', cat: 'Kitchen & dining', brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: 790, tone: '#f1f3f6' },
+      { id: 'sheet', cat: 'Home & living', brand: 'Brand C', title: 'Cotton bedsheet set, double', price: 1690, compare: 2100, tone: '#e8f0fa' },
+      { id: 'bag', cat: 'Baby & kids', brand: 'Brand C', title: 'Kids’ school backpack, 18 L', price: 950, tone: '#fff4dd' }
+    ];
+    var SW = { Black: '#23262d', Red: '#a3302a', Grey: '#8a8f98', White: '#f4f4f2', Silver: '#c0c4ca', Blue: '#3a6ea5' };
+    var SHOW = { Grey: 'Granite grey' };
+    var toCard = function (p) {
+      var cols = (p.cols || []).length > 1 ? p.cols.map(function (c) { return { name: SHOW[c] || c, swatch: SW[c] }; }) : [];
+      return { id: p.id, added: !!s.added[p.id], brand: p.brand, title: p.title, tone: p.tone, soldOut: !!p.soldOut, price: ((p.sizes || []).length > 1 ? 'From ' : '') + fmt(p.price), compare: p.compare ? fmt(p.compare) : '', off: p.compare ? '−' + Math.round((1 - p.price / p.compare) * 100) + '%' : '', href: 'Product.dc.html', value: p.price, compareValue: p.compare || 0, variants: { sizes: p.sizes || [], colors: cols } };
+    };
+    var words = s.q.trim().toLowerCase().split(/\s+/).filter(function (w) { return w; });
+    var matches = words.length ? catalog.filter(function (p) {
+      var tw = p.title.toLowerCase().split(/[^a-z0-9]+/);
+      return words.every(function (w) { return tw.some(function (t) { return t.indexOf(w) === 0; }); });
+    }) : [];
+    var cats = {};
+    matches.forEach(function (p) { cats[p.cat] = (cats[p.cat] || 0) + 1; });
+    var shown = s.cat && cats[s.cat] ? matches.filter(function (p) { return p.cat === s.cat; }) : matches;
+    if (s.sort === 'price_asc') shown = shown.slice().sort(function (a, b) { return a.price - b.price; });
+    if (s.sort === 'price_desc') shown = shown.slice().sort(function (a, b) { return b.price - a.price; });
+    var facets = [{ key: '', label: 'All (' + matches.length + ')' }].concat(Object.keys(cats).map(function (c) { return { key: c, label: c + ' (' + cats[c] + ')' }; }));
+    var fixes = { fraying: 'frying', fryng: 'frying', botle: 'bottle', bottel: 'bottle', ketle: 'kettle', kettel: 'kettle', panjibi: 'panjabi' };
+    var suggestion = words.length === 1 && fixes[words[0]] ? fixes[words[0]] : '';
+    var activeCat = s.cat && cats[s.cat] ? s.cat : '';
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      cartCount: s.count,
+      addOne: function (it) { var a = Object.assign({}, self.state.added); a[it.id] = true; self.setState({ count: self.state.count + 1, added: a }); },
+      choose: function (it) { self.setState({ pick: it }); },
+      picking: !!s.pick,
+      pick: s.pick,
+      closePick: function () { self.setState({ pick: null }); },
+      addPicked: function (it) { var a = Object.assign({}, self.state.added); a[it.id] = true; self.setState({ count: self.state.count + 1, added: a, pick: null }); },
+      q: s.q,
+      qShown: s.q.trim() || '…',
+      setQuery: function (v) { self.setState({ q: v, cat: '' }); },
+      sort: s.sort,
+      setSort: function (e) { self.setState({ sort: e.target.value }); },
+      hasResults: matches.length > 0,
+      noResults: matches.length === 0,
+      countText: shown.length + (shown.length === 1 ? ' product' : ' products'),
+      facets: facets.map(function (f) {
+        var on = f.key === activeCat;
+        return { label: f.label, on: on, border: on ? '2px solid ' + (self.props.primary ?? '#1f4e8c') : '1px solid #c5ccd8', bg: on ? '#e8f0fa' : '#ffffff', pick: function () { self.setState({ cat: f.key }); } };
+      }),
+      results: shown.map(toCard),
+      hasSuggestion: !!suggestion,
+      suggestion: suggestion,
+      useSuggestion: function () { self.setState({ q: suggestion }); },
+      popular: ['pan', 'bottle', 'kettle', 'rice'].map(function (w) { return { word: w, pick: function () { self.setState({ q: w, cat: '' }); } }; }),
+      cats: [
+        { name: 'Kitchen & dining', tone: '#fdf0e1' },
+        { name: 'Home & living', tone: '#e8f0fa' },
+        { name: 'Electronics', tone: '#eceaf8' },
+        { name: 'Fashion', tone: '#f8e9ee' },
+        { name: 'Beauty & health', tone: '#e6f4ef' },
+        { name: 'Baby & kids', tone: '#fff4dd' },
+        { name: 'Groceries', tone: '#eef5e4' },
+        { name: 'Stationery', tone: '#f1f3f6' }
+      ],
+      fallback: catalog.filter(function (p) { return ['pan', 'fan', 'sheet', 'bottle'].indexOf(p.id) >= 0; }).map(toCard)
+    };
+  }
+}
+</script>
+</body>
+</html>
