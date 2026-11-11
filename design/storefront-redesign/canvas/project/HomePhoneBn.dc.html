@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>হোম, ফোন (বাংলা)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 4780px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.6">
+<dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{cartCount}}" bn="{{ true }}" on-menu="{{openMenu}}" hint-size="100%,132px"></dc-import>
+
+<main style="flex: 1 1 auto; display: flex; flex-direction: column">
+<section aria-label="বিশেষ" style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="border-radius: 12px; overflow: hidden; background: {{primary}}; color: #ffffff">
+<div style="height: 160px; background: rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #d6e2f2; font-size: 13px">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
+<span>লাইফস্টাইল ছবি</span>
+</div>
+<div style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 600; color: #ffd98a">এই সপ্তাহে</span>
+<h1 style="margin: 0; font-size: 26px; line-height: 1.35; font-weight: 700">ঘরের দরকারি জিনিস, পৌঁছে যাবে আপনার দরজায়</h1>
+<p style="margin: 0; font-size: 15px; color: #e3ebf6">রান্নাঘর, বিছানা, স্টোরেজ আর আরও অনেক কিছু। অর্ডার হাতে পেয়ে টাকা দিন।</p>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px">
+<a href="ListingPhone.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: #ffffff; color: {{primary}}; font-weight: 700; text-decoration: none; display: flex; align-items: center">এখনই কিনুন</a>
+<a href="#bn-deals" style="height: 44px; padding: 0 18px; border-radius: 8px; border: 1.5px solid #ffffff; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box">আজকের অফার দেখুন</a>
+</div>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<a href="ListingPhone.dc.html" style="min-height: 140px; border-radius: 12px; background: #fff4dd; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.35">ইলেকট্রনিক্সে নতুন</span><span style="color: #545b69; font-size: 13px">ফ্যান, ল্যাম্প আর চার্জার</span></span>
+<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">ইলেকট্রনিক্স দেখুন <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+</a>
+<a href="ListingPhone.dc.html" style="min-height: 140px; border-radius: 12px; background: #e8f0fa; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.35">স্কুলের প্রস্তুতি</span><span style="color: #545b69; font-size: 13px">ব্যাগ, বোতল আর স্টেশনারি</span></span>
+<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">স্কুলের জিনিস দেখুন <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+</a>
+</div>
+</section>
+
+<section aria-label="কেন আমাদের থেকে কিনবেন" style="padding: 10px 16px 0">
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
+<span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.4"><strong style="font-size: 14px; font-weight: 600">ক্যাশ অন ডেলিভারি</strong><span style="font-size: 12px; color: #545b69">পণ্য হাতে পেয়ে টাকা দিন</span></span>
+</li>
+<li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
+<span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.4"><strong style="font-size: 14px; font-weight: 600">সারা দেশে ডেলিভারি</strong><span style="font-size: 12px; color: #545b69">ঢাকায় ১–২ দিন, ঢাকার বাইরে ৩–৫ দিন</span></span>
+</li>
+<li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
+<span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6"></path><path d="M4 4v4h4"></path></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.4"><strong style="font-size: 14px; font-weight: 600">সহজ রিটার্ন</strong><span style="font-size: 12px; color: #545b69">৭ দিনের মধ্যে ফেরত দিন</span></span>
+</li>
+<li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
+<span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
+<span style="display: flex; flex-direction: column; line-height: 1.4"><strong style="font-size: 14px; font-weight: 600">নিরাপদ অনলাইন পেমেন্ট</strong><span style="font-size: 12px; color: #545b69">বিকাশ, নগদ, কার্ড বা ব্যাংক</span></span>
+</li>
+</ul>
+</section>
+
+<section aria-labelledby="bn-cat-h" style="padding: 32px 16px 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
+<h2 id="bn-cat-h" style="margin: 0; font-size: 20px; font-weight: 700">ক্যাটাগরি অনুযায়ী দেখুন</h2>
+<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">সব দেখুন</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 10px">
+<sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
+<a href="ListingPhone.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #1a1f29; text-align: center">
+<span style="width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; background: {{c.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
+<span style="font-size: 13px; font-weight: 600; line-height: 1.35">{{c.short}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section id="bn-deals" aria-labelledby="bn-deals-h" style="padding: 32px 0 0">
+<div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; padding: 0 16px; margin-bottom: 12px">
+<div style="display: flex; flex-direction: column">
+<h2 id="bn-deals-h" style="margin: 0; font-size: 20px; font-weight: 700">আজকের অফার</h2>
+<span style="color: #545b69; font-size: 13px">প্রতিদিনের পছন্দের জিনিসে কম দাম</span>
+</div>
+<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">সব অফার দেখুন</a>
+</div>
+<div style="padding: 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
+<sc-for list="{{deals}}" as="p" hint-placeholder-count="4">
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,370px"></dc-import>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="bn-iwt-h" style="padding: 32px 16px 0">
+<div style="border-radius: 12px; overflow: hidden; background: #f4f6f9">
+<div style="height: 180px; background: #e4e9f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #545b69; font-size: 13px">
+<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
+<span>কালেকশনের ছবি</span>
+</div>
+<div style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 600; color: #545b69">কালেকশন</span>
+<h2 id="bn-iwt-h" style="margin: 0; font-size: 24px; line-height: 1.35; font-weight: 700">রান্নাঘরের সবকিছু</h2>
+<p style="margin: 0; color: #3c4350">প্রতিদিনের রান্নার জন্য বাছাই করা হাঁড়ি-পাতিল, স্টোরেজ আর বাসনপত্র। পছন্দমতো মিলিয়ে নিন, আমরা সব একসাথে পৌঁছে দেব।</p>
+<a href="ListingPhone.dc.html" style="align-self: flex-start; height: 44px; padding: 0 20px; margin-top: 4px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">রান্নাঘরের জিনিস দেখুন</a>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="bn-new-h" style="padding: 32px 16px 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
+<h2 id="bn-new-h" style="margin: 0; font-size: 20px; font-weight: 700">নতুন পণ্য</h2>
+<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">সব দেখুন</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
+<sc-for list="{{newest}}" as="p" hint-placeholder-count="6">
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,370px"></dc-import>
+</sc-for>
+</div>
+<a href="ListingPhone.dc.html" style="margin-top: 24px; height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">সব পণ্য দেখুন</a>
+</section>
+
+<section aria-label="সাহায্য" style="padding: 32px 16px">
+<div style="border-radius: 12px; background: #1a1f29; color: #ffffff; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<strong style="font-size: 18px; font-weight: 700; line-height: 1.4">কোনটা নেবেন বুঝতে পারছেন না?</strong>
+<span style="color: #c9cfda; font-size: 14px">অর্ডারের আগে যেকোনো প্রশ্ন করুন। আমরা উত্তর দিই [খোলার সময়]।</span>
+<a href="#" style="height: 48px; border-radius: 8px; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>হোয়াটসঅ্যাপে মেসেজ করুন</a>
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #8a93a3; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>কল করুন [হটলাইন নম্বর]</a>
+</div>
+</section>
+</main>
+
+<dc-import name="PhoneFooter" primary="{{primary}}" bn="{{ true }}" hint-size="100%,560px"></dc-import>
+
+<nav aria-label="শর্টকাট" style="position: sticky; bottom: 0; background: #ffffff; border-top: 1px solid #dde2ea; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px">
+<a href="HomePhoneBn.dc.html" aria-current="page" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{primary}}; text-decoration: none; font-size: 12px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>হোম</a>
+<a href="ListingPhone.dc.html" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>ক্যাটাগরি</a>
+<a href="CartPhone.dc.html" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>কার্ট</a>
+<a href="#" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>অ্যাকাউন্ট</a>
+</nav>
+
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; top: 0; left: 0; width: 390px; height: 844px; background: rgba(26,31,41,0.5); z-index: 10">
+<nav aria-label="মেনু" style="width: 320px; height: 844px; background: #ffffff; display: flex; flex-direction: column; box-shadow: 8px 0 24px rgba(26,31,41,0.2)">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 20px; border-bottom: 1px solid #dde2ea">
+<strong style="font-size: 18px; font-weight: 700">ক্যাটাগরি</strong>
+<button type="button" onClick="{{closeMenu}}" aria-label="মেনু বন্ধ করুন" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
+<a href="ListingPhone.dc.html" style="min-height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #1a1f29; text-decoration: none; font-weight: 500; border-bottom: 1px solid #eef1f5">{{c.name}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+</sc-for>
+<div style="padding: 16px 20px; display: flex; flex-direction: column">
+<a href="TrackPhone.dc.html" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">অর্ডার ট্র্যাক করুন</a>
+<a href="#" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">হেল্পলাইন: [হটলাইন নম্বর]</a>
+</div>
+</nav>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":4780}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { count: 0, menuOpen: false };
+  }
+  renderVals() {
+    var self = this;
+    var bnDigits = function (str) { return String(str).replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }); };
+    var taka = function (n) { return '৳' + bnDigits(n.toLocaleString('en-US')); };
+    var card = function (p) {
+      var out = { brand: p.brand, title: p.title, tone: p.tone, href: 'ProductPhone.dc.html', price: taka(p.price) + (p.from ? ' থেকে' : ''), variants: p.variants };
+      if (p.compare) { out.compare = taka(p.compare); out.off = '−' + bnDigits(Math.round((1 - p.price / p.compare) * 100)) + '%'; }
+      return out;
+    };
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      cartCount: this.state.count,
+      addOne: function () { self.setState({ count: self.state.count + 1 }); },
+      categories: [
+        { name: 'রান্নাঘর ও খাবার', short: 'রান্নাঘর', tone: '#fdf0e1' },
+        { name: 'ঘর ও সাজসজ্জা', short: 'ঘর', tone: '#e8f0fa' },
+        { name: 'ইলেকট্রনিক্স', short: 'ইলেকট্রনিক্স', tone: '#eceaf8' },
+        { name: 'ফ্যাশন', short: 'ফ্যাশন', tone: '#f8e9ee' },
+        { name: 'সৌন্দর্য ও স্বাস্থ্য', short: 'সৌন্দর্য', tone: '#e6f4ef' },
+        { name: 'শিশু ও বাচ্চা', short: 'শিশু', tone: '#fff4dd' },
+        { name: 'মুদি', short: 'মুদি', tone: '#eef5e4' },
+        { name: 'স্টেশনারি', short: 'স্টেশনারি', tone: '#f1f3f6' }
+      ],
+      deals: [
+        { brand: 'Brand A', title: 'গ্লাস ঢাকনাসহ নন-স্টিক ফ্রাইং প্যান', price: 990, compare: 1190, from: true, tone: '#f1f3f6', variants: { sizes: [{ name: '২২ সেমি' }, { name: '২৪ সেমি' }, { name: '২৬ সেমি' }, { name: '২৮ সেমি' }], colors: [{ name: 'কালো', swatch: '#23262d' }, { name: 'লাল', swatch: '#a3302a' }, { name: 'ধূসর', swatch: '#8a8f98' }] } },
+        { brand: 'Brand B', title: 'রিচার্জেবল টেবিল ফ্যান, ১২ ইঞ্চি', price: 3450, compare: 3990, tone: '#eceaf8' },
+        { brand: 'Brand C', title: 'সুতির বেডশিট সেট, ডাবল', price: 1690, compare: 2100, tone: '#e8f0fa' },
+        { brand: 'Brand D', title: 'স্টেইনলেস স্টিলের পানির বোতল, ১ লিটার', price: 590, compare: 690, tone: '#e6f4ef', variants: { colors: [{ name: 'রুপালি', swatch: '#c0c4ca' }, { name: 'নীল', swatch: '#3a6ea5' }, { name: 'কালো', swatch: '#23262d' }] } },
+        { brand: 'Brand C', title: 'সিরামিক ডিনার সেট, ২৪ পিস', price: 3800, compare: 4500, tone: '#fdf0e1' },
+        { brand: 'Brand D', title: 'পাটের স্টোরেজ ঝুড়ি, ৩টির সেট', price: 690, compare: 850, tone: '#fff4dd' }
+      ].map(card).slice(0, 4),
+      newest: [
+        { brand: 'Brand B', title: 'ইউএসবি চার্জিংসহ এলইডি ডেস্ক ল্যাম্প', price: 1100, tone: '#eceaf8' },
+        { brand: 'Brand D', title: 'কাচের খাবারের বাক্স, ৫টির সেট', price: 980, compare: 1150, tone: '#fdf0e1' },
+        { brand: 'Brand C', title: 'বাচ্চাদের স্কুল ব্যাগ, ১৮ লিটার', price: 950, tone: '#fff4dd' },
+        { brand: 'Brand A', title: 'বালতিসহ মাইক্রোফাইবার মপ', price: 1450, tone: '#e8f0fa' },
+        { brand: 'Brand B', title: 'অ্যালোভেরা ফেস ওয়াশ, ১৫০ মিলি', price: 320, tone: '#e6f4ef' },
+        { brand: 'Brand D', title: 'মিনিকেট চাল, ৫ কেজি', price: 420, tone: '#eef5e4' }
+      ].map(card),
+      menuOpen: this.state.menuOpen,
+      openMenu: function () { self.setState({ menuOpen: true }); },
+      closeMenu: function () { self.setState({ menuOpen: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

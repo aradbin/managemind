@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site header, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; position: relative; z-index: 20; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+
+<div style="background: #1a1f29; color: #ffffff; font-size: 13px">
+<div style="max-width: 1280px; margin: 0 auto; padding: 8px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 4px 24px; align-items: center; justify-content: space-between">
+<a href="Listing.dc.html" style="color: #ffffff; text-decoration: none">[Announcement: this week’s offer or a holiday notice]</a>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
+<a href="Track.dc.html" style="color: #ffffff; text-decoration: none">Track order</a>
+<a href="#" style="color: #ffffff; text-decoration: none">Help: [hotline number]</a>
+<a href="#" lang="bn" style="color: #ffffff; text-decoration: none; font-weight: 600">বাংলা</a>
+</div>
+</div>
+</div>
+
+<header style="border-bottom: 1px solid #dde2ea; background: #ffffff">
+<div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px">
+<a href="Main.dc.html" style="font-size: 26px; font-weight: 700; color: {{primary}}; text-decoration: none; letter-spacing: -0.01em">Your Store</a>
+<form role="search" style="flex: 1 1 420px; min-width: 0; display: flex; position: relative">
+<label for="site-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search products</label>
+<input id="site-q" type="search" value="{{q}}" onChange="{{setQ}}" autocomplete="off" aria-autocomplete="list" aria-controls="site-suggest" aria-expanded="{{showSuggest}}" placeholder="Search for products, brands and categories" style="flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 16px; font: inherit; font-size: 15px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff">
+<a href="Search.dc.html" style="height: 48px; padding: 0 22px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+Search</a>
+<sc-if value="{{showSuggest}}" hint-placeholder-val="{{ false }}">
+<div id="site-suggest" style="position: absolute; top: 54px; left: 0; right: 0; z-index: 30; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 8px 0; display: flex; flex-direction: column">
+<sc-if value="{{hasCats}}" hint-placeholder-val="{{ true }}">
+<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Categories</span>
+<sc-for list="{{cats}}" as="c" hint-placeholder-count="2">
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 10px; color: #1a1f29; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>{{c.name}}</a>
+</sc-for>
+</sc-if>
+<sc-if value="{{hasProducts}}" hint-placeholder-val="{{ true }}">
+<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Products</span>
+<sc-for list="{{products}}" as="p" hint-placeholder-count="4">
+<a href="Product.dc.html" style="min-height: 52px; padding: 4px 16px; display: flex; align-items: center; gap: 12px; color: #1a1f29; text-decoration: none">
+<span style="width: 40px; height: 40px; flex: none; border-radius: 8px; background: {{p.tone}}"></span>
+<span style="flex: 1 1 auto; min-width: 0">{{p.title}}</span>
+<span style="font-weight: 700">{{p.price}}</span>
+</a>
+</sc-for>
+</sc-if>
+<sc-if value="{{noMatch}}" hint-placeholder-val="{{ false }}">
+<span style="padding: 10px 16px; color: #3c4350">No matches for “{{q}}”. Check the spelling, or browse a category.</span>
+</sc-if>
+<a href="Search.dc.html" style="min-height: 44px; margin-top: 4px; padding: 0 16px; border-top: 1px solid #eef1f5; display: flex; align-items: center; color: {{primary}}; font-weight: 600; text-decoration: none">See all results for “{{q}}”</a>
+</div>
+</sc-if>
+</form>
+<div style="display: flex; align-items: center; gap: 8px">
+<a href="#" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
+<span style="font-weight: 500">Account</span></a>
+<a href="Cart.dc.html" aria-label="{{cartLabel}}" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
+<span style="position: relative; display: flex">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
+<sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: -8px; right: -10px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px; background: #f59e0b; color: #1a1f29; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
+</span>
+<span style="font-weight: 500">Cart</span></a>
+</div>
+</div>
+
+<nav aria-label="Categories" style="max-width: 1280px; margin: 0 auto; padding: 0 24px 4px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; position: relative">
+<button type="button" onClick="{{toggleMenu}}" aria-expanded="{{menuOpen}}" style="height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: #f4f6f9; color: #1a1f29; font: inherit; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+All categories</button>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Kitchen &amp; dining</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Home &amp; living</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Electronics</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Fashion</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Beauty &amp; health</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Baby &amp; kids</a>
+<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #b42318; text-decoration: none; font-weight: 600; margin-left: auto">Today’s deals</a>
+<sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; top: 48px; left: 24px; right: 24px; z-index: 30; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px 32px">
+<sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
+<div style="display: flex; flex-direction: column">
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; font-weight: 700; color: #1a1f29; text-decoration: none">{{c.name}}</a>
+<sc-for list="{{c.subs}}" as="s" hint-placeholder-count="3">
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none; font-size: 14px">{{s.name}}</a>
+</sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</nav>
+</header>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"query":{"editor":null},"onQuery":{"editor":null},"$preview":{"width":1440,"height":176}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { q: '', menuOpen: false };
+  }
+  renderVals() {
+    var self = this;
+    var count = this.props.cartCount ?? 2;
+    var external = typeof this.props.onQuery === 'function';
+    var raw = external ? (this.props.query || '') : this.state.q;
+    var q = raw.trim().toLowerCase();
+    var subs = function (list) { return list.map(function (n) { return { name: n }; }); };
+    var categories = [
+      { name: 'Kitchen & dining', subs: subs(['Cookware', 'Tableware', 'Food storage']) },
+      { name: 'Home & living', subs: subs(['Bedding', 'Decor', 'Cleaning']) },
+      { name: 'Electronics', subs: subs(['Fans', 'Lighting', 'Chargers']) },
+      { name: 'Fashion', subs: subs(['Men', 'Women', 'Footwear']) },
+      { name: 'Beauty & health', subs: subs(['Skin care', 'Hair care', 'Personal care']) },
+      { name: 'Baby & kids', subs: subs(['School', 'Toys', 'Baby care']) },
+      { name: 'Groceries', subs: subs(['Rice and oil', 'Snacks', 'Drinks']) },
+      { name: 'Stationery', subs: subs(['Notebooks', 'Pens', 'Art supplies']) }
+    ];
+    var catalog = [
+      { title: 'Non-stick frying pan with glass lid', price: '৳1,250', tone: '#f1f3f6' },
+      { title: 'Pressure cooker, 5 litre', price: '৳3,150', tone: '#eceaf8' },
+      { title: 'Glass food containers, set of 5', price: '৳980', tone: '#fdf0e1' },
+      { title: 'Stainless steel water bottle, 1 L', price: '৳590', tone: '#e6f4ef' },
+      { title: 'Rechargeable table fan, 12 inch', price: '৳3,450', tone: '#eceaf8' },
+      { title: 'Cotton bedsheet set, double', price: '৳1,690', tone: '#e8f0fa' },
+      { title: 'LED desk lamp with USB charging', price: '৳1,100', tone: '#eceaf8' },
+      { title: 'Electric kettle, 1.8 litre', price: '৳1,690', tone: '#f8e9ee' }
+    ];
+    var allSubs = [];
+    categories.forEach(function (c) { allSubs.push({ name: c.name }); c.subs.forEach(function (s) { allSubs.push({ name: s.name + ' in ' + c.name }); }); });
+    var cats = q ? allSubs.filter(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; }).slice(0, 2) : [];
+    var products = q ? catalog.filter(function (p) { return p.title.toLowerCase().indexOf(q) >= 0; }).slice(0, 4) : [];
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      q: raw,
+      setQ: function (e) { if (external) self.props.onQuery(e.target.value); else self.setState({ q: e.target.value, menuOpen: false }); },
+      showSuggest: !external && q.length > 0,
+      cats: cats,
+      hasCats: cats.length > 0,
+      products: products,
+      hasProducts: products.length > 0,
+      noMatch: q.length > 0 && cats.length === 0 && products.length === 0,
+      hasCount: count > 0,
+      countText: String(count),
+      cartLabel: 'Cart, ' + count + (count === 1 ? ' item' : ' items'),
+      categories: categories,
+      menuOpen: this.state.menuOpen,
+      toggleMenu: function () { self.setState({ menuOpen: !self.state.menuOpen }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

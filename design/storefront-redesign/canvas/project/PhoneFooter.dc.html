@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site footer, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<footer lang="{{lang}}" style="width: 100%; box-sizing: border-box; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; border-top: 1px solid #dde2ea; font-size: 15px; line-height: 1.5; padding: 28px 16px 20px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 20px; font-weight: 700; color: {{primary}}">Your Store</span>
+<span style="color: #545b69; font-size: 14px">{{about}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px">
+<nav aria-label="{{shopTitle}}" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 2px">{{shopTitle}}</strong>
+<sc-for list="{{shopLinks}}" as="l" hint-placeholder-count="3">
+<a href="{{l.href}}" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none; font-size: 14px">{{l.label}}</a>
+</sc-for>
+</nav>
+<nav aria-label="{{helpTitle}}" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 2px">{{helpTitle}}</strong>
+<sc-for list="{{helpLinks}}" as="l" hint-placeholder-count="4">
+<a href="{{l.href}}" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none; font-size: 14px">{{l.label}}</a>
+</sc-for>
+</nav>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<strong style="font-weight: 600">{{payTitle}}</strong>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<sc-for list="{{pays}}" as="p" hint-placeholder-count="5">
+<span style="padding: 3px 9px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 12px; font-weight: 600">{{p.label}}</span>
+</sc-for>
+</div>
+</div>
+<div style="padding-top: 12px; border-top: 1px solid #dde2ea; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; color: #545b69; font-size: 13px">
+<span>© Your Store</span>
+<span style="display: flex; flex-wrap: wrap; gap: 0 16px">
+<a href="#" style="min-height: 44px; display: flex; align-items: center; color: #545b69">{{terms}}</a>
+<a href="#" style="min-height: 44px; display: flex; align-items: center; color: #545b69">{{privacy}}</a>
+<a href="{{otherHref}}" lang="{{otherLang}}" style="min-height: 44px; display: flex; align-items: center; color: #545b69">{{otherName}}</a>
+</span>
+</div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":540}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bn = !!this.props.bn;
+    var link = function (label, href) { return { label: label, href: href }; };
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      lang: bn ? 'bn' : 'en',
+      about: bn ? '[দোকান সম্পর্কে এক লাইন: কী বিক্রি করেন, কোথায় ডেলিভারি দেন।]' : '[Short line about the shop: what you sell and where you deliver.]',
+      shopTitle: bn ? 'কেনাকাটা' : 'Shop',
+      helpTitle: bn ? 'সাহায্য' : 'Help',
+      payTitle: bn ? 'পরিশোধের উপায়' : 'Ways to pay',
+      shopLinks: bn
+        ? [link('সব ক্যাটাগরি', 'ListingPhone.dc.html'), link('আজকের অফার', 'ListingPhone.dc.html'), link('নতুন পণ্য', 'ListingPhone.dc.html')]
+        : [link('All categories', 'ListingPhone.dc.html'), link('Today’s deals', 'ListingPhone.dc.html'), link('New arrivals', 'ListingPhone.dc.html')],
+      helpLinks: bn
+        ? [link('অর্ডার ট্র্যাক করুন', 'TrackPhone.dc.html'), link('ডেলিভারি ও চার্জ', '#'), link('রিটার্ন ও রিফান্ড', '#'), link('যোগাযোগ', '#')]
+        : [link('Track your order', 'TrackPhone.dc.html'), link('Delivery and charges', '#'), link('Returns and refunds', '#'), link('Contact us', '#')],
+      pays: (bn ? ['ক্যাশ অন ডেলিভারি', 'বিকাশ', 'নগদ', 'কার্ড', 'ব্যাংক'] : ['Cash on delivery', 'bKash', 'Nagad', 'Card', 'Bank']).map(function (l) { return { label: l }; }),
+      terms: bn ? 'শর্তাবলি' : 'Terms',
+      privacy: bn ? 'গোপনীয়তা' : 'Privacy',
+      otherHref: bn ? 'HomePhone.dc.html' : 'HomePhoneBn.dc.html',
+      otherLang: bn ? 'en' : 'bn',
+      otherName: bn ? 'English' : 'বাংলা'
+    };
+  }
+}
+</script>
+</body>
+</html>

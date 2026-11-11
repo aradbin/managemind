@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Site footer, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<footer style="width: 100%; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; border-top: 1px solid #dde2ea; font-size: 15px; line-height: 1.5">
+<div style="max-width: 1280px; margin: 0 auto; padding: 48px 24px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 22px; font-weight: 700; color: {{primary}}">Your Store</span>
+<span style="color: #545b69; font-size: 14px">[Short line about the shop: what you sell and where you deliver.]</span>
+</div>
+<nav aria-label="Shop" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 4px">Shop</strong>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">All categories</a>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Today’s deals</a>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">New arrivals</a>
+</nav>
+<nav aria-label="Help" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 4px">Help</strong>
+<a href="Track.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Track your order</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Delivery and charges</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Returns and refunds</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Contact us</a>
+</nav>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<strong style="font-weight: 600; margin-bottom: 4px">Ways to pay</strong>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Cash on delivery</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">bKash</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Nagad</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Card</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Bank</span>
+</div>
+</div>
+</div>
+<div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px 32px; box-sizing: border-box; border-top: 1px solid #dde2ea; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: #545b69; font-size: 13px">
+<span>© Your Store</span>
+<span style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" style="color: #545b69">Terms</a><a href="#" style="color: #545b69">Privacy</a><a href="#" lang="bn" style="color: #545b69">বাংলা</a></span>
+</div>
+</footer>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { primary: this.props.primary ?? '#1f4e8c' };
+  }
+}
+</script>
+</body>
+</html>

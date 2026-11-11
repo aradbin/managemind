@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quick add: choose options</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 60; background: rgba(26,31,41,0.5); display: flex; align-items: {{align}}; justify-content: center; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; font-size: 15px; line-height: 1.5">
+<div role="dialog" aria-modal="true" aria-labelledby="qa-title" style="width: {{width}}; max-width: 100%; max-height: 92%; overflow-y: auto; background: #ffffff; border-radius: {{radius}}; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 16px 40px rgba(26,31,41,0.25)">
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<span style="width: 72px; height: 72px; flex: none; border-radius: 8px; background: {{tone}}"></span>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<h2 id="qa-title" style="margin: 0; font-size: 17px; font-weight: 700; line-height: 1.35">{{title}}</h2>
+<span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px"><span style="font-size: 20px; font-weight: 700; color: {{priceColor}}">{{priceText}}</span><sc-if value="{{hasCompare}}" hint-placeholder-val="{{ false }}"><s style="font-size: 14px; color: #545b69">{{compareText}}</s></sc-if></span>
+<span role="status" style="font-size: 13px; font-weight: 600; color: {{stockColor}}">{{stockText}}</span>
+</div>
+<button type="button" onClick="{{close}}" aria-label="Close" style="width: 44px; height: 44px; margin: -10px -10px 0 0; flex: none; border: 0; background: transparent; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<sc-if value="{{hasSizes}}" hint-placeholder-val="{{ true }}">
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">Size: <span style="font-weight: 400">{{sizeName}}</span></legend>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{sizes}}" as="v" hint-placeholder-count="4">
+<button type="button" onClick="{{v.pick}}" aria-pressed="{{v.on}}" aria-label="{{v.label}}" style="min-width: 72px; height: 44px; padding: 0 12px; border-radius: 8px; border: {{v.border}}; background: {{v.bg}}; color: {{v.color}}; font: inherit; font-weight: 600; text-decoration: {{v.strike}}; cursor: pointer">{{v.name}}</button>
+</sc-for>
+</div>
+</fieldset>
+</sc-if>
+
+<sc-if value="{{hasColors}}" hint-placeholder-val="{{ true }}">
+<fieldset style="margin: 0; padding: 0; border: 0">
+<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">Colour: <span style="font-weight: 400">{{colorName}}</span></legend>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<sc-for list="{{colors}}" as="c" hint-placeholder-count="3">
+<button type="button" onClick="{{c.pick}}" aria-label="{{c.name}}" aria-pressed="{{c.on}}" style="width: 44px; height: 44px; padding: 3px; border-radius: 22px; border: {{c.ring}}; background: #ffffff; cursor: pointer; box-sizing: border-box"><span style="display: block; width: 100%; height: 100%; border-radius: 50%; background: {{c.swatch}}; box-shadow: inset 0 0 0 1px rgba(26,31,41,0.2)"></span></button>
+</sc-for>
+</div>
+</fieldset>
+</sc-if>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-if value="{{canBuy}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{add}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer">Add to cart</button></sc-if>
+<sc-if value="{{soldOut}}" hint-placeholder-val="{{ false }}"><button type="button" disabled style="height: 52px; border: 0; border-radius: 8px; background: #eef1f5; color: #545b69; font: inherit; font-size: 17px; font-weight: 700">Sold out in this size</button></sc-if>
+<a href="{{href}}" style="min-height: 44px; display: flex; align-items: center; justify-content: center; color: {{primary}}; font-weight: 600">See full details</a>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"phone":{"editor":"boolean","default":false},"item":{"editor":null},"onClose":{"editor":null},"onAdd":{"editor":null},"$preview":{"width":480,"height":620}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var it = props.item || {};
+    var sizes = (it.variants && it.variants.sizes) || [];
+    var first = 0;
+    for (var i = 0; i < sizes.length; i++) { if (!sizes[i].soldOut) { first = i; break; } }
+    this.state = { size: first, color: 0 };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var phone = !!this.props.phone;
+    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var it = this.props.item || {
+      title: 'Non-stick frying pan with glass lid', tone: '#f1f3f6', href: 'Product.dc.html', value: 990, compareValue: 1190,
+      variants: {
+        sizes: [{ name: '22 cm', price: 990, compare: 1190 }, { name: '24 cm', price: 1150, compare: 1350 }, { name: '26 cm', price: 1250, compare: 1490 }, { name: '28 cm', price: 1450, compare: 1690, soldOut: true }],
+        colors: [{ name: 'Black', swatch: '#23262d' }, { name: 'Red', swatch: '#a3302a' }, { name: 'Granite grey', swatch: '#8a8f98' }]
+      }
+    };
+    var v = it.variants || {};
+    var sizes = v.sizes || [];
+    var colors = v.colors || [];
+    var cur = sizes[s.size] || { price: it.value, compare: it.compareValue };
+    var soldOut = !!cur.soldOut;
+    return {
+      primary: primary,
+      align: phone ? 'flex-end' : 'center',
+      width: phone ? '100%' : '440px',
+      radius: phone ? '16px 16px 0 0' : '12px',
+      tone: it.tone || '#f1f3f6',
+      title: it.title,
+      href: it.href || 'Product.dc.html',
+      priceText: fmt(cur.price),
+      hasCompare: !!cur.compare,
+      compareText: cur.compare ? fmt(cur.compare) : '',
+      priceColor: cur.compare ? '#b42318' : '#1a1f29',
+      stockText: soldOut ? 'Out of stock in this size' : 'In stock, ready to ship',
+      stockColor: soldOut ? '#b42318' : '#1d6b3a',
+      hasSizes: sizes.length > 1,
+      sizeName: cur.name || '',
+      sizes: sizes.map(function (x, i) {
+        var on = i === s.size;
+        return { name: x.name, label: x.name + (x.soldOut ? ', out of stock' : ''), on: on, border: on ? '2px solid ' + primary : '1.5px solid #c5ccd8', bg: on ? '#e8f0fa' : '#ffffff', color: x.soldOut ? '#545b69' : '#1a1f29', strike: x.soldOut ? 'line-through' : 'none', pick: function () { self.setState({ size: i }); } };
+      }),
+      hasColors: colors.length > 1,
+      colorName: colors.length ? colors[s.color].name : '',
+      colors: colors.map(function (c, i) {
+        var on = i === s.color;
+        return { name: c.name, swatch: c.swatch, on: on, ring: on ? '2px solid ' + primary : '1px solid #c5ccd8', pick: function () { self.setState({ color: i }); } };
+      }),
+      soldOut: soldOut,
+      canBuy: !soldOut,
+      close: function () { if (self.props.onClose) self.props.onClose(); },
+      add: function () { if (self.props.onAdd) self.props.onAdd(it); }
+    };
+  }
+}
+</script>
+</body>
+</html>

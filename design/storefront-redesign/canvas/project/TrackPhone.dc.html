@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Track your order, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2000px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+<dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{ 0 }}" back="HomePhone.dc.html" hint-size="100%,132px"></dc-import>
+
+<main style="flex: 1 1 auto; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">Track your order</h1>
+<p style="margin: 0; color: #3c4350; font-size: 14px">Enter your order number and the mobile number you ordered with.</p>
+</div>
+
+<sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+<form style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="tp-num" style="font-weight: 600; font-size: 14px">Order number</label>
+<input id="tp-num" type="text" inputmode="numeric" value="{{num}}" onChange="{{setNum}}" aria-invalid="{{numBad}}" aria-describedby="tp-num-e" placeholder="For example 10482" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{numBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{numBad}}" hint-placeholder-val="{{ false }}"><span id="tp-num-e" style="font-size: 13px; color: #b42318; font-weight: 600">Enter your order number.</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="tp-phone" style="font-weight: 600; font-size: 14px">Mobile number</label>
+<input id="tp-phone" type="tel" inputmode="tel" autocomplete="tel" value="{{phone}}" onChange="{{setPhone}}" aria-invalid="{{phoneBad}}" aria-describedby="tp-phone-e" placeholder="01712-345678" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{phoneBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{phoneBad}}" hint-placeholder-val="{{ false }}"><span id="tp-phone-e" style="font-size: 13px; color: #b42318; font-weight: 600">Enter the mobile number you ordered with.</span></sc-if>
+</div>
+<sc-if value="{{notFound}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600; font-size: 14px">No order matches this number and mobile number.</div>
+</sc-if>
+<button type="button" onClick="{{find}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">Track order</button>
+<span style="font-size: 13px; color: #545b69">Your order number is in the confirmation message we sent on WhatsApp or SMS.</span>
+</form>
+</sc-if>
+
+<sc-if value="{{found}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="tp-order" style="border: 1px solid #dde2ea; border-radius: 12px; overflow: hidden">
+<div style="padding: 14px 16px; background: #f4f6f9; display: flex; flex-direction: column">
+<h2 id="tp-order" style="margin: 0; font-size: 18px; font-weight: 700">Order {{numShown}}</h2>
+<span style="color: #545b69; font-size: 13px">Placed on [date]</span>
+</div>
+<sc-if value="{{cancelled}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="margin: 16px 16px 0; padding: 12px 14px; border-radius: 8px; background: #f4f6f9; border: 1.5px solid #8a93a3; font-weight: 600; font-size: 14px">Your order is cancelled.</div>
+</sc-if>
+<dl style="margin: 0; padding: 16px 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px">
+<div><dt style="font-size: 12px; color: #545b69">Status</dt><dd style="margin: 0; font-weight: 700">{{statusText}}</dd></div>
+<div><dt style="font-size: 12px; color: #545b69">Delivery</dt><dd style="margin: 0; font-weight: 700">{{deliveryText}}</dd></div>
+</dl>
+<sc-if value="{{active}}" hint-placeholder-val="{{ true }}">
+<ol style="list-style: none; margin: 0; padding: 16px 16px 0; display: flex; flex-direction: column">
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+<li style="display: flex; gap: 12px; min-height: 52px">
+<span style="display: flex; flex-direction: column; align-items: center; flex: none; width: 24px">
+<span style="width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; border: {{st.ring}}; background: {{st.fill}}; color: #ffffff; display: flex; align-items: center; justify-content: center"><sc-if value="{{st.done}}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+<span style="flex: 1 1 auto; width: 2px; min-height: 14px; background: {{st.line}}"></span>
+</span>
+<span style="display: flex; flex-direction: column; padding-bottom: 10px">
+<span style="font-weight: {{st.weight}}; color: {{st.color}}; font-size: 15px">{{st.label}}<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{st.srState}}</span></span>
+<span style="font-size: 13px; color: #545b69">{{st.note}}</span>
+</span>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+<div style="padding: 8px 16px 16px; border-bottom: 1px solid #dde2ea; display: flex; flex-direction: column; gap: 8px; font-size: 14px">
+<h3 style="margin: 0; font-size: 15px; font-weight: 700">Items</h3>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span>Non-stick frying pan with glass lid · 26 cm · Black × 1</span><span style="font-weight: 600">৳1,250</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span>Stainless steel water bottle · 1 litre × 2</span><span style="font-weight: 600">৳1,180</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; color: #3c4350"><span>Delivery (inside Dhaka)</span><span>৳60</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 16px"><span>Total</span><span>৳2,490</span></div>
+</div>
+<dl style="margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 14px">
+<div><dt style="color: #545b69">Payment</dt><dd style="margin: 0">Cash on delivery: pay ৳2,490 when it arrives</dd></div>
+<div><dt style="color: #545b69">Delivering to</dt><dd style="margin: 0">[Name], [house and road], [area], Dhaka</dd></div>
+</dl>
+<div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>Message us on WhatsApp</a>
+<sc-if value="{{canCancel}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{askCancel}}" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #b42318; font: inherit; font-weight: 600; cursor: pointer">Cancel this order</button></sc-if>
+<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+<div role="alertdialog" aria-labelledby="tp-confirm" style="padding: 14px; border-radius: 8px; border: 1.5px solid #b42318; background: #fdf1ef; display: flex; flex-direction: column; gap: 10px">
+<strong id="tp-confirm">Cancel this order? This can’t be undone.</strong>
+<button type="button" onClick="{{doCancel}}" style="height: 44px; border: 0; border-radius: 8px; background: #b42318; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">Yes, cancel the order</button>
+<button type="button" onClick="{{keep}}" style="height: 44px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Keep my order</button>
+</div>
+</sc-if>
+<button type="button" onClick="{{reset}}" style="height: 44px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer">Track another order</button>
+</div>
+</section>
+</sc-if>
+</main>
+
+<dc-import name="PhoneFooter" primary="{{primary}}" hint-size="100%,540px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { num: '', phone: '', tried: false, view: 'form', confirming: false, cancelled: false };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var numBad = s.tried && !s.num.trim();
+    var phoneBad = s.tried && !s.phone.trim();
+    var stepDefs = [
+      { label: 'Order placed', note: '[date and time]' },
+      { label: 'Confirmed by the store', note: 'We called you to confirm' },
+      { label: 'Being prepared', note: 'Packing your items' },
+      { label: 'On the way', note: 'Booked with the courier, then on the way to you' },
+      { label: 'Delivered', note: 'Pay the courier when it arrives' }
+    ];
+    var current = 2;
+    return {
+      primary: primary,
+      num: s.num,
+      phone: s.phone,
+      setNum: function (e) { self.setState({ num: e.target.value }); },
+      setPhone: function (e) { self.setState({ phone: e.target.value }); },
+      numBad: numBad,
+      phoneBad: phoneBad,
+      numBorder: numBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      phoneBorder: phoneBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      showForm: s.view !== 'found',
+      notFound: s.view === 'notfound',
+      found: s.view === 'found',
+      find: function () {
+        var st = self.state;
+        if (!st.num.trim() || !st.phone.trim()) { self.setState({ tried: true }); return; }
+        var digits = st.num.replace(/\D/g, '');
+        self.setState({ tried: false, view: digits.length >= 4 ? 'found' : 'notfound' });
+      },
+      numShown: s.num.trim(),
+      cancelled: s.cancelled,
+      active: !s.cancelled,
+      statusText: s.cancelled ? 'Cancelled' : 'Being prepared',
+      deliveryText: s.cancelled ? 'Not sent' : 'Not sent yet',
+      steps: stepDefs.map(function (d, i) {
+        var done = i < current;
+        var now = i === current;
+        return {
+          label: d.label,
+          note: d.note,
+          done: done,
+          srState: done ? ' (done)' : now ? ' (current step)' : ' (not yet)',
+          ring: done ? '0' : now ? '3px solid ' + primary : '2px solid #c5ccd8',
+          fill: done ? primary : '#ffffff',
+          line: i === stepDefs.length - 1 ? 'transparent' : (done ? primary : '#dde2ea'),
+          weight: now ? '700' : '600',
+          color: done || now ? '#1a1f29' : '#545b69'
+        };
+      }),
+      canCancel: !s.cancelled && !s.confirming,
+      confirming: s.confirming,
+      askCancel: function () { self.setState({ confirming: true }); },
+      keep: function () { self.setState({ confirming: false }); },
+      doCancel: function () { self.setState({ confirming: false, cancelled: true }); },
+      reset: function () { self.setState({ num: '', phone: '', tried: false, view: 'form', confirming: false, cancelled: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

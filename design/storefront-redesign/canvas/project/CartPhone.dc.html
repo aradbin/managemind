@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cart, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 2400px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+<dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{count}}" back="ProductPhone.dc.html" hint-size="100%,132px"></dc-import>
+
+<main style="flex: 1 1 auto; display: flex; flex-direction: column">
+<div style="padding: 16px 16px 4px; display: flex; align-items: baseline; gap: 10px">
+<h1 style="margin: 0; font-size: 24px; font-weight: 700">Your cart</h1>
+<span role="status" style="color: #545b69; font-size: 14px">{{countText}}</span>
+</div>
+
+<sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 40px 24px 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 50%; background: #f4f6f9; color: #545b69; display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg></span>
+<strong style="font-size: 18px">Your cart is empty</strong>
+<span style="color: #3c4350">Browse the shop and add something you like.</span>
+<a href="HomePhone.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">Start shopping</a>
+</div>
+</sc-if>
+
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+<ul style="list-style: none; margin: 0; padding: 0 16px; display: flex; flex-direction: column">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="2">
+<li style="padding: 16px 0; border-bottom: 1px solid #dde2ea; display: flex; gap: 12px; align-items: flex-start">
+<a href="ProductPhone.dc.html" aria-label="{{it.title}}" style="width: 80px; height: 80px; flex: none; border-radius: 8px; background: {{it.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg></a>
+<div style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; gap: 8px; align-items: flex-start">
+<span style="flex: 1 1 auto; display: flex; flex-direction: column">
+<a href="ProductPhone.dc.html" style="font-size: 15px; line-height: 1.35; color: #1a1f29; text-decoration: none">{{it.title}}</a>
+<sc-if value="{{it.hasVariant}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; color: #545b69">{{it.variant}}</span></sc-if>
+<span style="font-size: 13px; color: #545b69">{{it.unitText}} each</span>
+</span>
+<button type="button" onClick="{{it.remove}}" aria-label="Remove {{it.title}}" style="width: 44px; height: 44px; margin: -8px -10px 0 0; flex: none; border: 0; background: transparent; color: #545b69; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+<div role="group" aria-label="Quantity of {{it.title}}" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 44px; box-sizing: border-box">
+<button type="button" onClick="{{it.dec}}" aria-label="Decrease quantity" style="width: 44px; height: 41px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">−</button>
+<span style="min-width: 24px; text-align: center; font-weight: 600">{{it.qty}}</span>
+<button type="button" onClick="{{it.inc}}" aria-label="Increase quantity" style="width: 44px; height: 41px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">+</button>
+</div>
+<span style="font-weight: 700; font-size: 16px">{{it.lineText}}</span>
+</div>
+</div>
+</li>
+</sc-for>
+</ul>
+
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="border-radius: 8px; background: #e8f0fa; padding: 12px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start">
+<span style="color: {{primary}}; display: flex; flex: none; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<span>Delivery is ৳60 inside Dhaka (1–2 days) or ৳120 elsewhere (3–5 days). You choose your address at checkout, and you can pay cash on delivery.</span>
+</div>
+<details style="border-bottom: 1px solid #dde2ea; padding-bottom: 4px">
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Have a promo code?</summary>
+<div style="display: flex; gap: 8px; padding: 4px 0 12px">
+<label for="cart-promo" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Promo code</label>
+<input id="cart-promo" type="text" autocapitalize="characters" placeholder="Promo code" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<button type="button" style="height: 44px; padding: 0 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Apply</button>
+</div>
+</details>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Subtotal ({{countText}})</span><span>{{subtotalText}}</span></span>
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Delivery</span><span>Added at checkout</span></span>
+</div>
+</div>
+</sc-if>
+
+<section aria-labelledby="cart-rel" style="padding: 24px 16px 32px; border-top: 8px solid #f4f6f9">
+<h2 id="cart-rel" style="margin: 0 0 12px; font-size: 20px; font-weight: 700">You may also like</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
+<sc-for list="{{related}}" as="p" hint-placeholder-count="4">
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addRelated}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
+</sc-for>
+</div>
+</section>
+</main>
+
+<dc-import name="PhoneFooter" primary="{{primary}}" hint-size="100%,540px"></dc-import>
+
+<sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
+<div style="position: sticky; bottom: 0; background: #ffffff; border-top: 1px solid #dde2ea; padding: 12px 16px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 -4px 16px rgba(26,31,41,0.06)">
+<span style="display: flex; flex-direction: column; line-height: 1.25"><span style="font-size: 13px; color: #545b69">Subtotal</span><strong style="font-size: 20px; font-weight: 700">{{subtotalText}}</strong></span>
+<a href="CheckoutPhone.dc.html" style="flex: 1 1 auto; height: 52px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">Checkout</a>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      items: [
+        { id: 'pan', title: 'Non-stick frying pan with glass lid', variant: '26 cm · Black', price: 1250, tone: '#f1f3f6', qty: 1 },
+        { id: 'bottle', title: 'Stainless steel water bottle', variant: '1 litre', price: 590, tone: '#e6f4ef', qty: 2 }
+      ]
+    };
+  }
+  renderVals() {
+    var self = this;
+    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var items = this.state.items;
+    var update = function (id, fn) {
+      self.setState({ items: self.state.items.map(function (x) { return x.id === id ? fn(x) : x; }).filter(function (x) { return x.qty > 0; }) });
+    };
+    var count = 0;
+    var subtotal = 0;
+    items.forEach(function (x) { count += x.qty; subtotal += x.qty * x.price; });
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      count: count,
+      countText: count + (count === 1 ? ' item' : ' items'),
+      isEmpty: items.length === 0,
+      hasItems: items.length > 0,
+      subtotalText: fmt(subtotal),
+      items: items.map(function (x) {
+        return {
+          title: x.title,
+          variant: x.variant,
+          hasVariant: !!x.variant,
+          tone: x.tone,
+          qty: String(x.qty),
+          unitText: fmt(x.price),
+          lineText: fmt(x.price * x.qty),
+          dec: function () { update(x.id, function (y) { return Object.assign({}, y, { qty: Math.max(1, y.qty - 1) }); }); },
+          inc: function () { update(x.id, function (y) { return Object.assign({}, y, { qty: Math.min(10, y.qty + 1) }); }); },
+          remove: function () { update(x.id, function (y) { return Object.assign({}, y, { qty: 0 }); }); }
+        };
+      }),
+      addRelated: function (it) {
+        var list = self.state.items.slice();
+        var found = list.filter(function (x) { return x.id === it.id; })[0];
+        if (found) { list = list.map(function (x) { return x.id === it.id ? Object.assign({}, x, { qty: Math.min(10, x.qty + 1) }) : x; }); }
+        else { list.push({ id: it.id, title: it.title, variant: '', price: it.value, tone: it.tone, qty: 1 }); }
+        self.setState({ items: list });
+      },
+      related: [
+        { id: 'spatula', brand: 'Brand A', title: 'Wooden spatula and spoon set', price: '৳420', value: 420, tone: '#eef5e4', href: 'ProductPhone.dc.html' },
+        { id: 'containers', brand: 'Brand D', title: 'Glass food containers, set of 5', price: '৳980', compare: '৳1,150', off: '−15%', value: 980, tone: '#fdf0e1', href: 'ProductPhone.dc.html' },
+        { id: 'knives', brand: 'Brand A', title: 'Knife set with block, 6 pieces', price: '৳1,350', value: 1350, tone: '#e6f4ef', href: 'ProductPhone.dc.html' },
+        { id: 'ricebox', brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: '৳790', value: 790, tone: '#f1f3f6', href: 'ProductPhone.dc.html' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
