@@ -13,9 +13,10 @@
 <style>
 body{margin:0;background:#ffffff}
 a{color:#1f4e8c}a:hover{color:#173c6d}
+:focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="width: 390px; min-height: 4780px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.6">
+<div style="width: 390px; min-height: 5450px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.6">
 <dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{cartCount}}" bn="{{ true }}" on-menu="{{openMenu}}" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; display: flex; flex-direction: column">
@@ -37,10 +38,12 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
 <a href="ListingPhone.dc.html" style="min-height: 140px; border-radius: 12px; background: #fff4dd; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<span aria-hidden="true" style="height: 76px; border-radius: 8px; background: rgba(26,31,41,0.06); display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
 <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.35">ইলেকট্রনিক্সে নতুন</span><span style="color: #545b69; font-size: 13px">ফ্যান, ল্যাম্প আর চার্জার</span></span>
 <span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">ইলেকট্রনিক্স দেখুন <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
 </a>
 <a href="ListingPhone.dc.html" style="min-height: 140px; border-radius: 12px; background: #e8f0fa; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<span aria-hidden="true" style="height: 76px; border-radius: 8px; background: rgba(26,31,41,0.06); display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
 <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.35">স্কুলের প্রস্তুতি</span><span style="color: #545b69; font-size: 13px">ব্যাগ, বোতল আর স্টেশনারি</span></span>
 <span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">স্কুলের জিনিস দেখুন <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
 </a>
@@ -83,7 +86,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </section>
 
-<section id="bn-deals" aria-labelledby="bn-deals-h" style="padding: 32px 0 0">
+<section id="bn-deals" aria-labelledby="bn-deals-h" style="margin-top: 32px; padding: 24px 0 28px; background: #f4f6f9">
 <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; padding: 0 16px; margin-bottom: 12px">
 <div style="display: flex; flex-direction: column">
 <h2 id="bn-deals-h" style="margin: 0; font-size: 20px; font-weight: 700">আজকের অফার</h2>
@@ -113,7 +116,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </section>
 
-<section aria-labelledby="bn-new-h" style="padding: 32px 16px 0">
+<section aria-labelledby="bn-new-h" style="margin-top: 32px; padding: 24px 16px 28px; background: #f4f6f9">
 <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
 <h2 id="bn-new-h" style="margin: 0; font-size: 20px; font-weight: 700">নতুন পণ্য</h2>
 <a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">সব দেখুন</a>
@@ -123,8 +126,22 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,370px"></dc-import>
 </sc-for>
 </div>
-<a href="ListingPhone.dc.html" style="margin-top: 24px; height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">সব পণ্য দেখুন</a>
+<a href="ListingPhone.dc.html" style="margin-top: 24px; height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">সব পণ্য দেখুন</a>
 </section>
+
+<sc-if value="{{hasRecent}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="bn-recent-h" style="padding: 32px 16px 0">
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
+<h2 id="bn-recent-h" style="margin: 0; font-size: 20px; font-weight: 700">সম্প্রতি দেখা পণ্য</h2>
+<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">মুছে ফেলুন</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
+<sc-for list="{{recent}}" as="p" hint-placeholder-count="4">
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,310px"></dc-import>
+</sc-for>
+</div>
+</section>
+</sc-if>
 
 <section aria-label="সাহায্য" style="padding: 32px 16px">
 <div style="border-radius: 12px; background: #1a1f29; color: #ffffff; padding: 20px; display: flex; flex-direction: column; gap: 12px">
@@ -138,12 +155,9 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 
 <dc-import name="PhoneFooter" primary="{{primary}}" bn="{{ true }}" hint-size="100%,560px"></dc-import>
 
-<nav aria-label="শর্টকাট" style="position: sticky; bottom: 0; background: #ffffff; border-top: 1px solid #dde2ea; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px">
-<a href="HomePhoneBn.dc.html" aria-current="page" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{primary}}; text-decoration: none; font-size: 12px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>হোম</a>
-<a href="ListingPhone.dc.html" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>ক্যাটাগরি</a>
-<a href="CartPhone.dc.html" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>কার্ট</a>
-<a href="#" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #545b69; text-decoration: none; font-size: 12px; font-weight: 500"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>অ্যাকাউন্ট</a>
-</nav>
+<div style="position: sticky; bottom: 0; z-index: 8">
+<dc-import name="PhoneTabBar" active="home" bn="{{ true }}" cart-count="{{cartCount}}" primary="{{primary}}" hint-size="100%,72px"></dc-import>
+</div>
 
 <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; top: 0; left: 0; width: 390px; height: 844px; background: rgba(26,31,41,0.5); z-index: 10">
@@ -164,11 +178,11 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":4780}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":5450}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { count: 0, menuOpen: false };
+    this.state = { count: 0, menuOpen: false, recentCleared: false };
   }
   renderVals() {
     var self = this;
@@ -194,7 +208,7 @@ class Component extends DCLogic {
         { name: 'স্টেশনারি', short: 'স্টেশনারি', tone: '#f1f3f6' }
       ],
       deals: [
-        { brand: 'Brand A', title: 'গ্লাস ঢাকনাসহ নন-স্টিক ফ্রাইং প্যান', price: 990, compare: 1190, from: true, tone: '#f1f3f6', variants: { sizes: [{ name: '২২ সেমি' }, { name: '২৪ সেমি' }, { name: '২৬ সেমি' }, { name: '২৮ সেমি' }], colors: [{ name: 'কালো', swatch: '#23262d' }, { name: 'লাল', swatch: '#a3302a' }, { name: 'ধূসর', swatch: '#8a8f98' }] } },
+        { brand: 'Brand A', title: 'গ্লাস ঢাকনাসহ নন-স্টিক ফ্রাইং প্যান', price: 990, compare: 1190, from: true, tone: '#e4e9f0', variants: { sizes: [{ name: '২২ সেমি' }, { name: '২৪ সেমি' }, { name: '২৬ সেমি' }, { name: '২৮ সেমি' }], colors: [{ name: 'কালো', swatch: '#23262d' }, { name: 'লাল', swatch: '#a3302a' }, { name: 'ধূসর', swatch: '#8a8f98' }] } },
         { brand: 'Brand B', title: 'রিচার্জেবল টেবিল ফ্যান, ১২ ইঞ্চি', price: 3450, compare: 3990, tone: '#eceaf8' },
         { brand: 'Brand C', title: 'সুতির বেডশিট সেট, ডাবল', price: 1690, compare: 2100, tone: '#e8f0fa' },
         { brand: 'Brand D', title: 'স্টেইনলেস স্টিলের পানির বোতল, ১ লিটার', price: 590, compare: 690, tone: '#e6f4ef', variants: { colors: [{ name: 'রুপালি', swatch: '#c0c4ca' }, { name: 'নীল', swatch: '#3a6ea5' }, { name: 'কালো', swatch: '#23262d' }] } },
@@ -208,6 +222,14 @@ class Component extends DCLogic {
         { brand: 'Brand A', title: 'বালতিসহ মাইক্রোফাইবার মপ', price: 1450, tone: '#e8f0fa' },
         { brand: 'Brand B', title: 'অ্যালোভেরা ফেস ওয়াশ, ১৫০ মিলি', price: 320, tone: '#e6f4ef' },
         { brand: 'Brand D', title: 'মিনিকেট চাল, ৫ কেজি', price: 420, tone: '#eef5e4' }
+      ].map(card),
+      hasRecent: !this.state.recentCleared,
+      clearRecent: function () { self.setState({ recentCleared: true }); },
+      recent: [
+        { brand: 'Brand B', title: 'ইলেকট্রিক কেটলি, ১.৮ লিটার', price: 1690, tone: '#f8e9ee', variants: { colors: [{ name: 'কালো', swatch: '#23262d' }, { name: 'সাদা', swatch: '#f4f4f2' }] } },
+        { brand: 'Brand A', title: 'প্রেশার কুকার', price: 2650, from: true, tone: '#eceaf8', variants: { sizes: [{ name: '৩ লিটার' }, { name: '৫ লিটার' }] } },
+        { brand: 'Brand A', title: 'ব্লকসহ ছুরির সেট, ৬ পিস', price: 1350, tone: '#e6f4ef' },
+        { brand: 'Brand D', title: 'এয়ারটাইট চালের বাক্স, ১০ কেজি', price: 790, tone: '#f1f3f6' }
       ].map(card),
       menuOpen: this.state.menuOpen,
       openMenu: function () { self.setState({ menuOpen: true }); },

@@ -18,7 +18,7 @@ Why each choice was made, and what still needs platform work, is in [DECISIONS.m
 | Cart | `Cart` | `CartPhone` |
 | Checkout | `Checkout` | `CheckoutPhone` |
 | Order tracking | `Track` | `TrackPhone` |
-| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `States` |
+| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` |
 
 The component boards are mounted by the pages with `<dc-import name="…">`. Change a component once and every page that uses it changes.
 
@@ -33,6 +33,8 @@ Each board is a Design Component page:
 - `data-props` on the script tag declares the canvas tweaks (here only `primary`, the theme's primary colour).
 
 Sample products, prices and copy live in each board's `renderVals()`. Phone boards are 390 px wide and use `min-height`, so `canvas.json` must give them a frame tall enough for their content (over-tall is fine, clipped is not).
+
+A component that must stick to the bottom of the screen (the phone bottom bar) is wrapped in a `<div style="position: sticky; bottom: 0">` in the page itself: sticky positioning only works when the sticky box sits directly in the tall page, not inside the component's own wrapper.
 
 ## Republishing in a later session
 

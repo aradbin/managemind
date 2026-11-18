@@ -15,17 +15,41 @@ body{margin:0}
 </style>
 </helmet>
 <div lang="{{lang}}" style="width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 8px; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; font-size: 15px; line-height: 1.5">
+
+<sc-if value="{{compact}}" hint-placeholder-val="{{ false }}">
+<div style="position: relative">
+<a href="{{href}}" tabindex="-1" aria-hidden="true" style="display: block; text-decoration: none">
+<span style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; background: {{tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+<sc-if value="{{hasOff}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; left: 8px; background: #b42318; color: #ffffff; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px">{{off}}</span></sc-if>
+<sc-if value="{{soldOut}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; left: 8px; background: #1a1f29; color: #ffffff; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px">{{outLabel}}</span></sc-if>
+</span>
+</a>
+<sc-if value="{{canAdd}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{add}}" aria-label="{{addAria}}" style="position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: {{primary}}; color: #ffffff; box-shadow: 0 2px 8px rgba(26,31,41,0.28); display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></sc-if>
+<sc-if value="{{canChoose}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{choose}}" aria-haspopup="dialog" aria-label="{{chooseAria}}" style="position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 22px; background: {{primary}}; color: #ffffff; box-shadow: 0 2px 8px rgba(26,31,41,0.28); display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></sc-if>
+<sc-if value="{{chooseByLink}}" hint-placeholder-val="{{ false }}"><a href="{{href}}" aria-label="{{chooseAria}}" style="position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; border-radius: 22px; background: {{primary}}; color: #ffffff; box-shadow: 0 2px 8px rgba(26,31,41,0.28); display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></a></sc-if>
+<sc-if value="{{isAdded}}" hint-placeholder-val="{{ false }}"><a href="{{cartHref}}" role="status" aria-label="{{addedLabel}}" style="position: absolute; right: 8px; bottom: 8px; width: 44px; height: 44px; border-radius: 22px; background: #1d6b3a; color: #ffffff; box-shadow: 0 2px 8px rgba(26,31,41,0.28); display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></a></sc-if>
+</div>
+<a href="{{href}}" style="display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: #1a1f29">
+<sc-if value="{{hasBrand}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #545b69; text-transform: uppercase; letter-spacing: 0.04em">{{brand}}</span></sc-if>
+<span style="font-size: 14px; line-height: {{titleLine}}; min-height: {{titleClamp}}; max-height: {{titleClamp}}; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical">{{title}}</span>
+</a>
+</sc-if>
+
+<sc-if value="{{regular}}" hint-placeholder-val="{{ true }}">
 <a href="{{href}}" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: #1a1f29">
 <span style="position: relative; aspect-ratio: 1 / 1; border-radius: 8px; background: {{tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383">
-<svg width="{{iconSize}}" height="{{iconSize}}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
+<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg>
 <sc-if value="{{hasOff}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; left: 8px; background: #b42318; color: #ffffff; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 4px">{{off}}</span></sc-if>
 <sc-if value="{{soldOut}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 8px; left: 8px; background: #1a1f29; color: #ffffff; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px">{{outLabel}}</span></sc-if>
 </span>
 <span style="display: flex; flex-direction: column; gap: 2px">
-<sc-if value="{{hasBrand}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12px; color: #545b69; text-transform: uppercase; letter-spacing: 0.04em">{{brand}}</span></sc-if>
-<span style="font-size: {{titleSize}}; line-height: {{titleLine}}; min-height: {{titleClamp}}; max-height: {{titleClamp}}; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical">{{title}}</span>
+<sc-if value="{{hasBrand}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #545b69; text-transform: uppercase; letter-spacing: 0.04em">{{brand}}</span></sc-if>
+<span style="font-size: 15px; line-height: {{titleLine}}; min-height: {{titleClamp}}; max-height: {{titleClamp}}; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical">{{title}}</span>
 </span>
 </a>
+</sc-if>
+
 <sc-if value="{{hasOptions}}" hint-placeholder-val="{{ false }}">
 <span style="display: flex; align-items: center; gap: 6px; min-height: 18px; font-size: 13px; color: #545b69">
 <sc-for list="{{dots}}" as="d" hint-placeholder-count="3"><span aria-hidden="true" style="width: 14px; height: 14px; flex: none; border-radius: 7px; background: {{d.swatch}}; box-shadow: inset 0 0 0 1px rgba(26,31,41,0.25)"></span></sc-for>
@@ -36,13 +60,16 @@ body{margin:0}
 <span style="font-weight: 700; font-size: {{priceSize}}; color: {{priceColor}}">{{price}}</span>
 <sc-if value="{{hasCompare}}" hint-placeholder-val="{{ false }}"><s style="color: #545b69; font-size: 13px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{regularLabel}} </span>{{compare}}</s></sc-if>
 </span>
-<sc-if value="{{canAdd}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{add}}" style="height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{addLabel}}</button></sc-if>
-<sc-if value="{{canChoose}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{choose}}" aria-haspopup="dialog" style="height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{chooseLabel}}</button></sc-if>
+
+<sc-if value="{{regular}}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{canAdd}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{add}}" style="width: 100%; height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{addLabel}}</button></sc-if>
+<sc-if value="{{canChoose}}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{choose}}" aria-haspopup="dialog" style="width: 100%; height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{chooseLabel}}</button></sc-if>
 <sc-if value="{{chooseByLink}}" hint-placeholder-val="{{ false }}"><a href="{{href}}" style="height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">{{chooseLabel}}</a></sc-if>
 <sc-if value="{{isAdded}}" hint-placeholder-val="{{ false }}"><a href="{{cartHref}}" role="status" style="height: 44px; border-radius: 8px; background: #e7f4ec; color: #1d6b3a; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{addedLabel}}</a></sc-if>
+</sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"compact":{"editor":"boolean","default":false},"bn":{"editor":"boolean","default":false},"item":{"editor":null},"added":{"editor":null},"onAdd":{"editor":null},"onChoose":{"editor":null},"$preview":{"width":240,"height":450}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"compact":{"editor":"boolean","default":false},"showBrand":{"editor":"boolean","default":false},"bn":{"editor":"boolean","default":false},"item":{"editor":null},"added":{"editor":null},"onAdd":{"editor":null},"onChoose":{"editor":null},"$preview":{"width":240,"height":450}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -71,12 +98,14 @@ class Component extends DCLogic {
     return {
       primary: this.props.primary ?? '#1f4e8c',
       lang: bn ? 'bn' : 'en',
+      compact: compact,
+      regular: !compact,
       href: it.href || 'Product.dc.html',
       cartHref: compact ? 'CartPhone.dc.html' : 'Cart.dc.html',
       tone: it.tone || '#f1f3f6',
       title: it.title,
       brand: it.brand || '',
-      hasBrand: !!it.brand,
+      hasBrand: !!it.brand && !!this.props.showBrand,
       hasOptions: hasOptions,
       dots: colors.length > 1 ? colors.slice(0, 4) : [],
       optionText: parts.join(' · '),
@@ -91,14 +120,14 @@ class Component extends DCLogic {
       chooseByLink: !soldOut && !added && hasOptions && !canPick,
       isAdded: added,
       priceColor: it.compare ? '#b42318' : '#1a1f29',
-      titleSize: compact ? '14px' : '15px',
       titleLine: bn ? '1.6' : '1.45',
       titleClamp: bn ? '3.2em' : '2.9em',
       priceSize: compact ? '16px' : '17px',
-      iconSize: compact ? 28 : 40,
       addLabel: bn ? 'কার্টে যোগ করুন' : 'Add to cart',
       chooseLabel: bn ? 'অপশন বাছাই করুন' : 'Choose options',
       addedLabel: bn ? 'যোগ হয়েছে · কার্ট দেখুন' : 'Added · View cart',
+      addAria: bn ? it.title + ' কার্টে যোগ করুন' : 'Add ' + it.title + ' to cart',
+      chooseAria: bn ? it.title + '-এর অপশন বাছাই করুন' : 'Choose options for ' + it.title,
       outLabel: bn ? 'স্টকে নেই' : 'Out of stock',
       regularLabel: bn ? 'নিয়মিত দাম' : 'Regular price',
       add: function () {
