@@ -13,9 +13,10 @@
 <style>
 body{margin:0;background:#ffffff}
 a{color:#1f4e8c}a:hover{color:#173c6d}
+:focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="width: 390px; min-height: 3500px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+<div style="width: 390px; min-height: 3850px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
 <dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{cartCount}}" back="ListingPhone.dc.html" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; display: flex; flex-direction: column">
@@ -118,7 +119,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </ul>
 </div>
 </details>
-<details open style="border-bottom: 1px solid #dde2ea">
+<details style="border-bottom: 1px solid #dde2ea">
 <summary style="min-height: 52px; padding: 0 16px; display: flex; align-items: center; font-weight: 600; font-size: 16px; cursor: pointer">Specifications</summary>
 <dl style="margin: 0; padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; font-size: 14px">
 <dt style="color: #545b69">Brand</dt><dd style="margin: 0">Brand A</dd>
@@ -141,6 +142,20 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </sc-for>
 </div>
 </section>
+
+<sc-if value="{{hasRecent}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="pp-recent" style="padding: 0 16px 32px">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
+<h2 id="pp-recent" style="margin: 0; font-size: 20px; font-weight: 700">Recently viewed</h2>
+<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">Clear</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
+<sc-for list="{{recent}}" as="p" hint-placeholder-count="4">
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOther}}" primary="{{primary}}" hint-size="100%,290px"></dc-import>
+</sc-for>
+</div>
+</section>
+</sc-if>
 </main>
 
 <dc-import name="PhoneFooter" primary="{{primary}}" hint-size="100%,540px"></dc-import>
@@ -163,11 +178,11 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":3500}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":3850}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { size: 2, color: 0, photo: 0, qty: 1, cart: 0, others: 0, justAdded: false };
+    this.state = { size: 2, color: 0, photo: 0, qty: 1, cart: 0, others: 0, justAdded: false, recentCleared: false };
   }
   renderVals() {
     var self = this;
@@ -225,6 +240,14 @@ class Component extends DCLogic {
       justAdded: s.justAdded,
       addedText: 'Added to cart (' + (s.cart + s.others) + ')',
       addOther: function () { self.setState({ others: self.state.others + 1 }); },
+      hasRecent: !s.recentCleared,
+      clearRecent: function () { self.setState({ recentCleared: true }); },
+      recent: [
+        { brand: 'Brand B', title: 'Electric kettle, 1.8 litre', price: '৳1,690', tone: '#f8e9ee', href: 'ProductPhone.dc.html', variants: { colors: [{ name: 'Black', swatch: '#23262d' }, { name: 'White', swatch: '#f4f4f2' }] } },
+        { brand: 'Brand C', title: 'Cotton bedsheet set, double', price: '৳1,690', compare: '৳2,100', off: '−20%', tone: '#e8f0fa', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: '৳790', tone: '#f1f3f6', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand B', title: 'LED desk lamp with USB charging', price: '৳1,100', tone: '#eceaf8', href: 'ProductPhone.dc.html' }
+      ],
       related: [
         { brand: 'Brand A', title: 'Pressure cooker, 5 litre', price: '৳3,150', tone: '#eceaf8', href: 'ProductPhone.dc.html' },
         { brand: 'Brand A', title: 'Wooden spatula and spoon set', price: '৳420', tone: '#eef5e4', href: 'ProductPhone.dc.html' },

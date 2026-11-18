@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bottom bar, phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<nav lang="{{lang}}" aria-label="{{label}}" style="width: 100%; box-sizing: border-box; font-family: 'Hind Siliguri', system-ui, sans-serif; background: #ffffff; border-top: 1px solid #dde2ea; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px; line-height: 1.3">
+<a href="{{homeHref}}" aria-current="{{homeCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{homeColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{homeWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>{{homeLabel}}</a>
+<a href="ListingPhone.dc.html" aria-current="{{catCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{catColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{catWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>{{catLabel}}</a>
+<a href="CartPhone.dc.html" aria-current="{{cartCurrent}}" aria-label="{{cartAria}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{cartColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{cartWeight}}">
+<span style="position: relative; display: flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
+<sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: -6px; right: -10px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: #f59e0b; color: #1a1f29; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
+</span>{{cartLabel}}</a>
+<a href="#" aria-current="{{accountCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{accountColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{accountWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>{{accountLabel}}</a>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"active":{"editor":"enum","default":"home","options":["home","categories","cart","account"]},"bn":{"editor":"boolean","default":false},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"$preview":{"width":390,"height":68}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var bn = !!this.props.bn;
+    var active = this.props.active || 'home';
+    var primary = this.props.primary ?? '#1f4e8c';
+    var count = this.props.cartCount ?? 0;
+    var digits = function (n) { var s = String(n); return bn ? s.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : s; };
+    var tab = function (key) { var on = key === active; return { current: on ? 'page' : 'false', color: on ? primary : '#545b69', weight: on ? '600' : '500' }; };
+    var h = tab('home'), c = tab('categories'), k = tab('cart'), a = tab('account');
+    var cartLabel = bn ? 'কার্ট' : 'Cart';
+    return {
+      lang: bn ? 'bn' : 'en',
+      label: bn ? 'শর্টকাট' : 'Shortcuts',
+      fontSize: bn ? '12px' : '11px',
+      homeHref: bn ? 'HomePhoneBn.dc.html' : 'HomePhone.dc.html',
+      homeLabel: bn ? 'হোম' : 'Home',
+      catLabel: bn ? 'ক্যাটাগরি' : 'Categories',
+      cartLabel: cartLabel,
+      accountLabel: bn ? 'অ্যাকাউন্ট' : 'Account',
+      cartAria: count > 0 ? cartLabel + ', ' + digits(count) : cartLabel,
+      homeCurrent: h.current, homeColor: h.color, homeWeight: h.weight,
+      catCurrent: c.current, catColor: c.color, catWeight: c.weight,
+      cartCurrent: k.current, cartColor: k.color, cartWeight: k.weight,
+      accountCurrent: a.current, accountColor: a.color, accountWeight: a.weight,
+      hasCount: count > 0,
+      countText: digits(count)
+    };
+  }
+}
+</script>
+</body>
+</html>
