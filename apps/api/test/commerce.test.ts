@@ -199,6 +199,11 @@ describe('checkout', () => {
 
   it('limits orders per phone, with the store’s numbers', async () => {
     const s = await store();
+    // The limits count in fixed windows that start on the hour
+    // (rate-limit/limiter.ts), so the four orders must fall inside one: when
+    // the hour is about to turn, wait for it first.
+    const toNextHour = 3_600_000 - (Date.now() % 3_600_000);
+    if (toNextHour < 10_000) await new Promise((done) => setTimeout(done, toNextHour + 100));
     for (let i = 0; i < 4; i += 1) {
       const b = shopper(s.host);
       await b.call('POST', '/v1/store/cart/lines', { variantId: s.variant, quantity: 1 });
