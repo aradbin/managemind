@@ -82,3 +82,12 @@ overrides:
   undici@6: 6.29.1
   undici@7: 7.30.1
   undici@8: 8.12.2
+
+# GHSA-fc5q-39xc-vjpf (picomatch ReDoS through repeated extglobs, Nov 2026)
+# has no fixed picomatch yet, so no override can move past it. picomatch
+# arrives through the admin's route-file build plugin (tinyglobby) and Astro's
+# storage driver lookup (anymatch); both match patterns from our own config,
+# never shopper input. Remove once picomatch publishes a fix.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf
