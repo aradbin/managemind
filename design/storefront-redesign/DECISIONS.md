@@ -56,8 +56,8 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 
 **Product card**
 - Two-line title (cut with an ellipsis), price ("From ৳990" when sizes differ in price), compare-at price and percentage badge; brand only when the theme turns it on.
-- Desktop cards keep a full-width "Add to cart" button. Phone cards replace it with a 44 px round "+" on the photo's bottom-right corner (a green tick once added), which cuts a card from about 380 px to about 270 px: roughly 6 products per screen instead of 4.
-- Colour dots and "4 sizes · 3 colours" when the product has options.
+- Desktop cards keep a full-width "Add to cart" button with a cart icon. Phone cards replace it with a 44 px round cart button on the photo's bottom-right corner (a cart reads as "add to cart" more clearly than a "+") (a green tick once added), which cuts a card from about 380 px to about 270 px: roughly 6 products per screen instead of 4.
+- Colour dots and "4 sizes · 3 colours" when the product has options. The line keeps its space (empty) on products without options, so every card in a row is the same height and the prices and buttons line up.
 - Products with options show "Choose options": on listing and search pages it opens the quick-add picker (centred dialog on desktop, bottom sheet on phone); elsewhere it links to the product page. This prevents wrong-size orders, which are costly with cash on delivery.
 
 **Search results**
@@ -136,7 +136,7 @@ New, needs building in the theme:
 - Product card: options summary, "Choose options" and the quick-add picker, Add to cart on the card.
 - Listing: Load more, quick filter chips, one-tap price ranges, greyed zero-count values, collapsible facet lists, the no-results suggestions, back to top.
 - Header search suggestions, desktop mini-cart, phone bottom bar, phone footer, delivery-estimate box on the product page.
-- Phone: the pinned slim search bar on scroll, the round "+" on cards, collapsed specifications.
+- Phone: the pinned slim search bar on scroll, the round cart button on cards, collapsed specifications.
 - Recently viewed (browser storage), the category introduction under the grid, grey section bands, photos in the offer tiles, the focus ring.
 - Desktop: the pinned slim header.
 - Checkout: the searchable Area field, the linked error summary and focus on the first invalid field, the trust line, the phone-code dialog, the blocked-checkout panel, the price-changed line marks, the thank-you payment box and Copy button.
