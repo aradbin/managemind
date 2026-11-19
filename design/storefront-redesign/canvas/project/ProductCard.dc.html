@@ -50,12 +50,11 @@ body{margin:0}
 </a>
 </sc-if>
 
-<sc-if value="{{hasOptions}}" hint-placeholder-val="{{ false }}">
-<span style="display: flex; align-items: center; gap: 6px; min-height: 18px; font-size: 13px; color: #545b69">
+<!-- Always present, empty when the product has no options, so every card in a row is the same height. -->
+<span aria-hidden="{{noOptions}}" style="display: flex; align-items: center; gap: 6px; height: 22px; overflow: hidden; white-space: nowrap; font-size: 13px; color: #545b69">
 <sc-for list="{{dots}}" as="d" hint-placeholder-count="3"><span aria-hidden="true" style="width: 14px; height: 14px; flex: none; border-radius: 7px; background: {{d.swatch}}; box-shadow: inset 0 0 0 1px rgba(26,31,41,0.25)"></span></sc-for>
 <span>{{optionText}}</span>
 </span>
-</sc-if>
 <span style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px">
 <span style="font-weight: 700; font-size: {{priceSize}}; color: {{priceColor}}">{{price}}</span>
 <sc-if value="{{hasCompare}}" hint-placeholder-val="{{ false }}"><s style="color: #545b69; font-size: 13px"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{regularLabel}} </span>{{compare}}</s></sc-if>
@@ -107,6 +106,7 @@ class Component extends DCLogic {
       brand: it.brand || '',
       hasBrand: !!it.brand && !!this.props.showBrand,
       hasOptions: hasOptions,
+      noOptions: !hasOptions,
       dots: colors.length > 1 ? colors.slice(0, 4) : [],
       optionText: parts.join(' · '),
       price: it.price,

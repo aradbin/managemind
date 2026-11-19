@@ -14,7 +14,7 @@
       "x": 0,
       "y": 0,
       "w": 1440,
-      "h": 4380,
+      "h": 4440,
       "title": "Home · desktop",
       "expand": "fill",
       "is_interactive": true
@@ -23,7 +23,7 @@
       "x": 1520,
       "y": 0,
       "w": 390,
-      "h": 5040,
+      "h": 5170,
       "title": "Home · phone",
       "is_interactive": true
     },
@@ -31,30 +31,30 @@
       "x": 1990,
       "y": 0,
       "w": 390,
-      "h": 5040,
+      "h": 5180,
       "title": "Home · phone · Bangla",
       "is_interactive": true
     },
     "Listing.dc.html": {
       "x": 0,
-      "y": 5460,
+      "y": 5600,
       "w": 1440,
-      "h": 4420,
+      "h": 4520,
       "title": "Category listing · desktop",
       "expand": "fill",
       "is_interactive": true
     },
     "ListingPhone.dc.html": {
       "x": 1520,
-      "y": 5460,
+      "y": 5600,
       "w": 390,
-      "h": 4810,
+      "h": 5000,
       "title": "Category listing · phone",
       "is_interactive": true
     },
     "Search.dc.html": {
       "x": 0,
-      "y": 10730,
+      "y": 11060,
       "w": 1440,
       "h": 1600,
       "title": "Search results · desktop",
@@ -63,49 +63,49 @@
     },
     "SearchPhone.dc.html": {
       "x": 1520,
-      "y": 10730,
+      "y": 11060,
       "w": 390,
-      "h": 1950,
+      "h": 1980,
       "title": "Search results · phone",
       "is_interactive": true
     },
     "Product.dc.html": {
       "x": 0,
-      "y": 13100,
+      "y": 13460,
       "w": 1440,
-      "h": 2920,
+      "h": 2950,
       "title": "Product · desktop",
       "expand": "fill",
       "is_interactive": true
     },
     "ProductPhone.dc.html": {
       "x": 1520,
-      "y": 13100,
+      "y": 13460,
       "w": 390,
-      "h": 3590,
+      "h": 3680,
       "title": "Product · phone",
       "is_interactive": true
     },
     "Cart.dc.html": {
       "x": 0,
-      "y": 17110,
+      "y": 17560,
       "w": 1440,
-      "h": 1660,
+      "h": 1690,
       "title": "Cart · desktop",
       "expand": "fill",
       "is_interactive": true
     },
     "CartPhone.dc.html": {
       "x": 1520,
-      "y": 17110,
+      "y": 17560,
       "w": 390,
-      "h": 2040,
+      "h": 2060,
       "title": "Cart · phone",
       "is_interactive": true
     },
     "Checkout.dc.html": {
       "x": 0,
-      "y": 19570,
+      "y": 20050,
       "w": 1440,
       "h": 1790,
       "title": "Checkout · desktop",
@@ -114,7 +114,7 @@
     },
     "CheckoutPhone.dc.html": {
       "x": 1520,
-      "y": 19570,
+      "y": 20050,
       "w": 390,
       "h": 2540,
       "title": "Checkout · phone",
@@ -122,7 +122,7 @@
     },
     "Track.dc.html": {
       "x": 0,
-      "y": 24380,
+      "y": 24860,
       "w": 1440,
       "h": 2650,
       "title": "Order tracking · desktop",
@@ -131,7 +131,7 @@
     },
     "TrackPhone.dc.html": {
       "x": 1520,
-      "y": 24380,
+      "y": 24860,
       "w": 390,
       "h": 2360,
       "title": "Order tracking · phone",
@@ -139,7 +139,7 @@
     },
     "SiteHeader.dc.html": {
       "x": 0,
-      "y": 29800,
+      "y": 30280,
       "w": 1440,
       "h": 176,
       "title": "Component · desktop header",
@@ -147,14 +147,14 @@
     },
     "SiteFooter.dc.html": {
       "x": 0,
-      "y": 30096,
+      "y": 30576,
       "w": 1440,
       "h": 300,
       "title": "Component · desktop footer"
     },
     "ProductCard.dc.html": {
       "x": 1520,
-      "y": 29800,
+      "y": 30280,
       "w": 240,
       "h": 450,
       "title": "Component · product card",
@@ -162,7 +162,7 @@
     },
     "QuickAdd.dc.html": {
       "x": 1840,
-      "y": 29800,
+      "y": 30280,
       "w": 480,
       "h": 620,
       "title": "Component · quick add picker",
@@ -170,7 +170,7 @@
     },
     "PhoneHeader.dc.html": {
       "x": 2400,
-      "y": 29800,
+      "y": 30280,
       "w": 390,
       "h": 132,
       "title": "Component · phone header",
@@ -178,44 +178,44 @@
     },
     "PhoneFooter.dc.html": {
       "x": 2400,
-      "y": 30052,
+      "y": 30532,
       "w": 390,
       "h": 540,
       "title": "Component · phone footer"
     },
     "PhoneTabBar.dc.html": {
       "x": 2400,
-      "y": 30712,
+      "y": 31192,
       "w": 390,
       "h": 68,
       "title": "Component · phone bottom bar"
     },
     "States.dc.html": {
       "x": 2870,
-      "y": 29800,
+      "y": 30280,
       "w": 390,
       "h": 2000,
       "title": "Loading and error states · phone"
     },
     "ProductPhoneBn.dc.html": {
       "x": 1990,
-      "y": 13100,
+      "y": 13460,
       "w": 390,
-      "h": 3590,
+      "h": 3680,
       "title": "Product · phone · Bangla",
       "is_interactive": true
     },
     "CartPhoneBn.dc.html": {
       "x": 1990,
-      "y": 17110,
+      "y": 17560,
       "w": 390,
-      "h": 2040,
+      "h": 2070,
       "title": "Cart · phone · Bangla",
       "is_interactive": true
     },
     "CheckoutPhoneBn.dc.html": {
       "x": 1990,
-      "y": 19570,
+      "y": 20050,
       "w": 390,
       "h": 2540,
       "title": "Checkout · phone · Bangla",
@@ -223,7 +223,7 @@
     },
     "TrackPhoneBn.dc.html": {
       "x": 1990,
-      "y": 24380,
+      "y": 24860,
       "w": 390,
       "h": 2370,
       "title": "Order tracking · phone · Bangla",
@@ -231,7 +231,7 @@
     },
     "Account.dc.html": {
       "x": 0,
-      "y": 27490,
+      "y": 27970,
       "w": 1440,
       "h": 1480,
       "title": "Account · desktop",
@@ -240,7 +240,7 @@
     },
     "AccountPhone.dc.html": {
       "x": 1520,
-      "y": 27490,
+      "y": 27970,
       "w": 390,
       "h": 1890,
       "title": "Account · phone",
@@ -248,7 +248,7 @@
     },
     "AccountPhoneBn.dc.html": {
       "x": 1990,
-      "y": 27490,
+      "y": 27970,
       "w": 390,
       "h": 1890,
       "title": "Account · phone · Bangla",
@@ -258,39 +258,39 @@
       "x": 2460,
       "y": 0,
       "w": 1440,
-      "h": 4380,
+      "h": 4410,
       "title": "Home · desktop · Bangla",
       "expand": "fill",
       "is_interactive": true
     },
     "ListingPhoneBn.dc.html": {
       "x": 1990,
-      "y": 5460,
+      "y": 5600,
       "w": 390,
-      "h": 4850,
+      "h": 5040,
       "title": "Category listing · phone · Bangla",
       "is_interactive": true
     },
     "ListingBn.dc.html": {
       "x": 2460,
-      "y": 5460,
+      "y": 5600,
       "w": 1440,
-      "h": 4430,
+      "h": 4530,
       "title": "Category listing · desktop · Bangla",
       "expand": "fill",
       "is_interactive": true
     },
     "SearchPhoneBn.dc.html": {
       "x": 1990,
-      "y": 10730,
+      "y": 11060,
       "w": 390,
-      "h": 1950,
+      "h": 1980,
       "title": "Search results · phone · Bangla",
       "is_interactive": true
     },
     "SearchBn.dc.html": {
       "x": 2460,
-      "y": 10730,
+      "y": 11060,
       "w": 1440,
       "h": 1620,
       "title": "Search results · desktop · Bangla",
@@ -299,25 +299,25 @@
     },
     "ProductBn.dc.html": {
       "x": 2460,
-      "y": 13100,
+      "y": 13460,
       "w": 1440,
-      "h": 2960,
+      "h": 3000,
       "title": "Product · desktop · Bangla",
       "expand": "fill",
       "is_interactive": true
     },
     "CartBn.dc.html": {
       "x": 2460,
-      "y": 17110,
+      "y": 17560,
       "w": 1440,
-      "h": 1680,
+      "h": 1710,
       "title": "Cart · desktop · Bangla",
       "expand": "fill",
       "is_interactive": true
     },
     "CheckoutBn.dc.html": {
       "x": 2460,
-      "y": 19570,
+      "y": 20050,
       "w": 1440,
       "h": 1830,
       "title": "Checkout · desktop · Bangla",
@@ -326,7 +326,7 @@
     },
     "Thanks.dc.html": {
       "x": 0,
-      "y": 22530,
+      "y": 23010,
       "w": 1440,
       "h": 1120,
       "title": "Thank-you page · desktop",
@@ -335,7 +335,7 @@
     },
     "ThanksPhone.dc.html": {
       "x": 1520,
-      "y": 22530,
+      "y": 23010,
       "w": 390,
       "h": 1400,
       "title": "Thank-you page · phone",
@@ -343,7 +343,7 @@
     },
     "ThanksPhoneBn.dc.html": {
       "x": 1990,
-      "y": 22530,
+      "y": 23010,
       "w": 390,
       "h": 1430,
       "title": "Thank-you page · phone · Bangla",
@@ -351,7 +351,7 @@
     },
     "ThanksBn.dc.html": {
       "x": 2460,
-      "y": 22530,
+      "y": 23010,
       "w": 1440,
       "h": 1140,
       "title": "Thank-you page · desktop · Bangla",
@@ -360,7 +360,7 @@
     },
     "TrackBn.dc.html": {
       "x": 2460,
-      "y": 24380,
+      "y": 24860,
       "w": 1440,
       "h": 2690,
       "title": "Order tracking · desktop · Bangla",
@@ -369,7 +369,7 @@
     },
     "AccountBn.dc.html": {
       "x": 2460,
-      "y": 27490,
+      "y": 27970,
       "w": 1440,
       "h": 1510,
       "title": "Account · desktop · Bangla",
@@ -433,56 +433,56 @@
     },
     "rowListing": {
       "x": 0,
-      "y": 5160,
+      "y": 5300,
       "text": "Category listing",
       "kind": "title1",
       "maxW": 3900
     },
     "rowSearch": {
       "x": 0,
-      "y": 10430,
+      "y": 10760,
       "text": "Search results",
       "kind": "title1",
       "maxW": 3900
     },
     "rowProduct": {
       "x": 0,
-      "y": 12800,
+      "y": 13160,
       "text": "Product",
       "kind": "title1",
       "maxW": 3900
     },
     "rowCart": {
       "x": 0,
-      "y": 16810,
+      "y": 17260,
       "text": "Cart",
       "kind": "title1",
       "maxW": 3900
     },
     "rowCheckout": {
       "x": 0,
-      "y": 19270,
+      "y": 19750,
       "text": "Checkout",
       "kind": "title1",
       "maxW": 3900
     },
     "rowTrack": {
       "x": 0,
-      "y": 24080,
+      "y": 24560,
       "text": "Order tracking",
       "kind": "title1",
       "maxW": 3900
     },
     "rowParts": {
       "x": 0,
-      "y": 29500,
+      "y": 29980,
       "text": "Shared components and states",
       "kind": "title1",
       "maxW": 3260
     },
     "rowAccount": {
       "x": 0,
-      "y": 27190,
+      "y": 27670,
       "text": "Account",
       "kind": "title1",
       "maxW": 3900
@@ -496,35 +496,35 @@
     },
     "noteCheckout": {
       "x": 3980,
-      "y": 19570,
+      "y": 20050,
       "w": 360,
       "fill": "orange",
       "text": "Scenario tweak (checkout boards): normal · phone_code · advance_required · cod_unavailable · no_delivery · store_paused · too_many_orders · price_changed. Every scenario except normal starts filled in, so pressing Place order shows what the store or the server answers. The Area field is searchable: try “mir” or “kush”."
     },
     "noteTrack": {
       "x": 3980,
-      "y": 24380,
+      "y": 24860,
       "w": 360,
       "fill": "orange",
       "text": "Scenario tweak (tracking boards): waiting_for_store · being_prepared · on_the_way · delivered · too_many_tries. The form starts filled in: press Track order. Parcels and courier updates appear once the order is on the way; Request a return appears once it is delivered."
     },
     "noteAccount": {
       "x": 3980,
-      "y": 27490,
+      "y": 27970,
       "w": 360,
       "fill": "orange",
       "text": "Scenario tweak (account boards): signed_out (any email address, then any 6 digits) · signed_in · new_account (no orders or addresses yet)."
     },
     "rowThanks": {
       "x": 0,
-      "y": 22230,
+      "y": 22710,
       "text": "Thank-you page",
       "kind": "title1",
       "maxW": 3900
     },
     "noteThanks": {
       "x": 3980,
-      "y": 22530,
+      "y": 23010,
       "w": 360,
       "fill": "orange",
       "text": "Payment tweak (thank-you boards): cod · online · cod_with_advance. Placing an order on a checkout board opens this page with the payment chosen there."
