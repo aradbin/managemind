@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Your account</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+:focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
+</style>
+</helmet>
+<div lang="{{lang}}" style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: {{lineHeight}}">
+<dc-import name="SiteHeader" primary="{{primary}}" cart-count="{{ 2 }}" hint-size="100%,176px"></dc-import>
+
+<sc-if value="{{signedOut}}" hint-placeholder-val="{{ true }}">
+<main style="max-width: 1040px; margin: 0 auto; padding: 40px 24px 72px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+<section aria-labelledby="a-title" style="flex: 1 1 420px; max-width: 480px; border: 1px solid #dde2ea; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 id="a-title" style="margin: 0; font-size: 28px; font-weight: 700">{{t.title}}</h1>
+<p style="margin: 0; color: #3c4350">{{t.intro}}</p>
+</div>
+
+<sc-if value="{{askAddress}}" hint-placeholder-val="{{ true }}">
+<form style="display: flex; flex-direction: column; gap: 14px">
+<sc-if value="{{viaEmail}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="a-email" style="font-weight: 600; font-size: 14px">{{t.email}}</label>
+<input id="a-email" type="email" autocomplete="email" value="{{email}}" onChange="{{setEmail}}" aria-invalid="{{addressBad}}" aria-describedby="a-email-e" placeholder="name@example.com" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{addressBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{addressBad}}" hint-placeholder-val="{{ false }}"><span id="a-email-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.badEmail}}</span></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{viaPhone}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="a-phone" style="font-weight: 600; font-size: 14px">{{t.mobile}}</label>
+<input id="a-phone" type="tel" autocomplete="tel" inputmode="tel" value="{{mobileIn}}" onChange="{{setMobileIn}}" aria-invalid="{{addressBad}}" aria-describedby="a-phone-e" placeholder="01712-345678" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{addressBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{addressBad}}" hint-placeholder-val="{{ false }}"><span id="a-phone-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.badPhone}}</span></sc-if>
+</div>
+</sc-if>
+<button type="button" onClick="{{sendCode}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">{{t.sendCode}}</button>
+<button type="button" onClick="{{switchVia}}" style="align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{switchLabel}}</button>
+</form>
+</sc-if>
+
+<sc-if value="{{askCode}}" hint-placeholder-val="{{ false }}">
+<form style="display: flex; flex-direction: column; gap: 14px">
+<p role="status" style="margin: 0; padding: 12px 14px; border-radius: 8px; background: #e7f4ec; color: #14532d; font-size: 14px">{{codeSentText}}</p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="a-code" style="font-weight: 600; font-size: 14px">{{codeLabel}}</label>
+<input id="a-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{code}}" onChange="{{setCode}}" aria-invalid="{{codeBad}}" aria-describedby="a-code-e" style="height: 56px; padding: 0 16px; font: inherit; font-size: 24px; font-weight: 600; letter-spacing: 0.4em; border: {{codeBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{codeBad}}" hint-placeholder-val="{{ false }}"><span id="a-code-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.badCode}}</span></sc-if>
+</div>
+<button type="button" onClick="{{signIn}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">{{t.signIn}}</button>
+<button type="button" onClick="{{otherAddress}}" style="align-self: flex-start; min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{otherLabel}}</button>
+</form>
+</sc-if>
+</section>
+
+<aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px; padding-top: 8px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">Why sign in?</h2>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{perks}}" as="pk" hint-placeholder-count="3">
+<li style="display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12l5 5 9-10"></path></svg><span>{{pk.text}}</span></li>
+</sc-for>
+</ul>
+<p style="margin: 8px 0 0; padding: 16px; border-radius: 12px; background: #f4f6f9; color: #3c4350">{{t.guest}} <a href="Track.dc.html" style="font-weight: 600">{{t.trackLink}}</a></p>
+</aside>
+</main>
+</sc-if>
+
+<sc-if value="{{signedIn}}" hint-placeholder-val="{{ false }}">
+<main style="max-width: 1040px; margin: 0 auto; padding: 32px 24px 72px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.015em">{{t.title}}</h1><span style="color: #545b69">{{helloText}}</span></div>
+<button type="button" onClick="{{signOut}}" style="height: 44px; padding: 0 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.signOut}}</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
+<nav aria-label="{{t.title}}" style="flex: 0 0 220px; display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+<button type="button" aria-current="{{tb.current}}" onClick="{{tb.pick}}" style="min-height: 48px; padding: 0 14px; border: 0; border-left: {{tb.edge}}; border-radius: 0 8px 8px 0; background: {{tb.navBg}}; color: {{tb.color}}; font: inherit; font-weight: 600; text-align: left; cursor: pointer">{{tb.longLabel}}</button>
+</sc-for>
+</nav>
+
+<div style="flex: 999 1 520px; min-width: 0">
+<sc-if value="{{onOrders}}" hint-placeholder-val="{{ true }}">
+<section aria-labelledby="o-h" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="o-h" style="margin: 0 0 4px; font-size: 22px; font-weight: 700">{{t.orders}}</h2>
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="3">
+<a href="Track.dc.html" style="border: 1px solid #dde2ea; border-radius: 12px; padding: 16px 20px; color: #1a1f29; text-decoration: none; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<span style="display: flex; gap: 6px"><sc-for list="{{o.thumbs}}" as="th" hint-placeholder-count="2"><span style="width: 48px; height: 48px; border-radius: 8px; background: {{th.tone}}"></span></sc-for></span>
+<span style="flex: 1 1 200px; display: flex; flex-direction: column; line-height: 1.4"><strong style="font-weight: 700">{{o.title}}</strong><span style="font-size: 14px; color: #545b69">{{o.meta}}</span></span>
+<span style="padding: 2px 10px; border-radius: 4px; background: {{o.pillBg}}; color: {{o.pillColor}}; font-size: 13px; font-weight: 700">{{o.status}}</span>
+<span style="min-width: 90px; text-align: right; font-weight: 700">{{o.total}}</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</a>
+</sc-for>
+<sc-if value="{{noOrders}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 32px; border-radius: 12px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center"><p style="margin: 0; color: #3c4350">{{t.noOrders}}</p><a href="Main.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{t.startShopping}}</a></div>
+</sc-if>
+<sc-if value="{{hasOrders}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 14px; color: #545b69">{{t.guestOrders}} <a href="Track.dc.html" style="font-weight: 600">{{t.trackLink}}</a></p></sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{onAddresses}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="ad-h" style="display: flex; flex-direction: column; gap: 12px">
+<h2 id="ad-h" style="margin: 0 0 4px; font-size: 22px; font-weight: 700">{{t.addresses}}</h2>
+<sc-if value="{{hasUndo}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="padding: 8px 8px 8px 16px; border-radius: 8px; background: #1a1f29; color: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 8px"><span>{{t.deleted}}</span><button type="button" onClick="{{undo}}" style="height: 40px; padding: 0 14px; border: 0; border-radius: 6px; background: transparent; color: #ffd98a; font: inherit; font-weight: 700; cursor: pointer">{{t.undo}}</button></div>
+</sc-if>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px">
+<sc-for list="{{addresses}}" as="ad" hint-placeholder-count="2">
+<div style="border: {{ad.border}}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+<span style="display: flex; align-items: center; gap: 8px"><strong style="font-weight: 700">{{ad.label}}</strong><sc-if value="{{ad.def}}" hint-placeholder-val="{{ false }}"><span style="padding: 1px 8px; border-radius: 4px; background: #e8f0fa; color: {{primary}}; font-size: 12px; font-weight: 700">{{t.default}}</span></sc-if></span>
+<span style="font-size: 14px; color: #3c4350">{{ad.line}}</span>
+<span style="font-size: 14px; color: #3c4350">{{ad.area}}</span>
+<span style="display: flex; flex-wrap: wrap; gap: 0 16px; margin-top: auto">
+<sc-if value="{{ad.notDef}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ad.makeDef}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{t.makeDefaultShort}}</button></sc-if>
+<button type="button" onClick="{{ad.remove}}" aria-label="{{ad.removeLabel}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: #b42318; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">{{t.delete}}</button>
+</span>
+</div>
+</sc-for>
+<sc-if value="{{notAdding}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{startAdd}}" style="min-height: 140px; border: 1.5px dashed #8a93a3; border-radius: 12px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>{{t.addAddress}}</button>
+</sc-if>
+</div>
+<sc-if value="{{noAddresses}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; color: #3c4350">{{t.noAddresses}}</p></sc-if>
+
+<sc-if value="{{adding}}" hint-placeholder-val="{{ false }}">
+<form aria-labelledby="ad-title" style="max-width: 560px; border: 1.5px solid {{primary}}; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<h3 id="ad-title" style="margin: 0; font-size: 18px; font-weight: 700">{{t.addAddress}}</h3>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ad-label" style="font-weight: 600; font-size: 14px">{{t.label}}</label>
+<input id="ad-label" type="text" value="{{form.label}}" onChange="{{setLabel}}" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; position: relative">
+<label for="ad-area" style="font-weight: 600; font-size: 14px">{{t.area}}</label>
+<sc-if value="{{formAreaPicked}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 4px 4px 12px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box"><span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.35"><strong style="font-weight: 600">{{formArea.name}}</strong><span style="font-size: 13px; color: #545b69">{{formArea.where}}</span></span><button id="ad-area-change" type="button" onClick="{{changeFormArea}}" style="height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: #f4f6f9; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{t.change}}</button></div>
+</sc-if>
+<sc-if value="{{formAreaOpen}}" hint-placeholder-val="{{ true }}">
+<input id="ad-area" type="text" role="combobox" autocomplete="off" aria-autocomplete="list" aria-controls="ad-area-list" aria-expanded="{{formHasQuery}}" aria-invalid="{{formAreaBad}}" aria-describedby="ad-area-e" value="{{form.areaQuery}}" onChange="{{setFormAreaQuery}}" placeholder="{{t.areaPlaceholder}}" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{formAreaBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{formHasQuery}}" hint-placeholder-val="{{ false }}">
+<div id="ad-area-list" role="listbox" aria-label="{{t.area}}" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; z-index: 5; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 6px 0; display: flex; flex-direction: column; background: #ffffff">
+<sc-for list="{{formMatches}}" as="m" hint-placeholder-count="2">
+<button type="button" role="option" onClick="{{m.pick}}" style="min-height: 52px; padding: 4px 16px; border: 0; background: transparent; font: inherit; color: #1a1f29; display: flex; flex-direction: column; justify-content: center; text-align: left; line-height: 1.35; cursor: pointer"><strong style="font-weight: 600">{{m.name}}</strong><span style="font-size: 13px; color: #545b69">{{m.where}}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{formAreaBad}}" hint-placeholder-val="{{ false }}"><span id="ad-area-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.areaErr}}</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ad-line" style="font-weight: 600; font-size: 14px">{{t.line}}</label>
+<textarea id="ad-line" rows="2" autocomplete="street-address" value="{{form.line}}" onChange="{{setFormLine}}" aria-invalid="{{formLineBad}}" aria-describedby="ad-line-e" style="padding: 12px 14px; font: inherit; font-size: 16px; border: {{formLineBorder}}; border-radius: 8px; resize: vertical; box-sizing: border-box"></textarea>
+<sc-if value="{{formLineBad}}" hint-placeholder-val="{{ false }}"><span id="ad-line-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.lineErr}}</span></sc-if>
+</div>
+<label style="display: flex; gap: 10px; align-items: flex-start; min-height: 44px; font-size: 14px; cursor: pointer"><input type="checkbox" checked="{{form.def}}" onChange="{{toggleFormDef}}" style="width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: {{primary}}">{{t.makeDefault}}</label>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<button type="button" onClick="{{saveAddress}}" style="height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.save}}</button>
+<button type="button" onClick="{{cancelAdd}}" style="height: 48px; padding: 0 20px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.cancel}}</button>
+</div>
+</form>
+</sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{onDetails}}" hint-placeholder-val="{{ false }}">
+<section aria-labelledby="p-h" style="max-width: 480px; display: flex; flex-direction: column; gap: 16px">
+<h2 id="p-h" style="margin: 0 0 4px; font-size: 22px; font-weight: 700">{{t.profile}}</h2>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="p-name" style="font-weight: 600; font-size: 14px">{{t.name}}</label>
+<input id="p-name" type="text" autocomplete="name" value="{{name}}" onChange="{{setName}}" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="p-mobile" style="font-weight: 600; font-size: 14px">{{t.mobile}}</label>
+<input id="p-mobile" type="tel" autocomplete="tel" inputmode="tel" value="{{mobile}}" onChange="{{setMobile}}" aria-describedby="p-mobile-h" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<span id="p-mobile-h" style="font-size: 13px; color: #545b69">{{t.mobileHint}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600; font-size: 14px">{{t.email}}</span>
+<span style="color: #3c4350">{{emailShown}}</span>
+</div>
+<div style="display: flex; align-items: center; gap: 16px">
+<button type="button" onClick="{{saveDetails}}" style="height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.save}}</button>
+<sc-if value="{{detailsSaved}}" hint-placeholder-val="{{ false }}"><span role="status" style="display: flex; align-items: center; gap: 6px; color: #1d6b3a; font-weight: 600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{t.saved}}</span></sc-if>
+</div>
+</section>
+</sc-if>
+</div>
+</div>
+</main>
+</sc-if>
+
+<dc-import name="SiteFooter" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"signed_out","options":["signed_out","signed_in","new_account"]},"$preview":{"width":1440,"height":1700}}'>
+// Scenario (canvas tweak):
+//   signed_out   sign in with a code by email (or by SMS); any 6 digits work
+//   signed_in    orders, saved addresses and details of a returning shopper
+//   new_account  signed in, but no orders or addresses yet
+// AccountPhone.dc.html uses the same logic; keep the two in step.
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sc: null };
+  }
+  renderVals() {
+    var self = this;
+    var sc = this.props.scenario || 'signed_out';
+    var bn = !!this.props.bn;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var num = function (n) { var s = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? s.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : s; };
+    var fmt = function (n) { return '৳' + num(n); };
+    var t = bn ? {
+      title: 'আপনার অ্যাকাউন্ট', intro: 'ইমেইলে পাঠানো কোড দিয়ে সাইন ইন করুন: পাসওয়ার্ড লাগবে না। অ্যাকাউন্ট ছাড়াও সবসময় অর্ডার করতে পারবেন।',
+      email: 'ইমেইল ঠিকানা', badEmail: 'ইমেইল ঠিকানা লিখুন।', mobile: 'মোবাইল নম্বর', badPhone: 'বাংলাদেশি মোবাইল নম্বর লিখুন।',
+      sendCode: 'কোড পাঠান', signIn: 'সাইন ইন', badCode: 'কোডটি কাজ করেনি। দেখে নিন, অথবা নতুন কোড চান।',
+      guest: 'অ্যাকাউন্ট ছাড়া অর্ডার করেছেন?', trackLink: 'অর্ডার ট্র্যাক করুন', signOut: 'সাইন আউট',
+      orders: 'আপনার অর্ডার', addresses: 'সেভ করা ঠিকানা', profile: 'আপনার তথ্য', ordersTab: 'অর্ডার', addressesTab: 'ঠিকানা', profileTab: 'তথ্য',
+      noOrders: 'এখনো কোনো অর্ডার নেই। অতিথি হিসেবে করা অর্ডার এখানে নেই: অর্ডার নম্বর দিয়ে ট্র্যাক করুন।', startShopping: 'কেনাকাটা শুরু করুন',
+      guestOrders: 'অতিথি হিসেবে করা অর্ডার এখানে নেই: অর্ডার নম্বর দিয়ে ট্র্যাক করুন।',
+      deleted: 'ঠিকানা মুছে ফেলা হয়েছে।', undo: 'ফিরিয়ে আনুন', default: 'মূল', makeDefaultShort: 'মূল ঠিকানা করুন', delete: 'মুছুন',
+      noAddresses: 'এখনো কোনো ঠিকানা সেভ করা নেই।', addAddress: 'ঠিকানা যোগ করুন', label: 'নাম দিন (যেমন, বাসা)', area: 'এলাকা (থানা বা উপজেলা)',
+      areaPlaceholder: 'যেমন মিরপুর বা কোতোয়ালী', change: 'বদলান', areaErr: 'তালিকা থেকে আপনার এলাকা বেছে নিন।', line: 'বাসা, রোড ও চেনার মতো জায়গা',
+      lineErr: 'বাসা, রোড ও চেনার মতো একটি জায়গা লিখুন।', makeDefault: 'এই ঠিকানাটি মূল হিসেবে ব্যবহার করুন', save: 'সেভ করুন', cancel: 'বাতিল',
+      name: 'নাম', mobileHint: 'অর্ডার নিশ্চিত করতে দোকান এই নম্বরে যোগাযোগ করে।', saved: 'সেভ হয়েছে।',
+      perk1: 'আপনার সব অর্ডার এক জায়গায়', perk2: 'সেভ করা ঠিকানা চেকআউটে নিজে থেকে পূরণ হয়', perk3: 'পাসওয়ার্ড মনে রাখতে হবে না'
+    } : {
+      title: 'Your account', intro: 'Sign in with a code we send to your email: no password needed. You can always order without an account.',
+      email: 'Email address', badEmail: 'Enter an email address.', mobile: 'Mobile number', badPhone: 'Enter a Bangladeshi mobile number.',
+      sendCode: 'Send code', signIn: 'Sign in', badCode: 'That code didn’t work. Check it, or ask for a new one.',
+      guest: 'Ordered without an account?', trackLink: 'Track your order', signOut: 'Sign out',
+      orders: 'Your orders', addresses: 'Saved addresses', profile: 'Your details', ordersTab: 'Orders', addressesTab: 'Addresses', profileTab: 'Details',
+      noOrders: 'No orders yet. Orders placed as a guest aren’t here: track them with their number.', startShopping: 'Start shopping',
+      guestOrders: 'Orders placed as a guest aren’t here: track them with their number.',
+      deleted: 'Address deleted.', undo: 'Undo', default: 'Default', makeDefaultShort: 'Make default', delete: 'Delete',
+      noAddresses: 'No saved addresses yet.', addAddress: 'Add an address', label: 'Label (for example, Home)', area: 'Area (thana or upazila)',
+      areaPlaceholder: 'For example Mirpur or Kotwali', change: 'Change', areaErr: 'Choose your area from the list.', line: 'House, road and landmark',
+      lineErr: 'Enter your house, road and a landmark.', makeDefault: 'Use this address by default', save: 'Save', cancel: 'Cancel',
+      name: 'Name', mobileHint: 'The store uses this number to confirm your orders.', saved: 'Saved.',
+      perk1: 'All your orders in one place', perk2: 'Saved addresses fill in checkout for you', perk3: 'No password to remember'
+    };
+    var areas = [
+      { id: 'dhanmondi', name: 'Dhanmondi', bn: 'ধানমন্ডি', district: 'Dhaka', dbn: 'ঢাকা' },
+      { id: 'mirpur-dhaka', name: 'Mirpur', bn: 'মিরপুর', district: 'Dhaka', dbn: 'ঢাকা' },
+      { id: 'gulshan', name: 'Gulshan', bn: 'গুলশান', district: 'Dhaka', dbn: 'ঢাকা' },
+      { id: 'uttara', name: 'Uttara', bn: 'উত্তরা', district: 'Dhaka', dbn: 'ঢাকা' },
+      { id: 'mirpur-kushtia', name: 'Mirpur', bn: 'মিরপুর', district: 'Kushtia', dbn: 'কুষ্টিয়া' },
+      { id: 'kotwali-ctg', name: 'Kotwali', bn: 'কোতোয়ালী', district: 'Chattogram', dbn: 'চট্টগ্রাম' },
+      { id: 'panchlaish', name: 'Panchlaish', bn: 'পাঁচলাইশ', district: 'Chattogram', dbn: 'চট্টগ্রাম' }
+    ];
+    var shownArea = function (a) { var n = bn ? a.bn : a.name; var d = bn ? a.dbn : a.district; return { name: n, where: d, full: n + ', ' + d }; };
+    var areaById = function (id) { var f = null; areas.forEach(function (a) { if (a.id === id) f = a; }); return f; };
+    var startAddresses = sc === 'new_account' ? [] : [
+      { id: 1, label: bn ? 'বাসা' : 'Home', line: bn ? 'বাসা ১২, রোড ৫, মসজিদের পাশে' : 'House 12, Road 5, near the mosque', area: 'dhanmondi', def: true },
+      { id: 2, label: bn ? 'অফিস' : 'Office', line: bn ? 'লেভেল ৪, ২২ কামাল আতাতুর্ক অ্যাভিনিউ' : 'Level 4, 22 Kemal Ataturk Avenue', area: 'gulshan', def: false }
+    ];
+    var fresh = {
+      signedIn: sc !== 'signed_out', step: 'address', via: 'email', email: '', mobileIn: '', addressTried: false, code: '', codeBad: false,
+      tab: 'orders', addresses: startAddresses, undo: null, adding: false,
+      form: { label: '', areaQuery: '', area: '', line: '', def: false }, formTried: false,
+      name: sc === 'new_account' ? '' : (bn ? 'রহিম উদ্দিন' : 'Rahim Uddin'), mobile: sc === 'new_account' ? '' : '01712-345678', detailsSaved: false,
+      signedEmail: 'rahim@example.com'
+    };
+    var key = sc + (bn ? ':bn' : '');
+    var st = this.state.sc === key ? this.state : fresh;
+    var up = function (o) { self.setState(Object.assign({}, st, o, { sc: key })); };
+    var focusOn = function (id) { setTimeout(function () { var el = document.getElementById(id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 40); };
+
+    var emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(st.email.trim());
+    var phoneDigits = st.mobileIn.replace(/[০-৯]/g, function (d) { return String('০১২৩৪৫৬৭৮৯'.indexOf(d)); }).replace(/\D/g, '');
+    var phoneOk = /^01\d{9}$/.test(phoneDigits);
+    var addressOk = st.via === 'email' ? emailOk : phoneOk;
+    var addressBad = st.addressTried && !addressOk;
+    var sentTo = st.via === 'email' ? st.email.trim() : st.mobileIn.trim();
+
+    var ordersData = sc === 'new_account' ? [] : [
+      { n: 10482, count: 3, status: 'processing', total: 2490, tones: ['#f1f3f6', '#e6f4ef'] },
+      { n: 10317, count: 1, status: 'completed', total: 3150, tones: ['#eceaf8'] },
+      { n: 10102, count: 2, status: 'cancelled', total: 1690, tones: ['#e8f0fa', '#fdf0e1'] }
+    ];
+    var statusLook = {
+      processing: { label: bn ? 'প্রস্তুত হচ্ছে' : 'Being prepared', bg: '#e8f0fa', color: primary },
+      completed: { label: bn ? 'সম্পন্ন' : 'Completed', bg: '#e7f4ec', color: '#1d6b3a' },
+      cancelled: { label: bn ? 'বাতিল' : 'Cancelled', bg: '#eef0f3', color: '#3c4350' }
+    };
+    var tabDefs = [['orders', t.ordersTab, t.orders], ['addresses', t.addressesTab, t.addresses], ['details', t.profileTab, t.profile]];
+
+    var f = st.form;
+    var fq = f.areaQuery.trim();
+    var fArea = f.area ? areaById(f.area) : null;
+    var formMatches = fq && !fArea ? areas.filter(function (a) { return a.name.toLowerCase().indexOf(fq.toLowerCase()) >= 0 || a.district.toLowerCase().indexOf(fq.toLowerCase()) >= 0 || a.bn.indexOf(fq) >= 0 || a.dbn.indexOf(fq) >= 0; }).slice(0, 5).map(function (a) {
+      return Object.assign(shownArea(a), { pick: function () { up({ form: Object.assign({}, f, { area: a.id, areaQuery: '' }) }); } });
+    }) : [];
+    var setForm = function (k) { return function (e) { var o = {}; o[k] = e.target.value; up({ form: Object.assign({}, f, o) }); }; };
+    var formAreaBad = st.formTried && !fArea;
+    var formLineBad = st.formTried && !f.line.trim();
+
+    return {
+      primary: primary,
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      lineHeight: bn ? '1.6' : '1.5',
+      homeHref: bn ? 'HomePhoneBn.dc.html' : 'HomePhone.dc.html',
+      trackHref: bn ? 'TrackPhoneBn.dc.html' : 'TrackPhone.dc.html',
+      signedOut: !st.signedIn,
+      signedIn: st.signedIn,
+      askAddress: st.step === 'address',
+      askCode: st.step === 'code',
+      viaEmail: st.via === 'email',
+      viaPhone: st.via === 'phone',
+      email: st.email,
+      setEmail: function (e) { up({ email: e.target.value }); },
+      mobileIn: st.mobileIn,
+      setMobileIn: function (e) { up({ mobileIn: e.target.value }); },
+      addressBad: addressBad,
+      addressBorder: addressBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      sendCode: function () {
+        if (!addressOk) { up({ addressTried: true }); focusOn(st.via === 'email' ? 'a-email' : 'a-phone'); return; }
+        up({ step: 'code', code: '', codeBad: false, addressTried: false }); focusOn('a-code');
+      },
+      switchVia: function () { var v = st.via === 'email' ? 'phone' : 'email'; up({ via: v, addressTried: false }); focusOn(v === 'email' ? 'a-email' : 'a-phone'); },
+      switchLabel: st.via === 'email' ? (bn ? 'এর বদলে মোবাইল নম্বর দিয়ে সাইন ইন করুন' : 'Sign in with your mobile number instead') : (bn ? 'এর বদলে ইমেইল দিয়ে সাইন ইন করুন' : 'Sign in with your email instead'),
+      codeSentText: st.via === 'email'
+        ? (bn ? sentTo + ' ঠিকানায় ৬ অঙ্কের একটি কোড পাঠানো হয়েছে। এটি ১০ মিনিট কাজ করবে।' : 'We sent a 6-digit code to ' + sentTo + '. It works for 10 minutes.')
+        : (bn ? sentTo + ' নম্বরে ৬ অঙ্কের একটি কোড পাঠানো হয়েছে। এটি ১০ মিনিট কাজ করবে।' : 'We texted a 6-digit code to ' + sentTo + '. It works for 10 minutes.'),
+      codeLabel: st.via === 'email' ? (bn ? 'ইমেইলের কোড' : 'Code from the email') : (bn ? 'এসএমএসের কোড' : 'Code from the SMS'),
+      code: st.code,
+      setCode: function (e) { up({ code: e.target.value.replace(/\D/g, '').slice(0, 6), codeBad: false }); },
+      codeBad: st.codeBad,
+      codeBorder: st.codeBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      signIn: function () {
+        if (st.code.length !== 6) { up({ codeBad: true }); focusOn('a-code'); return; }
+        up({ signedIn: true, tab: 'orders', signedEmail: st.via === 'email' ? st.email.trim() : 'rahim@example.com' });
+        if (typeof window !== 'undefined') window.scrollTo(0, 0);
+      },
+      otherAddress: function () { up({ step: 'address', code: '', codeBad: false }); focusOn(st.via === 'email' ? 'a-email' : 'a-phone'); },
+      otherLabel: st.via === 'email' ? (bn ? 'অন্য ইমেইল ব্যবহার করুন' : 'Use another email') : (bn ? 'অন্য নম্বর ব্যবহার করুন' : 'Use another number'),
+      perks: [{ text: t.perk1 }, { text: t.perk2 }, { text: t.perk3 }],
+      helloText: bn ? st.signedEmail + ' দিয়ে সাইন ইন করা' : 'Signed in as ' + st.signedEmail,
+      signOut: function () { up({ signedIn: false, step: 'address', code: '' }); },
+      tabs: tabDefs.map(function (d) {
+        var on = st.tab === d[0];
+        return { label: d[1], longLabel: d[2], on: on, current: on ? 'page' : 'false', bg: on ? '#ffffff' : 'transparent', navBg: on ? '#f3f7fc' : 'transparent', edge: on ? '3px solid ' + primary : '3px solid transparent', shadow: on ? '0 1px 3px rgba(26,31,41,0.12)' : 'none', color: on ? '#1a1f29' : '#545b69', pick: function () { up({ tab: d[0] }); } };
+      }),
+      onOrders: st.tab === 'orders',
+      onAddresses: st.tab === 'addresses',
+      onDetails: st.tab === 'details',
+      orders: ordersData.map(function (o) {
+        var look = statusLook[o.status];
+        return {
+          title: (bn ? 'অর্ডার ' : 'Order ') + num(o.n),
+          meta: bn ? '[date] · ' + num(o.count) + 'টি পণ্য' : '[date] · ' + o.count + (o.count === 1 ? ' item' : ' items'),
+          status: look.label, pillBg: look.bg, pillColor: look.color, total: fmt(o.total),
+          thumbs: o.tones.map(function (tone) { return { tone: tone }; })
+        };
+      }),
+      hasOrders: ordersData.length > 0,
+      noOrders: ordersData.length === 0,
+      hasUndo: !!st.undo,
+      undo: function () { if (st.undo) up({ addresses: st.undo, undo: null }); },
+      addresses: st.addresses.map(function (a) {
+        var ar = areaById(a.area);
+        return {
+          label: a.label, line: a.line, area: ar ? shownArea(ar).full : '', def: a.def, notDef: !a.def,
+          border: a.def ? '2px solid ' + primary : '1px solid #dde2ea',
+          removeLabel: (bn ? 'মুছুন: ' : 'Delete ') + a.label,
+          makeDef: function () { up({ addresses: st.addresses.map(function (b) { return Object.assign({}, b, { def: b.id === a.id }); }), undo: null }); },
+          remove: function () {
+            var list = st.addresses.filter(function (b) { return b.id !== a.id; });
+            if (a.def && list.length) list[0] = Object.assign({}, list[0], { def: true });
+            up({ addresses: list, undo: st.addresses });
+          }
+        };
+      }),
+      noAddresses: st.addresses.length === 0 && !st.adding,
+      notAdding: !st.adding,
+      adding: st.adding,
+      startAdd: function () { up({ adding: true, undo: null, form: { label: '', areaQuery: '', area: '', line: '', def: st.addresses.length === 0 }, formTried: false }); focusOn('ad-label'); },
+      cancelAdd: function () { up({ adding: false, formTried: false }); },
+      form: f,
+      setLabel: setForm('label'),
+      setFormAreaQuery: setForm('areaQuery'),
+      setFormLine: setForm('line'),
+      toggleFormDef: function () { up({ form: Object.assign({}, f, { def: !f.def }) }); },
+      formArea: fArea ? shownArea(fArea) : { name: '', where: '' },
+      formAreaPicked: !!fArea,
+      formAreaOpen: !fArea,
+      formHasQuery: formMatches.length > 0,
+      formMatches: formMatches,
+      changeFormArea: function () { up({ form: Object.assign({}, f, { area: '', areaQuery: '' }) }); focusOn('ad-area'); },
+      formAreaBad: formAreaBad,
+      formAreaBorder: formAreaBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      formLineBad: formLineBad,
+      formLineBorder: formLineBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      saveAddress: function () {
+        if (!fArea || !f.line.trim()) { up({ formTried: true }); focusOn(!fArea ? 'ad-area' : 'ad-line'); return; }
+        var item = { id: Date.now(), label: f.label.trim() || (bn ? 'ঠিকানা' : 'Address'), line: f.line.trim(), area: f.area, def: f.def || st.addresses.length === 0 };
+        var list = st.addresses.map(function (b) { return item.def ? Object.assign({}, b, { def: false }) : b; }).concat([item]);
+        up({ addresses: list, adding: false, formTried: false });
+      },
+      name: st.name,
+      setName: function (e) { up({ name: e.target.value, detailsSaved: false }); },
+      mobile: st.mobile,
+      setMobile: function (e) { up({ mobile: e.target.value, detailsSaved: false }); },
+      emailShown: st.signedEmail,
+      saveDetails: function () { up({ detailsSaved: true }); },
+      detailsSaved: st.detailsSaved
+    };
+  }
+}
+</script>
+</body>
+</html>

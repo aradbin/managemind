@@ -8,17 +8,22 @@ Why each choice was made, and what still needs platform work, is in [DECISIONS.m
 
 - `canvas/project/` – what gets published. Each `*.dc.html` file is one board; `canvas.json` places them on the canvas (one row per page: desktop on the left, phone beside it).
 - `files-map.mjs` – prints the `files` map a publish call needs (see below).
+- `make-bangla.mjs` – writes the Bangla phone boards (`…PhoneBn.dc.html`) from their English boards. Run it after changing `CartPhone`, `ProductPhone`, `CheckoutPhone`, `TrackPhone` or `AccountPhone`.
+- `check-board.mjs` – checks a board without the canvas: runs its script, can press its buttons in order, and lists any `{{hole}}` left empty. Run it on every board you change before publishing.
 
-| Row | Desktop | Phone |
-| --- | --- | --- |
-| Home | `Main` | `HomePhone`, `HomePhoneBn` (Bangla) |
-| Category listing | `Listing` | `ListingPhone` |
-| Search results | `Search` | `SearchPhone` |
-| Product | `Product` | `ProductPhone` |
-| Cart | `Cart` | `CartPhone` |
-| Checkout | `Checkout` | `CheckoutPhone` |
-| Order tracking | `Track` | `TrackPhone` |
-| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` |
+| Row | Desktop | Phone | Phone, Bangla |
+| --- | --- | --- | --- |
+| Home | `Main` | `HomePhone` | `HomePhoneBn` (hand-written) |
+| Category listing | `Listing` | `ListingPhone` | – |
+| Search results | `Search` | `SearchPhone` | – |
+| Product | `Product` | `ProductPhone` | `ProductPhoneBn` |
+| Cart | `Cart` | `CartPhone` | `CartPhoneBn` |
+| Checkout | `Checkout` | `CheckoutPhone` | `CheckoutPhoneBn` |
+| Order tracking | `Track` | `TrackPhone` | `TrackPhoneBn` |
+| Account | `Account` | `AccountPhone` | `AccountPhoneBn` |
+| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` | |
+
+Every Bangla board except `HomePhoneBn` is generated: edit the English board, then run `node design/storefront-redesign/make-bangla.mjs`.
 
 The component boards are mounted by the pages with `<dc-import name="…">`. Change a component once and every page that uses it changes.
 
@@ -30,7 +35,17 @@ Each board is a Design Component page:
 - `{{name}}` holes filled from `renderVals()` in the `<script type="text/x-dc" data-dc-script>` block at the bottom: dotted lookups only, no expressions;
 - `<sc-for list="{{items}}" as="item">` for lists, `<sc-if value="{{flag}}">` for branches, `onClick="{{handler}}"` for events;
 - `<dc-import name="ProductCard" item="{{p}}" on-add="{{addOne}}">` mounts `ProductCard.dc.html`; kebab-case attributes arrive as camelCase props;
-- `data-props` on the script tag declares the canvas tweaks (here only `primary`, the theme's primary colour).
+- `data-props` on the script tag declares the canvas tweaks: `primary` (the theme's primary colour) on every board, `bn` (Bangla copy) on the phone boards that have a Bangla twin, and `scenario` on the checkout, tracking and account boards.
+
+## Scenario tweaks
+
+The checkout, tracking and account boards switch between the states the store and the server can produce with a `scenario` tweak in the canvas's properties panel (each also has a sticky note beside its row):
+
+- Checkout: `normal`, `phone_code` (the SMS code step), `advance_required` (cash on delivery refused until the delivery charge is paid online), `cod_unavailable`, `no_delivery`, `store_paused`, `too_many_orders`, `price_changed`. Every scenario but `normal` starts filled in, so pressing Place order shows the answer.
+- Tracking: `waiting_for_store`, `being_prepared`, `on_the_way` (parcels and courier updates), `delivered` (request a return), `too_many_tries`.
+- Account: `signed_out`, `signed_in`, `new_account`.
+
+Each board keeps its state per scenario, so changing the tweak starts that scenario afresh. The copy comes from the storefront's own strings in `apps/storefront/src/i18n.ts` wherever one exists.
 
 Sample products, prices and copy live in each board's `renderVals()`. Phone boards are 390 px wide and use `min-height`, so `canvas.json` must give them a frame tall enough for their content (over-tall is fine, clipped is not).
 

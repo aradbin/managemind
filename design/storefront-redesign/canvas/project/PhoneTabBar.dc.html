@@ -17,14 +17,14 @@ body{margin:0}
 <nav lang="{{lang}}" aria-label="{{label}}" style="width: 100%; box-sizing: border-box; font-family: 'Hind Siliguri', system-ui, sans-serif; background: #ffffff; border-top: 1px solid #dde2ea; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 4px 0 8px; line-height: 1.3">
 <a href="{{homeHref}}" aria-current="{{homeCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{homeColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{homeWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path></svg>{{homeLabel}}</a>
 <a href="ListingPhone.dc.html" aria-current="{{catCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{catColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{catWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>{{catLabel}}</a>
-<a href="CartPhone.dc.html" aria-current="{{cartCurrent}}" aria-label="{{cartAria}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{cartColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{cartWeight}}">
+<a href="{{cartHref}}" aria-current="{{cartCurrent}}" aria-label="{{cartAria}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{cartColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{cartWeight}}">
 <span style="position: relative; display: flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
 <sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: -6px; right: -10px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px; background: #f59e0b; color: #1a1f29; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
 </span>{{cartLabel}}</a>
-<a href="#" aria-current="{{accountCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{accountColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{accountWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>{{accountLabel}}</a>
+<a href="{{accountHref}}" aria-current="{{accountCurrent}}" style="min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: {{accountColor}}; text-decoration: none; font-size: {{fontSize}}; font-weight: {{accountWeight}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>{{accountLabel}}</a>
 </nav>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"active":{"editor":"enum","default":"home","options":["home","categories","cart","account"]},"bn":{"editor":"boolean","default":false},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"$preview":{"width":390,"height":68}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"active":{"editor":"enum","default":"home","options":["home","categories","cart","account","none"]},"bn":{"editor":"boolean","default":false},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"$preview":{"width":390,"height":68}}'>
 class Component extends DCLogic {
   renderVals() {
     var bn = !!this.props.bn;
@@ -44,6 +44,8 @@ class Component extends DCLogic {
       catLabel: bn ? 'ক্যাটাগরি' : 'Categories',
       cartLabel: cartLabel,
       accountLabel: bn ? 'অ্যাকাউন্ট' : 'Account',
+      accountHref: bn ? 'AccountPhoneBn.dc.html' : 'AccountPhone.dc.html',
+      cartHref: bn ? 'CartPhoneBn.dc.html' : 'CartPhone.dc.html',
       cartAria: count > 0 ? cartLabel + ', ' + digits(count) : cartLabel,
       homeCurrent: h.current, homeColor: h.color, homeWeight: h.weight,
       catCurrent: c.current, catColor: c.color, catWeight: c.weight,

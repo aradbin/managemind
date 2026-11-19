@@ -27,13 +27,47 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </header>
 
-<sc-if value="{{notPlaced}}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{blocked}}" hint-placeholder-val="{{ false }}">
 <main style="max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; box-sizing: border-box">
 <h1 style="margin: 0 0 20px; font-size: 32px; font-weight: 700; letter-spacing: -0.015em">Checkout</h1>
+<section style="max-width: 640px; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 32px; display: flex; flex-direction: column; gap: 14px">
+<span style="width: 56px; height: 56px; border-radius: 50%; background: #fdf3e3; color: #92400e; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M10 9v6M14 9v6"></path></svg></span>
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">{{blockTitle}}</h2>
+<sc-if value="{{blockHasMessage}}" hint-placeholder-val="{{ true }}">
+<p style="margin: 0; padding: 12px 16px; border-left: 4px solid #c5ccd8; background: #f4f6f9; border-radius: 0 8px 8px 0; color: #3c4350">{{blockMessage}}</p>
+</sc-if>
+<p style="margin: 0; color: #3c4350">{{blockNext}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px">
+<a href="#" style="height: 48px; padding: 0 20px; border-radius: 8px; background: #1d6b3a; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"></path></svg>Message the store on WhatsApp</a>
+<a href="Cart.dc.html" style="height: 48px; padding: 0 20px; border-radius: 8px; border: 1.5px solid #c5ccd8; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box">Back to cart</a>
+</div>
+</section>
+</main>
+</sc-if>
+
+<sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+<main style="max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; box-sizing: border-box">
+<h1 style="margin: 0 0 4px; font-size: 32px; font-weight: 700; letter-spacing: -0.015em">Checkout</h1>
+<p style="margin: 0 0 20px; font-size: 14px; color: #3c4350"><a href="Account.dc.html" style="font-weight: 600">Have an account? Sign in to fill this in faster.</a> Or just order as a guest.</p>
 <div style="display: flex; flex-wrap: wrap; gap: 24px 32px; align-items: flex-start">
 <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+
 <sc-if value="{{showErrorSummary}}" hint-placeholder-val="{{ false }}">
-<div role="alert" style="padding: 14px 16px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600">{{errorSummary}}</div>
+<div role="alert" style="padding: 14px 16px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; display: flex; flex-direction: column; gap: 4px">
+<strong style="font-weight: 700">{{errorSummary}}</strong>
+<sc-for list="{{errorList}}" as="er" hint-placeholder-count="2">
+<button type="button" onClick="{{er.go}}" style="align-self: flex-start; min-height: 32px; padding: 0; border: 0; background: transparent; color: #8f1c13; font: inherit; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left">{{er.text}}</button>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{hasNotice}}" hint-placeholder-val="{{ false }}">
+<div id="d-notice" tabindex="-1" role="{{notice.role}}" style="padding: 14px 16px; border-radius: 8px; background: {{notice.bg}}; border: 1.5px solid {{notice.line}}; color: #1a1f29; display: flex; gap: 12px; align-items: flex-start">
+<span style="flex: none; display: flex; color: {{notice.line}}; padding-top: 1px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5v.5"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">{{notice.text}}</span>
+<sc-if value="{{notice.contact}}" hint-placeholder-val="{{ false }}"><span style="display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px"><a href="#" style="font-weight: 600">Message on WhatsApp</a><a href="#" style="font-weight: 600">Call [hotline number]</a></span></sc-if>
+</span>
+</div>
 </sc-if>
 
 <section aria-labelledby="d-contact" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
@@ -42,7 +76,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="d-phone" style="font-weight: 600; font-size: 14px">Mobile number</label>
 <input id="d-phone" type="tel" inputmode="tel" autocomplete="tel" value="{{phone}}" onChange="{{setPhone}}" aria-invalid="{{phoneBad}}" aria-describedby="d-phone-h d-phone-e" placeholder="01712-345678" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{phoneBorder}}; border-radius: 8px; box-sizing: border-box">
-<span id="d-phone-h" style="font-size: 13px; color: #545b69">We call or text this number to confirm your order.</span>
+<span id="d-phone-h" style="font-size: 13px; color: #545b69">The store calls or texts this number to confirm your order.</span>
 <sc-if value="{{phoneBad}}" hint-placeholder-val="{{ false }}"><span id="d-phone-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{phoneErr}}</span></sc-if>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
@@ -59,43 +93,46 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 
 <section aria-labelledby="d-addr" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
 <h2 id="d-addr" style="margin: 0; font-size: 20px; font-weight: 700">Delivery address</h2>
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px">
-<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
-<label for="d-division" style="font-weight: 600; font-size: 14px">Division</label>
-<select id="d-division" value="{{division}}" onChange="{{setDivision}}" aria-invalid="{{divisionBad}}" aria-describedby="d-division-e" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: {{divisionBorder}}; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0">
-<option value="">Choose</option>
-<option value="dhaka">Dhaka</option>
-<option value="chattogram">Chattogram</option>
-<option value="khulna">Khulna</option>
-<option value="rajshahi">Rajshahi</option>
-<option value="sylhet">Sylhet</option>
-<option value="barishal">Barishal</option>
-<option value="rangpur">Rangpur</option>
-<option value="mymensingh">Mymensingh</option>
-</select>
-<sc-if value="{{divisionBad}}" hint-placeholder-val="{{ false }}"><span id="d-division-e" style="font-size: 13px; color: #b42318; font-weight: 600">Choose your division.</span></sc-if>
-</div>
-<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
-<label for="d-district" style="font-weight: 600; font-size: 14px">District</label>
-<select id="d-district" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0"><option>Choose</option></select>
-</div>
-<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 560px; position: relative">
 <label for="d-area" style="font-weight: 600; font-size: 14px">Area (thana or upazila)</label>
-<select id="d-area" style="height: 48px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; min-width: 0"><option>Choose</option></select>
+<span id="d-area-h" style="font-size: 13px; color: #545b69">Type your area or district, then pick it from the list.</span>
+<sc-if value="{{areaPicked}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 6px 6px 14px; border: {{areaBorder}}; border-radius: 8px; box-sizing: border-box">
+<span style="color: {{primary}}; display: flex; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.35"><strong style="font-weight: 600">{{area.name}}</strong><span style="font-size: 13px; color: #545b69">{{area.where}}</span></span>
+<button id="d-area-change" type="button" onClick="{{changeArea}}" aria-describedby="d-area-e" style="height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: #f4f6f9; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">Change</button>
 </div>
+</sc-if>
+<sc-if value="{{areaOpen}}" hint-placeholder-val="{{ true }}">
+<input id="d-area" type="text" role="combobox" autocomplete="off" aria-autocomplete="list" aria-controls="d-area-list" aria-expanded="{{hasQuery}}" aria-invalid="{{areaBad}}" aria-describedby="d-area-h d-area-e" value="{{areaQuery}}" onChange="{{setAreaQuery}}" placeholder="For example Mirpur, Kotwali or Kushtia" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{areaBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{hasQuery}}" hint-placeholder-val="{{ false }}">
+<div id="d-area-list" role="listbox" aria-label="Areas" style="position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; z-index: 5; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 6px 0; display: flex; flex-direction: column">
+<sc-for list="{{matches}}" as="m" hint-placeholder-count="3">
+<button type="button" role="option" onClick="{{m.pick}}" style="min-height: 52px; padding: 4px 16px; border: 0; background: transparent; font: inherit; color: #1a1f29; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer">
+<span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.35"><strong style="font-weight: 600">{{m.name}}</strong><span style="font-size: 13px; color: #545b69">{{m.where}}</span></span>
+<span style="flex: none; font-size: 13px; font-weight: 600; color: {{m.tagColor}}">{{m.tag}}</span>
+</button>
+</sc-for>
+<sc-if value="{{noMatch}}" hint-placeholder-val="{{ false }}">
+<span style="padding: 10px 16px; color: #3c4350; font-size: 14px">No area matches “{{areaQuery}}”. Try your district’s name, or message the store.</span>
+</sc-if>
+</div>
+</sc-if>
+</sc-if>
+<sc-if value="{{areaBad}}" hint-placeholder-val="{{ false }}"><span id="d-area-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{areaErr}}</span></sc-if>
 </div>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="d-line" style="font-weight: 600; font-size: 14px">House, road and landmark</label>
 <textarea id="d-line" rows="2" autocomplete="street-address" value="{{line}}" onChange="{{setLine}}" aria-invalid="{{lineBad}}" aria-describedby="d-line-e" style="padding: 12px 14px; font: inherit; font-size: 16px; border: {{lineBorder}}; border-radius: 8px; resize: vertical; box-sizing: border-box"></textarea>
 <sc-if value="{{lineBad}}" hint-placeholder-val="{{ false }}"><span id="d-line-e" style="font-size: 13px; color: #b42318; font-weight: 600">Enter your house, road and a landmark.</span></sc-if>
 </div>
-<div style="border-radius: 8px; background: #e8f0fa; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center">
-<span style="color: {{primary}}; display: flex; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
-<span>{{zoneText}}</span>
+<div style="border-radius: 8px; background: {{zone.bg}}; color: {{zone.color}}; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: center">
+<span style="color: {{zone.icon}}; display: flex; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
+<span style="font-weight: {{zone.weight}}">{{zone.text}}</span>
 </div>
 <details>
-<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Add a note for the delivery</summary>
-<label for="d-note" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Note for the delivery</label>
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Add a note for the store</summary>
+<label for="d-note" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Note for the store</label>
 <textarea id="d-note" rows="2" style="width: 100%; padding: 12px 14px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box"></textarea>
 </details>
 </section>
@@ -117,16 +154,15 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <a href="Cart.dc.html" style="font-size: 14px; font-weight: 600; min-height: 44px; display: flex; align-items: center">Edit cart</a>
 </div>
 <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
+<sc-for list="{{lines}}" as="ln" hint-placeholder-count="2">
 <li style="display: flex; gap: 12px; align-items: center">
-<span style="position: relative; width: 56px; height: 56px; flex: none; border-radius: 8px; background: #f1f3f6"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #545b69; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">1</span></span>
-<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; font-size: 14px"><span>Non-stick frying pan with glass lid</span><span style="color: #545b69">26 cm · Black</span></span>
-<span style="font-weight: 600">৳1,250</span>
+<span style="position: relative; width: 56px; height: 56px; flex: none; border-radius: 8px; background: {{ln.tone}}"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #545b69; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{ln.qty}}</span></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; font-size: 14px"><span>{{ln.title}}</span><span style="color: #545b69">{{ln.variant}}</span>
+<sc-if value="{{ln.changed}}" hint-placeholder-val="{{ false }}"><span style="align-self: flex-start; margin-top: 2px; padding: 0 6px; border-radius: 4px; background: #fdf3e3; color: #7a3e06; font-size: 12px; font-weight: 600">{{ln.was}}</span></sc-if>
+</span>
+<span style="font-weight: 600">{{ln.lineText}}</span>
 </li>
-<li style="display: flex; gap: 12px; align-items: center">
-<span style="position: relative; width: 56px; height: 56px; flex: none; border-radius: 8px; background: #e6f4ef"><span style="position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #545b69; color: #ffffff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span></span>
-<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; font-size: 14px"><span>Stainless steel water bottle</span><span style="color: #545b69">1 litre · ৳590 each</span></span>
-<span style="font-weight: 600">৳1,180</span>
-</li>
+</sc-for>
 </ul>
 <details>
 <summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Have a promo code?</summary>
@@ -137,25 +173,78 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </details>
 <div style="border-top: 1px solid #dde2ea; padding-top: 12px; display: flex; flex-direction: column; gap: 6px">
-<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Subtotal (3 items)</span><span>৳2,430</span></span>
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">{{subtotalLabel}}</span><span>{{subtotalText}}</span></span>
 <span style="display: flex; justify-content: space-between; gap: 12px"><span style="color: #3c4350">Delivery</span><span style="text-align: right">{{deliveryLine}}</span></span>
 <span style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px; padding-top: 6px"><span>{{totalLabel}}</span><span>{{totalText}}</span></span>
 <span style="display: flex; justify-content: space-between; font-size: 14px; color: #3c4350"><span>{{payLine}}</span><span style="font-weight: 600; color: #1a1f29">{{payNowText}}</span></span>
 </div>
-<label style="display: flex; gap: 10px; align-items: flex-start; min-height: 44px; font-size: 14px; cursor: pointer"><input type="checkbox" checked="{{terms}}" onChange="{{toggleTerms}}" aria-invalid="{{termsBad}}" aria-describedby="d-terms-e" style="width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: {{primary}}"><span>I agree to the <a href="#">terms and return policy</a></span></label>
+<label style="display: flex; gap: 10px; align-items: flex-start; min-height: 44px; font-size: 14px; cursor: pointer"><input id="d-terms" type="checkbox" checked="{{terms}}" onChange="{{toggleTerms}}" aria-invalid="{{termsBad}}" aria-describedby="d-terms-e" style="width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: {{primary}}"><span>I agree to the <a href="#">terms and return policy</a></span></label>
 <sc-if value="{{termsBad}}" hint-placeholder-val="{{ false }}"><span id="d-terms-e" style="margin-top: -8px; font-size: 13px; color: #b42318; font-weight: 600">Please agree to the terms to place your order.</span></sc-if>
 <button type="button" onClick="{{place}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer">{{placeLabel}}</button>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #545b69">
+<span style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg><span>Your details are used only for this order and its delivery.</span></span>
+<span style="display: flex; gap: 8px; align-items: flex-start"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"></path><path d="M4 4v4.5h4.5"></path></svg><span>Returns within 7 days. Questions? [hotline number]</span></span>
+</div>
 </aside>
 </div>
 </main>
 </sc-if>
 
+<sc-if value="{{otpOpen}}" hint-placeholder-val="{{ false }}">
+<div style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; background: rgba(26,31,41,0.5); display: flex; align-items: center; justify-content: center; padding: 24px">
+<div role="dialog" aria-modal="true" aria-labelledby="d-otp-t" style="width: 100%; max-width: 440px; background: #ffffff; border-radius: 12px; padding: 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 24px 64px rgba(26,31,41,0.24)">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+<h2 id="d-otp-t" style="margin: 0; font-size: 22px; font-weight: 700">Confirm your mobile number</h2>
+<button type="button" onClick="{{closeOtp}}" aria-label="Close" style="width: 44px; height: 44px; margin: -10px -10px 0 0; flex: none; border: 0; background: transparent; color: #545b69; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+<p style="margin: 0; color: #3c4350">This store confirms your phone number first. We’ve sent you a code by SMS.</p>
+<p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px">Sent to <strong>{{phone}}</strong><button type="button" onClick="{{changePhone}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">Change number</button></p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="d-otp" style="font-weight: 600; font-size: 14px">6-digit code</label>
+<input id="d-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{otpCode}}" onChange="{{setOtp}}" aria-invalid="{{otpBad}}" aria-describedby="d-otp-e" style="height: 56px; padding: 0 16px; font: inherit; font-size: 24px; font-weight: 600; letter-spacing: 0.4em; border: {{otpBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{otpBad}}" hint-placeholder-val="{{ false }}"><span id="d-otp-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{otpErr}}</span></sc-if>
+</div>
+<button type="button" onClick="{{verify}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer">Confirm and place order</button>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px">
+<button type="button" onClick="{{resend}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">Send a new code</button>
+<sc-if value="{{otpSent}}" hint-placeholder-val="{{ false }}"><span role="status" style="color: #1d6b3a; font-weight: 600">Code sent. It works for 10 minutes.</span></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
 <sc-if value="{{placed}}" hint-placeholder-val="{{ false }}">
-<main style="max-width: 640px; margin: 0 auto; padding: 72px 24px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center">
-<span style="width: 80px; height: 80px; border-radius: 50%; background: #e7f4ec; color: #1d6b3a; display: flex; align-items: center; justify-content: center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
-<h1 style="margin: 0; font-size: 30px; font-weight: 700">Thank you, your order is placed</h1>
-<p style="margin: 0; color: #3c4350; font-size: 17px">Order [number]. We will call you to confirm, then send updates on WhatsApp.</p>
-<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px">
+<main style="max-width: 720px; margin: 0 auto; padding: 48px 24px 72px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 50%; background: #e7f4ec; color: #1d6b3a; display: flex; align-items: center; justify-content: center"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">Thank you for your order</h1>
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border: 1px solid #dde2ea; border-radius: 8px; background: #ffffff">
+<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3"><span style="font-size: 13px; color: #545b69">Order number</span><strong style="font-size: 20px; font-weight: 700">[number]</strong></span>
+<button type="button" onClick="{{copy}}" style="height: 44px; padding: 0 14px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+</div>
+</div>
+<div style="padding: 16px 18px; border-radius: 12px; background: #e7f4ec; color: #14532d; display: flex; gap: 12px; align-items: flex-start">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="3" y="6" width="18" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 17px; font-weight: 700">{{thanksPay}}</strong><span>The store will call or message you to confirm. Track your order any time with its number and your mobile number.</span></span>
+</div>
+<section aria-labelledby="d-t-items" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="d-t-items" style="margin: 0; font-size: 18px; font-weight: 700">What you ordered</h2>
+<sc-for list="{{lines}}" as="ln" hint-placeholder-count="2">
+<div style="display: flex; gap: 12px; align-items: center; font-size: 14px"><span style="width: 48px; height: 48px; flex: none; border-radius: 8px; background: {{ln.tone}}"></span><span style="flex: 1 1 auto">{{ln.title}} <span style="color: #545b69">× {{ln.qty}}</span></span><span style="font-weight: 600">{{ln.lineText}}</span></div>
+</sc-for>
+<div style="border-top: 1px solid #dde2ea; padding-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Delivery</span><span>{{deliveryLine}}</span></span>
+<span style="display: flex; justify-content: space-between; font-weight: 700; font-size: 16px"><span>Total</span><span>{{totalText}}</span></span>
+</div>
+</section>
+<section aria-labelledby="d-t-to" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 4px">
+<h2 id="d-t-to" style="margin: 0 0 6px; font-size: 18px; font-weight: 700">Delivery to</h2>
+<span>{{name}} · {{phone}}</span>
+<span style="color: #3c4350">{{line}}</span>
+<span style="color: #3c4350">{{area.full}}</span>
+<span style="margin-top: 6px; font-size: 14px; color: #545b69">{{estimate}}</span>
+</section>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px">
 <a href="Track.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box; background: #ffffff">Track your order</a>
 <a href="Main.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">Continue shopping</a>
 </div>
@@ -167,58 +256,196 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </footer>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":1600}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"normal","options":["normal","phone_code","advance_required","cod_unavailable","no_delivery","store_paused","too_many_orders","price_changed"]},"$preview":{"width":1440,"height":1700}}'>
+// Scenario (canvas tweak): what the store and the server decide.
+//   normal            plain checkout; the form starts empty to show validation
+//   phone_code        Place order asks for the SMS code first (otp_required)
+//   advance_required  choosing cash on delivery is refused: delivery charge online first
+//   cod_unavailable   the store offers no payment this order can use
+//   no_delivery       the chosen area is one the store doesn't deliver to
+//   store_paused      the store's holiday switch is on
+//   too_many_orders   the per-phone order limit is reached (rate_limited)
+//   price_changed     a price moved since the page opened (price_changed)
+// Every scenario but normal starts with the form filled, so one click on
+// Place order shows the outcome.
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { phone: '', name: '', division: '', line: '', pay: 'cod', terms: false, tried: false, placed: false };
+    this.state = { sc: null };
   }
   renderVals() {
     var self = this;
-    var s = this.state;
+    var sc = this.props.scenario || 'normal';
     var primary = this.props.primary ?? '#1f4e8c';
     var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
-    var subtotal = 2430;
-    var chosen = s.division !== '';
-    var inside = s.division === 'dhaka';
-    var delivery = chosen ? (inside ? 60 : 120) : 0;
+    var filled = sc !== 'normal';
+    var fresh = {
+      phone: filled ? '01712-345678' : '', name: filled ? 'Rahim Uddin' : '', line: filled ? 'House 12, Road 5, near the mosque' : '',
+      terms: filled, area: filled ? (sc === 'no_delivery' ? 'kalapara' : 'dhanmondi') : '', areaQuery: '', pay: 'cod',
+      tried: false, notice: '', codGone: false, priceNew: false, otpOpen: false, otpCode: '', otpErr: '', otpSent: false, placed: false, copied: false
+    };
+    var st = this.state.sc === sc ? this.state : fresh;
+    var up = function (o) { self.setState(Object.assign({}, st, o, { sc: sc })); };
+    var focusOn = function (id) { setTimeout(function () { var el = document.getElementById(id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 40); };
+
+    var areas = [
+      { id: 'dhanmondi', name: 'Dhanmondi', bn: 'ধানমন্ডি', district: 'Dhaka', division: 'Dhaka', zone: 'in' },
+      { id: 'mirpur-dhaka', name: 'Mirpur', bn: 'মিরপুর', district: 'Dhaka', division: 'Dhaka', zone: 'in' },
+      { id: 'mohammadpur', name: 'Mohammadpur', bn: 'মোহাম্মদপুর', district: 'Dhaka', division: 'Dhaka', zone: 'in' },
+      { id: 'uttara', name: 'Uttara', bn: 'উত্তরা', district: 'Dhaka', division: 'Dhaka', zone: 'in' },
+      { id: 'gulshan', name: 'Gulshan', bn: 'গুলশান', district: 'Dhaka', division: 'Dhaka', zone: 'in' },
+      { id: 'mirpur-kushtia', name: 'Mirpur', bn: 'মিরপুর', district: 'Kushtia', division: 'Khulna', zone: 'out' },
+      { id: 'kushtia-sadar', name: 'Kushtia Sadar', bn: 'কুষ্টিয়া সদর', district: 'Kushtia', division: 'Khulna', zone: 'out' },
+      { id: 'kotwali-ctg', name: 'Kotwali', bn: 'কোতোয়ালী', district: 'Chattogram', division: 'Chattogram', zone: 'out' },
+      { id: 'panchlaish', name: 'Panchlaish', bn: 'পাঁচলাইশ', district: 'Chattogram', division: 'Chattogram', zone: 'out' },
+      { id: 'sylhet-sadar', name: 'Sylhet Sadar', bn: 'সিলেট সদর', district: 'Sylhet', division: 'Sylhet', zone: 'out' },
+      { id: 'boalia', name: 'Boalia', bn: 'বোয়ালিয়া', district: 'Rajshahi', division: 'Rajshahi', zone: 'out' },
+      { id: 'mymensingh-sadar', name: 'Mymensingh Sadar', bn: 'ময়মনসিংহ সদর', district: 'Mymensingh', division: 'Mymensingh', zone: 'out' },
+      { id: 'kalapara', name: 'Kalapara', bn: 'কলাপাড়া', district: 'Patuakhali', division: 'Barishal', zone: sc === 'no_delivery' ? 'none' : 'out' }
+    ];
+    var withWhere = function (a) { return Object.assign({}, a, { where: a.district + ' · ' + a.division + ' division', full: a.name + ', ' + a.district }); };
+    var area = null;
+    areas.forEach(function (a) { if (a.id === st.area) area = withWhere(a); });
+    var zoneOf = area ? area.zone : '';
+    var delivery = zoneOf === 'in' ? 60 : zoneOf === 'out' ? 120 : 0;
+    var q = st.areaQuery.trim().toLowerCase();
+    var matches = q ? areas.filter(function (a) {
+      return (a.name + ' ' + a.district + ' ' + a.division).toLowerCase().indexOf(q) >= 0 || a.bn.indexOf(st.areaQuery.trim()) >= 0;
+    }).slice(0, 6).map(function (a) {
+      var w = withWhere(a);
+      return Object.assign(w, {
+        tag: a.zone === 'in' ? '৳60 · 1–2 days' : a.zone === 'out' ? '৳120 · 3–5 days' : 'No delivery',
+        tagColor: a.zone === 'none' ? '#b42318' : '#545b69',
+        pick: function () { up({ area: a.id, areaQuery: '' }); }
+      });
+    }) : [];
+
+    var base = [
+      { title: 'Non-stick frying pan with glass lid', variant: '26 cm · Black', price: 1250, qty: 1, tone: '#f1f3f6' },
+      { title: 'Stainless steel water bottle', variant: '1 litre', price: 590, qty: 2, tone: '#e6f4ef', newPrice: 620 }
+    ];
+    var subtotal = 0;
+    var lines = base.map(function (b) {
+      var changed = st.priceNew && !!b.newPrice;
+      var price = changed ? b.newPrice : b.price;
+      subtotal += price * b.qty;
+      return Object.assign({}, b, {
+        qty: String(b.qty), changed: changed,
+        was: 'Was ' + fmt(b.price) + ', now ' + fmt(price) + ' each',
+        variant: b.qty > 1 ? b.variant + ' · ' + fmt(price) + ' each' : b.variant,
+        lineText: fmt(price * b.qty)
+      });
+    });
+    var count = base.reduce(function (n, b) { return n + b.qty; }, 0);
     var total = subtotal + delivery;
-    var digits = s.phone.replace(/\D/g, '');
-    var phoneErr = !digits ? 'Enter your mobile number.' : (/^01\d{9}$/.test(digits) ? '' : 'Enter an 11-digit number starting with 01, like 01712-345678.');
-    var errs = { phone: phoneErr, name: s.name.trim() ? '' : 'x', division: chosen ? '' : 'x', line: s.line.trim() ? '' : 'x', terms: s.terms ? '' : 'x' };
-    var n = Object.keys(errs).filter(function (k) { return errs[k]; }).length;
-    var show = function (k) { return s.tried && !!errs[k]; };
-    var border = function (k) { return show(k) ? '2px solid #b42318' : '1.5px solid #c5ccd8'; };
-    var set = function (key) { return function (e) { var o = {}; o[key] = e.target.value; self.setState(o); }; };
+
+    var digits = st.phone.replace(/\D/g, '');
+    var phoneErr = !digits ? 'Enter your mobile number.' : (/^01\d{9}$/.test(digits) ? '' : 'Enter a Bangladeshi mobile number: 11 digits starting with 01.');
+    var areaErr = !area ? 'Choose your area from the list.' : zoneOf === 'none' ? 'The store doesn’t deliver to this area.' : '';
+    var checks = [
+      { key: 'phone', label: 'Mobile number', err: phoneErr, id: 'd-phone' },
+      { key: 'name', label: 'Full name', err: st.name.trim() ? '' : 'Enter your full name.', id: 'd-name' },
+      { key: 'area', label: 'Area', err: areaErr, id: area ? 'd-area-change' : 'd-area' },
+      { key: 'line', label: 'House, road and landmark', err: st.line.trim() ? '' : 'Enter your house, road and a landmark.', id: 'd-line' },
+      { key: 'terms', label: 'Terms', err: st.terms ? '' : 'Please agree to the terms.', id: 'd-terms' }
+    ];
+    var failing = checks.filter(function (c) { return c.err; });
+    var bad = function (k) { return st.tried && failing.some(function (c) { return c.key === k; }); };
+    var border = function (k) { return bad(k) ? '2px solid #b42318' : '1.5px solid #c5ccd8'; };
+    var set = function (key) { return function (e) { var o = {}; o[key] = e.target.value; up(o); }; };
+
+    var advance = delivery ? 'Pay ' + fmt(delivery) + ' now through SSLCommerz, and the rest to the courier.' : 'Pay the delivery charge now through SSLCommerz, and the rest to the courier.';
     var pays = [
       { id: 'cod', name: 'Cash on delivery', hint: 'Pay the courier when your order arrives.' },
       { id: 'online', name: 'Pay online', hint: 'Card, bKash, Nagad or bank, through SSLCommerz.' },
-      { id: 'cod_with_advance', name: 'Delivery charge online, the rest on delivery', hint: chosen ? 'Pay ' + fmt(delivery) + ' now and ' + fmt(subtotal) + ' when it arrives.' : 'Pay the delivery charge now and the rest when it arrives.' }
-    ];
+      { id: 'cod_with_advance', name: 'Delivery charge online, the rest on delivery', hint: advance }
+    ].filter(function (p) { return !(st.codGone && p.id === 'cod'); });
+
+    var notices = {
+      advance: { role: 'status', bg: '#e8f0fa', line: primary, text: 'This store asks for the delivery charge online first. Choose how to pay below.', contact: false },
+      limited: { role: 'alert', bg: '#fdf1ef', line: '#b42318', text: 'Too many orders from this number. Please contact the store.', contact: true },
+      price: { role: 'status', bg: '#fdf3e3', line: '#b45309', text: 'Prices changed since you opened checkout. Please check the new total, then place your order again.', contact: false }
+    };
+    var zone = !area
+      ? { text: 'Delivery: ৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).', bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400' }
+      : zoneOf === 'none'
+        ? { text: 'The store doesn’t deliver to this area. Message the store to ask about other options.', bg: '#fdf1ef', color: '#8f1c13', icon: '#b42318', weight: '600' }
+        : { text: (zoneOf === 'in' ? 'Inside Dhaka · ৳60 · Delivery in about 1–2 days' : 'Outside Dhaka · ৳120 · Delivery in about 3–5 days'), bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400' };
+
+    var blockedKind = sc === 'store_paused' ? 'paused' : sc === 'cod_unavailable' ? 'nopay' : '';
+    var finish = function () { up({ placed: true, otpOpen: false, notice: '', tried: false }); if (typeof window !== 'undefined') window.scrollTo(0, 0); };
+    var thanksPay = st.pay === 'cod' ? 'Please keep ' + fmt(total) + ' ready for the courier.'
+      : st.pay === 'online' ? 'Payment received. Thank you!'
+      : 'Delivery charge paid. Please keep ' + fmt(subtotal) + ' ready for the courier.';
+
     return {
       primary: primary,
-      notPlaced: !s.placed,
-      placed: s.placed,
-      deliveryLine: chosen ? fmt(delivery) + (inside ? ' (inside Dhaka)' : ' (outside Dhaka)') : 'Choose your division',
-      totalLabel: chosen ? 'Total' : 'Total before delivery',
+      blocked: !!blockedKind,
+      blockTitle: blockedKind === 'paused' ? 'The store is not taking orders right now.' : 'Cash on delivery isn’t available for this order. Please message the store.',
+      blockHasMessage: blockedKind === 'paused',
+      blockMessage: '[The store’s holiday message, for example: “We’re closed for Eid. Orders open again on [date].”]',
+      blockNext: blockedKind === 'paused' ? 'Your cart stays here. You can still message the store with questions.' : 'The store can tell you how to pay, or take the order on WhatsApp.',
+      showForm: !blockedKind && !st.placed,
+      placed: st.placed,
+      lines: lines,
+      subtotalLabel: 'Subtotal (' + count + ' items)',
+      subtotalText: fmt(subtotal),
+      deliveryLine: !area ? 'Choose your area' : zoneOf === 'none' ? 'Not available' : fmt(delivery) + (zoneOf === 'in' ? ' (inside Dhaka)' : ' (outside Dhaka)'),
+      totalLabel: area && zoneOf !== 'none' ? 'Total' : 'Total before delivery',
       totalText: fmt(total),
-      zoneText: chosen ? (inside ? 'Inside Dhaka: 1–2 days · ৳60' : 'Outside Dhaka: 3–5 days · ৳120') : 'Delivery: ৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).',
-      phone: s.phone, setPhone: set('phone'), phoneBad: show('phone'), phoneErr: phoneErr, phoneBorder: border('phone'),
-      name: s.name, setName: set('name'), nameBad: show('name'), nameBorder: border('name'),
-      division: s.division, setDivision: set('division'), divisionBad: show('division'), divisionBorder: border('division'),
-      line: s.line, setLine: set('line'), lineBad: show('line'), lineBorder: border('line'),
-      terms: s.terms, termsBad: show('terms'),
-      toggleTerms: function () { self.setState({ terms: !self.state.terms }); },
-      showErrorSummary: s.tried && n > 0,
-      errorSummary: n === 1 ? 'Please fix 1 thing to place your order.' : 'Please fix ' + n + ' things to place your order.',
+      zone: zone,
+      phone: st.phone, setPhone: set('phone'), phoneBad: bad('phone'), phoneErr: phoneErr, phoneBorder: border('phone'),
+      name: st.name, setName: set('name'), nameBad: bad('name'), nameBorder: border('name'),
+      line: st.line, setLine: set('line'), lineBad: bad('line'), lineBorder: border('line'),
+      area: area || { name: '', where: '', full: '' },
+      areaPicked: !!area,
+      areaOpen: !area,
+      areaQuery: st.areaQuery,
+      setAreaQuery: set('areaQuery'),
+      hasQuery: !area && q.length > 0,
+      matches: matches,
+      noMatch: q.length > 0 && matches.length === 0,
+      areaBad: bad('area') || zoneOf === 'none',
+      areaErr: areaErr,
+      areaBorder: (bad('area') || zoneOf === 'none') ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      changeArea: function () { up({ area: '', areaQuery: '' }); focusOn('d-area'); },
+      terms: st.terms, termsBad: bad('terms'),
+      toggleTerms: function () { up({ terms: !st.terms }); },
+      showErrorSummary: st.tried && failing.length > 0,
+      errorSummary: failing.length === 1 ? 'Please fix 1 thing to place your order:' : 'Please fix ' + failing.length + ' things to place your order:',
+      errorList: failing.map(function (c) { return { text: c.label + ': ' + c.err, go: function () { focusOn(c.id); } }; }),
+      hasNotice: !!st.notice,
+      notice: notices[st.notice] || notices.advance,
       payments: pays.map(function (p) {
-        var on = p.id === s.pay;
-        return Object.assign({}, p, { on: on, border: on ? '2px solid ' + primary : '1.5px solid #dde2ea', bg: on ? '#f3f7fc' : '#ffffff', pick: function () { self.setState({ pay: p.id }); } });
+        var on = p.id === st.pay;
+        return Object.assign({}, p, { on: on, border: on ? '2px solid ' + primary : '1.5px solid #dde2ea', bg: on ? '#f3f7fc' : '#ffffff', pick: function () { up({ pay: p.id }); } });
       }),
-      payLine: s.pay === 'cod' ? 'Pay on delivery' : s.pay === 'online' ? 'Pay now' : 'Pay now (delivery charge)',
-      payNowText: s.pay === 'cod_with_advance' ? (chosen ? fmt(delivery) : 'Choose division') : fmt(total),
-      placeLabel: s.pay === 'cod' ? 'Place order' : s.pay === 'online' ? 'Pay and place order' : 'Pay delivery charge and place order',
-      place: function () { if (n > 0) { self.setState({ tried: true }); return; } self.setState({ placed: true }); }
+      payLine: st.pay === 'cod' ? 'Pay on delivery' : st.pay === 'online' ? 'Pay now' : 'Pay now (delivery charge)',
+      payNowText: st.pay === 'cod_with_advance' ? (delivery ? fmt(delivery) : 'Choose your area') : fmt(total),
+      placeLabel: st.pay === 'cod' ? 'Place order' : st.pay === 'online' ? 'Pay and place order' : 'Pay delivery charge and place order',
+      place: function () {
+        if (failing.length) { up({ tried: true, notice: '' }); focusOn(failing[0].id); return; }
+        if (sc === 'phone_code') { up({ otpOpen: true, otpCode: '', otpErr: '', otpSent: false, tried: false }); focusOn('d-otp'); return; }
+        if (sc === 'advance_required' && st.pay === 'cod') { up({ codGone: true, pay: 'cod_with_advance', notice: 'advance', tried: false }); focusOn('d-notice'); return; }
+        if (sc === 'too_many_orders') { up({ notice: 'limited', tried: false }); focusOn('d-notice'); return; }
+        if (sc === 'price_changed' && !st.priceNew) { up({ priceNew: true, notice: 'price', tried: false }); focusOn('d-notice'); return; }
+        finish();
+      },
+      otpOpen: st.otpOpen && !st.placed,
+      otpCode: st.otpCode,
+      setOtp: function (e) { up({ otpCode: e.target.value.replace(/\D/g, '').slice(0, 6), otpErr: '' }); },
+      otpBad: !!st.otpErr,
+      otpErr: st.otpErr,
+      otpBorder: st.otpErr ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      otpSent: st.otpSent,
+      verify: function () { if (st.otpCode.length !== 6) { up({ otpErr: 'That code isn’t right.' }); focusOn('d-otp'); return; } finish(); },
+      resend: function () { up({ otpSent: true, otpErr: '', otpCode: '' }); focusOn('d-otp'); },
+      closeOtp: function () { up({ otpOpen: false }); },
+      changePhone: function () { up({ otpOpen: false }); focusOn('d-phone'); },
+      thanksPay: thanksPay,
+      estimate: zoneOf === 'in' ? 'Delivery in about 1–2 days' : 'Delivery in about 3–5 days',
+      copyLabel: st.copied ? 'Copied' : 'Copy',
+      copy: function () { up({ copied: true }); }
     };
   }
 }
