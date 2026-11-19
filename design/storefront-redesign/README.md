@@ -8,22 +8,24 @@ Why each choice was made, and what still needs platform work, is in [DECISIONS.m
 
 - `canvas/project/` – what gets published. Each `*.dc.html` file is one board; `canvas.json` places them on the canvas (one row per page: desktop on the left, phone beside it).
 - `files-map.mjs` – prints the `files` map a publish call needs (see below).
-- `make-bangla.mjs` – writes the Bangla phone boards (`…PhoneBn.dc.html`) from their English boards. Run it after changing `CartPhone`, `ProductPhone`, `CheckoutPhone`, `TrackPhone` or `AccountPhone`.
-- `check-board.mjs` – checks a board without the canvas: runs its script, can press its buttons in order, and lists any `{{hole}}` left empty. Run it on every board you change before publishing.
+- `build-boards.mjs` – regenerates the boards that are copies: the desktop listing, search, checkout, thank-you, tracking and account boards take their script from their phone board, and every `…Bn.dc.html` board is its English board with the Bangla switch on. Run it after changing any board, before checking and publishing.
+- `check-board.mjs` – checks a board without the canvas: runs its script, can press its buttons in order, and lists any `{{hole}}` left empty. Run it on every board you change, with `'{}'` and `'{"bn":true}'`.
+- `render-board.mjs` – renders a board to a PNG with a stand-in for the canvas runtime, or (with `NATURAL=1`) prints its content height. Use it to look at a change and to size frames.
 
-| Row | Desktop | Phone | Phone, Bangla |
-| --- | --- | --- | --- |
-| Home | `Main` | `HomePhone` | `HomePhoneBn` (hand-written) |
-| Category listing | `Listing` | `ListingPhone` | – |
-| Search results | `Search` | `SearchPhone` | – |
-| Product | `Product` | `ProductPhone` | `ProductPhoneBn` |
-| Cart | `Cart` | `CartPhone` | `CartPhoneBn` |
-| Checkout | `Checkout` | `CheckoutPhone` | `CheckoutPhoneBn` |
-| Order tracking | `Track` | `TrackPhone` | `TrackPhoneBn` |
-| Account | `Account` | `AccountPhone` | `AccountPhoneBn` |
-| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` | |
+| Row | Desktop | Phone | Phone, Bangla | Desktop, Bangla |
+| --- | --- | --- | --- | --- |
+| Home | `Main` | `HomePhone` | `HomePhoneBn` | `MainBn` |
+| Category listing | `Listing` | `ListingPhone` | `ListingPhoneBn` | `ListingBn` |
+| Search results | `Search` | `SearchPhone` | `SearchPhoneBn` | `SearchBn` |
+| Product | `Product` | `ProductPhone` | `ProductPhoneBn` | `ProductBn` |
+| Cart | `Cart` | `CartPhone` | `CartPhoneBn` | `CartBn` |
+| Checkout | `Checkout` | `CheckoutPhone` | `CheckoutPhoneBn` | `CheckoutBn` |
+| Thank-you page | `Thanks` | `ThanksPhone` | `ThanksPhoneBn` | `ThanksBn` |
+| Order tracking | `Track` | `TrackPhone` | `TrackPhoneBn` | `TrackBn` |
+| Account | `Account` | `AccountPhone` | `AccountPhoneBn` | `AccountBn` |
+| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` | | |
 
-Every Bangla board except `HomePhoneBn` is generated: edit the English board, then run `node design/storefront-redesign/make-bangla.mjs`.
+Every Bangla board is generated, and so is the script of the desktop listing, search, checkout, thank-you, tracking and account boards: edit the English board (the phone board, for a shared script), then run `node design/storefront-redesign/build-boards.mjs`.
 
 The component boards are mounted by the pages with `<dc-import name="…">`. Change a component once and every page that uses it changes.
 
@@ -35,7 +37,9 @@ Each board is a Design Component page:
 - `{{name}}` holes filled from `renderVals()` in the `<script type="text/x-dc" data-dc-script>` block at the bottom: dotted lookups only, no expressions;
 - `<sc-for list="{{items}}" as="item">` for lists, `<sc-if value="{{flag}}">` for branches, `onClick="{{handler}}"` for events;
 - `<dc-import name="ProductCard" item="{{p}}" on-add="{{addOne}}">` mounts `ProductCard.dc.html`; kebab-case attributes arrive as camelCase props;
-- `data-props` on the script tag declares the canvas tweaks: `primary` (the theme's primary colour) on every board, `bn` (Bangla copy) on the phone boards that have a Bangla twin, and `scenario` on the checkout, tracking and account boards.
+- `data-props` on the script tag declares the canvas tweaks: `primary` (the theme's primary colour) on every board, `bn` (Bangla copy) on every page and shared component, `scenario` on the checkout, tracking and account boards, and `payment` on the thank-you boards.
+
+Each board's copy lives in its script: a `T0` table of `[English, Bangla]` pairs for the fixed text in the markup (shown through `{{t.key}}`), and a `TR` table that translates text in the sample data (`tr('Cookware')`). Numbers and prices go through `num()` / `fmt()`, which switch to Bengali digits.
 
 ## Scenario tweaks
 
@@ -44,10 +48,11 @@ The checkout, tracking and account boards switch between the states the store an
 - Checkout: `normal`, `phone_code` (the SMS code step), `advance_required` (cash on delivery refused until the delivery charge is paid online), `cod_unavailable`, `no_delivery`, `store_paused`, `too_many_orders`, `price_changed`. Every scenario but `normal` starts filled in, so pressing Place order shows the answer.
 - Tracking: `waiting_for_store`, `being_prepared`, `on_the_way` (parcels and courier updates), `delivered` (request a return), `too_many_tries`.
 - Account: `signed_out`, `signed_in`, `new_account`.
+- Thank-you page: `payment` is `cod`, `online` or `cod_with_advance`. Placing an order on a checkout board opens the thank-you board with the payment chosen there.
 
 Each board keeps its state per scenario, so changing the tweak starts that scenario afresh. The copy comes from the storefront's own strings in `apps/storefront/src/i18n.ts` wherever one exists.
 
-Sample products, prices and copy live in each board's `renderVals()`. Phone boards are 390 px wide and use `min-height`, so `canvas.json` must give them a frame tall enough for their content (over-tall is fine, clipped is not).
+Sample products, prices and copy live in each board's `renderVals()`. Phone boards are 390 px wide and fill their frame (`min-height: 100vh`), so the pinned bottom bars sit at the frame's bottom. Each frame in `canvas.json` is the height of the board's longest state (measured with `render-board.mjs`, plus about 40 px): clipped content is worse than some empty space in shorter states.
 
 A component that must stick to the bottom of the screen (the phone bottom bar) is wrapped in a `<div style="position: sticky; bottom: 0">` in the page itself: sticky positioning only works when the sticky box sits directly in the tall page, not inside the component's own wrapper.
 

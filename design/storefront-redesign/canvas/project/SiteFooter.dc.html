@@ -14,46 +14,84 @@
 body{margin:0}
 </style>
 </helmet>
-<footer style="width: 100%; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; border-top: 1px solid #dde2ea; font-size: 15px; line-height: 1.5">
+<footer lang="{{lang}}" style="width: 100%; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; border-top: 1px solid #dde2ea; font-size: 15px; line-height: {{lineHeight}}">
 <div style="max-width: 1280px; margin: 0 auto; padding: 48px 24px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px">
 <div style="display: flex; flex-direction: column; gap: 10px">
 <span style="font-size: 22px; font-weight: 700; color: {{primary}}">Your Store</span>
-<span style="color: #545b69; font-size: 14px">[Short line about the shop: what you sell and where you deliver.]</span>
+<span style="color: #545b69; font-size: 14px">{{t.shortLineAboutThe}}</span>
 </div>
-<nav aria-label="Shop" style="display: flex; flex-direction: column">
-<strong style="font-weight: 600; margin-bottom: 4px">Shop</strong>
-<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">All categories</a>
-<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Today’s deals</a>
-<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">New arrivals</a>
+<nav aria-label="{{t.shop}}" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 4px">{{t.shop}}</strong>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.allCategories}}</a>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.todaySDeals}}</a>
+<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.newArrivals}}</a>
 </nav>
-<nav aria-label="Help" style="display: flex; flex-direction: column">
-<strong style="font-weight: 600; margin-bottom: 4px">Help</strong>
-<a href="Track.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Track your order</a>
-<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Delivery and charges</a>
-<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Returns and refunds</a>
-<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Contact us</a>
+<nav aria-label="{{t.help}}" style="display: flex; flex-direction: column">
+<strong style="font-weight: 600; margin-bottom: 4px">{{t.help}}</strong>
+<a href="Track.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.trackYourOrder}}</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.deliveryAndCharges}}</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.returnsAndRefunds}}</a>
+<a href="#" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.contactUs}}</a>
 </nav>
 <div style="display: flex; flex-direction: column; gap: 8px">
-<strong style="font-weight: 600; margin-bottom: 4px">Ways to pay</strong>
+<strong style="font-weight: 600; margin-bottom: 4px">{{t.waysToPay}}</strong>
 <div style="display: flex; flex-wrap: wrap; gap: 8px">
-<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Cash on delivery</span>
-<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">bKash</span>
-<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Nagad</span>
-<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Card</span>
-<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">Bank</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">{{t.cashOnDelivery}}</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">{{t.bkash}}</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">{{t.nagad}}</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">{{t.card}}</span>
+<span style="padding: 4px 10px; border-radius: 8px; background: #ffffff; border: 1px solid #dde2ea; font-size: 13px; font-weight: 600">{{t.bank}}</span>
 </div>
 </div>
 </div>
 <div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px 32px; box-sizing: border-box; border-top: 1px solid #dde2ea; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; color: #545b69; font-size: 13px">
 <span>© Your Store</span>
-<span style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" style="color: #545b69">Terms</a><a href="#" style="color: #545b69">Privacy</a><a href="#" lang="bn" style="color: #545b69">বাংলা</a></span>
+<span style="display: flex; flex-wrap: wrap; gap: 20px"><a href="#" style="color: #545b69">{{t.terms}}</a><a href="#" style="color: #545b69">{{t.privacy}}</a><a href="{{otherHref}}" lang="{{otherLang}}" style="color: #545b69">{{t.otherLanguage}}</a></span>
 </div>
 </footer>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":300}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"alt":{"editor":null},"$preview":{"width":1440,"height":300}}'>
 class Component extends DCLogic {
   renderVals() {
-    return { primary: this.props.primary ?? '#1f4e8c' };
+    var bn = !!this.props.bn;
+    // English → Bangla for text in this board's data (the store's own strings where it has them).
+    var TR = {
+
+    };
+    var tr = function (x) { return bn && Object.prototype.hasOwnProperty.call(TR, x) ? TR[x] : x; };
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    // The board's fixed copy: [English, Bangla].
+    var T0 = {
+      allCategories: ["All categories", "সব ক্যাটাগরি"],
+      bank: ["Bank", "ব্যাংক"],
+      bkash: ["bKash", "বিকাশ"],
+      card: ["Card", "কার্ড"],
+      cashOnDelivery: ["Cash on delivery", "ক্যাশ অন ডেলিভারি"],
+      contactUs: ["Contact us", "যোগাযোগ"],
+      deliveryAndCharges: ["Delivery and charges", "ডেলিভারি ও চার্জ"],
+      help: ["Help", "সাহায্য"],
+      nagad: ["Nagad", "নগদ"],
+      newArrivals: ["New arrivals", "নতুন পণ্য"],
+      privacy: ["Privacy", "গোপনীয়তা"],
+      returnsAndRefunds: ["Returns and refunds", "রিটার্ন ও রিফান্ড"],
+      otherLanguage: ["বাংলা", "English"],
+      shop: ["Shop", "কেনাকাটা"],
+      shortLineAboutThe: ["[Short line about the shop: what you sell and where you deliver.]", "[দোকান সম্পর্কে এক লাইন: কী বিক্রি করেন, কোথায় ডেলিভারি দেন।]"],
+      terms: ["Terms", "শর্তাবলি"],
+      todaySDeals: ["Today’s deals", "আজকের অফার"],
+      trackYourOrder: ["Track your order", "অর্ডার ট্র্যাক করুন"],
+      waysToPay: ["Ways to pay", "পরিশোধের উপায়"]
+    };
+    var t = {};
+    Object.keys(T0).forEach(function (k) { t[k] = T0[k][bn ? 1 : 0]; });
+    return {
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      lineHeight: bn ? '1.6' : '1.5',
+      otherHref: this.props.alt || (bn ? 'Main.dc.html' : 'MainBn.dc.html'),
+      otherLang: bn ? 'en' : 'bn',
+      primary: this.props.primary ?? '#1f4e8c' };
   }
 }
 </script>

@@ -16,104 +16,146 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: 1.5">
-<dc-import name="SiteHeader" primary="{{primary}}" cart-count="{{count}}" hint-size="100%,176px"></dc-import>
+<div lang="{{lang}}" style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: {{lineHeight}}">
+<dc-import name="SiteHeader" alt="{{altHref}}" bn="{{bn}}" primary="{{primary}}" cart-count="{{count}}" hint-size="100%,176px"></dc-import>
 
 <main style="max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; box-sizing: border-box">
 <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px">
-<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2">Your cart</h1>
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2">{{t.yourCart}}</h1>
 <span role="status" style="color: #545b69">{{countText}}</span>
 </div>
 
 <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
 <div style="margin-top: 24px; padding: 56px 24px; border: 1px solid #dde2ea; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
 <span style="width: 72px; height: 72px; border-radius: 50%; background: #f4f6f9; color: #545b69; display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg></span>
-<strong style="font-size: 20px">Your cart is empty</strong>
-<span style="color: #3c4350">Browse the shop and add something you like.</span>
-<a href="Main.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">Start shopping</a>
+<strong style="font-size: 20px">{{t.yourCartIsEmpty}}</strong>
+<span style="color: #3c4350">{{t.browseTheShopAnd}}</span>
+<a href="Main{{sfx}}.dc.html" style="height: 48px; padding: 0 24px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{t.startShopping}}</a>
 </div>
 </sc-if>
 
 <sc-if value="{{hasItems}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; flex-wrap: wrap; gap: 32px 40px; margin-top: 24px; align-items: flex-start">
-<section aria-label="Items" style="flex: 999 1 600px; min-width: 0">
+<section aria-label="{{t.items}}" style="flex: 999 1 600px; min-width: 0">
 <ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid #dde2ea">
 <sc-for list="{{items}}" as="it" hint-placeholder-count="2">
 <li style="padding: 20px 0; border-bottom: 1px solid #dde2ea; display: flex; flex-wrap: wrap; gap: 16px 20px; align-items: center">
-<a href="Product.dc.html" aria-label="{{it.title}}" style="width: 104px; height: 104px; flex: none; border-radius: 8px; background: {{it.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg></a>
+<a href="Product{{sfx}}.dc.html" aria-label="{{it.title}}" style="width: 104px; height: 104px; flex: none; border-radius: 8px; background: {{it.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg></a>
 <div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
-<a href="Product.dc.html" style="font-size: 16px; font-weight: 600; color: #1a1f29; text-decoration: none; line-height: 1.35">{{it.title}}</a>
+<a href="Product{{sfx}}.dc.html" style="font-size: 16px; font-weight: 600; color: #1a1f29; text-decoration: none; line-height: 1.35">{{it.title}}</a>
 <sc-if value="{{it.hasVariant}}" hint-placeholder-val="{{ true }}"><span style="font-size: 14px; color: #545b69">{{it.variant}}</span></sc-if>
-<span style="font-size: 14px; color: #545b69">{{it.unitText}} each</span>
-<button type="button" onClick="{{it.remove}}" aria-label="Remove {{it.title}}" style="align-self: flex-start; height: 44px; margin-left: -8px; padding: 0 8px; border: 0; background: transparent; color: #545b69; font: inherit; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>Remove</button>
+<span style="font-size: 14px; color: #545b69">{{t.x}}{{it.unitText}}{{t.textEnd}}</span>
+<button type="button" onClick="{{it.remove}}" aria-label="{{it.removeLabel}}" style="align-self: flex-start; height: 44px; margin-left: -8px; padding: 0 8px; border: 0; background: transparent; color: #545b69; font: inherit; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>{{t.remove}}</button>
 </div>
-<div role="group" aria-label="Quantity of {{it.title}}" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 48px; box-sizing: border-box">
-<button type="button" onClick="{{it.dec}}" aria-label="Decrease quantity" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">−</button>
+<div role="group" aria-label="{{it.qtyLabel}}" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 48px; box-sizing: border-box">
+<button type="button" onClick="{{it.dec}}" aria-label="{{t.decreaseQuantity}}" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">−</button>
 <span style="min-width: 28px; text-align: center; font-weight: 600">{{it.qty}}</span>
-<button type="button" onClick="{{it.inc}}" aria-label="Increase quantity" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">+</button>
+<button type="button" onClick="{{it.inc}}" aria-label="{{t.increaseQuantity}}" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">+</button>
 </div>
 <span style="min-width: 96px; text-align: right; font-weight: 700; font-size: 17px">{{it.lineText}}</span>
 </li>
 </sc-for>
 </ul>
-<a href="Main.dc.html" style="margin-top: 16px; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Continue shopping</a>
+<a href="Main{{sfx}}.dc.html" style="margin-top: 16px; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>{{t.continueShopping}}</a>
 </section>
 
 <aside aria-labelledby="sum-h" style="flex: 1 1 340px; min-width: 0; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box">
-<h2 id="sum-h" style="margin: 0; font-size: 20px; font-weight: 700">Order summary</h2>
+<h2 id="sum-h" style="margin: 0; font-size: 20px; font-weight: 700">{{t.orderSummary}}</h2>
 <div style="display: flex; flex-direction: column; gap: 6px; font-size: 15px">
-<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Subtotal ({{countText}})</span><span>{{subtotalText}}</span></span>
-<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">Delivery</span><span>Added at checkout</span></span>
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">{{t.subtotalX}}{{countText}}{{t.subtotalEnd}}</span><span>{{subtotalText}}</span></span>
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">{{t.delivery}}</span><span>{{t.addedAtCheckout}}</span></span>
 </div>
 <div style="border-radius: 8px; background: #e8f0fa; padding: 12px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
-<span>৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).</span>
+<span>{{t.s60InsideDhaka1}}</span>
 </div>
 <details>
-<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">Have a promo code?</summary>
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">{{t.haveAPromoCode}}</summary>
 <div style="display: flex; gap: 8px; padding-top: 4px">
-<label for="dc-promo" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Promo code</label>
-<input id="dc-promo" type="text" placeholder="Promo code" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 12px; font: inherit; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
-<button type="button" style="height: 44px; padding: 0 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Apply</button>
+<label for="dc-promo" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{t.promoCode}}</label>
+<input id="dc-promo" type="text" placeholder="{{t.promoCode}}" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 12px; font: inherit; border: 1.5px solid #c5ccd8; border-radius: 8px; box-sizing: border-box">
+<button type="button" style="height: 44px; padding: 0 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.apply}}</button>
 </div>
 </details>
-<a href="Checkout.dc.html" style="height: 52px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">Go to checkout</a>
+<a href="Checkout{{sfx}}.dc.html" style="height: 52px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-size: 17px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">{{t.goToCheckout}}</a>
 <ul style="list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: #3c4350">
-<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Cash on delivery available</li>
-<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Return within 7 days</li>
-<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>Pay online with bKash, Nagad, card or bank</li>
+<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{t.cashOnDeliveryAvailable}}</li>
+<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{t.returnWithin7Days}}</li>
+<li style="display: flex; gap: 8px; align-items: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{t.payOnlineWithBkash}}</li>
 </ul>
 </aside>
 </div>
 </sc-if>
 
 <section aria-labelledby="cart-rel" style="margin-top: 56px">
-<h2 id="cart-rel" style="margin: 0 0 20px; font-size: 24px; font-weight: 700">You may also like</h2>
+<h2 id="cart-rel" style="margin: 0 0 20px; font-size: 24px; font-weight: 700">{{t.youMayAlsoLike}}</h2>
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 32px 20px">
 <sc-for list="{{related}}" as="p" hint-placeholder-count="4">
-<dc-import name="ProductCard" item="{{p}}" added="{{p.added}}" on-add="{{addRelated}}" primary="{{primary}}" hint-size="100%,420px"></dc-import>
+<dc-import name="ProductCard" bn="{{bn}}" item="{{p}}" added="{{p.added}}" on-add="{{addRelated}}" primary="{{primary}}" hint-size="100%,420px"></dc-import>
 </sc-for>
 </div>
 </section>
 </main>
 
-<dc-import name="SiteFooter" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+<dc-import name="SiteFooter" alt="{{altHref}}" bn="{{bn}}" primary="{{primary}}" hint-size="100%,300px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":1440,"height":1500}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1660}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
       items: [
-        { id: 'pan', title: 'Non-stick frying pan with glass lid', variant: '26 cm · Black', price: 1250, tone: '#f1f3f6', qty: 1 },
-        { id: 'bottle', title: 'Stainless steel water bottle', variant: '1 litre', price: 590, tone: '#e6f4ef', qty: 2 }
+        { id: 'pan', title: props.bn ? 'কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান' : 'Non-stick frying pan with glass lid', variant: props.bn ? '২৬ সেমি · কালো' : '26 cm · Black', price: 1250, tone: '#f1f3f6', qty: 1 },
+        { id: 'bottle', title: props.bn ? 'স্টেইনলেস স্টিলের পানির বোতল' : 'Stainless steel water bottle', variant: props.bn ? '১ লিটার' : '1 litre', price: 590, tone: '#e6f4ef', qty: 2 }
       ]
     };
   }
   renderVals() {
+    var bn = !!this.props.bn;
+    // English → Bangla for text in this board's data (the store's own strings where it has them).
+    var TR = {
+      "Airtight rice box, 10 kg": "এয়ারটাইট চালের বাক্স, ১০ কেজি",
+      "Glass food containers, set of 5": "কাচের খাবারের বাক্স, ৫টির সেট",
+      "Knife set with block, 6 pieces": "স্ট্যান্ডসহ ছুরির সেট, ৬ পিস",
+      "Non-stick frying pan with glass lid": "কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান",
+      "Stainless steel water bottle": "স্টেইনলেস স্টিলের পানির বোতল",
+      "Wooden spatula and spoon set": "কাঠের খুন্তি ও চামচের সেট"
+    };
+    var tr = function (x) { return bn && Object.prototype.hasOwnProperty.call(TR, x) ? TR[x] : x; };
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    // The board's fixed copy: [English, Bangla].
+    var T0 = {
+      addedAtCheckout: ["Added at checkout", "চেকআউটে যোগ হবে"],
+      apply: ["Apply", "প্রয়োগ করুন"],
+      browseTheShopAnd: ["Browse the shop and add something you like.", "দোকান ঘুরে পছন্দের কিছু যোগ করুন।"],
+      cashOnDeliveryAvailable: ["Cash on delivery available", "ক্যাশ অন ডেলিভারি আছে"],
+      continueShopping: ["Continue shopping", "আরও কেনাকাটা করুন"],
+      decreaseQuantity: ["Decrease quantity", "কমান"],
+      delivery: ["Delivery", "ডেলিভারি"],
+      goToCheckout: ["Go to checkout", "চেকআউটে যান"],
+      haveAPromoCode: ["Have a promo code?", "প্রোমো কোড আছে?"],
+      increaseQuantity: ["Increase quantity", "বাড়ান"],
+      items: ["Items", "পণ্য"],
+      orderSummary: ["Order summary", "অর্ডারের সারাংশ"],
+      payOnlineWithBkash: ["Pay online with bKash, Nagad, card or bank", "বিকাশ, নগদ, কার্ড বা ব্যাংকে অনলাইনে দিন"],
+      promoCode: ["Promo code", "প্রোমো কোড"],
+      remove: ["Remove", "সরান"],
+      returnWithin7Days: ["Return within 7 days", "৭ দিনের মধ্যে ফেরত"],
+      s60InsideDhaka1: ["৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).", "ঢাকার ভেতরে ৳৬০ (১–২ দিন), বাইরে ৳১২০ (৩–৫ দিন)।"],
+      startShopping: ["Start shopping", "কেনাকাটা শুরু করুন"],
+      subtotalEnd: [")", ")"],
+      subtotalX: ["Subtotal (", "সাবটোটাল ("],
+      textEnd: [" each", ""],
+      x: ["", "প্রতিটি "],
+      youMayAlsoLike: ["You may also like", "আপনার পছন্দ হতে পারে"],
+      yourCart: ["Your cart", "আপনার কার্ট"],
+      yourCartIsEmpty: ["Your cart is empty", "আপনার কার্ট খালি"]
+    };
+    var t = {};
+    Object.keys(T0).forEach(function (k) { t[k] = T0[k][bn ? 1 : 0]; });
     var self = this;
-    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var fmt = function (n) { return '৳' + num(n); };
     var items = this.state.items;
     var update = function (id, fn) {
       self.setState({ items: self.state.items.map(function (x) { return x.id === id ? fn(x) : x; }).filter(function (x) { return x.qty > 0; }) });
@@ -123,15 +165,21 @@ class Component extends DCLogic {
     var subtotal = 0;
     items.forEach(function (x) { inCart[x.id] = true; count += x.qty; subtotal += x.qty * x.price; });
     var related = [
-      { id: 'spatula', brand: 'Brand A', title: 'Wooden spatula and spoon set', price: '৳420', value: 420, tone: '#eef5e4', href: 'Product.dc.html' },
-      { id: 'containers', brand: 'Brand D', title: 'Glass food containers, set of 5', price: '৳980', compare: '৳1,150', off: '−15%', value: 980, tone: '#fdf0e1', href: 'Product.dc.html' },
-      { id: 'knives', brand: 'Brand A', title: 'Knife set with block, 6 pieces', price: '৳1,350', value: 1350, tone: '#e6f4ef', href: 'Product.dc.html' },
-      { id: 'ricebox', brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: '৳790', value: 790, tone: '#f1f3f6', href: 'Product.dc.html' }
+      { id: 'spatula', brand: 'Brand A', title: tr('Wooden spatula and spoon set'), price: num('৳420'), value: 420, tone: '#eef5e4', href: 'Product.dc.html' },
+      { id: 'containers', brand: 'Brand D', title: tr('Glass food containers, set of 5'), price: num('৳980'), compare: num('৳1,150'), off: num('−15%'), value: 980, tone: '#fdf0e1', href: 'Product.dc.html' },
+      { id: 'knives', brand: 'Brand A', title: tr('Knife set with block, 6 pieces'), price: num('৳1,350'), value: 1350, tone: '#e6f4ef', href: 'Product.dc.html' },
+      { id: 'ricebox', brand: 'Brand D', title: tr('Airtight rice box, 10 kg'), price: num('৳790'), value: 790, tone: '#f1f3f6', href: 'Product.dc.html' }
     ];
     return {
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      altHref: bn ? 'Cart.dc.html' : 'CartBn.dc.html',
+      lineHeight: bn ? '1.6' : '1.5',
+      sfx: bn ? 'Bn' : '',
       primary: this.props.primary ?? '#1f4e8c',
       count: count,
-      countText: count + (count === 1 ? ' item' : ' items'),
+      countText: bn ? num(count) + 'টি পণ্য' : count + (count === 1 ? ' item' : ' items'),
       isEmpty: items.length === 0,
       hasItems: items.length > 0,
       subtotalText: fmt(subtotal),
@@ -141,7 +189,9 @@ class Component extends DCLogic {
           variant: x.variant,
           hasVariant: !!x.variant,
           tone: x.tone,
-          qty: String(x.qty),
+          qty: num(x.qty),
+          removeLabel: (bn ? 'সরান: ' : 'Remove ') + x.title,
+          qtyLabel: (bn ? 'পরিমাণ: ' : 'Quantity of ') + x.title,
           unitText: fmt(x.price),
           lineText: fmt(x.price * x.qty),
           dec: function () { update(x.id, function (y) { return Object.assign({}, y, { qty: Math.max(1, y.qty - 1) }); }); },

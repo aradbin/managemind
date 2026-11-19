@@ -34,7 +34,7 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 - **Grids, not sideways sliders, for products.** Shoppers rarely swipe sideways rows, so products past the first one or two go unseen. Deals, New arrivals and "You may also like" are grids with a "See all" link. Sideways scrolling is kept only for small chip rows (subcategories, search category filters, quick filters), where the next chip visibly peeks in.
 - **Trust near the top.** Cash on delivery, delivery times, 7-day returns and online payment options sit right under the hero, and again on product, cart and checkout.
 - **The top bar is the theme's announcement slot,** not a repeat of the delivery promise.
-- **Bangla.** The phone header and footer switch language (to the same page in the other language where a twin exists, otherwise home). Home, product, cart, checkout, tracking and account have Bangla phone boards, in the store's existing translations with Bengali numerals and a taller line height (1.6).
+- **Bangla.** Every page has Bangla boards, desktop and phone, in the store's existing translations with Bengali numerals and a taller line height (1.6). The language link in the desktop header, desktop footer and phone header goes to the same page in the other language. In Bangla, search matches anywhere in a product's name (Bangla has no word starts to anchor on), and "From ৳990" reads "৳৯৯০ থেকে".
 - **Store copy first.** Messages reuse the storefront's own strings (`apps/storefront/src/i18n.ts`) wherever one exists, so the boards show what shoppers will actually read.
 - **Placeholders, not invented facts:** `[Announcement]`, `[hotline number]`, `[opening hours]`, `[Warranty terms]`, `[number]`, `[date]`. The ৳60 / ৳120 delivery charges, Brand A–D and all prices are samples.
 
@@ -80,23 +80,30 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 - Mobile number first.
 - **One searchable Area field instead of three dropdowns.** The shopper types a few letters of the thana, upazila or district (in English or Bangla) and picks from a list that shows the district, division and the delivery charge for each match (two Mirpurs, in Dhaka and Kushtia, are told apart by their district). The pick shows as a card with Change. Until an area is chosen, delivery shows "Choose your area" and the total "Total before delivery". The storefront already loads every division, district and area with both names (`/geo/bd.json`), so the search runs in the browser.
 - Terms box starts unticked.
+- **Phone: the order summary starts collapsed,** showing the item count and total, so the form starts near the top of the screen. It opens by itself when prices change.
+- **Desktop: the order summary, with Place order, stays pinned** beside the form while the shopper scrolls it.
 - **Errors:** a summary at the top that lists each problem as a link to its field, a message on each field, and the focus moves to the first invalid field.
 - Cash on delivery is the first payment option; online payment and "delivery charge now, rest on delivery" follow.
 - **Trust line under Place order:** details used only for this order and its delivery; returns within 7 days; the hotline. On phone it is one line in the pinned pay bar.
 - **When the store or server says no** (the Scenario tweak shows each):
-  - *Phone code:* a dialog (bottom sheet on phone) with the store's SMS text, the number it went to with "Change number", a one-time-code field, "Confirm and place order", and "Send a new code".
+  - *Phone code:* a dialog (bottom sheet on phone) with the store's SMS text, the number it went to with "Change number", a one-time-code field that confirms by itself once all 6 digits are in, "Confirm and place order", and "Send a new code" that waits 45 seconds first ("Send a new code in 0:45"), since the store allows only a few codes an hour.
   - *Delivery charge first:* cash on delivery disappears, "delivery charge online" is chosen, and a notice explains why.
   - *No payment the order can use* and *store paused (holiday):* the form is replaced by a panel with the store's message, WhatsApp and Back to cart.
-  - *Area not served:* the area card turns red with the store's message as soon as it is picked, so the shopper never fills the rest first.
+  - *Area not served:* the area card turns red with the store's message as soon as it is picked, so the shopper never fills the rest first. The delivery box under it gives the next step ("Ask the store whether they can deliver here" and a WhatsApp link) instead of repeating the message.
   - *Too many orders from this number:* an error notice with WhatsApp and call links.
   - *Price changed:* a notice, the changed line marked "Was ৳590, now ৳620", the new total, then Place order again.
-- **Thank-you page** uses the store's words: "Thank you for your order", the order number with a Copy button, "Please keep ৳2,490 ready for the courier" (or "Payment received", or "Delivery charge paid. Please keep ৳2,430 ready"), "The store will call or message you to confirm…", what was ordered, where it goes and the delivery estimate, then Track your order and Continue shopping.
+
+**Thank-you page** (its own boards, as in the storefront, which moves to its thank-you page after the order)
+- The store's words: "Thank you for your order", the order number with a Copy button, "Please keep ৳2,490 ready for the courier" (or "Payment received", or "Delivery charge paid. Please keep ৳2,430 ready"), "The store will call or message you to confirm…", what was ordered, where it goes and the delivery estimate.
+- Continue shopping is the main button and Track your order the second, on desktop and phone alike. No "Back to cart": the cart is empty now.
+- **Order faster next time:** an offer to save the details with a code by email, no password. Asking after the order gets accounts without slowing guest checkout.
 
 **Order tracking**
 - Order number and mobile number; not-found, "too many tries" and field errors; a five-step progress line from the store's status names; items, total, payment, address; cancel with confirmation while the order hasn't left.
+- **One headline status** instead of the platform's two (order "Being prepared" next to delivery "On the way" read as a contradiction): the order's status until it leaves, then the parcel's, with the expected delivery date under it ("Delivered on [date]" once it arrives).
 - **Parcels:** once shipped, each parcel shows its status, courier and tracking number, a "Track with the courier" link, and the courier's updates (newest first, open by default).
 - **Returns:** once delivered, "Request a return" with the deadline. The form asks how many of each item (up to the number bought), why (the store's six reasons), an optional note and up to 3 photos, lists anything not returnable, checks the items and reason, then confirms "Return [number] requested. The store will let you know."
-- Desktop puts the order on the left and payment, address and actions on the right.
+- Desktop puts the order on the left and payment, address and actions on the right; the return form opens in the left column, under the order. On phone it opens as a bottom sheet.
 
 **Account**
 - Sign in with a 6-digit code sent to the email address (or by SMS, "Sign in with your mobile number instead"); no password. "Use another email" goes back a step. Beside it (below on phone): why sign in, and a link to track a guest order.
@@ -133,7 +140,9 @@ New, needs building in the theme:
 - Recently viewed (browser storage), the category introduction under the grid, grey section bands, photos in the offer tiles, the focus ring.
 - Desktop: the pinned slim header.
 - Checkout: the searchable Area field, the linked error summary and focus on the first invalid field, the trust line, the phone-code dialog, the blocked-checkout panel, the price-changed line marks, the thank-you payment box and Copy button.
-- Tracking: the parcel card layout. Account: tabs on phone, the address Undo.
+- Tracking: the parcel card layout, the headline status. Account: tabs on phone, the address Undo.
+- Thank-you: the "Order faster next time" card. Checkout: the code resend countdown and auto-confirm, the pinned desktop summary.
+- Bangla on every page (the storefront already switches language; the theme templates need the new strings).
 
 ## Needs platform work
 
@@ -150,8 +159,10 @@ New, needs building in the theme:
 11. **Photo guidelines in the admin uploader** (see "Photo guidelines" above).
 12. **Delivery charge in the area list.** The area search itself needs nothing new (the geo file is already loaded), but showing each match's delivery charge before it is picked needs the store's zone of every area in the checkout state. Without it, show the charge only after the pick, as today.
 13. **Photos on account orders.** The account's order list shows small item photos; if the orders endpoint doesn't return an image per line, it needs one (or the list goes without photos).
+14. **Expected delivery date on tracking.** The order view has no estimate. It can come from the delivery zone's days and the date the parcel was booked, or from the courier where its API gives one.
+15. **Saving details from the thank-you page.** An account created there by email code should take in the order just placed and its address. Today a guest order stays a guest order.
 
 ## Still to design
 
-- Bangla boards for category listing and search results (phone), and for the desktop pages.
 - The grocery and fashion presets in the new layout.
+- A Bangla version of the loading and error states board.

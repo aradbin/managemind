@@ -17,7 +17,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </style>
 </helmet>
 <div lang="{{lang}}" style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: {{lineHeight}}">
-<dc-import name="SiteHeader" primary="{{primary}}" cart-count="{{ 2 }}" hint-size="100%,176px"></dc-import>
+<dc-import name="SiteHeader" bn="{{bn}}" alt="{{altHref}}" primary="{{primary}}" cart-count="{{ 2 }}" hint-size="100%,176px"></dc-import>
 
 <sc-if value="{{signedOut}}" hint-placeholder-val="{{ true }}">
 <main style="max-width: 1040px; margin: 0 auto; padding: 40px 24px 72px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start">
@@ -63,13 +63,13 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </section>
 
 <aside style="flex: 1 1 300px; display: flex; flex-direction: column; gap: 16px; padding-top: 8px">
-<h2 style="margin: 0; font-size: 18px; font-weight: 700">Why sign in?</h2>
+<h2 style="margin: 0; font-size: 18px; font-weight: 700">{{t.whySignIn}}</h2>
 <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px">
 <sc-for list="{{perks}}" as="pk" hint-placeholder-count="3">
 <li style="display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d6b3a" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M5 12l5 5 9-10"></path></svg><span>{{pk.text}}</span></li>
 </sc-for>
 </ul>
-<p style="margin: 8px 0 0; padding: 16px; border-radius: 12px; background: #f4f6f9; color: #3c4350">{{t.guest}} <a href="Track.dc.html" style="font-weight: 600">{{t.trackLink}}</a></p>
+<p style="margin: 8px 0 0; padding: 16px; border-radius: 12px; background: #f4f6f9; color: #3c4350">{{t.guest}} <a href="{{trackHref}}" style="font-weight: 600">{{t.trackLink}}</a></p>
 </aside>
 </main>
 </sc-if>
@@ -92,7 +92,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <section aria-labelledby="o-h" style="display: flex; flex-direction: column; gap: 12px">
 <h2 id="o-h" style="margin: 0 0 4px; font-size: 22px; font-weight: 700">{{t.orders}}</h2>
 <sc-for list="{{orders}}" as="o" hint-placeholder-count="3">
-<a href="Track.dc.html" style="border: 1px solid #dde2ea; border-radius: 12px; padding: 16px 20px; color: #1a1f29; text-decoration: none; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
+<a href="{{trackHref}}" style="border: 1px solid #dde2ea; border-radius: 12px; padding: 16px 20px; color: #1a1f29; text-decoration: none; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px">
 <span style="display: flex; gap: 6px"><sc-for list="{{o.thumbs}}" as="th" hint-placeholder-count="2"><span style="width: 48px; height: 48px; border-radius: 8px; background: {{th.tone}}"></span></sc-for></span>
 <span style="flex: 1 1 200px; display: flex; flex-direction: column; line-height: 1.4"><strong style="font-weight: 700">{{o.title}}</strong><span style="font-size: 14px; color: #545b69">{{o.meta}}</span></span>
 <span style="padding: 2px 10px; border-radius: 4px; background: {{o.pillBg}}; color: {{o.pillColor}}; font-size: 13px; font-weight: 700">{{o.status}}</span>
@@ -101,9 +101,9 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </a>
 </sc-for>
 <sc-if value="{{noOrders}}" hint-placeholder-val="{{ false }}">
-<div style="padding: 32px; border-radius: 12px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center"><p style="margin: 0; color: #3c4350">{{t.noOrders}}</p><a href="Main.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{t.startShopping}}</a></div>
+<div style="padding: 32px; border-radius: 12px; background: #f4f6f9; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center"><p style="margin: 0; color: #3c4350">{{t.noOrders}}</p><a href="{{homeHref}}" style="height: 44px; padding: 0 20px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{t.startShopping}}</a></div>
 </sc-if>
-<sc-if value="{{hasOrders}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 14px; color: #545b69">{{t.guestOrders}} <a href="Track.dc.html" style="font-weight: 600">{{t.trackLink}}</a></p></sc-if>
+<sc-if value="{{hasOrders}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-size: 14px; color: #545b69">{{t.guestOrders}} <a href="{{trackHref}}" style="font-weight: 600">{{t.trackLink}}</a></p></sc-if>
 </section>
 </sc-if>
 
@@ -197,15 +197,16 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </main>
 </sc-if>
 
-<dc-import name="SiteFooter" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+<dc-import name="SiteFooter" bn="{{bn}}" alt="{{altHref}}" primary="{{primary}}" hint-size="100%,300px"></dc-import>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"signed_out","options":["signed_out","signed_in","new_account"]},"$preview":{"width":1440,"height":1700}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"signed_out","options":["signed_out","signed_in","new_account"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1480}}'>
 // Scenario (canvas tweak):
 //   signed_out   sign in with a code by email (or by SMS); any 6 digits work
 //   signed_in    orders, saved addresses and details of a returning shopper
 //   new_account  signed in, but no orders or addresses yet
-// AccountPhone.dc.html uses the same logic; keep the two in step.
+// `bn` switches to the store's Bangla copy (AccountBn.dc.html).
+// Account.dc.html uses the same logic; keep the two in step.
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -231,7 +232,7 @@ class Component extends DCLogic {
       areaPlaceholder: 'যেমন মিরপুর বা কোতোয়ালী', change: 'বদলান', areaErr: 'তালিকা থেকে আপনার এলাকা বেছে নিন।', line: 'বাসা, রোড ও চেনার মতো জায়গা',
       lineErr: 'বাসা, রোড ও চেনার মতো একটি জায়গা লিখুন।', makeDefault: 'এই ঠিকানাটি মূল হিসেবে ব্যবহার করুন', save: 'সেভ করুন', cancel: 'বাতিল',
       name: 'নাম', mobileHint: 'অর্ডার নিশ্চিত করতে দোকান এই নম্বরে যোগাযোগ করে।', saved: 'সেভ হয়েছে।',
-      perk1: 'আপনার সব অর্ডার এক জায়গায়', perk2: 'সেভ করা ঠিকানা চেকআউটে নিজে থেকে পূরণ হয়', perk3: 'পাসওয়ার্ড মনে রাখতে হবে না'
+      whySignIn: 'কেন সাইন ইন করবেন?', perk1: 'আপনার সব অর্ডার এক জায়গায়', perk2: 'সেভ করা ঠিকানা চেকআউটে নিজে থেকে পূরণ হয়', perk3: 'পাসওয়ার্ড মনে রাখতে হবে না'
     } : {
       title: 'Your account', intro: 'Sign in with a code we send to your email: no password needed. You can always order without an account.',
       email: 'Email address', badEmail: 'Enter an email address.', mobile: 'Mobile number', badPhone: 'Enter a Bangladeshi mobile number.',
@@ -245,7 +246,7 @@ class Component extends DCLogic {
       areaPlaceholder: 'For example Mirpur or Kotwali', change: 'Change', areaErr: 'Choose your area from the list.', line: 'House, road and landmark',
       lineErr: 'Enter your house, road and a landmark.', makeDefault: 'Use this address by default', save: 'Save', cancel: 'Cancel',
       name: 'Name', mobileHint: 'The store uses this number to confirm your orders.', saved: 'Saved.',
-      perk1: 'All your orders in one place', perk2: 'Saved addresses fill in checkout for you', perk3: 'No password to remember'
+      whySignIn: 'Why sign in?', perk1: 'All your orders in one place', perk2: 'Saved addresses fill in checkout for you', perk3: 'No password to remember'
     };
     var areas = [
       { id: 'dhanmondi', name: 'Dhanmondi', bn: 'ধানমন্ডি', district: 'Dhaka', dbn: 'ঢাকা' },
@@ -308,9 +309,10 @@ class Component extends DCLogic {
       t: t,
       bn: bn,
       lang: bn ? 'bn' : 'en',
+      altHref: bn ? 'Account.dc.html' : 'AccountBn.dc.html',
       lineHeight: bn ? '1.6' : '1.5',
-      homeHref: bn ? 'HomePhoneBn.dc.html' : 'HomePhone.dc.html',
-      trackHref: bn ? 'TrackPhoneBn.dc.html' : 'TrackPhone.dc.html',
+      homeHref: bn ? 'MainBn.dc.html' : 'Main.dc.html',
+      trackHref: bn ? 'TrackBn.dc.html' : 'Track.dc.html',
       signedOut: !st.signedIn,
       signedIn: st.signedIn,
       askAddress: st.step === 'address',
@@ -357,7 +359,7 @@ class Component extends DCLogic {
       orders: ordersData.map(function (o) {
         var look = statusLook[o.status];
         return {
-          title: (bn ? 'অর্ডার ' : 'Order ') + num(o.n),
+          title: (bn ? 'অর্ডার ' : 'Order ') + num(String(o.n)),
           meta: bn ? '[date] · ' + num(o.count) + 'টি পণ্য' : '[date] · ' + o.count + (o.count === 1 ? ' item' : ' items'),
           status: look.label, pillBg: look.bg, pillColor: look.color, total: fmt(o.total),
           thumbs: o.tones.map(function (tone) { return { tone: tone }; })

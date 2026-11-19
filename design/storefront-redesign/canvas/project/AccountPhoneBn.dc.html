@@ -16,7 +16,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div lang="{{lang}}" style="width: 390px; min-height: 2150px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
+<div lang="{{lang}}" style="width: 390px; min-height: 100vh; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
 <dc-import name="PhoneHeader" alt="{{altHref}}" primary="{{primary}}" bn="{{bn}}" cart-count="{{ 2 }}" hint-size="100%,132px"></dc-import>
 
 <sc-if value="{{signedOut}}" hint-placeholder-val="{{ true }}">
@@ -178,14 +178,14 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </main>
 </sc-if>
 
-<dc-import name="PhoneFooter" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
+<dc-import name="PhoneFooter" alt="{{altHref}}" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
 
 <div style="position: sticky; bottom: 0; z-index: 8">
 <dc-import name="PhoneTabBar" active="account" bn="{{bn}}" cart-count="{{ 2 }}" primary="{{primary}}" hint-size="100%,68px"></dc-import>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"signed_out","options":["signed_out","signed_in","new_account"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":390,"height":2150}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"signed_out","options":["signed_out","signed_in","new_account"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":390,"height":1890}}'>
 // Scenario (canvas tweak):
 //   signed_out   sign in with a code by email (or by SMS); any 6 digits work
 //   signed_in    orders, saved addresses and details of a returning shopper
@@ -217,7 +217,7 @@ class Component extends DCLogic {
       areaPlaceholder: 'যেমন মিরপুর বা কোতোয়ালী', change: 'বদলান', areaErr: 'তালিকা থেকে আপনার এলাকা বেছে নিন।', line: 'বাসা, রোড ও চেনার মতো জায়গা',
       lineErr: 'বাসা, রোড ও চেনার মতো একটি জায়গা লিখুন।', makeDefault: 'এই ঠিকানাটি মূল হিসেবে ব্যবহার করুন', save: 'সেভ করুন', cancel: 'বাতিল',
       name: 'নাম', mobileHint: 'অর্ডার নিশ্চিত করতে দোকান এই নম্বরে যোগাযোগ করে।', saved: 'সেভ হয়েছে।',
-      perk1: 'আপনার সব অর্ডার এক জায়গায়', perk2: 'সেভ করা ঠিকানা চেকআউটে নিজে থেকে পূরণ হয়', perk3: 'পাসওয়ার্ড মনে রাখতে হবে না'
+      whySignIn: 'কেন সাইন ইন করবেন?', perk1: 'আপনার সব অর্ডার এক জায়গায়', perk2: 'সেভ করা ঠিকানা চেকআউটে নিজে থেকে পূরণ হয়', perk3: 'পাসওয়ার্ড মনে রাখতে হবে না'
     } : {
       title: 'Your account', intro: 'Sign in with a code we send to your email: no password needed. You can always order without an account.',
       email: 'Email address', badEmail: 'Enter an email address.', mobile: 'Mobile number', badPhone: 'Enter a Bangladeshi mobile number.',
@@ -231,7 +231,7 @@ class Component extends DCLogic {
       areaPlaceholder: 'For example Mirpur or Kotwali', change: 'Change', areaErr: 'Choose your area from the list.', line: 'House, road and landmark',
       lineErr: 'Enter your house, road and a landmark.', makeDefault: 'Use this address by default', save: 'Save', cancel: 'Cancel',
       name: 'Name', mobileHint: 'The store uses this number to confirm your orders.', saved: 'Saved.',
-      perk1: 'All your orders in one place', perk2: 'Saved addresses fill in checkout for you', perk3: 'No password to remember'
+      whySignIn: 'Why sign in?', perk1: 'All your orders in one place', perk2: 'Saved addresses fill in checkout for you', perk3: 'No password to remember'
     };
     var areas = [
       { id: 'dhanmondi', name: 'Dhanmondi', bn: 'ধানমন্ডি', district: 'Dhaka', dbn: 'ঢাকা' },
@@ -344,7 +344,7 @@ class Component extends DCLogic {
       orders: ordersData.map(function (o) {
         var look = statusLook[o.status];
         return {
-          title: (bn ? 'অর্ডার ' : 'Order ') + num(o.n),
+          title: (bn ? 'অর্ডার ' : 'Order ') + num(String(o.n)),
           meta: bn ? '[date] · ' + num(o.count) + 'টি পণ্য' : '[date] · ' + o.count + (o.count === 1 ? ' item' : ' items'),
           status: look.label, pillBg: look.bg, pillColor: look.color, total: fmt(o.total),
           thumbs: o.tones.map(function (tone) { return { tone: tone }; })

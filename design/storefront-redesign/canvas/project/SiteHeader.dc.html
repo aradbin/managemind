@@ -14,40 +14,40 @@
 body{margin:0}
 </style>
 </helmet>
-<div style="width: 100%; position: relative; z-index: 20; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
+<div lang="{{lang}}" style="width: 100%; position: relative; z-index: 20; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
 
 <div style="background: #1a1f29; color: #ffffff; font-size: 13px">
 <div style="max-width: 1280px; margin: 0 auto; padding: 8px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 4px 24px; align-items: center; justify-content: space-between">
-<a href="Listing.dc.html" style="color: #ffffff; text-decoration: none">[Announcement: this week’s offer or a holiday notice]</a>
+<a href="Listing{{sfx}}.dc.html" style="color: #ffffff; text-decoration: none">{{t.announcementThisWeekS}}</a>
 <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
-<a href="Track.dc.html" style="color: #ffffff; text-decoration: none">Track order</a>
-<a href="#" style="color: #ffffff; text-decoration: none">Help: [hotline number]</a>
-<a href="#" lang="bn" style="color: #ffffff; text-decoration: none; font-weight: 600">বাংলা</a>
+<a href="Track{{sfx}}.dc.html" style="color: #ffffff; text-decoration: none">{{t.trackOrder}}</a>
+<a href="#" style="color: #ffffff; text-decoration: none">{{t.helpHotlineNumber}}</a>
+<a href="{{otherHref}}" lang="{{otherLang}}" style="color: #ffffff; text-decoration: none; font-weight: 600">{{t.otherLanguage}}</a>
 </div>
 </div>
 </div>
 
 <header style="border-bottom: 1px solid #dde2ea; background: #ffffff">
 <div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px">
-<a href="Main.dc.html" style="font-size: 26px; font-weight: 700; color: {{primary}}; text-decoration: none; letter-spacing: -0.01em">Your Store</a>
+<a href="Main{{sfx}}.dc.html" style="font-size: 26px; font-weight: 700; color: {{primary}}; text-decoration: none; letter-spacing: -0.01em">Your Store</a>
 <form role="search" style="flex: 1 1 420px; min-width: 0; display: flex; position: relative">
-<label for="site-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search products</label>
-<input id="site-q" type="search" value="{{q}}" onChange="{{setQ}}" autocomplete="off" aria-autocomplete="list" aria-controls="site-suggest" aria-expanded="{{showSuggest}}" placeholder="Search for products, brands and categories" style="flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 16px; font: inherit; font-size: 15px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff">
-<a href="Search.dc.html" style="height: 48px; padding: 0 22px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box">
+<label for="site-q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{t.searchProducts}}</label>
+<input id="site-q" type="search" value="{{q}}" onChange="{{setQ}}" autocomplete="off" aria-autocomplete="list" aria-controls="site-suggest" aria-expanded="{{showSuggest}}" placeholder="{{t.searchForProductsBrands}}" style="flex: 1 1 auto; min-width: 0; height: 48px; padding: 0 16px; font: inherit; font-size: 15px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff">
+<a href="Search{{sfx}}.dc.html" style="height: 48px; padding: 0 22px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-Search</a>
+{{t.search}}</a>
 <sc-if value="{{showSuggest}}" hint-placeholder-val="{{ false }}">
 <div id="site-suggest" style="position: absolute; top: 54px; left: 0; right: 0; z-index: 30; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 8px 0; display: flex; flex-direction: column">
 <sc-if value="{{hasCats}}" hint-placeholder-val="{{ true }}">
-<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Categories</span>
+<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">{{t.categories}}</span>
 <sc-for list="{{cats}}" as="c" hint-placeholder-count="2">
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 10px; color: #1a1f29; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>{{c.name}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 10px; color: #1a1f29; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="1.75" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg>{{c.name}}</a>
 </sc-for>
 </sc-if>
 <sc-if value="{{hasProducts}}" hint-placeholder-val="{{ true }}">
-<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Products</span>
+<span style="padding: 6px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">{{t.products}}</span>
 <sc-for list="{{products}}" as="p" hint-placeholder-count="4">
-<a href="Product.dc.html" style="min-height: 52px; padding: 4px 16px; display: flex; align-items: center; gap: 12px; color: #1a1f29; text-decoration: none">
+<a href="Product{{sfx}}.dc.html" style="min-height: 52px; padding: 4px 16px; display: flex; align-items: center; gap: 12px; color: #1a1f29; text-decoration: none">
 <span style="width: 40px; height: 40px; flex: none; border-radius: 8px; background: {{p.tone}}"></span>
 <span style="flex: 1 1 auto; min-width: 0">{{p.title}}</span>
 <span style="font-weight: 700">{{p.price}}</span>
@@ -55,43 +55,43 @@ Search</a>
 </sc-for>
 </sc-if>
 <sc-if value="{{noMatch}}" hint-placeholder-val="{{ false }}">
-<span style="padding: 10px 16px; color: #3c4350">No matches for “{{q}}”. Check the spelling, or browse a category.</span>
+<span style="padding: 10px 16px; color: #3c4350">{{t.noMatchesForX}}{{q}}{{t.checkTheSpellingOr}}</span>
 </sc-if>
-<a href="Search.dc.html" style="min-height: 44px; margin-top: 4px; padding: 0 16px; border-top: 1px solid #eef1f5; display: flex; align-items: center; color: {{primary}}; font-weight: 600; text-decoration: none">See all results for “{{q}}”</a>
+<a href="Search{{sfx}}.dc.html" style="min-height: 44px; margin-top: 4px; padding: 0 16px; border-top: 1px solid #eef1f5; display: flex; align-items: center; color: {{primary}}; font-weight: 600; text-decoration: none">{{t.seeAllResultsFor}}{{q}}{{t.seeAllResultsForEnd}}</a>
 </div>
 </sc-if>
 </form>
 <div style="display: flex; align-items: center; gap: 8px">
-<a href="Account.dc.html" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
+<a href="Account{{sfx}}.dc.html" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>
-<span style="font-weight: 500">Account</span></a>
-<a href="Cart.dc.html" aria-label="{{cartLabel}}" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
+<span style="font-weight: 500">{{t.account}}</span></a>
+<a href="Cart{{sfx}}.dc.html" aria-label="{{cartLabel}}" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 44px; color: #1a1f29; text-decoration: none; border-radius: 8px">
 <span style="position: relative; display: flex">
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
 <sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: -8px; right: -10px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px; background: #f59e0b; color: #1a1f29; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
 </span>
-<span style="font-weight: 500">Cart</span></a>
+<span style="font-weight: 500">{{t.cart}}</span></a>
 </div>
 </div>
 
-<nav aria-label="Categories" style="max-width: 1280px; margin: 0 auto; padding: 0 24px 4px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; position: relative">
+<nav aria-label="{{t.categories}}" style="max-width: 1280px; margin: 0 auto; padding: 0 24px 4px; box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; position: relative">
 <button type="button" onClick="{{toggleMenu}}" aria-expanded="{{menuOpen}}" style="height: 44px; padding: 0 14px; border: 0; border-radius: 8px; background: #f4f6f9; color: #1a1f29; font: inherit; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-All categories</button>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Kitchen &amp; dining</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Home &amp; living</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Electronics</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Fashion</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Beauty &amp; health</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">Baby &amp; kids</a>
-<a href="Listing.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 8px; color: #1a1f29; text-decoration: none; font-weight: 600; margin-left: auto">Today’s deals<span style="padding: 1px 8px; border-radius: 4px; background: #b42318; color: #ffffff; font-size: 12px; font-weight: 700; line-height: 1.5">Sale</span></a>
+{{t.allCategories}}</button>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.kitchenAndDining}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.homeAndLiving}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.electronics}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.fashion}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.beautyAndHealth}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; color: #1a1f29; text-decoration: none; font-weight: 500">{{t.babyAndKids}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 8px; color: #1a1f29; text-decoration: none; font-weight: 600; margin-left: auto">{{t.todaySDeals}}<span style="padding: 1px 8px; border-radius: 4px; background: #b42318; color: #ffffff; font-size: 12px; font-weight: 700; line-height: 1.5">{{t.sale}}</span></a>
 <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; top: 48px; left: 24px; right: 24px; z-index: 30; background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; box-shadow: 0 12px 32px rgba(26,31,41,0.14); padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px 32px">
 <sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
 <div style="display: flex; flex-direction: column">
-<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; font-weight: 700; color: #1a1f29; text-decoration: none">{{c.name}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 36px; display: flex; align-items: center; font-weight: 700; color: #1a1f29; text-decoration: none">{{c.name}}</a>
 <sc-for list="{{c.subs}}" as="s" hint-placeholder-count="3">
-<a href="Listing.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none; font-size: 14px">{{s.name}}</a>
+<a href="Listing{{sfx}}.dc.html" style="min-height: 36px; display: flex; align-items: center; color: #3c4350; text-decoration: none; font-size: 14px">{{s.name}}</a>
 </sc-for>
 </div>
 </sc-for>
@@ -101,25 +101,25 @@ All categories</button>
 <sc-if value="{{compact}}" hint-placeholder-val="{{ false }}">
 <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 40; background: #ffffff; border-bottom: 1px solid #dde2ea; box-shadow: 0 2px 12px rgba(26,31,41,0.08)">
 <div style="max-width: 1280px; margin: 0 auto; padding: 8px 24px; box-sizing: border-box; height: 64px; display: flex; align-items: center; gap: 20px">
-<a href="Main.dc.html" style="font-size: 20px; font-weight: 700; color: {{primary}}; text-decoration: none; letter-spacing: -0.01em; flex: none">Your Store</a>
-<button type="button" onClick="{{openMenuPinned}}" aria-label="All categories" style="width: 44px; height: 44px; flex: none; border: 0; border-radius: 8px; background: #f4f6f9; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+<a href="Main{{sfx}}.dc.html" style="font-size: 20px; font-weight: 700; color: {{primary}}; text-decoration: none; letter-spacing: -0.01em; flex: none">Your Store</a>
+<button type="button" onClick="{{openMenuPinned}}" aria-label="{{t.allCategories}}" style="width: 44px; height: 44px; flex: none; border: 0; border-radius: 8px; background: #f4f6f9; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
 <form role="search" style="flex: 1 1 auto; min-width: 0; display: flex">
-<label for="site-q-pinned" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search products</label>
-<input id="site-q-pinned" type="search" value="{{q}}" onChange="{{setQ}}" autocomplete="off" placeholder="Search for products, brands and categories" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 14px; font: inherit; font-size: 15px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff; box-sizing: border-box">
-<a href="Search.dc.html" style="height: 44px; padding: 0 18px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Search</a>
+<label for="site-q-pinned" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{t.searchProducts}}</label>
+<input id="site-q-pinned" type="search" value="{{q}}" onChange="{{setQ}}" autocomplete="off" placeholder="{{t.searchForProductsBrands}}" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 14px; font: inherit; font-size: 15px; border: 2px solid {{primary}}; border-right: 0; border-radius: 8px 0 0 8px; color: #1a1f29; background: #ffffff; box-sizing: border-box">
+<a href="Search{{sfx}}.dc.html" style="height: 44px; padding: 0 18px; border-radius: 0 8px 8px 0; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>{{t.search}}</a>
 </form>
-<a href="Account.dc.html" aria-label="Account" style="width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: #1a1f29; border-radius: 8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></a>
-<a href="Cart.dc.html" aria-label="{{cartLabel}}" style="height: 44px; padding: 0 12px; flex: none; display: flex; align-items: center; gap: 8px; color: #1a1f29; text-decoration: none; border-radius: 8px">
+<a href="Account{{sfx}}.dc.html" aria-label="{{t.account}}" style="width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: #1a1f29; border-radius: 8px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></a>
+<a href="Cart{{sfx}}.dc.html" aria-label="{{cartLabel}}" style="height: 44px; padding: 0 12px; flex: none; display: flex; align-items: center; gap: 8px; color: #1a1f29; text-decoration: none; border-radius: 8px">
 <span style="position: relative; display: flex"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="17" cy="20" r="1.5"></circle></svg>
 <sc-if value="{{hasCount}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position: absolute; top: -8px; right: -10px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 10px; background: #f59e0b; color: #1a1f29; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">{{countText}}</span></sc-if>
-</span><span style="font-weight: 500">Cart</span></a>
+</span><span style="font-weight: 500">{{t.cart}}</span></a>
 </div>
 </div>
 </sc-if>
 </header>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"query":{"editor":null},"onQuery":{"editor":null},"$preview":{"width":1440,"height":176}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"cartCount":{"editor":"int","default":2,"min":0,"max":99},"query":{"editor":null},"onQuery":{"editor":null},"bn":{"editor":"boolean","default":false},"alt":{"editor":null},"$preview":{"width":1440,"height":176}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -130,6 +130,81 @@ class Component extends DCLogic {
   componentWillUnmount() { if (typeof window !== 'undefined') window.removeEventListener('scroll', this.onScroll); }
   onScroll() { var past = window.scrollY > 176; if (past !== this.state.compact) this.setState({ compact: past }); }
   renderVals() {
+    var bn = !!this.props.bn;
+    // English → Bangla for text in this board's data (the store's own strings where it has them).
+    var TR = {
+      "Art supplies": "আঁকার সরঞ্জাম",
+      "Baby & kids": "শিশু ও বাচ্চা",
+      "Baby care": "শিশুর যত্ন",
+      "Beauty & health": "সৌন্দর্য ও স্বাস্থ্য",
+      "Bedding": "বিছানাপত্র",
+      "Chargers": "চার্জার",
+      "Cleaning": "পরিষ্কার",
+      "Cookware": "রান্নার পাত্র",
+      "Cotton bedsheet set, double": "সুতির বিছানার চাদরের সেট, ডাবল",
+      "Decor": "সাজসজ্জা",
+      "Drinks": "পানীয়",
+      "Electric kettle, 1.8 litre": "ইলেকট্রিক কেটলি, ১.৮ লিটার",
+      "Electronics": "ইলেকট্রনিক্স",
+      "Fans": "ফ্যান",
+      "Fashion": "ফ্যাশন",
+      "Food storage": "খাবার রাখার পাত্র",
+      "Footwear": "জুতা",
+      "Glass food containers, set of 5": "কাচের খাবারের বাক্স, ৫টির সেট",
+      "Groceries": "মুদি",
+      "Hair care": "চুলের যত্ন",
+      "Home & living": "ঘর ও সাজসজ্জা",
+      "Kitchen & dining": "রান্নাঘর ও খাবার",
+      "LED desk lamp with USB charging": "ইউএসবি চার্জিংসহ এলইডি টেবিল ল্যাম্প",
+      "Lighting": "লাইট",
+      "Men": "ছেলেদের",
+      "Non-stick frying pan with glass lid": "কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান",
+      "Notebooks": "খাতা",
+      "Pens": "কলম",
+      "Personal care": "ব্যক্তিগত যত্ন",
+      "Pressure cooker, 5 litre": "প্রেশার কুকার, ৫ লিটার",
+      "Rechargeable table fan, 12 inch": "রিচার্জেবল টেবিল ফ্যান, ১২ ইঞ্চি",
+      "Rice and oil": "চাল ও তেল",
+      "School": "স্কুল",
+      "Skin care": "ত্বকের যত্ন",
+      "Snacks": "স্ন্যাকস",
+      "Stainless steel water bottle, 1 L": "স্টেইনলেস স্টিলের পানির বোতল, ১ লিটার",
+      "Stationery": "স্টেশনারি",
+      "Tableware": "টেবিলের তৈজস",
+      "Toys": "খেলনা",
+      "Women": "মেয়েদের"
+    };
+    var tr = function (x) { return bn && Object.prototype.hasOwnProperty.call(TR, x) ? TR[x] : x; };
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    // The board's fixed copy: [English, Bangla].
+    var T0 = {
+      account: ["Account", "অ্যাকাউন্ট"],
+      allCategories: ["All categories", "সব ক্যাটাগরি"],
+      announcementThisWeekS: ["[Announcement: this week’s offer or a holiday notice]", "[এই সপ্তাহের অফার বা ছুটির ঘোষণা]"],
+      babyAndKids: ["Baby & kids", "শিশু ও বাচ্চা"],
+      beautyAndHealth: ["Beauty & health", "সৌন্দর্য ও স্বাস্থ্য"],
+      cart: ["Cart", "কার্ট"],
+      categories: ["Categories", "ক্যাটাগরি"],
+      checkTheSpellingOr: ["”. Check the spelling, or browse a category.", "” মেলেনি। বানান দেখুন, বা ক্যাটাগরি ঘুরে দেখুন।"],
+      electronics: ["Electronics", "ইলেকট্রনিক্স"],
+      fashion: ["Fashion", "ফ্যাশন"],
+      helpHotlineNumber: ["Help: [hotline number]", "সাহায্য: [hotline number]"],
+      homeAndLiving: ["Home & living", "ঘর ও সাজসজ্জা"],
+      kitchenAndDining: ["Kitchen & dining", "রান্নাঘর ও খাবার"],
+      noMatchesForX: ["No matches for “", "“"],
+      products: ["Products", "পণ্য"],
+      otherLanguage: ["বাংলা", "English"],
+      sale: ["Sale", "ছাড়"],
+      search: ["Search", "খুঁজুন"],
+      searchForProductsBrands: ["Search for products, brands and categories", "পণ্য, ব্র্যান্ড বা ক্যাটাগরি খুঁজুন"],
+      searchProducts: ["Search products", "পণ্য খুঁজুন"],
+      seeAllResultsFor: ["See all results for “", "“"],
+      todaySDeals: ["Today’s deals", "আজকের অফার"],
+      trackOrder: ["Track order", "অর্ডার ট্র্যাক"],
+      seeAllResultsForEnd: ["”", "”-এর সব ফলাফল দেখুন"]
+    };
+    var t = {};
+    Object.keys(T0).forEach(function (k) { t[k] = T0[k][bn ? 1 : 0]; });
     var self = this;
     var count = this.props.cartCount ?? 2;
     var external = typeof this.props.onQuery === 'function';
@@ -137,30 +212,35 @@ class Component extends DCLogic {
     var q = raw.trim().toLowerCase();
     var subs = function (list) { return list.map(function (n) { return { name: n }; }); };
     var categories = [
-      { name: 'Kitchen & dining', subs: subs(['Cookware', 'Tableware', 'Food storage']) },
-      { name: 'Home & living', subs: subs(['Bedding', 'Decor', 'Cleaning']) },
-      { name: 'Electronics', subs: subs(['Fans', 'Lighting', 'Chargers']) },
-      { name: 'Fashion', subs: subs(['Men', 'Women', 'Footwear']) },
-      { name: 'Beauty & health', subs: subs(['Skin care', 'Hair care', 'Personal care']) },
-      { name: 'Baby & kids', subs: subs(['School', 'Toys', 'Baby care']) },
-      { name: 'Groceries', subs: subs(['Rice and oil', 'Snacks', 'Drinks']) },
-      { name: 'Stationery', subs: subs(['Notebooks', 'Pens', 'Art supplies']) }
+      { name: tr('Kitchen & dining'), subs: subs([tr('Cookware'), tr('Tableware'), tr('Food storage')]) },
+      { name: tr('Home & living'), subs: subs([tr('Bedding'), tr('Decor'), tr('Cleaning')]) },
+      { name: tr('Electronics'), subs: subs([tr('Fans'), tr('Lighting'), tr('Chargers')]) },
+      { name: tr('Fashion'), subs: subs([tr('Men'), tr('Women'), tr('Footwear')]) },
+      { name: tr('Beauty & health'), subs: subs([tr('Skin care'), tr('Hair care'), tr('Personal care')]) },
+      { name: tr('Baby & kids'), subs: subs([tr('School'), tr('Toys'), tr('Baby care')]) },
+      { name: tr('Groceries'), subs: subs([tr('Rice and oil'), tr('Snacks'), tr('Drinks')]) },
+      { name: tr('Stationery'), subs: subs([tr('Notebooks'), tr('Pens'), tr('Art supplies')]) }
     ];
     var catalog = [
-      { title: 'Non-stick frying pan with glass lid', price: '৳1,250', tone: '#f1f3f6' },
-      { title: 'Pressure cooker, 5 litre', price: '৳3,150', tone: '#eceaf8' },
-      { title: 'Glass food containers, set of 5', price: '৳980', tone: '#fdf0e1' },
-      { title: 'Stainless steel water bottle, 1 L', price: '৳590', tone: '#e6f4ef' },
-      { title: 'Rechargeable table fan, 12 inch', price: '৳3,450', tone: '#eceaf8' },
-      { title: 'Cotton bedsheet set, double', price: '৳1,690', tone: '#e8f0fa' },
-      { title: 'LED desk lamp with USB charging', price: '৳1,100', tone: '#eceaf8' },
-      { title: 'Electric kettle, 1.8 litre', price: '৳1,690', tone: '#f8e9ee' }
+      { title: tr('Non-stick frying pan with glass lid'), price: num('৳1,250'), tone: '#f1f3f6' },
+      { title: tr('Pressure cooker, 5 litre'), price: num('৳3,150'), tone: '#eceaf8' },
+      { title: tr('Glass food containers, set of 5'), price: num('৳980'), tone: '#fdf0e1' },
+      { title: tr('Stainless steel water bottle, 1 L'), price: num('৳590'), tone: '#e6f4ef' },
+      { title: tr('Rechargeable table fan, 12 inch'), price: num('৳3,450'), tone: '#eceaf8' },
+      { title: tr('Cotton bedsheet set, double'), price: num('৳1,690'), tone: '#e8f0fa' },
+      { title: tr('LED desk lamp with USB charging'), price: num('৳1,100'), tone: '#eceaf8' },
+      { title: tr('Electric kettle, 1.8 litre'), price: num('৳1,690'), tone: '#f8e9ee' }
     ];
     var allSubs = [];
-    categories.forEach(function (c) { allSubs.push({ name: c.name }); c.subs.forEach(function (s) { allSubs.push({ name: s.name + ' in ' + c.name }); }); });
+    categories.forEach(function (c) { allSubs.push({ name: c.name }); c.subs.forEach(function (s) { allSubs.push({ name: bn ? s.name + ' · ' + c.name : s.name + ' in ' + c.name }); }); });
     var cats = q ? allSubs.filter(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; }).slice(0, 2) : [];
     var products = q ? catalog.filter(function (p) { return p.title.toLowerCase().indexOf(q) >= 0; }).slice(0, 4) : [];
     return {
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      lineHeight: bn ? '1.6' : '1.5',
+      sfx: bn ? 'Bn' : '',
       primary: this.props.primary ?? '#1f4e8c',
       q: raw,
       setQ: function (e) { if (external) self.props.onQuery(e.target.value); else self.setState({ q: e.target.value, menuOpen: false }); },
@@ -171,8 +251,10 @@ class Component extends DCLogic {
       hasProducts: products.length > 0,
       noMatch: q.length > 0 && cats.length === 0 && products.length === 0,
       hasCount: count > 0,
-      countText: String(count),
-      cartLabel: 'Cart, ' + count + (count === 1 ? ' item' : ' items'),
+      countText: num(count),
+      cartLabel: bn ? 'কার্ট, ' + num(count) + 'টি পণ্য' : 'Cart, ' + count + (count === 1 ? ' item' : ' items'),
+      otherHref: this.props.alt || (bn ? 'Main.dc.html' : 'MainBn.dc.html'),
+      otherLang: bn ? 'en' : 'bn',
       categories: categories,
       compact: this.state.compact,
       openMenuPinned: function () { if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); self.setState({ menuOpen: true }); },

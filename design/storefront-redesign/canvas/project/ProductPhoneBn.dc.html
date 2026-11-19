@@ -16,7 +16,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div lang="{{lang}}" style="width: 390px; min-height: 4150px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
+<div lang="{{lang}}" style="width: 390px; min-height: 100vh; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
 <dc-import name="PhoneHeader" alt="{{altHref}}" primary="{{primary}}" cart-count="{{cartCount}}" bn="{{bn}}" back="ListingPhone.dc.html" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; display: flex; flex-direction: column">
@@ -156,7 +156,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </sc-if>
 </main>
 
-<dc-import name="PhoneFooter" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
+<dc-import name="PhoneFooter" alt="{{altHref}}" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
 
 <sc-if value="{{justAdded}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: sticky; bottom: 84px; margin: 0 12px 8px; border-radius: 8px; background: #1a1f29; color: #ffffff; padding: 4px 4px 4px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 8px 24px rgba(26,31,41,0.25)">
@@ -176,7 +176,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":390,"height":4150}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":390,"height":3590}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
