@@ -27,13 +27,15 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 - **Desktop and phone match.** Same sections in the same order, same copy, same button order and styling (filled Add to cart, outlined Buy now). Layout adapts (grids reflow, filters move into a sheet); content does not.
 - **Search is the main header element** on every page, with a Search button on desktop and phone. Typing in the desktop header shows suggestions (categories and products).
 - **Phone header pins a slim search bar.** Once the shopper scrolls past the full header (about 140 px), a 60 px bar fixed at the top keeps the menu or back button, the search field and the cart. The announcement and store name scroll away. It is a separate fixed bar, not the header shrinking, so nothing on the page jumps.
-- **Phone bottom bar (Home, Categories, Cart, Account)** on every phone page except product, cart and checkout, which have their own pinned buy, checkout or pay bar. Two bars stacked at the bottom would take too much of the screen.
+- **Desktop header pins a slim bar too.** Past the full header (about 176 px) a 64 px bar fixed at the top keeps the store name, an All categories button (it scrolls back up and opens the menu), the search field, Account and Cart. The announcement bar and category links scroll away.
+- **Phone bottom bar (Home, Categories, Cart, Account)** on every phone page except product, cart and checkout, which have their own pinned buy, checkout or pay bar. Two bars stacked at the bottom would take too much of the screen. It highlights the tab the page belongs to and nothing on pages that belong to none (order tracking).
 - **Brand on cards follows the theme's `card.showBrand`.** It is off in the `general` preset, so general stores don't show it; grocery and electronics stores can turn it on.
 - **Recently viewed** on the home pages and the product page, with a "Clear history" button. In the real storefront it lives in the browser's own storage (no account, no platform work) and only appears once the shopper has viewed something.
 - **Grids, not sideways sliders, for products.** Shoppers rarely swipe sideways rows, so products past the first one or two go unseen. Deals, New arrivals and "You may also like" are grids with a "See all" link. Sideways scrolling is kept only for small chip rows (subcategories, search category filters, quick filters), where the next chip visibly peeks in.
 - **Trust near the top.** Cash on delivery, delivery times, 7-day returns and online payment options sit right under the hero, and again on product, cart and checkout.
 - **The top bar is the theme's announcement slot,** not a repeat of the delivery promise.
-- **Bangla.** The phone header and footer switch language; the Bangla home board uses the store's existing translations and Bengali numerals.
+- **Bangla.** The phone header and footer switch language (to the same page in the other language where a twin exists, otherwise home). Home, product, cart, checkout, tracking and account have Bangla phone boards, in the store's existing translations with Bengali numerals and a taller line height (1.6).
+- **Store copy first.** Messages reuse the storefront's own strings (`apps/storefront/src/i18n.ts`) wherever one exists, so the boards show what shoppers will actually read.
 - **Placeholders, not invented facts:** `[Announcement]`, `[hotline number]`, `[opening hours]`, `[Warranty terms]`, `[number]`, `[date]`. The ৳60 / ৳120 delivery charges, Brand A–D and all prices are samples.
 
 ## Page decisions
@@ -74,13 +76,34 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 - Quantity and Remove per item, empty state, delivery note, promo code, suggestions that add straight to the cart. Phone keeps Checkout pinned at the bottom.
 
 **Checkout**
-- Minimal header (store name, "Secure checkout", back to cart), no site navigation.
-- Mobile number first. Division starts on "Choose": delivery shows as "Choose your division" and the total as "Total before delivery" until picked. Terms box starts unticked.
-- Errors: a summary at the top plus a message on each field.
+- Minimal header (store name, "Secure checkout", back to cart), no site navigation. A "Have an account? Sign in to fill this in faster." link under the title; ordering as a guest stays the default.
+- Mobile number first.
+- **One searchable Area field instead of three dropdowns.** The shopper types a few letters of the thana, upazila or district (in English or Bangla) and picks from a list that shows the district, division and the delivery charge for each match (two Mirpurs, in Dhaka and Kushtia, are told apart by their district). The pick shows as a card with Change. Until an area is chosen, delivery shows "Choose your area" and the total "Total before delivery". The storefront already loads every division, district and area with both names (`/geo/bd.json`), so the search runs in the browser.
+- Terms box starts unticked.
+- **Errors:** a summary at the top that lists each problem as a link to its field, a message on each field, and the focus moves to the first invalid field.
 - Cash on delivery is the first payment option; online payment and "delivery charge now, rest on delivery" follow.
+- **Trust line under Place order:** details used only for this order and its delivery; returns within 7 days; the hotline. On phone it is one line in the pinned pay bar.
+- **When the store or server says no** (the Scenario tweak shows each):
+  - *Phone code:* a dialog (bottom sheet on phone) with the store's SMS text, the number it went to with "Change number", a one-time-code field, "Confirm and place order", and "Send a new code".
+  - *Delivery charge first:* cash on delivery disappears, "delivery charge online" is chosen, and a notice explains why.
+  - *No payment the order can use* and *store paused (holiday):* the form is replaced by a panel with the store's message, WhatsApp and Back to cart.
+  - *Area not served:* the area card turns red with the store's message as soon as it is picked, so the shopper never fills the rest first.
+  - *Too many orders from this number:* an error notice with WhatsApp and call links.
+  - *Price changed:* a notice, the changed line marked "Was ৳590, now ৳620", the new total, then Place order again.
+- **Thank-you page** uses the store's words: "Thank you for your order", the order number with a Copy button, "Please keep ৳2,490 ready for the courier" (or "Payment received", or "Delivery charge paid. Please keep ৳2,430 ready"), "The store will call or message you to confirm…", what was ordered, where it goes and the delivery estimate, then Track your order and Continue shopping.
 
 **Order tracking**
-- Order number and mobile number; not-found and field errors; a five-step progress line from the store's status names; items, total, payment, address; cancel with confirmation.
+- Order number and mobile number; not-found, "too many tries" and field errors; a five-step progress line from the store's status names; items, total, payment, address; cancel with confirmation while the order hasn't left.
+- **Parcels:** once shipped, each parcel shows its status, courier and tracking number, a "Track with the courier" link, and the courier's updates (newest first, open by default).
+- **Returns:** once delivered, "Request a return" with the deadline. The form asks how many of each item (up to the number bought), why (the store's six reasons), an optional note and up to 3 photos, lists anything not returnable, checks the items and reason, then confirms "Return [number] requested. The store will let you know."
+- Desktop puts the order on the left and payment, address and actions on the right.
+
+**Account**
+- Sign in with a 6-digit code sent to the email address (or by SMS, "Sign in with your mobile number instead"); no password. "Use another email" goes back a step. Beside it (below on phone): why sign in, and a link to track a guest order.
+- Signed in: Orders, Saved addresses and Your details, as a side menu on desktop and three tabs on phone; "Signed in as …" and Sign out at the top.
+- Orders: number, date, item count, status label, total and small photos; each opens tracking. A note that guest orders aren't listed. Empty state with Start shopping.
+- Saved addresses: label, Default badge, Make default, Delete with Undo; Add an address uses the same searchable Area field as checkout.
+- Your details: name and mobile number (with why the store needs it), email shown read-only, Save with "Saved.".
 
 **States**
 - Loading skeleton, "Adding…", "Placing your order…", page failed to load, stock changed before checkout, online payment failed or cancelled (using the store's existing payment messages).
@@ -108,6 +131,9 @@ New, needs building in the theme:
 - Header search suggestions, desktop mini-cart, phone bottom bar, phone footer, delivery-estimate box on the product page.
 - Phone: the pinned slim search bar on scroll, the round "+" on cards, collapsed specifications.
 - Recently viewed (browser storage), the category introduction under the grid, grey section bands, photos in the offer tiles, the focus ring.
+- Desktop: the pinned slim header.
+- Checkout: the searchable Area field, the linked error summary and focus on the first invalid field, the trust line, the phone-code dialog, the blocked-checkout panel, the price-changed line marks, the thank-you payment box and Copy button.
+- Tracking: the parcel card layout. Account: tabs on phone, the address Undo.
 
 ## Needs platform work
 
@@ -122,9 +148,10 @@ New, needs building in the theme:
 9. **Sticky buy bar on phone** should show only when the in-page buy buttons are off screen (IntersectionObserver).
 10. **Stock urgency** ("Only 2 left") is deliberately left out: the storefront does not expose stock counts.
 11. **Photo guidelines in the admin uploader** (see "Photo guidelines" above).
+12. **Delivery charge in the area list.** The area search itself needs nothing new (the geo file is already loaded), but showing each match's delivery charge before it is picked needs the store's zone of every area in the checkout state. Without it, show the charge only after the pick, as today.
+13. **Photos on account orders.** The account's order list shows small item photos; if the orders endpoint doesn't return an image per line, it needs one (or the list goes without photos).
 
 ## Still to design
 
-- Account pages (sign in, orders, addresses) and returns requests.
+- Bangla boards for category listing and search results (phone), and for the desktop pages.
 - The grocery and fashion presets in the new layout.
-- Bangla versions of pages beyond home.

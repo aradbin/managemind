@@ -16,11 +16,11 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="width: 390px; min-height: 3850px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
-<dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{cartCount}}" back="ListingPhone.dc.html" hint-size="100%,132px"></dc-import>
+<div lang="{{lang}}" style="width: 390px; min-height: 4150px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
+<dc-import name="PhoneHeader" alt="{{altHref}}" primary="{{primary}}" cart-count="{{cartCount}}" bn="{{bn}}" back="ListingPhone.dc.html" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; display: flex; flex-direction: column">
-<section aria-label="Photos" style="position: relative">
+<section aria-label="{{t.photos}}" style="position: relative">
 <div style="height: 390px; background: {{mainTone}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #545b69; font-size: 13px">
 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
 <span>{{mainLabel}}</span>
@@ -36,19 +36,19 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <section aria-labelledby="pp-title" style="padding: 4px 16px 0; display: flex; flex-direction: column; gap: 18px">
 <div style="display: flex; flex-direction: column; gap: 4px">
 <span style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #545b69">Brand A</span>
-<h1 id="pp-title" style="margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700">Non-stick frying pan with glass lid</h1>
+<h1 id="pp-title" style="margin: 0; font-size: 22px; line-height: 1.25; font-weight: 700">{{t.name}}</h1>
 </div>
 <div style="display: flex; flex-direction: column; gap: 4px">
 <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px">
 <span style="font-size: 26px; font-weight: 700; color: #b42318">{{priceText}}</span>
-<s style="font-size: 15px; color: #545b69"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Regular price </span>{{compareText}}</s>
+<s style="font-size: 15px; color: #545b69"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{t.regular}} </span>{{compareText}}</s>
 <span style="font-size: 13px; font-weight: 600; color: #b42318; background: #fdf1ef; padding: 2px 8px; border-radius: 4px">{{saveText}}</span>
 </div>
 <span role="status" style="font-size: 14px; font-weight: 600; color: {{stockColor}}; display: flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 4px; background: {{stockColor}}"></span>{{stockText}}</span>
 </div>
 
 <fieldset style="margin: 0; padding: 0; border: 0">
-<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">Size: <span style="font-weight: 400">{{sizeName}}</span></legend>
+<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">{{t.size}}: <span style="font-weight: 400">{{sizeName}}</span></legend>
 <div style="display: flex; flex-wrap: wrap; gap: 8px">
 <sc-for list="{{sizes}}" as="v" hint-placeholder-count="4">
 <button type="button" onClick="{{v.pick}}" aria-pressed="{{v.on}}" aria-label="{{v.label}}" style="min-width: 76px; height: 44px; padding: 0 12px; border-radius: 8px; border: {{v.border}}; background: {{v.bg}}; color: {{v.color}}; font: inherit; font-weight: 600; text-decoration: {{v.strike}}; cursor: pointer">{{v.name}}</button>
@@ -57,7 +57,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </fieldset>
 
 <fieldset style="margin: 0; padding: 0; border: 0">
-<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">Colour: <span style="font-weight: 400">{{colorName}}</span></legend>
+<legend style="padding: 0; margin-bottom: 8px; font-weight: 600">{{t.colour}}: <span style="font-weight: 400">{{colorName}}</span></legend>
 <div style="display: flex; gap: 10px">
 <sc-for list="{{colors}}" as="c" hint-placeholder-count="3">
 <button type="button" onClick="{{c.pick}}" aria-label="{{c.name}}" aria-pressed="{{c.on}}" style="width: 44px; height: 44px; padding: 3px; border-radius: 22px; border: {{c.ring}}; background: #ffffff; cursor: pointer; box-sizing: border-box"><span style="display: block; width: 100%; height: 100%; border-radius: 50%; background: {{c.swatch}}"></span></button>
@@ -66,79 +66,77 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </fieldset>
 
 <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
-<span style="font-weight: 600">Quantity</span>
-<div role="group" aria-label="Quantity" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 48px; box-sizing: border-box">
-<button type="button" onClick="{{dec}}" aria-label="Decrease quantity" style="width: 48px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 20px; cursor: pointer">−</button>
+<span style="font-weight: 600">{{t.qty}}</span>
+<div role="group" aria-label="{{t.qty}}" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 48px; box-sizing: border-box">
+<button type="button" onClick="{{dec}}" aria-label="{{t.less}}" style="width: 48px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 20px; cursor: pointer">−</button>
 <span aria-live="polite" style="min-width: 28px; text-align: center; font-weight: 600; font-size: 17px">{{qty}}</span>
-<button type="button" onClick="{{inc}}" aria-label="Increase quantity" style="width: 48px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 20px; cursor: pointer">+</button>
+<button type="button" onClick="{{inc}}" aria-label="{{t.more}}" style="width: 48px; height: 44px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 20px; cursor: pointer">+</button>
 </div>
 </div>
 
 <sc-if value="{{canBuy}}" hint-placeholder-val="{{ true }}">
 <div style="display: flex; gap: 8px">
-<button type="button" onClick="{{addToCart}}" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; cursor: pointer">Add to cart<span style="font-size: 12px; font-weight: 500; color: #d6e2f2">{{lineText}}</span></button>
-<a href="CheckoutPhone.dc.html" style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid {{primary}}; color: {{primary}}; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">Buy now</a>
+<button type="button" onClick="{{addToCart}}" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; cursor: pointer">{{t.add}}<span style="font-size: 12px; font-weight: 500; color: #d6e2f2">{{lineText}}</span></button>
+<a href="{{checkoutHref}}" style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid {{primary}}; color: {{primary}}; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">{{t.buy}}</a>
 </div>
 </sc-if>
 <sc-if value="{{soldOut}}" hint-placeholder-val="{{ false }}">
-<button type="button" disabled style="height: 52px; border: 0; border-radius: 8px; background: #eef1f5; color: #545b69; font: inherit; font-size: 16px; font-weight: 700">Sold out in this size</button>
+<button type="button" disabled style="height: 52px; border: 0; border-radius: 8px; background: #eef1f5; color: #545b69; font: inherit; font-size: 16px; font-weight: 700">{{t.soldOut}}</button>
 </sc-if>
 
-<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>Order on WhatsApp</a>
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>{{t.whatsapp}}</a>
 
 <div style="border: 1px solid #dde2ea; border-radius: 12px">
 <div style="padding: 14px; display: flex; gap: 12px; border-bottom: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
 <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
-<strong style="font-weight: 600; font-size: 15px">Delivery</strong>
-<span style="display: flex; justify-content: space-between; gap: 8px"><span style="color: #3c4350">Inside Dhaka</span><span>1–2 days · ৳60</span></span>
-<span style="display: flex; justify-content: space-between; gap: 8px"><span style="color: #3c4350">Outside Dhaka</span><span>3–5 days · ৳120</span></span>
+<strong style="font-weight: 600; font-size: 15px">{{t.delivery}}</strong>
+<span style="display: flex; justify-content: space-between; gap: 8px"><span style="color: #3c4350">{{t.inside}}</span><span>{{t.insideTime}}</span></span>
+<span style="display: flex; justify-content: space-between; gap: 8px"><span style="color: #3c4350">{{t.outside}}</span><span>{{t.outsideTime}}</span></span>
 </div>
 </div>
 <div style="padding: 14px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg></span>
-<span style="display: flex; flex-direction: column; font-size: 14px"><strong style="font-weight: 600; font-size: 15px">Cash on delivery</strong><span style="color: #545b69">Pay the courier when your order arrives.</span></span>
+<span style="display: flex; flex-direction: column; font-size: 14px"><strong style="font-weight: 600; font-size: 15px">{{t.cod}}</strong><span style="color: #545b69">{{t.codHint}}</span></span>
 </div>
 <div style="padding: 14px; display: flex; gap: 12px; align-items: center">
 <span style="color: {{primary}}; display: flex; flex: none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6"></path><path d="M4 4v4h4"></path></svg></span>
-<span style="display: flex; flex-direction: column; font-size: 14px"><strong style="font-weight: 600; font-size: 15px">Easy returns</strong><span style="color: #545b69">Return within 7 days. <a href="#">Return policy</a></span></span>
+<span style="display: flex; flex-direction: column; font-size: 14px"><strong style="font-weight: 600; font-size: 15px">{{t.returns}}</strong><span style="color: #545b69">{{t.returnsHint}} <a href="#">{{t.returnPolicy}}</a></span></span>
 </div>
 </div>
 
 </section>
 
-<section aria-label="Details" style="margin-top: 20px; border-top: 1px solid #dde2ea">
+<section aria-label="{{t.details}}" style="margin-top: 20px; border-top: 1px solid #dde2ea">
 <details open style="border-bottom: 1px solid #dde2ea">
-<summary style="min-height: 52px; padding: 0 16px; display: flex; align-items: center; font-weight: 600; font-size: 16px; cursor: pointer">About this product</summary>
+<summary style="min-height: 52px; padding: 0 16px; display: flex; align-items: center; font-weight: 600; font-size: 16px; cursor: pointer">{{t.about}}</summary>
 <div style="padding: 0 16px 16px; color: #3c4350; font-size: 14px; display: flex; flex-direction: column; gap: 8px">
-<p style="margin: 0">A light frying pan for everyday cooking: eggs, bhaji and shallow frying with less oil. The coating releases food easily and wipes clean. The tempered glass lid lets you check on food without lifting it.</p>
+<p style="margin: 0">{{t.aboutText}}</p>
 <ul style="margin: 0; padding-left: 18px">
-<li>Works on gas and electric stoves</li>
-<li>Heat-resistant handle stays cool to hold</li>
-<li>Glass lid with steam vent included</li>
+<sc-for list="{{t.points}}" as="pt" hint-placeholder-count="3"><li>{{pt.text}}</li></sc-for>
 </ul>
 </div>
 </details>
 <details style="border-bottom: 1px solid #dde2ea">
-<summary style="min-height: 52px; padding: 0 16px; display: flex; align-items: center; font-weight: 600; font-size: 16px; cursor: pointer">Specifications</summary>
+<summary style="min-height: 52px; padding: 0 16px; display: flex; align-items: center; font-weight: 600; font-size: 16px; cursor: pointer">{{t.specs}}</summary>
 <dl style="margin: 0; padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; font-size: 14px">
-<dt style="color: #545b69">Brand</dt><dd style="margin: 0">Brand A</dd>
-<dt style="color: #545b69">Material</dt><dd style="margin: 0">Aluminium, non-stick coating</dd>
-<dt style="color: #545b69">Size</dt><dd style="margin: 0">{{sizeName}}</dd>
-<dt style="color: #545b69">Stove</dt><dd style="margin: 0">Gas and electric</dd>
-<dt style="color: #545b69">Warranty</dt><dd style="margin: 0">[Warranty terms]</dd>
+<dt style="color: #545b69">{{t.brand}}</dt><dd style="margin: 0">Brand A</dd>
+<dt style="color: #545b69">{{t.material}}</dt><dd style="margin: 0">{{t.materialValue}}</dd>
+<dt style="color: #545b69">{{t.size}}</dt><dd style="margin: 0">{{sizeName}}</dd>
+<dt style="color: #545b69">{{t.stove}}</dt><dd style="margin: 0">{{t.stoveValue}}</dd>
+<dt style="color: #545b69">{{t.warranty}}</dt><dd style="margin: 0">{{t.warrantyValue}}</dd>
 </dl>
 </details>
 </section>
 
 <section aria-labelledby="pp-rel" style="padding: 28px 16px 32px">
 <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
-<h2 id="pp-rel" style="margin: 0; font-size: 20px; font-weight: 700">You may also like</h2>
-<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">See more</a>
+<h2 id="pp-rel" style="margin: 0; font-size: 20px; font-weight: 700">{{t.related}}</h2>
+<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">{{t.seeMore}}</a>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
 <sc-for list="{{related}}" as="p" hint-placeholder-count="4">
-<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOther}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{bn}}" on-add="{{addOther}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
 </sc-for>
 </div>
 </section>
@@ -146,39 +144,39 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <sc-if value="{{hasRecent}}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="pp-recent" style="padding: 0 16px 32px">
 <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
-<h2 id="pp-recent" style="margin: 0; font-size: 20px; font-weight: 700">Recently viewed</h2>
-<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">Clear</button>
+<h2 id="pp-recent" style="margin: 0; font-size: 20px; font-weight: 700">{{t.recent}}</h2>
+<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">{{t.clear}}</button>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
 <sc-for list="{{recent}}" as="p" hint-placeholder-count="4">
-<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOther}}" primary="{{primary}}" hint-size="100%,290px"></dc-import>
+<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" bn="{{bn}}" on-add="{{addOther}}" primary="{{primary}}" hint-size="100%,290px"></dc-import>
 </sc-for>
 </div>
 </section>
 </sc-if>
 </main>
 
-<dc-import name="PhoneFooter" primary="{{primary}}" hint-size="100%,540px"></dc-import>
+<dc-import name="PhoneFooter" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
 
 <sc-if value="{{justAdded}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="position: sticky; bottom: 84px; margin: 0 12px 8px; border-radius: 8px; background: #1a1f29; color: #ffffff; padding: 4px 4px 4px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 8px 24px rgba(26,31,41,0.25)">
 <span style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7ed3a0" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>{{addedText}}</span>
-<a href="CartPhone.dc.html" style="color: #ffd98a; font-weight: 700; font-size: 14px; min-height: 44px; padding: 0 12px; display: flex; align-items: center">View cart</a>
+<a href="{{cartHref}}" style="color: #ffd98a; font-weight: 700; font-size: 14px; min-height: 44px; padding: 0 12px; display: flex; align-items: center">{{t.viewCart}}</a>
 </div>
 </sc-if>
 
 <div style="position: sticky; bottom: 0; background: #ffffff; border-top: 1px solid #dde2ea; padding: 10px 12px 14px; display: flex; gap: 8px; box-shadow: 0 -4px 16px rgba(26,31,41,0.06)">
 <sc-if value="{{canBuy}}" hint-placeholder-val="{{ true }}">
-<button type="button" onClick="{{addToCart}}" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; cursor: pointer">Add to cart<span style="font-size: 12px; font-weight: 500; color: #d6e2f2">{{lineText}}</span></button>
-<a href="CheckoutPhone.dc.html" style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid {{primary}}; color: {{primary}}; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">Buy now</a>
+<button type="button" onClick="{{addToCart}}" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; cursor: pointer">{{t.add}}<span style="font-size: 12px; font-weight: 500; color: #d6e2f2">{{lineText}}</span></button>
+<a href="{{checkoutHref}}" style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid {{primary}}; color: {{primary}}; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">{{t.buy}}</a>
 </sc-if>
 <sc-if value="{{soldOut}}" hint-placeholder-val="{{ false }}">
-<button type="button" disabled style="flex: 1 1 auto; height: 52px; border: 0; border-radius: 8px; background: #eef1f5; color: #545b69; font: inherit; font-size: 16px; font-weight: 700">Sold out in this size</button>
+<button type="button" disabled style="flex: 1 1 auto; height: 52px; border: 0; border-radius: 8px; background: #eef1f5; color: #545b69; font: inherit; font-size: 16px; font-weight: 700">{{t.soldOut}}</button>
 </sc-if>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":3850}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":4150}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
@@ -188,49 +186,79 @@ class Component extends DCLogic {
     var self = this;
     var s = this.state;
     var primary = this.props.primary ?? '#1f4e8c';
-    var fmt = function (n) { return '৳' + n.toLocaleString('en-US'); };
+    var bn = !!this.props.bn;
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    var fmt = function (n) { return '৳' + num(n); };
+    var t = bn ? {
+      photos: 'ছবি', name: 'কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান', regular: 'আগের দাম', size: 'সাইজ', colour: 'রং', qty: 'পরিমাণ', less: 'কমান', more: 'বাড়ান',
+      add: 'কার্টে যোগ করুন', buy: 'এখনই কিনুন', soldOut: 'এই সাইজ শেষ', whatsapp: 'হোয়াটসঅ্যাপে অর্ডার করুন', delivery: 'ডেলিভারি',
+      inside: 'ঢাকার ভেতরে', insideTime: '১–২ দিন · ৳৬০', outside: 'ঢাকার বাইরে', outsideTime: '৩–৫ দিন · ৳১২০',
+      cod: 'ক্যাশ অন ডেলিভারি', codHint: 'অর্ডার হাতে পেয়ে কুরিয়ারকে টাকা দিন।', returns: 'সহজ ফেরত', returnsHint: '৭ দিনের মধ্যে ফেরত দিতে পারবেন।', returnPolicy: 'ফেরতের নিয়ম',
+      details: 'বিস্তারিত', about: 'পণ্যের বিবরণ',
+      aboutText: 'প্রতিদিনের রান্নার জন্য হালকা ফ্রাইপ্যান: ডিম, ভাজি আর কম তেলে ভাজার জন্য। কোটিং থেকে খাবার সহজে ওঠে, মুছলেই পরিষ্কার। টেম্পার্ড কাচের ঢাকনা না তুলেই রান্না দেখা যায়।',
+      points: [{ text: 'গ্যাস ও ইলেকট্রিক চুলায় চলে' }, { text: 'তাপরোধী হাতল ধরতে ঠান্ডা থাকে' }, { text: 'ভাপ বের হওয়ার ছিদ্রসহ কাচের ঢাকনা' }],
+      specs: 'স্পেসিফিকেশন', brand: 'ব্র্যান্ড', material: 'উপাদান', materialValue: 'অ্যালুমিনিয়াম, নন-স্টিক কোটিং', stove: 'চুলা', stoveValue: 'গ্যাস ও ইলেকট্রিক',
+      warranty: 'ওয়ারেন্টি', warrantyValue: '[ওয়ারেন্টির শর্ত]', related: 'আপনার পছন্দ হতে পারে', seeMore: 'আরও দেখুন', recent: 'সম্প্রতি দেখেছেন', clear: 'মুছুন', viewCart: 'কার্ট দেখুন'
+    } : {
+      photos: 'Photos', name: 'Non-stick frying pan with glass lid', regular: 'Regular price', size: 'Size', colour: 'Colour', qty: 'Quantity', less: 'Decrease quantity', more: 'Increase quantity',
+      add: 'Add to cart', buy: 'Buy now', soldOut: 'Sold out in this size', whatsapp: 'Order on WhatsApp', delivery: 'Delivery',
+      inside: 'Inside Dhaka', insideTime: '1–2 days · ৳60', outside: 'Outside Dhaka', outsideTime: '3–5 days · ৳120',
+      cod: 'Cash on delivery', codHint: 'Pay the courier when your order arrives.', returns: 'Easy returns', returnsHint: 'Return within 7 days.', returnPolicy: 'Return policy',
+      details: 'Details', about: 'About this product',
+      aboutText: 'A light frying pan for everyday cooking: eggs, bhaji and shallow frying with less oil. The coating releases food easily and wipes clean. The tempered glass lid lets you check on food without lifting it.',
+      points: [{ text: 'Works on gas and electric stoves' }, { text: 'Heat-resistant handle stays cool to hold' }, { text: 'Glass lid with steam vent included' }],
+      specs: 'Specifications', brand: 'Brand', material: 'Material', materialValue: 'Aluminium, non-stick coating', stove: 'Stove', stoveValue: 'Gas and electric',
+      warranty: 'Warranty', warrantyValue: '[Warranty terms]', related: 'You may also like', seeMore: 'See more', recent: 'Recently viewed', clear: 'Clear', viewCart: 'View cart'
+    };
     var sizes = [
-      { name: '22 cm', price: 990, compare: 1190 },
-      { name: '24 cm', price: 1150, compare: 1350 },
-      { name: '26 cm', price: 1250, compare: 1490 },
-      { name: '28 cm', price: 1450, compare: 1690, soldOut: true }
+      { name: bn ? '২২ সেমি' : '22 cm', price: 990, compare: 1190 },
+      { name: bn ? '২৪ সেমি' : '24 cm', price: 1150, compare: 1350 },
+      { name: bn ? '২৬ সেমি' : '26 cm', price: 1250, compare: 1490 },
+      { name: bn ? '২৮ সেমি' : '28 cm', price: 1450, compare: 1690, soldOut: true }
     ];
     var colors = [
-      { name: 'Black', swatch: '#23262d' },
-      { name: 'Red', swatch: '#a3302a' },
-      { name: 'Granite grey', swatch: '#8a8f98' }
+      { name: bn ? 'কালো' : 'Black', swatch: '#23262d' },
+      { name: bn ? 'লাল' : 'Red', swatch: '#a3302a' },
+      { name: bn ? 'গ্রানাইট ধূসর' : 'Granite grey', swatch: '#8a8f98' }
     ];
     var tones = ['#f1f3f6', '#e8f0fa', '#fdf0e1', '#eceaf8', '#e6f4ef'];
-    var labels = ['Front', 'With lid', 'Coating close-up', 'Handle', 'In use'];
+    var labels = bn ? ['সামনে থেকে', 'ঢাকনাসহ', 'কোটিং কাছ থেকে', 'হাতল', 'ব্যবহারের সময়'] : ['Front', 'With lid', 'Coating close-up', 'Handle', 'In use'];
     var v = sizes[s.size];
     var soldOut = !!v.soldOut;
     var save = v.compare - v.price;
     return {
       primary: primary,
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      altHref: bn ? 'ProductPhone.dc.html' : 'ProductPhoneBn.dc.html',
+      lineHeight: bn ? '1.6' : '1.5',
+      checkoutHref: bn ? 'CheckoutPhoneBn.dc.html' : 'CheckoutPhone.dc.html',
+      cartHref: bn ? 'CartPhoneBn.dc.html' : 'CartPhone.dc.html',
       cartCount: s.cart + s.others,
       mainTone: tones[s.photo],
-      mainLabel: 'Product photo: ' + labels[s.photo].toLowerCase(),
-      photoCount: (s.photo + 1) + ' / ' + tones.length,
+      mainLabel: bn ? 'পণ্যের ছবি: ' + labels[s.photo] : 'Product photo: ' + labels[s.photo].toLowerCase(),
+      photoCount: num(s.photo + 1) + ' / ' + num(tones.length),
       dots: tones.map(function (t, i) {
         var on = i === s.photo;
-        return { on: on, label: 'Show photo ' + (i + 1) + ': ' + labels[i], w: on ? '20px' : '8px', color: on ? primary : '#c5ccd8', pick: function () { self.setState({ photo: i }); } };
+        return { on: on, label: (bn ? 'ছবি ' : 'Show photo ') + num(i + 1) + ': ' + labels[i], w: on ? '20px' : '8px', color: on ? primary : '#c5ccd8', pick: function () { self.setState({ photo: i }); } };
       }),
       priceText: fmt(v.price),
       compareText: fmt(v.compare),
-      saveText: 'Save ' + fmt(save) + ' (' + Math.round(save / v.compare * 100) + '%)',
-      stockText: soldOut ? 'Out of stock in this size' : 'In stock, ready to ship',
+      saveText: bn ? fmt(save) + ' সাশ্রয় (' + num(Math.round(save / v.compare * 100)) + '%)' : 'Save ' + fmt(save) + ' (' + Math.round(save / v.compare * 100) + '%)',
+      stockText: soldOut ? (bn ? 'এই সাইজ স্টকে নেই' : 'Out of stock in this size') : (bn ? 'স্টকে আছে, পাঠানোর জন্য প্রস্তুত' : 'In stock, ready to ship'),
       stockColor: soldOut ? '#b42318' : '#1d6b3a',
       sizeName: v.name,
       sizes: sizes.map(function (x, i) {
         var on = i === s.size;
-        return { name: x.name, label: x.name + (x.soldOut ? ', out of stock' : ''), on: on, border: on ? '2px solid ' + primary : '1.5px solid #c5ccd8', bg: on ? '#e8f0fa' : '#ffffff', color: x.soldOut ? '#545b69' : '#1a1f29', strike: x.soldOut ? 'line-through' : 'none', pick: function () { self.setState({ size: i, justAdded: false }); } };
+        return { name: x.name, label: x.name + (x.soldOut ? (bn ? ', স্টকে নেই' : ', out of stock') : ''), on: on, border: on ? '2px solid ' + primary : '1.5px solid #c5ccd8', bg: on ? '#e8f0fa' : '#ffffff', color: x.soldOut ? '#545b69' : '#1a1f29', strike: x.soldOut ? 'line-through' : 'none', pick: function () { self.setState({ size: i, justAdded: false }); } };
       }),
       colorName: colors[s.color].name,
       colors: colors.map(function (c, i) {
         var on = i === s.color;
         return { name: c.name, swatch: c.swatch, on: on, ring: on ? '2px solid ' + primary : '1px solid #c5ccd8', pick: function () { self.setState({ color: i }); } };
       }),
-      qty: String(s.qty),
+      qty: num(s.qty),
       dec: function () { self.setState({ qty: Math.max(1, self.state.qty - 1) }); },
       inc: function () { self.setState({ qty: Math.min(10, self.state.qty + 1) }); },
       lineText: fmt(v.price * s.qty),
@@ -238,21 +266,21 @@ class Component extends DCLogic {
       canBuy: !soldOut,
       addToCart: function () { self.setState({ cart: self.state.cart + self.state.qty, justAdded: true }); },
       justAdded: s.justAdded,
-      addedText: 'Added to cart (' + (s.cart + s.others) + ')',
+      addedText: bn ? 'কার্টে যোগ হয়েছে (' + num(s.cart + s.others) + ')' : 'Added to cart (' + (s.cart + s.others) + ')',
       addOther: function () { self.setState({ others: self.state.others + 1 }); },
       hasRecent: !s.recentCleared,
       clearRecent: function () { self.setState({ recentCleared: true }); },
       recent: [
-        { brand: 'Brand B', title: 'Electric kettle, 1.8 litre', price: '৳1,690', tone: '#f8e9ee', href: 'ProductPhone.dc.html', variants: { colors: [{ name: 'Black', swatch: '#23262d' }, { name: 'White', swatch: '#f4f4f2' }] } },
-        { brand: 'Brand C', title: 'Cotton bedsheet set, double', price: '৳1,690', compare: '৳2,100', off: '−20%', tone: '#e8f0fa', href: 'ProductPhone.dc.html' },
-        { brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: '৳790', tone: '#f1f3f6', href: 'ProductPhone.dc.html' },
-        { brand: 'Brand B', title: 'LED desk lamp with USB charging', price: '৳1,100', tone: '#eceaf8', href: 'ProductPhone.dc.html' }
+        { brand: 'Brand B', title: bn ? 'ইলেকট্রিক কেটলি, ১.৮ লিটার' : 'Electric kettle, 1.8 litre', price: fmt(1690), tone: '#f8e9ee', href: 'ProductPhone.dc.html', variants: { colors: [{ name: bn ? 'কালো' : 'Black', swatch: '#23262d' }, { name: bn ? 'সাদা' : 'White', swatch: '#f4f4f2' }] } },
+        { brand: 'Brand C', title: bn ? 'সুতির বিছানার চাদরের সেট, ডাবল' : 'Cotton bedsheet set, double', price: fmt(1690), compare: fmt(2100), off: bn ? '−২০%' : '−20%', tone: '#e8f0fa', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand D', title: bn ? 'এয়ারটাইট চালের বাক্স, ১০ কেজি' : 'Airtight rice box, 10 kg', price: fmt(790), tone: '#f1f3f6', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand B', title: bn ? 'ইউএসবি চার্জিংসহ এলইডি টেবিল ল্যাম্প' : 'LED desk lamp with USB charging', price: fmt(1100), tone: '#eceaf8', href: 'ProductPhone.dc.html' }
       ],
       related: [
-        { brand: 'Brand A', title: 'Pressure cooker, 5 litre', price: '৳3,150', tone: '#eceaf8', href: 'ProductPhone.dc.html' },
-        { brand: 'Brand A', title: 'Wooden spatula and spoon set', price: '৳420', tone: '#eef5e4', href: 'ProductPhone.dc.html' },
-        { brand: 'Brand D', title: 'Glass food containers, set of 5', price: '৳980', compare: '৳1,150', off: '−15%', tone: '#fdf0e1', href: 'ProductPhone.dc.html' },
-        { brand: 'Brand A', title: 'Knife set with block, 6 pieces', price: '৳1,350', tone: '#e6f4ef', href: 'ProductPhone.dc.html' }
+        { brand: 'Brand A', title: bn ? 'প্রেশার কুকার, ৫ লিটার' : 'Pressure cooker, 5 litre', price: fmt(3150), tone: '#eceaf8', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand A', title: bn ? 'কাঠের খুন্তি ও চামচের সেট' : 'Wooden spatula and spoon set', price: fmt(420), tone: '#eef5e4', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand D', title: bn ? 'কাচের খাবারের বাক্স, ৫টির সেট' : 'Glass food containers, set of 5', price: fmt(980), compare: fmt(1150), off: bn ? '−১৫%' : '−15%', tone: '#fdf0e1', href: 'ProductPhone.dc.html' },
+        { brand: 'Brand A', title: bn ? 'স্ট্যান্ডসহ ছুরির সেট, ৬ পিস' : 'Knife set with block, 6 pieces', price: fmt(1350), tone: '#e6f4ef', href: 'ProductPhone.dc.html' }
       ]
     };
   }
