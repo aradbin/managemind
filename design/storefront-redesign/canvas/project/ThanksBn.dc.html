@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>ধন্যবাদ (বাংলা)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#f4f6f9}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+:focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
+</style>
+</helmet>
+<div lang="{{lang}}" style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; min-height: 100vh; font-size: 15px; line-height: {{lineHeight}}">
+<header style="background: #ffffff; border-bottom: 1px solid #dde2ea">
+<div style="max-width: 1120px; margin: 0 auto; padding: 14px 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 24px">
+<a href="{{homeHref}}" style="font-size: 24px; font-weight: 700; color: {{primary}}; text-decoration: none">Your Store</a>
+<a href="#" style="min-height: 44px; display: flex; align-items: center; font-weight: 600; text-decoration: none">{{t.help}}</a>
+</div>
+</header>
+
+<main style="max-width: 1040px; margin: 0 auto; padding: 48px 24px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+<span style="width: 72px; height: 72px; border-radius: 50%; background: #e7f4ec; color: #1d6b3a; display: flex; align-items: center; justify-content: center"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+<h1 style="margin: 0; font-size: 30px; font-weight: 700">{{t.title}}</h1>
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; border: 1px solid #dde2ea; border-radius: 8px; background: #ffffff">
+<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3"><span style="font-size: 13px; color: #545b69">{{t.orderNumber}}</span><strong style="font-size: 20px; font-weight: 700">[number]</strong></span>
+<button type="button" onClick="{{copy}}" style="height: 44px; padding: 0 14px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="padding: 16px 18px; border-radius: 12px; background: #e7f4ec; color: #14532d; display: flex; gap: 12px; align-items: flex-start">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="3" y="6" width="18" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 17px; font-weight: 700">{{payText}}</strong><span>{{t.next}}</span></span>
+</div>
+<section aria-labelledby="ty-items" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 id="ty-items" style="margin: 0; font-size: 18px; font-weight: 700">{{t.items}}</h2>
+<sc-for list="{{lines}}" as="ln" hint-placeholder-count="2">
+<div style="display: flex; gap: 12px; align-items: center; font-size: 14px">
+<span style="width: 52px; height: 52px; flex: none; border-radius: 8px; background: {{ln.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg></span>
+<span style="flex: 1 1 auto; display: flex; flex-direction: column; line-height: 1.4"><span>{{ln.title}}</span><span style="font-size: 13px; color: #545b69">{{ln.meta}}</span></span>
+<span style="font-weight: 600">{{ln.price}}</span>
+</div>
+</sc-for>
+<div style="border-top: 1px solid #dde2ea; padding-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">{{t.delivery}}</span><span>{{feeText}}</span></span>
+<span style="display: flex; justify-content: space-between; font-weight: 700; font-size: 16px"><span>{{t.total}}</span><span>{{totalText}}</span></span>
+</div>
+</section>
+<section aria-labelledby="ty-to" style="background: #ffffff; border: 1px solid #dde2ea; border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; gap: 4px">
+<h2 id="ty-to" style="margin: 0 0 6px; font-size: 18px; font-weight: 700">{{t.deliverTo}}</h2>
+<span>{{t.who}}</span>
+<span style="color: #3c4350">{{t.line}}</span>
+<span style="color: #3c4350">{{t.area}}</span>
+<span style="margin-top: 6px; font-size: 14px; color: #545b69">{{t.estimate}}</span>
+</section>
+</div>
+
+<aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<a href="{{homeHref}}" style="height: 48px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">{{t.continue}}</a>
+<a href="{{trackHref}}" style="height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: #ffffff">{{t.track}}</a>
+</div>
+<section aria-labelledby="ty-save" style="padding: 20px; border-radius: 12px; border: 1px solid #c9d8ec; background: #ffffff; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; gap: 12px; align-items: flex-start">
+<span style="width: 40px; height: 40px; flex: none; border-radius: 50%; background: #e8f0fa; color: {{primary}}; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><h2 id="ty-save" style="margin: 0; font-size: 17px; font-weight: 700">{{t.saveTitle}}</h2><span style="font-size: 14px; color: #3c4350">{{t.saveText}}</span></span>
+</div>
+<sc-if value="{{saveAsk}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ty-email" style="font-weight: 600; font-size: 14px">{{t.email}}</label>
+<input id="ty-email" type="email" autocomplete="email" inputmode="email" value="{{email}}" onChange="{{setEmail}}" aria-invalid="{{emailBad}}" aria-describedby="ty-email-e" placeholder="name@example.com" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{emailBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{emailBad}}" hint-placeholder-val="{{ false }}"><span id="ty-email-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.badEmail}}</span></sc-if>
+</div>
+<button type="button" onClick="{{sendCode}}" style="height: 48px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 700; cursor: pointer">{{t.sendCode}}</button>
+</sc-if>
+<sc-if value="{{saveCode}}" hint-placeholder-val="{{ false }}">
+<p role="status" style="margin: 0; font-size: 14px; color: #14532d">{{codeSentText}}</p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="ty-code" style="font-weight: 600; font-size: 14px">{{t.code}}</label>
+<input id="ty-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{code}}" onChange="{{setCode}}" aria-invalid="{{codeBad}}" aria-describedby="ty-code-e" style="height: 52px; padding: 0 14px; font: inherit; font-size: 22px; font-weight: 600; letter-spacing: 0.4em; border: {{codeBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{codeBad}}" hint-placeholder-val="{{ false }}"><span id="ty-code-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.badCode}}</span></sc-if>
+</div>
+<button type="button" onClick="{{confirm}}" style="height: 48px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.save}}</button>
+</sc-if>
+<sc-if value="{{saveDone}}" hint-placeholder-val="{{ false }}">
+<p id="ty-saved" tabindex="-1" role="status" style="margin: 0; padding: 12px 14px; border-radius: 8px; background: #e7f4ec; color: #14532d; font-weight: 600; font-size: 14px">{{t.saved}}</p>
+</sc-if>
+</section>
+</aside>
+</div>
+</main>
+
+<footer style="max-width: 1040px; margin: 0 auto; padding: 16px 24px 32px; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px 20px; color: #545b69; font-size: 13px">
+<span>© Your Store</span><a href="#" style="color: #545b69">{{t.terms}}</a><a href="#" style="color: #545b69">{{t.privacy}}</a><a href="#" style="color: #545b69">{{t.returns}}</a>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"payment":{"editor":"enum","default":"cod","options":["cod","online","cod_with_advance"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":1120}}'>
+// The thank-you page after checkout. `payment` (canvas tweak) picks what the
+// payment box says; arriving from the checkout board, ?pay= in the link wins.
+// `bn` switches to the store's Bangla copy (ThanksBn.dc.html).
+// Thanks.dc.html uses the same logic; build-boards.mjs copies it there.
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { copied: false, step: 'ask', email: '', emailTried: false, code: '', codeBad: false };
+  }
+  renderVals() {
+    var self = this;
+    var s = this.state;
+    var bn = !!this.props.bn;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    var fmt = function (n) { return '৳' + num(n); };
+    var fromLink = '';
+    try { fromLink = (new URLSearchParams(window.location.search)).get('pay') || ''; } catch (e) { fromLink = ''; }
+    var pay = ['cod', 'online', 'cod_with_advance'].indexOf(fromLink) >= 0 ? fromLink : (this.props.payment || 'cod');
+    var t = bn ? {
+      help: 'সাহায্য: [hotline number]', title: 'অর্ডারের জন্য ধন্যবাদ', orderNumber: 'অর্ডার নম্বর', copy: 'কপি', copied: 'কপি হয়েছে',
+      next: 'দোকান নিশ্চিত করতে আপনাকে কল বা মেসেজ করবে। অর্ডার নম্বর ও মোবাইল নম্বর দিয়ে যেকোনো সময় অর্ডার ট্র্যাক করুন।',
+      continue: 'আরও কেনাকাটা করুন', track: 'অর্ডার ট্র্যাক করুন', items: 'যা অর্ডার করেছেন', delivery: 'ডেলিভারি', total: 'মোট',
+      deliverTo: 'ডেলিভারির ঠিকানা', who: 'রহিম উদ্দিন · ০১৭১২-৩৪৫৬৭৮', line: 'বাসা ১২, রোড ৫, মসজিদের পাশে', area: 'ধানমন্ডি, ঢাকা', estimate: 'আনুমানিক ১–২ দিনে ডেলিভারি',
+      saveTitle: 'পরের বার আরও দ্রুত অর্ডার করুন', saveText: 'ইমেইলে একটি কোড নিন: এই ঠিকানা আর তথ্য সেভ থাকবে, পরের বার চেকআউট নিজে থেকে পূরণ হবে। পাসওয়ার্ড লাগবে না।',
+      email: 'ইমেইল ঠিকানা', badEmail: 'ইমেইল ঠিকানা লিখুন।', sendCode: 'কোড পাঠান', code: 'ইমেইলের কোড', badCode: 'কোডটি কাজ করেনি। দেখে নিন, অথবা নতুন কোড চান।',
+      save: 'সেভ করুন', saved: 'সেভ হয়েছে। পরের বার ইমেইল দিয়ে সাইন ইন করলেই চেকআউট পূরণ হয়ে যাবে।',
+      terms: 'শর্তাবলি', privacy: 'গোপনীয়তা', returns: 'ফেরত'
+    } : {
+      help: 'Help: [hotline number]', title: 'Thank you for your order', orderNumber: 'Order number', copy: 'Copy', copied: 'Copied',
+      next: 'The store will call or message you to confirm. Track your order any time with its number and your mobile number.',
+      continue: 'Continue shopping', track: 'Track your order', items: 'What you ordered', delivery: 'Delivery', total: 'Total',
+      deliverTo: 'Delivery to', who: 'Rahim Uddin · 01712-345678', line: 'House 12, Road 5, near the mosque', area: 'Dhanmondi, Dhaka', estimate: 'Delivery in about 1–2 days',
+      saveTitle: 'Order faster next time', saveText: 'Get a code by email and we’ll keep this address and your details, so checkout fills itself in next time. No password.',
+      email: 'Email address', badEmail: 'Enter an email address.', sendCode: 'Send code', code: 'Code from the email', badCode: 'That code didn’t work. Check it, or ask for a new one.',
+      save: 'Save my details', saved: 'Saved. Next time, sign in with your email and checkout fills in for you.',
+      terms: 'Terms', privacy: 'Privacy', returns: 'Returns'
+    };
+    var lines = [
+      { title: bn ? 'কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান' : 'Non-stick frying pan with glass lid', meta: bn ? '২৬ সেমি · কালো · ১টি' : '26 cm · Black · 1', price: fmt(1250), tone: '#f1f3f6' },
+      { title: bn ? 'স্টেইনলেস স্টিলের পানির বোতল' : 'Stainless steel water bottle', meta: bn ? '১ লিটার · ২টি' : '1 litre · 2', price: fmt(1180), tone: '#e6f4ef' }
+    ];
+    var emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.email.trim());
+    var emailBad = s.emailTried && !emailOk;
+    var focusOn = function (id) { setTimeout(function () { var el = document.getElementById(id); if (el) el.focus(); }, 40); };
+    return {
+      primary: primary,
+      t: t,
+      lang: bn ? 'bn' : 'en',
+      lineHeight: bn ? '1.6' : '1.5',
+      homeHref: bn ? 'MainBn.dc.html' : 'Main.dc.html',
+      trackHref: bn ? 'TrackBn.dc.html' : 'Track.dc.html',
+      copyLabel: s.copied ? t.copied : t.copy,
+      copy: function () { self.setState({ copied: true }); },
+      payText: pay === 'cod' ? (bn ? 'কুরিয়ারের জন্য ' + fmt(2490) + ' প্রস্তুত রাখুন।' : 'Please keep ' + fmt(2490) + ' ready for the courier.')
+        : pay === 'online' ? (bn ? 'পরিশোধ পেয়েছি। ধন্যবাদ!' : 'Payment received. Thank you!')
+        : (bn ? 'ডেলিভারি চার্জ পেয়েছি। কুরিয়ারের জন্য ' + fmt(2430) + ' প্রস্তুত রাখুন।' : 'Delivery charge paid. Please keep ' + fmt(2430) + ' ready for the courier.'),
+      lines: lines,
+      feeText: fmt(60),
+      totalText: fmt(2490),
+      saveAsk: s.step === 'ask',
+      saveCode: s.step === 'code',
+      saveDone: s.step === 'done',
+      email: s.email,
+      setEmail: function (e) { self.setState({ email: e.target.value }); },
+      emailBad: emailBad,
+      emailBorder: emailBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      sendCode: function () { if (!emailOk) { self.setState({ emailTried: true }); focusOn('ty-email'); return; } self.setState({ step: 'code', code: '', codeBad: false }); focusOn('ty-code'); },
+      codeSentText: bn ? s.email.trim() + ' ঠিকানায় ৬ অঙ্কের একটি কোড পাঠানো হয়েছে। এটি ১০ মিনিট কাজ করবে।' : 'We sent a 6-digit code to ' + s.email.trim() + '. It works for 10 minutes.',
+      code: s.code,
+      setCode: function (e) { self.setState({ code: e.target.value.replace(/\D/g, '').slice(0, 6), codeBad: false }); },
+      codeBad: s.codeBad,
+      codeBorder: s.codeBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      confirm: function () { if (s.code.length !== 6) { self.setState({ codeBad: true }); focusOn('ty-code'); return; } self.setState({ step: 'done' }); focusOn('ty-saved'); }
+    };
+  }
+}
+</script>
+</body>
+</html>

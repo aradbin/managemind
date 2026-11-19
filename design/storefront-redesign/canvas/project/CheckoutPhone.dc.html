@@ -16,7 +16,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div lang="{{lang}}" style="width: 390px; min-height: 2600px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; font-size: 15px; line-height: {{lineHeight}}">
+<div lang="{{lang}}" style="width: 390px; min-height: 100vh; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; font-size: 15px; line-height: {{lineHeight}}">
 
 <header style="background: #ffffff; border-bottom: 1px solid #dde2ea; padding: 6px 8px; display: flex; align-items: center; gap: 4px">
 <a href="{{cartHref}}" aria-label="{{t.backToCart}}" style="width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; color: #1a1f29"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
@@ -175,7 +175,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 <div style="border-radius: 8px; background: {{zone.bg}}; color: {{zone.color}}; padding: 10px 12px; font-size: 14px; display: flex; gap: 10px; align-items: center">
 <span style="color: {{zone.icon}}; display: flex; flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
-<span style="font-weight: {{zone.weight}}">{{zone.text}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: {{zone.weight}}">{{zone.text}}</span><sc-if value="{{zone.ask}}" hint-placeholder-val="{{ false }}"><a href="#" style="font-weight: 600; color: #8f1c13">{{t.whatsappShort}}</a></sc-if></span>
 </div>
 <details>
 <summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">{{t.noteAsk}}</summary>
@@ -223,12 +223,13 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <p style="margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px">{{t.sentTo}} <strong>{{phone}}</strong><button type="button" onClick="{{changePhone}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{t.changeNumber}}</button></p>
 <div style="display: flex; flex-direction: column; gap: 6px">
 <label for="c-otp" style="font-weight: 600; font-size: 14px">{{t.otpLabel}}</label>
-<input id="c-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{otpCode}}" onChange="{{setOtp}}" aria-invalid="{{otpBad}}" aria-describedby="c-otp-e" style="height: 56px; padding: 0 16px; font: inherit; font-size: 24px; font-weight: 600; letter-spacing: 0.4em; border: {{otpBorder}}; border-radius: 8px; box-sizing: border-box">
+<input id="c-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" value="{{otpCode}}" onChange="{{setOtp}}" aria-invalid="{{otpBad}}" aria-describedby="c-otp-h c-otp-e" style="height: 56px; padding: 0 16px; font: inherit; font-size: 24px; font-weight: 600; letter-spacing: 0.4em; border: {{otpBorder}}; border-radius: 8px; box-sizing: border-box">
+<span id="c-otp-h" style="font-size: 13px; color: #545b69">{{t.autoConfirm}}</span>
 <sc-if value="{{otpBad}}" hint-placeholder-val="{{ false }}"><span id="c-otp-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.otpWrong}}</span></sc-if>
 </div>
 <button type="button" onClick="{{verify}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer">{{t.otpVerify}}</button>
 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; font-size: 14px">
-<button type="button" onClick="{{resend}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{t.otpResend}}</button>
+<button type="button" onClick="{{resend}}" disabled="{{otpWaiting}}" style="min-height: 44px; padding: 0; border: 0; background: transparent; color: {{resendColor}}; font: inherit; font-weight: 600; cursor: pointer">{{resendLabel}}</button>
 <sc-if value="{{otpSent}}" hint-placeholder-val="{{ false }}"><span role="status" style="color: #1d6b3a; font-weight: 600">{{t.otpSent}}</span></sc-if>
 </div>
 </div>
@@ -236,45 +237,15 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </sc-if>
 
 <sc-if value="{{placed}}" hint-placeholder-val="{{ false }}">
-<main style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; padding: 24px 0 24px">
-<div style="padding: 0 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+<main style="flex: 1 1 auto; padding: 64px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
 <span style="width: 64px; height: 64px; border-radius: 50%; background: #e7f4ec; color: #1d6b3a; display: flex; align-items: center; justify-content: center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
-<h1 style="margin: 0; font-size: 24px; font-weight: 700">{{t.thanksTitle}}</h1>
-<div style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 14px; border: 1px solid #dde2ea; border-radius: 8px; background: #ffffff">
-<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3"><span style="font-size: 13px; color: #545b69">{{t.orderNumber}}</span><strong style="font-size: 19px; font-weight: 700">[number]</strong></span>
-<button type="button" onClick="{{copy}}" style="height: 44px; padding: 0 14px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{copyLabel}}</button>
-</div>
-</div>
-<div style="margin: 0 16px; padding: 14px; border-radius: 12px; background: #e7f4ec; color: #14532d; display: flex; gap: 10px; align-items: flex-start">
-<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="3" y="6" width="18" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.5"></circle></svg>
-<span style="display: flex; flex-direction: column; gap: 4px"><strong style="font-size: 16px; font-weight: 700">{{thanksPay}}</strong><span style="font-size: 14px">{{t.thanksNext}}</span></span>
-</div>
-<section aria-labelledby="t-items" style="background: #ffffff; border-top: 1px solid #dde2ea; border-bottom: 1px solid #dde2ea; padding: 16px; display: flex; flex-direction: column; gap: 10px">
-<h2 id="t-items" style="margin: 0; font-size: 17px; font-weight: 700">{{t.thanksItems}}</h2>
-<sc-for list="{{lines}}" as="ln" hint-placeholder-count="2">
-<div style="display: flex; gap: 12px; align-items: center; font-size: 14px"><span style="width: 44px; height: 44px; flex: none; border-radius: 8px; background: {{ln.tone}}"></span><span style="flex: 1 1 auto">{{ln.title}} <span style="color: #545b69">× {{ln.qtyText}}</span></span><span style="font-weight: 600">{{ln.lineText}}</span></div>
-</sc-for>
-<div style="border-top: 1px solid #dde2ea; padding-top: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
-<span style="display: flex; justify-content: space-between"><span style="color: #3c4350">{{t.delivery}}</span><span>{{deliveryLine}}</span></span>
-<span style="display: flex; justify-content: space-between; font-weight: 700; font-size: 16px"><span>{{t.total}}</span><span>{{totalText}}</span></span>
-</div>
-</section>
-<section aria-labelledby="t-to" style="background: #ffffff; border-top: 1px solid #dde2ea; border-bottom: 1px solid #dde2ea; padding: 16px; display: flex; flex-direction: column; gap: 2px">
-<h2 id="t-to" style="margin: 0 0 6px; font-size: 17px; font-weight: 700">{{t.deliverTo}}</h2>
-<span>{{name}} · {{phone}}</span>
-<span style="color: #3c4350">{{line}}</span>
-<span style="color: #3c4350">{{area.full}}</span>
-<span style="margin-top: 6px; font-size: 14px; color: #545b69">{{estimate}}</span>
-</section>
-<div style="padding: 4px 16px 0; display: flex; flex-direction: column; gap: 10px">
-<a href="{{trackHref}}" style="height: 48px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">{{t.track}}</a>
-<a href="{{homeHref}}" style="height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box; background: #ffffff">{{t.continue}}</a>
-</div>
+<h1 role="status" style="margin: 0; font-size: 22px; font-weight: 700">{{t.placedTitle}}</h1>
+<a id="c-thanks-link" href="{{thanksHref}}" style="font-weight: 600; min-height: 44px; display: flex; align-items: center">{{t.openThanks}}</a>
 </main>
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"normal","options":["normal","phone_code","advance_required","cod_unavailable","no_delivery","store_paused","too_many_orders","price_changed"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":2600}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"normal","options":["normal","phone_code","advance_required","cod_unavailable","no_delivery","store_paused","too_many_orders","price_changed"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":2540}}'>
 // Scenarios: see Checkout.dc.html. `bn` switches the copy to the store's
 // Bangla strings (CheckoutPhoneBn.dc.html is this board with bn on).
 class Component extends DCLogic {
@@ -307,6 +278,9 @@ class Component extends DCLogic {
       thanksTitle: 'অর্ডারের জন্য ধন্যবাদ', orderNumber: 'অর্ডার নম্বর', thanksItems: 'যা অর্ডার করেছেন', deliverTo: 'ডেলিভারির ঠিকানা',
       thanksNext: 'দোকান নিশ্চিত করতে আপনাকে কল বা মেসেজ করবে। অর্ডার নম্বর ও মোবাইল নম্বর দিয়ে যেকোনো সময় অর্ডার ট্র্যাক করুন।',
       track: 'অর্ডার ট্র্যাক করুন', continue: 'আরও কেনাকাটা করুন', copy: 'কপি', copied: 'কপি হয়েছে',
+      orderSummary: 'অর্ডারের সারাংশ', editCart: 'কার্ট বদলান', guest: 'অথবা অতিথি হিসেবেই অর্ডার করুন।',
+      trust1: 'আপনার তথ্য শুধু এই অর্ডার ও ডেলিভারির জন্য ব্যবহার হয়।', trust2: '৭ দিনের মধ্যে ফেরত। প্রশ্ন থাকলে: [hotline number]',
+      placedTitle: 'অর্ডার হয়েছে', openThanks: 'ধন্যবাদ পাতা খুলুন', autoConfirm: '৬টি অঙ্ক লিখলেই নিশ্চিত হবে।',
       emptyTitle: 'আপনার কার্ট খালি', emptyText: 'পছন্দের কিছু কার্টে যোগ করে আবার চেকআউটে আসুন।', startShopping: 'কেনাকাটা শুরু করুন'
     } : {
       backToCart: 'Back to cart', secure: 'Secure checkout', title: 'Checkout', signInFaster: 'Have an account? Sign in to fill this in faster.',
@@ -326,6 +300,9 @@ class Component extends DCLogic {
       thanksTitle: 'Thank you for your order', orderNumber: 'Order number', thanksItems: 'What you ordered', deliverTo: 'Delivery to',
       thanksNext: 'The store will call or message you to confirm. Track your order any time with its number and your mobile number.',
       track: 'Track your order', continue: 'Continue shopping', copy: 'Copy', copied: 'Copied',
+      orderSummary: 'Order summary', editCart: 'Edit cart', guest: 'Or just order as a guest.',
+      trust1: 'Your details are used only for this order and its delivery.', trust2: 'Returns within 7 days. Questions? [hotline number]',
+      placedTitle: 'Order placed', openThanks: 'Open the thank-you page', autoConfirm: 'It confirms as soon as you type all 6 digits.',
       emptyTitle: 'Your cart is empty', emptyText: 'Add something you like, then come back to check out.', startShopping: 'Start shopping'
     };
     var filled = sc !== 'normal';
@@ -333,8 +310,8 @@ class Component extends DCLogic {
       phone: filled ? '01712-345678' : '', name: filled ? (bn ? 'রহিম উদ্দিন' : 'Rahim Uddin') : '',
       line: filled ? (bn ? 'বাসা ১২, রোড ৫, মসজিদের পাশে' : 'House 12, Road 5, near the mosque') : '',
       terms: filled, area: filled ? (sc === 'no_delivery' ? 'kalapara' : 'dhanmondi') : '', areaQuery: '', pay: 'cod',
-      qty: [1, 2], removed: [false, false], summaryOpen: true,
-      tried: false, notice: '', codGone: false, priceNew: false, otpOpen: false, otpCode: '', otpErr: false, otpSent: false, placed: false, copied: false
+      qty: [1, 2], removed: [false, false], summaryOpen: false,
+      tried: false, notice: '', codGone: false, priceNew: false, otpOpen: false, otpCode: '', otpErr: false, otpSent: false, otpWait: 0, placed: false, copied: false
     };
     var st = this.state.sc === sc + (bn ? ':bn' : '') ? this.state : fresh;
     var up = function (o) { self.setState(Object.assign({}, st, o, { sc: sc + (bn ? ':bn' : '') })); };
@@ -441,13 +418,24 @@ class Component extends DCLogic {
     var est = zoneOf === 'in' ? (bn ? '১–২ দিন' : '1–2 days') : (bn ? '৩–৫ দিন' : '3–5 days');
     var estimate = bn ? 'আনুমানিক ' + est + '-এ ডেলিভারি' : 'Delivery in about ' + est;
     var zone = !area
-      ? { text: bn ? 'ডেলিভারি: ঢাকার ভেতরে ৳৬০ (১–২ দিন), বাইরে ৳১২০ (৩–৫ দিন)।' : 'Delivery: ৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).', bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400' }
+      ? { text: bn ? 'ডেলিভারি: ঢাকার ভেতরে ৳৬০ (১–২ দিন), বাইরে ৳১২০ (৩–৫ দিন)।' : 'Delivery: ৳60 inside Dhaka (1–2 days), ৳120 elsewhere (3–5 days).', bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400', ask: false }
       : zoneOf === 'none'
-        ? { text: bn ? 'দোকান এই এলাকায় ডেলিভারি দেয় না। অন্য উপায় জানতে দোকানে মেসেজ করুন।' : 'The store doesn’t deliver to this area. Message the store to ask about other options.', bg: '#fdf1ef', color: '#8f1c13', icon: '#b42318', weight: '600' }
-        : { text: (zoneOf === 'in' ? (bn ? 'ঢাকার ভেতরে' : 'Inside Dhaka') : (bn ? 'ঢাকার বাইরে' : 'Outside Dhaka')) + ' · ' + fmt(delivery) + ' · ' + estimate, bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400' };
+        ? { text: bn ? 'এখানে পাঠানো যায় কিনা দোকানকে জিজ্ঞেস করুন:' : 'Ask the store whether they can deliver here:', ask: true, bg: '#fdf1ef', color: '#8f1c13', icon: '#b42318', weight: '600' }
+        : { text: (zoneOf === 'in' ? (bn ? 'ঢাকার ভেতরে' : 'Inside Dhaka') : (bn ? 'ঢাকার বাইরে' : 'Outside Dhaka')) + ' · ' + fmt(delivery) + ' · ' + estimate, bg: '#e8f0fa', color: '#1a1f29', icon: primary, weight: '400', ask: false };
 
     var blockedKind = sc === 'store_paused' ? 'paused' : sc === 'cod_unavailable' ? 'nopay' : '';
-    var finish = function () { up({ placed: true, otpOpen: false, notice: '', tried: false }); if (typeof window !== 'undefined') window.scrollTo(0, 0); };
+    var finish = function () {
+      if (self._timer) clearInterval(self._timer);
+      up({ placed: true, otpOpen: false, notice: '', tried: false });
+      if (typeof window !== 'undefined') window.scrollTo(0, 0);
+      // The real storefront moves to its thank-you page: the board follows its link.
+      setTimeout(function () { var a = document.getElementById('c-thanks-link'); if (a) a.click(); }, 700);
+    };
+    var startWait = function () {
+      if (self._timer) clearInterval(self._timer);
+      var left = 45;
+      self._timer = setInterval(function () { left -= 1; self.setState({ otpWait: left }); if (left <= 0) clearInterval(self._timer); }, 1000);
+    };
     var thanksPay = st.pay === 'cod' ? (bn ? 'কুরিয়ারের জন্য ' + fmt(total) + ' প্রস্তুত রাখুন।' : 'Please keep ' + fmt(total) + ' ready for the courier.')
       : st.pay === 'online' ? (bn ? 'পরিশোধ পেয়েছি। ধন্যবাদ!' : 'Payment received. Thank you!')
       : (bn ? 'ডেলিভারি চার্জ পেয়েছি। কুরিয়ারের জন্য ' + fmt(subtotal) + ' প্রস্তুত রাখুন।' : 'Delivery charge paid. Please keep ' + fmt(subtotal) + ' ready for the courier.');
@@ -462,6 +450,7 @@ class Component extends DCLogic {
       homeHref: bn ? 'HomePhoneBn.dc.html' : 'HomePhone.dc.html',
       cartHref: 'CartPhone.dc.html',
       trackHref: bn ? 'TrackPhoneBn.dc.html' : 'TrackPhone.dc.html',
+      thanksHref: (bn ? 'ThanksPhoneBn.dc.html' : 'ThanksPhone.dc.html') + '?pay=' + st.pay,
       accountHref: bn ? 'AccountPhoneBn.dc.html' : 'AccountPhone.dc.html',
       blocked: !!blockedKind,
       blockTitle: blockedKind === 'paused' ? (bn ? 'দোকান এখন অর্ডার নিচ্ছে না।' : 'The store is not taking orders right now.') : (bn ? 'এই অর্ডারে ক্যাশ অন ডেলিভারি নেই। অনুগ্রহ করে দোকানে মেসেজ করুন।' : 'Cash on delivery isn’t available for this order. Please message the store.'),
@@ -475,6 +464,7 @@ class Component extends DCLogic {
       summaryLabel: bn ? (st.summaryOpen ? 'অর্ডারের সারাংশ লুকান' : 'অর্ডারের সারাংশ দেখুন') + ' (' + num(count) + 'টি)' : (st.summaryOpen ? 'Hide' : 'Show') + ' order summary (' + count + (count === 1 ? ' item)' : ' items)'),
       toggleSummary: function () { up({ summaryOpen: !st.summaryOpen }); },
       subtotalText: fmt(subtotal),
+      subtotalLabel: bn ? 'সাবটোটাল (' + num(count) + 'টি পণ্য)' : 'Subtotal (' + count + (count === 1 ? ' item)' : ' items)'),
       deliveryLine: !area ? (bn ? 'এলাকা বেছে নিন' : 'Choose your area') : zoneOf === 'none' ? (bn ? 'পাওয়া যাবে না' : 'Not available') : fmt(delivery),
       totalLabel: area && zoneOf !== 'none' ? t.total : (bn ? 'ডেলিভারি ছাড়া মোট' : 'Total before delivery'),
       totalText: fmt(total),
@@ -511,7 +501,7 @@ class Component extends DCLogic {
       placeLabel: placeLabel,
       place: function () {
         if (failing.length) { up({ tried: true, notice: '' }); focusOn(failing[0].id); return; }
-        if (sc === 'phone_code') { up({ otpOpen: true, otpCode: '', otpErr: false, otpSent: false, tried: false }); focusOn('c-otp'); return; }
+        if (sc === 'phone_code') { up({ otpOpen: true, otpCode: '', otpErr: false, otpSent: false, otpWait: 45, tried: false }); startWait(); focusOn('c-otp'); return; }
         if (sc === 'advance_required' && st.pay === 'cod') { up({ codGone: true, pay: 'cod_with_advance', notice: 'advance', tried: false }); focusOn('c-notice'); return; }
         if (sc === 'too_many_orders') { up({ notice: 'limited', tried: false }); focusOn('c-notice'); return; }
         if (sc === 'price_changed' && !st.priceNew) { up({ priceNew: true, notice: 'price', tried: false, summaryOpen: true }); focusOn('c-notice'); return; }
@@ -519,12 +509,15 @@ class Component extends DCLogic {
       },
       otpOpen: st.otpOpen && !st.placed,
       otpCode: st.otpCode,
-      setOtp: function (e) { up({ otpCode: e.target.value.replace(/\D/g, '').slice(0, 6), otpErr: false }); },
+      setOtp: function (e) { var code = e.target.value.replace(/\D/g, '').slice(0, 6); if (code.length === 6) { finish(); return; } up({ otpCode: code, otpErr: false }); },
       otpBad: st.otpErr,
       otpBorder: st.otpErr ? '2px solid #b42318' : '1.5px solid #c5ccd8',
       otpSent: st.otpSent,
       verify: function () { if (st.otpCode.length !== 6) { up({ otpErr: true }); focusOn('c-otp'); return; } finish(); },
-      resend: function () { up({ otpSent: true, otpErr: false, otpCode: '' }); focusOn('c-otp'); },
+      resend: function () { if (st.otpWait > 0) return; up({ otpSent: true, otpErr: false, otpCode: '', otpWait: 45 }); startWait(); focusOn('c-otp'); },
+      otpWaiting: st.otpWait > 0,
+      resendColor: st.otpWait > 0 ? '#545b69' : primary,
+      resendLabel: st.otpWait > 0 ? (bn ? num(0) + ':' + (st.otpWait < 10 ? num(0) : '') + num(st.otpWait) + ' পর নতুন কোড পাঠাতে পারবেন' : 'Send a new code in 0:' + (st.otpWait < 10 ? '0' : '') + st.otpWait) : t.otpResend,
       closeOtp: function () { up({ otpOpen: false }); },
       changePhone: function () { up({ otpOpen: false }); focusOn('c-phone'); },
       thanksPay: thanksPay,

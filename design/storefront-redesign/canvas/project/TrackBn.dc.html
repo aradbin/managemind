@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>অর্ডার ট্র্যাক (বাংলা)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#1f4e8c}a:hover{color:#173c6d}
+:focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
+</style>
+</helmet>
+<div lang="{{lang}}" style="font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; min-height: 100vh; font-size: 15px; line-height: {{lineHeight}}">
+<dc-import name="SiteHeader" bn="{{bn}}" alt="{{altHref}}" primary="{{primary}}" cart-count="{{ 0 }}" hint-size="100%,176px"></dc-import>
+
+<main style="max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.015em">{{t.title}}</h1>
+<p style="margin: 0; color: #3c4350">{{t.intro}}</p>
+</div>
+
+<sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+<form style="max-width: 760px; border: 1px solid #dde2ea; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="tp-num" style="font-weight: 600; font-size: 14px">{{t.number}}</label>
+<input id="tp-num" type="text" value="{{num}}" onChange="{{setNum}}" aria-invalid="{{numBad}}" aria-describedby="tp-num-e" placeholder="{{t.numberExample}}" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{numBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{numBad}}" hint-placeholder-val="{{ false }}"><span id="tp-num-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.numberErr}}</span></sc-if>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="tp-phone" style="font-weight: 600; font-size: 14px">{{t.phone}}</label>
+<input id="tp-phone" type="tel" inputmode="tel" autocomplete="tel" value="{{phone}}" onChange="{{setPhone}}" aria-invalid="{{phoneBad}}" aria-describedby="tp-phone-e" placeholder="01712-345678" style="height: 48px; padding: 0 14px; font: inherit; font-size: 16px; border: {{phoneBorder}}; border-radius: 8px; box-sizing: border-box">
+<sc-if value="{{phoneBad}}" hint-placeholder-val="{{ false }}"><span id="tp-phone-e" style="font-size: 13px; color: #b42318; font-weight: 600">{{t.phoneErr}}</span></sc-if>
+</div>
+</div>
+<sc-if value="{{hasLookupError}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600">{{lookupError}}</div>
+</sc-if>
+<button type="button" onClick="{{find}}" style="align-self: flex-start; height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.submit}}</button>
+<span style="font-size: 14px; color: #545b69">{{t.whereNumber}}</span>
+</form>
+</sc-if>
+
+<sc-if value="{{found}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+<div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+<section aria-labelledby="tp-order" style="border: 1px solid #dde2ea; border-radius: 12px; overflow: hidden">
+<div style="padding: 20px 24px; background: #f4f6f9; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px">
+<h2 id="tp-order" style="margin: 0; font-size: 22px; font-weight: 700">{{orderTitle}}</h2>
+<span style="color: #545b69; font-size: 14px">{{t.placedOn}}</span>
+</div>
+<sc-if value="{{cancelled}}" hint-placeholder-val="{{ false }}">
+<div role="status" style="margin: 20px 24px 0; padding: 12px 14px; border-radius: 8px; background: #f4f6f9; border: 1.5px solid #8a93a3; font-weight: 600">{{t.cancelledNotice}}</div>
+</sc-if>
+<div role="status" style="padding: 20px 24px 0; display: flex; flex-direction: column; gap: 2px">
+<strong style="font-size: 24px; font-weight: 700; color: {{headColor}}">{{statusText}}</strong>
+<span style="color: #3c4350">{{expectText}}</span>
+</div>
+<sc-if value="{{active}}" hint-placeholder-val="{{ true }}">
+<ol style="list-style: none; margin: 0; padding: 20px 24px 4px; display: flex; flex-direction: column">
+<sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+<li style="display: flex; gap: 14px; min-height: 56px">
+<span style="display: flex; flex-direction: column; align-items: center; flex: none; width: 28px">
+<span style="width: 28px; height: 28px; border-radius: 50%; box-sizing: border-box; border: {{st.ring}}; background: {{st.fill}}; color: #ffffff; display: flex; align-items: center; justify-content: center"><sc-if value="{{st.done}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></sc-if></span>
+<span style="flex: 1 1 auto; width: 2px; min-height: 16px; background: {{st.line}}"></span>
+</span>
+<span style="display: flex; flex-direction: column; padding-bottom: 12px">
+<span style="font-weight: {{st.weight}}; color: {{st.color}}">{{st.label}}<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{st.srState}}</span></span>
+<span style="font-size: 13px; color: #545b69">{{st.note}}</span>
+</span>
+</li>
+</sc-for>
+</ol>
+</sc-if>
+
+<sc-if value="{{hasParcel}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 4px 24px 20px; display: flex; flex-direction: column; gap: 10px">
+<h3 style="margin: 0; font-size: 16px; font-weight: 700">{{t.parcels}}</h3>
+<div style="border: 1px solid #dde2ea; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center">
+<span style="width: 44px; height: 44px; flex: none; border-radius: 8px; background: #e8f0fa; color: {{primary}}; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path></svg></span>
+<span style="flex: 1 1 220px; display: flex; flex-direction: column; line-height: 1.4"><strong style="font-weight: 700; color: {{parcel.color}}">{{parcel.status}}</strong><span style="font-size: 14px; color: #3c4350">{{parcel.courier}} · {{t.trackingNo}} [tracking number]</span></span>
+<a href="#" style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 8px; box-sizing: border-box">{{t.courierLink}}<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg></a>
+</div>
+<details open>
+<summary style="min-height: 44px; display: flex; align-items: center; color: {{primary}}; font-weight: 600; font-size: 14px; cursor: pointer">{{t.updates}}</summary>
+<ol style="list-style: none; margin: 0; padding: 0 0 0 4px; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+<sc-for list="{{events}}" as="ev" hint-placeholder-count="3">
+<li style="display: flex; gap: 10px"><span style="width: 8px; height: 8px; margin-top: 7px; flex: none; border-radius: 50%; background: {{ev.dot}}"></span><span style="display: flex; flex-wrap: wrap; gap: 0 12px"><span style="font-weight: {{ev.weight}}">{{ev.label}}</span><span style="color: #545b69">{{ev.when}}</span></span></li>
+</sc-for>
+</ol>
+</details>
+</div>
+</div>
+</sc-if>
+
+<div style="padding: 16px 24px 20px; border-top: 1px solid #dde2ea; display: flex; flex-direction: column; gap: 10px">
+<h3 style="margin: 0; font-size: 16px; font-weight: 700">{{t.items}}</h3>
+<sc-for list="{{items}}" as="it" hint-placeholder-count="2">
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px"><span>{{it.text}}</span><span style="font-weight: 600">{{it.price}}</span></div>
+</sc-for>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: #3c4350"><span>{{t.deliveryInside}}</span><span>{{fee}}</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px; font-weight: 700; font-size: 16px"><span>{{t.total}}</span><span>{{total}}</span></div>
+</div>
+</section>
+<sc-if value="{{returnSent}}" hint-placeholder-val="{{ false }}">
+<div id="rp-sent" tabindex="-1" role="status" style="padding: 16px; border-radius: 12px; background: #e7f4ec; color: #14532d; display: flex; gap: 10px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="M5 12l5 5 9-10"></path></svg><span style="font-weight: 600">{{t.sent}}</span></div>
+</sc-if>
+<sc-if value="{{returnForm}}" hint-placeholder-val="{{ false }}">
+<form aria-labelledby="rp-title" style="padding: 24px; border-radius: 12px; border: 1.5px solid {{primary}}; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h2 id="rp-title" tabindex="-1" style="margin: 0; font-size: 22px; font-weight: 700">{{t.returnTitle}}</h2>
+<span style="font-size: 14px; color: #3c4350">{{t.returnUntil}}</span>
+</div>
+<sc-if value="{{returnHasError}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600; display: flex; flex-direction: column; gap: 2px"><sc-for list="{{returnErrors}}" as="re" hint-placeholder-count="1"><span>{{re.text}}</span></sc-for></div>
+</sc-if>
+<fieldset id="rp-items" tabindex="-1" style="min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+<legend style="padding: 0 0 8px; font-weight: 600">{{t.returnItems}}</legend>
+<sc-for list="{{returnItems}}" as="ri" hint-placeholder-count="2">
+<div style="display: flex; gap: 12px; align-items: center">
+<span style="width: 48px; height: 48px; flex: none; border-radius: 8px; background: {{ri.tone}}"></span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.35"><span>{{ri.title}}</span><span style="font-size: 13px; color: #545b69">{{ri.upTo}}</span></span>
+<div role="group" aria-label="{{ri.title}}" style="display: flex; align-items: center; border: 1.5px solid #c5ccd8; border-radius: 8px; height: 44px; box-sizing: border-box; flex: none">
+<button type="button" onClick="{{ri.dec}}" aria-label="{{t.less}}" style="width: 44px; height: 41px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">−</button>
+<span style="min-width: 24px; text-align: center; font-weight: 600">{{ri.qty}}</span>
+<button type="button" onClick="{{ri.inc}}" aria-label="{{t.more}}" style="width: 44px; height: 41px; border: 0; background: transparent; color: #1a1f29; font: inherit; font-size: 18px; cursor: pointer">+</button>
+</div>
+</div>
+</sc-for>
+<span style="font-size: 13px; color: #545b69">{{t.notReturnable}}</span>
+</fieldset>
+<fieldset id="rp-reason" tabindex="-1" style="min-width: 0; margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px">
+<legend style="padding: 0 0 8px; font-weight: 600">{{t.reason}}</legend>
+<sc-for list="{{reasons}}" as="rs" hint-placeholder-count="6">
+<label style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: {{rs.border}}; background: {{rs.bg}}; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px"><input type="radio" name="rp-reason" checked="{{rs.on}}" onChange="{{rs.pick}}" style="width: 18px; height: 18px; margin: 0; accent-color: {{primary}}">{{rs.label}}</label>
+</sc-for>
+</fieldset>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="rp-note" style="font-weight: 600">{{t.note}} <span style="font-weight: 400; color: #545b69">{{t.optional}}</span></label>
+<textarea id="rp-note" rows="2" style="padding: 10px 12px; font: inherit; font-size: 16px; border: 1.5px solid #c5ccd8; border-radius: 8px; resize: vertical; box-sizing: border-box"></textarea>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-weight: 600">{{t.photos}} <span style="font-weight: 400; color: #545b69">{{t.optional}}</span></span>
+<span style="font-size: 13px; color: #545b69">{{t.photosHint}}</span>
+<div style="display: flex; gap: 10px; flex-wrap: wrap; padding-top: 6px">
+<sc-for list="{{photos}}" as="ph" hint-placeholder-count="1">
+<span style="position: relative; width: 80px; height: 80px; border-radius: 8px; background: #e6e9ee; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg><button type="button" onClick="{{ph.remove}}" aria-label="{{ph.label}}" style="position: absolute; top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 14px; border: 2px solid #ffffff; background: #1a1f29; color: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></span>
+</sc-for>
+<sc-if value="{{canAddPhoto}}" hint-placeholder-val="{{ true }}">
+<button type="button" onClick="{{addPhoto}}" style="width: 80px; height: 80px; border-radius: 8px; border: 1.5px dashed #8a93a3; background: #ffffff; color: {{primary}}; font: inherit; font-size: 12px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>{{t.addPhoto}}</button>
+</sc-if>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<button type="button" onClick="{{sendReturn}}" style="height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.send}}</button>
+<button type="button" onClick="{{closeReturn}}" style="height: 48px; padding: 0 20px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.notNow}}</button>
+</div>
+</form>
+</sc-if>
+</div>
+
+<aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<dl style="margin: 0; padding: 20px; border: 1px solid #dde2ea; border-radius: 12px; display: flex; flex-direction: column; gap: 14px; font-size: 14px">
+<div><dt style="color: #545b69">{{t.payment}}</dt><dd style="margin: 0">{{paymentText}}</dd></div>
+<div><dt style="color: #545b69">{{t.deliverTo}}</dt><dd style="margin: 0">{{t.address}}</dd></div>
+</dl>
+
+<sc-if value="{{returnOpen}}" hint-placeholder-val="{{ false }}">
+<div style="padding: 16px; border-radius: 12px; background: #f3f7fc; border: 1px solid #c9d8ec; display: flex; flex-direction: column; gap: 10px">
+<span style="display: flex; flex-direction: column"><strong style="font-weight: 700">{{t.returnAsk}}</strong><span style="font-size: 13px; color: #3c4350">{{t.returnUntil}}</span></span>
+<button type="button" onClick="{{startReturn}}" style="height: 44px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 600; cursor: pointer">{{t.returnRequest}}</button>
+</div>
+</sc-if>
+
+
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>{{t.whatsapp}}</a>
+<sc-if value="{{canCancel}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{askCancel}}" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #b42318; font: inherit; font-weight: 600; cursor: pointer">{{t.cancel}}</button></sc-if>
+<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+<div role="alertdialog" aria-labelledby="tp-confirm" style="padding: 16px; border-radius: 8px; border: 1.5px solid #b42318; background: #fdf1ef; display: flex; flex-direction: column; gap: 10px">
+<strong id="tp-confirm">{{t.cancelConfirm}}</strong>
+<button type="button" onClick="{{doCancel}}" style="height: 44px; border: 0; border-radius: 8px; background: #b42318; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.cancelYes}}</button>
+<button type="button" onClick="{{keep}}" style="height: 44px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.cancelNo}}</button>
+</div>
+</sc-if>
+<button type="button" onClick="{{reset}}" style="height: 44px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer">{{t.another}}</button>
+</div>
+</aside>
+</div>
+</sc-if>
+</main>
+
+<dc-import name="SiteFooter" bn="{{bn}}" alt="{{altHref}}" primary="{{primary}}" hint-size="100%,300px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"being_prepared","options":["waiting_for_store","being_prepared","on_the_way","delivered","too_many_tries"]},"bn":{"editor":"boolean","default":true},"$preview":{"width":1440,"height":2650}}'>
+// Scenario (canvas tweak): where the order is. The form starts filled in,
+// so "Track order" shows that stage at once. Clear a field to see the
+// errors; an order number under 4 digits is "not found". too_many_tries
+// shows the lock after 5 wrong mobile numbers.
+// `bn` switches to the store's Bangla copy (TrackBn.dc.html).
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sc: null };
+  }
+  renderVals() {
+    var self = this;
+    var sc = this.props.scenario || 'being_prepared';
+    var bn = !!this.props.bn;
+    var primary = this.props.primary ?? '#1f4e8c';
+    var num = function (n) { var s = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? s.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : s; };
+    var fmt = function (n) { return '৳' + num(n); };
+    var t = bn ? {
+      title: 'অর্ডার ট্র্যাক করুন', intro: 'অর্ডার নম্বর এবং যে মোবাইল নম্বরে অর্ডার করেছেন তা লিখুন।', number: 'অর্ডার নম্বর', numberExample: 'যেমন ১০৪৮২',
+      numberErr: 'অর্ডার নম্বর লিখুন।', phone: 'মোবাইল নম্বর', phoneErr: 'যে মোবাইল নম্বরে অর্ডার করেছেন তা লিখুন।', submit: 'অর্ডার দেখুন',
+      whereNumber: 'অর্ডার নম্বর আছে হোয়াটসঅ্যাপ বা এসএমএসে পাঠানো নিশ্চিতকরণ মেসেজে।', placedOn: 'অর্ডার করেছেন [date]',
+      cancelledNotice: 'আপনার অর্ডার বাতিল হয়েছে।', status: 'অবস্থা', delivery: 'ডেলিভারি', parcels: 'পার্সেল', trackingNo: 'ট্র্যাকিং নম্বর',
+      courierLink: 'কুরিয়ারে ট্র্যাক করুন', updates: 'কুরিয়ারের আপডেট', items: 'পণ্য', deliveryInside: 'ডেলিভারি (ঢাকার ভেতরে)', total: 'মোট',
+      payment: 'পেমেন্ট', deliverTo: 'ডেলিভারির ঠিকানা', address: '[নাম], [বাসা ও রোড], [এলাকা], ঢাকা',
+      returnAsk: 'কোনো সমস্যা? ফেরত দিতে পারেন।', returnUntil: '[date] পর্যন্ত চাইতে পারবেন।', returnRequest: 'ফেরতের অনুরোধ করুন', returnTitle: 'ফেরতের অনুরোধ',
+      returnItems: 'কী ফেরত দিচ্ছেন?', notReturnable: 'ফেরতযোগ্য নয়: [যে পণ্য দোকান ফেরত নেয় না]', reason: 'কেন?', note: 'আর কিছু বলতে চান', optional: '(ঐচ্ছিক)',
+      photos: 'ছবি', photosHint: 'সর্বোচ্চ ৩টি। দোকান দ্রুত সিদ্ধান্ত নিতে পারবে।', addPhoto: 'ছবি যোগ', send: 'অনুরোধ পাঠান', notNow: 'এখন না',
+      sent: 'ফেরত [return number]-এর অনুরোধ পাঠানো হয়েছে। দোকান আপনাকে জানাবে।', less: 'কমান', more: 'বাড়ান',
+      whatsapp: 'হোয়াটসঅ্যাপে মেসেজ করুন', cancel: 'অর্ডার বাতিল করুন', cancelConfirm: 'অর্ডারটি বাতিল করবেন? এটি ফেরানো যাবে না।', cancelYes: 'হ্যাঁ, বাতিল করুন',
+      cancelNo: 'অর্ডার রাখুন', another: 'অন্য অর্ডার দেখুন'
+    } : {
+      title: 'Track your order', intro: 'Enter your order number and the mobile number you ordered with.', number: 'Order number', numberExample: 'For example 10482',
+      numberErr: 'Enter your order number.', phone: 'Mobile number', phoneErr: 'Enter the mobile number you ordered with.', submit: 'Track order',
+      whereNumber: 'Your order number is in the confirmation message we sent on WhatsApp or SMS.', placedOn: 'Placed on [date]',
+      cancelledNotice: 'Your order is cancelled.', status: 'Status', delivery: 'Delivery', parcels: 'Parcels', trackingNo: 'Tracking number',
+      courierLink: 'Track with the courier', updates: 'Courier updates', items: 'Items', deliveryInside: 'Delivery (inside Dhaka)', total: 'Total',
+      payment: 'Payment', deliverTo: 'Delivering to', address: '[Name], [house and road], [area], Dhaka',
+      returnAsk: 'Something wrong? You can send it back.', returnUntil: 'You can ask until [date].', returnRequest: 'Request a return', returnTitle: 'Request a return',
+      returnItems: 'What are you returning?', notReturnable: 'Not returnable: [items the store doesn’t take back]', reason: 'Why?', note: 'Anything to add', optional: '(optional)',
+      photos: 'Photos', photosHint: 'Up to 3. They help the store decide quickly.', addPhoto: 'Add photo', send: 'Send request', notNow: 'Not now',
+      sent: 'Return [return number] requested. The store will let you know.', less: 'Fewer', more: 'More',
+      whatsapp: 'Message us on WhatsApp', cancel: 'Cancel this order', cancelConfirm: 'Cancel this order? This can’t be undone.', cancelYes: 'Yes, cancel the order',
+      cancelNo: 'Keep my order', another: 'Track another order'
+    };
+    var fresh = { num: num('10482'), phone: '01712-345678', tried: false, view: 'form', confirming: false, cancelled: false,
+      returning: false, retQty: [0, 0], reason: '', photos: 0, retTried: false, retSent: false };
+    var key = sc + (bn ? ':bn' : '');
+    var st = this.state.sc === key ? this.state : fresh;
+    var up = function (o) { self.setState(Object.assign({}, st, o, { sc: key })); };
+    var focusOn = function (id) { setTimeout(function () { var el = document.getElementById(id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } }, 40); };
+
+    var numBad = st.tried && !st.num.trim();
+    var phoneBad = st.tried && !st.phone.trim();
+    var stage = { waiting_for_store: 1, being_prepared: 2, on_the_way: 3, delivered: 5, too_many_tries: 2 }[sc];
+    var stepDefs = bn ? [
+      { label: 'অর্ডার হয়েছে', note: '[date and time]' },
+      { label: 'দোকান নিশ্চিত করেছে', note: stage === 1 ? 'দোকানের নিশ্চিতকরণের অপেক্ষায়' : 'দোকান কল বা মেসেজ করে নিশ্চিত করেছে' },
+      { label: 'প্রস্তুত হচ্ছে', note: 'আপনার পণ্য প্যাক করা হচ্ছে' },
+      { label: 'পথে আছে', note: 'কুরিয়ারের কাছে, আপনার দিকে আসছে' },
+      { label: 'ডেলিভারি হয়েছে', note: stage === 5 ? '[date and time]' : 'পণ্য পেয়ে কুরিয়ারকে টাকা দিন' }
+    ] : [
+      { label: 'Order placed', note: '[date and time]' },
+      { label: 'Confirmed by the store', note: stage === 1 ? 'Waiting for the store to confirm' : 'The store called or messaged you to confirm' },
+      { label: 'Being prepared', note: 'Packing your items' },
+      { label: 'On the way', note: 'With the courier, on the way to you' },
+      { label: 'Delivered', note: stage === 5 ? '[date and time]' : 'Pay the courier when it arrives' }
+    ];
+    // One headline for the shopper: the order status until it leaves, then the parcel's.
+    var headNames = bn
+      ? ['', 'দোকানের নিশ্চিতকরণের অপেক্ষায়', 'প্রস্তুত হচ্ছে', 'পথে আছে', '', 'ডেলিভারি হয়েছে']
+      : ['', 'Waiting for the store to confirm', 'Being prepared', 'On the way', '', 'Delivered'];
+    var expectNames = bn
+      ? ['', 'দোকান নিশ্চিত করলে ডেলিভারির আনুমানিক তারিখ দেখা যাবে।', 'আনুমানিক ডেলিভারি: [date]', 'আনুমানিক ডেলিভারি: [date]', '', '[date]-এ ডেলিভারি হয়েছে']
+      : ['', 'You’ll see an expected delivery date once the store confirms.', 'Expected delivery: [date]', 'Expected delivery: [date]', '', 'Delivered on [date]'];
+    var eventDefs = bn
+      ? [['কুরিয়ারে বুক হয়েছে', 3], ['কুরিয়ার নিয়ে গেছে', 3], ['পথে আছে', 3], ['ডেলিভারি হয়েছে', 5]]
+      : [['Booked with the courier', 3], ['Picked up by the courier', 3], ['On the way', 3], ['Delivered', 5]];
+    var events = eventDefs.filter(function (e) { return e[1] <= stage; }).reverse().map(function (e, i) {
+      return { label: e[0], when: '[date and time]', dot: i === 0 ? primary : '#c5ccd8', weight: i === 0 ? '700' : '400' };
+    });
+    var items = [
+      { title: bn ? 'কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান' : 'Non-stick frying pan with glass lid', variant: bn ? '২৬ সেমি · কালো' : '26 cm · Black', qty: 1, price: 1250, tone: '#f1f3f6' },
+      { title: bn ? 'স্টেইনলেস স্টিলের পানির বোতল' : 'Stainless steel water bottle', variant: bn ? '১ লিটার' : '1 litre', qty: 2, price: 590, tone: '#e6f4ef' }
+    ];
+    var reasonDefs = bn
+      ? [['wrong_size', 'সাইজ মেলেনি'], ['damaged', 'ক্ষতিগ্রস্ত অবস্থায় এসেছে'], ['wrong_item', 'ভুল পণ্য'], ['not_as_described', 'বর্ণনার সাথে মেলেনি'], ['changed_mind', 'মত বদলেছি'], ['other', 'অন্য কারণ']]
+      : [['wrong_size', 'Wrong size'], ['damaged', 'Arrived damaged'], ['wrong_item', 'Wrong item'], ['not_as_described', 'Not as described'], ['changed_mind', 'Changed my mind'], ['other', 'Something else']];
+    var picked = st.retQty[0] + st.retQty[1];
+    var retErrors = [];
+    if (st.retTried && !picked) retErrors.push({ text: bn ? 'প্রতিটি পণ্যের কয়টি ফেরত দিচ্ছেন বেছে নিন।' : 'Choose how many of each item you’re returning.' });
+    if (st.retTried && !st.reason) retErrors.push({ text: bn ? 'একটি কারণ বেছে নিন।' : 'Choose a reason.' });
+    var setQty = function (i, v) { var a = st.retQty.slice(); a[i] = v; up({ retQty: a }); };
+    var cancellable = stage <= 2 && sc !== 'too_many_tries';
+    var paid = stage === 5;
+
+    return {
+      primary: primary,
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      altHref: bn ? 'Track.dc.html' : 'TrackBn.dc.html',
+      lineHeight: bn ? '1.6' : '1.5',
+      homeHref: bn ? 'MainBn.dc.html' : 'Main.dc.html',
+      num: st.num,
+      phone: st.phone,
+      setNum: function (e) { up({ num: e.target.value }); },
+      setPhone: function (e) { up({ phone: e.target.value }); },
+      numBad: numBad,
+      phoneBad: phoneBad,
+      numBorder: numBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      phoneBorder: phoneBad ? '2px solid #b42318' : '1.5px solid #c5ccd8',
+      showForm: st.view !== 'found',
+      hasLookupError: st.view === 'notfound' || st.view === 'locked',
+      lookupError: st.view === 'locked'
+        ? (bn ? 'অনেকবার চেষ্টা হয়েছে। এক ঘণ্টা পর আবার চেষ্টা করুন।' : 'Too many tries. Please try again in an hour.')
+        : (bn ? 'এই নম্বর ও মোবাইল নম্বরে কোনো অর্ডার নেই।' : 'No order matches this number and mobile number.'),
+      found: st.view === 'found',
+      find: function () {
+        if (!st.num.trim() || !st.phone.trim()) { up({ tried: true }); focusOn(!st.num.trim() ? 'tp-num' : 'tp-phone'); return; }
+        if (sc === 'too_many_tries') { up({ tried: false, view: 'locked' }); return; }
+        var digits = st.num.replace(/[০-৯]/g, function (d) { return String('০১২৩৪৫৬৭৮৯'.indexOf(d)); }).replace(/\D/g, '');
+        up({ tried: false, view: digits.length >= 4 ? 'found' : 'notfound' });
+      },
+      orderTitle: (bn ? 'অর্ডার ' : 'Order ') + st.num.trim(),
+      cancelled: st.cancelled,
+      active: !st.cancelled,
+      statusText: st.cancelled ? (bn ? 'বাতিল' : 'Cancelled') : headNames[stage],
+      headColor: st.cancelled ? '#3c4350' : stage === 5 ? '#1d6b3a' : '#1a1f29',
+      expectText: st.cancelled ? (bn ? 'কোনো টাকা দিতে হবে না।' : 'You don’t need to pay anything.') : expectNames[stage],
+      steps: stepDefs.map(function (d, i) {
+        var done = i < stage;
+        var now = i === stage;
+        return {
+          label: d.label, note: d.note, done: done,
+          srState: done ? (bn ? ' (হয়েছে)' : ' (done)') : now ? (bn ? ' (এখন এই ধাপে)' : ' (current step)') : (bn ? ' (এখনো নয়)' : ' (not yet)'),
+          ring: done ? '0' : now ? '3px solid ' + primary : '2px solid #c5ccd8',
+          fill: done ? primary : '#ffffff',
+          line: i === stepDefs.length - 1 ? 'transparent' : (done ? primary : '#dde2ea'),
+          weight: now ? '700' : '600',
+          color: done || now ? '#1a1f29' : '#545b69'
+        };
+      }),
+      hasParcel: stage >= 3 && !st.cancelled,
+      parcel: {
+        status: paid ? (bn ? 'ডেলিভারি হয়েছে' : 'Delivered') : (bn ? 'কুরিয়ারের কাছে' : 'With the courier'),
+        color: paid ? '#1d6b3a' : '#1a1f29',
+        courier: bn ? 'Steadfast কুরিয়ার' : 'Steadfast courier'
+      },
+      events: events,
+      items: items.map(function (it) { return { text: it.title + ' · ' + it.variant + ' × ' + num(it.qty), price: fmt(it.price * it.qty) }; }),
+      fee: fmt(60),
+      total: fmt(2490),
+      paymentText: paid ? (bn ? 'ক্যাশ অন ডেলিভারি: ' + fmt(2490) + ' পরিশোধ হয়েছে' : 'Cash on delivery: ' + fmt(2490) + ' paid') : (bn ? 'ক্যাশ অন ডেলিভারি: পণ্য পেয়ে ' + fmt(2490) + ' দিন' : 'Cash on delivery: pay ' + fmt(2490) + ' when it arrives'),
+      returnOpen: paid && !st.returning && !st.retSent,
+      startReturn: function () { up({ returning: true }); focusOn('rp-title'); },
+      returnForm: paid && st.returning && !st.retSent,
+      returnHasError: retErrors.length > 0,
+      returnErrors: retErrors,
+      returnItems: items.map(function (it, i) {
+        return {
+          title: it.title, tone: it.tone, qty: num(st.retQty[i]),
+          upTo: bn ? 'সর্বোচ্চ ' + num(it.qty) + 'টি' : 'up to ' + it.qty,
+          dec: function () { setQty(i, Math.max(0, st.retQty[i] - 1)); },
+          inc: function () { setQty(i, Math.min(it.qty, st.retQty[i] + 1)); }
+        };
+      }),
+      reasons: reasonDefs.map(function (r) {
+        var on = st.reason === r[0];
+        return { label: r[1], on: on, border: on ? '2px solid ' + primary : '1.5px solid #dde2ea', bg: on ? '#f3f7fc' : '#ffffff', pick: function () { up({ reason: r[0] }); } };
+      }),
+      photos: Array.from({ length: st.photos }, function (_, i) { return { label: (bn ? 'ছবি সরান ' : 'Remove photo ') + num(i + 1), remove: function () { up({ photos: st.photos - 1 }); } }; }),
+      canAddPhoto: st.photos < 3,
+      addPhoto: function () { up({ photos: Math.min(3, st.photos + 1) }); },
+      sendReturn: function () {
+        if (!picked || !st.reason) { up({ retTried: true }); focusOn(!picked ? 'rp-items' : 'rp-reason'); return; }
+        up({ retSent: true, returning: false }); focusOn('rp-sent');
+      },
+      closeReturn: function () { up({ returning: false, retTried: false }); },
+      returnSent: st.retSent,
+      canCancel: cancellable && !st.cancelled && !st.confirming,
+      confirming: st.confirming,
+      askCancel: function () { up({ confirming: true }); },
+      keep: function () { up({ confirming: false }); },
+      doCancel: function () { up({ confirming: false, cancelled: true }); },
+      reset: function () { up({ num: '', phone: '', tried: false, view: 'form', confirming: false, cancelled: false, returning: false, retSent: false, retQty: [0, 0], reason: '', photos: 0, retTried: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

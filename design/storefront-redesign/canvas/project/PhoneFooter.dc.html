@@ -51,7 +51,7 @@ body{margin:0}
 </div>
 </footer>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":540}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"alt":{"editor":null},"$preview":{"width":390,"height":540}}'>
 class Component extends DCLogic {
   renderVals() {
     var bn = !!this.props.bn;
@@ -64,15 +64,15 @@ class Component extends DCLogic {
       helpTitle: bn ? 'সাহায্য' : 'Help',
       payTitle: bn ? 'পরিশোধের উপায়' : 'Ways to pay',
       shopLinks: bn
-        ? [link('সব ক্যাটাগরি', 'ListingPhone.dc.html'), link('আজকের অফার', 'ListingPhone.dc.html'), link('নতুন পণ্য', 'ListingPhone.dc.html')]
+        ? [link('সব ক্যাটাগরি', 'ListingPhoneBn.dc.html'), link('আজকের অফার', 'ListingPhoneBn.dc.html'), link('নতুন পণ্য', 'ListingPhoneBn.dc.html')]
         : [link('All categories', 'ListingPhone.dc.html'), link('Today’s deals', 'ListingPhone.dc.html'), link('New arrivals', 'ListingPhone.dc.html')],
       helpLinks: bn
-        ? [link('অর্ডার ট্র্যাক করুন', 'TrackPhone.dc.html'), link('ডেলিভারি ও চার্জ', '#'), link('রিটার্ন ও রিফান্ড', '#'), link('যোগাযোগ', '#')]
+        ? [link('অর্ডার ট্র্যাক করুন', 'TrackPhoneBn.dc.html'), link('ডেলিভারি ও চার্জ', '#'), link('রিটার্ন ও রিফান্ড', '#'), link('যোগাযোগ', '#')]
         : [link('Track your order', 'TrackPhone.dc.html'), link('Delivery and charges', '#'), link('Returns and refunds', '#'), link('Contact us', '#')],
       pays: (bn ? ['ক্যাশ অন ডেলিভারি', 'বিকাশ', 'নগদ', 'কার্ড', 'ব্যাংক'] : ['Cash on delivery', 'bKash', 'Nagad', 'Card', 'Bank']).map(function (l) { return { label: l }; }),
       terms: bn ? 'শর্তাবলি' : 'Terms',
       privacy: bn ? 'গোপনীয়তা' : 'Privacy',
-      otherHref: bn ? 'HomePhone.dc.html' : 'HomePhoneBn.dc.html',
+      otherHref: this.props.alt || (bn ? 'HomePhone.dc.html' : 'HomePhoneBn.dc.html'),
       otherLang: bn ? 'en' : 'bn',
       otherName: bn ? 'English' : 'বাংলা'
     };

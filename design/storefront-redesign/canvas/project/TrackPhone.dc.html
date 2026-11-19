@@ -16,7 +16,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div lang="{{lang}}" style="width: 390px; min-height: 3350px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
+<div lang="{{lang}}" style="width: 390px; min-height: 100vh; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
 <dc-import name="PhoneHeader" alt="{{altHref}}" primary="{{primary}}" bn="{{bn}}" cart-count="{{ 0 }}" back="{{homeHref}}" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; padding: 20px 16px 32px; display: flex; flex-direction: column; gap: 20px">
@@ -54,10 +54,10 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <sc-if value="{{cancelled}}" hint-placeholder-val="{{ false }}">
 <div role="status" style="margin: 16px 16px 0; padding: 12px 14px; border-radius: 8px; background: #f4f6f9; border: 1.5px solid #8a93a3; font-weight: 600; font-size: 14px">{{t.cancelledNotice}}</div>
 </sc-if>
-<dl style="margin: 0; padding: 16px 16px 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px">
-<div><dt style="font-size: 12px; color: #545b69">{{t.status}}</dt><dd style="margin: 0; font-weight: 700">{{statusText}}</dd></div>
-<div><dt style="font-size: 12px; color: #545b69">{{t.delivery}}</dt><dd style="margin: 0; font-weight: 700">{{deliveryText}}</dd></div>
-</dl>
+<div role="status" style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 2px">
+<strong style="font-size: 20px; font-weight: 700; color: {{headColor}}">{{statusText}}</strong>
+<span style="font-size: 14px; color: #3c4350">{{expectText}}</span>
+</div>
 <sc-if value="{{active}}" hint-placeholder-val="{{ true }}">
 <ol style="list-style: none; margin: 0; padding: 16px 16px 0; display: flex; flex-direction: column">
 <sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
@@ -116,8 +116,32 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </div>
 </sc-if>
 
+
+
+<sc-if value="{{returnSent}}" hint-placeholder-val="{{ false }}">
+<div id="rp-sent" tabindex="-1" role="status" style="margin: 0 16px 16px; padding: 14px; border-radius: 8px; background: #e7f4ec; color: #14532d; display: flex; gap: 10px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="M5 12l5 5 9-10"></path></svg><span style="font-weight: 600">{{t.sent}}</span></div>
+</sc-if>
+
+<div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>{{t.whatsapp}}</a>
+<sc-if value="{{canCancel}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{askCancel}}" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #b42318; font: inherit; font-weight: 600; cursor: pointer">{{t.cancel}}</button></sc-if>
+<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+<div role="alertdialog" aria-labelledby="tp-confirm" style="padding: 14px; border-radius: 8px; border: 1.5px solid #b42318; background: #fdf1ef; display: flex; flex-direction: column; gap: 10px">
+<strong id="tp-confirm">{{t.cancelConfirm}}</strong>
+<button type="button" onClick="{{doCancel}}" style="height: 44px; border: 0; border-radius: 8px; background: #b42318; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.cancelYes}}</button>
+<button type="button" onClick="{{keep}}" style="height: 44px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.cancelNo}}</button>
+</div>
+</sc-if>
+<button type="button" onClick="{{reset}}" style="height: 44px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer">{{t.another}}</button>
+</div>
+</section>
+</sc-if>
+</main>
+
 <sc-if value="{{returnForm}}" hint-placeholder-val="{{ false }}">
-<form aria-labelledby="rp-title" style="margin: 0 16px 16px; padding: 16px; border-radius: 12px; border: 1.5px solid {{primary}}; display: flex; flex-direction: column; gap: 16px">
+<div style="position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 20; background: rgba(26,31,41,0.5); display: flex; flex-direction: column; justify-content: flex-end">
+<form role="dialog" aria-modal="true" aria-labelledby="rp-title" style="max-height: 92vh; overflow-y: auto; background: #ffffff; border-radius: 16px 16px 0 0; padding: 8px 16px 20px; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #c5ccd8"></span>
 <div style="display: flex; flex-direction: column; gap: 2px">
 <h3 id="rp-title" tabindex="-1" style="margin: 0; font-size: 18px; font-weight: 700">{{t.returnTitle}}</h3>
 <span style="font-size: 13px; color: #3c4350">{{t.returnUntil}}</span>
@@ -125,7 +149,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <sc-if value="{{returnHasError}}" hint-placeholder-val="{{ false }}">
 <div role="alert" style="padding: 10px 12px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-weight: 600; font-size: 14px; display: flex; flex-direction: column; gap: 2px"><sc-for list="{{returnErrors}}" as="re" hint-placeholder-count="1"><span>{{re.text}}</span></sc-for></div>
 </sc-if>
-<fieldset id="rp-items" tabindex="-1" style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
+<fieldset id="rp-items" tabindex="-1" style="min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 10px">
 <legend style="padding: 0 0 8px; font-weight: 600; font-size: 14px">{{t.returnItems}}</legend>
 <sc-for list="{{returnItems}}" as="ri" hint-placeholder-count="2">
 <div style="display: flex; gap: 10px; align-items: center">
@@ -140,7 +164,7 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 </sc-for>
 <span style="font-size: 13px; color: #545b69">{{t.notReturnable}}</span>
 </fieldset>
-<fieldset id="rp-reason" tabindex="-1" style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px">
+<fieldset id="rp-reason" tabindex="-1" style="min-width: 0; margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px">
 <legend style="padding: 0 0 8px; font-weight: 600; font-size: 14px">{{t.reason}}</legend>
 <sc-for list="{{reasons}}" as="rs" hint-placeholder-count="6">
 <label style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: {{rs.border}}; background: {{rs.bg}}; display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px"><input type="radio" name="rp-reason" checked="{{rs.on}}" onChange="{{rs.pick}}" style="width: 18px; height: 18px; margin: 0; accent-color: {{primary}}">{{rs.label}}</label>
@@ -165,36 +189,17 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <button type="button" onClick="{{sendReturn}}" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">{{t.send}}</button>
 <button type="button" onClick="{{closeReturn}}" style="height: 44px; border: 0; background: transparent; color: #3c4350; font: inherit; font-weight: 600; cursor: pointer">{{t.notNow}}</button>
 </form>
-</sc-if>
-
-<sc-if value="{{returnSent}}" hint-placeholder-val="{{ false }}">
-<div id="rp-sent" tabindex="-1" role="status" style="margin: 0 16px 16px; padding: 14px; border-radius: 8px; background: #e7f4ec; color: #14532d; display: flex; gap: 10px; align-items: flex-start"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true" style="flex: none"><path d="M5 12l5 5 9-10"></path></svg><span style="font-weight: 600">{{t.sent}}</span></div>
-</sc-if>
-
-<div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
-<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #1d6b3a; color: #1d6b3a; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>{{t.whatsapp}}</a>
-<sc-if value="{{canCancel}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{askCancel}}" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #b42318; font: inherit; font-weight: 600; cursor: pointer">{{t.cancel}}</button></sc-if>
-<sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
-<div role="alertdialog" aria-labelledby="tp-confirm" style="padding: 14px; border-radius: 8px; border: 1.5px solid #b42318; background: #fdf1ef; display: flex; flex-direction: column; gap: 10px">
-<strong id="tp-confirm">{{t.cancelConfirm}}</strong>
-<button type="button" onClick="{{doCancel}}" style="height: 44px; border: 0; border-radius: 8px; background: #b42318; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.cancelYes}}</button>
-<button type="button" onClick="{{keep}}" style="height: 44px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.cancelNo}}</button>
 </div>
 </sc-if>
-<button type="button" onClick="{{reset}}" style="height: 44px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer">{{t.another}}</button>
-</div>
-</section>
-</sc-if>
-</main>
 
-<dc-import name="PhoneFooter" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
+<dc-import name="PhoneFooter" alt="{{altHref}}" primary="{{primary}}" bn="{{bn}}" hint-size="100%,540px"></dc-import>
 
 <div style="position: sticky; bottom: 0; z-index: 8">
 <dc-import name="PhoneTabBar" active="none" bn="{{bn}}" cart-count="{{ 0 }}" primary="{{primary}}" hint-size="100%,68px"></dc-import>
 </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"being_prepared","options":["waiting_for_store","being_prepared","on_the_way","delivered","too_many_tries"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":3350}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"scenario":{"editor":"enum","default":"being_prepared","options":["waiting_for_store","being_prepared","on_the_way","delivered","too_many_tries"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":2360}}'>
 // Scenario (canvas tweak): where the order is. The form starts filled in,
 // so "Track order" shows that stage at once. Clear a field to see the
 // errors; an order number under 4 digits is "not found". too_many_tries
@@ -239,7 +244,7 @@ class Component extends DCLogic {
       whatsapp: 'Message us on WhatsApp', cancel: 'Cancel this order', cancelConfirm: 'Cancel this order? This can’t be undone.', cancelYes: 'Yes, cancel the order',
       cancelNo: 'Keep my order', another: 'Track another order'
     };
-    var fresh = { num: num(10482), phone: '01712-345678', tried: false, view: 'form', confirming: false, cancelled: false,
+    var fresh = { num: num('10482'), phone: '01712-345678', tried: false, view: 'form', confirming: false, cancelled: false,
       returning: false, retQty: [0, 0], reason: '', photos: 0, retTried: false, retSent: false };
     var key = sc + (bn ? ':bn' : '');
     var st = this.state.sc === key ? this.state : fresh;
@@ -262,12 +267,13 @@ class Component extends DCLogic {
       { label: 'On the way', note: 'With the courier, on the way to you' },
       { label: 'Delivered', note: stage === 5 ? '[date and time]' : 'Pay the courier when it arrives' }
     ];
-    var statusNames = bn
-      ? ['দোকানের নিশ্চিতকরণের অপেক্ষায়', 'দোকানের নিশ্চিতকরণের অপেক্ষায়', 'প্রস্তুত হচ্ছে', 'প্রস্তুত হচ্ছে', 'সম্পন্ন', 'সম্পন্ন']
-      : ['Waiting for the store to confirm', 'Waiting for the store to confirm', 'Being prepared', 'Being prepared', 'Completed', 'Completed'];
-    var deliveryNames = bn
-      ? ['এখনো পাঠানো হয়নি', 'এখনো পাঠানো হয়নি', 'এখনো পাঠানো হয়নি', 'পথে আছে', 'ডেলিভারি হয়েছে', 'ডেলিভারি হয়েছে']
-      : ['Not sent yet', 'Not sent yet', 'Not sent yet', 'On the way', 'Delivered', 'Delivered'];
+    // One headline for the shopper: the order status until it leaves, then the parcel's.
+    var headNames = bn
+      ? ['', 'দোকানের নিশ্চিতকরণের অপেক্ষায়', 'প্রস্তুত হচ্ছে', 'পথে আছে', '', 'ডেলিভারি হয়েছে']
+      : ['', 'Waiting for the store to confirm', 'Being prepared', 'On the way', '', 'Delivered'];
+    var expectNames = bn
+      ? ['', 'দোকান নিশ্চিত করলে ডেলিভারির আনুমানিক তারিখ দেখা যাবে।', 'আনুমানিক ডেলিভারি: [date]', 'আনুমানিক ডেলিভারি: [date]', '', '[date]-এ ডেলিভারি হয়েছে']
+      : ['', 'You’ll see an expected delivery date once the store confirms.', 'Expected delivery: [date]', 'Expected delivery: [date]', '', 'Delivered on [date]'];
     var eventDefs = bn
       ? [['কুরিয়ারে বুক হয়েছে', 3], ['কুরিয়ার নিয়ে গেছে', 3], ['পথে আছে', 3], ['ডেলিভারি হয়েছে', 5]]
       : [['Booked with the courier', 3], ['Picked up by the courier', 3], ['On the way', 3], ['Delivered', 5]];
@@ -320,8 +326,9 @@ class Component extends DCLogic {
       orderTitle: (bn ? 'অর্ডার ' : 'Order ') + st.num.trim(),
       cancelled: st.cancelled,
       active: !st.cancelled,
-      statusText: st.cancelled ? (bn ? 'বাতিল' : 'Cancelled') : statusNames[stage],
-      deliveryText: st.cancelled ? (bn ? 'পাঠানো হয়নি' : 'Not sent') : deliveryNames[stage],
+      statusText: st.cancelled ? (bn ? 'বাতিল' : 'Cancelled') : headNames[stage],
+      headColor: st.cancelled ? '#3c4350' : stage === 5 ? '#1d6b3a' : '#1a1f29',
+      expectText: st.cancelled ? (bn ? 'কোনো টাকা দিতে হবে না।' : 'You don’t need to pay anything.') : expectNames[stage],
       steps: stepDefs.map(function (d, i) {
         var done = i < stage;
         var now = i === stage;

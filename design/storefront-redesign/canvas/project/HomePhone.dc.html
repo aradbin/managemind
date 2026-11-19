@@ -16,69 +16,69 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="width: 390px; min-height: 5050px; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: 1.5">
-<dc-import name="PhoneHeader" primary="{{primary}}" cart-count="{{cartCount}}" on-menu="{{openMenu}}" hint-size="100%,132px"></dc-import>
+<div lang="{{lang}}" style="width: 390px; min-height: 100vh; position: relative; display: flex; flex-direction: column; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #ffffff; font-size: 15px; line-height: {{lineHeight}}">
+<dc-import name="PhoneHeader" alt="{{altHref}}" bn="{{bn}}" primary="{{primary}}" cart-count="{{cartCount}}" on-menu="{{openMenu}}" hint-size="100%,132px"></dc-import>
 
 <main style="flex: 1 1 auto; display: flex; flex-direction: column">
-<section aria-label="Featured" style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 10px">
+<section aria-label="{{t.featured}}" style="padding: 16px 16px 0; display: flex; flex-direction: column; gap: 10px">
 <div style="border-radius: 12px; overflow: hidden; background: {{primary}}; color: #ffffff">
 <div style="height: 160px; background: rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #d6e2f2; font-size: 13px">
 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
-<span>Lifestyle photo</span>
+<span>{{t.lifestylePhoto}}</span>
 </div>
 <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
-<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd98a">This week</span>
-<h1 style="margin: 0; font-size: 28px; line-height: 1.15; font-weight: 700">Home essentials, delivered to your door</h1>
-<p style="margin: 0; font-size: 15px; color: #e3ebf6">Kitchen, bedding, storage and more. Pay cash when your order arrives.</p>
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #ffd98a">{{t.thisWeek}}</span>
+<h1 style="margin: 0; font-size: 28px; line-height: 1.15; font-weight: 700">{{t.homeEssentialsDeliveredTo}}</h1>
+<p style="margin: 0; font-size: 15px; color: #e3ebf6">{{t.kitchenBeddingStorageAnd}}</p>
 <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px">
-<a href="ListingPhone.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: #ffffff; color: {{primary}}; font-weight: 700; text-decoration: none; display: flex; align-items: center">Shop now</a>
-<a href="#p-deals" style="height: 44px; padding: 0 18px; border-radius: 8px; border: 1.5px solid #ffffff; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box">See today’s deals</a>
+<a href="ListingPhone{{sfx}}.dc.html" style="height: 44px; padding: 0 20px; border-radius: 8px; background: #ffffff; color: {{primary}}; font-weight: 700; text-decoration: none; display: flex; align-items: center">{{t.shopNow}}</a>
+<a href="#p-deals" style="height: 44px; padding: 0 18px; border-radius: 8px; border: 1.5px solid #ffffff; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-sizing: border-box">{{t.seeTodaySDeals}}</a>
 </div>
 </div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
-<a href="ListingPhone.dc.html" style="min-height: 132px; border-radius: 12px; background: #fff4dd; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<a href="ListingPhone{{sfx}}.dc.html" style="min-height: 132px; border-radius: 12px; background: #fff4dd; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
 <span aria-hidden="true" style="height: 76px; border-radius: 8px; background: rgba(26,31,41,0.06); display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
-<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.2">New in electronics</span><span style="color: #545b69; font-size: 13px">Fans, lamps and chargers</span></span>
-<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">Shop electronics <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.2">{{t.newInElectronics}}</span><span style="color: #545b69; font-size: 13px">{{t.fansLampsAndChargers}}</span></span>
+<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">{{t.shopElectronics}} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
 </a>
-<a href="ListingPhone.dc.html" style="min-height: 132px; border-radius: 12px; background: #e8f0fa; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
+<a href="ListingPhone{{sfx}}.dc.html" style="min-height: 132px; border-radius: 12px; background: #e8f0fa; color: #1a1f29; text-decoration: none; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 8px">
 <span aria-hidden="true" style="height: 76px; border-radius: 8px; background: rgba(26,31,41,0.06); display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
-<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.2">Back to school</span><span style="color: #545b69; font-size: 13px">Bags, bottles and stationery</span></span>
-<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">Shop back to school <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 16px; font-weight: 700; line-height: 1.2">{{t.backToSchool}}</span><span style="color: #545b69; font-size: 13px">{{t.bagsBottlesAndStationery}}</span></span>
+<span style="font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 2px">{{t.shopBackToSchool}} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
 </a>
 </div>
 </section>
 
-<section aria-label="Why shop with us" style="padding: 10px 16px 0">
+<section aria-label="{{t.whyShopWithUs}}" style="padding: 10px 16px 0">
 <ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
 <li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg></span>
-<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">Cash on delivery</strong><span style="font-size: 12px; color: #545b69">Pay when your order arrives</span></span>
+<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">{{t.cashOnDelivery}}</strong><span style="font-size: 12px; color: #545b69">{{t.payWhenYourOrder}}</span></span>
 </li>
 <li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg></span>
-<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">Delivery across Bangladesh</strong><span style="font-size: 12px; color: #545b69">1–2 days in Dhaka, 3–5 days elsewhere</span></span>
+<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">{{t.deliveryAcrossBangladesh}}</strong><span style="font-size: 12px; color: #545b69">{{t.s12DaysIn}}</span></span>
 </li>
 <li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6"></path><path d="M4 4v4h4"></path></svg></span>
-<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">Easy returns</strong><span style="font-size: 12px; color: #545b69">Return within 7 days</span></span>
+<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">{{t.easyReturns}}</strong><span style="font-size: 12px; color: #545b69">{{t.returnWithin7Days}}</span></span>
 </li>
 <li style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 8px; border: 1px solid #dde2ea">
 <span style="color: {{primary}}; display: flex; flex: none; margin-top: 2px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg></span>
-<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">Pay online safely</strong><span style="font-size: 12px; color: #545b69">bKash, Nagad, card or bank</span></span>
+<span style="display: flex; flex-direction: column; line-height: 1.3"><strong style="font-size: 13px; font-weight: 600">{{t.payOnlineSafely}}</strong><span style="font-size: 12px; color: #545b69">{{t.bkashNagadCardOr}}</span></span>
 </li>
 </ul>
 </section>
 
 <section aria-labelledby="p-cat-h" style="padding: 32px 16px 0">
 <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px">
-<h2 id="p-cat-h" style="margin: 0; font-size: 20px; font-weight: 700">Shop by category</h2>
-<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">See all</a>
+<h2 id="p-cat-h" style="margin: 0; font-size: 20px; font-weight: 700">{{t.shopByCategory}}</h2>
+<a href="ListingPhone{{sfx}}.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">{{t.seeAll}}</a>
 </div>
 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 10px">
 <sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
-<a href="ListingPhone.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #1a1f29; text-align: center">
+<a href="ListingPhone{{sfx}}.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #1a1f29; text-align: center">
 <span style="width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; background: {{c.tone}}; display: flex; align-items: center; justify-content: center; color: #6b7383"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg></span>
 <span style="font-size: 12px; font-weight: 600; line-height: 1.25">{{c.short}}</span>
 </a>
@@ -89,14 +89,14 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <section id="p-deals" aria-labelledby="pdeals-h" style="margin-top: 32px; padding: 24px 0 28px; background: #f4f6f9">
 <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; padding: 0 16px; margin-bottom: 12px">
 <div style="display: flex; flex-direction: column">
-<h2 id="pdeals-h" style="margin: 0; font-size: 20px; font-weight: 700">Today’s deals</h2>
-<span style="color: #545b69; font-size: 13px">Lower prices on everyday favourites</span>
+<h2 id="pdeals-h" style="margin: 0; font-size: 20px; font-weight: 700">{{t.todaySDeals}}</h2>
+<span style="color: #545b69; font-size: 13px">{{t.lowerPricesOnEveryday}}</span>
 </div>
-<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">See all deals</a>
+<a href="ListingPhone{{sfx}}.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">{{t.seeAllDeals}}</a>
 </div>
 <div style="padding: 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
 <sc-for list="{{deals}}" as="p" hint-placeholder-count="4">
-<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
+<dc-import name="ProductCard" bn="{{bn}}" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
 </sc-for>
 </div>
 </section>
@@ -105,125 +105,230 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 <div style="border-radius: 12px; overflow: hidden; background: #f4f6f9">
 <div style="height: 180px; background: #e4e9f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #545b69; font-size: 13px">
 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-9 9"></path></svg>
-<span>Collection photo</span>
+<span>{{t.collectionPhoto}}</span>
 </div>
 <div style="padding: 20px; display: flex; flex-direction: column; gap: 10px">
-<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #545b69">Collection</span>
-<h2 id="p-iwt-h" style="margin: 0; font-size: 24px; line-height: 1.2; font-weight: 700">Everything for the kitchen</h2>
-<p style="margin: 0; color: #3c4350">Cookware, storage and tableware, picked for everyday cooking. Mix and match, and we deliver it all together.</p>
-<a href="ListingPhone.dc.html" style="align-self: flex-start; height: 44px; padding: 0 20px; margin-top: 4px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">Shop kitchen</a>
+<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #545b69">{{t.collection}}</span>
+<h2 id="p-iwt-h" style="margin: 0; font-size: 24px; line-height: 1.2; font-weight: 700">{{t.everythingForTheKitchen}}</h2>
+<p style="margin: 0; color: #3c4350">{{t.cookwareStorageAndTableware}}</p>
+<a href="ListingPhone{{sfx}}.dc.html" style="align-self: flex-start; height: 44px; padding: 0 20px; margin-top: 4px; border-radius: 8px; background: {{primary}}; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center">{{t.shopKitchen}}</a>
 </div>
 </div>
 </section>
 
 <section aria-labelledby="pnew-h" style="margin-top: 32px; padding: 24px 16px 28px; background: #f4f6f9">
 <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
-<h2 id="pnew-h" style="margin: 0; font-size: 20px; font-weight: 700">New arrivals</h2>
-<a href="ListingPhone.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">View all</a>
+<h2 id="pnew-h" style="margin: 0; font-size: 20px; font-weight: 700">{{t.newArrivals}}</h2>
+<a href="ListingPhone{{sfx}}.dc.html" style="font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: flex; align-items: center">{{t.viewAll}}</a>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
 <sc-for list="{{newest}}" as="p" hint-placeholder-count="6">
-<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
+<dc-import name="ProductCard" bn="{{bn}}" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,350px"></dc-import>
 </sc-for>
 </div>
-<a href="ListingPhone.dc.html" style="margin-top: 24px; height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">View all products</a>
+<a href="ListingPhone{{sfx}}.dc.html" style="margin-top: 24px; height: 48px; border-radius: 8px; border: 1.5px solid #c5ccd8; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box">{{t.viewAllProducts}}</a>
 </section>
 
 <sc-if value="{{hasRecent}}" hint-placeholder-val="{{ true }}">
 <section aria-labelledby="p-recent-h" style="padding: 32px 16px 0">
 <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px">
-<h2 id="p-recent-h" style="margin: 0; font-size: 20px; font-weight: 700">Recently viewed</h2>
-<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">Clear</button>
+<h2 id="p-recent-h" style="margin: 0; font-size: 20px; font-weight: 700">{{t.recentlyViewed}}</h2>
+<button type="button" onClick="{{clearRecent}}" style="height: 44px; padding: 0 4px; border: 0; background: transparent; color: {{primary}}; font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer">{{t.clear}}</button>
 </div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px">
 <sc-for list="{{recent}}" as="p" hint-placeholder-count="4">
-<dc-import name="ProductCard" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,290px"></dc-import>
+<dc-import name="ProductCard" bn="{{bn}}" item="{{p}}" compact="{{ true }}" on-add="{{addOne}}" primary="{{primary}}" hint-size="100%,290px"></dc-import>
 </sc-for>
 </div>
 </section>
 </sc-if>
 
-<section aria-label="Help" style="padding: 32px 16px">
+<section aria-label="{{t.help}}" style="padding: 32px 16px">
 <div style="border-radius: 12px; background: #1a1f29; color: #ffffff; padding: 20px; display: flex; flex-direction: column; gap: 12px">
-<strong style="font-size: 18px; font-weight: 700">Need help choosing?</strong>
-<span style="color: #c9cfda; font-size: 14px">Ask us anything before you order. We reply [opening hours].</span>
-<a href="#" style="height: 48px; border-radius: 8px; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>Message on WhatsApp</a>
-<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #8a93a3; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>Call [hotline number]</a>
+<strong style="font-size: 18px; font-weight: 700">{{t.needHelpChoosing}}</strong>
+<span style="color: #c9cfda; font-size: 14px">{{t.askUsAnythingBefore}}</span>
+<a href="#" style="height: 48px; border-radius: 8px; background: #ffffff; color: #1a1f29; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"></path></svg>{{t.messageOnWhatsapp}}</a>
+<a href="#" style="height: 48px; border-radius: 8px; border: 1.5px solid #8a93a3; color: #ffffff; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>{{t.callHotlineNumber}}</a>
 </div>
 </section>
 </main>
 
-<dc-import name="PhoneFooter" primary="{{primary}}" hint-size="100%,540px"></dc-import>
+<dc-import name="PhoneFooter" alt="{{altHref}}" bn="{{bn}}" primary="{{primary}}" hint-size="100%,540px"></dc-import>
 
 <div style="position: sticky; bottom: 0; z-index: 8">
-<dc-import name="PhoneTabBar" active="home" cart-count="{{cartCount}}" primary="{{primary}}" hint-size="100%,68px"></dc-import>
+<dc-import name="PhoneTabBar" bn="{{bn}}" active="home" cart-count="{{cartCount}}" primary="{{primary}}" hint-size="100%,68px"></dc-import>
 </div>
 
 <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
 <div style="position: absolute; top: 0; left: 0; width: 390px; height: 844px; background: rgba(26,31,41,0.5); z-index: 10">
-<nav aria-label="Menu" style="width: 320px; height: 844px; background: #ffffff; display: flex; flex-direction: column; box-shadow: 8px 0 24px rgba(26,31,41,0.2)">
+<nav aria-label="{{t.menu}}" style="width: 320px; height: 844px; background: #ffffff; display: flex; flex-direction: column; box-shadow: 8px 0 24px rgba(26,31,41,0.2)">
 <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 20px; border-bottom: 1px solid #dde2ea">
-<strong style="font-size: 18px; font-weight: 700">Categories</strong>
-<button type="button" onClick="{{closeMenu}}" aria-label="Close menu" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+<strong style="font-size: 18px; font-weight: 700">{{t.categories}}</strong>
+<button type="button" onClick="{{closeMenu}}" aria-label="{{t.closeMenu}}" style="width: 44px; height: 44px; border: 0; background: transparent; color: #1a1f29; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
 </div>
 <sc-for list="{{categories}}" as="c" hint-placeholder-count="8">
-<a href="ListingPhone.dc.html" style="min-height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #1a1f29; text-decoration: none; font-weight: 500; border-bottom: 1px solid #eef1f5">{{c.name}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+<a href="ListingPhone{{sfx}}.dc.html" style="min-height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; color: #1a1f29; text-decoration: none; font-weight: 500; border-bottom: 1px solid #eef1f5">{{c.name}}<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#545b69" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
 </sc-for>
 <div style="padding: 16px 20px; display: flex; flex-direction: column">
-<a href="TrackPhone.dc.html" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Track your order</a>
-<a href="#" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">Help: [hotline number]</a>
+<a href="TrackPhone{{sfx}}.dc.html" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.trackYourOrder}}</a>
+<a href="#" style="min-height: 44px; display: flex; align-items: center; color: #3c4350; text-decoration: none">{{t.helpHotlineNumber}}</a>
 </div>
 </nav>
 </div>
 </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":5050}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":5040}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = { count: 0, menuOpen: false, recentCleared: false };
   }
   renderVals() {
+    var bn = !!this.props.bn;
+    // English → Bangla for text in this board's data (the store's own strings where it has them).
+    var TR = {
+      "22 cm": "২২ সেমি",
+      "24 cm": "২৪ সেমি",
+      "26 cm": "২৬ সেমি",
+      "28 cm": "২৮ সেমি",
+      "3 litre": "৩ লিটার",
+      "5 litre": "৫ লিটার",
+      "Airtight rice box, 10 kg": "এয়ারটাইট চালের বাক্স, ১০ কেজি",
+      "Aloe vera face wash, 150 ml": "অ্যালোভেরা ফেসওয়াশ, ১৫০ মিলি",
+      "Baby & kids": "শিশু ও বাচ্চা",
+      "Beauty": "সৌন্দর্য",
+      "Beauty & health": "সৌন্দর্য ও স্বাস্থ্য",
+      "Black": "কালো",
+      "Blue": "নীল",
+      "Ceramic dinner set, 24 pieces": "সিরামিক ডিনার সেট, ২৪ পিস",
+      "Cotton bedsheet set, double": "সুতির বিছানার চাদরের সেট, ডাবল",
+      "Electric kettle, 1.8 litre": "ইলেকট্রিক কেটলি, ১.৮ লিটার",
+      "Electronics": "ইলেকট্রনিক্স",
+      "Fashion": "ফ্যাশন",
+      "From ৳2,650": "৳২,৬৫০ থেকে",
+      "From ৳990": "৳৯৯০ থেকে",
+      "Glass food containers, set of 5": "কাচের খাবারের বাক্স, ৫টির সেট",
+      "Granite grey": "গ্রানাইট ধূসর",
+      "Groceries": "মুদি",
+      "Home": "ঘর",
+      "Home & living": "ঘর ও সাজসজ্জা",
+      "Jute storage baskets, set of 3": "পাটের ঝুড়ি, ৩টির সেট",
+      "Kids’ school backpack, 18 L": "বাচ্চাদের স্কুলব্যাগ, ১৮ লিটার",
+      "Kitchen": "রান্নাঘর",
+      "Kitchen & dining": "রান্নাঘর ও খাবার",
+      "Knife set with block, 6 pieces": "স্ট্যান্ডসহ ছুরির সেট, ৬ পিস",
+      "LED desk lamp with USB charging": "ইউএসবি চার্জিংসহ এলইডি টেবিল ল্যাম্প",
+      "Microfibre floor mop with bucket": "বালতিসহ মাইক্রোফাইবার মপ",
+      "Miniket rice, 5 kg": "মিনিকেট চাল, ৫ কেজি",
+      "Non-stick frying pan with glass lid": "কাচের ঢাকনাসহ নন-স্টিক ফ্রাইপ্যান",
+      "Pressure cooker": "প্রেশার কুকার",
+      "Rechargeable table fan, 12 inch": "রিচার্জেবল টেবিল ফ্যান, ১২ ইঞ্চি",
+      "Red": "লাল",
+      "Silver": "রুপালি",
+      "Stainless steel water bottle, 1 L": "স্টেইনলেস স্টিলের পানির বোতল, ১ লিটার",
+      "Stationery": "স্টেশনারি",
+      "White": "সাদা"
+    };
+    var tr = function (x) { return bn && Object.prototype.hasOwnProperty.call(TR, x) ? TR[x] : x; };
+    var num = function (n) { var x = typeof n === 'number' ? n.toLocaleString('en-US') : String(n); return bn ? x.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : x; };
+    // The board's fixed copy: [English, Bangla].
+    var T0 = {
+      askUsAnythingBefore: ["Ask us anything before you order. We reply [opening hours].", "অর্ডারের আগে যেকোনো প্রশ্ন করুন। আমরা উত্তর দিই [খোলার সময়]।"],
+      backToSchool: ["Back to school", "স্কুলের প্রস্তুতি"],
+      bagsBottlesAndStationery: ["Bags, bottles and stationery", "ব্যাগ, বোতল আর স্টেশনারি"],
+      bkashNagadCardOr: ["bKash, Nagad, card or bank", "বিকাশ, নগদ, কার্ড বা ব্যাংক"],
+      callHotlineNumber: ["Call [hotline number]", "কল করুন [hotline number]"],
+      cashOnDelivery: ["Cash on delivery", "ক্যাশ অন ডেলিভারি"],
+      categories: ["Categories", "ক্যাটাগরি"],
+      clear: ["Clear", "মুছুন"],
+      closeMenu: ["Close menu", "মেনু বন্ধ করুন"],
+      collection: ["Collection", "কালেকশন"],
+      collectionPhoto: ["Collection photo", "কালেকশনের ছবি"],
+      cookwareStorageAndTableware: ["Cookware, storage and tableware, picked for everyday cooking. Mix and match, and we deliver it all together.", "প্রতিদিনের রান্নার জন্য বাছাই করা হাঁড়ি-পাতিল, স্টোরেজ আর বাসনপত্র। পছন্দমতো মিলিয়ে নিন, আমরা সব একসাথে পৌঁছে দেব।"],
+      deliveryAcrossBangladesh: ["Delivery across Bangladesh", "সারা দেশে ডেলিভারি"],
+      easyReturns: ["Easy returns", "সহজ ফেরত"],
+      everythingForTheKitchen: ["Everything for the kitchen", "রান্নাঘরের সবকিছু"],
+      fansLampsAndChargers: ["Fans, lamps and chargers", "ফ্যান, ল্যাম্প আর চার্জার"],
+      featured: ["Featured", "বাছাই করা"],
+      help: ["Help", "সাহায্য"],
+      helpHotlineNumber: ["Help: [hotline number]", "সাহায্য: [hotline number]"],
+      homeEssentialsDeliveredTo: ["Home essentials, delivered to your door", "ঘরের দরকারি জিনিস, পৌঁছে যাবে আপনার দরজায়"],
+      kitchenBeddingStorageAnd: ["Kitchen, bedding, storage and more. Pay cash when your order arrives.", "রান্নাঘর, বিছানা, স্টোরেজ আর আরও অনেক কিছু। অর্ডার হাতে পেয়ে টাকা দিন।"],
+      lifestylePhoto: ["Lifestyle photo", "লাইফস্টাইল ছবি"],
+      lowerPricesOnEveryday: ["Lower prices on everyday favourites", "প্রতিদিনের পছন্দের জিনিসে কম দাম"],
+      menu: ["Menu", "মেনু"],
+      messageOnWhatsapp: ["Message on WhatsApp", "হোয়াটসঅ্যাপে মেসেজ"],
+      needHelpChoosing: ["Need help choosing?", "কোনটা নেবেন বুঝতে পারছেন না?"],
+      newArrivals: ["New arrivals", "নতুন পণ্য"],
+      newInElectronics: ["New in electronics", "ইলেকট্রনিক্সে নতুন"],
+      payOnlineSafely: ["Pay online safely", "নিরাপদ অনলাইন পেমেন্ট"],
+      payWhenYourOrder: ["Pay when your order arrives", "পণ্য হাতে পেয়ে টাকা দিন"],
+      recentlyViewed: ["Recently viewed", "সম্প্রতি দেখেছেন"],
+      returnWithin7Days: ["Return within 7 days", "৭ দিনের মধ্যে ফেরত"],
+      s12DaysIn: ["1–2 days in Dhaka, 3–5 days elsewhere", "ঢাকায় ১–২ দিন, ঢাকার বাইরে ৩–৫ দিন"],
+      seeAll: ["See all", "সব দেখুন"],
+      seeAllDeals: ["See all deals", "সব অফার দেখুন"],
+      seeTodaySDeals: ["See today’s deals", "আজকের অফার দেখুন"],
+      shopBackToSchool: ["Shop back to school", "স্কুলের জিনিস দেখুন"],
+      shopByCategory: ["Shop by category", "ক্যাটাগরি অনুযায়ী দেখুন"],
+      shopElectronics: ["Shop electronics", "ইলেকট্রনিক্স দেখুন"],
+      shopKitchen: ["Shop kitchen", "রান্নাঘরের জিনিস দেখুন"],
+      shopNow: ["Shop now", "এখনই কিনুন"],
+      thisWeek: ["This week", "এই সপ্তাহে"],
+      todaySDeals: ["Today’s deals", "আজকের অফার"],
+      trackYourOrder: ["Track your order", "অর্ডার ট্র্যাক করুন"],
+      viewAll: ["View all", "সব দেখুন"],
+      viewAllProducts: ["View all products", "সব পণ্য দেখুন"],
+      whyShopWithUs: ["Why shop with us", "কেন আমাদের থেকে কিনবেন"]
+    };
+    var t = {};
+    Object.keys(T0).forEach(function (k) { t[k] = T0[k][bn ? 1 : 0]; });
     var self = this;
     var link = function (list) { return list.map(function (p) { return Object.assign({ href: 'ProductPhone.dc.html' }, p); }); };
     return {
+      t: t,
+      bn: bn,
+      lang: bn ? 'bn' : 'en',
+      altHref: bn ? 'HomePhone.dc.html' : 'HomePhoneBn.dc.html',
+      lineHeight: bn ? '1.6' : '1.5',
+      sfx: bn ? 'Bn' : '',
       primary: this.props.primary ?? '#1f4e8c',
       cartCount: this.state.count,
       addOne: function () { self.setState({ count: self.state.count + 1 }); },
       categories: [
-        { name: 'Kitchen & dining', short: 'Kitchen', tone: '#fdf0e1' },
-        { name: 'Home & living', short: 'Home', tone: '#e8f0fa' },
-        { name: 'Electronics', short: 'Electronics', tone: '#eceaf8' },
-        { name: 'Fashion', short: 'Fashion', tone: '#f8e9ee' },
-        { name: 'Beauty & health', short: 'Beauty', tone: '#e6f4ef' },
-        { name: 'Baby & kids', short: 'Baby & kids', tone: '#fff4dd' },
-        { name: 'Groceries', short: 'Groceries', tone: '#eef5e4' },
-        { name: 'Stationery', short: 'Stationery', tone: '#f1f3f6' }
+        { name: tr('Kitchen & dining'), short: tr('Kitchen'), tone: '#fdf0e1' },
+        { name: tr('Home & living'), short: tr('Home'), tone: '#e8f0fa' },
+        { name: tr('Electronics'), short: tr('Electronics'), tone: '#eceaf8' },
+        { name: tr('Fashion'), short: tr('Fashion'), tone: '#f8e9ee' },
+        { name: tr('Beauty & health'), short: tr('Beauty'), tone: '#e6f4ef' },
+        { name: tr('Baby & kids'), short: tr('Baby & kids'), tone: '#fff4dd' },
+        { name: tr('Groceries'), short: tr('Groceries'), tone: '#eef5e4' },
+        { name: tr('Stationery'), short: tr('Stationery'), tone: '#f1f3f6' }
       ],
       deals: link([
-        { brand: 'Brand A', title: 'Non-stick frying pan with glass lid', price: 'From ৳990', compare: '৳1,190', off: '−17%', tone: '#e4e9f0', variants: { sizes: [{ name: '22 cm' }, { name: '24 cm' }, { name: '26 cm' }, { name: '28 cm' }], colors: [{ name: 'Black', swatch: '#23262d' }, { name: 'Red', swatch: '#a3302a' }, { name: 'Granite grey', swatch: '#8a8f98' }] } },
-        { brand: 'Brand B', title: 'Rechargeable table fan, 12 inch', price: '৳3,450', compare: '৳3,990', off: '−14%', tone: '#eceaf8' },
-        { brand: 'Brand C', title: 'Cotton bedsheet set, double', price: '৳1,690', compare: '৳2,100', off: '−20%', tone: '#e8f0fa' },
-        { brand: 'Brand D', title: 'Stainless steel water bottle, 1 L', price: '৳590', compare: '৳690', off: '−14%', tone: '#e6f4ef', variants: { colors: [{ name: 'Silver', swatch: '#c0c4ca' }, { name: 'Blue', swatch: '#3a6ea5' }, { name: 'Black', swatch: '#23262d' }] } },
-        { brand: 'Brand C', title: 'Ceramic dinner set, 24 pieces', price: '৳3,800', compare: '৳4,500', off: '−16%', tone: '#fdf0e1' },
-        { brand: 'Brand D', title: 'Jute storage baskets, set of 3', price: '৳690', compare: '৳850', off: '−19%', tone: '#fff4dd' }
+        { brand: 'Brand A', title: tr('Non-stick frying pan with glass lid'), price: tr('From ৳990'), compare: num('৳1,190'), off: num('−17%'), tone: '#e4e9f0', variants: { sizes: [{ name: tr('22 cm') }, { name: tr('24 cm') }, { name: tr('26 cm') }, { name: tr('28 cm') }], colors: [{ name: tr('Black'), swatch: '#23262d' }, { name: tr('Red'), swatch: '#a3302a' }, { name: tr('Granite grey'), swatch: '#8a8f98' }] } },
+        { brand: 'Brand B', title: tr('Rechargeable table fan, 12 inch'), price: num('৳3,450'), compare: num('৳3,990'), off: num('−14%'), tone: '#eceaf8' },
+        { brand: 'Brand C', title: tr('Cotton bedsheet set, double'), price: num('৳1,690'), compare: num('৳2,100'), off: num('−20%'), tone: '#e8f0fa' },
+        { brand: 'Brand D', title: tr('Stainless steel water bottle, 1 L'), price: num('৳590'), compare: num('৳690'), off: num('−14%'), tone: '#e6f4ef', variants: { colors: [{ name: tr('Silver'), swatch: '#c0c4ca' }, { name: tr('Blue'), swatch: '#3a6ea5' }, { name: tr('Black'), swatch: '#23262d' }] } },
+        { brand: 'Brand C', title: tr('Ceramic dinner set, 24 pieces'), price: num('৳3,800'), compare: num('৳4,500'), off: num('−16%'), tone: '#fdf0e1' },
+        { brand: 'Brand D', title: tr('Jute storage baskets, set of 3'), price: num('৳690'), compare: num('৳850'), off: num('−19%'), tone: '#fff4dd' }
       ]).slice(0, 4),
       newest: link([
-        { brand: 'Brand B', title: 'LED desk lamp with USB charging', price: '৳1,100', tone: '#eceaf8' },
-        { brand: 'Brand D', title: 'Glass food containers, set of 5', price: '৳980', compare: '৳1,150', off: '−15%', tone: '#fdf0e1' },
-        { brand: 'Brand C', title: 'Kids’ school backpack, 18 L', price: '৳950', tone: '#fff4dd' },
-        { brand: 'Brand A', title: 'Microfibre floor mop with bucket', price: '৳1,450', tone: '#e8f0fa' },
-        { brand: 'Brand B', title: 'Aloe vera face wash, 150 ml', price: '৳320', tone: '#e6f4ef' },
-        { brand: 'Brand D', title: 'Miniket rice, 5 kg', price: '৳420', tone: '#eef5e4' }
+        { brand: 'Brand B', title: tr('LED desk lamp with USB charging'), price: num('৳1,100'), tone: '#eceaf8' },
+        { brand: 'Brand D', title: tr('Glass food containers, set of 5'), price: num('৳980'), compare: num('৳1,150'), off: num('−15%'), tone: '#fdf0e1' },
+        { brand: 'Brand C', title: tr('Kids’ school backpack, 18 L'), price: num('৳950'), tone: '#fff4dd' },
+        { brand: 'Brand A', title: tr('Microfibre floor mop with bucket'), price: num('৳1,450'), tone: '#e8f0fa' },
+        { brand: 'Brand B', title: tr('Aloe vera face wash, 150 ml'), price: num('৳320'), tone: '#e6f4ef' },
+        { brand: 'Brand D', title: tr('Miniket rice, 5 kg'), price: num('৳420'), tone: '#eef5e4' }
       ]),
       hasRecent: !this.state.recentCleared,
       clearRecent: function () { self.setState({ recentCleared: true }); },
       recent: link([
-        { brand: 'Brand B', title: 'Electric kettle, 1.8 litre', price: '৳1,690', tone: '#f8e9ee', variants: { colors: [{ name: 'Black', swatch: '#23262d' }, { name: 'White', swatch: '#f4f4f2' }] } },
-        { brand: 'Brand A', title: 'Pressure cooker', price: 'From ৳2,650', tone: '#eceaf8', variants: { sizes: [{ name: '3 litre' }, { name: '5 litre' }] } },
-        { brand: 'Brand A', title: 'Knife set with block, 6 pieces', price: '৳1,350', tone: '#e6f4ef' },
-        { brand: 'Brand D', title: 'Airtight rice box, 10 kg', price: '৳790', tone: '#f1f3f6' }
+        { brand: 'Brand B', title: tr('Electric kettle, 1.8 litre'), price: num('৳1,690'), tone: '#f8e9ee', variants: { colors: [{ name: tr('Black'), swatch: '#23262d' }, { name: tr('White'), swatch: '#f4f4f2' }] } },
+        { brand: 'Brand A', title: tr('Pressure cooker'), price: tr('From ৳2,650'), tone: '#eceaf8', variants: { sizes: [{ name: tr('3 litre') }, { name: tr('5 litre') }] } },
+        { brand: 'Brand A', title: tr('Knife set with block, 6 pieces'), price: num('৳1,350'), tone: '#e6f4ef' },
+        { brand: 'Brand D', title: tr('Airtight rice box, 10 kg'), price: num('৳790'), tone: '#f1f3f6' }
       ]),
       menuOpen: this.state.menuOpen,
       openMenu: function () { self.setState({ menuOpen: true }); },
