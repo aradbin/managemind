@@ -9,7 +9,8 @@ export interface ShopConfig {
   numerals: 'bengali' | 'latin';
   /** The language prefix for links ('' or '/en'). */
   prefix: string;
-  msg: Record<string, string>;
+  /** Messages by key; plural ones as both forms. */
+  msg: Record<string, string | { one: string; other: string }>;
   links: {
     home: string;
     cart: string;
@@ -23,6 +24,19 @@ export interface ShopConfig {
   /** The store's WhatsApp number (E.164), when its chat buttons are on. */
   whatsapp?: string | null;
   geo?: string;
+  /** The cart and checkout: what the store promises (ShopPage.astro). */
+  facts?: ShopFactsView | null;
+  /** The store's phone, formatted, for "Questions? …". */
+  phone?: string | null;
+}
+
+export interface ShopFactsView {
+  /** Active delivery zones in the page's language, in the store's order. */
+  zones: { name: string; fee: number; estimate: string | null }[];
+  cod: boolean;
+  online: boolean;
+  /** Days to ask for a return, when shoppers can. */
+  returnDays: number | null;
 }
 
 export type Localized = { bn?: string; en?: string };
@@ -44,9 +58,17 @@ export function config(): ShopConfig {
 
 const cfg = config();
 
-/** A message with {placeholders} filled; digits in the store's numerals. */
+const plurals = new Intl.PluralRules(cfg.locale === 'bn' ? 'bn-BD' : 'en-BD');
+
+/** A message with {placeholders} filled; digits in the store's numerals; plurals by {count}. */
 export function t(key: string, params: Record<string, string | number> = {}): string {
-  const text = cfg.msg[key] ?? key;
+  const message = cfg.msg[key] ?? key;
+  const text =
+    typeof message === 'string'
+      ? message
+      : plurals.select(Number(params.count ?? 0)) === 'one'
+        ? message.one
+        : message.other;
   return text.replace(/\{(\w+)\}/g, (m, name: string) => {
     const v = params[name];
     if (v === undefined) return m;

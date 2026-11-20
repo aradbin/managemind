@@ -1,12 +1,14 @@
 ---
+import type { ShopFacts } from '@managemind/core';
 import type { StoreMessageKey } from '../../../i18n';
 import type { PageContext } from '../../../lib/page';
 import ShopPage from '../ShopPage.astro';
 
 interface Props {
   ctx: PageContext;
+  facts?: ShopFacts | null;
 }
-const { ctx } = Astro.props;
+const { ctx, facts = null } = Astro.props;
 const { t } = ctx;
 const keys: StoreMessageKey[] = [
   'cart.empty',
@@ -44,11 +46,28 @@ const keys: StoreMessageKey[] = [
   'cart.orderWhatsappIntro',
   'cart.fix',
   'product.regular',
+  'cart.items',
+  'cart.subtotalCount',
+  'cart.summary',
+  'cart.atCheckout',
+  'cart.promo',
+  'cart.each',
+  'cart.removeShort',
+  'cart.emptyText',
+  'cart.start',
+  'cart.deliveryNote',
+  'cart.checkoutShort',
+  'trust.cod',
+  'trust.returns',
+  'trust.online',
 ];
 ---
 
-<ShopPage ctx={ctx} kind="cart" title={t('cart.title')} keys={keys}>
-  <h1>{t('cart.title')}</h1>
+<ShopPage ctx={ctx} facts={facts} kind="cart" title={t('cart.title')} keys={keys}>
+  <div class="listing-head">
+    <h1>{t('cart.title')}</h1>
+    <p class="count" data-cart-items></p>
+  </div>
   <div class="shop" data-cart aria-live="polite">
     <p class="muted" data-loading>{t('cart.loading')}</p>
     <noscript><p>{t('cart.noscript')}</p></noscript>

@@ -66,9 +66,24 @@ const row = (label: string, value: string, cls?: string) =>
   );
 
 /** The totals: subtotal, each offer, delivery, VAT and the total. */
-export function totals(cart: Cart, options: { deliveryHint?: string } = {}): HTMLElement {
+export function totals(
+  cart: Cart,
+  options: {
+    deliveryHint?: string;
+    /** "Subtotal (3 items)" in place of "Subtotal". */
+    subtotalLabel?: string;
+    /** "Total before delivery" in place of "Total", while the area isn't chosen. */
+    totalLabel?: string;
+    /** The cart, before an area is chosen: no total while delivery is unknown. */
+    totalOnlyWithZone?: boolean;
+  } = {},
+): HTMLElement {
   const tt = cart.totals;
-  const list = el('dl', { class: 'totals' }, row(t('cart.subtotal'), money(tt.subtotal)));
+  const list = el(
+    'dl',
+    { class: 'totals' },
+    row(options.subtotalLabel ?? t('cart.subtotal'), money(tt.subtotal)),
+  );
   for (const p of cart.promotions) {
     add(list, row(pick(p.title) || t('cart.discount'), `−${money(p.amount)}`, 'discount'));
   }
@@ -77,13 +92,14 @@ export function totals(cart: Cart, options: { deliveryHint?: string } = {}): HTM
     ? fee === 0 && tt.deliveryFee > 0
       ? t('cart.free')
       : money(fee)
-    : cart.deliveryFrom !== null
+    : cart.deliveryFrom !== null && !options.totalOnlyWithZone
       ? t('cart.deliveryFrom', { price: money(cart.deliveryFrom) })
       : (options.deliveryHint ?? '');
   add(list, row(t('cart.delivery'), delivery));
   if (tt.vatTotal > 0 && !tt.vatIncluded) add(list, row(t('cart.vat'), money(tt.vatTotal)));
   if (tt.rounding !== 0) add(list, row(t('cart.rounding'), money(tt.rounding)));
-  add(list, row(t('cart.total'), money(tt.total), 'total'));
+  if (!options.totalOnlyWithZone || cart.zone)
+    add(list, row(options.totalLabel ?? t('cart.total'), money(tt.total), 'total'));
   const box = el('div', {}, list);
   if (tt.vatTotal > 0 && tt.vatIncluded) {
     add(

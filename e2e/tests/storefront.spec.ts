@@ -7,7 +7,7 @@
 // store with ?store=, which a cookie then remembers. Each page type's own
 // JavaScript is held to the 50 KB budget.
 import { expect, type Page, test } from '@playwright/test';
-import { expectAccessible, expectAddedToCart, expectScriptBudget } from './helpers';
+import { expectAccessible, expectAddedToCart, expectScriptBudget, pickArea } from './helpers';
 import { STOREFRONT } from './urls';
 
 async function openStore(page: Page, store: string, path = '/') {
@@ -177,6 +177,34 @@ test('adding from a card, and recently viewed products', async ({ page }) => {
     await expect(recent).toBeHidden();
     await page.reload();
     await expect(page.getByRole('region', { name: 'Recently viewed' })).toBeHidden();
+  });
+});
+
+test('the cart and checkout', async ({ page }) => {
+  await openStore(page, 'demo-fashion', '/categories/sarees');
+  const add = page.getByRole('button', { name: /^Add .+ to cart$/ }).first();
+  await add.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await add.click();
+  await expect(page.getByRole('status').filter({ hasText: 'Added · View cart' })).toBeVisible();
+
+  await test.step('the cart', async () => {
+    await page.goto(`${STOREFRONT}/cart`);
+    await expect(page.getByRole('heading', { level: 2, name: 'Order summary' })).toBeVisible();
+    await expect(page.getByText('1 item', { exact: true })).toBeVisible();
+    await expectAccessible(page, 'cart');
+  });
+
+  await test.step('checkout: problems listed, then the area found by typing', async () => {
+    await page.goto(`${STOREFRONT}/checkout`);
+    await expect(page.getByText('Secure checkout')).toBeVisible();
+    // The pay bar's button on phones, the summary's on desktops: the same one.
+    await page.getByRole('button', { name: 'Place order' }).click();
+    const problems = page.getByRole('alert').filter({ hasText: 'Please check these:' });
+    await expect(problems.getByRole('link', { name: /^Mobile number:/ })).toBeVisible();
+    await expect(page.locator('#c-phone')).toBeFocused();
+    await expectAccessible(page, 'checkout with problems');
+    await pickArea(page, { name: 'Dhanm', id: 513 });
+    await expect(page.locator('[data-area-chosen]')).toContainText('Dhanmondi');
   });
 });
 

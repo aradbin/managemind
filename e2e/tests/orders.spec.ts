@@ -28,6 +28,7 @@ import {
   expectScriptBudget,
   mailCount,
   nextMail,
+  pickArea,
   signIn,
 } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
@@ -224,9 +225,8 @@ test('orders, promotions and accounts', async ({
     ).toBeVisible();
     await shopper.locator('#c-phone').fill(phone);
     await shopper.locator('#c-name').fill('ই২ই ক্রেতা');
-    await shopper.locator('#c-division').selectOption(DHAKA.division);
-    await shopper.locator('#c-district').selectOption(DHAKA.district);
-    await shopper.locator('#c-area').selectOption(DHAKA.area);
+    // Dhanmondi, in Dhaka.
+    await pickArea(shopper, { name: 'Dhanmondi', id: DHAKA.area });
     await shopper.locator('#c-line').fill('বাড়ি ১, সড়ক ২');
     await expect(shopper.getByText(s('checkout.chooseArea'))).toBeHidden();
     // ৳1,050 of ৳1,500, now that the area gives a delivery charge.

@@ -1,6 +1,7 @@
-// Checkout (phase-4-plan §3.5, §3.16): phone first, the area from the
-// geography file's three dropdowns (no API call), totals that follow the
-// area, an invisible Turnstile check, and "Place order" under an
+// Checkout (phase-4-plan §3.5, §3.16; design/storefront-redesign: Checkout,
+// CheckoutPhone): phone first, one searchable Area field over the geography
+// file (no API call), totals that follow the area, a summary of problems
+// linked to their fields, an invisible Turnstile check, and "Place order" under an
 // idempotency key kept in sessionStorage, so a double tap, a lost response
 // or a reload sends the same key and never makes two orders. Online payment
 // (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
@@ -12,6 +13,7 @@ import {
   digits,
   el,
   fill,
+  imageUrl,
   money,
   pick,
   ShopError,
@@ -83,29 +85,74 @@ function show(message: string, kind: 'error' | 'info' = 'error') {
   if (message) notice.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
+const foldLabel = document.querySelector<HTMLElement>('[data-fold-label]');
+const foldTotal = document.querySelector<HTMLElement>('[data-fold-total]');
+const payLabel = document.querySelector<HTMLElement>('[data-pay-label]');
+const payAmount = document.querySelector<HTMLElement>('[data-pay-amount]');
+
+/** What is paid when: on delivery, now, or the delivery charge now. */
+function payRow() {
+  if (!cart || !payLabel || !payAmount) return;
+  const method = chosenPayment();
+  const fee = Math.max(0, cart.totals.deliveryFee - cart.totals.deliveryDiscount);
+  payLabel.textContent =
+    method === 'online'
+      ? t('checkout.payNow')
+      : method === 'cod_with_advance'
+        ? t('checkout.payNowFee')
+        : t('checkout.payOnDelivery');
+  payAmount.textContent = money(method === 'cod_with_advance' ? fee : cart.totals.total);
+}
+
 function renderSummary(c: Cart) {
   cart = c;
   if (!summary) return;
   const lines = el(
     'ul',
     { class: 'mini-lines', role: 'list' },
-    ...c.lines.map((l) =>
-      el(
+    ...c.lines.map((l) => {
+      const src = imageUrl(l.image, 160);
+      return el(
         'li',
         {},
-        el('span', { text: `${lineName(l)} × ${digits(String(l.quantity))}` }),
-        el('span', { text: money(l.total) }),
-        problemText(l) ? el('p', { class: 'line-problem', text: problemText(l) ?? '' }) : null,
-      ),
-    ),
+        el(
+          'span',
+          { class: 'mini-media' },
+          src ? el('img', { src, alt: '', width: '56', height: '56', loading: 'lazy' }) : null,
+          el('span', {
+            class: 'mini-qty',
+            'aria-hidden': 'true',
+            text: digits(String(l.quantity)),
+          }),
+        ),
+        el(
+          'span',
+          { class: 'mini-name' },
+          el('span', { text: `${pick(l.title)}`, class: 'mini-title' }),
+          l.optionLabels.length
+            ? el('span', { class: 'hint', text: l.optionLabels.map(pick).join(' · ') })
+            : null,
+          el('span', { class: 'visually-hidden', text: ` × ${digits(String(l.quantity))}` }),
+          problemText(l) ? el('span', { class: 'line-problem', text: problemText(l) ?? '' }) : null,
+        ),
+        el('span', { class: 'mini-total', text: money(l.total) }),
+      );
+    }),
   );
-  const parts: (Node | null)[] = [lines, totals(c, { deliveryHint: t('checkout.chooseArea') })];
+  const box = totals(c, {
+    deliveryHint: t('checkout.chooseArea'),
+    subtotalLabel: t('cart.subtotalCount', { count: c.itemCount }),
+    ...(c.zone ? {} : { totalLabel: t('checkout.totalBefore') }),
+  });
+  const parts: (Node | null)[] = [lines, box];
   const estimate = c.zone ? pick(c.zone.estimate) : '';
-  if (estimate)
-    parts.push(el('p', { class: 'muted small', text: t('checkout.estimate', { estimate }) }));
+  if (estimate) parts.push(el('p', { class: 'hint', text: t('checkout.estimate', { estimate }) }));
   if (!c.ready) parts.push(el('p', { class: 'line-problem', text: t('cart.fix') }));
   fill(summary, ...parts.filter((p): p is Node => p !== null));
   if (place) place.disabled = !c.ready;
+  if (foldLabel) foldLabel.textContent = t('checkout.showSummary', { count: c.itemCount });
+  if (foldTotal) foldTotal.textContent = money(c.totals.total);
+  payRow();
   // What "delivery charge online" takes now (§3.4).
   const hint = document.querySelector<HTMLElement>('[data-advance-hint]');
   if (hint) {
@@ -128,65 +175,153 @@ function choose(method: string) {
 }
 const chosenPayment = () => String(new FormData(form as HTMLFormElement).get('payment') ?? 'cod');
 
-/** Chooses a place in the three dropdowns, as a reload or a saved address does. */
+/** Chooses an area, as a pick, a reload or a saved address does. */
 let choosePlace: (areaId: number) => void = () => {};
 
-/** The three dropdowns, from the geography file (cached for a year). */
+/**
+ * One searchable Area field (design/storefront-redesign: "One searchable
+ * Area field instead of three dropdowns"): a few letters of the thana,
+ * upazila or district, in either language, list the matching areas with
+ * their district and division; the pick shows as a card with Change. The
+ * geography file is cached for a year, so the search runs here.
+ */
 async function setupAddress() {
   const geo = (await (await fetch(cfg.geo ?? '/geo/bd.json')).json()) as GeoFile;
-  // By ID: querySelector's generic is typed against Workers' Element here.
-  const division = document.getElementById('c-division') as HTMLSelectElement | null;
-  const district = document.getElementById('c-district') as HTMLSelectElement | null;
-  const area = document.getElementById('c-area') as HTMLSelectElement | null;
-  if (!division || !district || !area) return;
-  const fillSelect = (select: HTMLSelectElement, rows: [number, ...unknown[]][]) => {
-    const sorted = [...rows].sort((a, b) => name(a).localeCompare(name(b), cfg.locale));
-    fill(
-      select,
-      el('option', { value: '', text: t('checkout.choose') }),
-      ...sorted.map((r) => el('option', { value: String(r[0]), text: name(r) })),
-    );
-    select.disabled = rows.length === 0;
+  const input = document.getElementById('c-area-q') as HTMLInputElement | null;
+  const list = document.getElementById('c-area-list') as HTMLUListElement | null;
+  const search = document.querySelector<HTMLElement>('[data-area-search]');
+  const chosen = document.querySelector<HTMLElement>('[data-area-chosen]');
+  const hidden = (id: string) => document.getElementById(id) as HTMLInputElement | null;
+  const division = hidden('c-division');
+  const district = hidden('c-district');
+  const areaInput = hidden('c-area');
+  if (!input || !list || !search || !chosen || !division || !district || !areaInput) return;
+  const fold = (text: string) => text.normalize('NFC').toLowerCase();
+  const districts = new Map(geo.s.map((x) => [x[0], x]));
+  const divisions = new Map(geo.d.map((x) => [x[0], x]));
+  type Match = { area: GeoFile['a'][number]; rank: number };
+  let matches: Match[] = [];
+  let active = -1;
+
+  const placeText = (a: GeoFile['a'][number]) => {
+    const s = districts.get(a[1]);
+    const d = s ? divisions.get(s[1]) : undefined;
+    return [s ? name(s) : '', d ? name(d) : ''].filter(Boolean).join(', ');
   };
-  fillSelect(division, geo.d);
-  division.addEventListener('change', () => {
-    fillSelect(
-      district,
-      geo.s.filter((s) => s[1] === Number(division.value)),
-    );
-    fillSelect(area, []);
-  });
-  district.addEventListener('change', () =>
-    fillSelect(
-      area,
-      geo.a.filter((a) => a[1] === Number(district.value)),
-    ),
-  );
-  area.addEventListener('change', async () => {
-    const areaId = Number(area.value) || null;
+  const close = () => {
+    list.hidden = true;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+    active = -1;
+  };
+  const mark = (i: number) => {
+    active = i;
+    for (const [j, li] of [...list.children].entries()) {
+      li.setAttribute('aria-selected', String(j === i));
+    }
+    const li = list.children[i] as HTMLElement | undefined;
+    if (li) {
+      input.setAttribute('aria-activedescendant', li.id);
+      li.scrollIntoView({ block: 'nearest' });
+    }
+  };
+  const pickArea = async (areaId: number, send = true) => {
+    const a = geo.a.find((x) => x[0] === areaId);
+    const s = a ? districts.get(a[1]) : undefined;
+    if (!a || !s) return;
+    areaInput.value = String(a[0]);
+    district.value = String(s[0]);
+    division.value = String(s[1]);
+    const nameEl = chosen.querySelector('[data-area-name]');
+    const placeEl = chosen.querySelector('[data-area-place]');
+    if (nameEl) nameEl.textContent = name(a);
+    if (placeEl) placeEl.textContent = placeText(a);
+    chosen.hidden = false;
+    search.hidden = true;
+    close();
+    fieldError('areaId', '');
+    if (!send) return;
     try {
       renderSummary(await api<Cart>('/cart/area', { method: 'PUT', body: { areaId } }));
     } catch {
       show(t('cart.error'));
     }
-  });
-  choosePlace = (areaId: number) => {
-    const a = geo.a.find((x) => x[0] === areaId);
-    const s = a && geo.s.find((x) => x[0] === a[1]);
-    if (a && s) {
-      division.value = String(s[1]);
-      fillSelect(
-        district,
-        geo.s.filter((x) => x[1] === s[1]),
-      );
-      district.value = String(s[0]);
-      fillSelect(
-        area,
-        geo.a.filter((x) => x[1] === s[0]),
-      );
-      area.value = String(a[0]);
-    }
   };
+  const draw = () => {
+    const q = fold(input.value.trim());
+    while (list.firstChild) list.removeChild(list.firstChild);
+    matches = [];
+    if (q.length < 2) return close();
+    for (const area of geo.a) {
+      const own = [fold(area[2]), fold(area[3])];
+      const s = districts.get(area[1]);
+      const parent = s ? [fold(s[2]), fold(s[3])] : [];
+      const rank = own.some((n) => n.startsWith(q))
+        ? 0
+        : own.some((n) => n.includes(q))
+          ? 1
+          : parent.some((n) => n.startsWith(q))
+            ? 2
+            : -1;
+      if (rank >= 0) matches.push({ area, rank });
+    }
+    matches.sort((x, y) => x.rank - y.rank || name(x.area).localeCompare(name(y.area), cfg.locale));
+    matches = matches.slice(0, 8);
+    if (!matches.length) {
+      list.appendChild(
+        el('li', {
+          class: 'area-none',
+          role: 'option',
+          'aria-disabled': 'true',
+          text: t('checkout.areaNone', { q: input.value.trim() }),
+        }),
+      );
+    }
+    for (const [i, m] of matches.entries()) {
+      const li = el(
+        'li',
+        {
+          id: `c-area-o${i}`,
+          role: 'option',
+          'aria-selected': 'false',
+          'data-area': String(m.area[0]),
+        },
+        el('strong', { text: name(m.area) }),
+        el('span', { class: 'hint', text: placeText(m.area) }),
+      );
+      li.addEventListener('mousedown', (e) => e.preventDefault());
+      li.addEventListener('click', () => void pickArea(m.area[0]));
+      list.appendChild(li);
+    }
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  };
+  input.addEventListener('input', draw);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' && matches.length) {
+      e.preventDefault();
+      if (list.hidden) draw();
+      mark(Math.min(matches.length - 1, active + 1));
+    } else if (e.key === 'ArrowUp' && matches.length) {
+      e.preventDefault();
+      mark(Math.max(0, active - 1));
+    } else if (e.key === 'Enter' && !list.hidden) {
+      e.preventDefault();
+      const m = matches[Math.max(0, active)];
+      if (m) void pickArea(m.area[0]);
+    } else if (e.key === 'Escape') {
+      close();
+    }
+  });
+  input.addEventListener('blur', close);
+  chosen.querySelector('[data-area-change]')?.addEventListener('click', () => {
+    chosen.hidden = true;
+    search.hidden = false;
+    areaInput.value = '';
+    input.value = '';
+    input.focus();
+  });
+  choosePlace = (areaId: number) => void pickArea(areaId, false);
   // A cart that already has an area (a reload): choose it again.
   if (cart?.areaId) choosePlace(cart.areaId);
 }
@@ -216,9 +351,9 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
       show(t('cart.error'));
     }
   };
-  const division = document.getElementById('c-division');
-  const fieldset = division?.closest('fieldset');
-  if (account.addresses.length && division) {
+  const areaField = document.getElementById('c-area-field');
+  const fieldset = areaField?.closest('fieldset');
+  if (account.addresses.length && areaField) {
     const select = el(
       'select',
       { id: 'c-saved' },
@@ -232,17 +367,15 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
       if (a) void use(a);
       else if (line) line.value = '';
     });
-    division
-      .closest('.field')
-      ?.insertAdjacentElement(
-        'beforebegin',
-        el(
-          'div',
-          { class: 'field' },
-          el('label', { for: 'c-saved', text: t('checkout.savedAddress') }),
-          select,
-        ),
-      );
+    areaField.insertAdjacentElement(
+      'beforebegin',
+      el(
+        'div',
+        { class: 'field' },
+        el('label', { for: 'c-saved', text: t('checkout.savedAddress') }),
+        select,
+      ),
+    );
     const first = account.addresses.find((a) => a.isDefault) ?? account.addresses[0];
     if (first) {
       select.value = first.id;
@@ -263,11 +396,44 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
 const PHONE = /^(?:\+?88)?0?1[3-9]\d{8}$/;
 const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
+/** The field a problem belongs to: the area's is the search field (or its chosen card). */
+const fieldInput = (field: string): HTMLElement | null =>
+  field === 'areaId' || field === 'districtId' || field === 'divisionId'
+    ? document.getElementById('c-area-q')
+    : (form?.querySelector<HTMLElement>(`[name=${field}]`) ?? null);
+
 function fieldError(field: string, message: string) {
-  const input = form?.querySelector<HTMLInputElement>(`[name=${field}]`);
-  const error = input ? document.getElementById(`${input.id}-e`) : null;
+  const input = fieldInput(field);
+  const error = input
+    ? document.getElementById(`${field === 'areaId' ? 'c-area' : input.id}-e`)
+    : null;
   if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
   if (error) error.textContent = message;
+}
+
+/** The problems at the top, each a link to its field (design/storefront-redesign). */
+function errorSummary(problems: { field: string; label: string; message: string }[]) {
+  const box = document.querySelector<HTMLElement>('[data-error-summary]');
+  const list = box?.querySelector('[data-error-list]');
+  if (!box || !list) return;
+  while (list.firstChild) list.removeChild(list.firstChild);
+  box.hidden = !problems.length;
+  for (const p of problems) {
+    const input = fieldInput(p.field);
+    const id =
+      p.field === 'areaId' && document.getElementById('c-area-q')?.closest('[hidden]')
+        ? 'c-area-field'
+        : input?.id;
+    const link = el('a', { href: `#${id ?? ''}`, text: `${p.label}: ${p.message}` });
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      (input?.closest('[hidden]')
+        ? document.querySelector<HTMLElement>('[data-area-change]')
+        : input
+      )?.focus();
+    });
+    list.appendChild(el('li', {}, link));
+  }
 }
 
 /** Client-side checks for the obvious; the server checks everything again. */
@@ -295,19 +461,42 @@ function collect(): Record<string, unknown> | null {
       if (bad) ok = false;
     }
   }
-  const divisionId = Number(need('divisionId'));
-  const districtId = Number(need('districtId'));
-  const areaId = Number(need('areaId'));
+  const areaId = Number(value('areaId'));
+  fieldError('areaId', areaId ? '' : t('checkout.areaPick'));
+  if (!areaId) ok = false;
+  const divisionId = Number(value('divisionId'));
+  const districtId = Number(value('districtId'));
   const line = need('line');
   if (form.querySelector('[name=acceptTerms]') && !data.get('acceptTerms')) {
     fieldError('acceptTerms', t('checkout.required'));
     ok = false;
   }
   if (!ok) {
-    show(t('checkout.invalid'));
+    const LABELS: Record<string, string> = {
+      phone: t('checkout.phone'),
+      name: t('checkout.name'),
+      email: t('checkout.email'),
+      areaId: t('checkout.area'),
+      line: t('checkout.line'),
+      acceptTerms: t('checkout.terms'),
+    };
+    errorSummary(
+      Object.keys(LABELS)
+        .map((field) => {
+          const input = fieldInput(field);
+          const message =
+            input?.getAttribute('aria-invalid') === 'true'
+              ? (document.getElementById(`${field === 'areaId' ? 'c-area' : (input.id ?? '')}-e`)
+                  ?.textContent ?? '')
+              : '';
+          return { field, label: LABELS[field] ?? field, message };
+        })
+        .filter((p) => p.message),
+    );
     form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
     return null;
   }
+  errorSummary([]);
   const attribution = attributionForCheckout();
   return {
     contact: { name: value('name'), phone, ...(email ? { email } : {}) },
@@ -584,6 +773,33 @@ async function submit(e: SubmitEvent) {
   }
 }
 
+/** The delivery note under the address, and the promises under Place order. */
+function showFacts() {
+  const facts = cfg.facts;
+  if (!facts) return;
+  const zones = facts.zones
+    .map((z) => `${z.name}: ${money(z.fee)}${z.estimate ? ` (${z.estimate})` : ''}`)
+    .join(', ');
+  const note = document.querySelector<HTMLElement>('[data-delivery-note]');
+  const text = document.querySelector<HTMLElement>('[data-delivery-text]');
+  if (note && text && zones) {
+    text.textContent = t('cart.deliveryNote', { zones });
+    note.hidden = false;
+  }
+  const trust = document.querySelector<HTMLElement>('[data-trust]');
+  if (!trust) return;
+  const items = [
+    t('checkout.trustDetails'),
+    [
+      facts.returnDays ? t('checkout.trustReturns', { count: facts.returnDays }) : '',
+      cfg.phone ? t('checkout.trustHelp', { phone: cfg.phone }) : '',
+    ]
+      .filter(Boolean)
+      .join(' '),
+  ].filter(Boolean);
+  fill(trust, ...items.map((text) => el('li', {}, el('span', { text }))));
+}
+
 async function start() {
   if (!form) return;
   let state: CheckoutState;
@@ -619,13 +835,30 @@ async function start() {
   else if (state.accounts && cfg.links.account) {
     form.insertAdjacentElement(
       'beforebegin',
-      el('p', {}, el('a', { href: cfg.links.account, text: t('checkout.signIn') })),
+      el(
+        'p',
+        { class: 'sign-in-hint' },
+        el('a', { href: cfg.links.account, text: t('checkout.signIn') }),
+        ' ',
+        el('span', { class: 'muted', text: t('checkout.guest') }),
+      ),
     );
   }
+  showFacts();
   const box = document.querySelector<HTMLElement>('[data-turnstile]');
   if (state.turnstileSiteKey && box)
     check = mountTurnstile(box, state.turnstileSiteKey, cfg.locale);
   form.addEventListener('submit', (e) => void submit(e));
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLInputElement).name === 'payment') payRow();
+  });
+  // A corrected field loses its error at once; the summary goes when none is left.
+  form.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (target.getAttribute('aria-invalid') !== 'true' || !target.name) return;
+    if (target.value.trim()) fieldError(target.name, '');
+    if (!form.querySelector('[aria-invalid=true]')) errorSummary([]);
+  });
   if (state.recovery.save) setupRecovery();
   tracker()?.beginCheckout(
     state.cart.lines.map((l) => ({

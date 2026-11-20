@@ -3108,47 +3108,788 @@ button.link {
   background: var(--c-background);
   font-weight: 700;
 }
-.checkout fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0 0 20px;
+/* The cart (design/storefront-redesign: Cart, CartPhone). */
+.cart-grid .lines {
+  border-top: 1px solid var(--c-border);
 }
-.checkout legend {
-  font-size: 1.15rem;
+.cart-grid .line {
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "media body remove"
+    "media stepper total";
+  align-items: start;
+  gap: 8px 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.cart-grid .line-media,
+.cart-grid .line > .line-image {
+  grid-area: media;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.cart-grid .line-image {
+  width: 80px;
+  height: 80px;
+}
+.cart-grid .line-body {
+  grid-area: body;
+  min-width: 0;
+}
+.line-title {
+  color: var(--c-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.line-title:hover {
+  text-decoration: underline;
+}
+.line-options,
+.line-each {
+  color: var(--c-muted);
+  font-size: 0.8125rem;
+}
+.line-remove {
+  grid-area: remove;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -10px -10px 0 0;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--c-muted);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.line-remove span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.cart-grid .stepper {
+  grid-area: stepper;
+  justify-self: start;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+}
+.cart-grid .step {
+  width: 44px;
+  height: 42px;
+  border: 0;
+}
+.cart-grid .stepper input {
+  width: 40px;
+  padding: 0;
+  border: 0;
+  font-size: 16px;
+  font-weight: 600;
+  -moz-appearance: textfield;
+}
+.cart-grid .stepper input::-webkit-inner-spin-button,
+.cart-grid .stepper input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cart-grid .line-total {
+  grid-area: total;
+  align-self: center;
+  margin: 0;
+  font-size: 1.0625rem;
   font-weight: 700;
-  margin-bottom: 8px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 16px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cart-grid .summary {
+  background: var(--c-background);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+.summary h2 {
+  font-size: 1.25rem;
+  margin: 0 0 12px;
+}
+.delivery-note {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c-primary) 9%, var(--c-background));
+  font-size: 0.875rem;
+}
+.delivery-note svg {
+  flex: none;
+  color: var(--c-primary);
+}
+.promo {
+  margin: 0 0 16px;
+}
+.promo > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--c-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  list-style: none;
+}
+.promo > summary::-webkit-details-marker {
+  display: none;
+}
+.cart-grid .summary .button {
+  min-height: 52px;
+  margin-bottom: 10px;
+  font-size: 1.0625rem;
+}
+.trust {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--c-muted);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.trust li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.trust svg {
+  color: var(--c-success);
+}
+.cart-empty {
+  padding: 32px 0;
+  text-align: center;
+}
+/* The phone's pinned Checkout bar; desktops have the summary beside the lines. */
+.checkout-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--c-background);
+  border-top: 1px solid var(--c-border);
+  box-shadow: 0 -4px 16px rgb(26 31 41 / 0.06);
+}
+.checkout-bar p {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--c-muted);
+  line-height: 1.3;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.checkout-bar strong {
+  color: var(--c-text);
+  font-size: 1.0625rem;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.checkout-bar .button {
+  flex: 1;
+  min-height: 52px;
+  font-size: 1.0625rem;
+}
+body:has(.checkout-bar) {
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+/* Phones: the summary is part of the page, and Checkout is in the bar. */
+@media (max-width: 899px) {
+  .cart-grid .summary {
+    border: 0;
+    border-top: 1px solid var(--c-border);
+    border-radius: 0;
+    padding: 16px 0 0;
+  }
+  .cart-grid .summary-checkout {
+    display: none;
+  }
+}
+/* The store's chat buttons clear the phone's pinned bars. */
+@media (max-width: 899px) {
+  body:has(.checkout-bar) .chat,
+  body:has(.buy-bar:not([hidden])) .chat {
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: a different page from the product one; never both match */
+  body:has(.place-box) .chat {
+    bottom: calc(160px + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 900px) {
+  .cart-grid {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 40px;
+  }
+  .cart-grid .line {
+    grid-template-columns: 104px minmax(0, 1fr) auto 120px;
+    grid-template-areas:
+      "media body stepper total"
+      "media remove stepper total";
+    align-items: center;
+    gap: 0 20px;
+    padding: 24px 0;
+  }
+  .cart-grid .line-body {
+    align-self: end;
+  }
+  .cart-grid .line-remove {
+    justify-self: start;
+    align-self: start;
+    margin: 4px 0 0 -10px;
+  }
+  .cart-grid .line-image {
+    width: 104px;
+    height: 104px;
+  }
+  .line-remove span {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
+  .cart-grid .line-total {
+    justify-self: end;
+  }
+  .cart-grid .summary {
+    position: sticky;
+    top: 24px;
+  }
+  .checkout-bar {
+    display: none;
+  }
+  body:has(.checkout-bar) {
+    padding-bottom: 0;
+  }
+}
+/* Checkout (design/storefront-redesign: Checkout, CheckoutPhone): its own
+   header and footer on the surface colour, the form in white cards, the
+   summary pinned beside it on desktop; on phones the summary folds at the
+   top and Place order pins to the bottom. */
+body.minimal {
+  background: var(--c-surface);
+}
+.minimal-header {
+  border-bottom: 1px solid var(--c-border);
+}
+.minimal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 60px;
+}
+.minimal-row .brand {
+  flex: 1;
+  min-height: 44px;
+}
+.minimal-header .header-back {
+  display: flex;
+}
+.secure {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-success);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.back-cart {
+  display: none;
+  font-weight: 600;
+  text-decoration: none;
+}
+@media (min-width: 900px) {
+  .minimal-row {
+    min-height: 72px;
+    gap: 24px;
+  }
+  .minimal-header .header-back {
+    display: none;
+  }
+  .back-cart {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+.minimal-footer {
+  margin-top: 32px;
+  padding: 24px 0 40px;
+  color: var(--c-muted);
+  font-size: 0.8125rem;
+}
+.minimal-footer .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+}
+.minimal-footer p {
+  margin: 0;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.minimal-footer ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.minimal-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+}
+.sign-in-hint {
+  margin: -4px 0 16px;
+  font-size: 0.875rem;
+}
+.checkout {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+.checkout-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.checkout-card {
+  min-width: 0;
+  margin: 0 -16px;
+  padding: 20px 16px;
+  border: 0;
+  border-top: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-background);
+}
+.checkout-card legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+.checkout-card legend + * {
+  clear: left;
+}
+@media (min-width: 900px) {
+  .checkout {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 32px;
+  }
+  .checkout-card {
+    margin: 0;
+    padding: 24px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+  }
+  .checkout-card legend {
+    font-size: 1.25rem;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+  }
+  .narrow-field {
+    max-width: 480px;
+  }
 }
 .field {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .field label {
   display: block;
   font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 0.9375rem;
+  margin-bottom: 6px;
 }
 /* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
 .field input,
 .field select,
 .field textarea {
   width: 100%;
-  padding: 11px 12px;
-  border: 1px solid color-mix(in srgb, var(--c-text) 35%, transparent);
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
   border-radius: var(--radius);
   background: var(--c-background);
   font: inherit;
+  font-size: 16px;
   color: inherit;
 }
 .field [aria-invalid="true"] {
   border-color: var(--c-sale);
   box-shadow: 0 0 0 1px var(--c-sale);
 }
+.hint {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--c-muted);
+  font-size: 0.8125rem;
+}
+.field label + .hint {
+  margin: -2px 0 8px;
+}
 .field-error {
   color: var(--c-sale);
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   font-size: 0.875rem;
+  font-weight: 600;
 }
 .field-error:empty {
   display: none;
+}
+/* The error summary: each problem links to its field. */
+.error-summary {
+  padding: 16px 20px;
+  border: 2px solid var(--c-sale);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--c-sale) 6%, var(--c-background));
+}
+.error-summary h2 {
+  margin: 0 0 8px;
+  font-size: 1.0625rem;
+  color: var(--c-sale);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.error-summary ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.error-summary a {
+  color: var(--c-sale);
+  font-weight: 600;
+}
+/* The searchable Area field. */
+.area-search {
+  position: relative;
+}
+.area-search [role="listbox"] {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: var(--c-background);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+}
+.area-search [role="option"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 52px;
+  justify-content: center;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.area-search [role="option"][aria-selected="true"],
+.area-search [role="option"]:hover {
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-background));
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.area-search .hint {
+  margin: 0;
+}
+.area-search .area-none {
+  color: var(--c-muted);
+  cursor: default;
+}
+.area-chosen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--c-primary);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c-primary) 5%, var(--c-background));
+}
+.area-chosen svg {
+  flex: none;
+  color: var(--c-primary);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.area-chosen > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.area-chosen > span span {
+  color: var(--c-muted);
+  font-size: 0.875rem;
+}
+.area-chosen .link {
+  min-height: 44px;
+  font-weight: 600;
+}
+.area-field:has(.field-error:not(:empty)) .area-chosen {
+  border-color: var(--c-sale);
+}
+.note-field > summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--c-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  list-style: none;
+}
+.note-field > summary::-webkit-details-marker {
+  display: none;
+}
+/* Payment choices as radio cards. */
+.pay-choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.pay-choice > span {
+  display: flex;
+  flex-direction: column;
+}
+.pay-choice:has(input:checked) {
+  border: 2px solid var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 5%, var(--c-background));
+}
+/* biome-ignore lint/style/noDescendingSpecificity: shopper pages' own elements, never inside the listing filters or the specs list */
+.pay-choice input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--c-primary);
+}
+.terms-field {
+  margin: 16px 0 0;
+}
+/* The summary: folded at the top on phones, pinned beside the form on desktop. */
+.checkout-side {
+  order: -1;
+  margin: 0 -16px;
+}
+.summary-fold {
+  background: var(--c-background);
+  border-top: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+}
+.summary-fold > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 16px;
+  color: var(--c-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  list-style: none;
+}
+.summary-fold > summary::-webkit-details-marker {
+  display: none;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.summary-fold > summary span {
+  flex: 1;
+}
+.summary-fold > summary strong {
+  color: var(--c-text);
+}
+.checkout .summary {
+  padding: 0 16px 16px;
+  background: var(--c-background);
+  border-radius: 0;
+}
+.summary-head {
+  display: none;
+}
+.checkout .mini-lines li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.mini-media {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+.mini-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+.mini-qty {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: #4b5563;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 22px;
+  text-align: center;
+}
+.mini-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 0.875rem;
+}
+.mini-total {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.checkout .totals {
+  border-top: 1px solid var(--c-border);
+  padding-top: 12px;
+}
+/* The phone's pinned pay bar. */
+.place-box {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--c-background);
+  border-top: 1px solid var(--c-border);
+  box-shadow: 0 -4px 16px rgb(26 31 41 / 0.06);
+}
+.pay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 8px;
+  color: var(--c-muted);
+  font-size: 0.875rem;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.pay-row strong {
+  color: var(--c-text);
+  font-size: 1.125rem;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.place-box .button {
+  min-height: 52px;
+  font-size: 1.0625rem;
+}
+.checkout-trust {
+  display: none;
+}
+.trust-short {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  color: var(--c-muted);
+  font-size: 0.75rem;
+}
+.trust-short svg {
+  color: var(--c-success);
+}
+body.minimal:has(.place-box) {
+  padding-bottom: calc(150px + env(safe-area-inset-bottom));
+}
+@media (min-width: 900px) {
+  .checkout-side {
+    order: 0;
+    position: sticky;
+    top: 24px;
+    margin: 0;
+    padding: 24px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+    background: var(--c-background);
+  }
+  .summary-fold {
+    border: 0;
+  }
+  .summary-fold > summary {
+    display: none;
+  }
+  .checkout .summary {
+    padding: 0;
+  }
+  .summary-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .summary-head h2 {
+    margin: 0;
+  }
+  .place-box {
+    position: static;
+    margin-top: 16px;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+  }
+  .checkout-trust {
+    display: block;
+  }
+  .trust-short {
+    display: none;
+  }
+  body.minimal:has(.place-box) {
+    padding-bottom: 0;
+  }
 }
 .choice {
   display: flex;
@@ -3198,6 +3939,7 @@ button.link {
 .order-view .line {
   grid-template-columns: 56px minmax(0, 1fr) auto;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .order-view .line-image {
   width: 56px;
   height: 56px;

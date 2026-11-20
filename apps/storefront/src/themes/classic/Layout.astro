@@ -16,6 +16,8 @@ import { previewParents } from '../../lib/preview';
 import { type Head, ldJson } from '../../lib/seo';
 import Footer from './Footer.astro';
 import Header from './Header.astro';
+import MinimalFooter from './MinimalFooter.astro';
+import MinimalHeader from './MinimalHeader.astro';
 import TabBar, { type Tab } from './TabBar.astro';
 import './theme.css';
 
@@ -33,8 +35,11 @@ interface Props {
   tab?: Tab | false;
   /** Where the phone header's back arrow goes, in place of the menu (product pages). */
   back?: string;
+  /** minimal: checkout's own header and footer, with no site navigation. */
+  chrome?: 'full' | 'minimal';
 }
-const { ctx, head, languageHref, product = null, tab = null, back } = Astro.props;
+const { ctx, head, languageHref, product = null, tab = null, back, chrome = 'full' } = Astro.props;
+const minimal = chrome === 'minimal';
 const { theme, layout, t, locale } = ctx;
 const c = theme.tokens.colors;
 const [radius, radiusLarge] = RADIUS_CSS[theme.tokens.radius];
@@ -98,7 +103,7 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
     <style set:html={fonts + vars}></style>
     {(head.jsonLd ?? []).map((data) => <script type="application/ld+json" set:html={ldJson(data)} />)}
   </head>
-  <body class:list={{ 'has-tabbar': tab !== false }}>
+  <body class:list={{ 'has-tabbar': tab !== false && !minimal, minimal }}>
     <a class="skip" href="#main">{t('skip.content')}</a>
     {Astro.locals.devStore && (
       <p class="bar preview-bar" role="note">{shared(locale, 'store.devBanner', { store: layout.store.name })}</p>
@@ -109,12 +114,12 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
         (function(){var ok=JSON.parse(parents);var keys=['--c-primary','--c-on-primary','--c-background','--c-surface','--c-text','--c-accent','--c-sale','--radius','--radius-lg','--font','--card-ratio'];addEventListener('message',function(e){if(ok.indexOf(e.origin)<0||!e.data||e.data.type!=='mm-theme-vars')return;var v=e.data.vars||{};keys.forEach(function(k){var x=v[k];if(typeof x==='string'&&x.length<200&&!/[;{}<>]/.test(x))document.documentElement.style.setProperty(k,x);});});})();
       </script>
     )}
-    <Header ctx={ctx} languageHref={languageHref} back={back} />
+    {minimal ? <MinimalHeader ctx={ctx} /> : <Header ctx={ctx} languageHref={languageHref} back={back} />}
     <main id="main" class="wrap">
       <slot />
     </main>
-    <Footer ctx={ctx} consent={hasTags} languageHref={languageHref} />
-    {tab !== false && <TabBar ctx={ctx} current={tab} />}
+    {minimal ? <MinimalFooter ctx={ctx} /> : <Footer ctx={ctx} consent={hasTags} languageHref={languageHref} />}
+    {tab !== false && !minimal && <TabBar ctx={ctx} current={tab} />}
     {showChat && (
       <div class="chat">
         {chat.whatsapp && (

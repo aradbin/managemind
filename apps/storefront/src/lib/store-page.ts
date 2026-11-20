@@ -44,6 +44,9 @@ export function apiPath(
   if (locale) extra.set('locale', locale);
   const qs = extra.toString();
   // Shopper pages are shells: the layout alone, their data comes from /api/* in the browser.
+  // The cart and checkout also show what the store promises (delivery, COD, returns).
+  if (route && (route.kind === 'cart' || route.kind === 'checkout'))
+    return `/v1/store/pages/shop${qs ? `?${qs}` : ''}`;
   if (!route || isShell(route)) return `/v1/store/pages/layout${qs ? `?${qs}` : ''}`;
   const slug = 'slug' in route ? `/${encodeURIComponent(route.slug)}` : '';
   return `/v1/store/pages/${ENDPOINT[route.kind as keyof typeof ENDPOINT]}${slug}${qs ? `?${qs}` : ''}`;

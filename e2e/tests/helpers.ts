@@ -152,6 +152,19 @@ export async function expectAddedToCart(page: Page): Promise<void> {
   ).toBeVisible();
 }
 
+/**
+ * Checkout's Area field: types the area's name and picks it by ID from the
+ * list, which also tells two areas of the same name apart.
+ */
+export async function pickArea(
+  page: Page,
+  area: { name: string; id: number | string },
+): Promise<void> {
+  await page.locator('#c-area-q').fill(area.name);
+  await page.locator(`#c-area-list [role="option"][data-area="${area.id}"]`).click();
+  await expect(page.locator('[data-area-chosen]')).toBeVisible();
+}
+
 export async function expectScriptBudget(page: Page, what: string): Promise<void> {
   const scripts = await page.evaluate(() =>
     [...document.querySelectorAll('script')]

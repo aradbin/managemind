@@ -1,0 +1,32 @@
+---
+// Checkout's header (design/storefront-redesign: Checkout, CheckoutPhone): the
+// store name, "Secure checkout" and Back to cart, and no site navigation, so
+// nothing leads away from the order.
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+import Img from './Img.astro';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t, layout } = ctx;
+const logo = ctx.image(ctx.theme.tokens.logoMediaId);
+const cart = href(ctx.link, { kind: 'cart' });
+---
+
+<header class="site-header minimal-header">
+  <div class="wrap minimal-row">
+    <a class="header-back" href={cart} aria-label={t('checkout.backToCart')}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    </a>
+    <a class="brand" href={href(ctx.link, { kind: 'home' })}>
+      {logo ? <Img image={logo} alt={layout.store.name} sizes="200px" eager /> : <span>{layout.store.name}</span>}
+    </a>
+    <span class="secure">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v11H5z" /></svg>
+      {t('checkout.secure')}
+    </span>
+    <a class="back-cart" href={cart}>{t('checkout.backToCart')}</a>
+  </div>
+</header>

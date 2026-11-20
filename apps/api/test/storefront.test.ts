@@ -160,6 +160,19 @@ describe('store pages', () => {
     expect(layout.layout.pages.map((p: Json) => p.slug)).toContain('about');
   });
 
+  it('serves the cart and checkout shell with what the store promises', async () => {
+    const res = await get('/v1/store/pages/shop', a.host);
+    expect(res.status).toBe(200);
+    const body: Json = await res.json();
+    expect(body.layout.store.slug).toBe(a.slug);
+    expect(body.page).toMatchObject({
+      cod: true,
+      returns: { windowDays: 7 },
+      zones: expect.any(Array),
+    });
+    expect(res.headers.get('x-cache-tags')).toBe(`${storeTag(a.id)},${legalTag(a.id)}`);
+  });
+
   it('limits search misses to 30 a minute per shopper', async () => {
     // The limiter's windows are whole minutes: a run that crossed one would
     // start counting again, so the clock stays at the start of a minute.

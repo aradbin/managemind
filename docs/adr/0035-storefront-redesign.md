@@ -1,6 +1,6 @@
 # ADR 0035: The storefront follows the general-store redesign boards
 
-- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) 3 (listing and search) and 4 (the product page) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 5–7 are to come.
+- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) 3 (listing and search), 4 (the product page) and 5 (cart and checkout) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 6–7 are to come.
 - Date: 2026-11-20
 - Design: the canvas in `design/storefront-redesign/canvas/project/` (desktop and phone boards for every shopper page, in English and Bangla, on the `classic` theme's `general` preset), with its reasons in [DECISIONS.md](../../design/storefront-redesign/DECISIONS.md). Code: `apps/storefront/src/themes/classic/`
 
@@ -23,7 +23,7 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 | 2 (built) | Home: offer tiles beside the hero, the help strip, Recently viewed (browser storage, also on product pages), a second hero button and a line above its heading, a line beside product grid headings | Theme sections and fields, and their editor in the admin |
 | 3 (built) | Listing and search: Load more as `?page=N` links, quick filter chips, one-tap price ranges, greyed zero counts, collapsing facet lists, removable chips, no-results suggestions, back to top, category introduction, the quick-add picker | An On sale filter, price-range and stock and sale counts |
 | 4 (built) | Product: the option pickers and buy buttons, Order on WhatsApp, the delivery box, collapsed specifications, the phone's buy bar (shown once the in-page buttons scroll away), the desktop mini-cart, Recently viewed | Delivery zones, COD and the return window in the product page's data |
-| 5 | Cart and checkout: the searchable Area field, the linked error summary, the trust line, the phone-code dialog with its resend countdown, the blocked-checkout panel, the price-changed marks, the collapsed phone summary, the pinned desktop summary | Optionally each area's delivery charge |
+| 5 (built) | Cart and checkout: the searchable Area field, the linked error summary, the trust line, the phone-code dialog with its resend countdown, the blocked-checkout panel, the price-changed marks, the collapsed phone summary, the pinned desktop summary | A `shop` page endpoint: the layout and the store's facts |
 | 6 | Thank-you, tracking and account: payment box with Copy, "Order faster next time", the headline status, parcels, returns, account tabs and the address Undo | The expected delivery date; photos on account orders |
 | 7 | The pinned slim headers (desktop and phone), header search suggestions, the loading and error states | A cached search-suggestions endpoint |
 
@@ -63,6 +63,14 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 - **After Add to cart:** desktops get the mini-cart panel (the line, the cart subtotal, Checkout, View cart, Continue shopping) from the cart API's answer; phones get a note above the buy bar.
 - **Phones:** a buy bar (Add to cart with the price, Buy now) pins to the bottom once the in-page buttons have scrolled up out of view, and the header's menu becomes a back arrow to the product's category.
 - **Where step 4 differs from the boards:** the in-page Add to cart on phones doesn't repeat the price (the pinned bar does); share links stay under the box.
+
+## Step 5
+
+- **API:** `/v1/store/pages/shop` answers the cart and checkout shells with the layout and the store's facts (delivery zones, COD, online payment, return window), under the store and legal cache tags; the SDK is regenerated. Other shells keep `/v1/store/pages/layout`.
+- **Cart:** "Your cart" with the item count; rows with photo, title, options, "৳1,250 each", Remove, a stepper and the line total; Continue shopping; an Order summary card (Subtotal (3 items), "Added at checkout"), the delivery note from the store's zones, "Have a promo code?" folded, Go to checkout, Order on WhatsApp and the promises (cash on delivery, the return window, online payment). Phones get the summary flat under the rows and a pinned bar with the subtotal and Checkout.
+- **Checkout:** its own header (store name, "Secure checkout", Back to cart; a back arrow on phones) and footer (the legal pages and Help), on the surface colour with the form in white cards; mobile number first; one searchable Area field over the geography file (thana, upazila or district, either language, with district and division in each match; arrow keys and Enter; the pick as a card with Change) in place of the three dropdowns; the delivery note; "Add a note for the store" folded; payment as radio cards; a summary of problems at the top, each a link to its field, with errors clearing as fields are fixed. The order summary (photos with quantity badges, "Total before delivery" until an area is chosen) is pinned beside the form on desktop and folds at the top on phones, where "Pay on delivery ৳…" and Place order pin to the bottom with a one-line promise.
+- **Fixed on the way:** shopper-page scripts got plural messages pre-rendered in their plural form ("1 items"); they now get both forms and choose by the count.
+- **Where step 5 differs from the boards:** the cart has no "You may also like" (the cart page has no products to suggest from); the area list shows each match's district and division but not its delivery charge (DECISIONS.md item 12), and an area the store doesn't serve is still reported when the order is placed rather than as soon as it is picked; the phone-code dialog, the blocked-checkout panel and the price-changed marks keep their current behaviour, as notices in the page; the promo code is on the cart page only; the terms box stays under the payment choices on desktop too.
 
 ## Consequences
 
