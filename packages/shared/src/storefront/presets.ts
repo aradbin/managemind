@@ -175,21 +175,35 @@ const PRESETS: Record<ThemePreset, () => Theme> = {
           },
         ],
       },
+      // The redesign's order (design/storefront-redesign: Main): promises
+      // right under the hero, then categories, products, the shopper's own
+      // history and a way to ask.
+      trustBadges('trust1'),
       {
         type: 'category_grid',
         id: 'categories1',
-        heading: { bn: 'ক্যাটাগরি', en: 'Categories' },
+        heading: { bn: 'ক্যাটাগরি অনুযায়ী দেখুন', en: 'Shop by category' },
         categoryIds: [],
       },
       {
         type: 'product_grid',
         id: 'newest1',
-        heading: { bn: 'নতুন পণ্য', en: 'New products' },
+        heading: { bn: 'নতুন পণ্য', en: 'New arrivals' },
         collectionId: null,
         limit: 8,
         layout: 'grid',
       },
-      trustBadges('trust1'),
+      {
+        type: 'recently_viewed',
+        id: 'recent1',
+        heading: { bn: 'সম্প্রতি দেখেছেন', en: 'Recently viewed' },
+      },
+      {
+        type: 'help_strip',
+        id: 'help1',
+        heading: { bn: 'কোনটা নেবেন বুঝতে পারছেন না?', en: 'Need help choosing?' },
+        text: { bn: 'অর্ডারের আগে যেকোনো প্রশ্ন করুন।', en: 'Ask us anything before you order.' },
+      },
     ],
   }),
 };

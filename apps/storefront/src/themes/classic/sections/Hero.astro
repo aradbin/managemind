@@ -1,6 +1,12 @@
 ---
-import type { ThemeSection } from '@managemind/shared/storefront';
+// The banner (design/storefront-redesign: Main, HomePhone): one slide, or up
+// to three that scroll sideways, each with its text on the primary colour
+// beside the photo (under it on phones), a small line above the heading and
+// up to two buttons. Up to two offer tiles sit beside it on desktop and under
+// it, side by side, on phones.
+import type { Localized, ThemeLink, ThemeSection } from '@managemind/shared/storefront';
 import type { PageContext } from '../../../lib/page';
+import Icon from '../Icon.astro';
 import Img from '../Img.astro';
 
 interface Props {
@@ -13,25 +19,64 @@ interface Props {
 const { ctx, section, first, h1 } = Astro.props;
 const { t } = ctx;
 const count = section.slides.length;
+type Button = { label: Localized; link: ThemeLink } | null | undefined;
+/** A button's text and address, or null when either is missing. */
+const button = (b: Button) => {
+  const label = b ? ctx.text(b.label) : '';
+  const target = b ? ctx.themeLink(b.link) : null;
+  return label && target ? { label, href: target } : null;
+};
+const tiles = (section.tiles ?? [])
+  .map((tile) => ({
+    image: ctx.image(tile.mediaId),
+    heading: ctx.text(tile.heading),
+    text: ctx.text(tile.text),
+    button: button(tile.button),
+  }))
+  .filter((tile) => tile.heading || tile.image);
 ---
 
-<section class="section" aria-roledescription={count > 1 ? 'carousel' : undefined}>
-  <div class={`hero ${section.size}`}>
+<section class:list={['section', 'hero-row', { 'with-tiles': tiles.length > 0 }]}>
+  <div class={`hero ${section.size}`} aria-roledescription={count > 1 ? 'carousel' : undefined}>
     {section.slides.map((slide, i) => {
       const image = ctx.image(slide.mediaId);
+      const eyebrow = ctx.text(slide.eyebrow);
       const heading = ctx.text(slide.heading);
       const sub = ctx.text(slide.subheading);
-      const button = slide.button ? { label: ctx.text(slide.button.label), href: ctx.themeLink(slide.button.link) } : null;
+      const main = button(slide.button);
+      const second = button(slide.secondaryButton);
       return (
         <div class={`slide${image ? '' : ' plain'}`} role={count > 1 ? 'group' : undefined} aria-label={count > 1 ? t('section.slide', { n: i + 1, count }) : undefined}>
-          {image && <div class="slide-media"><Img image={image} alt={heading} sizes="(min-width: 900px) 50vw, 100vw" eager={first && i === 0} /></div>}
+          {image && <div class="slide-media"><Img image={image} alt={heading} sizes="(min-width: 900px) 40vw, 100vw" eager={first && i === 0} /></div>}
           <div class="slide-text">
+            {eyebrow && <p class="eyebrow">{eyebrow}</p>}
             {heading && (h1 && i === 0 ? <h1>{heading}</h1> : <h2>{heading}</h2>)}
             {sub && <p>{sub}</p>}
-            {button?.href && button.label && <a class="button" href={button.href}>{button.label}</a>}
+            {(main || second) && (
+              <div class="slide-buttons">
+                {main && <a class="button" href={main.href}>{main.label}</a>}
+                {second && <a class="button outline" href={second.href}>{second.label}</a>}
+              </div>
+            )}
           </div>
         </div>
       );
     })}
   </div>
+  {tiles.length > 0 && (
+    <ul class="offer-tiles" role="list">
+      {tiles.map((tile, i) => (
+        <li class={`offer-tile tone-${i}`}>
+          <div class="offer-media">{tile.image && <Img image={tile.image} alt="" sizes="(min-width: 900px) 140px, 45vw" />}</div>
+          <div class="offer-text">
+            {tile.heading && <h2>{tile.heading}</h2>}
+            {tile.text && <p>{tile.text}</p>}
+            {tile.button && (
+              <a href={tile.button.href}>{tile.button.label}<Icon name="chevron" size={16} stroke={2} /></a>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )}
 </section>

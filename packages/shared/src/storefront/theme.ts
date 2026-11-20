@@ -128,11 +128,26 @@ const heroSlide = z
   .object({
     /** Null shows the primary colour behind the heading. */
     mediaId: z.uuid().nullable(),
+    /** A short line above the heading ("This week"). */
+    eyebrow: localized(40).optional(),
     heading: localized(80),
     subheading: localized(160),
     button: button.nullable(),
+    /** An outlined second button beside the first ("See today's deals"). */
+    secondaryButton: button.nullable().optional(),
   })
   .strict();
+
+/** An offer tile beside the hero (below it on phones): a photo, a heading, a line and a link. */
+const heroTile = z
+  .object({
+    mediaId: z.uuid().nullable(),
+    heading: localized(60),
+    text: localized(120),
+    button: button.nullable(),
+  })
+  .strict();
+export const MAX_HERO_TILES = 2;
 
 export const TRUST_ICONS = ['cod', 'delivery', 'returns', 'secure', 'support'] as const;
 
@@ -143,6 +158,7 @@ export const themeSection = z.discriminatedUnion('type', [
       id: sectionId,
       size: z.enum(['large', 'compact']),
       slides: z.array(heroSlide).min(1).max(3),
+      tiles: z.array(heroTile).max(MAX_HERO_TILES).optional(),
     })
     .strict(),
   z
@@ -168,6 +184,8 @@ export const themeSection = z.discriminatedUnion('type', [
       type: z.literal('product_grid'),
       id: sectionId,
       heading: localized(80),
+      /** A short line beside the heading ("Lower prices on everyday favourites"). */
+      subheading: localized(120).optional(),
       /** Null shows the newest products. */
       collectionId: z.uuid().nullable(),
       limit: z.int().min(2).max(24),
@@ -205,6 +223,26 @@ export const themeSection = z.discriminatedUnion('type', [
         )
         .min(1)
         .max(4),
+    })
+    .strict(),
+  /**
+   * "Need help choosing?": the store's WhatsApp and phone, from its chat
+   * settings and profile. Hidden when it has neither.
+   */
+  z
+    .object({
+      type: z.literal('help_strip'),
+      id: sectionId,
+      heading: localized(80),
+      text: localized(200),
+    })
+    .strict(),
+  /** The products this shopper viewed last, from their browser's storage. */
+  z
+    .object({
+      type: z.literal('recently_viewed'),
+      id: sectionId,
+      heading: localized(80),
     })
     .strict(),
 ]);
@@ -263,7 +301,10 @@ export function contrastIssues(colors: Record<ColorKey, string>): ContrastIssue[
 export function themeMediaIds(theme: Theme): string[] {
   const ids = [theme.tokens.logoMediaId, theme.tokens.faviconMediaId];
   for (const s of theme.sections) {
-    if (s.type === 'hero') ids.push(...s.slides.map((slide) => slide.mediaId));
+    if (s.type === 'hero') {
+      ids.push(...s.slides.map((slide) => slide.mediaId));
+      ids.push(...(s.tiles ?? []).map((tile) => tile.mediaId));
+    }
     if (s.type === 'image_with_text') ids.push(s.mediaId);
   }
   return [...new Set(ids.filter((id): id is string => id !== null))];
@@ -284,7 +325,13 @@ export function themeLinkTargets(
   };
   add(theme.announcement?.link);
   for (const s of theme.sections) {
-    if (s.type === 'hero') for (const slide of s.slides) add(slide.button?.link);
+    if (s.type === 'hero') {
+      for (const slide of s.slides) {
+        add(slide.button?.link);
+        add(slide.secondaryButton?.link);
+      }
+      for (const tile of s.tiles ?? []) add(tile.button?.link);
+    }
     if (s.type === 'image_with_text') add(s.button?.link);
     if (s.type === 'category_grid') for (const id of s.categoryIds) out.category.add(id);
     if (s.type === 'collection_carousel') for (const id of s.collectionIds) out.collection.add(id);

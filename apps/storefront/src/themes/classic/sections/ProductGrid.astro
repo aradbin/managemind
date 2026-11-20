@@ -14,6 +14,7 @@ interface Props {
 }
 const { ctx, section, products, eager } = Astro.props;
 const heading = ctx.text(section.heading);
+const subheading = ctx.text(section.subheading);
 const all = section.collectionId
   ? ctx.themeLink({ type: 'collection', id: section.collectionId })
   : null;
@@ -22,7 +23,10 @@ const all = section.collectionId
 {products.length > 0 && (
   <section class="section band" aria-labelledby={`s-${section.id}`}>
     <div class="section-head">
-      <h2 id={`s-${section.id}`}>{heading}</h2>
+      <div class="section-title">
+        <h2 id={`s-${section.id}`}>{heading}</h2>
+        {subheading && <p>{subheading}</p>}
+      </div>
       {all && <a href={all}>{ctx.t('section.viewAll')}<span class="visually-hidden">: {heading}</span></a>}
     </div>
     <ProductList ctx={ctx} products={products} layout={section.layout} eagerFirst={eager} />

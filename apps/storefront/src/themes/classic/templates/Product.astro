@@ -2,6 +2,7 @@
 import type { ProductPageData, StoreSpecification } from '@managemind/core';
 import { renderRichText, richTextToPlainText } from '@managemind/shared/rich-text';
 import { messengerLink, whatsappLink } from '@managemind/shared/storefront';
+import { cardView, productAsCard } from '../../../lib/card';
 import { number, price } from '../../../lib/format';
 import { absolute, alternates, href } from '../../../lib/links';
 import type { PageContext } from '../../../lib/page';
@@ -9,6 +10,7 @@ import { breadcrumbLd, type Head, productLd } from '../../../lib/seo';
 import Img from '../Img.astro';
 import Layout from '../Layout.astro';
 import ProductList from '../ProductList.astro';
+import RecentlyViewed from '../sections/RecentlyViewed.astro';
 
 interface Props {
   ctx: PageContext;
@@ -94,6 +96,12 @@ const greeting = ctx.text(chat.greeting);
 const orderText = t('chat.productGreeting', { greeting, product: product.title, url }).trim();
 const showOrder = chat.show !== 'none' && Boolean(chat.whatsapp || chat.messenger);
 const count = product.media.length;
+// This product's card, which the browser keeps for Recently viewed (scripts/recent.ts).
+const recentItem = {
+  store: layout.store.slug,
+  locale: ctx.locale,
+  view: cardView(ctx, productAsCard(product)),
+};
 ---
 
 <Layout ctx={ctx} head={head} languageHref={languageHref} tab={false} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
@@ -213,6 +221,8 @@ const count = product.media.length;
       <ProductList ctx={ctx} products={related} layout="carousel" />
     </section>
   )}
+  <RecentlyViewed ctx={ctx} section={{ type: 'recently_viewed', id: 'recent', heading: {} }} except={product.id} />
+  <script type="application/json" id="mm-recent-item" set:html={JSON.stringify(recentItem).replace(/</g, '\\u003c')} />
   <script type="application/json" id="mm-variants" set:html={JSON.stringify(variantData).replace(/</g, '\\u003c')} />
   <script src="../scripts/product.ts"></script>
 </Layout>

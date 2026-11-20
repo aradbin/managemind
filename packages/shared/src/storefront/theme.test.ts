@@ -68,6 +68,34 @@ describe('themeSchema', () => {
     expect(themeSchema.safeParse({ ...theme, extra: 1 }).success).toBe(false);
   });
 
+  it('takes the redesign’s optional fields and sections, and at most two hero tiles', () => {
+    const tile = { mediaId: null, heading: { en: 'New' }, text: {}, button: null };
+    const hero = {
+      type: 'hero',
+      id: 'hero9',
+      size: 'large',
+      slides: [
+        {
+          mediaId: null,
+          eyebrow: { en: 'This week' },
+          heading: {},
+          subheading: {},
+          button: null,
+          secondaryButton: null,
+        },
+      ],
+      tiles: [tile, tile],
+    };
+    const extra = [
+      hero,
+      { type: 'help_strip', id: 'help1', heading: { en: 'Need help?' }, text: {} },
+      { type: 'recently_viewed', id: 'recent1', heading: { en: 'Recently viewed' } },
+    ];
+    expect(themeSchema.safeParse({ ...theme, sections: extra }).success).toBe(true);
+    const three = { ...hero, tiles: [tile, tile, tile] };
+    expect(themeSchema.safeParse({ ...theme, sections: [three] }).success).toBe(false);
+  });
+
   it('drops empty translations and refuses non-https links', () => {
     const parsed = themeSchema.parse({
       ...theme,
@@ -89,6 +117,9 @@ describe('theme references', () => {
     category: '01900000-0000-7000-8000-000000000003',
     page: '01900000-0000-7000-8000-000000000004',
     collection: '01900000-0000-7000-8000-000000000005',
+    tile: '01900000-0000-7000-8000-000000000006',
+    product: '01900000-0000-7000-8000-000000000007',
+    deals: '01900000-0000-7000-8000-000000000008',
   };
   const theme: Theme = {
     ...defaultTheme(),
@@ -105,6 +136,18 @@ describe('theme references', () => {
             heading: {},
             subheading: {},
             button: { label: { en: 'Shop' }, link: { type: 'category', id: ids.category } },
+            secondaryButton: {
+              label: { en: 'Deals' },
+              link: { type: 'collection', id: ids.deals },
+            },
+          },
+        ],
+        tiles: [
+          {
+            mediaId: ids.tile,
+            heading: { en: 'New in' },
+            text: {},
+            button: { label: { en: 'Shop' }, link: { type: 'product', id: ids.product } },
           },
         ],
       },
@@ -120,14 +163,14 @@ describe('theme references', () => {
   };
 
   it('lists the media a theme uses', () => {
-    expect(themeMediaIds(theme).sort()).toEqual([ids.logo, ids.slide].sort());
+    expect(themeMediaIds(theme).sort()).toEqual([ids.logo, ids.slide, ids.tile].sort());
   });
 
   it('lists the records a theme links to', () => {
     expect(themeLinkTargets(theme)).toEqual({
       category: [ids.category],
-      collection: [ids.collection],
-      product: [],
+      collection: [ids.deals, ids.collection],
+      product: [ids.product],
       page: [ids.page],
     });
   });

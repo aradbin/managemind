@@ -31,7 +31,9 @@ test('browsing the English demo store', async ({ page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.locator('link[rel=alternate][hreflang=bn]')).toHaveAttribute('href', /\/bn$/);
-    await expect(page.getByRole('link', { name: 'Red Jamdani saree', exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Red Jamdani saree', exact: true }).first(),
+    ).toBeVisible();
     await expectAccessible(page, 'store home');
     await expectScriptBudget(page, 'the home page');
   });
@@ -45,7 +47,9 @@ test('browsing the English demo store', async ({ page }) => {
     await page.locator('details.filters').getByRole('button', { name: 'Apply' }).click();
     await expect(page).toHaveURL(/stock=1/);
     await expect(page.getByText('2 products')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Yellow muslin saree', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Yellow muslin saree', exact: true })).toHaveCount(
+      0,
+    );
 
     // With JavaScript the sort applies on change; its button is for no-JS visitors.
     await expect(page.locator('form.sorter').getByRole('button', { name: 'Apply' })).toBeHidden();
@@ -108,6 +112,35 @@ test('browsing the English demo store', async ({ page }) => {
     expect(res?.status()).toBe(404);
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
     await expectAccessible(page, 'not found');
+  });
+});
+
+test('adding from a card, and recently viewed products', async ({ page }) => {
+  await test.step('Add to cart on a card adds it there', async () => {
+    await openStore(page, 'demo-fashion', '/categories/sarees');
+    const add = page.getByRole('button', { name: /^Add .+ to cart$/ }).first();
+    await add.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await add.click();
+    await expect(page.getByRole('status').filter({ hasText: 'Added · View cart' })).toBeVisible();
+    await expect(page.locator('[data-cart-count]:visible').first()).not.toHaveText('');
+  });
+
+  await test.step('a product page lists the products viewed before it', async () => {
+    await page.goto(`${STOREFRONT}/products/red-jamdani-saree`);
+    await page.goto(`${STOREFRONT}/products/white-cotton-panjabi`);
+    const recent = page.getByRole('region', { name: 'Recently viewed' });
+    await expect(
+      recent.getByRole('link', { name: 'Red Jamdani saree', exact: true }),
+    ).toBeVisible();
+    // Not the product on screen.
+    await expect(
+      recent.getByRole('link', { name: 'White cotton panjabi', exact: true }),
+    ).toHaveCount(0);
+    await expectAccessible(page, 'product page with recently viewed');
+    await recent.getByRole('button', { name: 'Clear history' }).click();
+    await expect(recent).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole('region', { name: 'Recently viewed' })).toBeHidden();
   });
 });
 

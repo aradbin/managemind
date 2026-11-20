@@ -7,12 +7,13 @@
 // - several: Choose options, a link to the product page;
 // - sold out: none.
 // Desktop shows the action as a full-width button; phones as a round cart
-// button on the photo's corner. It is one element either way.
-import type { CardOption, ProductCard } from '@managemind/core';
-import { price, priceRange } from '../../lib/format';
+// button on the photo's corner. It is one element either way. What it shows
+// comes from lib/card.ts, which Recently viewed's cards (scripts/recent.ts)
+// share; keep the markup of both the same.
+import type { ProductCard } from '@managemind/core';
+import { cardView } from '../../lib/card';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
-import { swatch } from '../../lib/swatches';
 import Icon from './Icon.astro';
 import Img from './Img.astro';
 
@@ -22,36 +23,8 @@ interface Props {
   eager?: boolean;
 }
 const { ctx, product, eager = false } = Astro.props;
-const { t, d, theme } = ctx;
-const card = theme.tokens.card;
-const link = href(ctx.link, { kind: 'product', slug: product.slug });
-const onSale =
-  card.showCompareAt &&
-  product.compareAt !== null &&
-  product.priceMin !== null &&
-  product.compareAt > product.priceMin;
-const percent =
-  onSale && product.compareAt && product.priceMin !== null
-    ? Math.round(((product.compareAt - product.priceMin) / product.compareAt) * 100)
-    : 0;
-const ranged =
-  product.priceMax !== null && product.priceMin !== null && product.priceMax !== product.priceMin;
-
-const SIZE = new Set(['size', 'সাইজ', 'মাপ']);
-const COLOUR = new Set(['colour', 'color', 'রং', 'রঙ']);
-const is = (o: CardOption, names: Set<string>) => o.keys.some((k) => names.has(k));
-const many = (product.options ?? []).filter((o) => o.values.length > 1);
-const colour = many.find((o) => is(o, COLOUR));
-const dots = (colour?.values ?? [])
-  .map(swatch)
-  .filter((c): c is string => c !== null)
-  .slice(0, 4);
-const parts = many.map((o) =>
-  t(is(o, SIZE) ? 'card.sizes' : is(o, COLOUR) ? 'card.colours' : 'card.options', {
-    count: o.values.length,
-  }),
-);
-const action = !product.available ? null : product.variantId ? 'add' : 'choose';
+const { t } = ctx;
+const view = cardView(ctx, product);
 ---
 
 <article class="card">
@@ -59,33 +32,28 @@ const action = !product.available ? null : product.variantId ? 'add' : 'choose';
     {product.image && (
       <Img image={product.image} alt="" sizes="(min-width: 1000px) 25vw, (min-width: 640px) 33vw, 50vw" eager={eager} />
     )}
-    {!product.available ? (
-      <span class="badge out">{t('product.outOfStock')}</span>
-    ) : (
-      percent > 0 && <span class="badge">{t('card.off', { percent })}</span>
-    )}
+    {view.soldOut && <span class="badge out">{t('product.outOfStock')}</span>}
+    {view.off && <span class="badge">{view.off}</span>}
   </div>
   <div class="card-text">
-    {card.showBrand && product.brand && <p class="card-brand">{product.brand}</p>}
-    <h3 class="card-title"><a href={link}>{product.title}</a></h3>
+    {view.brand && <p class="card-brand">{view.brand}</p>}
+    <h3 class="card-title"><a href={view.href}>{view.title}</a></h3>
   </div>
-  <p class="card-options" aria-hidden={parts.length ? undefined : 'true'}>
-    {dots.map((c) => <span class="dot" style={`background:${c}`} />)}
-    {parts.join(' · ')}
+  <p class="card-options" aria-hidden={view.options ? undefined : 'true'}>
+    {view.dots.map((c) => <span class="dot" style={`background:${c}`} />)}
+    {view.options}
   </p>
-  {product.priceMin !== null && (
+  {view.price && (
     <p class="price">
-      <span class={onSale ? 'sale' : undefined}>
-        {ranged ? t('product.from', { price: price(product.priceMin, d) }) : priceRange(product.priceMin, product.priceMax, d)}
-      </span>
-      {onSale && product.compareAt !== null && (
-        <s class="compare"><span class="visually-hidden">{t('product.regular')}: </span>{price(product.compareAt, d)}</s>
+      <span class={view.sale ? 'sale' : undefined}>{view.price}</span>
+      {view.compare && (
+        <s class="compare"><span class="visually-hidden">{t('product.regular')}: </span>{view.compare}</s>
       )}
     </p>
   )}
-  {action === 'add' && (
-    <div class="card-action" data-card-add={product.variantId} data-name={product.title} data-price={product.priceMin ?? 0} data-adding={t('cart.adding')} data-error={t('cart.error')}>
-      <button type="button" class="card-button" aria-label={t('card.addAria', { product: product.title })}>
+  {view.action === 'add' && (
+    <div class="card-action" data-card-add={view.variantId} data-name={view.title} data-price={view.amount} data-adding={t('cart.adding')} data-error={t('cart.error')}>
+      <button type="button" class="card-button" aria-label={t('card.addAria', { product: view.title })}>
         <Icon name="cart" size={18} stroke={2} /><span class="card-label">{t('cart.add')}</span>
       </button>
       <a class="card-button card-added" href={href(ctx.link, { kind: 'cart' })} role="status" hidden>
@@ -93,10 +61,10 @@ const action = !product.available ? null : product.variantId ? 'add' : 'choose';
       </a>
     </div>
   )}
-  {action === null && <div class="card-action none" />}
-  {action === 'choose' && (
+  {view.action === null && <div class="card-action none" />}
+  {view.action === 'choose' && (
     <div class="card-action">
-      <a class="card-button" href={link} aria-label={t('card.chooseAria', { product: product.title })}>
+      <a class="card-button" href={view.href} aria-label={t('card.chooseAria', { product: view.title })}>
         <Icon name="cart" size={18} stroke={2} /><span class="card-label">{t('card.choose')}</span>
       </a>
     </div>

@@ -830,6 +830,31 @@ html[lang="bn"] .card-title {
 .section-head h2 {
   margin: 0;
 }
+/* A heading with its short line: beside it on desktop, under it on phones. */
+.section-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 16px;
+}
+.section-title p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 0.875rem;
+}
+@media (min-width: 900px) {
+  .section-title p {
+    flex-basis: auto;
+    font-size: 0.9375rem;
+  }
+}
+.section-head .link-button {
+  color: var(--c-primary);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
 .section-head a {
   font-weight: 600;
   font-size: 0.9375rem;
@@ -914,6 +939,184 @@ html[lang="bn"] .card-title {
   background: var(--c-on-primary);
   color: var(--c-primary);
   padding-inline: 24px;
+}
+.slide-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 899px) {
+  .slide-buttons .button {
+    padding-inline: 18px;
+    font-size: 0.9375rem;
+  }
+}
+/* An outlined button on a dark panel (the banner, the help strip). */
+.button.outline,
+.slide .button.outline {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, currentColor 75%, transparent);
+}
+.button.light {
+  background: #fff;
+  color: #1a1f29;
+}
+.eyebrow {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* Not the boards' amber: only the button-label colour is checked
+     against the primary colour, so only it is sure to be readable. */
+  color: var(--c-on-primary);
+}
+/* The banner with its offer tiles: beside it on desktop, two across under
+   it on phones. */
+.hero-row {
+  display: grid;
+  gap: 12px;
+}
+.offer-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.offer-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--c-accent) 14%, var(--c-background));
+}
+.offer-tile.tone-1 {
+  background: color-mix(in srgb, var(--c-primary) 10%, var(--c-background));
+}
+.offer-media {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-text) 6%, transparent);
+}
+.offer-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.offer-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.offer-text h2 {
+  font-size: 1rem;
+  margin: 0 0 2px;
+}
+.offer-text p {
+  margin: 0 0 12px;
+  font-size: 0.8125rem;
+  color: var(--c-muted);
+}
+.offer-text a {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--c-text);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.offer-text a:hover {
+  text-decoration: underline;
+}
+/* The tile's link covers it. */
+.offer-tile {
+  position: relative;
+}
+.offer-text a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+}
+@media (min-width: 900px) {
+  .hero-row.with-tiles {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  .with-tiles .hero.large .slide {
+    min-height: 464px;
+  }
+  .offer-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 16px;
+  }
+  .offer-tile {
+    flex-direction: row-reverse;
+    align-items: stretch;
+    gap: 16px;
+    padding: 28px;
+  }
+  .offer-media {
+    flex: 0 0 124px;
+    aspect-ratio: 1;
+    align-self: center;
+  }
+  .offer-text h2 {
+    font-size: 1.375rem;
+    margin-bottom: 4px;
+  }
+  .offer-text p {
+    font-size: 0.9375rem;
+  }
+  .offer-text a {
+    font-size: 0.9375rem;
+  }
+}
+/* "Need help choosing?": a dark strip with WhatsApp and Call. */
+.help-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--c-text);
+  color: var(--c-background);
+}
+.help-text h2 {
+  font-size: 1.25rem;
+  margin-bottom: 6px;
+}
+.help-text p {
+  margin: 0;
+  opacity: 0.85;
+}
+.help-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 900px) {
+  .help-strip {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px;
+  }
+  .help-text h2 {
+    font-size: 1.5rem;
+  }
+  .help-buttons {
+    flex-direction: row;
+  }
 }
 .hero.compact .slide-media {
   aspect-ratio: 3 / 1;
@@ -1857,6 +2060,7 @@ button.link {
   display: none;
 }
 /* The account page (phase-4-plan §3.11). */
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .link-button {
   min-height: 44px;
   padding: 0;
