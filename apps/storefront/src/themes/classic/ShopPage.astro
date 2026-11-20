@@ -20,8 +20,8 @@ interface Props {
   keys: StoreMessageKey[];
   /** The cart and checkout: what the store promises (delivery, COD, returns). */
   facts?: ShopFacts | null;
-  /** Checkout: the store name, "Secure checkout" and Back to cart, with no site navigation. */
-  chrome?: 'full' | 'minimal';
+  /** checkout and done (thank-you): their own header and footer, with no site navigation. */
+  chrome?: 'full' | 'checkout' | 'done';
 }
 const { ctx, kind, title, keys, facts = null, chrome = 'full' } = Astro.props;
 // Cart and checkout pages have their own pinned bars, so no bottom bar.

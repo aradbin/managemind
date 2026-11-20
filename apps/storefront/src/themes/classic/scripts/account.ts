@@ -194,28 +194,62 @@ function renderOrders(orders: Order[]) {
   const box = document.querySelector<HTMLElement>('[data-orders]');
   if (!box) return;
   if (!orders.length) return fill(box, el('p', { class: 'muted', text: t('account.noOrders') }));
+  // Each order opens tracking (design/storefront-redesign: Account).
   fill(
     box,
     el(
       'ul',
-      { class: 'orders' },
+      { class: 'orders', role: 'list' },
       ...orders.map((o) =>
         el(
           'li',
           {},
-          el('strong', { text: digits(o.displayNumber) }),
-          ' ',
-          el('span', { text: t(`status.${o.status}`) }),
-          el('br'),
-          el('span', {
-            class: 'muted small',
-            text: t('account.ordered', { date: date(o.placedAt), count: o.itemCount }),
-          }),
-          ' · ',
-          el('span', { text: money(o.total) }),
+          el(
+            'a',
+            { href: cfg.links.track },
+            el(
+              'span',
+              { class: 'order-text' },
+              el('strong', { text: t('track.orderNumber', { number: o.displayNumber }) }),
+              el('span', {
+                class: 'hint',
+                text: t('account.ordered', { date: date(o.placedAt), count: o.itemCount }),
+              }),
+            ),
+            el('span', { class: `status-chip ${o.status}`, text: t(`status.${o.status}`) }),
+            el('strong', { class: 'order-total', text: money(o.total) }),
+          ),
         ),
       ),
     ),
+  );
+}
+
+/** Desktop's side menu and the phone's tabs: one panel at a time. */
+let tabsReady = false;
+function setupTabs() {
+  if (tabsReady) return;
+  tabsReady = true;
+  const tabs = [...document.querySelectorAll<HTMLAnchorElement>('[data-tab]')];
+  const show = (name: string) => {
+    for (const tab of tabs) {
+      if (tab.dataset.tab === name) tab.setAttribute('aria-current', 'true');
+      else tab.removeAttribute('aria-current');
+    }
+    for (const panel of document.querySelectorAll<HTMLElement>('[data-panel]')) {
+      panel.hidden = panel.dataset.panel !== name;
+    }
+  };
+  for (const tab of tabs) {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      show(tab.dataset.tab ?? 'orders');
+    });
+  }
+  show(
+    location.hash.slice(1) === 'addresses' || location.hash.slice(1) === 'details'
+      ? location.hash.slice(1)
+      : 'orders',
   );
 }
 
@@ -376,7 +410,13 @@ async function load() {
   const who = account.profile.email.endsWith('@phone.invalid')
     ? digits(`0${account.profile.email.slice(3, 13)}`)
     : account.profile.email;
-  if (hello) hello.textContent = t('account.hello', { email: who });
+  if (hello) {
+    hello.textContent = t('account.hello', { email: who });
+    hello.hidden = false;
+  }
+  const signOut = document.querySelector<HTMLElement>('[data-sign-out]');
+  if (signOut) signOut.hidden = false;
+  setupTabs();
   const nameInput = byId<HTMLInputElement>('a-name');
   const phoneInput = byId<HTMLInputElement>('a-phone');
   if (nameInput) nameInput.value = account.profile.name;

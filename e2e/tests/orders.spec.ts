@@ -236,7 +236,7 @@ test('orders, promotions and accounts', async ({
     await shopper.getByRole('button', { name: s('checkout.place') }).click();
 
     await expect(shopper.getByRole('heading', { name: s('thanks.title'), level: 1 })).toBeVisible();
-    const head = shopper.locator('.order-head dd').first();
+    const head = shopper.locator('.order-number strong');
     await expect(head).toHaveText(/\S/);
     number = (await head.textContent())?.trim() ?? '';
     await expect(shopper.getByText(pattern(s('thanks.cod')))).toBeVisible();

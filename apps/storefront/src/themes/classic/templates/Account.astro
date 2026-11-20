@@ -45,13 +45,20 @@ const keys: StoreMessageKey[] = [
 ---
 
 <ShopPage ctx={ctx} kind="account" title={t('account.title')} keys={keys}>
-  <div class="shop narrow">
-    <h1>{t('account.title')}</h1>
+  <div class="account-page">
+    <div class="account-head">
+      <div>
+        <h1>{t('account.title')}</h1>
+        <p class="muted" data-hello hidden></p>
+      </div>
+      <button type="button" class="button outline-primary" data-sign-out hidden>{t('account.signOut')}</button>
+    </div>
     <noscript><p>{t('cart.noscript')}</p></noscript>
     <p class="notice" data-notice role="alert" hidden></p>
 
-    <section data-signin hidden>
-      <p>{t('account.signInIntro')}</p>
+    <div class="signin-grid" data-signin hidden>
+    <section class="track-card">
+      <p class="muted">{t('account.signInIntro')}</p>
       <form class="track" data-email-form novalidate>
         <div class="field">
           <label for="a-email">{t('account.email')}</label>
@@ -81,13 +88,38 @@ const keys: StoreMessageKey[] = [
         <button type="button" class="link-button" data-other-email>{t('account.otherEmail')}</button>
       </form>
     </section>
+    <aside class="why">
+      <h2>{t('account.why')}</h2>
+      <ul class="trust" role="list">
+        {['account.perk1', 'account.perk2', 'account.perk3'].map((k) => (
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+            <span>{t(k as 'account.perk1')}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="guest-box">{t('account.guest')} <a href={href(ctx.link, { kind: 'track' })}>{t('track.title')}</a></p>
+    </aside>
+    </div>
 
-    <section data-account hidden>
-      <p class="muted" data-hello></p>
-      <button type="button" class="link-button" data-sign-out>{t('account.signOut')}</button>
+    <div class="account-grid" data-account hidden>
+      <nav class="account-tabs" aria-label={t('account.title')}>
+        <ul role="list">
+          <li><a href="#orders" data-tab="orders" aria-current="true">{t('account.orders')}</a></li>
+          <li><a href="#addresses" data-tab="addresses">{t('account.addresses')}</a></li>
+          <li><a href="#details" data-tab="details">{t('account.profile')}</a></li>
+        </ul>
+      </nav>
+      <div class="account-panels">
+      <section id="orders" data-panel="orders">
+      <h2>{t('account.orders')}</h2>
+      <div data-orders aria-live="polite"></div>
+      <p class="hint">{t('account.guest')} <a href={href(ctx.link, { kind: 'track' })}>{t('track.title')}</a></p>
+      </section>
 
+      <section id="details" data-panel="details">
       <h2>{t('account.profile')}</h2>
-      <form class="track" data-profile novalidate>
+      <form class="track track-card" data-profile novalidate>
         <div class="field">
           <label for="a-name">{t('account.name')}</label>
           <input id="a-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="a-name-e" />
@@ -101,11 +133,9 @@ const keys: StoreMessageKey[] = [
         <button type="submit" class="button">{t('account.save')}</button>
         <p class="muted small" data-profile-saved role="status"></p>
       </form>
+      </section>
 
-      <h2>{t('account.orders')}</h2>
-      <div data-orders aria-live="polite"></div>
-      <p><a href={href(ctx.link, { kind: 'track' })}>{t('track.title')}</a></p>
-
+      <section id="addresses" data-panel="addresses">
       <h2>{t('account.addresses')}</h2>
       <ul class="addresses" data-addresses></ul>
       <details>
@@ -149,7 +179,9 @@ const keys: StoreMessageKey[] = [
           <button type="submit" class="button">{t('account.save')}</button>
         </form>
       </details>
-    </section>
+      </section>
+      </div>
+    </div>
   </div>
   <script src="../scripts/account.ts"></script>
 </ShopPage>
