@@ -1,6 +1,6 @@
 # ADR 0035: The storefront follows the general-store redesign boards
 
-- Status: Proposed. Steps 1 (the frame, the product card and the home page) and 2 (the home page's new sections) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 3–7 are to come.
+- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) and 3 (listing and search) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 4–7 are to come.
 - Date: 2026-11-20
 - Design: the canvas in `design/storefront-redesign/canvas/project/` (desktop and phone boards for every shopper page, in English and Bangla, on the `classic` theme's `general` preset), with its reasons in [DECISIONS.md](../../design/storefront-redesign/DECISIONS.md). Code: `apps/storefront/src/themes/classic/`
 
@@ -21,7 +21,7 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 | --- | --- | --- |
 | 1 (built) | Tokens, focus ring, top bar, header, category row, footer, phone bottom bar, product card with Add to cart, home sections restyled (hero, trust strip, category tiles, grey bands with "View all", image with text) | The card's only variant and its options (`ProductCard.variantId`, `options`) |
 | 2 (built) | Home: offer tiles beside the hero, the help strip, Recently viewed (browser storage, also on product pages), a second hero button and a line above its heading, a line beside product grid headings | Theme sections and fields, and their editor in the admin |
-| 3 | Listing and search: Load more as `?page=N` links, quick filter chips, one-tap price ranges, greyed zero counts, collapsing facet lists, removable chips, no-results suggestions, back to top, category introduction, the quick-add picker | A light variants fetch for the picker |
+| 3 (built) | Listing and search: Load more as `?page=N` links, quick filter chips, one-tap price ranges, greyed zero counts, collapsing facet lists, removable chips, no-results suggestions, back to top, category introduction, the quick-add picker | An On sale filter, price-range and stock and sale counts |
 | 4 | Product: the option pickers and buy buttons, Order on WhatsApp, the delivery box, collapsed specifications, the phone's buy bar (shown once the in-page buttons scroll away), the desktop mini-cart, Recently viewed | Delivery charges from the store's settings |
 | 5 | Cart and checkout: the searchable Area field, the linked error summary, the trust line, the phone-code dialog with its resend countdown, the blocked-checkout panel, the price-changed marks, the collapsed phone summary, the pinned desktop summary | Optionally each area's delivery charge |
 | 6 | Thank-you, tracking and account: payment box with Copy, "Order faster next time", the headline status, parcels, returns, account tabs and the address Undo | The expected delivery date; photos on account orders |
@@ -44,6 +44,17 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 - **The admin's editor** has the new fields and sections. The product grid's "Layout" choice is gone: product grids are grids (step 1).
 - **The `general` preset** follows the boards' order: banner, promises, Shop by category, New arrivals, Recently viewed, the help strip. Stores keep their saved themes; the preset applies when chosen.
 - **The eyebrow** is drawn in the button-label colour, not the boards' amber: only that colour is checked against the primary colour, and amber fails on the grocery preset's green.
+
+## Step 3
+
+- **Core** (additive): an On sale filter (`sale=1`: a live variant with a sale price now, or a compare-at price above what it costs), and three more facets: one-tap price ranges with counts (four round ranges from the shared `priceRanges`, counted before the price filter), and how many of the listing are in stock and on sale.
+- **Categories and collections:** filters in a sidebar on desktop, applied as they are ticked; on phones a full-screen sheet behind a pinned Filters and Sort bar, applied with "Show products", and quick filter chips (In stock, On sale, the cheapest range) with counts. Price ranges are links styled as radio buttons, plus min and max with Go. Filter lists longer than four collapse behind "Show all N"; colour values show swatches. Applied filters show as chips that remove them, with Clear all; with no results the page offers to remove each one.
+- **Load more** is a link to `?page=N` that the script follows in place: "Showing 24 of 132 products", a progress bar, focus on the first new product. Without scripts, page N shows "Showing 25–48 of 132" and a link to the earlier products. Back to top appears after two screens (on the left when the store's chat buttons hold the right corner).
+- **The category's description** moved under the products as "About …".
+- **Search:** category chips with counts (All, then each category) and sort ("Best match" for featured), no sidebar. With no results: tips and the categories.
+- **Quick add:** Choose options on listing and search cards opens a dialog (a bottom sheet on phones) with the product's options, from the product page data the storefront already proxies (`/api/pages/products/{slug}`), so no new endpoint. Choices that can't be bought with the others chosen are struck through; Add to cart adds the matching variant and the card turns into "Added · View cart". Without scripts, or if the data can't be had, it is a link to the product page.
+- **Where step 3 differs from the boards:** values with no products under the current filters aren't listed rather than greyed (the facets only count what the listing has); "Show N products" in the sheet reads "Show products" (the count would need a request per tick); "Did you mean" and popular searches wait for platform work (DECISIONS.md items 4 and 5).
+- **Fixed on the way:** `.wrap`'s padding shorthand was zeroing `main`'s top padding since step 1.
 
 ## Consequences
 

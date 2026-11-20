@@ -292,6 +292,31 @@ describe('listings', () => {
     await run((tx) => archiveProduct(tx, owner, two.id));
   });
 
+  it('filters to products on sale, and counts price ranges, stock and sales', async () => {
+    const variantId = (await list()).items.find((i) => i.id === middle)?.variantId as string;
+    await run((tx) => updateVariant(tx, owner, variantId, { compareAtPrice: 120_000 }));
+    expect((await list('sale=1')).items.map((i) => i.id)).toEqual([middle]);
+    const all = await list();
+    expect(all.facets).toMatchObject({ inStock: 3, onSale: 1 });
+    // Prices of 500, 1,000 and 3,000 taka: steps of 250.
+    expect(all.facets?.priceRanges).toEqual([
+      { max: 250, count: 0, selected: false },
+      { min: 250, max: 500, count: 1, selected: false },
+      { min: 500, max: 1000, count: 2, selected: false },
+      { min: 1000, count: 2, selected: false },
+    ]);
+    // The ranges ignore the price filter, the other counts don't.
+    const chosen = await list('min=1000');
+    expect(chosen.facets?.priceRanges.map((r) => [r.count, r.selected])).toEqual([
+      [0, false],
+      [1, false],
+      [2, false],
+      [2, true],
+    ]);
+    expect(chosen.facets).toMatchObject({ inStock: 2, onSale: 1 });
+    await run((tx) => updateVariant(tx, owner, variantId, { compareAtPrice: null }));
+  });
+
   it('filters to products in stock', async () => {
     const tracked = await product('স্টক জামা', { categoryIds: [category] }, 70_000);
     expect((await list('stock=1')).items.map((i) => i.id)).not.toContain(tracked.id);

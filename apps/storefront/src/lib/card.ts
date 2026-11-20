@@ -6,7 +6,7 @@ import { normalizeKey } from '@managemind/shared/catalog';
 import { price, priceRange } from './format';
 import { href } from './links';
 import type { PageContext } from './page';
-import { swatch } from './swatches';
+import { COLOUR_KEYS, swatch } from './swatches';
 
 export interface CardView {
   id: string;
@@ -31,8 +31,8 @@ export interface CardView {
 }
 
 const SIZE = new Set(['size', 'সাইজ', 'মাপ']);
-const COLOUR = new Set(['colour', 'color', 'রং', 'রঙ']);
-const is = (o: CardOption, names: Set<string>) => o.keys.some((k) => names.has(k));
+const COLOUR = COLOUR_KEYS;
+const is = (o: CardOption, names: ReadonlySet<string>) => o.keys.some((k) => names.has(k));
 
 export function cardView(ctx: PageContext, product: ProductCard): CardView {
   const { t, d } = ctx;

@@ -38,6 +38,9 @@ const SWATCHES: Record<string, string> = {
   বাদামি: '#7a4e2d',
 };
 
+/** Normalized names of a colour option, in English and Bangla. */
+export const COLOUR_KEYS: ReadonlySet<string> = new Set(['colour', 'color', 'রং', 'রঙ']);
+
 /** A swatch for a normalized colour name ("navy blue" finds "navy"), or null. */
 export function swatch(key: string): string | null {
   if (SWATCHES[key]) return SWATCHES[key];

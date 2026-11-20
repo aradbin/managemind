@@ -246,3 +246,6 @@ for (const section of document.querySelectorAll<HTMLElement>('[data-recent]')) {
     section.hidden = true;
   });
 }
+
+// A module, so its names stay its own.
+export {};

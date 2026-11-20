@@ -17,12 +17,18 @@ async function openStore(page: Page, store: string, path = '/') {
   expect(res?.status()).toBe(200);
 }
 
-/** Opens the filters where they fold away (phones). */
+/** Opens the filters where they fold away (the phone's sheet). */
 async function openFilters(page: Page, label: string) {
   const details = page.locator('details.filters');
   if (!(await details.evaluate((d: HTMLDetailsElement) => d.open))) {
     await details.locator('summary', { hasText: label }).click();
   }
+}
+
+/** Applies ticked filters: on desktops they apply as they change, the phone's sheet has a button. */
+async function applyFilters(page: Page, label: string) {
+  const show = page.locator('details.filters').getByRole('button', { name: label });
+  if (await show.isVisible()) await show.click();
 }
 
 test('browsing the English demo store', async ({ page }) => {
@@ -41,12 +47,18 @@ test('browsing the English demo store', async ({ page }) => {
   await test.step('a category, filtered to what is in stock and sorted by price', async () => {
     await page.goto(`${STOREFRONT}/categories/sarees`);
     await expect(page.getByRole('heading', { level: 1, name: 'Sarees' })).toBeVisible();
-    await expect(page.getByText('3 products')).toBeVisible();
+    await expect(page.getByText('3 products', { exact: true })).toBeVisible();
     await openFilters(page, 'Filters');
     await page.getByLabel('In stock only').check();
-    await page.locator('details.filters').getByRole('button', { name: 'Apply' }).click();
+    await applyFilters(page, 'Show products');
     await expect(page).toHaveURL(/stock=1/);
-    await expect(page.getByText('2 products')).toBeVisible();
+    await expect(page.getByText('2 products', { exact: true })).toBeVisible();
+    // What is applied shows as a chip that removes it.
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Applied filters' })
+        .getByRole('link', { name: 'Remove In stock' }),
+    ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Yellow muslin saree', exact: true })).toHaveCount(
       0,
     );
@@ -123,6 +135,24 @@ test('adding from a card, and recently viewed products', async ({ page }) => {
     await add.click();
     await expect(page.getByRole('status').filter({ hasText: 'Added · View cart' })).toBeVisible();
     await expect(page.locator('[data-cart-count]:visible').first()).not.toHaveText('');
+  });
+
+  await test.step('Choose options picks a size without leaving the list', async () => {
+    await page.goto(`${STOREFRONT}/categories/panjabis`);
+    const choose = page.getByRole('link', { name: 'Choose options for White cotton panjabi' });
+    await choose.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await choose.click();
+    const dialog = page.getByRole('dialog', { name: 'White cotton panjabi' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'L', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'L', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expectAccessible(page, 'quick-add picker');
+    await dialog.getByRole('button', { name: 'Add to cart' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Added · View cart' }).first()).toBeVisible();
   });
 
   await test.step('a product page lists the products viewed before it', async () => {

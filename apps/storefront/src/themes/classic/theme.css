@@ -112,17 +112,20 @@ select {
 .wrap {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 16px;
+  padding-inline: 16px;
 }
 @media (min-width: 900px) {
   .wrap {
-    padding: 0 24px;
+    padding-inline: 24px;
   }
 }
 main {
   display: block;
   min-height: 50vh;
-  padding: 16px 0 48px;
+  padding-block: 16px 48px;
+}
+main > .section:first-child {
+  margin-top: 0;
 }
 @media (min-width: 900px) {
   main {
@@ -1317,101 +1320,702 @@ html[lang="bn"] .card-title {
   }
 }
 
-/* Listings */
+/* Listings (design/storefront-redesign: Listing, ListingPhone, Search).
+   Phone: Filters and Sort pinned side by side, quick filter chips, the
+   products; the filters open as a full-screen sheet. Desktop: the filters
+   as a sidebar beside "Showing…", Sort and the products. */
 .listing-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
+  gap: 4px 16px;
   align-items: baseline;
-  justify-content: space-between;
+  margin-bottom: 12px;
 }
-.filters {
-  margin: 12px 0;
-}
-.filters > summary {
-  cursor: pointer;
-  font-weight: 600;
-  padding: 8px 0;
-}
-.filters form {
-  display: grid;
-  gap: 14px;
-  padding: 8px 0;
-}
-.filters fieldset {
-  border: 1px solid color-mix(in srgb, var(--c-text) 15%, transparent);
-  border-radius: var(--radius);
-  padding: 8px 12px;
+.listing-head h1 {
   margin: 0;
 }
-.filters legend {
-  font-weight: 600;
-  padding: 0 4px;
-}
-.filters label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  padding: 4px 0;
-}
-.filters .range {
-  display: flex;
-  gap: 8px;
-}
-.filters .range input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
-  border-radius: var(--radius);
-}
 .count {
-  opacity: 0.75;
-  font-size: 0.9em;
+  color: var(--c-muted);
+  font-size: 0.875rem;
+  margin: 0;
 }
-.sorter {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.sorter select {
-  padding: 8px;
-  border-radius: var(--radius);
-  border: 1px solid color-mix(in srgb, var(--c-text) 30%, transparent);
-  background: var(--c-background);
-}
-@media (min-width: 1000px) {
-  .with-filters {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 24px;
-    align-items: start;
-  }
-  .filters {
-    margin: 0;
+@media (min-width: 900px) {
+  .count {
+    font-size: 0.9375rem;
   }
 }
-.pager {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 16px;
-  margin: 24px 0;
-}
+/* Pill chips: subcategories, search categories, quick and applied filters.
+   One row that scrolls sideways on phones, wrapping on desktop. */
 .chips {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
   list-style: none;
-  padding: 0;
+  padding: 0 0 4px;
   margin: 0 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.chips li {
+  flex: none;
 }
 .chips a {
-  display: inline-block;
-  padding: 6px 12px;
-  border: 1px solid color-mix(in srgb, var(--c-text) 25%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--c-border);
   border-radius: 999px;
   text-decoration: none;
   color: var(--c-text);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+}
+.chips a:hover {
+  border-color: var(--c-muted);
+}
+.chips a[aria-current="true"] {
+  border: 2px solid var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-background));
+  font-weight: 600;
+}
+.chips .n {
+  color: var(--c-muted);
+  font-size: 0.8125rem;
+}
+@media (min-width: 900px) {
+  .chips {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+.listing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "filters sort"
+    "quick quick"
+    "applied applied"
+    "results results";
+  gap: 0 8px;
+  align-items: start;
+}
+.listing .search-cats {
+  grid-column: 1 / -1;
+}
+.filters {
+  grid-area: filters;
+}
+.sorter {
+  grid-area: sort;
+}
+.listing > .showing {
+  display: none;
+}
+.quick {
+  grid-area: quick;
+}
+.applied {
+  grid-area: applied;
+}
+.results {
+  grid-area: results;
+  min-width: 0;
+}
+/* The pinned Filters and Sort bar on phones. */
+.filters > summary,
+.sorter select {
+  position: sticky;
+  top: 0;
+}
+.filters,
+.sorter {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--c-background);
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+.filters > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+.filters > summary::-webkit-details-marker {
+  display: none;
+}
+.filter-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-size: 0.75rem;
+  line-height: 20px;
+  text-align: center;
+}
+.sorter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sorter label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.sorter select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font-weight: 600;
+}
+/* The sheet. */
+.filters-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-background);
+}
+body:has(.filters[open]) {
+  overflow: hidden;
+}
+/* Above the header and the bottom bar while the sheet is open. */
+.filters[open] {
+  z-index: 70;
+}
+.filters-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+.filters-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.125rem;
+}
+.filters-head a {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.filters-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.filters form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px;
+}
+.filters fieldset {
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--c-border);
+  margin: 0;
+  padding: 16px 0;
+}
+.filters legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 0;
+  font-weight: 600;
+}
+.filters .check {
+  clear: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.filters .check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--c-primary);
+}
+.filters .check > span:not(.n, .dot) {
+  flex: 1;
+}
+.filters .n {
+  color: var(--c-muted);
+  font-size: 0.8125rem;
+  margin-left: auto;
+}
+.ranges {
+  clear: left;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ranges a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  color: var(--c-text);
+  text-decoration: none;
+}
+/* A radio's look: these are links, so each works without a form. */
+.ranges a::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--c-muted);
+  border-radius: 50%;
+}
+.ranges a[aria-current="true"]::before {
+  border: 6px solid var(--c-primary);
+}
+.ranges a:hover {
+  text-decoration: underline;
+}
+.ranges .empty a {
+  color: var(--c-muted);
+}
+.filters .range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.filters .range input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+}
+.filters .go {
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font-weight: 600;
+  cursor: pointer;
+}
+.show-all > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--c-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.show-all > summary::-webkit-details-marker {
+  display: none;
+}
+.show-all .opened,
+.show-all[open] .closed {
+  display: none;
+}
+.show-all[open] .opened {
+  display: inline;
+}
+.filters-foot {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  background: var(--c-background);
+}
+.applied .chips a {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-background));
+}
+.applied .chips a.clear {
+  background: none;
+  border-color: transparent;
+  color: var(--c-primary);
+  text-decoration: underline;
+}
+.earlier {
+  text-align: center;
+}
+.no-match,
+.no-results {
+  padding: 24px 0;
+}
+.no-results ul:not(.chips) {
+  color: var(--c-muted);
+  padding-left: 1.2em;
+}
+.no-results h2 {
+  font-size: 1.125rem;
+}
+/* Load more. */
+.more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 32px auto 0;
+  max-width: 260px;
+  text-align: center;
+}
+.more .showing {
+  margin: 0;
+  color: var(--c-muted);
+  font-size: 0.875rem;
+}
+.progress {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--c-border);
+  overflow: hidden;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--c-primary);
+}
+.more .button {
+  width: 100%;
+}
+.intro {
+  max-width: 760px;
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--c-border);
+}
+.intro h2 {
+  font-size: 1.25rem;
+}
+.intro .rich {
+  color: var(--c-muted);
+}
+.to-top {
+  position: fixed;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--c-border);
+  border-radius: 22px;
+  background: var(--c-background);
+  box-shadow: 0 2px 8px rgb(26 31 41 / 0.15);
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Chat buttons take the corner when a store has them. */
+body:has(.chat) .to-top {
+  right: auto;
+  left: 16px;
+}
+@media (min-width: 900px) {
+  .listing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "sort"
+      "applied"
+      "results";
+    gap: 0;
+  }
+  .listing.with-sidebar {
+    grid-template-columns: minmax(240px, 2fr) minmax(0, 1.5fr) minmax(0, 1.5fr);
+    grid-template-areas:
+      "filters showing sort"
+      "filters applied applied"
+      "filters results results"
+      "filters . .";
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: 32px;
+  }
+  .listing .search-cats {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: center;
+  }
+  .listing .search-cats .chips {
+    margin: 0;
+  }
+  .listing:not(.with-sidebar):has(.search-cats) {
+    grid-template-areas:
+      ". sort"
+      "applied applied"
+      "results results";
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 16px;
+    padding-bottom: 16px;
+  }
+  .listing > .showing {
+    grid-area: showing;
+    display: block;
+    align-self: center;
+    margin: 0;
+    color: var(--c-muted);
+    font-size: 0.9375rem;
+  }
+  .filters,
+  .sorter {
+    position: static;
+    padding: 0;
+    margin: 0;
+  }
+  .sorter {
+    justify-self: end;
+    padding-bottom: 16px;
+  }
+  .sorter label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    color: var(--c-muted);
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+  .sorter select {
+    width: auto;
+    min-width: 160px;
+    font-weight: 500;
+  }
+  .filters > summary {
+    display: none;
+  }
+  .filters-panel {
+    position: static;
+    display: block;
+  }
+  body:has(.filters[open]) {
+    overflow: visible;
+  }
+  .filters-head {
+    padding: 0 0 8px;
+    border: 0;
+  }
+  .filters-close {
+    display: none;
+  }
+  .filters form {
+    padding: 0;
+    overflow: visible;
+  }
+  .filters fieldset:last-of-type {
+    border-bottom: 0;
+  }
+  .filters form[data-auto] .filters-foot {
+    display: none;
+  }
+  .quick {
+    display: none;
+  }
+  .results {
+    border-top: 1px solid var(--c-border);
+    padding-top: 24px;
+  }
+  .listing:not(.with-sidebar) .results {
+    padding-top: 24px;
+  }
+  .with-sidebar .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .more {
+    max-width: 240px;
+  }
+  .to-top {
+    bottom: 24px;
+  }
+}
+
+/* The quick-add picker: a bottom sheet on phones, a centred dialog on
+   desktop. */
+.quick-add {
+  width: 100%;
+  max-width: 100%;
+  max-height: 92vh;
+  margin: auto 0 0;
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--c-background);
+  color: var(--c-text);
+  box-shadow: 0 16px 40px rgb(26 31 41 / 0.25);
+}
+.quick-add[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.quick-add::backdrop {
+  background: rgb(26 31 41 / 0.5);
+}
+@media (min-width: 900px) {
+  .quick-add {
+    width: 440px;
+    margin: auto;
+    border-radius: var(--radius-lg);
+  }
+}
+.qa-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.qa-media {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--c-text) 6%, var(--c-surface));
+}
+.qa-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.qa-summary {
+  flex: 1;
+  min-width: 0;
+}
+.qa-summary h2 {
+  margin: 0 0 2px;
+  font-size: 1.0625rem;
+  line-height: 1.35;
+}
+.qa-price {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.qa-stock {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--c-success);
+}
+.qa-stock.out {
+  color: var(--c-sale);
+}
+.qa-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px 0 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.qa-options fieldset {
+  border: 0;
+  margin: 0 0 18px;
+  padding: 0;
+}
+.qa-options legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+.qa-options strong {
+  font-weight: 600;
+}
+.qa-choices,
+.qa-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qa-choices button {
+  min-width: 72px;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font-weight: 600;
+  cursor: pointer;
+}
+.qa-choices button[aria-pressed="true"] {
+  border: 2px solid var(--c-primary);
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-background));
+}
+.qa-choices button.gone {
+  color: var(--c-muted);
+  text-decoration: line-through;
+}
+.qa-swatch {
+  width: 44px;
+  height: 44px;
+  padding: 3px;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  background: var(--c-background);
+  cursor: pointer;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.qa-swatch span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(26 31 41 / 0.2);
+}
+.qa-swatch[aria-pressed="true"] {
+  border: 2px solid var(--c-primary);
+}
+.qa-swatch.gone {
+  opacity: 0.4;
+}
+.qa-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.qa-actions .button {
+  min-height: 52px;
+  font-size: 1.0625rem;
+}
+.qa-details {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
 }
 
 /* Product page */
@@ -1528,6 +2132,7 @@ html[lang="bn"] .card-title {
   margin: 16px 0 0;
   font-size: 0.9375rem;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .share a {
   display: inline-block;
   min-height: 44px;
@@ -1611,6 +2216,7 @@ dl.specs-list dd {
   font-size: 0.875rem;
   padding: 2px 0;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .site-footer nav a {
   display: flex;
   align-items: center;

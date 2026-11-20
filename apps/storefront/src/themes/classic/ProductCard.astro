@@ -21,8 +21,10 @@ interface Props {
   ctx: PageContext;
   product: ProductCard;
   eager?: boolean;
+  /** Choose options opens the quick-add picker (listing and search pages) instead of the product page. */
+  quick?: boolean;
 }
-const { ctx, product, eager = false } = Astro.props;
+const { ctx, product, eager = false, quick = false } = Astro.props;
 const { t } = ctx;
 const view = cardView(ctx, product);
 ---
@@ -64,7 +66,7 @@ const view = cardView(ctx, product);
   {view.action === null && <div class="card-action none" />}
   {view.action === 'choose' && (
     <div class="card-action">
-      <a class="card-button" href={view.href} aria-label={t('card.chooseAria', { product: view.title })}>
+      <a class="card-button" href={view.href} aria-label={t('card.chooseAria', { product: view.title })} data-quick={quick ? product.slug : undefined} aria-haspopup={quick ? 'dialog' : undefined}>
         <Icon name="cart" size={18} stroke={2} /><span class="card-label">{t('card.choose')}</span>
       </a>
     </div>

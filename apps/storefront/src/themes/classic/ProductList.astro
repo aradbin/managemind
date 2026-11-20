@@ -9,12 +9,14 @@ interface Props {
   layout?: 'grid' | 'carousel';
   /** The first card's image loads eagerly (the page's likely LCP). */
   eagerFirst?: boolean;
+  /** Choose options opens the quick-add picker (QuickAdd.astro must be on the page). */
+  quick?: boolean;
 }
-const { ctx, products, layout = 'grid', eagerFirst = false } = Astro.props;
+const { ctx, products, layout = 'grid', eagerFirst = false, quick = false } = Astro.props;
 ---
 
 <ul class={layout} role="list">
   {products.map((product, i) => (
-    <li><ProductCard ctx={ctx} product={product} eager={eagerFirst && i < 2} /></li>
+    <li><ProductCard ctx={ctx} product={product} eager={eagerFirst && i < 2} quick={quick} /></li>
   ))}
 </ul>

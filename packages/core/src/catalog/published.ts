@@ -6,7 +6,11 @@
 // "available" or not.
 import { collectionRules, MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
-import { LISTING_LIMITS, type ListingQuery } from '@managemind/shared/storefront/listing';
+import {
+  LISTING_LIMITS,
+  type ListingQuery,
+  priceRanges,
+} from '@managemind/shared/storefront/listing';
 import { type SQL, sql } from 'drizzle-orm';
 import { effectivePriceSql } from '../orders/variants';
 import type { TenantTx } from '../tenant';
@@ -90,6 +94,11 @@ const VARIANT_AVAILABLE = (v: SQL) => sql`(not ${v}.track_inventory or ${v}.allo
 
 const PRODUCT_AVAILABLE = sql`exists (select 1 from store.variants av
   where av.product_id = p.id and av.archived_at is null and ${VARIANT_AVAILABLE(sql`av`)})`;
+
+/** A live variant on sale: a sale price now, or a compare-at price above what it costs. */
+const PRODUCT_ON_SALE = sql`exists (select 1 from store.variants sv
+  where sv.product_id = p.id and sv.archived_at is null
+    and (${effectivePriceSql('sv')} < sv.price or sv.compare_at_price > ${effectivePriceSql('sv')}))`;
 
 /** The card of product `p`, with tl/td its translations in the shopper's and the default language. */
 const cardJson = (lang: Lang) => sql`json_build_object(
@@ -202,6 +211,14 @@ export interface Facets {
   /** Search only: the categories of the results. */
   categories: { slug: string; name: string; count: number; selected: boolean }[];
   groups: Facet[];
+  /**
+   * One-tap price ranges (whole taka; the first has no min, the last no max)
+   * with their product counts, over the listing before its price filter.
+   */
+  priceRanges: { min?: number; max?: number; count: number; selected: boolean }[];
+  /** How many of the listing are in stock, and on sale. */
+  inStock: number;
+  onSale: number;
 }
 
 export interface Listing {
@@ -282,12 +299,19 @@ const optionFilter = (key: string, values: string[]) => sql`exists (
    where fv.product_id = p.id and fv.archived_at is null
      and fvt.label_key = any(${sql.param(values)}::text[]))`;
 
-/** Filters other than the facets: price, stock and (search) category. */
+/** A price range in whole taka: products with a price in it (price_min..price_max overlaps). */
+function priceWithin(range: { min?: number | undefined; max?: number | undefined }): SQL[] {
+  const where: SQL[] = [];
+  if (range.min !== undefined) where.push(sql`p.price_max >= ${range.min * 100}`);
+  if (range.max !== undefined) where.push(sql`p.price_min <= ${range.max * 100}`);
+  return where;
+}
+
+/** Filters other than the facets and the price: stock, sale and (search) category. */
 function baseFilters(query: ListingQuery, lang: Lang): SQL[] {
   const where: SQL[] = [];
-  if (query.min !== undefined) where.push(sql`p.price_max >= ${query.min * 100}`);
-  if (query.max !== undefined) where.push(sql`p.price_min <= ${query.max * 100}`);
   if (query.inStock) where.push(PRODUCT_AVAILABLE);
+  if (query.onSale) where.push(PRODUCT_ON_SALE);
   if (query.category !== undefined) {
     const id = sql`(select ct.category_id from store.category_translations ct
       where ct.slug = ${query.category} and ct.locale in (${lang.locale}, ${lang.fallback}) limit 1)`;
@@ -351,7 +375,8 @@ export async function listPublishedProducts(
   const page = Math.max(1, Math.min(query.page, LISTING_LIMITS.maxPage));
   const offset = (page - 1) * pageSize;
   const scoped = await scopeSql(tx, scope);
-  const base = [sql`p.status = 'active'`, scoped, ...baseFilters(query, lang)];
+  const unpriced = [sql`p.status = 'active'`, scoped, ...baseFilters(query, lang)];
+  const base = [...unpriced, ...priceWithin(query)];
   const where = sql.join([...base, ...facetFilters(query)], sql` and `);
   const order = await orderSql(tx, scope, query);
   const limit = Math.max(0, Math.min(pageSize, cap - offset));
@@ -381,7 +406,13 @@ export async function listPublishedProducts(
     facets:
       options.facets === false
         ? null
-        : await facets(tx, lang, sql.join(base, sql` and `), query, scope.type === 'search'),
+        : await facets(
+            tx,
+            lang,
+            { base: sql.join(base, sql` and `), unpriced: sql.join(unpriced, sql` and `) },
+            query,
+            scope.type === 'search',
+          ),
   };
 }
 
@@ -402,10 +433,11 @@ type FacetRow = {
 async function facets(
   tx: TenantTx,
   lang: Lang,
-  base: SQL,
+  where: { base: SQL; unpriced: SQL },
   query: ListingQuery,
   withCategories: boolean,
 ): Promise<Facets> {
+  const { base } = where;
   const { rows } = await tx.db.execute<FacetRow>(sql`
     with base as (
       select p.id, p.price_min, p.price_max from store.products p ${translationJoins(lang)} where ${base}
@@ -486,7 +518,53 @@ async function facets(
       .filter((c) => c.slug)
       .map((c) => ({ ...c, selected: c.slug === query.category }));
   }
-  return { price, categories, groups: useful };
+  return {
+    price,
+    categories,
+    groups: useful,
+    ...(await quickCounts(tx, lang, where.unpriced, query)),
+  };
+}
+
+/**
+ * The one-tap price ranges with their counts, over the listing before its
+ * price filter, and how many of the listing (price filter applied) are in
+ * stock and on sale.
+ */
+async function quickCounts(
+  tx: TenantTx,
+  lang: Lang,
+  unpriced: SQL,
+  query: ListingQuery,
+): Promise<Pick<Facets, 'priceRanges' | 'inStock' | 'onSale'>> {
+  const scope = sql`select p.id, p.price_min, p.price_max, ${PRODUCT_AVAILABLE} as available,
+      ${PRODUCT_ON_SALE} as on_sale from store.products p ${translationJoins(lang)} where ${unpriced}`;
+  const { rows: top } = await tx.db.execute<{ max: string | null }>(sql`
+    select max(price_max)::text as max from (${scope}) b`);
+  const ranges = priceRanges(Math.floor(Number(top[0]?.max ?? 0) / 100));
+  const priced = sql.join([sql`true`, ...priceWithin(query)], sql` and `);
+  const within = (r: { min?: number; max?: number }) =>
+    sql.join([sql`true`, ...priceWithin(r)], sql` and `);
+  const { rows } = await tx.db.execute<Record<string, number>>(sql`
+    select count(*) filter (where ${priced} and available)::int as in_stock,
+           count(*) filter (where ${priced} and on_sale)::int as on_sale
+           ${sql.join(
+             ranges.map(
+               (r, i) => sql`, count(*) filter (where ${within(r)})::int as ${sql.raw(`r${i}`)}`,
+             ),
+             sql``,
+           )}
+      from (${scope}) p`);
+  const counts = rows[0] ?? {};
+  return {
+    inStock: counts.in_stock ?? 0,
+    onSale: counts.on_sale ?? 0,
+    priceRanges: ranges.map((r, i) => ({
+      ...r,
+      count: counts[`r${i}`] ?? 0,
+      selected: query.min === r.min && query.max === r.max,
+    })),
+  };
 }
 
 // ---- Product pages ------------------------------------------------------------------

@@ -54,3 +54,6 @@ document.addEventListener('click', async (event) => {
     if (label) label.textContent = idle;
   }
 });
+
+// A module, so its names stay its own.
+export {};
