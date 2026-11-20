@@ -11,13 +11,27 @@ import { and, asc, eq } from 'drizzle-orm';
 import type { TenantTx } from '../tenant';
 import { getSupport } from '../terms/support';
 
-export async function legalContext(tx: TenantTx, platformName: string): Promise<LegalContext> {
+/**
+ * What a shopper is promised before ordering: delivery zones with their
+ * charges and times, cash on delivery, online payment and the return
+ * window. The legal pages and the product page show these (both under the
+ * `legal` cache tag).
+ */
+export type ShopFacts = Pick<LegalContext, 'zones' | 'cod' | 'online' | 'returns'>;
+
+async function storeSettings(tx: TenantTx) {
   const [store] = await tx.db
     .select({ name: schema.tenants.name, settings: schema.tenants.settings })
     .from(schema.tenants)
     .where(eq(schema.tenants.id, tx.tenantId));
-  const settings = tenantSettings.parse(store?.settings ?? {});
-  const p = settings.profile;
+  return { name: store?.name ?? '', settings: tenantSettings.parse(store?.settings ?? {}) };
+}
+
+export async function shopFacts(
+  tx: TenantTx,
+  loaded?: Awaited<ReturnType<typeof storeSettings>>,
+): Promise<ShopFacts> {
+  const { settings } = loaded ?? (await storeSettings(tx));
   const z = schema.deliveryZones;
   const zones = await tx.db
     .select({ name: z.name, fee: z.fee, estimate: z.estimate })
@@ -34,21 +48,11 @@ export async function legalContext(tx: TenantTx, platformName: string): Promise<
       ),
     )
     .limit(1);
-  const support = await getSupport(tx);
   const estimate = (e: unknown) => {
     const v = e as Partial<Record<Locale, string>> | null;
     return v?.bn || v?.en ? { bn: v.bn ?? v.en ?? '', en: v.en ?? v.bn ?? '' } : null;
   };
   return {
-    storeName: store?.name ?? '',
-    businessName: p.businessName,
-    address: p.address
-      ? [p.address.line1, p.address.line2, p.address.city].filter(Boolean).join(', ')
-      : undefined,
-    contactEmail: p.contactEmail,
-    contactPhone: p.contactPhone ? formatPhone(p.contactPhone) : undefined,
-    tradeLicense: p.tradeLicense,
-    dbid: p.dbid,
     returns: {
       shopperRequests: settings.returns.shopperRequests,
       windowDays: settings.returns.windowDays,
@@ -65,6 +69,26 @@ export async function legalContext(tx: TenantTx, platformName: string): Promise<
     }),
     cod: settings.cod.enabled,
     online: Boolean(gateway),
+  };
+}
+
+export async function legalContext(tx: TenantTx, platformName: string): Promise<LegalContext> {
+  const loaded = await storeSettings(tx);
+  const { settings } = loaded;
+  const p = settings.profile;
+  const facts = await shopFacts(tx, loaded);
+  const support = await getSupport(tx);
+  return {
+    ...facts,
+    storeName: loaded.name,
+    businessName: p.businessName,
+    address: p.address
+      ? [p.address.line1, p.address.line2, p.address.city].filter(Boolean).join(', ')
+      : undefined,
+    contactEmail: p.contactEmail,
+    contactPhone: p.contactPhone ? formatPhone(p.contactPhone) : undefined,
+    tradeLicense: p.tradeLicense,
+    dbid: p.dbid,
     savedCheckoutDays: settings.recovery.incomplete ? settings.recovery.keepDays : null,
     abuseEmail: support.abuseEmail,
     platformName,

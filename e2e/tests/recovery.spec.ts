@@ -15,7 +15,7 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
-import { expectAccessible, expectScriptBudget, signIn } from './helpers';
+import { expectAccessible, expectAddedToCart, expectScriptBudget, signIn } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API, STOREFRONT } from './urls';
 
@@ -155,7 +155,7 @@ test('sales recovery', async ({ page, browser, viewport: size, hasTouch }, info)
     const shopper = await (await browser.newContext({ viewport: size, hasTouch })).newPage();
     await shopper.goto(store(`/products/${products[0]?.slug}`));
     await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
-    await expect(shopper.getByText(s('cart.added'))).toBeVisible();
+    await expectAddedToCart(shopper);
     await shopper.goto(store('/checkout'));
     await expect(
       shopper.getByRole('heading', { name: s('checkout.title'), level: 1 }),

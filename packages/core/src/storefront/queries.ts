@@ -18,6 +18,7 @@ import {
 import { type ListingQuery, parseListingQuery } from '@managemind/shared/storefront/listing';
 import type { SitemapPart } from '@managemind/shared/storefront/urls';
 import { eq, sql } from 'drizzle-orm';
+import { type ShopFacts, shopFacts } from '../catalog/legal';
 import {
   publishedPageBySlug,
   type StorePage,
@@ -248,6 +249,8 @@ export type Found<T> = { found: T } | { redirect: string } | null;
 export interface ProductPageData {
   product: StoreProduct;
   related: ProductCard[];
+  /** Delivery, cash on delivery and returns, for the box beside the buy buttons. */
+  facts: ShopFacts;
 }
 
 /** A product page: the product and related products, or a redirect for an old slug. */
@@ -261,11 +264,14 @@ export async function productPage(
   if (!hit || 'redirect' in hit)
     return { data: hit, tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)] };
   const related = options.related ? await relatedProducts(tx, lang, hit.found) : [];
+  const facts = await shopFacts(tx);
   return {
-    data: { found: { product: hit.found, related } },
-    // Related products' tags too, so an archived one never stays linked for a day.
+    data: { found: { product: hit.found, related, facts } },
+    // Related products' tags too, so an archived one never stays linked for a day;
+    // the legal tag for the delivery, COD and returns box.
     tags: [
       storeTag(tx.tenantId),
+      legalTag(tx.tenantId),
       productTag(tx.tenantId, hit.found.id),
       ...cardTags(tx.tenantId, related),
     ],

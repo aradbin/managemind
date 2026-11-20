@@ -31,8 +31,10 @@ interface Props {
    * false on pages with their own pinned bar (product, cart, checkout).
    */
   tab?: Tab | false;
+  /** Where the phone header's back arrow goes, in place of the menu (product pages). */
+  back?: string;
 }
-const { ctx, head, languageHref, product = null, tab = null } = Astro.props;
+const { ctx, head, languageHref, product = null, tab = null, back } = Astro.props;
 const { theme, layout, t, locale } = ctx;
 const c = theme.tokens.colors;
 const [radius, radiusLarge] = RADIUS_CSS[theme.tokens.radius];
@@ -107,7 +109,7 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
         (function(){var ok=JSON.parse(parents);var keys=['--c-primary','--c-on-primary','--c-background','--c-surface','--c-text','--c-accent','--c-sale','--radius','--radius-lg','--font','--card-ratio'];addEventListener('message',function(e){if(ok.indexOf(e.origin)<0||!e.data||e.data.type!=='mm-theme-vars')return;var v=e.data.vars||{};keys.forEach(function(k){var x=v[k];if(typeof x==='string'&&x.length<200&&!/[;{}<>]/.test(x))document.documentElement.style.setProperty(k,x);});});})();
       </script>
     )}
-    <Header ctx={ctx} languageHref={languageHref} />
+    <Header ctx={ctx} languageHref={languageHref} back={back} />
     <main id="main" class="wrap">
       <slot />
     </main>

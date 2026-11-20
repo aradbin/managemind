@@ -1,6 +1,6 @@
 # ADR 0035: The storefront follows the general-store redesign boards
 
-- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) and 3 (listing and search) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 4–7 are to come.
+- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) 3 (listing and search) and 4 (the product page) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); steps 5–7 are to come.
 - Date: 2026-11-20
 - Design: the canvas in `design/storefront-redesign/canvas/project/` (desktop and phone boards for every shopper page, in English and Bangla, on the `classic` theme's `general` preset), with its reasons in [DECISIONS.md](../../design/storefront-redesign/DECISIONS.md). Code: `apps/storefront/src/themes/classic/`
 
@@ -22,7 +22,7 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 | 1 (built) | Tokens, focus ring, top bar, header, category row, footer, phone bottom bar, product card with Add to cart, home sections restyled (hero, trust strip, category tiles, grey bands with "View all", image with text) | The card's only variant and its options (`ProductCard.variantId`, `options`) |
 | 2 (built) | Home: offer tiles beside the hero, the help strip, Recently viewed (browser storage, also on product pages), a second hero button and a line above its heading, a line beside product grid headings | Theme sections and fields, and their editor in the admin |
 | 3 (built) | Listing and search: Load more as `?page=N` links, quick filter chips, one-tap price ranges, greyed zero counts, collapsing facet lists, removable chips, no-results suggestions, back to top, category introduction, the quick-add picker | An On sale filter, price-range and stock and sale counts |
-| 4 | Product: the option pickers and buy buttons, Order on WhatsApp, the delivery box, collapsed specifications, the phone's buy bar (shown once the in-page buttons scroll away), the desktop mini-cart, Recently viewed | Delivery charges from the store's settings |
+| 4 (built) | Product: the option pickers and buy buttons, Order on WhatsApp, the delivery box, collapsed specifications, the phone's buy bar (shown once the in-page buttons scroll away), the desktop mini-cart, Recently viewed | Delivery zones, COD and the return window in the product page's data |
 | 5 | Cart and checkout: the searchable Area field, the linked error summary, the trust line, the phone-code dialog with its resend countdown, the blocked-checkout panel, the price-changed marks, the collapsed phone summary, the pinned desktop summary | Optionally each area's delivery charge |
 | 6 | Thank-you, tracking and account: payment box with Copy, "Order faster next time", the headline status, parcels, returns, account tabs and the address Undo | The expected delivery date; photos on account orders |
 | 7 | The pinned slim headers (desktop and phone), header search suggestions, the loading and error states | A cached search-suggestions endpoint |
@@ -55,6 +55,14 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 - **Quick add:** Choose options on listing and search cards opens a dialog (a bottom sheet on phones) with the product's options, from the product page data the storefront already proxies (`/api/pages/products/{slug}`), so no new endpoint. Choices that can't be bought with the others chosen are struck through; Add to cart adds the matching variant and the card turns into "Added · View cart". Without scripts, or if the data can't be had, it is a link to the product page.
 - **Where step 3 differs from the boards:** values with no products under the current filters aren't listed rather than greyed (the facets only count what the listing has); "Show N products" in the sheet reads "Show products" (the count would need a request per tick); "Did you mean" and popular searches wait for platform work (DECISIONS.md items 4 and 5).
 - **Fixed on the way:** `.wrap`'s padding shorthand was zeroing `main`'s top padding since step 1.
+
+## Step 4
+
+- **Core:** the product page's data has the store's `facts` (active delivery zones with charge and time, cash on delivery, online payment, the return window), from the same `shopFacts` the legal pages use, and product pages carry the `legal` cache tag, which zone, COD and return-policy changes already purge.
+- **The page:** the gallery (edge to edge with a counter and dots on phones, thumbnails on desktop) beside brand, title, SKU, the price with "Save ৳240 (16%)", "In stock, ready to ship", option pickers whose legend names the choice ("Size: L"), colour swatches, and choices that can't be bought with the others struck through; quantity, Add to cart and Buy now (adds, then checkout); Order on WhatsApp; the delivery, COD and returns box with a link to the store's returns page; About this product beside Specifications (folding rows on phones, Specifications folded); You may also like (four, with "See more in" the category); Recently viewed.
+- **After Add to cart:** desktops get the mini-cart panel (the line, the cart subtotal, Checkout, View cart, Continue shopping) from the cart API's answer; phones get a note above the buy bar.
+- **Phones:** a buy bar (Add to cart with the price, Buy now) pins to the bottom once the in-page buttons have scrolled up out of view, and the header's menu becomes a back arrow to the product's category.
+- **Where step 4 differs from the boards:** the in-page Add to cart on phones doesn't repeat the price (the pinned bar does); share links stay under the box.
 
 ## Consequences
 

@@ -14,7 +14,7 @@ import {
 import { connect } from '@managemind/db/testing';
 import { permissionsOf } from '@managemind/shared';
 import { signPreviewToken } from '@managemind/shared/storefront';
-import { productTag, storeTag } from '@managemind/shared/storefront/cache';
+import { legalTag, productTag, storeTag } from '@managemind/shared/storefront/cache';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createApp } from '../src/app';
@@ -105,7 +105,8 @@ describe('store pages', () => {
     expect(body.layout.store).toMatchObject({ slug: a.slug, defaultLocale: 'bn' });
     expect(body.redirect).toBeNull();
     expect(res.headers.get('x-cache-tags')).toBe(
-      `${storeTag(a.id)},${productTag(a.id, productId)}`,
+      // The legal tag: delivery, COD and returns show beside the buy buttons.
+      `${storeTag(a.id)},${legalTag(a.id)},${productTag(a.id, productId)}`,
     );
     expect(res.headers.get('cache-control')).toBe('public, max-age=60');
     const tag = res.headers.get('etag') as string;

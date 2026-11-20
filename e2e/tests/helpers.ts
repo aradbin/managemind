@@ -142,6 +142,16 @@ const SCRIPT_BUDGET = 50 * 1024;
  * and Google's tags load only after consent, and Turnstile only on the pages
  * that need it; they are not ours to count.
  */
+/**
+ * After Add to cart on a product page: the mini-cart panel opens on desktops,
+ * and a note shows above the buy bar on phones.
+ */
+export async function expectAddedToCart(page: Page): Promise<void> {
+  await expect(
+    page.locator('[data-mini-cart][open], [data-added-toast]:not([hidden])'),
+  ).toBeVisible();
+}
+
 export async function expectScriptBudget(page: Page, what: string): Promise<void> {
   const scripts = await page.evaluate(() =>
     [...document.querySelectorAll('script')]

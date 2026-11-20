@@ -7,7 +7,7 @@
 // store with ?store=, which a cookie then remembers. Each page type's own
 // JavaScript is held to the 50 KB budget.
 import { expect, type Page, test } from '@playwright/test';
-import { expectAccessible, expectScriptBudget } from './helpers';
+import { expectAccessible, expectAddedToCart, expectScriptBudget } from './helpers';
 import { STOREFRONT } from './urls';
 
 async function openStore(page: Page, store: string, path = '/') {
@@ -83,10 +83,16 @@ test('browsing the English demo store', async ({ page }) => {
     await size.evaluate((el) => el.scrollIntoView({ block: 'center' }));
     await size.check({ force: true });
     await expect(page.locator('[data-sku]')).toHaveText('FAS-WHITE-COTTON-PANJABI-3');
-    await expect(page.locator('[data-stock]')).toHaveText('In stock');
+    await expect(page.locator('[data-stock]')).toHaveText('In stock, ready to ship');
+    await expect(page.getByText('Size: L')).toBeVisible();
     await expect(page.locator('script[type="application/ld+json"]').first()).toBeAttached();
     await expectAccessible(page, 'product page');
     await expectScriptBudget(page, 'a product page');
+    await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
+    await expectAddedToCart(page);
+    await expectAccessible(page, 'product page after Add to cart');
+    // The desktop's mini-cart is a modal panel.
+    await page.keyboard.press('Escape');
   });
 
   await test.step('search in English', async () => {

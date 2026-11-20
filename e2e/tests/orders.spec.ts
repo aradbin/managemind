@@ -24,6 +24,7 @@ import {
   addProduct,
   choose,
   expectAccessible,
+  expectAddedToCart,
   expectScriptBudget,
   mailCount,
   nextMail,
@@ -206,7 +207,7 @@ test('orders, promotions and accounts', async ({
     for (const item of products) {
       await shopper.goto(store(`/products/${item.slug}`));
       await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
-      await expect(shopper.getByText(s('cart.added'))).toBeVisible();
+      await expectAddedToCart(shopper);
     }
     await shopper.goto(store('/cart'));
     await expect(shopper.getByRole('heading', { name: s('cart.title'), level: 1 })).toBeVisible();

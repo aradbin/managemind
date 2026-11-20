@@ -18,8 +18,10 @@ interface Props {
   ctx: PageContext;
   /** This page in the other language. */
   languageHref: string;
+  /** Phones: a back arrow to here in place of the menu. */
+  back?: string | undefined;
 }
-const { ctx, languageHref } = Astro.props;
+const { ctx, languageHref, back } = Astro.props;
 const { layout, t, locale, d } = ctx;
 const other = locale === 'bn' ? 'en' : 'bn';
 const otherName = other === 'bn' ? 'বাংলা' : 'English';
@@ -63,6 +65,11 @@ const holidayText = holiday ? ctx.text(holiday.message) : '';
 )}
 <header class="site-header">
   <div class="wrap header-grid">
+    {back && (
+      <a class="header-back" href={back} aria-label={t('nav.back')}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </a>
+    )}
     <a class="brand" href={href(ctx.link, { kind: 'home' })}>
       {logo ? <Img image={logo} alt={layout.store.name} sizes="200px" eager /> : <span>{layout.store.name}</span>}
     </a>
@@ -86,7 +93,7 @@ const holidayText = holiday ? ctx.text(holiday.message) : '';
       <span class="cart-label">{t('nav.cart')}</span>
     </a>
     {roots.length > 0 && (
-      <details class="menu" id="site-menu">
+      <details class:list={['menu', { 'has-back': back }]} id="site-menu">
         <summary>
           <Icon name="menu" size={22} />
           <span class="menu-label">{t('nav.allCategories')}</span>
