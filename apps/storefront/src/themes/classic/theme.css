@@ -527,6 +527,143 @@ main > .section:first-child {
   }
 }
 
+/* Search suggestions under the header's field. */
+.search {
+  position: relative;
+}
+.suggest {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  background: var(--c-background);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+}
+.suggest-heading {
+  margin: 0;
+  padding: 6px 16px;
+  color: var(--c-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.suggest [role="option"] {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--c-text);
+  text-decoration: none;
+}
+.suggest [role="option"][aria-selected="true"],
+.suggest [role="option"]:hover {
+  background: color-mix(in srgb, var(--c-primary) 8%, var(--c-background));
+}
+.suggest .suggest-all {
+  margin-top: 4px;
+  border-top: 1px solid var(--c-border);
+  color: var(--c-primary);
+  font-weight: 600;
+}
+/* The slim bar pinned to the top once the header scrolls away. */
+.pinned-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--c-background);
+  border-bottom: 1px solid var(--c-border);
+  box-shadow: 0 2px 12px rgb(26 31 41 / 0.08);
+}
+.pinned-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 60px;
+  padding-inline: 8px;
+}
+.pinned-row .search {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.pinned-row .search button {
+  width: 44px;
+  justify-content: center;
+  padding: 0;
+}
+.pinned-search-label,
+.pinned-brand,
+.pinned-account {
+  display: none;
+}
+.pinned-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+}
+.pinned-menu.with-back {
+  display: none;
+}
+.pinned-row .header-back {
+  display: flex;
+}
+/* The phone's pinned Filters and Sort bar sits under the slim bar. */
+body.pinned .filters,
+body.pinned .sorter {
+  top: 60px;
+}
+@media (min-width: 900px) {
+  .pinned-row {
+    height: 64px;
+    gap: 16px;
+    padding-inline: 24px;
+  }
+  .pinned-row .header-back {
+    display: none;
+  }
+  .pinned-brand {
+    display: flex;
+    flex: none;
+    min-height: 44px;
+    font-size: 1.25rem;
+  }
+  .pinned-menu,
+  .pinned-menu.with-back {
+    display: flex;
+    background: var(--c-surface);
+  }
+  .pinned-row .search button {
+    width: auto;
+    padding: 0 18px;
+    gap: 8px;
+  }
+  .pinned-row .search input,
+  .pinned-row .search button {
+    height: 44px;
+  }
+  .pinned-search-label {
+    display: inline;
+  }
+  .pinned-account {
+    display: flex;
+  }
+}
 /* The phone's bottom bar. */
 .tabbar {
   position: fixed;
@@ -1425,9 +1562,11 @@ html[lang="bn"] .card-title {
 .listing .search-cats {
   grid-column: 1 / -1;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .filters {
   grid-area: filters;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .sorter {
   grid-area: sort;
 }
@@ -1450,7 +1589,9 @@ html[lang="bn"] .card-title {
   position: sticky;
   top: 0;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .filters,
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .sorter {
   position: sticky;
   top: 0;
@@ -1485,6 +1626,7 @@ html[lang="bn"] .card-title {
   line-height: 20px;
   text-align: center;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .sorter {
   display: flex;
   align-items: center;
@@ -1806,8 +1948,12 @@ body:has(.chat) .to-top {
     color: var(--c-muted);
     font-size: 0.9375rem;
   }
+  /* Grid items honour z-index even when static: none on desktop, so the
+     pinned bar stays on top. */
   .filters,
+  .filters[open],
   .sorter {
+    z-index: auto;
     position: static;
     padding: 0;
     margin: 0;
@@ -1978,6 +2124,7 @@ body:has(.chat) .to-top {
   flex-wrap: wrap;
   gap: 8px;
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .qa-choices button {
   min-width: 72px;
   height: 44px;
@@ -2327,6 +2474,7 @@ body:has(.chat) .to-top {
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
 }
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
 .qty-stepper button {
   width: 44px;
   height: 46px;
@@ -3107,6 +3255,52 @@ button.link {
   border-radius: var(--radius);
   background: var(--c-background);
   font-weight: 700;
+}
+/* Loading (design/storefront-redesign: States): grey shapes where the rows will be. */
+.skeleton-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.skeleton-box,
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.skeleton-lines span {
+  background: color-mix(in srgb, var(--c-text) 8%, var(--c-background));
+  border-radius: var(--radius);
+  animation: skeleton 1.4s ease-in-out infinite;
+}
+.skeleton-box {
+  width: 80px;
+  height: 80px;
+  flex: none;
+}
+.skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 6px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.skeleton-lines span {
+  height: 14px;
+  width: 70%;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.skeleton-lines span + span {
+  width: 40%;
+}
+@keyframes skeleton {
+  50% {
+    opacity: 0.55;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-box,
+  .skeleton-lines span {
+    animation: none;
+  }
 }
 /* The cart (design/storefront-redesign: Cart, CartPhone). */
 .cart-grid .lines {

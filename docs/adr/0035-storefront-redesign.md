@@ -1,6 +1,6 @@
 # ADR 0035: The storefront follows the general-store redesign boards
 
-- Status: Proposed. Steps 1 (the frame, the product card and the home page), 2 (the home page's new sections) 3 (listing and search), 4 (the product page), 5 (cart and checkout) and 6 (thank-you, tracking and account) are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20); step 7 is to come.
+- Status: Proposed. Steps 1–7 are built on the branch `ccr-5ed5b400-cybnlp` (Nov 20). What still differs from the boards is listed under each step and waits on the platform work in DECISIONS.md.
 - Date: 2026-11-20
 - Design: the canvas in `design/storefront-redesign/canvas/project/` (desktop and phone boards for every shopper page, in English and Bangla, on the `classic` theme's `general` preset), with its reasons in [DECISIONS.md](../../design/storefront-redesign/DECISIONS.md). Code: `apps/storefront/src/themes/classic/`
 
@@ -25,7 +25,7 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 | 4 (built) | Product: the option pickers and buy buttons, Order on WhatsApp, the delivery box, collapsed specifications, the phone's buy bar (shown once the in-page buttons scroll away), the desktop mini-cart, Recently viewed | Delivery zones, COD and the return window in the product page's data |
 | 5 (built) | Cart and checkout: the searchable Area field, the linked error summary, the trust line, the phone-code dialog with its resend countdown, the blocked-checkout panel, the price-changed marks, the collapsed phone summary, the pinned desktop summary | A `shop` page endpoint: the layout and the store's facts |
 | 6 (built) | Thank-you, tracking and account: payment box with Copy, "Order faster next time", the headline status, parcels, returns, account tabs and the address Undo | The expected delivery date; photos on account orders |
-| 7 | The pinned slim headers (desktop and phone), header search suggestions, the loading and error states | A cached search-suggestions endpoint |
+| 7 (built) | The pinned slim headers (desktop and phone), header search suggestions, the loading and error states | A cached search-suggestions endpoint |
 
 ## Step 1
 
@@ -78,6 +78,14 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 - **Tracking:** the form as a card with where to find the number; once found, it gives way to the order: "Order #1002", one headline status (the order's until it ships, then the parcel's), the five-step progress line, parcels with their courier link and updates, the items and totals; beside it payment, the address, Message us on WhatsApp (when the store's chat is on), Cancel this order and Track another order.
 - **Account:** signed out, the sign-in card beside "Why sign in?" and "Ordered without an account?"; signed in, the greeting with Sign out, and Your orders, Saved addresses and Your details as a side menu on desktop and tabs on phones; orders as cards with number, date, item count, a status chip and the total, each opening tracking.
 - **Where step 6 differs from the boards:** "Order faster next time" links to the account page's email sign-in instead of sending the code in place, and doesn't attach the order just placed (DECISIONS.md item 15); tracking has no order date or expected delivery date (item 14) and no order photos on account orders (item 13); the saved-address form keeps the three dropdowns, not checkout's searchable Area field; the address Undo isn't built.
+
+## Step 7
+
+- **The slim bar:** once the full header scrolls away, a separate fixed bar pins to the top (so nothing on the page jumps): on phones the menu (or the product page's back arrow), the search field and the cart; on desktop the store name, an All categories button (it goes back up and opens the menu), search, Account and Cart. The phone listing's pinned Filters and Sort bar moves down under it. Checkout and the thank-you page, with their own headers, have none.
+- **Search suggestions:** two letters in the header's field list the store's categories that match (from the layout, no request) and "See all results for …", with arrow keys and Enter.
+- **Loading:** the cart shows grey rows where its lines will be while it loads.
+- **Where step 7 differs from the boards:** suggestions have no products yet: that needs a cached suggestions endpoint (DECISIONS.md item 5), as typing would otherwise run a full search per keystroke. The other states on the States board (Adding…, Placing your order…, payment failed) were already in the pages' scripts.
+- **Fixed on the way:** grid items honour z-index even when static, so the open desktop filter sidebar painted over the pinned bar; it has none on desktop now.
 
 ## Consequences
 

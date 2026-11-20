@@ -73,10 +73,11 @@ const holidayText = holiday ? ctx.text(holiday.message) : '';
     <a class="brand" href={href(ctx.link, { kind: 'home' })}>
       {logo ? <Img image={logo} alt={layout.store.name} sizes="200px" eager /> : <span>{layout.store.name}</span>}
     </a>
-    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get">
+    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get" data-suggest-form>
       <label class="visually-hidden" for="q">{t('search.label')}</label>
-      <input id="q" name="q" type="search" enterkeyhint="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" />
+      <input id="q" name="q" type="search" enterkeyhint="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="q-suggest" aria-expanded="false" />
       <button type="submit"><Icon name="search" size={20} />{t('search.submit')}</button>
+      <div class="suggest" id="q-suggest" role="listbox" aria-label={t('search.suggestions')} hidden data-categories={JSON.stringify(layout.categories.map((c) => ({ name: c.name, href: href(ctx.link, { kind: 'category', slug: c.slug }) })))} data-heading={t('nav.categories')} data-all={t('search.seeAll', { q: '{q}' })} data-search={href(ctx.link, { kind: 'search' })}></div>
     </form>
     <a class="lang lang-phone" href={languageHref} hreflang={other} lang={other}>{otherName}</a>
     {layout.shop.accounts && (
@@ -125,6 +126,37 @@ const holidayText = holiday ? ctx.text(holiday.message) : '';
     )}
   </div>
 </header>
+<!-- Pinned once the full header scrolls away (design/storefront-redesign: the
+     slim bar): a separate fixed bar, so nothing on the page jumps. -->
+<div class="pinned-bar" data-pinned hidden>
+  <div class="wrap pinned-row">
+    {back && (
+      <a class="header-back pinned-back" href={back} aria-label={t('nav.back')}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </a>
+    )}
+    <a class="brand pinned-brand" href={href(ctx.link, { kind: 'home' })}>{layout.store.name}</a>
+    {roots.length > 0 && (
+      <button type="button" class:list={['pinned-menu', { 'with-back': back }]} data-open-menu aria-label={t('nav.allCategories')}><Icon name="menu" size={22} /></button>
+    )}
+    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get">
+      <label class="visually-hidden" for="q2">{t('search.label')}</label>
+      <input id="q2" name="q" type="search" enterkeyhint="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" />
+      <button type="submit" aria-label={t('search.submit')}><Icon name="search" size={20} /><span class="pinned-search-label">{t('search.submit')}</span></button>
+    </form>
+    {layout.shop.accounts && (
+      <a class="header-link pinned-account" href={href(ctx.link, { kind: 'account' })} aria-label={t('nav.account')}><Icon name="account" size={22} /></a>
+    )}
+    <a class="header-link cart-link" href={href(ctx.link, { kind: 'cart' })}>
+      <span class="cart-icon">
+        <Icon name="cart" size={24} />
+        <span class="cart-count" data-cart-count data-bengali={d.numerals === 'bengali' ? '' : undefined} hidden></span>
+      </span>
+      <span class="cart-label">{t('nav.cart')}</span>
+    </a>
+  </div>
+</div>
+<script src="./scripts/header.ts"></script>
 <script is:inline>
   // The count comes from a cookie the API keeps (phase-4-plan §3.4), so the
   // cached page shows it with no API call. The menu closes on Escape and on a

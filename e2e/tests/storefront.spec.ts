@@ -96,7 +96,8 @@ test('browsing the English demo store', async ({ page }) => {
   });
 
   await test.step('search in English', async () => {
-    const search = page.getByRole('search');
+    // The header's own search (the slim bar pinned on scroll has another).
+    const search = page.getByRole('banner').getByRole('search');
     await search.getByLabel('Search products').fill('saree');
     await search.getByRole('button', { name: 'Search' }).click();
     await expect(page).toHaveURL(/\/search\?q=saree/);
@@ -208,10 +209,30 @@ test('the cart and checkout', async ({ page }) => {
   });
 });
 
+test('the slim bar pinned on scroll, and search suggestions', async ({ page }) => {
+  await openStore(page, 'demo-fashion', '/categories/sarees');
+  const pinned = page.locator('[data-pinned]');
+  await expect(pinned).toBeHidden();
+  await page.mouse.wheel(0, 1200);
+  await expect(pinned).toBeVisible();
+  // Its menu button goes back up and opens All categories.
+  await pinned.getByRole('button', { name: 'All categories' }).click();
+  await expect(page.locator('#site-menu')).toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
+
+  const search = page.getByRole('banner').getByRole('search');
+  await search.getByLabel('Search products').fill('sar');
+  const list = page.getByRole('listbox', { name: 'Suggestions' });
+  await expect(list.getByRole('option', { name: 'Sarees' })).toBeVisible();
+  await expect(list.getByRole('option', { name: 'See all results for “sar”' })).toBeVisible();
+  await expectAccessible(page, 'search suggestions');
+});
+
 test('searching the Bangla demo store with another spelling', async ({ page }) => {
   await openStore(page, 'demo-grocery');
   await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
-  const search = page.getByRole('search');
+  // The header's own search (the slim bar pinned on scroll has another).
+  const search = page.getByRole('banner').getByRole('search');
   // The product is "সিলেটি চা পাতা"; shoppers often type ী for ি.
   await search.getByLabel('পণ্য খুঁজুন').fill('সিলেটী চা');
   await search.getByRole('button', { name: 'খুঁজুন' }).click();
