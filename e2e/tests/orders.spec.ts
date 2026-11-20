@@ -205,7 +205,7 @@ test('orders, promotions and accounts', async ({
     const shopper = await shopperPage();
     for (const item of products) {
       await shopper.goto(store(`/products/${item.slug}`));
-      await shopper.getByRole('button', { name: s('cart.add') }).click();
+      await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
       await expect(shopper.getByText(s('cart.added'))).toBeVisible();
     }
     await shopper.goto(store('/cart'));

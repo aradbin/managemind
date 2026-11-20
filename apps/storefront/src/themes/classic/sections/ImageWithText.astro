@@ -18,8 +18,8 @@ const button = section.button
 
 <section class="section">
   <div class={`split ${section.imagePosition}`}>
-    <div>{image && <Img image={image} alt={heading} sizes="(min-width: 800px) 50vw, 100vw" />}</div>
-    <div>
+    <div class="split-media">{image && <Img image={image} alt={heading} sizes="(min-width: 800px) 50vw, 100vw" />}</div>
+    <div class="split-text">
       {heading && <h2>{heading}</h2>}
       {text.split(/\n{2,}/).map((p) => <p>{p}</p>)}
       {button?.href && button.label && <a class="button" href={button.href}>{button.label}</a>}

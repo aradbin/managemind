@@ -31,7 +31,7 @@ test('browsing the English demo store', async ({ page }) => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     await expect(page.locator('link[rel=alternate][hreflang=bn]')).toHaveAttribute('href', /\/bn$/);
-    await expect(page.getByRole('link', { name: 'Red Jamdani saree' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Red Jamdani saree', exact: true }).first()).toBeVisible();
     await expectAccessible(page, 'store home');
     await expectScriptBudget(page, 'the home page');
   });
@@ -45,7 +45,7 @@ test('browsing the English demo store', async ({ page }) => {
     await page.locator('details.filters').getByRole('button', { name: 'Apply' }).click();
     await expect(page).toHaveURL(/stock=1/);
     await expect(page.getByText('2 products')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Yellow muslin saree' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Yellow muslin saree', exact: true })).toHaveCount(0);
 
     // With JavaScript the sort applies on change; its button is for no-JS visitors.
     await expect(page.locator('form.sorter').getByRole('button', { name: 'Apply' })).toBeHidden();
@@ -78,7 +78,7 @@ test('browsing the English demo store', async ({ page }) => {
     await search.getByLabel('Search products').fill('saree');
     await search.getByRole('button', { name: 'Search' }).click();
     await expect(page).toHaveURL(/\/search\?q=saree/);
-    await expect(page.getByRole('link', { name: 'Red Jamdani saree' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Red Jamdani saree', exact: true })).toBeVisible();
     await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
     await expectAccessible(page, 'search results');
   });
@@ -91,7 +91,8 @@ test('browsing the English demo store', async ({ page }) => {
 
   await test.step('the language switch keeps the page', async () => {
     await page.goto(`${STOREFRONT}/products/red-jamdani-saree`);
-    await page.getByRole('link', { name: 'বাংলা' }).click();
+    // The top bar, the phone header and the footer each have it.
+    await page.getByRole('link', { name: 'বাংলা' }).first().click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'bn');
     await expect(page).toHaveURL(/\/bn\/products\//);
     await expect(page.getByRole('heading', { level: 1, name: 'লাল জামদানি শাড়ি' })).toBeVisible();
@@ -117,9 +118,9 @@ test('searching the Bangla demo store with another spelling', async ({ page }) =
   // The product is "সিলেটি চা পাতা"; shoppers often type ী for ি.
   await search.getByLabel('পণ্য খুঁজুন').fill('সিলেটী চা');
   await search.getByRole('button', { name: 'খুঁজুন' }).click();
-  await expect(page.getByRole('link', { name: 'সিলেটি চা পাতা' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'সিলেটি চা পাতা', exact: true })).toBeVisible();
   await expectAccessible(page, 'Bangla search results');
 
   await page.goto(`${STOREFRONT}/search?q=${encodeURIComponent('কফি')}`);
-  await expect(page.getByRole('link', { name: 'ইনস্ট্যান্ট কফি' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ইনস্ট্যান্ট কফি', exact: true })).toBeVisible();
 });

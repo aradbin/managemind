@@ -96,7 +96,7 @@ const showOrder = chat.show !== 'none' && Boolean(chat.whatsapp || chat.messenge
 const count = product.media.length;
 ---
 
-<Layout ctx={ctx} head={head} languageHref={languageHref} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
+<Layout ctx={ctx} head={head} languageHref={languageHref} tab={false} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
   <nav class="crumbs" aria-label={t('breadcrumb.label')}>
     <ol>
       {crumbs.map((c) => <li><a href={c.href}>{c.name}</a></li>)}

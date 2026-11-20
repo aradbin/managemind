@@ -271,6 +271,27 @@ describe('listings', () => {
     );
   });
 
+  it('gives each card its only variant and its options', async () => {
+    const card = (await list()).items.find((i) => i.id === cheap);
+    expect(card?.variantId).toEqual(expect.any(String));
+    expect(card?.options).toEqual([{ name: 'রং', keys: ['colour', 'রং'], values: ['লাল'] }]);
+    const two = await product('দুই সাইজ', { categoryIds: [category] }, 20_000);
+    await run((tx) =>
+      setProductOptions(tx, owner, two.id, [
+        {
+          name: { bn: 'সাইজ', en: 'Size' },
+          values: [{ label: { bn: 'এম', en: 'M' } }, { label: { bn: 'এল', en: 'L' } }],
+        },
+      ]),
+    );
+    const twoCard = (await list()).items.find((i) => i.id === two.id);
+    expect(twoCard).toMatchObject({
+      variantId: null,
+      options: [{ name: 'সাইজ', keys: ['size', 'সাইজ'], values: ['m', 'l'] }],
+    });
+    await run((tx) => archiveProduct(tx, owner, two.id));
+  });
+
   it('filters to products in stock', async () => {
     const tracked = await product('স্টক জামা', { categoryIds: [category] }, 70_000);
     expect((await list('stock=1')).items.map((i) => i.id)).not.toContain(tracked.id);

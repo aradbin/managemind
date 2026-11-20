@@ -41,7 +41,7 @@ const hasH1 =
   theme.sections[0]?.type === 'hero' && Boolean(ctx.text(theme.sections[0].slides[0]?.heading));
 ---
 
-<Layout ctx={ctx} head={head} languageHref={languageHref}>
+<Layout ctx={ctx} head={head} languageHref={languageHref} tab="home">
   {!hasH1 && <h1 class="visually-hidden">{layout.store.name}</h1>}
   {theme.sections.map((section, i) => {
     switch (section.type) {

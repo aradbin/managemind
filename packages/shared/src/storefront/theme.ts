@@ -77,6 +77,15 @@ export const CONTRAST_PAIRS: readonly { fg: ColorKey | 'white'; bg: ColorKey; us
 
 export const FONTS = ['system', 'hind-siliguri'] as const;
 export const RADII = ['none', 'small', 'large'] as const;
+/**
+ * Each radius as CSS: [controls and images, panels and sections]. The
+ * storefront's --radius and --radius-lg; the admin's preview sends the same.
+ */
+export const RADIUS_CSS: Record<(typeof RADII)[number], readonly [string, string]> = {
+  none: ['0', '0'],
+  small: ['8px', '12px'],
+  large: ['12px', '16px'],
+};
 export const IMAGE_RATIOS = ['1:1', '3:4'] as const;
 
 export const themeTokens = z

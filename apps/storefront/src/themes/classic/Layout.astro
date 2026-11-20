@@ -5,12 +5,18 @@
 // banner with the tag loader. Pages never vary by cookie: consent is read by
 // the script in the browser, so one cached copy serves every shopper.
 import { t as shared } from '@managemind/shared/i18n';
-import { DEFAULT_CONSENT_TEXT, messengerLink, whatsappLink } from '@managemind/shared/storefront';
+import {
+  DEFAULT_CONSENT_TEXT,
+  messengerLink,
+  RADIUS_CSS,
+  whatsappLink,
+} from '@managemind/shared/storefront';
 import type { PageContext } from '../../lib/page';
 import { previewParents } from '../../lib/preview';
 import { type Head, ldJson } from '../../lib/seo';
 import Footer from './Footer.astro';
 import Header from './Header.astro';
+import TabBar, { type Tab } from './TabBar.astro';
 import './theme.css';
 
 interface Props {
@@ -20,18 +26,23 @@ interface Props {
   languageHref: string;
   /** Product pages: chat greetings name the product, and tags get a product view. */
   product?: { id: string; title: string; price: number; url: string } | null;
+  /**
+   * The phone's bottom bar and the tab it highlights (null for none), or
+   * false on pages with their own pinned bar (product, cart, checkout).
+   */
+  tab?: Tab | false;
 }
-const { ctx, head, languageHref, product = null } = Astro.props;
+const { ctx, head, languageHref, product = null, tab = null } = Astro.props;
 const { theme, layout, t, locale } = ctx;
 const c = theme.tokens.colors;
-const radius = { none: '0', small: '6px', large: '14px' }[theme.tokens.radius];
+const [radius, radiusLarge] = RADIUS_CSS[theme.tokens.radius];
 const system =
   "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Noto Sans', sans-serif";
 const hind = theme.tokens.font === 'hind-siliguri';
 const font = hind ? `'Hind Siliguri', ${system}` : system;
 const ratio = theme.tokens.card.imageRatio === '3:4' ? '3 / 4' : '1 / 1';
 // Colours are validated #rrggbb (shared themeSchema), so this is safe to inline.
-const vars = `:root{--c-primary:${c.primary};--c-on-primary:${c.onPrimary};--c-background:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-accent:${c.accent};--c-sale:${c.sale};--radius:${radius};--font:${font};--card-ratio:${ratio}}`;
+const vars = `:root{--c-primary:${c.primary};--c-on-primary:${c.onPrimary};--c-background:${c.background};--c-surface:${c.surface};--c-text:${c.text};--c-accent:${c.accent};--c-sale:${c.sale};--radius:${radius};--radius-lg:${radiusLarge};--font:${font};--card-ratio:${ratio}}`;
 const face = (subset: string, weight: number, range: string) =>
   `@font-face{font-family:'Hind Siliguri';font-style:normal;font-display:swap;font-weight:${weight};src:url(/fonts/hind-siliguri-${subset}-${weight}-normal.woff2) format('woff2');unicode-range:${range}}`;
 const BENGALI = 'U+0951-0952,U+0964-0965,U+0980-09FE,U+1CD0-1CF9,U+200C-200D,U+20B9,U+25CC,U+A8F1';
@@ -43,11 +54,6 @@ const fonts = hind
 
 const favicon = ctx.image(theme.tokens.faviconMediaId);
 const storefront = layout.storefront;
-const announcement = theme.announcement;
-const announcementText = announcement ? ctx.text(announcement.text) : '';
-const announcementHref = announcement ? ctx.themeLink(announcement.link) : null;
-const holiday = storefront.holiday;
-const holidayText = holiday ? ctx.text(holiday.message) : '';
 
 const chat = storefront.chat;
 const showChat =
@@ -90,7 +96,7 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
     <style set:html={fonts + vars}></style>
     {(head.jsonLd ?? []).map((data) => <script type="application/ld+json" set:html={ldJson(data)} />)}
   </head>
-  <body>
+  <body class:list={{ 'has-tabbar': tab !== false }}>
     <a class="skip" href="#main">{t('skip.content')}</a>
     {Astro.locals.devStore && (
       <p class="bar preview-bar" role="note">{shared(locale, 'store.devBanner', { store: layout.store.name })}</p>
@@ -98,27 +104,15 @@ const parents = ctx.preview ? JSON.stringify(previewParents()) : '[]';
     {ctx.preview && <p class="bar preview-bar" role="note">{t('preview.banner')}</p>}
     {ctx.preview && (
       <script is:inline define:vars={{ parents }}>
-        (function(){var ok=JSON.parse(parents);var keys=['--c-primary','--c-on-primary','--c-background','--c-surface','--c-text','--c-accent','--c-sale','--radius','--font','--card-ratio'];addEventListener('message',function(e){if(ok.indexOf(e.origin)<0||!e.data||e.data.type!=='mm-theme-vars')return;var v=e.data.vars||{};keys.forEach(function(k){var x=v[k];if(typeof x==='string'&&x.length<200&&!/[;{}<>]/.test(x))document.documentElement.style.setProperty(k,x);});});})();
-      </script>
-    )}
-    {holiday && holidayText && (
-      <p class="bar" id="mm-holiday" role="note" hidden data-start={holiday.startsAt} data-end={holiday.endsAt}>{holidayText}</p>
-    )}
-    {announcementText && (
-      <p class="bar" id="mm-announcement">
-        {announcementHref ? <a href={announcementHref}>{announcementText}</a> : announcementText}
-      </p>
-    )}
-    {holiday && (
-      <script is:inline>
-        (function(){var h=document.getElementById('mm-holiday');if(!h)return;var n=Date.now();if(n>=Date.parse(h.dataset.start)&&n<Date.parse(h.dataset.end)){h.hidden=false;var a=document.getElementById('mm-announcement');if(a)a.hidden=true;}})();
+        (function(){var ok=JSON.parse(parents);var keys=['--c-primary','--c-on-primary','--c-background','--c-surface','--c-text','--c-accent','--c-sale','--radius','--radius-lg','--font','--card-ratio'];addEventListener('message',function(e){if(ok.indexOf(e.origin)<0||!e.data||e.data.type!=='mm-theme-vars')return;var v=e.data.vars||{};keys.forEach(function(k){var x=v[k];if(typeof x==='string'&&x.length<200&&!/[;{}<>]/.test(x))document.documentElement.style.setProperty(k,x);});});})();
       </script>
     )}
     <Header ctx={ctx} languageHref={languageHref} />
     <main id="main" class="wrap">
       <slot />
     </main>
-    <Footer ctx={ctx} consent={hasTags} />
+    <Footer ctx={ctx} consent={hasTags} languageHref={languageHref} />
+    {tab !== false && <TabBar ctx={ctx} current={tab} />}
     {showChat && (
       <div class="chat">
         {chat.whatsapp && (

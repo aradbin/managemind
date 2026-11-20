@@ -8,6 +8,7 @@ import type { StoreMessageKey } from '../../i18n';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
 import Layout from './Layout.astro';
+import type { Tab } from './TabBar.astro';
 
 interface Props {
   ctx: PageContext;
@@ -17,6 +18,13 @@ interface Props {
   keys: StoreMessageKey[];
 }
 const { ctx, kind, title, keys } = Astro.props;
+// Cart and checkout pages have their own pinned bars, so no bottom bar.
+const tab: Tab | false =
+  kind === 'cart' || kind === 'checkout' || kind === 'metaCheckout'
+    ? false
+    : kind === 'account'
+      ? 'account'
+      : null;
 const { t, locale, defaultLocale } = ctx;
 const other = locale === 'bn' ? 'en' : 'bn';
 const terms = ctx.layout.pages.find((p) => p.kind === 'terms');
@@ -44,7 +52,7 @@ const shop = {
 };
 ---
 
-<Layout ctx={ctx} head={{ title: `${title} | ${ctx.layout.store.name}`, canonical: null, alternates: [], noindex: true }} languageHref={storePath({ kind }, other, defaultLocale)}>
+<Layout ctx={ctx} head={{ title: `${title} | ${ctx.layout.store.name}`, canonical: null, alternates: [], noindex: true }} languageHref={storePath({ kind }, other, defaultLocale)} tab={tab}>
   <slot />
   <script type="application/json" id="mm-shop" set:html={JSON.stringify(shop).replace(/</g, '\\u003c')} />
 </Layout>

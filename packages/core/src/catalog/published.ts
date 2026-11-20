@@ -41,6 +41,19 @@ export interface ProductCard {
   available: boolean;
   brand: string | null;
   image: StoreImage | null;
+  /** The product's only live variant, so the card can add it straight to the cart; null when it has several. */
+  variantId: string | null;
+  /** The product's options in order, for the card's "4 sizes · 3 colours" line. */
+  options: CardOption[];
+}
+
+export interface CardOption {
+  /** In the shopper's language. */
+  name: string;
+  /** The option's normalized name in every language ("size", "সাইজ"), to recognise sizes and colours. */
+  keys: string[];
+  /** Normalized labels of the values live variants use, in order (English where there is one), for colour dots. */
+  values: string[];
 }
 
 type RawImage = {
@@ -99,7 +112,30 @@ const cardJson = (lang: Lang) => sql`json_build_object(
              where pa.product_id = p.id limit 1),
   'image', (select ${imageJson(sql`md`, lang)}
               from store.product_media pm join store.media md on md.id = pm.media_id
-             where pm.product_id = p.id order by pm.position limit 1))`;
+             where pm.product_id = p.id order by pm.position limit 1),
+  -- The only live variant, so the card can add it to the cart without a picker.
+  'variantId', (select case when count(*) = 1 then min(ov.id::text) end
+                  from store.variants ov where ov.product_id = p.id and ov.archived_at is null),
+  'options', coalesce((select json_agg(json_build_object(
+      'name', coalesce(ol.name, od.name),
+      'keys', (select coalesce(array_agg(distinct ok.name_key), '{}') from store.product_option_translations ok
+                where ok.option_id = o.id),
+      'values', (select coalesce(array_agg(vk.label_key order by vk.position), '{}')
+                   from (select pv.position,
+                                coalesce(
+                                  (select x.label_key from store.product_option_value_translations x
+                                    where x.value_id = pv.id and x.locale = 'en'),
+                                  (select x.label_key from store.product_option_value_translations x
+                                    where x.value_id = pv.id order by x.locale limit 1)) as label_key
+                           from store.product_option_values pv
+                          where pv.option_id = o.id and exists (
+                                select 1 from store.variant_option_values vov
+                                  join store.variants vv on vv.id = vov.variant_id and vv.archived_at is null
+                                 where vov.value_id = pv.id)) vk)) order by o.position)
+      from store.product_options o
+      left join store.product_option_translations ol on ol.option_id = o.id and ol.locale = ${lang.locale}
+      left join store.product_option_translations od on od.option_id = o.id and od.locale = ${lang.fallback}
+     where o.product_id = p.id), '[]'::json))`;
 
 const translationJoins = (lang: Lang) => sql`
   left join store.product_translations tl on tl.product_id = p.id and tl.locale = ${lang.locale}

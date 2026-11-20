@@ -154,7 +154,7 @@ test('sales recovery', async ({ page, browser, viewport: size, hasTouch }, info)
   await test.step('a shopper fills in checkout, sees it is saved, and leaves', async () => {
     const shopper = await (await browser.newContext({ viewport: size, hasTouch })).newPage();
     await shopper.goto(store(`/products/${products[0]?.slug}`));
-    await shopper.getByRole('button', { name: s('cart.add') }).click();
+    await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
     await expect(shopper.getByText(s('cart.added'))).toBeVisible();
     await shopper.goto(store('/checkout'));
     await expect(

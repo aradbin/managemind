@@ -12,6 +12,7 @@ import {
   MAX_SECTIONS,
   presetTheme,
   RADII,
+  RADIUS_CSS,
   SECTION_TYPES,
   THEME_PRESETS,
   type Theme,
@@ -74,7 +75,8 @@ function cssVars(theme: Theme): Record<string, string> {
     '--c-text': c.text,
     '--c-accent': c.accent,
     '--c-sale': c.sale,
-    '--radius': { none: '0', small: '6px', large: '14px' }[theme.tokens.radius],
+    '--radius': RADIUS_CSS[theme.tokens.radius][0],
+    '--radius-lg': RADIUS_CSS[theme.tokens.radius][1],
     '--font': theme.tokens.font === 'hind-siliguri' ? `'Hind Siliguri', ${system}` : system,
     '--card-ratio': theme.tokens.card.imageRatio === '3:4' ? '3 / 4' : '1 / 1',
   };

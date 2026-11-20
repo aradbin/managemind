@@ -102,7 +102,7 @@ const capped = search && total >= LISTING_LIMITS.searchResults;
 const toTaka = (poisha: number) => Math.floor(poisha / 100);
 ---
 
-<Layout ctx={ctx} head={head} languageHref={languageHref}>
+<Layout ctx={ctx} head={head} languageHref={languageHref} tab={search ? null : 'categories'}>
   {!search && (
     <nav class="crumbs" aria-label={t('breadcrumb.label')}>
       <ol>

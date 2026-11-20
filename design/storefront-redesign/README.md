@@ -4,6 +4,8 @@ The source of the general-store storefront redesign: desktop and phone boards fo
 
 Why each choice was made, and what still needs platform work, is in [DECISIONS.md](DECISIONS.md).
 
+The storefront is built to these boards in steps; the order, and where each step still differs from its boards, is in [ADR 0035](../../docs/adr/0035-storefront-redesign.md).
+
 ## Layout
 
 - `canvas/project/` – what gets published. Each `*.dc.html` file is one board; `canvas.json` places them on the canvas (one row per page: desktop on the left, phone beside it).
