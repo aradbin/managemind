@@ -221,7 +221,13 @@ test('orders, promotions and accounts', async ({
     await expectAccessible(shopper, 'cart');
     await expectScriptBudget(shopper, 'the cart');
 
-    await shopper.getByRole('link', { name: s('cart.checkout') }).click();
+    // The summary's link on desktops, the pinned bar's shorter one on phones.
+    await shopper
+      .getByRole('link', {
+        name: new RegExp(`^(${s('cart.checkout')}|${s('cart.checkoutShort')})$`),
+      })
+      .first()
+      .click();
     await expect(
       shopper.getByRole('heading', { name: s('checkout.title'), level: 1 }),
     ).toBeVisible();
@@ -491,10 +497,10 @@ test('orders, promotions and accounts', async ({
     await shopper.getByRole('link', { name: s('account.addresses') }).click();
     await shopper.getByRole('button', { name: s('account.addAddress') }).click();
     const form = shopper.locator('form[data-address]');
-    await form.getByLabel(s('account.name')).fill('E2E Shopper');
-    await form.getByLabel(s('account.phone')).fill('01711000123');
+    await form.getByLabel(s('account.name'), { exact: true }).fill('E2E Shopper');
+    await form.getByLabel(s('account.phone'), { exact: true }).fill('01711000123');
     await pickArea(shopper, { name: 'Dhanm', id: 513 }, 'ad');
-    await form.getByLabel(s('checkout.line')).fill('House 1, Road 2');
+    await form.getByLabel(s('checkout.line'), { exact: true }).fill('House 1, Road 2');
     await expectAccessible(shopper, 'account address form');
     await form.getByRole('button', { name: s('account.save') }).click();
     const card = shopper.locator('.address-card');
