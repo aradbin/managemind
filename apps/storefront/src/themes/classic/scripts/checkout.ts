@@ -5,6 +5,7 @@
 // idempotency key kept in sessionStorage, so a double tap, a lost response
 // or a reload sends the same key and never makes two orders. Online payment
 // (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
+import { type AreaField, loadGeo, setupAreaField } from './area-field';
 import { attributionForCheckout } from './attribution';
 import { type Cart, codeForm, lineName, problemText, totals } from './cart-view';
 import {
@@ -23,12 +24,6 @@ import {
 } from './shop';
 import { type Check, mountTurnstile } from './turnstile';
 
-interface GeoFile {
-  v: string;
-  d: [number, string, string][];
-  s: [number, number, string, string][];
-  a: [number, number, string, string][];
-}
 interface CheckoutState {
   cart: Cart;
   cod: { enabled: boolean; maxOrderValue: number | null };
@@ -71,8 +66,6 @@ const notice = document.querySelector<HTMLElement>('[data-notice]');
 const summary = document.querySelector<HTMLElement>('[data-summary]');
 const place = document.querySelector<HTMLButtonElement>('[data-place]');
 const KEY = 'mm_checkout_key';
-const name = (n: [unknown, ...unknown[]]) =>
-  String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 
 let cart: Cart | null = null;
 let check: Check | undefined;
@@ -381,155 +374,28 @@ function choose(method: string) {
 }
 const chosenPayment = () => String(new FormData(form as HTMLFormElement).get('payment') ?? 'cod');
 
-/** Chooses an area, as a pick, a reload or a saved address does. */
+/** Chooses an area, as a reload or a saved address does. */
 let choosePlace: (areaId: number) => void = () => {};
+let areaField: AreaField | null = null;
 
-/**
- * One searchable Area field (design/storefront-redesign: "One searchable
- * Area field instead of three dropdowns"): a few letters of the thana,
- * upazila or district, in either language, list the matching areas with
- * their district and division; the pick shows as a card with Change. The
- * geography file is cached for a year, so the search runs here.
- */
+/** The Area field (scripts/area-field.ts): each pick sets the cart's area, so totals follow it. */
 async function setupAddress() {
-  const geo = (await (await fetch(cfg.geo ?? '/geo/bd.json')).json()) as GeoFile;
-  const input = document.getElementById('c-area-q') as HTMLInputElement | null;
-  const list = document.getElementById('c-area-list') as HTMLUListElement | null;
-  const search = document.querySelector<HTMLElement>('[data-area-search]');
-  const chosen = document.querySelector<HTMLElement>('[data-area-chosen]');
-  const hidden = (id: string) => document.getElementById(id) as HTMLInputElement | null;
-  const division = hidden('c-division');
-  const district = hidden('c-district');
-  const areaInput = hidden('c-area');
-  if (!input || !list || !search || !chosen || !division || !district || !areaInput) return;
-  const fold = (text: string) => text.normalize('NFC').toLowerCase();
-  const districts = new Map(geo.s.map((x) => [x[0], x]));
-  const divisions = new Map(geo.d.map((x) => [x[0], x]));
-  type Match = { area: GeoFile['a'][number]; rank: number };
-  let matches: Match[] = [];
-  let active = -1;
-
-  const placeText = (a: GeoFile['a'][number]) => {
-    const s = districts.get(a[1]);
-    const d = s ? divisions.get(s[1]) : undefined;
-    return [s ? name(s) : '', d ? name(d) : ''].filter(Boolean).join(', ');
-  };
-  const close = () => {
-    list.hidden = true;
-    input.setAttribute('aria-expanded', 'false');
-    input.removeAttribute('aria-activedescendant');
-    active = -1;
-  };
-  const mark = (i: number) => {
-    active = i;
-    for (const [j, li] of [...list.children].entries()) {
-      li.setAttribute('aria-selected', String(j === i));
-    }
-    const li = list.children[i] as HTMLElement | undefined;
-    if (li) {
-      input.setAttribute('aria-activedescendant', li.id);
-      li.scrollIntoView({ block: 'nearest' });
-    }
-  };
-  const pickArea = async (areaId: number, send = true) => {
-    const a = geo.a.find((x) => x[0] === areaId);
-    const s = a ? districts.get(a[1]) : undefined;
-    if (!a || !s) return;
-    areaInput.value = String(a[0]);
-    district.value = String(s[0]);
-    division.value = String(s[1]);
-    const nameEl = chosen.querySelector('[data-area-name]');
-    const placeEl = chosen.querySelector('[data-area-place]');
-    if (nameEl) nameEl.textContent = name(a);
-    if (placeEl) placeEl.textContent = placeText(a);
-    chosen.hidden = false;
-    search.hidden = true;
-    close();
+  const root = document.getElementById('c-area-field');
+  if (!root) return;
+  const field = setupAreaField(root, await loadGeo(), (areaId) => {
     fieldError('areaId', '');
-    if (!send) return;
     // Until the cart answers for the new area, the old one's "not served" is gone.
     unserved = false;
-    try {
-      renderSummary(await api<Cart>('/cart/area', { method: 'PUT', body: { areaId } }));
-    } catch {
-      show(t('cart.error'));
-    }
-  };
-  const draw = () => {
-    const q = fold(input.value.trim());
-    while (list.firstChild) list.removeChild(list.firstChild);
-    matches = [];
-    if (q.length < 2) return close();
-    for (const area of geo.a) {
-      const own = [fold(area[2]), fold(area[3])];
-      const s = districts.get(area[1]);
-      const parent = s ? [fold(s[2]), fold(s[3])] : [];
-      const rank = own.some((n) => n.startsWith(q))
-        ? 0
-        : own.some((n) => n.includes(q))
-          ? 1
-          : parent.some((n) => n.startsWith(q))
-            ? 2
-            : -1;
-      if (rank >= 0) matches.push({ area, rank });
-    }
-    matches.sort((x, y) => x.rank - y.rank || name(x.area).localeCompare(name(y.area), cfg.locale));
-    matches = matches.slice(0, 8);
-    if (!matches.length) {
-      list.appendChild(
-        el('li', {
-          class: 'area-none',
-          role: 'option',
-          'aria-disabled': 'true',
-          text: t('checkout.areaNone', { q: input.value.trim() }),
-        }),
-      );
-    }
-    for (const [i, m] of matches.entries()) {
-      const li = el(
-        'li',
-        {
-          id: `c-area-o${i}`,
-          role: 'option',
-          'aria-selected': 'false',
-          'data-area': String(m.area[0]),
-        },
-        el('strong', { text: name(m.area) }),
-        el('span', { class: 'hint', text: placeText(m.area) }),
-      );
-      li.addEventListener('mousedown', (e) => e.preventDefault());
-      li.addEventListener('click', () => void pickArea(m.area[0]));
-      list.appendChild(li);
-    }
-    list.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-  };
-  input.addEventListener('input', draw);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' && matches.length) {
-      e.preventDefault();
-      if (list.hidden) draw();
-      mark(Math.min(matches.length - 1, active + 1));
-    } else if (e.key === 'ArrowUp' && matches.length) {
-      e.preventDefault();
-      mark(Math.max(0, active - 1));
-    } else if (e.key === 'Enter' && !list.hidden) {
-      e.preventDefault();
-      const m = matches[Math.max(0, active)];
-      if (m) void pickArea(m.area[0]);
-    } else if (e.key === 'Escape') {
-      close();
-    }
+    api<Cart>('/cart/area', { method: 'PUT', body: { areaId } })
+      .then(renderSummary)
+      .catch(() => show(t('cart.error')));
   });
-  input.addEventListener('blur', close);
-  chosen.querySelector('[data-area-change]')?.addEventListener('click', () => {
-    chosen.hidden = true;
-    search.hidden = false;
-    areaInput.value = '';
-    input.value = '';
-    input.focus();
-  });
-  choosePlace = (areaId: number) => void pickArea(areaId, false);
+  if (!field) return;
+  areaField = field;
+  choosePlace = (areaId: number) => {
+    field.choose(areaId);
+    fieldError('areaId', '');
+  };
   // A cart that already has an area (a reload): choose it again.
   if (cart?.areaId) {
     choosePlace(cart.areaId);
@@ -638,10 +504,7 @@ function errorSummary(problems: { field: string; label: string; message: string 
     const link = el('a', { href: `#${id ?? ''}`, text: `${p.label}: ${p.message}` });
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      (input?.closest('[hidden]')
-        ? document.querySelector<HTMLElement>('[data-area-change]')
-        : input
-      )?.focus();
+      (p.field === 'areaId' ? areaField?.focusTarget() : input)?.focus();
     });
     list.appendChild(el('li', {}, link));
   }

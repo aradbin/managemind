@@ -481,6 +481,28 @@ test('orders, promotions and accounts', async ({
     await shopper.getByRole('button', { name: s('account.signIn'), exact: true }).click();
     await expect(shopper.getByText(s('account.hello', { email }))).toBeVisible();
     await expectAccessible(shopper, 'account');
+
+    // A saved address, with checkout's searchable Area field; Delete offers Undo.
+    await shopper.getByRole('link', { name: s('account.addresses') }).click();
+    await shopper.getByRole('button', { name: s('account.addAddress') }).click();
+    const form = shopper.locator('form[data-address]');
+    await form.getByLabel(s('account.name')).fill('E2E Shopper');
+    await form.getByLabel(s('account.phone')).fill('01711000123');
+    await pickArea(shopper, { name: 'Dhanm', id: 513 }, 'ad');
+    await form.getByLabel(s('checkout.line')).fill('House 1, Road 2');
+    await expectAccessible(shopper, 'account address form');
+    await form.getByRole('button', { name: s('account.save') }).click();
+    const card = shopper.locator('.address-card');
+    await expect(card).toHaveCount(1);
+    await card
+      .getByRole('button', { name: s('account.deleteLabel', { label: 'E2E Shopper' }) })
+      .click();
+    await expect(card).toHaveCount(0);
+    await shopper
+      .getByRole('status')
+      .getByRole('button', { name: s('account.undo') })
+      .click();
+    await expect(card).toHaveCount(1);
     await shopper.context().close();
   });
 });

@@ -279,9 +279,10 @@ const roots = layout.categories.filter((c) => c.parentId === null);
               {facets?.groups.map((group) => {
                 const name = `${group.type === 'attribute' ? 'a' : 'o'}.${group.key}`;
                 const colour = isColour(group);
+                // A value no product has under the other filters stays, greyed (design/storefront-redesign: Listing).
                 const row = (v: Facet['values'][number]) => (
-                  <label class="check">
-                    <input type="checkbox" name={name} value={v.key} checked={v.selected} />
+                  <label class:list={['check', { empty: v.count === 0 && !v.selected }]}>
+                    <input type="checkbox" name={name} value={v.key} checked={v.selected} disabled={v.count === 0 && !v.selected} />
                     {colour && swatch(v.key) && <span class="dot" style={`background:${swatch(v.key)}`} />}
                     <span>{v.label}</span>
                     <span class="n">{number(v.count, d)}</span>

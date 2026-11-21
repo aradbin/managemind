@@ -375,7 +375,8 @@ export async function listPublishedProducts(
   const page = Math.max(1, Math.min(query.page, LISTING_LIMITS.maxPage));
   const offset = (page - 1) * pageSize;
   const scoped = await scopeSql(tx, scope);
-  const unpriced = [sql`p.status = 'active'`, scoped, ...baseFilters(query, lang)];
+  const all = [sql`p.status = 'active'`, scoped];
+  const unpriced = [...all, ...baseFilters(query, lang)];
   const base = [...unpriced, ...priceWithin(query)];
   const where = sql.join([...base, ...facetFilters(query)], sql` and `);
   const order = await orderSql(tx, scope, query);
@@ -409,7 +410,11 @@ export async function listPublishedProducts(
         : await facets(
             tx,
             lang,
-            { base: sql.join(base, sql` and `), unpriced: sql.join(unpriced, sql` and `) },
+            {
+              all: sql.join(all, sql` and `),
+              base: sql.join(base, sql` and `),
+              unpriced: sql.join(unpriced, sql` and `),
+            },
             query,
             scope.type === 'search',
           ),
@@ -426,26 +431,30 @@ type FacetRow = {
 };
 
 /**
- * Filter values with their product counts, from one grouped query over the
- * listing before its facet filters (so choosing a value never hides the
- * others), plus the price range and, for search, the result categories.
+ * Filter values with their product counts, from one grouped query: every
+ * value in the scope, counted over the listing before its facet filters (so
+ * choosing a value never hides the others). A value no product has under the
+ * other filters (in stock, on sale, the price) counts 0, so the page can
+ * show it greyed rather than drop it (design/storefront-redesign: Listing).
+ * Plus the price range and, for search, the result categories.
  */
 async function facets(
   tx: TenantTx,
   lang: Lang,
-  where: { base: SQL; unpriced: SQL },
+  where: { all: SQL; base: SQL; unpriced: SQL },
   query: ListingQuery,
   withCategories: boolean,
 ): Promise<Facets> {
   const { base } = where;
   const { rows } = await tx.db.execute<FacetRow>(sql`
-    with base as (
-      select p.id, p.price_min, p.price_max from store.products p ${translationJoins(lang)} where ${base}
+    with scope as (
+      select p.id, p.price_min, p.price_max, (${base}) as hit
+        from store.products p ${translationJoins(lang)} where ${where.all}
     ), attrs as (
       select 'attribute' as type, a.key, coalesce(al.name, ad.name) as name, a.position as pos,
              coalesce(vl.label_key, vd.label_key) as value_key, coalesce(vl.label, vd.label) as label,
-             av.position as value_pos, count(distinct b.id)::int as count
-        from base b
+             av.position as value_pos, count(distinct b.id) filter (where b.hit)::int as count
+        from scope b
         join store.product_attributes pa on pa.product_id = b.id
         join store.attributes a on a.id = pa.attribute_id and a.filterable
              and a.type in ('choice', 'multi_choice')
@@ -459,8 +468,8 @@ async function facets(
       select 'option' as type, coalesce(ol.name_key, od.name_key) as key,
              min(coalesce(ol.name, od.name)) as name, 1000 as pos,
              coalesce(vl.label_key, vd.label_key) as value_key, min(coalesce(vl.label, vd.label)) as label,
-             min(ov.position) as value_pos, count(distinct b.id)::int as count
-        from base b
+             min(ov.position) as value_pos, count(distinct b.id) filter (where b.hit)::int as count
+        from scope b
         join store.variants v on v.product_id = b.id and v.archived_at is null
         join store.variant_option_values vo on vo.variant_id = v.id
         join store.product_option_values ov on ov.id = vo.value_id
@@ -471,7 +480,8 @@ async function facets(
        group by 2, 5
     ), price as (
       select 'price' as type, '' as key, '' as name, 0 as pos, min(price_min)::text as value_key,
-             max(price_max)::text as label, 0 as value_pos, count(*)::int as count from base
+             max(price_max)::text as label, 0 as value_pos, count(*)::int as count
+        from scope where hit
     )
     select type, key, name, value_key, label, count from (
       select * from attrs union all select * from opts union all select * from price) f
@@ -502,7 +512,9 @@ async function facets(
     });
   }
   // An option every product shares in one value (a lone "Size: Free") filters nothing.
-  const useful = [...groups.values()].filter((g) => g.values.length > 1 || g.values[0]?.selected);
+  const useful = [...groups.values()].filter(
+    (g) => g.values.filter((v) => v.count > 0).length > 1 || g.values.some((v) => v.selected),
+  );
 
   let categories: Facets['categories'] = [];
   if (withCategories) {

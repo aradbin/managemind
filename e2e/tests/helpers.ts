@@ -159,10 +159,12 @@ export async function expectAddedToCart(page: Page): Promise<void> {
 export async function pickArea(
   page: Page,
   area: { name: string; id: number | string },
+  /** The field's id prefix: `c` on checkout, `ad` in the account's address form. */
+  prefix = 'c',
 ): Promise<void> {
-  await page.locator('#c-area-q').fill(area.name);
-  await page.locator(`#c-area-list [role="option"][data-area="${area.id}"]`).click();
-  await expect(page.locator('[data-area-chosen]')).toBeVisible();
+  await page.locator(`#${prefix}-area-q`).fill(area.name);
+  await page.locator(`#${prefix}-area-list [role="option"][data-area="${area.id}"]`).click();
+  await expect(page.locator(`#${prefix}-area-field [data-area-chosen]`)).toBeVisible();
 }
 
 export async function expectScriptBudget(page: Page, what: string): Promise<void> {

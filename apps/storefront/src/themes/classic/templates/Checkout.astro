@@ -3,6 +3,7 @@ import type { ShopFacts } from '@managemind/core';
 import type { StoreMessageKey } from '../../../i18n';
 import { href } from '../../../lib/links';
 import type { PageContext } from '../../../lib/page';
+import AreaField from '../AreaField.astro';
 import ShopPage from '../ShopPage.astro';
 
 interface Props {
@@ -157,23 +158,7 @@ const keys: StoreMessageKey[] = [
       </fieldset>
       <fieldset class="checkout-card">
         <legend>{t('checkout.address')}</legend>
-        <div class="field narrow-field area-field" id="c-area-field">
-          <label for="c-area-q">{t('checkout.area')}</label>
-          <p class="hint" id="c-area-h">{t('checkout.areaHint')}</p>
-          <div class="area-search" data-area-search>
-            <input id="c-area-q" type="text" role="combobox" autocomplete="off" aria-autocomplete="list" aria-controls="c-area-list" aria-expanded="false" aria-describedby="c-area-h c-area-e" placeholder={t('checkout.areaPlaceholder')} />
-            <ul id="c-area-list" role="listbox" aria-label={t('checkout.area')} hidden></ul>
-          </div>
-          <div class="area-chosen" data-area-chosen hidden>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><path d="M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" /></svg>
-            <span><strong data-area-name></strong><span data-area-place></span></span>
-            <button type="button" class="link" data-area-change>{t('checkout.change')}</button>
-          </div>
-          <input type="hidden" name="divisionId" id="c-division" />
-          <input type="hidden" name="districtId" id="c-district" />
-          <input type="hidden" name="areaId" id="c-area" />
-          <p class="field-error" id="c-area-e"></p>
-        </div>
+        <AreaField ctx={ctx} prefix="c" class="narrow-field" />
         <div class="field">
           <label for="c-line">{t('checkout.line')}</label>
           <textarea id="c-line" name="line" rows="3" maxlength="250" autocomplete="street-address" required aria-describedby="c-line-e"></textarea>

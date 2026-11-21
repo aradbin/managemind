@@ -5,6 +5,7 @@
 import type { StoreMessageKey } from '../../../i18n';
 import { href } from '../../../lib/links';
 import type { PageContext } from '../../../lib/page';
+import AreaField from '../AreaField.astro';
 import ShopPage from '../ShopPage.astro';
 
 interface Props {
@@ -27,10 +28,15 @@ const keys: StoreMessageKey[] = [
   'account.saved',
   'account.noOrders',
   'account.ordered',
-  'account.noAddresses',
   'account.default',
   'account.delete',
-  'checkout.choose',
+  'account.addAddress',
+  'account.makeDefaultShort',
+  'account.deleteLabel',
+  'account.deleted',
+  'account.undo',
+  'checkout.areaPick',
+  'checkout.areaNone',
   'checkout.required',
   'checkout.badPhone',
   'checkout.badEmail',
@@ -137,10 +143,13 @@ const keys: StoreMessageKey[] = [
 
       <section id="addresses" data-panel="addresses">
       <h2>{t('account.addresses')}</h2>
-      <ul class="addresses" data-addresses></ul>
-      <details>
-        <summary>{t('account.addAddress')}</summary>
-        <form class="track" data-address novalidate>
+      {/* "Address deleted." with Undo (design/storefront-redesign: Account). */}
+      <div class="undo-bar" data-undo role="status"></div>
+      <ul class="address-cards" role="list" data-addresses></ul>
+      <p class="muted" data-no-addresses hidden>{t('account.noAddresses')}</p>
+      <form class="address-form" data-address novalidate hidden aria-labelledby="ad-title">
+        <h3 id="ad-title">{t('account.addAddress')}</h3>
+        <div class="field-row">
           <div class="field">
             <label for="ad-name">{t('account.name')}</label>
             <input id="ad-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="ad-name-e" />
@@ -151,34 +160,23 @@ const keys: StoreMessageKey[] = [
             <input id="ad-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="ad-phone-e" />
             <p class="field-error" id="ad-phone-e"></p>
           </div>
-          <div class="field">
-            <label for="ad-division">{t('checkout.division')}</label>
-            <select id="ad-division" name="divisionId" required aria-describedby="ad-division-e"><option value="">{t('checkout.choose')}</option></select>
-            <p class="field-error" id="ad-division-e"></p>
-          </div>
-          <div class="field">
-            <label for="ad-district">{t('checkout.district')}</label>
-            <select id="ad-district" name="districtId" required disabled aria-describedby="ad-district-e"><option value="">{t('checkout.choose')}</option></select>
-            <p class="field-error" id="ad-district-e"></p>
-          </div>
-          <div class="field">
-            <label for="ad-area">{t('checkout.area')}</label>
-            <select id="ad-area" name="areaId" required disabled aria-describedby="ad-area-e"><option value="">{t('checkout.choose')}</option></select>
-            <p class="field-error" id="ad-area-e"></p>
-          </div>
-          <div class="field">
-            <label for="ad-line">{t('checkout.line')}</label>
-            <textarea id="ad-line" name="line" rows="2" maxlength="250" autocomplete="street-address" required aria-describedby="ad-line-e"></textarea>
-            <p class="field-error" id="ad-line-e"></p>
-          </div>
-          <div class="field">
-            <label for="ad-label">{t('account.label')} <span class="muted">{t('checkout.optional')}</span></label>
-            <input id="ad-label" name="label" maxlength="40" />
-          </div>
-          <label class="choice"><input type="checkbox" name="isDefault" /> <span>{t('account.makeDefault')}</span></label>
+        </div>
+        <AreaField ctx={ctx} prefix="ad" />
+        <div class="field">
+          <label for="ad-line">{t('checkout.line')}</label>
+          <textarea id="ad-line" name="line" rows="2" maxlength="250" autocomplete="street-address" required aria-describedby="ad-line-e"></textarea>
+          <p class="field-error" id="ad-line-e"></p>
+        </div>
+        <div class="field">
+          <label for="ad-label">{t('account.label')} <span class="muted">{t('checkout.optional')}</span></label>
+          <input id="ad-label" name="label" maxlength="40" />
+        </div>
+        <label class="choice"><input type="checkbox" name="isDefault" /> <span>{t('account.makeDefault')}</span></label>
+        <p class="address-actions">
           <button type="submit" class="button">{t('account.save')}</button>
-        </form>
-      </details>
+          <button type="button" class="button outline" data-address-cancel>{t('account.cancel')}</button>
+        </p>
+      </form>
       </section>
       </div>
     </div>

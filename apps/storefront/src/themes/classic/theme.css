@@ -1730,6 +1730,13 @@ body:has(.filters[open]) {
 .filters .check > span:not(.n, .dot) {
   flex: 1;
 }
+.filters .check.empty {
+  color: var(--c-muted);
+  cursor: default;
+}
+.filters .check.empty .dot {
+  opacity: 0.4;
+}
 .filters .n {
   color: var(--c-muted);
   font-size: 0.8125rem;
@@ -4880,15 +4887,124 @@ body.minimal:has(.place-box) {
   text-decoration: underline;
   cursor: pointer;
 }
-.addresses {
+/* Saved addresses as cards (design/storefront-redesign: Account). */
+.address-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
   margin: 0 0 16px;
   padding: 0;
   list-style: none;
 }
+.address-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+}
+.address-card.is-default {
+  border: 1.5px solid var(--c-primary);
+}
+.address-card p {
+  margin: 0;
+}
+.address-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+.default-badge {
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c-primary) 10%, var(--c-background));
+  color: var(--c-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.address-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+.address-card .address-card-actions {
+  margin-top: auto;
+}
+.address-card-actions .link-button {
+  color: var(--c-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.address-card-actions .link-button.danger {
+  color: var(--c-sale);
+}
+.add-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-height: 140px;
+  border: 1.5px dashed color-mix(in srgb, var(--c-text) 45%, var(--c-background));
+  border-radius: var(--radius-lg);
+  background: var(--c-background);
+  color: var(--c-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
 /* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
-.addresses li {
-  padding: 12px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--c-text) 12%, transparent);
+.add-card span {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+.undo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 6px 6px 6px 16px;
+  border-radius: var(--radius);
+  background: #1a1f29;
+  color: #fff;
+}
+.undo-bar:empty {
+  display: none;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.undo-bar button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: #ffd98a;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.address-form {
+  max-width: 640px;
+  padding: 20px;
+  border: 1.5px solid var(--c-primary);
+  border-radius: var(--radius-lg);
+}
+.address-form h3 {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+}
+.address-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 0;
 }
 
 /* The SMS confirmation link's page (phase-6-plan §3.7). */

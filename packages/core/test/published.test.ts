@@ -271,6 +271,18 @@ describe('listings', () => {
     );
   });
 
+  it('keeps values no product has under the other filters, counted 0', async () => {
+    // Only the middle product (ইয়েলো, নীল) is in this price range, so আড়ং
+    // counts 0 but stays, ticked, to be unticked.
+    const facets = (await list('a.brand=আড়ং&min=600&max=1000')).facets;
+    expect(facets?.groups.find((g) => g.key === 'brand')?.values).toEqual([
+      { key: 'আড়ং', label: 'আড়ং', count: 0, selected: true },
+      { key: 'ইয়েলো', label: 'ইয়েলো', count: 1, selected: false },
+    ]);
+    // One colour left to choose filters nothing: the group goes.
+    expect(facets?.groups.find((g) => g.type === 'option')).toBeUndefined();
+  });
+
   it('gives each card its only variant and its options', async () => {
     const card = (await list()).items.find((i) => i.id === cheap);
     expect(card?.variantId).toEqual(expect.any(String));
