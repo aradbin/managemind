@@ -4540,6 +4540,14 @@ body.minimal:has(.place-box) {
   font-size: 1.375rem;
   font-weight: 700;
 }
+.track-status:has(+ .track-expect) {
+  margin-bottom: 4px;
+}
+.track-expect {
+  margin: 0 0 16px;
+  color: color-mix(in srgb, var(--c-text) 85%, var(--c-background));
+  font-size: 0.9375rem;
+}
 .steps {
   list-style: none;
   margin: 0;

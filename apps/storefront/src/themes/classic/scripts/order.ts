@@ -58,6 +58,9 @@ interface OrderView {
     events?: { update: string; message: { en?: string; bn?: string }; at: string }[];
   }[];
   cancellable: boolean;
+  /** Bangladesh dates (YYYY-MM-DD), once the store has confirmed. */
+  expectedDelivery?: { from: string; to: string } | null;
+  deliveredAt?: string | null;
   onlineDue: number;
 }
 
@@ -123,6 +126,33 @@ function headline(o: OrderView, at: number): string {
   );
 }
 
+/**
+ * When it should arrive (design/storefront-redesign: Track): a word on when
+ * the date comes while the store hasn't confirmed, the expected dates after,
+ * and the day it was delivered.
+ */
+function expectation(o: OrderView, at: number): HTMLElement | null {
+  const locale = cfg.locale === 'bn' ? 'bn-BD' : 'en-GB';
+  const day = new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'Asia/Dhaka',
+  });
+  // Calendar dates: noon UTC is the same day in Dhaka.
+  const date = (ymd: string) => new Date(`${ymd}T12:00:00Z`);
+  let text = '';
+  if (at === 1) text = t('track.expectLater');
+  else if ((at === 2 || at === 3) && o.expectedDelivery) {
+    const { from, to } = o.expectedDelivery;
+    const range = from === to ? day.format(date(from)) : day.formatRange(date(from), date(to));
+    text = t('track.expected', { date: range });
+  } else if (at === 5 && o.deliveredAt) {
+    text = t('track.deliveredOn', { date: day.format(new Date(o.deliveredAt)) });
+  }
+  return text ? el('p', { class: 'track-expect', text }) : null;
+}
+
 function progress(at: number): HTMLElement {
   const steps: [string, string][] = [
     [t('step.placed'), ''],
@@ -176,6 +206,7 @@ function view(
     'div',
     { class: 'track-body' },
     el('p', { class: 'track-status', text: headline(o, at) }),
+    expectation(o, at),
     at >= 0
       ? progress(at)
       : el('p', { class: 'notice', role: 'status', text: t('track.cancelled') }),

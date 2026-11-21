@@ -480,6 +480,9 @@ describe('reading orders', () => {
       status: 'pending',
       cancellable: true,
       totals: { total: 17_000, codDue: 17_000 },
+      // No date until the store confirms.
+      expectedDelivery: null,
+      deliveredAt: null,
     });
     expect(view).not.toHaveProperty('timeline');
   });

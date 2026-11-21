@@ -3,6 +3,7 @@
 // and what invoices and packing slips print. Without customers.read, the
 // shopper's phone, email and street line are masked (Viewers see orders
 // but not shoppers' personal data); cost prices need catalog.cost.
+
 import { AppError, formatPhone } from '@managemind/shared';
 import {
   type CancelCode,
@@ -22,6 +23,7 @@ import { incompleteCounts } from '../recovery/index';
 import { monthToDateProfit, orderProfits } from '../reports/back-office';
 import type { TenantTx } from '../tenant';
 import { type ConfirmationState, confirmationState, inQueueSql } from './confirmation';
+import { expectedDelivery } from './delivery-estimate';
 import type { Localized } from './variants';
 
 const iso = (d: unknown) =>
@@ -756,12 +758,30 @@ export interface ShopperOrderView {
   /** An online payment still waiting: the page offers "pay now" (phase-5a-plan §3.3). */
   onlineDue: number;
   placedAt: string;
+  /** Bangladesh dates, from the zone's time and the booking (delivery-estimate.ts). */
+  expectedDelivery: { from: string; to: string } | null;
+  /** When the first parcel was delivered. */
+  deliveredAt: string | null;
 }
 
 /** What a shopper sees of their own order: nothing internal, no notes or history. */
-export async function shopperOrderView(tx: TenantTx, id: string): Promise<ShopperOrderView | null> {
+export async function shopperOrderView(
+  tx: TenantTx,
+  id: string,
+  now = new Date(),
+): Promise<ShopperOrderView | null> {
   const d = await loadOrderDetail(tx, id);
   if (!d) return null;
+  const sent = d.shipments.filter((s) => s.status !== 'pending' && s.status !== 'cancelled');
+  const firstOf = (dates: (string | null | undefined)[]) =>
+    dates.filter((x): x is string => Boolean(x)).sort()[0] ?? null;
+  const zone = d.zone.id
+    ? (
+        await tx.db.execute<{ estimate: Localized }>(
+          sql`select estimate from store.delivery_zones where id = ${d.zone.id}`,
+        )
+      ).rows[0]
+    : undefined;
   return {
     id: d.id,
     displayNumber: d.displayNumber,
@@ -810,6 +830,17 @@ export async function shopperOrderView(tx: TenantTx, id: string): Promise<Shoppe
             .filter((p) => p.provider === 'sslcommerz' && p.status === 'pending')
             .reduce((a, p) => a + p.amount, 0),
     placedAt: d.placedAt,
+    expectedDelivery: expectedDelivery(
+      {
+        status: d.status,
+        deliveryStatus: d.deliveryStatus,
+        confirmedAt: d.confirmedAt,
+        bookedAt: firstOf(sent.map((s) => s.courier?.bookedAt ?? s.shippedAt)),
+        estimate: zone?.estimate ?? null,
+      },
+      now,
+    ),
+    deliveredAt: firstOf(sent.map((s) => s.deliveredAt)),
   };
 }
 
