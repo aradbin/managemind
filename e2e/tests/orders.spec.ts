@@ -213,6 +213,8 @@ test('orders, promotions and accounts', async ({
     await shopper.goto(store('/cart'));
     await expect(shopper.getByRole('heading', { name: s('cart.title'), level: 1 })).toBeVisible();
     await expect(shopper.getByText(products[0]?.title as string)).toBeVisible();
+    // The code field folds under "Have a promo code?" (design/storefront-redesign: Cart).
+    await shopper.getByText(s('cart.promo'), { exact: true }).click();
     await shopper.getByLabel(s('cart.code')).fill(code.toLowerCase());
     await shopper.getByRole('button', { name: s('cart.apply') }).click();
     await expect(shopper.getByText(s('cart.codeApplied', { code }))).toBeVisible();
@@ -229,6 +231,9 @@ test('orders, promotions and accounts', async ({
     await pickArea(shopper, { name: 'Dhanmondi', id: DHAKA.area });
     await shopper.locator('#c-line').fill('বাড়ি ১, সড়ক ২');
     await expect(shopper.getByText(s('checkout.chooseArea'))).toBeHidden();
+    // Phones fold the order summary at the top: open it.
+    const fold = shopper.locator('[data-summary-fold] > summary');
+    if (await fold.isVisible()) await fold.click();
     // ৳1,050 of ৳1,500, now that the area gives a delivery charge.
     await expect(shopper.getByText(pattern(s('cart.freeDelivery')))).toBeVisible();
     await expectAccessible(shopper, 'checkout');

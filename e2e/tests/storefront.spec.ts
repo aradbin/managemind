@@ -15,6 +15,20 @@ async function openStore(page: Page, store: string, path = '/') {
     `${STOREFRONT}${path}${path.includes('?') ? '&' : '?'}store=${store}`,
   );
   expect(res?.status()).toBe(200);
+  // A demo store with tracking tags asks for cookie consent first (a preview
+  // database branched from production has the owner's tags): the shopper
+  // answers, and the answer holds for the rest of the test.
+  const consent = page.getByRole('region', { name: /^(Cookie consent|কুকি সম্মতি)$/ });
+  if (await consent.isVisible().catch(() => false)) {
+    await consent.getByRole('button', { name: /^(Reject|প্রত্যাখ্যান করুন)$/ }).click();
+    await expect(consent).toBeHidden();
+  }
+}
+
+/** A listing's "N products" line, as a number. */
+async function productCount(page: Page): Promise<number> {
+  const text = await page.locator('main p.count').first().innerText();
+  return Number(/\d+/.exec(text)?.[0] ?? Number.NaN);
 }
 
 /** Opens the filters where they fold away (the phone's sheet). */
@@ -47,27 +61,38 @@ test('browsing the English demo store', async ({ page }) => {
   await test.step('a category, filtered to what is in stock and sorted by price', async () => {
     await page.goto(`${STOREFRONT}/categories/sarees`);
     await expect(page.getByRole('heading', { level: 1, name: 'Sarees' })).toBeVisible();
-    await expect(page.getByText('3 products', { exact: true })).toBeVisible();
+    // The counts come from the store's stock, which a preview branched from
+    // production doesn't share with the seed: the filter must give what its
+    // own count said, and leave nothing sold out.
+    expect(await productCount(page)).toBeGreaterThanOrEqual(2);
     await openFilters(page, 'Filters');
-    await page.getByLabel('In stock only').check();
+    const inStock = page.getByLabel('In stock only');
+    const expected = Number(
+      (await page.locator('label.check', { has: inStock }).locator('.n').innerText()).trim(),
+    );
+    await inStock.check();
     await applyFilters(page, 'Show products');
     await expect(page).toHaveURL(/stock=1/);
-    await expect(page.getByText('2 products', { exact: true })).toBeVisible();
+    await expect(page.locator('main p.count').first()).toHaveText(
+      expected === 1 ? '1 product' : `${expected} products`,
+    );
     // What is applied shows as a chip that removes it.
     await expect(
       page
         .getByRole('navigation', { name: 'Applied filters' })
         .getByRole('link', { name: 'Remove In stock' }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Yellow muslin saree', exact: true })).toHaveCount(
-      0,
-    );
+    await expect(page.locator('[data-listing-grid] .badge.out')).toHaveCount(0);
 
     // With JavaScript the sort applies on change; its button is for no-JS visitors.
     await expect(page.locator('form.sorter').getByRole('button', { name: 'Apply' })).toBeHidden();
     await page.getByLabel('Sort by').selectOption('price_asc');
     await expect(page).toHaveURL(/sort=price_asc/);
-    await expect(page.locator('main .card-title').first()).toHaveText(/Blue cotton saree/);
+    // Cheapest first, whatever the store's prices are now.
+    const prices = (
+      await page.locator('[data-listing-grid] .price > span:first-child').allInnerTexts()
+    ).map((p) => Number(p.replace(/[^\d]/g, '')));
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
     await expectAccessible(page, 'category with filters');
     await expectScriptBudget(page, 'a category');
   });
