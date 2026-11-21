@@ -22,6 +22,7 @@ import { promotionsBn } from '../../apps/admin/src/i18n/promotions-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
 import {
   addProduct,
+  answerConsent,
   choose,
   expectAccessible,
   expectAddedToCart,
@@ -212,6 +213,8 @@ test('orders, promotions and accounts', async ({
     }
     await shopper.goto(store('/cart'));
     await expect(shopper.getByRole('heading', { name: s('cart.title'), level: 1 })).toBeVisible();
+    // A store with tracking tags shows a cookie banner, which covers the phone's pinned bars.
+    await answerConsent(shopper);
     await expect(shopper.getByText(products[0]?.title as string)).toBeVisible();
     // The code field folds under "Have a promo code?" (design/storefront-redesign: Cart).
     await shopper.getByText(s('cart.promo'), { exact: true }).click();

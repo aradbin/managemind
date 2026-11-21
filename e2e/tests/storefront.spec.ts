@@ -7,7 +7,13 @@
 // store with ?store=, which a cookie then remembers. Each page type's own
 // JavaScript is held to the 50 KB budget.
 import { expect, type Page, test } from '@playwright/test';
-import { expectAccessible, expectAddedToCart, expectScriptBudget, pickArea } from './helpers';
+import {
+  answerConsent,
+  expectAccessible,
+  expectAddedToCart,
+  expectScriptBudget,
+  pickArea,
+} from './helpers';
 import { STOREFRONT } from './urls';
 
 async function openStore(page: Page, store: string, path = '/') {
@@ -16,13 +22,8 @@ async function openStore(page: Page, store: string, path = '/') {
   );
   expect(res?.status()).toBe(200);
   // A demo store with tracking tags asks for cookie consent first (a preview
-  // database branched from production has the owner's tags): the shopper
-  // answers, and the answer holds for the rest of the test.
-  const consent = page.getByRole('region', { name: /^(Cookie consent|কুকি সম্মতি)$/ });
-  if (await consent.isVisible().catch(() => false)) {
-    await consent.getByRole('button', { name: /^(Reject|প্রত্যাখ্যান করুন)$/ }).click();
-    await expect(consent).toBeHidden();
-  }
+  // database branched from production has the owner's tags).
+  await answerConsent(page);
 }
 
 /** A listing's "N products" line, as a number. */

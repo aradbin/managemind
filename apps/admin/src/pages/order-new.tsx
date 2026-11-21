@@ -940,9 +940,6 @@ export function NewOrderPage() {
                   <dt>{t(walkIn ? 'newOrder.paidInShop' : 'order.codDue')}</dt>
                   <dd>{money(0)}</dd>
                 </div>
-                <p className="sr-only">
-                  {quote.isFetching ? t('loading') : t('newOrder.summaryEmpty')}
-                </p>
               </>
             ) : (
               <>
@@ -990,8 +987,12 @@ export function NewOrderPage() {
                 </div>
               </>
             )}
-            {quote.isError && <Notice tone="error">{orderErrorMessage(quote.error, t)}</Notice>}
           </dl>
+          {/* Outside the list: a <dl> holds only its rows (axe's definition-list rule). */}
+          <p className="sr-only" aria-live="polite">
+            {q ? '' : quote.isFetching ? t('loading') : t('newOrder.summaryEmpty')}
+          </p>
+          {quote.isError && <Notice tone="error">{orderErrorMessage(quote.error, t)}</Notice>}
           {place_.error && <Notice tone="error">{orderErrorMessage(place_.error, t)}</Notice>}
           {showErrors && !ready && (
             <Notice tone="error" className="md:hidden">

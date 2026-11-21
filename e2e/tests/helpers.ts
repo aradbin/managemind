@@ -156,6 +156,23 @@ export async function expectAddedToCart(page: Page): Promise<void> {
  * Checkout's Area field: types the area's name and picks it by ID from the
  * list, which also tells two areas of the same name apart.
  */
+/**
+ * Answers the cookie banner when the store shows one (a store with tracking
+ * tags; on phones it covers the pinned checkout and Place order bars). The
+ * answer holds for the rest of the browser context.
+ */
+export async function answerConsent(page: Page): Promise<void> {
+  const consent = page.getByRole('region', { name: /^(Cookie consent|কুকি সম্মতি)$/ });
+  // The banner's script shows it once the page has loaded.
+  const shown = await consent
+    .waitFor({ state: 'visible', timeout: 3000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!shown) return;
+  await consent.getByRole('button', { name: /^(Reject|প্রত্যাখ্যান করুন)$/ }).click();
+  await expect(consent).toBeHidden();
+}
+
 export async function pickArea(
   page: Page,
   area: { name: string; id: number | string },
