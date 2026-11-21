@@ -3,7 +3,7 @@
 import type { ThemeLink } from '@managemind/shared/storefront';
 import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
-import { useLocale } from '../../i18n';
+import { type AdminKey, useLocale } from '../../i18n';
 import { api, unwrap } from '../../lib/api';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
 import { pagesQuery } from '../../lib/online-store';
@@ -19,10 +19,13 @@ export function LinkPicker({
   value,
   onChange,
   disabled,
+  label = 'section.link',
 }: {
   value: ThemeLink | null;
   onChange: (link: ThemeLink | null) => void;
   disabled?: boolean | undefined;
+  /** The question above the choices; "Goes to" unless the editor has two buttons. */
+  label?: AdminKey;
 }) {
   const { t, locale } = useLocale();
   const id = useId();
@@ -72,7 +75,7 @@ export function LinkPicker({
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-col">
         <span id={`${id}-kind`} className={fieldLabel}>
-          {t('section.link')}
+          {t(label)}
         </span>
         <fieldset
           aria-labelledby={`${id}-kind`}

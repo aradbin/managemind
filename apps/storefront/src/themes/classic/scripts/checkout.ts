@@ -1,17 +1,20 @@
-// Checkout (phase-4-plan §3.5, §3.16): phone first, the area from the
-// geography file's three dropdowns (no API call), totals that follow the
-// area, an invisible Turnstile check, and "Place order" under an
+// Checkout (phase-4-plan §3.5, §3.16; design/storefront-redesign: Checkout,
+// CheckoutPhone): phone first, one searchable Area field over the geography
+// file (no API call), totals that follow the area, a summary of problems
+// linked to their fields, an invisible Turnstile check, and "Place order" under an
 // idempotency key kept in sessionStorage, so a double tap, a lost response
 // or a reload sends the same key and never makes two orders. Online payment
 // (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
+import { type AreaField, loadGeo, setupAreaField } from './area-field';
 import { attributionForCheckout } from './attribution';
-import { type Cart, lineName, problemText, totals } from './cart-view';
+import { type Cart, codeForm, lineName, problemText, totals } from './cart-view';
 import {
   api,
   config,
   digits,
   el,
   fill,
+  imageUrl,
   money,
   pick,
   ShopError,
@@ -21,12 +24,6 @@ import {
 } from './shop';
 import { type Check, mountTurnstile } from './turnstile';
 
-interface GeoFile {
-  v: string;
-  d: [number, string, string][];
-  s: [number, number, string, string][];
-  a: [number, number, string, string][];
-}
 interface CheckoutState {
   cart: Cart;
   cod: { enabled: boolean; maxOrderValue: number | null };
@@ -69,43 +66,292 @@ const notice = document.querySelector<HTMLElement>('[data-notice]');
 const summary = document.querySelector<HTMLElement>('[data-summary]');
 const place = document.querySelector<HTMLButtonElement>('[data-place]');
 const KEY = 'mm_checkout_key';
-const name = (n: [unknown, ...unknown[]]) =>
-  String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 
 let cart: Cart | null = null;
 let check: Check | undefined;
 
-function show(message: string, kind: 'error' | 'info' = 'error') {
+/** WhatsApp and Call links to the store, those it has. */
+function contactLinks(text = ''): HTMLAnchorElement[] {
+  const links: HTMLAnchorElement[] = [];
+  if (cfg.whatsapp) {
+    const query = text ? `?text=${encodeURIComponent(text)}` : '';
+    links.push(
+      el('a', {
+        href: `https://wa.me/${cfg.whatsapp.replace(/\D/g, '')}${query}`,
+        target: '_blank',
+        rel: 'noopener',
+        text: t('help.whatsapp'),
+      }),
+    );
+  }
+  if (cfg.tel && cfg.phone) {
+    links.push(el('a', { href: `tel:${cfg.tel}`, text: t('checkout.call', { phone: cfg.phone }) }));
+  }
+  return links;
+}
+
+/**
+ * The notice above the form (design/storefront-redesign: Checkout's
+ * scenarios): a problem, a price change or a payment the store asks for,
+ * with the store's WhatsApp and phone when the shopper has to ask them.
+ * Focus moves to it, so it is read out.
+ */
+function show(message: string, kind: 'error' | 'info' | 'warn' = 'error', contact = false) {
   if (!notice) return;
-  notice.textContent = message;
+  const text = notice.querySelector('[data-notice-text]');
+  const links = notice.querySelector<HTMLElement>('[data-notice-links]');
+  if (text) text.textContent = message;
   notice.dataset.kind = kind;
+  notice.setAttribute('role', kind === 'error' ? 'alert' : 'status');
   notice.hidden = !message;
-  if (message) notice.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (links) {
+    const found = contact ? contactLinks() : [];
+    fill(links, ...found);
+    links.hidden = !found.length;
+  }
+  if (message) {
+    notice.focus({ preventScroll: true });
+    notice.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+/**
+ * In the form's place when the store can't take this order
+ * (design/storefront-redesign: "the form is replaced by a panel"): the store
+ * is paused, there is no way to pay, or the cart is empty.
+ */
+function block(kind: 'paused' | 'nopay' | 'empty' | 'error', message = '') {
+  const panel = document.querySelector<HTMLElement>('[data-block]');
+  if (!panel) return;
+  if (form) form.hidden = true;
+  const sign = (d: string, size = 26, round = true) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    for (const [k, v] of Object.entries({
+      width: String(size),
+      height: String(size),
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '2',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': 'true',
+    }))
+      svg.setAttribute(k, v);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+    return round ? el('span', { class: 'block-sign' }, svg) : svg;
+  };
+  const back = el('a', {
+    class: 'button outline',
+    href: cfg.links.cart,
+    text: t('checkout.backToCart'),
+  });
+  const whatsapp = cfg.whatsapp
+    ? el(
+        'a',
+        {
+          class: 'button whatsapp',
+          href: `https://wa.me/${cfg.whatsapp.replace(/\D/g, '')}`,
+          target: '_blank',
+          rel: 'noopener',
+        },
+        sign('M4 20l1.3-3.9A8 8 0 1 1 8 19z', 20, false),
+        t('checkout.whatsapp'),
+      )
+    : null;
+  panel.dataset.kind = kind;
+  if (kind === 'empty') {
+    fill(
+      panel,
+      sign('M3 4h2l2.4 11h11.2L21 7H7M10 20h.01M17 20h.01'),
+      el('h2', { text: t('cart.empty') }),
+      el('p', { text: t('cart.emptyText') }),
+      el(
+        'p',
+        { class: 'block-actions' },
+        el('a', { class: 'button', href: cfg.links.home, text: t('cart.start') }),
+      ),
+    );
+  } else if (kind === 'error') {
+    fill(
+      panel,
+      sign('M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16.5v.5'),
+      el('h2', { text: t('cart.error') }),
+      el('p', { class: 'block-actions' }, back),
+    );
+  } else {
+    fill(
+      panel,
+      sign(
+        kind === 'paused'
+          ? 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM10 9v6M14 9v6'
+          : 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16.5v.5',
+      ),
+      el('h2', { text: kind === 'paused' ? t('checkout.paused') : t('checkout.codUnavailable') }),
+      message ? el('blockquote', { text: message }) : null,
+      el('p', { text: kind === 'paused' ? t('checkout.pausedNext') : t('checkout.noPayNext') }),
+      el('p', { class: 'block-actions' }, whatsapp, back),
+    );
+  }
+  panel.hidden = false;
+  scrollTo({ top: 0 });
+}
+
+const foldLabel = document.querySelector<HTMLElement>('[data-fold-label]');
+const foldTotal = document.querySelector<HTMLElement>('[data-fold-total]');
+const payLabel = document.querySelector<HTMLElement>('[data-pay-label]');
+const payAmount = document.querySelector<HTMLElement>('[data-pay-amount]');
+
+/** What is paid when: on delivery, now, or the delivery charge now. */
+function payRow() {
+  if (!cart || !payLabel || !payAmount) return;
+  const method = chosenPayment();
+  const fee = Math.max(0, cart.totals.deliveryFee - cart.totals.deliveryDiscount);
+  payLabel.textContent =
+    method === 'online'
+      ? t('checkout.payNow')
+      : method === 'cod_with_advance'
+        ? t('checkout.payNowFee')
+        : t('checkout.payOnDelivery');
+  payAmount.textContent = money(method === 'cod_with_advance' ? fee : cart.totals.total);
+}
+
+/** Lines whose price changed when the order was placed: the price the shopper had seen. */
+const priceWas = new Map<string, number>();
+/** The chosen area has no delivery zone (design/storefront-redesign: "Area not served"). */
+let unserved = false;
+let busy = false;
+
+/** A change to the cart from checkout (the promo code): redraw from its answer. */
+async function change(run: () => Promise<Cart>, status: HTMLElement) {
+  if (busy) return;
+  busy = true;
+  try {
+    renderSummary(await run());
+  } catch (e) {
+    status.textContent =
+      e instanceof ShopError && e.code === 'promotion_unavailable'
+        ? t('cart.code.not_found')
+        : t('cart.error');
+  } finally {
+    busy = false;
+  }
+}
+
+/**
+ * The box under the address: every zone's charge before an area is chosen,
+ * the chosen zone's charge and time after, and what to do next when the
+ * store doesn't deliver there.
+ */
+function deliveryBox(c: Cart) {
+  const note = document.querySelector<HTMLElement>('[data-delivery-note]');
+  const text = document.querySelector<HTMLElement>('[data-delivery-text]');
+  if (!note || !text) return;
+  note.classList.toggle('unserved', unserved);
+  if (unserved) {
+    const links = contactLinks();
+    fill(
+      text,
+      el('strong', { text: t('checkout.askDelivery') }),
+      ...links.flatMap((a) => [' ', a]),
+    );
+    note.hidden = false;
+    return;
+  }
+  if (c.zone) {
+    const fee = Math.max(0, c.totals.deliveryFee - c.totals.deliveryDiscount);
+    const estimate = pick(c.zone.estimate);
+    fill(
+      text,
+      [
+        pick(c.zone.name),
+        fee === 0 && c.totals.deliveryFee > 0 ? t('cart.free') : money(fee),
+        estimate ? t('checkout.estimate', { estimate }) : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    );
+    note.hidden = false;
+    return;
+  }
+  const zones = (cfg.facts?.zones ?? [])
+    .map((z) => `${z.name}: ${money(z.fee)}${z.estimate ? ` (${z.estimate})` : ''}`)
+    .join(', ');
+  fill(text, zones ? t('cart.deliveryNote', { zones }) : '');
+  note.hidden = !zones;
 }
 
 function renderSummary(c: Cart) {
   cart = c;
+  unserved = c.areaId !== null && !c.zone && c.lines.length > 0;
+  if (unserved) fieldError('areaId', t('checkout.noDelivery'));
+  else if (document.getElementById('c-area-e')?.textContent === t('checkout.noDelivery'))
+    fieldError('areaId', '');
+  deliveryBox(c);
   if (!summary) return;
   const lines = el(
     'ul',
     { class: 'mini-lines', role: 'list' },
-    ...c.lines.map((l) =>
-      el(
+    ...c.lines.map((l) => {
+      const src = imageUrl(l.image, 160);
+      return el(
         'li',
         {},
-        el('span', { text: `${lineName(l)} × ${digits(String(l.quantity))}` }),
-        el('span', { text: money(l.total) }),
-        problemText(l) ? el('p', { class: 'line-problem', text: problemText(l) ?? '' }) : null,
-      ),
-    ),
+        el(
+          'span',
+          { class: 'mini-media' },
+          src ? el('img', { src, alt: '', width: '56', height: '56', loading: 'lazy' }) : null,
+          el('span', {
+            class: 'mini-qty',
+            'aria-hidden': 'true',
+            text: digits(String(l.quantity)),
+          }),
+        ),
+        el(
+          'span',
+          { class: 'mini-name' },
+          el('span', { text: `${pick(l.title)}`, class: 'mini-title' }),
+          l.optionLabels.length
+            ? el('span', { class: 'hint', text: l.optionLabels.map(pick).join(' · ') })
+            : null,
+          el('span', { class: 'visually-hidden', text: ` × ${digits(String(l.quantity))}` }),
+          problemText(l) ? el('span', { class: 'line-problem', text: problemText(l) ?? '' }) : null,
+          priceWas.has(l.variantId) && priceWas.get(l.variantId) !== l.unitPrice
+            ? el('span', {
+                class: 'was-now',
+                text: t('checkout.wasNow', {
+                  was: money(priceWas.get(l.variantId) ?? 0),
+                  now: money(l.unitPrice),
+                }),
+              })
+            : null,
+        ),
+        el('span', { class: 'mini-total', text: money(l.total) }),
+      );
+    }),
   );
-  const parts: (Node | null)[] = [lines, totals(c, { deliveryHint: t('checkout.chooseArea') })];
-  const estimate = c.zone ? pick(c.zone.estimate) : '';
-  if (estimate)
-    parts.push(el('p', { class: 'muted small', text: t('checkout.estimate', { estimate }) }));
+  const box = totals(c, {
+    deliveryHint: t('checkout.chooseArea'),
+    subtotalLabel: t('cart.subtotalCount', { count: c.itemCount }),
+    ...(c.zone ? {} : { totalLabel: t('checkout.totalBefore') }),
+    ...(unserved ? { noZoneDelivery: t('checkout.notAvailable') } : {}),
+  });
+  // The promo code, as on the cart page (design/storefront-redesign: Checkout).
+  const promo = el(
+    'details',
+    { class: 'promo', open: Boolean(c.code) },
+    el('summary', { text: t('cart.promo') }),
+    codeForm(c, (run, status) => void change(run, status), { nested: true }),
+  );
+  const parts: (Node | null)[] = [lines, promo, box];
   if (!c.ready) parts.push(el('p', { class: 'line-problem', text: t('cart.fix') }));
   fill(summary, ...parts.filter((p): p is Node => p !== null));
   if (place) place.disabled = !c.ready;
+  if (foldLabel) foldLabel.textContent = t('checkout.showSummary', { count: c.itemCount });
+  if (foldTotal) foldTotal.textContent = money(c.totals.total);
+  payRow();
   // What "delivery charge online" takes now (§3.4).
   const hint = document.querySelector<HTMLElement>('[data-advance-hint]');
   if (hint) {
@@ -128,67 +374,33 @@ function choose(method: string) {
 }
 const chosenPayment = () => String(new FormData(form as HTMLFormElement).get('payment') ?? 'cod');
 
-/** Chooses a place in the three dropdowns, as a reload or a saved address does. */
+/** Chooses an area, as a reload or a saved address does. */
 let choosePlace: (areaId: number) => void = () => {};
+let areaField: AreaField | null = null;
 
-/** The three dropdowns, from the geography file (cached for a year). */
+/** The Area field (scripts/area-field.ts): each pick sets the cart's area, so totals follow it. */
 async function setupAddress() {
-  const geo = (await (await fetch(cfg.geo ?? '/geo/bd.json')).json()) as GeoFile;
-  // By ID: querySelector's generic is typed against Workers' Element here.
-  const division = document.getElementById('c-division') as HTMLSelectElement | null;
-  const district = document.getElementById('c-district') as HTMLSelectElement | null;
-  const area = document.getElementById('c-area') as HTMLSelectElement | null;
-  if (!division || !district || !area) return;
-  const fillSelect = (select: HTMLSelectElement, rows: [number, ...unknown[]][]) => {
-    const sorted = [...rows].sort((a, b) => name(a).localeCompare(name(b), cfg.locale));
-    fill(
-      select,
-      el('option', { value: '', text: t('checkout.choose') }),
-      ...sorted.map((r) => el('option', { value: String(r[0]), text: name(r) })),
-    );
-    select.disabled = rows.length === 0;
-  };
-  fillSelect(division, geo.d);
-  division.addEventListener('change', () => {
-    fillSelect(
-      district,
-      geo.s.filter((s) => s[1] === Number(division.value)),
-    );
-    fillSelect(area, []);
+  const root = document.getElementById('c-area-field');
+  if (!root) return;
+  const field = setupAreaField(root, await loadGeo(), (areaId) => {
+    fieldError('areaId', '');
+    // Until the cart answers for the new area, the old one's "not served" is gone.
+    unserved = false;
+    api<Cart>('/cart/area', { method: 'PUT', body: { areaId } })
+      .then(renderSummary)
+      .catch(() => show(t('cart.error')));
   });
-  district.addEventListener('change', () =>
-    fillSelect(
-      area,
-      geo.a.filter((a) => a[1] === Number(district.value)),
-    ),
-  );
-  area.addEventListener('change', async () => {
-    const areaId = Number(area.value) || null;
-    try {
-      renderSummary(await api<Cart>('/cart/area', { method: 'PUT', body: { areaId } }));
-    } catch {
-      show(t('cart.error'));
-    }
-  });
+  if (!field) return;
+  areaField = field;
   choosePlace = (areaId: number) => {
-    const a = geo.a.find((x) => x[0] === areaId);
-    const s = a && geo.s.find((x) => x[0] === a[1]);
-    if (a && s) {
-      division.value = String(s[1]);
-      fillSelect(
-        district,
-        geo.s.filter((x) => x[1] === s[1]),
-      );
-      district.value = String(s[0]);
-      fillSelect(
-        area,
-        geo.a.filter((x) => x[1] === s[0]),
-      );
-      area.value = String(a[0]);
-    }
+    field.choose(areaId);
+    fieldError('areaId', '');
   };
   // A cart that already has an area (a reload): choose it again.
-  if (cart?.areaId) choosePlace(cart.areaId);
+  if (cart?.areaId) {
+    choosePlace(cart.areaId);
+    renderSummary(cart);
+  }
 }
 
 /**
@@ -216,9 +428,9 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
       show(t('cart.error'));
     }
   };
-  const division = document.getElementById('c-division');
-  const fieldset = division?.closest('fieldset');
-  if (account.addresses.length && division) {
+  const areaField = document.getElementById('c-area-field');
+  const fieldset = areaField?.closest('fieldset');
+  if (account.addresses.length && areaField) {
     const select = el(
       'select',
       { id: 'c-saved' },
@@ -232,17 +444,15 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
       if (a) void use(a);
       else if (line) line.value = '';
     });
-    division
-      .closest('.field')
-      ?.insertAdjacentElement(
-        'beforebegin',
-        el(
-          'div',
-          { class: 'field' },
-          el('label', { for: 'c-saved', text: t('checkout.savedAddress') }),
-          select,
-        ),
-      );
+    areaField.insertAdjacentElement(
+      'beforebegin',
+      el(
+        'div',
+        { class: 'field' },
+        el('label', { for: 'c-saved', text: t('checkout.savedAddress') }),
+        select,
+      ),
+    );
     const first = account.addresses.find((a) => a.isDefault) ?? account.addresses[0];
     if (first) {
       select.value = first.id;
@@ -263,11 +473,41 @@ function setupAccount(account: NonNullable<CheckoutState['account']>) {
 const PHONE = /^(?:\+?88)?0?1[3-9]\d{8}$/;
 const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
+/** The field a problem belongs to: the area's is the search field (or its chosen card). */
+const fieldInput = (field: string): HTMLElement | null =>
+  field === 'areaId' || field === 'districtId' || field === 'divisionId'
+    ? document.getElementById('c-area-q')
+    : (form?.querySelector<HTMLElement>(`[name=${field}]`) ?? null);
+
 function fieldError(field: string, message: string) {
-  const input = form?.querySelector<HTMLInputElement>(`[name=${field}]`);
-  const error = input ? document.getElementById(`${input.id}-e`) : null;
+  const input = fieldInput(field);
+  const error = input
+    ? document.getElementById(`${field === 'areaId' ? 'c-area' : input.id}-e`)
+    : null;
   if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
   if (error) error.textContent = message;
+}
+
+/** The problems at the top, each a link to its field (design/storefront-redesign). */
+function errorSummary(problems: { field: string; label: string; message: string }[]) {
+  const box = document.querySelector<HTMLElement>('[data-error-summary]');
+  const list = box?.querySelector('[data-error-list]');
+  if (!box || !list) return;
+  while (list.firstChild) list.removeChild(list.firstChild);
+  box.hidden = !problems.length;
+  for (const p of problems) {
+    const input = fieldInput(p.field);
+    const id =
+      p.field === 'areaId' && document.getElementById('c-area-q')?.closest('[hidden]')
+        ? 'c-area-field'
+        : input?.id;
+    const link = el('a', { href: `#${id ?? ''}`, text: `${p.label}: ${p.message}` });
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      (p.field === 'areaId' ? areaField?.focusTarget() : input)?.focus();
+    });
+    list.appendChild(el('li', {}, link));
+  }
 }
 
 /** Client-side checks for the obvious; the server checks everything again. */
@@ -295,19 +535,42 @@ function collect(): Record<string, unknown> | null {
       if (bad) ok = false;
     }
   }
-  const divisionId = Number(need('divisionId'));
-  const districtId = Number(need('districtId'));
-  const areaId = Number(need('areaId'));
+  const areaId = Number(value('areaId'));
+  fieldError('areaId', !areaId ? t('checkout.areaPick') : unserved ? t('checkout.noDelivery') : '');
+  if (!areaId || unserved) ok = false;
+  const divisionId = Number(value('divisionId'));
+  const districtId = Number(value('districtId'));
   const line = need('line');
   if (form.querySelector('[name=acceptTerms]') && !data.get('acceptTerms')) {
     fieldError('acceptTerms', t('checkout.required'));
     ok = false;
   }
   if (!ok) {
-    show(t('checkout.invalid'));
+    const LABELS: Record<string, string> = {
+      phone: t('checkout.phone'),
+      name: t('checkout.name'),
+      email: t('checkout.email'),
+      areaId: t('checkout.area'),
+      line: t('checkout.line'),
+      acceptTerms: t('checkout.terms'),
+    };
+    errorSummary(
+      Object.keys(LABELS)
+        .map((field) => {
+          const input = fieldInput(field);
+          const message =
+            input?.getAttribute('aria-invalid') === 'true'
+              ? (document.getElementById(`${field === 'areaId' ? 'c-area' : (input.id ?? '')}-e`)
+                  ?.textContent ?? '')
+              : '';
+          return { field, label: LABELS[field] ?? field, message };
+        })
+        .filter((p) => p.message),
+    );
     form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
     return null;
   }
+  errorSummary([]);
   const attribution = attributionForCheckout();
   return {
     contact: { name: value('name'), phone, ...(email ? { email } : {}) },
@@ -408,28 +671,47 @@ let otpToken: string | undefined;
 
 /**
  * Texts a code to the order's phone and checks it; then the order is placed
- * again with the token. Shown only when checkout answers `otp_required`.
+ * again with the token. Shown only when checkout answers `otp_required`
+ * (design/storefront-redesign: "Phone code"): a dialog, a bottom sheet on
+ * phones, that confirms by itself once all 6 digits are in, and lets a new
+ * code go only after 45 seconds, as the store allows only a few an hour.
  */
 function askForCode(phone: string) {
-  if (!form || form.querySelector('[data-otp]')) return;
-  const status = el('p', { class: 'muted small', role: 'status' });
-  const input = el('input', {
-    id: 'c-otp',
-    inputmode: 'numeric',
-    autocomplete: 'one-time-code',
-    maxlength: '6',
-    pattern: '[0-9]{6}',
-  });
-  const verify = el('button', { type: 'button', class: 'button', text: t('checkout.otpVerify') });
-  const resend = el('button', { type: 'button', class: 'link', text: t('checkout.otpResend') });
-  const box = el(
-    'div',
-    { class: 'field', 'data-otp': true },
-    el('label', { for: 'c-otp', text: t('checkout.otpLabel') }),
-    input,
-    status,
-    el('p', {}, verify, ' ', resend),
-  );
+  const dialog = document.querySelector<HTMLDialogElement>('[data-otp]');
+  const input = document.getElementById('c-otp') as HTMLInputElement | null;
+  const status = dialog?.querySelector<HTMLElement>('[data-otp-status]');
+  const verify = dialog?.querySelector<HTMLButtonElement>('[data-otp-verify]');
+  const resend = dialog?.querySelector<HTMLButtonElement>('[data-otp-resend]');
+  const shown = dialog?.querySelector('[data-otp-phone]');
+  if (!dialog || !input || !status || !verify || !resend) return;
+  // 01712-345678, as the number is written on the form's example.
+  const local = latin(phone).replace(/^\+?88/, '');
+  if (shown)
+    shown.textContent = digits(
+      /^01\d{9}$/.test(local) ? `${local.slice(0, 5)}-${local.slice(5)}` : phone,
+    );
+  input.value = '';
+  const say = (text: string, kind: 'ok' | 'error' = 'error') => {
+    status.textContent = text;
+    status.dataset.kind = kind;
+    input.setAttribute('aria-invalid', String(Boolean(text) && kind === 'error'));
+  };
+  say('');
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const wait = (seconds: number) => {
+    clearInterval(timer);
+    let left = seconds;
+    const tick = () => {
+      resend.disabled = left > 0;
+      resend.textContent =
+        left > 0
+          ? t('checkout.otpWait', { time: digits(`0:${String(left).padStart(2, '0')}`) })
+          : t('checkout.otpResend');
+      if (left-- <= 0) clearInterval(timer);
+    };
+    tick();
+    timer = setInterval(tick, 1000);
+  };
   const sendCode = async () => {
     resend.disabled = true;
     try {
@@ -438,48 +720,83 @@ function askForCode(phone: string) {
       await api('/checkout/otp', {
         body: { phone, ...(turnstileToken ? { turnstileToken } : {}) },
       });
-      status.textContent = t('checkout.otpSent');
+      say(t('checkout.otpSent'), 'ok');
+      wait(45);
     } catch (err) {
-      status.textContent =
+      say(
         err instanceof ShopError && err.code === 'rate_limited'
           ? t('checkout.otpTooMany')
-          : t('cart.error');
-    } finally {
-      resend.disabled = false;
+          : t('cart.error'),
+      );
+      wait(err instanceof ShopError && err.code === 'rate_limited' ? 45 : 0);
     }
   };
-  verify.addEventListener('click', async () => {
-    const code = input.value.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim();
-    if (!/^\d{6}$/.test(code)) {
-      status.textContent = t('checkout.otpWrong');
-      return;
-    }
+  let checking = false;
+  const confirm = async () => {
+    const code = latin(input.value).replace(/\D/g, '');
+    if (code.length !== 6) return say(t('checkout.otpWrong'));
+    if (checking) return;
+    checking = true;
     verify.disabled = true;
     try {
       const done = await api<{ otpToken: string }>('/checkout/otp/verify', {
         body: { phone, code },
       });
       otpToken = done.otpToken;
-      box.remove();
+      clearInterval(timer);
+      dialog.close();
       form?.requestSubmit();
     } catch (err) {
       const reason =
         err instanceof ShopError
           ? (err.body.errors as { code: string }[] | undefined)?.[0]?.code
           : '';
-      status.textContent =
+      say(
         reason === 'locked' || reason === 'expired'
           ? t('checkout.otpExpired')
-          : t('checkout.otpWrong');
+          : t('checkout.otpWrong'),
+      );
+      input.select();
     } finally {
+      checking = false;
       verify.disabled = false;
     }
-  });
-  resend.addEventListener('click', sendCode);
-  place?.insertAdjacentElement('beforebegin', box);
+  };
+  // The handlers are set once; each opening sends to the number on the form.
+  if (!dialog.dataset.ready) {
+    dialog.dataset.ready = '1';
+    input.addEventListener('input', () => {
+      const code = latin(input.value).replace(/\D/g, '').slice(0, 6);
+      if (code !== input.value) input.value = code;
+      if (input.getAttribute('aria-invalid') === 'true') say('');
+      if (code.length === 6) void current.confirm();
+    });
+    verify.addEventListener('click', () => void current.confirm());
+    resend.addEventListener('click', () => void current.sendCode());
+    dialog.querySelector('[data-otp-close]')?.addEventListener('click', () => dialog.close());
+    dialog.querySelector('[data-otp-change]')?.addEventListener('click', () => {
+      dialog.close();
+      const field = document.getElementById('c-phone') as HTMLInputElement | null;
+      field?.focus();
+      field?.select();
+    });
+    dialog.addEventListener('close', () => clearInterval(current.timer()));
+  }
+  current = { confirm, sendCode, timer: () => timer };
+  dialog.showModal();
   input.focus();
   void sendCode();
 }
+/** The open dialog's actions: the handlers are bound once, the phone changes per opening. */
+let current: {
+  confirm: () => Promise<void>;
+  sendCode: () => Promise<void>;
+  timer: () => ReturnType<typeof setInterval> | undefined;
+} = {
+  confirm: async () => {},
+  sendCode: async () => {},
+  timer: () => undefined,
+};
 
 async function submit(e: SubmitEvent) {
   e.preventDefault();
@@ -537,10 +854,21 @@ async function submit(e: SubmitEvent) {
     const b = err.body;
     switch (err.code) {
       case 'price_changed': {
-        // The new totals: the shopper sees them before trying again.
+        // The new totals, each changed line marked with the price seen before:
+        // the shopper checks them before trying again.
+        const seen = new Map((cart?.lines ?? []).map((l) => [l.variantId, l.unitPrice]));
         const fresh = await api<Cart>('/cart').catch(() => null);
-        if (fresh) renderSummary(fresh);
-        return show(t('checkout.priceChanged'), 'info');
+        if (fresh) {
+          for (const l of fresh.lines) {
+            const was = seen.get(l.variantId);
+            if (was !== undefined && was !== l.unitPrice && !priceWas.has(l.variantId))
+              priceWas.set(l.variantId, was);
+          }
+          renderSummary(fresh);
+        }
+        const fold = document.querySelector<HTMLDetailsElement>('[data-summary-fold]');
+        if (fold) fold.open = true;
+        return show(t('checkout.priceChanged'), 'warn');
       }
       case 'insufficient_stock':
       case 'cart_invalid': {
@@ -549,22 +877,32 @@ async function submit(e: SubmitEvent) {
         return show(t('checkout.stock'));
       }
       case 'checkout_paused':
-        return show(t('checkout.paused'));
+        return block('paused');
       case 'otp_required':
         // The store asks this phone for a code by SMS first (§3.14).
-        askForCode((body.contact as { phone: string }).phone);
-        return show(t('checkout.otpNeeded'), 'info');
-      case 'cod_unavailable':
+        return askForCode((body.contact as { phone: string }).phone);
+      case 'cod_unavailable': {
         // This phone (or every phone) pays the delivery charge first (§3.4).
         if (b.reason === 'advance_required') {
           offer('cod', false);
           offer('cod_with_advance', true);
           choose('cod_with_advance');
+          payRow();
           return show(t('checkout.advanceRequired'), 'info');
         }
-        return show(t('checkout.codUnavailable'));
+        // Cash on delivery is out for this order: online, if the store takes it.
+        const online = form?.querySelector<HTMLElement>('[data-pay="online"]');
+        if (online && !online.hidden) {
+          offer('cod', false);
+          offer('cod_with_advance', false);
+          choose('online');
+          payRow();
+          return show(t('checkout.codUnavailable'), 'info', true);
+        }
+        return block('nopay');
+      }
       case 'rate_limited':
-        return show(t('checkout.limited'));
+        return show(t('checkout.limited'), 'error', true);
       case 'validation_failed': {
         const fields = (b.errors as { path: string }[] | undefined) ?? [];
         for (const f of fields) {
@@ -584,48 +922,74 @@ async function submit(e: SubmitEvent) {
   }
 }
 
+/** The promises under Place order. */
+function showFacts() {
+  const facts = cfg.facts;
+  if (!facts) return;
+  const trust = document.querySelector<HTMLElement>('[data-trust]');
+  if (!trust) return;
+  const items = [
+    t('checkout.trustDetails'),
+    [
+      facts.returnDays ? t('checkout.trustReturns', { count: facts.returnDays }) : '',
+      cfg.phone ? t('checkout.trustHelp', { phone: cfg.phone }) : '',
+    ]
+      .filter(Boolean)
+      .join(' '),
+  ].filter(Boolean);
+  fill(trust, ...items.map((text) => el('li', {}, el('span', { text }))));
+}
+
 async function start() {
   if (!form) return;
   let state: CheckoutState;
   try {
     state = await api<CheckoutState>('/checkout');
   } catch {
-    return show(t('cart.error'));
+    return block('error');
   }
   setCount(state.cart.itemCount);
-  if (!state.cart.lines.length) {
-    show(t('cart.empty'), 'info');
-    notice?.insertAdjacentElement(
-      'afterend',
-      el('p', {}, el('a', { class: 'button', href: cfg.links.home, text: t('cart.continue') })),
-    );
-    return;
-  }
-  if (state.holiday.active) {
-    return show(pick(state.holiday.message) || t('checkout.paused'), 'info');
-  }
+  if (!state.cart.lines.length) return block('empty');
+  if (state.holiday.active) return block('paused', pick(state.holiday.message));
   const online = state.online.enabled;
-  if (!state.cod.enabled && !online) return show(t('checkout.codUnavailable'), 'info');
+  if (!state.cod.enabled && !online) return block('nopay');
   // The choices the store offers: COD, online, and the delivery charge online.
   offer('online', online);
   offer('cod_with_advance', online && state.cod.enabled && state.online.advance !== 'never');
   offer('cod', state.cod.enabled && !(online && state.online.advance === 'always'));
   if (!state.cod.enabled) choose('online');
   else if (online && state.online.advance === 'always') choose('cod_with_advance');
-  renderSummary(state.cart);
   form.hidden = false;
+  renderSummary(state.cart);
   await setupAddress().catch(() => show(t('cart.error')));
   if (state.account) setupAccount(state.account);
   else if (state.accounts && cfg.links.account) {
     form.insertAdjacentElement(
       'beforebegin',
-      el('p', {}, el('a', { href: cfg.links.account, text: t('checkout.signIn') })),
+      el(
+        'p',
+        { class: 'sign-in-hint' },
+        el('a', { href: cfg.links.account, text: t('checkout.signIn') }),
+        ' ',
+        el('span', { class: 'muted', text: t('checkout.guest') }),
+      ),
     );
   }
+  showFacts();
   const box = document.querySelector<HTMLElement>('[data-turnstile]');
   if (state.turnstileSiteKey && box)
     check = mountTurnstile(box, state.turnstileSiteKey, cfg.locale);
   form.addEventListener('submit', (e) => void submit(e));
+  form.addEventListener('change', (e) => {
+    if ((e.target as HTMLInputElement).name === 'payment') payRow();
+  });
+  // A corrected field loses its error at once; the summary goes when none is left.
+  form.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (target.getAttribute('aria-invalid') !== 'true' || !target.name) return;
+    if (target.value.trim()) fieldError(target.name, '');
+    if (!form.querySelector('[aria-invalid=true]')) errorSummary([]);
+  });
   if (state.recovery.save) setupRecovery();
   tracker()?.beginCheckout(
     state.cart.lines.map((l) => ({

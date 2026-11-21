@@ -114,6 +114,7 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 
 **States**
 - Loading skeleton, "Adding…", "Placing your order…", page failed to load, stock changed before checkout, online payment failed or cancelled (using the store's existing payment messages).
+- In Bangla too (`StatesBn`): the storefront's own Bangla strings where they exist; the section labels drop the letter spacing, which breaks up Bangla conjuncts.
 
 ## Photo guidelines (for the admin)
 
@@ -162,7 +163,29 @@ New, needs building in the theme:
 14. **Expected delivery date on tracking.** The order view has no estimate. It can come from the delivery zone's days and the date the parcel was booked, or from the courier where its API gives one.
 15. **Saving details from the thank-you page.** An account created there by email code should take in the order just placed and its address. Today a guest order stays a guest order.
 
+## What to build next (Nov 2026)
+
+What is left from the boards and the list above, weighed by what it changes for shoppers: mostly phones, cash on delivery, worry about the delivery charge, fakes and when the parcel arrives. This is judgement, not usage data: the stores' analytics (searches with no results, where checkout is left) should confirm it. Items 1, 6, 8 and 9 above are built (ADR 0035).
+
+**Do next** (a big gain for small work):
+- **Expected delivery date on tracking** (item 14). *Built.* "When will it arrive?" is likely the store's most common call; a date range answers it. The zone's days plus the date the parcel was booked are enough.
+- **Bangla and Banglish search** (item 4). *Built (ADR 0035).* A search with no results is a lost sale, more than missing suggestions.
+- **Ways to pay in the footer.** *Built.* Cash on delivery and bKash or Nagad, shown on every page, build trust before the cart.
+- **Best selling sort** (item 2). *Built.* The best guide for a first visit; sales counts come from orders.
+- **Reorder from the account** (new). *Built.* Grocery shoppers buy the same things each week: one tap fills the cart again.
+
+**Later:**
+- **Reviews and ratings** (item 3): high value, but a project of its own (asking on WhatsApp after delivery, moderation, showing them).
+- **Products in search suggestions** (item 5): most catalogs are small enough for categories; worth it for big ones, after Bangla search, on the same matching.
+- **"Today's deals" link**: a collection the store chooses in the theme, not a new deals feature.
+- **Photo guidelines in the admin uploader** (item 11), **item photos on account orders** (item 13), **the grocery and fashion presets** (below).
+
+**Not now:**
+- **Delivery charge in the area list** (item 12): checkout already shows it, and flags an area the store doesn't serve, the moment the area is picked.
+- **"You may also like" in the cart**: suggestions at the point of ordering can pull the shopper away; only with real "bought together" data.
+- **Saving details from the thank-you page** (item 15): shoppers come back by phone number more than by account, and many stores keep accounts off.
+- **Popular searches** (too few searches in a small store), **the store's description in the footer**, **the desktop terms box position**, and **stock urgency** (item 10, left out on purpose).
+
 ## Still to design
 
 - The grocery and fashion presets in the new layout.
-- A Bangla version of the loading and error states board.

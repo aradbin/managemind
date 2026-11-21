@@ -64,12 +64,25 @@ const keys: StoreMessageKey[] = [
   'track.cancel',
   'track.cancelConfirm',
   'track.cancelled',
+  'thanks.copy',
+  'thanks.copied',
+  'thanks.copyNumber',
+  'thanks.advancePaid',
+  'thanks.saveTitle',
+  'thanks.saveText',
+  'thanks.saveAction',
+  'cart.continue',
 ];
 ---
 
-<ShopPage ctx={ctx} kind="thanks" title={t('thanks.title')} keys={keys}>
-  <div class="shop narrow" data-thanks aria-live="polite">
-    <h1>{t('thanks.title')}</h1>
+<ShopPage ctx={ctx} kind="thanks" title={t('thanks.title')} keys={keys} chrome="done">
+  <div class="thanks" data-thanks aria-live="polite">
+    <div class="thanks-head">
+      <span class="thanks-tick" aria-hidden="true">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10" /></svg>
+      </span>
+      <h1>{t('thanks.title')}</h1>
+    </div>
     <noscript><p>{t('thanks.next')}</p></noscript>
   </div>
   <script src="../scripts/order.ts"></script>

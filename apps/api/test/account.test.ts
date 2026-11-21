@@ -268,6 +268,21 @@ describe('shopper accounts', () => {
     expect(placed.res.status).toBe(201);
     const orders = await (await b.call('GET', '/v1/store/account/orders')).json();
     expect(orders).toHaveLength(1);
+
+    // Order again: the items back in the (now empty) cart; another shopper can't.
+    const again = await b.call(
+      'POST',
+      `/v1/store/account/orders/${orders[0].id}/reorder?locale=en`,
+      {},
+    );
+    expect(again.res.status).toBe(200);
+    expect(await again.json()).toMatchObject({ added: 1, skipped: 0, cart: { itemCount: 1 } });
+    const other = shopper(s.host);
+    await signIn(other, `other${Date.now()}@example.test`);
+    expect(
+      (await other.call('POST', `/v1/store/account/orders/${orders[0].id}/reorder`, {})).res.status,
+    ).toBe(404);
+    await b.call('DELETE', `/v1/store/cart/lines/${s.variant}`);
     const account = await (await b.call('GET', '/v1/store/account')).json();
     expect(account.profile).toMatchObject({ name: 'Rahim', phone: '+8801712345670' });
     expect(account.addresses).toHaveLength(1);

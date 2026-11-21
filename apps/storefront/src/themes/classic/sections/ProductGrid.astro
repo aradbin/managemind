@@ -1,4 +1,6 @@
 ---
+// A grid of products on a full-width pale band, with "View all" when it shows
+// a collection (design/storefront-redesign: Today's deals, New arrivals).
 import type { ProductCard } from '@managemind/core';
 import type { ThemeSection } from '@managemind/shared/storefront';
 import type { PageContext } from '../../../lib/page';
@@ -12,11 +14,21 @@ interface Props {
 }
 const { ctx, section, products, eager } = Astro.props;
 const heading = ctx.text(section.heading);
+const subheading = ctx.text(section.subheading);
+const all = section.collectionId
+  ? ctx.themeLink({ type: 'collection', id: section.collectionId })
+  : null;
 ---
 
 {products.length > 0 && (
-  <section class="section" aria-labelledby={`s-${section.id}`}>
-    <h2 id={`s-${section.id}`}>{heading}</h2>
+  <section class="section band" aria-labelledby={`s-${section.id}`}>
+    <div class="section-head">
+      <div class="section-title">
+        <h2 id={`s-${section.id}`}>{heading}</h2>
+        {subheading && <p>{subheading}</p>}
+      </div>
+      {all && <a href={all}>{ctx.t('section.viewAll')}<span class="visually-hidden">: {heading}</span></a>}
+    </div>
     <ProductList ctx={ctx} products={products} layout={section.layout} eagerFirst={eager} />
   </section>
 )}

@@ -5,7 +5,13 @@
 import { normalizeKey } from '../catalog/text';
 import type { RouteKind } from './urls';
 
-export const LISTING_SORTS = ['featured', 'newest', 'price_asc', 'price_desc'] as const;
+export const LISTING_SORTS = [
+  'featured',
+  'best_selling',
+  'newest',
+  'price_asc',
+  'price_desc',
+] as const;
 export type ListingSort = (typeof LISTING_SORTS)[number];
 
 export const LISTING_LIMITS = {
@@ -35,6 +41,8 @@ export interface ListingQuery {
   min?: number;
   max?: number;
   inStock: boolean;
+  /** Only products with a variant on sale (a sale price now, or a compare-at price). */
+  onSale?: boolean;
   /** A category slug (search pages only). */
   category?: string;
   /** Attribute filters by key, each with value keys (normalized labels). */
@@ -62,6 +70,7 @@ export function parseListingQuery(params: URLSearchParams, kind: RouteKind): Lis
     attributes: {},
     options: {},
   };
+  if (params.get('sale') === '1') query.onSale = true;
   if (kind === 'search') {
     const q = [...normalizeKey(params.get('q') ?? '')].slice(0, L.searchLength).join('').trim();
     if (q) query.q = q;
@@ -110,6 +119,7 @@ export const isFiltered = (q: ListingQuery): boolean =>
   q.min !== undefined ||
   q.max !== undefined ||
   q.inStock ||
+  q.onSale === true ||
   q.category !== undefined ||
   Object.keys(q.attributes).length > 0 ||
   Object.keys(q.options).length > 0;
@@ -129,11 +139,30 @@ export function listingQueryString(q: ListingQuery): string {
     entries.push([`o.${key}`, values.join(',')]);
   if (q.page > 1) entries.push(['page', String(q.page)]);
   if (q.q !== undefined) entries.push(['q', q.q]);
+  if (q.onSale) entries.push(['sale', '1']);
   if (q.sort !== 'featured') entries.push(['sort', q.sort]);
   if (q.inStock) entries.push(['stock', '1']);
   entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   if (!entries.length) return '';
   return `?${entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')}`;
+}
+
+/**
+ * One-tap price ranges for a listing whose prices reach `max` taka: a
+ * round step s (so "Under ৳500, ৳500 to ৳1,000, ৳1,000 to ৳2,000, Over
+ * ৳2,000") with 4s near the middle of the range. Bounds in whole taka; the
+ * first range has no min, the last no max. Too narrow a range gets none.
+ */
+export function priceRanges(maxTaka: number): { min?: number; max?: number }[] {
+  const STEPS = [10, 20, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10_000, 25_000, 50_000];
+  const step = [...STEPS].reverse().find((s) => 4 * s <= maxTaka * 0.6);
+  if (!step) return [];
+  return [
+    { max: step },
+    { min: step, max: 2 * step },
+    { min: 2 * step, max: 4 * step },
+    { min: 4 * step },
+  ];
 }
 
 /** The same listing with some parameters changed, as a canonical query string. */

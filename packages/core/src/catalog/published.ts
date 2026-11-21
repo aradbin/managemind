@@ -6,7 +6,12 @@
 // "available" or not.
 import { collectionRules, MEDIA_EXTENSIONS, type MediaType } from '@managemind/shared/catalog';
 import type { RichTextDoc } from '@managemind/shared/rich-text';
-import { LISTING_LIMITS, type ListingQuery } from '@managemind/shared/storefront/listing';
+import {
+  LISTING_LIMITS,
+  type ListingQuery,
+  parseListingQuery,
+  priceRanges,
+} from '@managemind/shared/storefront/listing';
 import { type SQL, sql } from 'drizzle-orm';
 import { effectivePriceSql } from '../orders/variants';
 import type { TenantTx } from '../tenant';
@@ -41,6 +46,19 @@ export interface ProductCard {
   available: boolean;
   brand: string | null;
   image: StoreImage | null;
+  /** The product's only live variant, so the card can add it straight to the cart; null when it has several. */
+  variantId: string | null;
+  /** The product's options in order, for the card's "4 sizes · 3 colours" line. */
+  options: CardOption[];
+}
+
+export interface CardOption {
+  /** In the shopper's language. */
+  name: string;
+  /** The option's normalized name in every language ("size", "সাইজ"), to recognise sizes and colours. */
+  keys: string[];
+  /** Normalized labels of the values live variants use, in order (English where there is one), for colour dots. */
+  values: string[];
 }
 
 type RawImage = {
@@ -78,6 +96,11 @@ const VARIANT_AVAILABLE = (v: SQL) => sql`(not ${v}.track_inventory or ${v}.allo
 const PRODUCT_AVAILABLE = sql`exists (select 1 from store.variants av
   where av.product_id = p.id and av.archived_at is null and ${VARIANT_AVAILABLE(sql`av`)})`;
 
+/** A live variant on sale: a sale price now, or a compare-at price above what it costs. */
+const PRODUCT_ON_SALE = sql`exists (select 1 from store.variants sv
+  where sv.product_id = p.id and sv.archived_at is null
+    and (${effectivePriceSql('sv')} < sv.price or sv.compare_at_price > ${effectivePriceSql('sv')}))`;
+
 /** The card of product `p`, with tl/td its translations in the shopper's and the default language. */
 const cardJson = (lang: Lang) => sql`json_build_object(
   'id', p.id,
@@ -99,7 +122,30 @@ const cardJson = (lang: Lang) => sql`json_build_object(
              where pa.product_id = p.id limit 1),
   'image', (select ${imageJson(sql`md`, lang)}
               from store.product_media pm join store.media md on md.id = pm.media_id
-             where pm.product_id = p.id order by pm.position limit 1))`;
+             where pm.product_id = p.id order by pm.position limit 1),
+  -- The only live variant, so the card can add it to the cart without a picker.
+  'variantId', (select case when count(*) = 1 then min(ov.id::text) end
+                  from store.variants ov where ov.product_id = p.id and ov.archived_at is null),
+  'options', coalesce((select json_agg(json_build_object(
+      'name', coalesce(ol.name, od.name),
+      'keys', (select coalesce(array_agg(distinct ok.name_key), '{}') from store.product_option_translations ok
+                where ok.option_id = o.id),
+      'values', (select coalesce(array_agg(vk.label_key order by vk.position), '{}')
+                   from (select pv.position,
+                                coalesce(
+                                  (select x.label_key from store.product_option_value_translations x
+                                    where x.value_id = pv.id and x.locale = 'en'),
+                                  (select x.label_key from store.product_option_value_translations x
+                                    where x.value_id = pv.id order by x.locale limit 1)) as label_key
+                           from store.product_option_values pv
+                          where pv.option_id = o.id and exists (
+                                select 1 from store.variant_option_values vov
+                                  join store.variants vv on vv.id = vov.variant_id and vv.archived_at is null
+                                 where vov.value_id = pv.id)) vk)) order by o.position)
+      from store.product_options o
+      left join store.product_option_translations ol on ol.option_id = o.id and ol.locale = ${lang.locale}
+      left join store.product_option_translations od on od.option_id = o.id and od.locale = ${lang.fallback}
+     where o.product_id = p.id), '[]'::json))`;
 
 const translationJoins = (lang: Lang) => sql`
   left join store.product_translations tl on tl.product_id = p.id and tl.locale = ${lang.locale}
@@ -166,6 +212,14 @@ export interface Facets {
   /** Search only: the categories of the results. */
   categories: { slug: string; name: string; count: number; selected: boolean }[];
   groups: Facet[];
+  /**
+   * One-tap price ranges (whole taka; the first has no min, the last no max)
+   * with their product counts, over the listing before its price filter.
+   */
+  priceRanges: { min?: number; max?: number; count: number; selected: boolean }[];
+  /** How many of the listing are in stock, and on sale. */
+  inStock: number;
+  onSale: number;
 }
 
 export interface Listing {
@@ -185,23 +239,36 @@ const categoryTree = (categoryId: SQL) => sql`(
 
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-/** Search matches on titles (either language), tags and SKUs, on the normalized text (§3.7). */
+/**
+ * Search matches on titles (either language), tags and SKUs, on the
+ * normalized text (§3.7), and on the sound key (migration 0052, kept with
+ * each title and tag by migration 0053), so a query
+ * in Latin letters finds a Bangla title ("korai", "kadai": কড়াই) and a
+ * Bangla one spelled another way finds it too.
+ */
 function searchMatch(q: string): SQL {
   const like = `%${escapeLike(q)}%`;
   return sql`(
     exists (select 1 from store.product_translations st where st.product_id = p.id
              and (app.search_text(st.title) %> app.search_text(${q})
-                  or app.search_text(st.title) like app.search_text(${like})))
+                  or app.search_text(st.title) like app.search_text(${like})
+                  or app.search_key_matches(st.search_key, app.search_key(${q}))))
     or exists (select 1 from store.product_tags sg where sg.product_id = p.id
              and (app.search_text(sg.tag) %> app.search_text(${q})
-                  or app.search_text(sg.tag) like app.search_text(${like})))
+                  or app.search_text(sg.tag) like app.search_text(${like})
+                  or app.search_key_matches(sg.search_key, app.search_key(${q}))))
     or exists (select 1 from store.variants sv where sv.product_id = p.id and sv.archived_at is null
              and lower(sv.sku) like ${`${escapeLike(q.toLowerCase())}%`}))`;
 }
 
-/** Relevance of a search result: the best title match, an exact SKU first. */
+/**
+ * Relevance of a search result: the best title match, an exact SKU first;
+ * a match by sound only counts a little less than one by spelling.
+ */
 const searchRank = (q: string) => sql`greatest(
-  coalesce((select max(word_similarity(app.search_text(${q}), app.search_text(st.title)))
+  coalesce((select max(greatest(
+                word_similarity(app.search_text(${q}), app.search_text(st.title)),
+                0.8 * word_similarity(app.search_key(${q}), st.search_key)))
               from store.product_translations st where st.product_id = p.id), 0),
   case when exists (select 1 from store.variants sv where sv.product_id = p.id
                      and sv.archived_at is null and lower(sv.sku) = ${q.toLowerCase()}) then 2 else 0 end)`;
@@ -246,12 +313,19 @@ const optionFilter = (key: string, values: string[]) => sql`exists (
    where fv.product_id = p.id and fv.archived_at is null
      and fvt.label_key = any(${sql.param(values)}::text[]))`;
 
-/** Filters other than the facets: price, stock and (search) category. */
+/** A price range in whole taka: products with a price in it (price_min..price_max overlaps). */
+function priceWithin(range: { min?: number | undefined; max?: number | undefined }): SQL[] {
+  const where: SQL[] = [];
+  if (range.min !== undefined) where.push(sql`p.price_max >= ${range.min * 100}`);
+  if (range.max !== undefined) where.push(sql`p.price_min <= ${range.max * 100}`);
+  return where;
+}
+
+/** Filters other than the facets and the price: stock, sale and (search) category. */
 function baseFilters(query: ListingQuery, lang: Lang): SQL[] {
   const where: SQL[] = [];
-  if (query.min !== undefined) where.push(sql`p.price_max >= ${query.min * 100}`);
-  if (query.max !== undefined) where.push(sql`p.price_min <= ${query.max * 100}`);
   if (query.inStock) where.push(PRODUCT_AVAILABLE);
+  if (query.onSale) where.push(PRODUCT_ON_SALE);
   if (query.category !== undefined) {
     const id = sql`(select ct.category_id from store.category_translations ct
       where ct.slug = ${query.category} and ct.locale in (${lang.locale}, ${lang.fallback}) limit 1)`;
@@ -271,6 +345,7 @@ function facetFilters(query: ListingQuery): SQL[] {
 async function orderSql(tx: TenantTx, scope: ListingScope, query: ListingQuery): Promise<SQL> {
   const newest = sql`p.created_at desc, p.id desc`;
   if (query.sort === 'newest') return newest;
+  if (query.sort === 'best_selling') return sql`coalesce(sold.units, 0) desc, ${newest}`;
   if (query.sort === 'price_asc') return sql`p.price_min asc nulls last, p.id`;
   if (query.sort === 'price_desc') return sql`p.price_min desc nulls last, p.id`;
   // Featured: the scope's own order.
@@ -315,16 +390,28 @@ export async function listPublishedProducts(
   const page = Math.max(1, Math.min(query.page, LISTING_LIMITS.maxPage));
   const offset = (page - 1) * pageSize;
   const scoped = await scopeSql(tx, scope);
-  const base = [sql`p.status = 'active'`, scoped, ...baseFilters(query, lang)];
+  const all = [sql`p.status = 'active'`, scoped];
+  const unpriced = [...all, ...baseFilters(query, lang)];
+  const base = [...unpriced, ...priceWithin(query)];
   const where = sql.join([...base, ...facetFilters(query)], sql` and `);
   const order = await orderSql(tx, scope, query);
+  // Best selling: units in orders of the last 90 days that weren't
+  // cancelled, summed once for the store and joined (DECISIONS.md).
+  const sold =
+    query.sort === 'best_selling'
+      ? sql`left join (
+          select ol.product_id, sum(ol.quantity)::int as units
+            from store.order_lines ol join store.orders o on o.id = ol.order_id
+           where o.status <> 'cancelled' and o.placed_at > now() - interval '90 days'
+           group by ol.product_id) sold on sold.product_id = p.id`
+      : sql``;
   const limit = Math.max(0, Math.min(pageSize, cap - offset));
 
   const { rows } =
     limit > 0
       ? await tx.db.execute<{ card: RawCard; total: number }>(sql`
           select ${cardJson(lang)} as card, count(*) over ()::int as total
-            from store.products p ${translationJoins(lang)}
+            from store.products p ${translationJoins(lang)} ${sold}
            where ${where}
            order by ${order}
            limit ${limit} offset ${offset}`)
@@ -345,8 +432,67 @@ export async function listPublishedProducts(
     facets:
       options.facets === false
         ? null
-        : await facets(tx, lang, sql.join(base, sql` and `), query, scope.type === 'search'),
+        : await facets(
+            tx,
+            lang,
+            {
+              all: sql.join(all, sql` and `),
+              base: sql.join(base, sql` and `),
+              unpriced: sql.join(unpriced, sql` and `),
+            },
+            query,
+            scope.type === 'search',
+          ),
   };
+}
+
+/**
+ * "Did you mean" for a search that found nothing (DECISIONS.md, "What to
+ * build next"): each word of the query that no product has is swapped for
+ * the closest word of the store's own titles and tags, by spelling or by
+ * sound. Offered only when the new query finds something.
+ */
+export async function didYouMean(tx: TenantTx, lang: Lang, q: string): Promise<string | null> {
+  const words = q.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+  if (!words.length) return null;
+  const out: string[] = [];
+  let changed = false;
+  for (const word of words) {
+    const { rows } = await tx.db.execute<{ word: string; score: number; same: boolean }>(sql`
+      with vocab as (
+        select distinct w from (
+          -- Not [:punct:]: it takes in Bangla's virama and would cut words.
+          select regexp_split_to_table(lower(st.title), '[[:space:],.;:!?()/"“”‘’|+&-]+') as w
+            from store.product_translations st join store.products p on p.id = st.product_id
+           where p.status = 'active'
+          union all
+          select lower(sg.tag) from store.product_tags sg join store.products p on p.id = sg.product_id
+           where p.status = 'active') x
+         where length(w) >= 2)
+      select w as word,
+             greatest(similarity(app.search_text(w), app.search_text(${word})),
+                      similarity(app.search_key(w), app.search_key(${word})))::float as score,
+             app.search_text(w) = app.search_text(${word}) as same
+        from vocab
+       -- A word in the query's own script first: Bangla for Bangla.
+       order by score desc, (w ~ '[\u0980-\u09FF]') = (${word} ~ '[\u0980-\u09FF]') desc, length(w)
+       limit 1`);
+    const best = rows[0];
+    if (best && !best.same && best.score >= 0.35) {
+      out.push(best.word);
+      changed = true;
+    } else out.push(word);
+  }
+  if (!changed) return null;
+  const suggestion = out.join(' ');
+  const found = await listPublishedProducts(
+    tx,
+    lang,
+    { type: 'search', q: suggestion },
+    parseListingQuery(new URLSearchParams({ q: suggestion }), 'search'),
+    { pageSize: 1, facets: false },
+  );
+  return found.total > 0 ? suggestion : null;
 }
 
 type FacetRow = {
@@ -359,25 +505,30 @@ type FacetRow = {
 };
 
 /**
- * Filter values with their product counts, from one grouped query over the
- * listing before its facet filters (so choosing a value never hides the
- * others), plus the price range and, for search, the result categories.
+ * Filter values with their product counts, from one grouped query: every
+ * value in the scope, counted over the listing before its facet filters (so
+ * choosing a value never hides the others). A value no product has under the
+ * other filters (in stock, on sale, the price) counts 0, so the page can
+ * show it greyed rather than drop it (design/storefront-redesign: Listing).
+ * Plus the price range and, for search, the result categories.
  */
 async function facets(
   tx: TenantTx,
   lang: Lang,
-  base: SQL,
+  where: { all: SQL; base: SQL; unpriced: SQL },
   query: ListingQuery,
   withCategories: boolean,
 ): Promise<Facets> {
+  const { base } = where;
   const { rows } = await tx.db.execute<FacetRow>(sql`
-    with base as (
-      select p.id, p.price_min, p.price_max from store.products p ${translationJoins(lang)} where ${base}
+    with scope as (
+      select p.id, p.price_min, p.price_max, (${base}) as hit
+        from store.products p ${translationJoins(lang)} where ${where.all}
     ), attrs as (
       select 'attribute' as type, a.key, coalesce(al.name, ad.name) as name, a.position as pos,
              coalesce(vl.label_key, vd.label_key) as value_key, coalesce(vl.label, vd.label) as label,
-             av.position as value_pos, count(distinct b.id)::int as count
-        from base b
+             av.position as value_pos, count(distinct b.id) filter (where b.hit)::int as count
+        from scope b
         join store.product_attributes pa on pa.product_id = b.id
         join store.attributes a on a.id = pa.attribute_id and a.filterable
              and a.type in ('choice', 'multi_choice')
@@ -391,8 +542,8 @@ async function facets(
       select 'option' as type, coalesce(ol.name_key, od.name_key) as key,
              min(coalesce(ol.name, od.name)) as name, 1000 as pos,
              coalesce(vl.label_key, vd.label_key) as value_key, min(coalesce(vl.label, vd.label)) as label,
-             min(ov.position) as value_pos, count(distinct b.id)::int as count
-        from base b
+             min(ov.position) as value_pos, count(distinct b.id) filter (where b.hit)::int as count
+        from scope b
         join store.variants v on v.product_id = b.id and v.archived_at is null
         join store.variant_option_values vo on vo.variant_id = v.id
         join store.product_option_values ov on ov.id = vo.value_id
@@ -403,7 +554,8 @@ async function facets(
        group by 2, 5
     ), price as (
       select 'price' as type, '' as key, '' as name, 0 as pos, min(price_min)::text as value_key,
-             max(price_max)::text as label, 0 as value_pos, count(*)::int as count from base
+             max(price_max)::text as label, 0 as value_pos, count(*)::int as count
+        from scope where hit
     )
     select type, key, name, value_key, label, count from (
       select * from attrs union all select * from opts union all select * from price) f
@@ -434,7 +586,9 @@ async function facets(
     });
   }
   // An option every product shares in one value (a lone "Size: Free") filters nothing.
-  const useful = [...groups.values()].filter((g) => g.values.length > 1 || g.values[0]?.selected);
+  const useful = [...groups.values()].filter(
+    (g) => g.values.filter((v) => v.count > 0).length > 1 || g.values.some((v) => v.selected),
+  );
 
   let categories: Facets['categories'] = [];
   if (withCategories) {
@@ -450,7 +604,53 @@ async function facets(
       .filter((c) => c.slug)
       .map((c) => ({ ...c, selected: c.slug === query.category }));
   }
-  return { price, categories, groups: useful };
+  return {
+    price,
+    categories,
+    groups: useful,
+    ...(await quickCounts(tx, lang, where.unpriced, query)),
+  };
+}
+
+/**
+ * The one-tap price ranges with their counts, over the listing before its
+ * price filter, and how many of the listing (price filter applied) are in
+ * stock and on sale.
+ */
+async function quickCounts(
+  tx: TenantTx,
+  lang: Lang,
+  unpriced: SQL,
+  query: ListingQuery,
+): Promise<Pick<Facets, 'priceRanges' | 'inStock' | 'onSale'>> {
+  const scope = sql`select p.id, p.price_min, p.price_max, ${PRODUCT_AVAILABLE} as available,
+      ${PRODUCT_ON_SALE} as on_sale from store.products p ${translationJoins(lang)} where ${unpriced}`;
+  const { rows: top } = await tx.db.execute<{ max: string | null }>(sql`
+    select max(price_max)::text as max from (${scope}) b`);
+  const ranges = priceRanges(Math.floor(Number(top[0]?.max ?? 0) / 100));
+  const priced = sql.join([sql`true`, ...priceWithin(query)], sql` and `);
+  const within = (r: { min?: number; max?: number }) =>
+    sql.join([sql`true`, ...priceWithin(r)], sql` and `);
+  const { rows } = await tx.db.execute<Record<string, number>>(sql`
+    select count(*) filter (where ${priced} and available)::int as in_stock,
+           count(*) filter (where ${priced} and on_sale)::int as on_sale
+           ${sql.join(
+             ranges.map(
+               (r, i) => sql`, count(*) filter (where ${within(r)})::int as ${sql.raw(`r${i}`)}`,
+             ),
+             sql``,
+           )}
+      from (${scope}) p`);
+  const counts = rows[0] ?? {};
+  return {
+    inStock: counts.in_stock ?? 0,
+    onSale: counts.on_sale ?? 0,
+    priceRanges: ranges.map((r, i) => ({
+      ...r,
+      count: counts[`r${i}`] ?? 0,
+      selected: query.min === r.min && query.max === r.max,
+    })),
+  };
 }
 
 // ---- Product pages ------------------------------------------------------------------

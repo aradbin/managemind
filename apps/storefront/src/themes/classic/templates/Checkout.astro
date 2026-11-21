@@ -1,13 +1,16 @@
 ---
+import type { ShopFacts } from '@managemind/core';
 import type { StoreMessageKey } from '../../../i18n';
 import { href } from '../../../lib/links';
 import type { PageContext } from '../../../lib/page';
+import AreaField from '../AreaField.astro';
 import ShopPage from '../ShopPage.astro';
 
 interface Props {
   ctx: PageContext;
+  facts?: ShopFacts | null;
 }
-const { ctx } = Astro.props;
+const { ctx, facts = null } = Astro.props;
 const { t, layout } = ctx;
 const email = layout.shop.email;
 const terms = layout.pages.find((p) => p.kind === 'terms');
@@ -63,88 +66,174 @@ const keys: StoreMessageKey[] = [
   'checkout.otpTooMany',
   'checkout.redirecting',
   'checkout.payLater',
+  'checkout.areaPick',
+  'checkout.areaNone',
+  'checkout.showSummary',
+  'checkout.totalBefore',
+  'checkout.payOnDelivery',
+  'checkout.payNow',
+  'checkout.payNowFee',
+  'checkout.trustDetails',
+  'checkout.trustReturns',
+  'checkout.trustHelp',
+  'checkout.guest',
+  'checkout.errorsTitle',
+  'checkout.name',
+  'checkout.phone',
+  'checkout.email',
+  'checkout.area',
+  'checkout.line',
+  'checkout.terms',
+  'cart.deliveryNote',
+  'cart.subtotalCount',
+  'cart.emptyText',
+  'cart.start',
+  'cart.promo',
+  'cart.code',
+  'cart.apply',
+  'cart.removeCode',
+  'cart.codeApplied',
+  'cart.code.not_found',
+  'cart.code.inactive',
+  'cart.code.used_up',
+  'cart.code.min_subtotal',
+  'cart.code.better_offer',
+  'cart.code.other',
+  'help.whatsapp',
+  'checkout.otpTitle',
+  'checkout.otpSentTo',
+  'checkout.changeNumber',
+  'checkout.otpAuto',
+  'checkout.otpWait',
+  'checkout.close',
+  'checkout.pausedNext',
+  'checkout.noPayNext',
+  'checkout.whatsapp',
+  'checkout.call',
+  'checkout.askDelivery',
+  'checkout.notAvailable',
+  'checkout.wasNow',
 ];
 ---
 
-<ShopPage ctx={ctx} kind="checkout" title={t('checkout.title')} keys={keys}>
+<ShopPage ctx={ctx} facts={facts} kind="checkout" title={t('checkout.title')} keys={keys} chrome="checkout">
   <h1>{t('checkout.title')}</h1>
   <noscript><p>{t('cart.noscript')}</p></noscript>
-  <p class="notice" data-notice role="alert" hidden></p>
-  <form class="shop-grid checkout" data-checkout novalidate hidden>
-    <div>
-      <fieldset>
+  {/* When the store can't take this order (paused, no way to pay) or the cart is empty: the form's place. */}
+  <section class="checkout-block" data-block hidden></section>
+  <form class="checkout" data-checkout novalidate hidden>
+    <div class="checkout-main">
+      <div class="checkout-notice" data-notice tabindex="-1" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.5" /></svg>
+        <span><strong data-notice-text></strong><span class="notice-links" data-notice-links hidden></span></span>
+      </div>
+      <div class="error-summary" data-error-summary role="alert" tabindex="-1" hidden>
+        <h2>{t('checkout.errorsTitle')}</h2>
+        <ul data-error-list></ul>
+      </div>
+      <fieldset class="checkout-card">
         <legend>{t('checkout.contact')}</legend>
-        <div class="field">
-          <label for="c-name">{t('checkout.name')}</label>
-          <input id="c-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="c-name-e" />
-          <p class="field-error" id="c-name-e"></p>
-        </div>
-        <div class="field">
-          <label for="c-phone">{t('checkout.phone')}</label>
-          <input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required aria-describedby="c-phone-h c-phone-s c-phone-e" />
-          <p class="muted small" id="c-phone-h">{t('checkout.phoneHint')}</p>
-          {/* Saved as typed, for the store to call if the order isn't finished (phase-6-plan §3.2). */}
-          <p class="muted small" id="c-phone-s" data-recovery hidden><span data-recovery-text>{t('checkout.saveNotice', { store: ctx.layout.store.name })}</span> <button type="button" class="link" data-dont-save>{t('checkout.dontSave')}</button></p>
-          <p class="field-error" id="c-phone-e"></p>
+        <div class="field-row">
+          <div class="field">
+            <label for="c-phone">{t('checkout.phone')}</label>
+            <input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required placeholder="01712-345678" aria-describedby="c-phone-h c-phone-s c-phone-e" />
+            <p class="hint" id="c-phone-h">{t('checkout.phoneHint')}</p>
+            {/* Saved as typed, for the store to call if the order isn't finished (phase-6-plan §3.2). */}
+            <p class="hint" id="c-phone-s" data-recovery hidden><span data-recovery-text>{t('checkout.saveNotice', { store: ctx.layout.store.name })}</span> <button type="button" class="link" data-dont-save>{t('checkout.dontSave')}</button></p>
+            <p class="field-error" id="c-phone-e"></p>
+          </div>
+          <div class="field">
+            <label for="c-name">{t('checkout.name')}</label>
+            <input id="c-name" name="name" autocomplete="name" maxlength="100" required aria-describedby="c-name-e" />
+            <p class="field-error" id="c-name-e"></p>
+          </div>
         </div>
         {email !== 'hidden' && (
-          <div class="field">
+          <div class="field narrow-field">
             <label for="c-email">{t('checkout.email')} {email === 'optional' && <span class="muted">{t('checkout.optional')}</span>}</label>
             <input id="c-email" name="email" type="email" autocomplete="email" maxlength="254" required={email === 'required'} aria-describedby="c-email-e" />
             <p class="field-error" id="c-email-e"></p>
           </div>
         )}
       </fieldset>
-      <fieldset>
+      <fieldset class="checkout-card">
         <legend>{t('checkout.address')}</legend>
-        <div class="field">
-          <label for="c-division">{t('checkout.division')}</label>
-          <select id="c-division" name="divisionId" required aria-describedby="c-division-e"><option value="">{t('checkout.choose')}</option></select>
-          <p class="field-error" id="c-division-e"></p>
-        </div>
-        <div class="field">
-          <label for="c-district">{t('checkout.district')}</label>
-          <select id="c-district" name="districtId" required disabled aria-describedby="c-district-e"><option value="">{t('checkout.choose')}</option></select>
-          <p class="field-error" id="c-district-e"></p>
-        </div>
-        <div class="field">
-          <label for="c-area">{t('checkout.area')}</label>
-          <select id="c-area" name="areaId" required disabled aria-describedby="c-area-e"><option value="">{t('checkout.choose')}</option></select>
-          <p class="field-error" id="c-area-e"></p>
-        </div>
+        <AreaField ctx={ctx} prefix="c" class="narrow-field" />
         <div class="field">
           <label for="c-line">{t('checkout.line')}</label>
-          <textarea id="c-line" name="line" rows="2" maxlength="250" autocomplete="street-address" required aria-describedby="c-line-e"></textarea>
+          <textarea id="c-line" name="line" rows="3" maxlength="250" autocomplete="street-address" required aria-describedby="c-line-e"></textarea>
           <p class="field-error" id="c-line-e"></p>
         </div>
-        <div class="field">
-          <label for="c-note">{t('checkout.note')} <span class="muted">{t('checkout.optional')}</span></label>
-          <textarea id="c-note" name="note" rows="2" maxlength="500"></textarea>
-        </div>
+        <p class="delivery-note" data-delivery-note hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /></svg>
+          <span data-delivery-text></span>
+        </p>
+        <details class="note-field">
+          <summary>{t('checkout.noteAsk')}</summary>
+          <div class="field">
+            <label for="c-note">{t('checkout.note')} <span class="muted">{t('checkout.optional')}</span></label>
+            <textarea id="c-note" name="note" rows="2" maxlength="500"></textarea>
+          </div>
+        </details>
       </fieldset>
-      <fieldset>
+      <fieldset class="checkout-card">
         <legend>{t('checkout.payment')}</legend>
-        <label class="choice" data-pay="cod"><input type="radio" name="payment" value="cod" checked /> <span><strong>{t('checkout.cod')}</strong><br /><span class="muted small">{t('checkout.codHint')}</span></span></label>
-        <label class="choice" data-pay="online" hidden><input type="radio" name="payment" value="online" /> <span><strong>{t('checkout.online')}</strong><br /><span class="muted small">{t('checkout.onlineHint')}</span></span></label>
-        <label class="choice" data-pay="cod_with_advance" hidden><input type="radio" name="payment" value="cod_with_advance" /> <span><strong>{t('checkout.advance')}</strong><br /><span class="muted small" data-advance-hint></span></span></label>
+        <label class="choice pay-choice" data-pay="cod"><input type="radio" name="payment" value="cod" checked /> <span><strong>{t('checkout.cod')}</strong><span class="hint">{t('checkout.codHint')}</span></span></label>
+        <label class="choice pay-choice" data-pay="online" hidden><input type="radio" name="payment" value="online" /> <span><strong>{t('checkout.online')}</strong><span class="hint">{t('checkout.onlineHint')}</span></span></label>
+        <label class="choice pay-choice" data-pay="cod_with_advance" hidden><input type="radio" name="payment" value="cod_with_advance" /> <span><strong>{t('checkout.advance')}</strong><span class="hint" data-advance-hint></span></span></label>
+        {layout.shop.termsCheckbox && (
+          <div class="field terms-field">
+            <label class="choice">
+              <input type="checkbox" name="acceptTerms" id="c-terms" required aria-describedby="c-terms-e" />
+              <span>{terms ? <a href={href(ctx.link, { kind: 'page', slug: terms.slug })} target="_blank" rel="noopener">{t('checkout.terms')}</a> : t('checkout.terms')}</span>
+            </label>
+            <p class="field-error" id="c-terms-e"></p>
+          </div>
+        )}
       </fieldset>
-      {layout.shop.termsCheckbox && (
-        <div class="field">
-          <label class="choice">
-            <input type="checkbox" name="acceptTerms" required aria-describedby="c-terms-e" />
-            <span>{terms ? <a href={href(ctx.link, { kind: 'page', slug: terms.slug })} target="_blank" rel="noopener">{t('checkout.terms')}</a> : t('checkout.terms')}</span>
-          </label>
-          <p class="field-error" id="c-terms-e"></p>
-        </div>
-      )}
       <div data-turnstile></div>
     </div>
-    <aside class="summary">
-      <h2>{t('checkout.summary')}</h2>
-      <div data-summary aria-live="polite"></div>
-      <button type="submit" class="button wide" data-place>{t('checkout.place')}</button>
-      <p><a href={href(ctx.link, { kind: 'cart' })}>{t('checkout.backToCart')}</a></p>
+    <aside class="checkout-side">
+      <details class="summary-fold" data-summary-fold>
+        <summary><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7" /></svg><span data-fold-label>{t('checkout.summary')}</span><strong data-fold-total></strong></summary>
+        <div class="summary">
+          <div class="summary-head">
+            <h2>{t('checkout.summary')}</h2>
+            <a href={href(ctx.link, { kind: 'cart' })}>{t('checkout.editCart')}</a>
+          </div>
+          <div data-summary aria-live="polite"></div>
+        </div>
+      </details>
+      <div class="place-box">
+        <p class="pay-row"><span data-pay-label>{t('checkout.payOnDelivery')}</span><strong data-pay-amount></strong></p>
+        <button type="submit" class="button wide" data-place>{t('checkout.place')}</button>
+        <ul class="trust checkout-trust" role="list" data-trust></ul>
+        <p class="trust-short"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10V8a6 6 0 0 1 12 0v2M5 10h14v11H5z" /></svg>{t('checkout.trustShort')}</p>
+      </div>
     </aside>
   </form>
+  {/* The store asks this phone for a code by SMS first (phase-5a-plan §3.14): a dialog, a bottom sheet on phones. */}
+  <dialog class="sheet-dialog otp-dialog" data-otp aria-labelledby="otp-title">
+    <div class="sheet-head">
+      <h2 id="otp-title">{t('checkout.otpTitle')}</h2>
+      <button type="button" class="sheet-close" data-otp-close aria-label={t('checkout.close')}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <p>{t('checkout.otpNeeded')}</p>
+    <p class="otp-to">{t('checkout.otpSentTo')} <strong data-otp-phone></strong> <button type="button" class="link" data-otp-change>{t('checkout.changeNumber')}</button></p>
+    <div class="field">
+      <label for="c-otp">{t('checkout.otpLabel')}</label>
+      <input id="c-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="c-otp-h c-otp-s" />
+      <p class="hint" id="c-otp-h">{t('checkout.otpAuto')}</p>
+      <p class="otp-status" id="c-otp-s" role="status" data-otp-status></p>
+    </div>
+    <button type="button" class="button wide" data-otp-verify>{t('checkout.otpVerify')}</button>
+    <button type="button" class="link otp-resend" data-otp-resend disabled></button>
+  </dialog>
+  <script is:inline>
+    // Desktop shows the order summary beside the form; phones start with it folded.
+    (function(){var d=document.querySelector('[data-summary-fold]');if(d&&matchMedia('(min-width: 900px)').matches)d.open=true;})();
+  </script>
   <script src="../scripts/checkout.ts"></script>
 </ShopPage>

@@ -9,7 +9,13 @@ import {
   purgeTagsFor,
   storeTag,
 } from './cache';
-import { isFiltered, listingQueryString, parseListingQuery, withListing } from './listing';
+import {
+  isFiltered,
+  listingQueryString,
+  parseListingQuery,
+  priceRanges,
+  withListing,
+} from './listing';
 import { canonicalPath, parseStorePath, storePath } from './urls';
 
 const SAREE = 'লাল-শাড়ি';
@@ -140,9 +146,29 @@ describe('listing parameters', () => {
     expect(parse(`o.size=${values}`).options.size).toHaveLength(20);
   });
 
+  it('reads On sale as a filter', () => {
+    const q = parse('sale=1&stock=1');
+    expect(q.onSale).toBe(true);
+    expect(isFiltered(q)).toBe(true);
+    expect(listingQueryString(q)).toBe('?sale=1&stock=1');
+    expect(parse('sale=yes').onSale).toBeUndefined();
+  });
+
+  it('offers four round price ranges, or none for a narrow listing', () => {
+    expect(priceRanges(5000)).toEqual([
+      { max: 500 },
+      { min: 500, max: 1000 },
+      { min: 1000, max: 2000 },
+      { min: 2000 },
+    ]);
+    expect(priceRanges(450)[0]).toEqual({ max: 50 });
+    expect(priceRanges(50)).toEqual([]);
+  });
+
   it('resets the page when a filter changes', () => {
     const q = parse('page=3&sort=newest');
     expect(withListing(q, { inStock: true })).toBe('?sort=newest&stock=1');
+    expect(withListing(q, { onSale: true })).toBe('?sale=1&sort=newest');
   });
 });
 
@@ -213,6 +239,8 @@ describe('cache tags', () => {
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['returns'] }))).toEqual([legalTag(t)]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['recovery'] }))).toEqual([legalTag(t)]);
     expect(purgeTagsFor(ev('delivery.zones.changed'))).toEqual([legalTag(t)]);
+    expect(purgeTagsFor(ev('credentials.changed', { kind: 'sslcommerz' }))).toEqual([storeTag(t)]);
+    expect(purgeTagsFor(ev('credentials.changed', { kind: 'sms' }))).toEqual([]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['tax'] }))).toEqual([]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['profile'] }))).toEqual([storeTag(t)]);
     expect(

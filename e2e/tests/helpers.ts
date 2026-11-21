@@ -142,6 +142,48 @@ const SCRIPT_BUDGET = 50 * 1024;
  * and Google's tags load only after consent, and Turnstile only on the pages
  * that need it; they are not ours to count.
  */
+/**
+ * After Add to cart on a product page: the mini-cart panel opens on desktops,
+ * and a note shows above the buy bar on phones.
+ */
+export async function expectAddedToCart(page: Page): Promise<void> {
+  await expect(
+    page.locator('[data-mini-cart][open], [data-added-toast]:not([hidden])'),
+  ).toBeVisible();
+}
+
+/**
+ * Checkout's Area field: types the area's name and picks it by ID from the
+ * list, which also tells two areas of the same name apart.
+ */
+/**
+ * Answers the cookie banner when the store shows one (a store with tracking
+ * tags; on phones it covers the pinned checkout and Place order bars). The
+ * answer holds for the rest of the browser context.
+ */
+export async function answerConsent(page: Page): Promise<void> {
+  const consent = page.getByRole('region', { name: /^(Cookie consent|কুকি সম্মতি)$/ });
+  // The banner's script shows it once the page has loaded.
+  const shown = await consent
+    .waitFor({ state: 'visible', timeout: 3000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!shown) return;
+  await consent.getByRole('button', { name: /^(Reject|প্রত্যাখ্যান করুন)$/ }).click();
+  await expect(consent).toBeHidden();
+}
+
+export async function pickArea(
+  page: Page,
+  area: { name: string; id: number | string },
+  /** The field's id prefix: `c` on checkout, `ad` in the account's address form. */
+  prefix = 'c',
+): Promise<void> {
+  await page.locator(`#${prefix}-area-q`).fill(area.name);
+  await page.locator(`#${prefix}-area-list [role="option"][data-area="${area.id}"]`).click();
+  await expect(page.locator(`#${prefix}-area-field [data-area-chosen]`)).toBeVisible();
+}
+
 export async function expectScriptBudget(page: Page, what: string): Promise<void> {
   const scripts = await page.evaluate(() =>
     [...document.querySelectorAll('script')]

@@ -18,6 +18,7 @@ import {
 import { type ListingQuery, parseListingQuery } from '@managemind/shared/storefront/listing';
 import type { SitemapPart } from '@managemind/shared/storefront/urls';
 import { eq, sql } from 'drizzle-orm';
+import { type ShopFacts, shopFacts, takesOnlinePayment } from '../catalog/legal';
 import {
   publishedPageBySlug,
   type StorePage,
@@ -25,6 +26,7 @@ import {
   storePageLinks,
 } from '../catalog/pages';
 import {
+  didYouMean,
   imageJson,
   type Lang,
   type Listing,
@@ -75,7 +77,13 @@ export interface StoreLayout {
   storefront: StorefrontSettings;
   numerals: 'bengali' | 'latin' | null;
   /** What the shopper pages need to know (phase-4-plan §3.16). */
-  shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };
+  shop: {
+    accounts: boolean;
+    termsCheckbox: boolean;
+    email: 'optional' | 'required' | 'hidden';
+    /** The ways to pay, for the footer: cash on delivery, and online (SSLCommerz: cards, bKash, Nagad, bank). */
+    pay: { cod: boolean; online: boolean };
+  };
   /**
    * Whether the browser pixel reports purchases. Not when the store reports
    * them to Meta from the server once confirmed (phase-9-plan §3.1.6, Q5).
@@ -154,6 +162,7 @@ export async function storeLayout(
         accounts: row.settings.checkout.accounts,
         termsCheckbox: row.settings.checkout.termsCheckbox,
         email: row.settings.checkout.email,
+        pay: { cod: row.settings.cod.enabled, online: await takesOnlinePayment(tx) },
       },
       pixelPurchase: row.settings.meta.purchaseAt === 'placed',
     },
@@ -248,6 +257,8 @@ export type Found<T> = { found: T } | { redirect: string } | null;
 export interface ProductPageData {
   product: StoreProduct;
   related: ProductCard[];
+  /** Delivery, cash on delivery and returns, for the box beside the buy buttons. */
+  facts: ShopFacts;
 }
 
 /** A product page: the product and related products, or a redirect for an old slug. */
@@ -261,11 +272,14 @@ export async function productPage(
   if (!hit || 'redirect' in hit)
     return { data: hit, tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)] };
   const related = options.related ? await relatedProducts(tx, lang, hit.found) : [];
+  const facts = await shopFacts(tx);
   return {
-    data: { found: { product: hit.found, related } },
-    // Related products' tags too, so an archived one never stays linked for a day.
+    data: { found: { product: hit.found, related, facts } },
+    // Related products' tags too, so an archived one never stays linked for a day;
+    // the legal tag for the delivery, COD and returns box.
     tags: [
       storeTag(tx.tenantId),
+      legalTag(tx.tenantId),
       productTag(tx.tenantId, hit.found.id),
       ...cardTags(tx.tenantId, related),
     ],
@@ -332,11 +346,18 @@ export async function searchPage(
   tx: TenantTx,
   lang: Lang,
   query: ListingQuery,
-): Promise<PageResult<{ listing: Listing | null; query: ListingQuery }>> {
+): Promise<
+  PageResult<{ listing: Listing | null; query: ListingQuery; suggestion: string | null }>
+> {
   if (!query.q)
-    return { data: { listing: null, query }, tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)] };
+    return {
+      data: { listing: null, query, suggestion: null },
+      tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)],
+    };
   const listing = await listPublishedProducts(tx, lang, { type: 'search', q: query.q }, query);
-  return { data: { listing, query }, tags: listingTags(tx.tenantId, listing) };
+  // Nothing found: "Did you mean" from the store's own words.
+  const suggestion = listing.total === 0 ? await didYouMean(tx, lang, query.q) : null;
+  return { data: { listing, query, suggestion }, tags: listingTags(tx.tenantId, listing) };
 }
 
 export async function staticPage(

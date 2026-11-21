@@ -1,0 +1,48 @@
+---
+// The quick-add picker (design/storefront-redesign: QuickAdd): Choose options
+// on a listing or search card opens it instead of the product page, so a
+// shopper picks a size or colour without leaving the list, which prevents
+// wrong-size orders. A dialog centred on desktop, a bottom sheet on phones.
+// scripts/quick-add.ts fills it from the product's page data (/api/pages/
+// products/{slug}); the link still goes to the product page without scripts.
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t, locale, d } = ctx;
+const messages = {
+  add: t('cart.add'),
+  adding: t('cart.adding'),
+  error: t('cart.error'),
+  added: t('card.added'),
+  inStock: t('quick.inStock'),
+  soldOut: t('quick.soldOut'),
+  unavailable: t('product.unavailable'),
+  regular: t('product.regular'),
+  cart: href(ctx.link, { kind: 'cart' }),
+};
+---
+
+<dialog class="quick-add" aria-labelledby="qa-title" data-quick-add data-locale={locale} data-numerals={d.numerals} data-messages={JSON.stringify(messages)}>
+  <div class="qa-head">
+    <div class="qa-media"><img alt="" hidden data-qa-image /></div>
+    <div class="qa-summary">
+      <h2 id="qa-title" data-qa-title></h2>
+      <p class="qa-price"><span data-qa-price></span><s class="compare" data-qa-compare hidden></s></p>
+      <p class="qa-stock" role="status" data-qa-stock></p>
+    </div>
+    <button type="button" class="qa-close" data-qa-close aria-label={t('quick.close')}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+  <div class="qa-options" data-qa-options></div>
+  <div class="qa-actions">
+    <button type="button" class="button wide" data-qa-add>{t('cart.add')}</button>
+    <p class="line-problem" role="alert" data-qa-error></p>
+    <a class="qa-details" href="#" data-qa-details>{t('quick.details')}</a>
+  </div>
+</dialog>
+<script src="./scripts/quick-add.ts"></script>

@@ -1,0 +1,41 @@
+---
+// Recently viewed (design/storefront-redesign: Main, HomePhone, Product): the
+// products this shopper opened last, from their browser's storage, with
+// "Clear history". Each product page keeps a copy of its card there
+// (scripts/recent.ts), so the cached page stays the same for everyone and
+// the section appears only once there is something to show.
+import type { ThemeSection } from '@managemind/shared/storefront';
+import { href } from '../../../lib/links';
+import type { PageContext } from '../../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'recently_viewed' }>;
+  /** The product on screen, left out of the list. */
+  except?: string;
+}
+const { ctx, section, except } = Astro.props;
+const { t } = ctx;
+const heading = ctx.text(section.heading) || t('recent.title');
+const messages = {
+  add: t('cart.add'),
+  addAria: t('card.addAria', { product: '{product}' }),
+  added: t('card.added'),
+  choose: t('card.choose'),
+  chooseAria: t('card.chooseAria', { product: '{product}' }),
+  adding: t('cart.adding'),
+  error: t('cart.error'),
+  out: t('product.outOfStock'),
+  regular: t('product.regular'),
+  cart: href(ctx.link, { kind: 'cart' }),
+};
+---
+
+<section class="section" aria-labelledby={`s-${section.id}`} data-recent data-store={ctx.layout.store.slug} data-locale={ctx.locale} data-except={except} data-messages={JSON.stringify(messages)} hidden>
+  <div class="section-head">
+    <h2 id={`s-${section.id}`}>{heading}</h2>
+    <button type="button" class="link-button" data-recent-clear>{t('recent.clear')}</button>
+  </div>
+  <ul class="grid" role="list"></ul>
+</section>
+<script src="../scripts/recent.ts"></script>

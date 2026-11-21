@@ -3,7 +3,13 @@
 import { schema } from '@managemind/db';
 import { permissionsOf } from '@managemind/shared';
 import { presetTheme } from '@managemind/shared/storefront';
-import { listsTag, pageTag, productTag, storeTag } from '@managemind/shared/storefront/cache';
+import {
+  legalTag,
+  listsTag,
+  pageTag,
+  productTag,
+  storeTag,
+} from '@managemind/shared/storefront/cache';
 import { parseListingQuery } from '@managemind/shared/storefront/listing';
 import { sql } from 'drizzle-orm';
 import type pg from 'pg';
@@ -329,7 +335,14 @@ describe('page queries', () => {
     const lang = { locale: 'bn' as const, fallback: 'bn' as const };
     const page = await run((tx) => productPage(tx, lang, productSlug));
     expect(page.data && 'found' in page.data && page.data.found.product.title).toBe('সিলেটি চা');
-    expect(page.tags).toEqual([storeTag(store), productTag(store, productId)]);
+    // The delivery, COD and returns box changes with the legal settings.
+    expect(page.tags).toEqual([storeTag(store), legalTag(store), productTag(store, productId)]);
+    expect(page.data && 'found' in page.data && page.data.found.facts).toMatchObject({
+      cod: true,
+      online: false,
+      returns: { windowDays: 7 },
+      zones: expect.any(Array),
+    });
     expect((await run((tx) => productPage(tx, lang, 'missing-product'))).data).toBeNull();
   });
 

@@ -6,9 +6,11 @@ import { type Head, storeLd } from '../../../lib/seo';
 import Layout from '../Layout.astro';
 import CategoryGrid from '../sections/CategoryGrid.astro';
 import CollectionCarousel from '../sections/CollectionCarousel.astro';
+import HelpStrip from '../sections/HelpStrip.astro';
 import Hero from '../sections/Hero.astro';
 import ImageWithText from '../sections/ImageWithText.astro';
 import ProductGrid from '../sections/ProductGrid.astro';
+import RecentlyViewed from '../sections/RecentlyViewed.astro';
 import RichText from '../sections/RichText.astro';
 import TrustBadges from '../sections/TrustBadges.astro';
 
@@ -41,7 +43,7 @@ const hasH1 =
   theme.sections[0]?.type === 'hero' && Boolean(ctx.text(theme.sections[0].slides[0]?.heading));
 ---
 
-<Layout ctx={ctx} head={head} languageHref={languageHref}>
+<Layout ctx={ctx} head={head} languageHref={languageHref} tab="home">
   {!hasH1 && <h1 class="visually-hidden">{layout.store.name}</h1>}
   {theme.sections.map((section, i) => {
     switch (section.type) {
@@ -59,6 +61,10 @@ const hasH1 =
         return <RichText ctx={ctx} section={section} />;
       case 'trust_badges':
         return <TrustBadges ctx={ctx} section={section} />;
+      case 'help_strip':
+        return <HelpStrip ctx={ctx} section={section} />;
+      case 'recently_viewed':
+        return <RecentlyViewed ctx={ctx} section={section} />;
       default:
         return null;
     }

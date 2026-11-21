@@ -15,7 +15,13 @@ import { type APIRequestContext, expect, type Page, test } from '@playwright/tes
 import { bn } from '../../apps/admin/src/i18n/bn';
 import { ordersBn } from '../../apps/admin/src/i18n/orders-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
-import { expectAccessible, expectScriptBudget, signIn } from './helpers';
+import {
+  expectAccessible,
+  expectAddedToCart,
+  expectScriptBudget,
+  pickArea,
+  signIn,
+} from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
 import { API, STOREFRONT } from './urls';
 
@@ -154,8 +160,8 @@ test('sales recovery', async ({ page, browser, viewport: size, hasTouch }, info)
   await test.step('a shopper fills in checkout, sees it is saved, and leaves', async () => {
     const shopper = await (await browser.newContext({ viewport: size, hasTouch })).newPage();
     await shopper.goto(store(`/products/${products[0]?.slug}`));
-    await shopper.getByRole('button', { name: s('cart.add') }).click();
-    await expect(shopper.getByText(s('cart.added'))).toBeVisible();
+    await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
+    await expectAddedToCart(shopper);
     await shopper.goto(store('/checkout'));
     await expect(
       shopper.getByRole('heading', { name: s('checkout.title'), level: 1 }),
@@ -164,9 +170,8 @@ test('sales recovery', async ({ page, browser, viewport: size, hasTouch }, info)
     await expect(shopper.getByRole('button', { name: s('checkout.dontSave') })).toBeVisible();
     await shopper.locator('#c-phone').fill(phone);
     await shopper.locator('#c-name').fill(shopperName);
-    await shopper.locator('#c-division').selectOption(String(DHAKA.division));
-    await shopper.locator('#c-district').selectOption(String(DHAKA.district));
-    await shopper.locator('#c-area').selectOption(String(DHAKA.area));
+    // Dhanmondi, in Dhaka.
+    await pickArea(shopper, { name: 'Dhanmondi', id: DHAKA.area });
     // Saved 2 seconds after the last change, with everything typed by then.
     const saved = shopper.waitForResponse(
       (r) =>

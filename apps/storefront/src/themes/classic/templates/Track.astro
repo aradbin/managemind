@@ -90,14 +90,39 @@ const keys: StoreMessageKey[] = [
   'thanks.deliverTo',
   'checkout.required',
   'checkout.badPhone',
+  'track.orderNumber',
+  'track.waiting',
+  'track.expectLater',
+  'track.expected',
+  'track.deliveredOn',
+  'track.currentStep',
+  'step.placed',
+  'step.confirmed',
+  'step.confirmedNote',
+  'step.waitingNote',
+  'step.prepared',
+  'step.preparedNote',
+  'step.onTheWay',
+  'step.onTheWayNote',
+  'step.delivered',
+  'step.deliveredNote',
+  'track.payment',
+  'track.payCod',
+  'track.paid',
+  'track.deliveringTo',
+  'track.another',
+  'track.whatsapp',
+  'pay.due',
+  'pay.now',
 ];
 ---
 
 <ShopPage ctx={ctx} kind="track" title={t('track.title')} keys={keys}>
-  <div class="shop narrow">
+  <div class="track-page">
     <h1>{t('track.title')}</h1>
-    <p>{t('track.intro')}</p>
-    <form class="track" data-track novalidate>
+    <p class="muted" data-track-intro>{t('track.intro')}</p>
+    <form class="track track-card" data-track novalidate>
+      <div class="field-row">
       <div class="field">
         <label for="t-number">{t('track.number')}</label>
         <input id="t-number" name="number" required maxlength="30" autocomplete="off" aria-describedby="t-number-e" />
@@ -108,7 +133,9 @@ const keys: StoreMessageKey[] = [
         <input id="t-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" aria-describedby="t-phone-e" />
         <p class="field-error" id="t-phone-e"></p>
       </div>
+      </div>
       <button type="submit" class="button">{t('track.submit')}</button>
+      <p class="hint">{t('track.whereNumber')}</p>
     </form>
     <p class="notice" data-notice role="alert" hidden></p>
     <div data-order aria-live="polite"></div>

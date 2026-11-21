@@ -80,6 +80,7 @@ const bangla = {
   TrackPhone: 'অর্ডার ট্র্যাক, ফোন (বাংলা)',
   Account: 'অ্যাকাউন্ট (বাংলা)',
   AccountPhone: 'অ্যাকাউন্ট, ফোন (বাংলা)',
+  States: 'লোডিং ও সমস্যার অবস্থা, ফোন (বাংলা)',
 };
 
 const swap = (text, from, to, name) => {

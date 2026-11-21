@@ -1,5 +1,12 @@
 ---
+// The site footer of the redesign (design/storefront-redesign: SiteFooter and
+// PhoneFooter): the store name and contact, Shop (the top-level categories),
+// Help (tracking, the account and the store's own pages), the ways to pay,
+// the business details
+// the guidelines ask for, then the legal pages, cookie settings and the
+// language link along the bottom.
 import { formatPhone } from '@managemind/shared';
+import type { PageKind } from '@managemind/shared/storefront';
 import { number } from '../../lib/format';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
@@ -8,9 +15,12 @@ interface Props {
   ctx: PageContext;
   /** Shows "Cookie settings" when the store has tracking tags. */
   consent: boolean;
+  /** This page in the other language. */
+  languageHref: string;
 }
-const { ctx, consent } = Astro.props;
-const { layout, t, d } = ctx;
+const { ctx, consent, languageHref } = Astro.props;
+const { layout, t, d, locale } = ctx;
+const other = locale === 'bn' ? 'en' : 'bn';
 const profile = layout.store.profile;
 const business = [
   ['footer.businessName', profile.businessName],
@@ -22,25 +32,50 @@ const address = profile.address
   ? [profile.address.line1, profile.address.line2, profile.address.city].filter(Boolean).join(', ')
   : null;
 const year = number(new Date().getUTCFullYear(), d).replace(/[,،]/g, '');
+const LEGAL: readonly PageKind[] = ['terms', 'privacy'];
+const legal = layout.pages.filter((p) => LEGAL.includes(p.kind));
+const help = layout.pages.filter((p) => !LEGAL.includes(p.kind));
+const roots = layout.categories.filter((c) => c.parentId === null).slice(0, 8);
+// Ways to pay (design/storefront-redesign: SiteFooter): cash on delivery, and
+// what SSLCommerz takes when the store has it.
+const pay = layout.shop.pay ?? { cod: false, online: false };
+const ways = [
+  ...(pay.cod ? (['footer.cod'] as const) : []),
+  ...(pay.online ? (['footer.bkash', 'footer.nagad', 'footer.card', 'footer.bank'] as const) : []),
+];
 ---
 
 <footer class="site-footer">
-  <div class="wrap footer-cols">
-    {layout.pages.length > 0 && (
-      <nav aria-labelledby="footer-pages">
-        <h2 id="footer-pages">{t('footer.pages')}</h2>
-        <ul>
-          {layout.pages.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
+  <div class="wrap footer-grid">
+    <section class="footer-store" aria-labelledby="footer-contact">
+      <h2 id="footer-contact" class="footer-name">{layout.store.name}</h2>
+      <ul role="list">
+        {profile.contactPhone && <li><a href={`tel:${profile.contactPhone}`}>{formatPhone(profile.contactPhone, d.numerals)}</a></li>}
+        {profile.contactEmail && <li><a href={`mailto:${profile.contactEmail}`}>{profile.contactEmail}</a></li>}
+        {address && <li>{address}</li>}
+      </ul>
+    </section>
+    {roots.length > 0 && (
+      <nav id="footer-shop" aria-labelledby="footer-shop-title">
+        <h2 id="footer-shop-title">{t('footer.shop')}</h2>
+        <ul role="list">
+          {roots.map((c) => <li><a href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a></li>)}
         </ul>
       </nav>
     )}
-    {(profile.contactPhone || profile.contactEmail || address) && (
-      <section aria-labelledby="footer-contact">
-        <h2 id="footer-contact">{t('footer.contact')}</h2>
-        <ul>
-          {profile.contactPhone && <li><a href={`tel:${profile.contactPhone}`}>{formatPhone(profile.contactPhone, d.numerals)}</a></li>}
-          {profile.contactEmail && <li><a href={`mailto:${profile.contactEmail}`}>{profile.contactEmail}</a></li>}
-          {address && <li>{address}</li>}
+    <nav aria-labelledby="footer-help">
+      <h2 id="footer-help">{t('footer.help')}</h2>
+      <ul role="list">
+        <li><a href={href(ctx.link, { kind: 'track' })}>{t('track.title')}</a></li>
+        {layout.shop.accounts && <li><a href={href(ctx.link, { kind: 'account' })}>{t('nav.account')}</a></li>}
+        {help.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
+      </ul>
+    </nav>
+    {ways.length > 0 && (
+      <section class="footer-pay" aria-labelledby="footer-pay">
+        <h2 id="footer-pay">{t('footer.waysToPay')}</h2>
+        <ul role="list" class="pay-chips">
+          {ways.map((key) => <li>{t(key)}</li>)}
         </ul>
       </section>
     )}
@@ -48,13 +83,17 @@ const year = number(new Date().getUTCFullYear(), d).replace(/[,،]/g, '');
       <section aria-labelledby="footer-business">
         <h2 id="footer-business">{t('footer.business')}</h2>
         <dl>
-          {business.map(([key, value]) => (<><dt>{t(key)}</dt><dd>{value}</dd></>))}
+          {business.map(([key, value]) => (<div><dt>{t(key)}</dt><dd>{value}</dd></div>))}
         </dl>
       </section>
     )}
   </div>
-  <div class="wrap" style="margin-top:24px">
-    {consent && <p><button type="button" class="linkish" data-consent-open>{t('footer.cookies')}</button></p>}
+  <div class="wrap footer-bottom">
     <p>{t('footer.rights', { year, store: layout.store.name })}</p>
+    <ul role="list">
+      {legal.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
+      {consent && <li><button type="button" class="linkish" data-consent-open>{t('footer.cookies')}</button></li>}
+      <li><a href={languageHref} hreflang={other} lang={other}>{other === 'bn' ? 'বাংলা' : 'English'}</a></li>
+    </ul>
   </div>
 </footer>

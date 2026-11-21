@@ -22,11 +22,14 @@ import { promotionsBn } from '../../apps/admin/src/i18n/promotions-bn';
 import { type StoreMessageKey, bn as shopBn } from '../../apps/storefront/src/i18n';
 import {
   addProduct,
+  answerConsent,
   choose,
   expectAccessible,
+  expectAddedToCart,
   expectScriptBudget,
   mailCount,
   nextMail,
+  pickArea,
   signIn,
 } from './helpers';
 import { DEV_TOKEN, people, RUN } from './people';
@@ -205,29 +208,41 @@ test('orders, promotions and accounts', async ({
     const shopper = await shopperPage();
     for (const item of products) {
       await shopper.goto(store(`/products/${item.slug}`));
-      await shopper.getByRole('button', { name: s('cart.add') }).click();
-      await expect(shopper.getByText(s('cart.added'))).toBeVisible();
+      await shopper.getByRole('button', { name: s('cart.add'), exact: true }).click();
+      await expectAddedToCart(shopper);
     }
     await shopper.goto(store('/cart'));
     await expect(shopper.getByRole('heading', { name: s('cart.title'), level: 1 })).toBeVisible();
+    // A store with tracking tags shows a cookie banner, which covers the phone's pinned bars.
+    await answerConsent(shopper);
     await expect(shopper.getByText(products[0]?.title as string)).toBeVisible();
+    // The code field folds under "Have a promo code?" (design/storefront-redesign: Cart).
+    await shopper.getByText(s('cart.promo'), { exact: true }).click();
     await shopper.getByLabel(s('cart.code')).fill(code.toLowerCase());
     await shopper.getByRole('button', { name: s('cart.apply') }).click();
     await expect(shopper.getByText(s('cart.codeApplied', { code }))).toBeVisible();
     await expectAccessible(shopper, 'cart');
     await expectScriptBudget(shopper, 'the cart');
 
-    await shopper.getByRole('link', { name: s('cart.checkout') }).click();
+    // The summary's link on desktops, the pinned bar's shorter one on phones.
+    await shopper
+      .getByRole('link', {
+        name: new RegExp(`^(${s('cart.checkout')}|${s('cart.checkoutShort')})$`),
+      })
+      .first()
+      .click();
     await expect(
       shopper.getByRole('heading', { name: s('checkout.title'), level: 1 }),
     ).toBeVisible();
     await shopper.locator('#c-phone').fill(phone);
     await shopper.locator('#c-name').fill('ই২ই ক্রেতা');
-    await shopper.locator('#c-division').selectOption(DHAKA.division);
-    await shopper.locator('#c-district').selectOption(DHAKA.district);
-    await shopper.locator('#c-area').selectOption(DHAKA.area);
+    // Dhanmondi, in Dhaka.
+    await pickArea(shopper, { name: 'Dhanmondi', id: DHAKA.area });
     await shopper.locator('#c-line').fill('বাড়ি ১, সড়ক ২');
     await expect(shopper.getByText(s('checkout.chooseArea'))).toBeHidden();
+    // Phones fold the order summary at the top: open it.
+    const fold = shopper.locator('[data-summary-fold] > summary');
+    if (await fold.isVisible()) await fold.click();
     // ৳1,050 of ৳1,500, now that the area gives a delivery charge.
     await expect(shopper.getByText(pattern(s('cart.freeDelivery')))).toBeVisible();
     await expectAccessible(shopper, 'checkout');
@@ -235,7 +250,7 @@ test('orders, promotions and accounts', async ({
     await shopper.getByRole('button', { name: s('checkout.place') }).click();
 
     await expect(shopper.getByRole('heading', { name: s('thanks.title'), level: 1 })).toBeVisible();
-    const head = shopper.locator('.order-head dd').first();
+    const head = shopper.locator('.order-number strong');
     await expect(head).toHaveText(/\S/);
     number = (await head.textContent())?.trim() ?? '';
     await expect(shopper.getByText(pattern(s('thanks.cod')))).toBeVisible();
@@ -480,6 +495,28 @@ test('orders, promotions and accounts', async ({
     await shopper.getByRole('button', { name: s('account.signIn'), exact: true }).click();
     await expect(shopper.getByText(s('account.hello', { email }))).toBeVisible();
     await expectAccessible(shopper, 'account');
+
+    // A saved address, with checkout's searchable Area field; Delete offers Undo.
+    await shopper.getByRole('link', { name: s('account.addresses') }).click();
+    await shopper.getByRole('button', { name: s('account.addAddress') }).click();
+    const form = shopper.locator('form[data-address]');
+    await form.getByLabel(s('account.name'), { exact: true }).fill('E2E Shopper');
+    await form.getByLabel(s('account.phone'), { exact: true }).fill('01711000123');
+    await pickArea(shopper, { name: 'Dhanm', id: 513 }, 'ad');
+    await form.getByLabel(s('checkout.line'), { exact: true }).fill('House 1, Road 2');
+    await expectAccessible(shopper, 'account address form');
+    await form.getByRole('button', { name: s('account.save') }).click();
+    const card = shopper.locator('.address-card');
+    await expect(card).toHaveCount(1);
+    await card
+      .getByRole('button', { name: s('account.deleteLabel', { label: 'E2E Shopper' }) })
+      .click();
+    await expect(card).toHaveCount(0);
+    await shopper
+      .getByRole('status')
+      .getByRole('button', { name: s('account.undo') })
+      .click();
+    await expect(card).toHaveCount(1);
     await shopper.context().close();
   });
 });

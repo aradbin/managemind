@@ -1,0 +1,36 @@
+---
+// One searchable Area field (design/storefront-redesign: "One searchable Area
+// field instead of three dropdowns"), for checkout and the account's saved
+// addresses: a few letters of the thana, upazila or district, in either
+// language; the pick shows as a card with Change. scripts/area-field.ts
+// runs it over the geography file; the three hidden inputs carry the ids.
+import type { PageContext } from '../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  /** The ids' prefix: `c` on checkout, `ad` on the account page. */
+  prefix: string;
+  class?: string;
+}
+const { ctx, prefix, class: extra } = Astro.props;
+const { t } = ctx;
+const id = (s: string) => `${prefix}-${s}`;
+---
+
+<div class:list={['field', 'area-field', extra]} id={id('area-field')} data-area-field>
+  <label for={id('area-q')}>{t('checkout.area')}</label>
+  <p class="hint" id={id('area-h')}>{t('checkout.areaHint')}</p>
+  <div class="area-search" data-area-search>
+    <input id={id('area-q')} type="text" role="combobox" autocomplete="off" aria-autocomplete="list" aria-controls={id('area-list')} aria-expanded="false" aria-describedby={`${id('area-h')} ${id('area-e')}`} placeholder={t('checkout.areaPlaceholder')} />
+    <ul id={id('area-list')} role="listbox" aria-label={t('checkout.area')} hidden></ul>
+  </div>
+  <div class="area-chosen" data-area-chosen hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><path d="M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" /></svg>
+    <span><strong data-area-name></strong><span data-area-place></span></span>
+    <button type="button" class="link" data-area-change>{t('checkout.change')}</button>
+  </div>
+  <input type="hidden" name="divisionId" id={id('division')} data-area-division />
+  <input type="hidden" name="districtId" id={id('district')} data-area-district />
+  <input type="hidden" name="areaId" id={id('area')} data-area-id />
+  <p class="field-error" id={id('area-e')}></p>
+</div>

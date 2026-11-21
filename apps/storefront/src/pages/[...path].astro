@@ -4,7 +4,7 @@ import { env } from 'cloudflare:workers';
 // the API for its data and the layout, then the store's theme renders it.
 // The page marks itself cacheable with its cache tags (lib/cache.ts) unless
 // it is a preview. Old slugs answer a 301 to the current one, cached too.
-import type { StoreProduct } from '@managemind/core';
+import type { ShopFacts, StoreProduct } from '@managemind/core';
 import { parseStorePath } from '@managemind/shared/storefront/urls';
 import StoreMessage from '../layouts/StoreMessage.astro';
 import {
@@ -112,8 +112,8 @@ const page = body?.page;
 {!message && result?.kind === 'error' && result.status === 429 && <StoreMessage kind="busy" name={store?.name ?? ''} host={host} />}
 {ctx && theme && (() => {
   // Shopper pages are shells around the layout; their scripts fetch the rest.
-  if (route?.kind === 'cart') return <theme.Cart ctx={ctx} />;
-  if (route?.kind === 'checkout') return <theme.Checkout ctx={ctx} />;
+  if (route?.kind === 'cart') return <theme.Cart ctx={ctx} facts={page as ShopFacts | null} />;
+  if (route?.kind === 'checkout') return <theme.Checkout ctx={ctx} facts={page as ShopFacts | null} />;
   if (route?.kind === 'thanks') return <theme.Thanks ctx={ctx} />;
   if (route?.kind === 'track') return <theme.Track ctx={ctx} />;
   if (route?.kind === 'confirm') return <theme.Confirm ctx={ctx} />;
@@ -140,7 +140,7 @@ const page = body?.page;
     }
     case 'search': {
       const p = page as SearchPage;
-      return <theme.Listing ctx={ctx} route={route} title="" listing={p.listing} query={p.query} noindex />;
+      return <theme.Listing ctx={ctx} route={route} title="" listing={p.listing} query={p.query} suggestion={p.suggestion ?? null} noindex />;
     }
     case 'page':
       return <theme.StaticPage ctx={ctx} page={page as StorePage} noindex={noindex} />;

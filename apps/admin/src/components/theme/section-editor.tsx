@@ -1,10 +1,15 @@
 // One homepage section's settings (phase-3-plan §3.4): texts in both
 // languages, images, links, and what each kind of section shows.
 import type { RichTextDoc } from '@managemind/shared/rich-text';
-import { type ThemeSection, TRUST_ICONS } from '@managemind/shared/storefront';
+import {
+  MAX_HERO_TILES,
+  type ThemeLink,
+  type ThemeSection,
+  TRUST_ICONS,
+} from '@managemind/shared/storefront';
 import { useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
-import { useLocale } from '../../i18n';
+import { type AdminKey, useLocale } from '../../i18n';
 import { categoriesQuery, categoryOptions, collectionsQuery, pick } from '../../lib/catalog';
 import { DescriptionField } from '../catalog/description-field';
 import { LANGUAGE_NAMES, type Lang, otherLang } from '../catalog/language-tabs';
@@ -49,7 +54,50 @@ export function newSection(type: ThemeSection['type']): ThemeSection {
       return { type, id, heading: {}, body: {} };
     case 'trust_badges':
       return { type, id, items: [{ icon: 'cod', title: {}, text: {} }] };
+    case 'help_strip':
+      return { type, id, heading: {}, text: {} };
+    case 'recently_viewed':
+      return { type, id, heading: {} };
   }
+}
+
+type ButtonValue = { label: { bn?: string; en?: string }; link: ThemeLink } | null;
+
+/** A button: where it goes, then its text once it goes somewhere. */
+function ButtonFields({
+  value,
+  onChange,
+  common,
+  linkLabel,
+  textLabel = 'section.buttonLabel',
+  disabled,
+}: {
+  value: ButtonValue | undefined;
+  onChange: (button: ButtonValue) => void;
+  common: { defaultLang: Lang; disabled: boolean; stacked: boolean };
+  linkLabel?: AdminKey;
+  textLabel?: AdminKey;
+  disabled?: boolean | undefined;
+}) {
+  return (
+    <>
+      <LinkPicker
+        value={value?.link ?? null}
+        disabled={disabled}
+        {...(linkLabel ? { label: linkLabel } : {})}
+        onChange={(link) => onChange(link ? { label: value?.label ?? {}, link } : null)}
+      />
+      {value && (
+        <LocalizedField
+          {...common}
+          label={textLabel}
+          maxLength={40}
+          value={value.label}
+          onChange={(label) => onChange({ ...value, label })}
+        />
+      )}
+    </>
+  );
 }
 
 function Choice<V extends string>({
@@ -208,6 +256,13 @@ export function SectionEditor({
                 />
                 <LocalizedField
                   {...common}
+                  label="section.eyebrow"
+                  maxLength={40}
+                  value={slide.eyebrow ?? {}}
+                  onChange={(eyebrow) => setSlide({ ...slide, eyebrow })}
+                />
+                <LocalizedField
+                  {...common}
                   label="section.heading"
                   maxLength={80}
                   value={slide.heading}
@@ -220,28 +275,20 @@ export function SectionEditor({
                   value={slide.subheading}
                   onChange={(subheading) => setSlide({ ...slide, subheading })}
                 />
-                <LinkPicker
-                  value={slide.button?.link ?? null}
+                <ButtonFields
+                  value={slide.button}
+                  common={common}
                   disabled={disabled}
-                  onChange={(link) =>
-                    setSlide({
-                      ...slide,
-                      button: link ? { label: slide.button?.label ?? {}, link } : null,
-                    })
-                  }
+                  onChange={(button) => setSlide({ ...slide, button })}
                 />
                 {slide.button && (
-                  <LocalizedField
-                    {...common}
-                    label="section.buttonLabel"
-                    maxLength={40}
-                    value={slide.button.label}
-                    onChange={(label) =>
-                      setSlide({
-                        ...slide,
-                        button: slide.button ? { ...slide.button, label } : null,
-                      })
-                    }
+                  <ButtonFields
+                    value={slide.secondaryButton}
+                    common={common}
+                    disabled={disabled}
+                    linkLabel="section.secondLink"
+                    textLabel="section.secondButtonLabel"
+                    onChange={(secondaryButton) => setSlide({ ...slide, secondaryButton })}
                   />
                 )}
                 {section.slides.length > 1 && (
@@ -279,6 +326,81 @@ export function SectionEditor({
               </Button>
             </div>
           )}
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="font-medium">{t('section.tiles')}</p>
+              <p className="text-sm text-muted-foreground">{t('section.tilesHint')}</p>
+            </div>
+            {(section.tiles ?? []).map((tile, i) => {
+              const tiles = section.tiles ?? [];
+              const setTile = (next: typeof tile) =>
+                onChange({ ...section, tiles: tiles.map((x, j) => (j === i ? next : x)) });
+              return (
+                <fieldset
+                  key={i}
+                  className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3"
+                >
+                  <legend className="px-1 font-medium">{t('section.tile', { n: i + 1 })}</legend>
+                  <ImagePicker
+                    label={t('section.image')}
+                    mediaId={tile.mediaId}
+                    disabled={disabled}
+                    onChange={(mediaId) => setTile({ ...tile, mediaId })}
+                  />
+                  <LocalizedField
+                    {...common}
+                    label="section.heading"
+                    maxLength={60}
+                    value={tile.heading}
+                    onChange={(heading) => setTile({ ...tile, heading })}
+                  />
+                  <LocalizedField
+                    {...common}
+                    label="section.text"
+                    maxLength={120}
+                    value={tile.text}
+                    onChange={(text) => setTile({ ...tile, text })}
+                  />
+                  <ButtonFields
+                    value={tile.button}
+                    common={common}
+                    disabled={disabled}
+                    onChange={(button) => setTile({ ...tile, button })}
+                  />
+                  <div>
+                    <Button
+                      variant="ghost"
+                      disabled={disabled}
+                      onClick={() =>
+                        onChange({ ...section, tiles: tiles.filter((_, j) => j !== i) })
+                      }
+                    >
+                      {t('section.removeTile', { n: i + 1 })}
+                    </Button>
+                  </div>
+                </fieldset>
+              );
+            })}
+            {(section.tiles ?? []).length < MAX_HERO_TILES && (
+              <div>
+                <Button
+                  variant="secondary"
+                  disabled={disabled}
+                  onClick={() =>
+                    onChange({
+                      ...section,
+                      tiles: [
+                        ...(section.tiles ?? []),
+                        { mediaId: null, heading: {}, text: {}, button: null },
+                      ],
+                    })
+                  }
+                >
+                  {t('section.addTile')}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       );
     case 'category_grid':
@@ -331,6 +453,13 @@ export function SectionEditor({
             value={section.heading}
             onChange={(heading) => onChange({ ...section, heading })}
           />
+          <LocalizedField
+            {...common}
+            label="section.subheading"
+            maxLength={120}
+            value={section.subheading ?? {}}
+            onChange={(subheading) => onChange({ ...section, subheading })}
+          />
           <div className="flex flex-col gap-3.5">
             <Choice
               label={t('section.collection')}
@@ -349,17 +478,6 @@ export function SectionEditor({
               disabled={disabled}
               options={[4, 6, 8, 12, 16, 24].map((n) => ({ value: String(n), label: String(n) }))}
               onChange={(n) => onChange({ ...section, limit: Number(n) })}
-            />
-            <Choice
-              chips
-              label={t('section.layout')}
-              value={section.layout}
-              disabled={disabled}
-              options={[
-                { value: 'grid', label: t('section.layout.grid') },
-                { value: 'carousel', label: t('section.layout.carousel') },
-              ]}
-              onChange={(layout) => onChange({ ...section, layout })}
             />
           </div>
         </div>
@@ -400,30 +518,12 @@ export function SectionEditor({
             value={section.text}
             onChange={(text) => onChange({ ...section, text })}
           />
-          <LinkPicker
-            value={section.button?.link ?? null}
+          <ButtonFields
+            value={section.button}
+            common={common}
             disabled={disabled}
-            onChange={(link) =>
-              onChange({
-                ...section,
-                button: link ? { label: section.button?.label ?? {}, link } : null,
-              })
-            }
+            onChange={(button) => onChange({ ...section, button })}
           />
-          {section.button && (
-            <LocalizedField
-              {...common}
-              label="section.buttonLabel"
-              maxLength={40}
-              value={section.button.label}
-              onChange={(label) =>
-                onChange({
-                  ...section,
-                  button: section.button ? { ...section.button, label } : null,
-                })
-              }
-            />
-          )}
         </div>
       );
     case 'rich_text':
@@ -516,6 +616,40 @@ export function SectionEditor({
               </Button>
             </div>
           )}
+        </div>
+      );
+    case 'help_strip':
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t('section.helpHint')}</p>
+          <LocalizedField
+            {...common}
+            label="section.heading"
+            maxLength={80}
+            value={section.heading}
+            onChange={(heading) => onChange({ ...section, heading })}
+          />
+          <LocalizedField
+            {...common}
+            multiline
+            label="section.text"
+            maxLength={200}
+            value={section.text}
+            onChange={(text) => onChange({ ...section, text })}
+          />
+        </div>
+      );
+    case 'recently_viewed':
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">{t('section.recentHint')}</p>
+          <LocalizedField
+            {...common}
+            label="section.heading"
+            maxLength={80}
+            value={section.heading}
+            onChange={(heading) => onChange({ ...section, heading })}
+          />
         </div>
       );
   }

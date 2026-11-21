@@ -9,6 +9,7 @@ import {
   deleteShopperAddress,
   type OrderSettings,
   orderSettings,
+  reorderToCart,
   shopperAddresses,
   shopperOrders,
   shopperProfile,
@@ -26,6 +27,7 @@ import type { AppEnv } from '../env';
 import { sendOtp, smsGatewayFor, verifyOtp } from '../otp/index';
 import { verifyTurnstile } from '../turnstile';
 import { shopSiteKey } from '../turnstile-hosts';
+import { ShopperCart } from './cart-schema';
 import {
   CART_COOKIE,
   cartCookies,
@@ -33,7 +35,9 @@ import {
   cookie,
   inShopStore,
   limiterFor,
+  setCartCookies,
   shopperIp,
+  toShopperCart,
   withShopStore,
 } from './commerce';
 import {
@@ -228,6 +232,21 @@ export const ACCOUNT_ROUTES = {
       'Orders',
     ),
   }),
+  reorder: r({
+    method: 'post',
+    path: '/account/orders/{id}/reorder',
+    summary: 'Order again: the order’s items back into the cart, at today’s prices',
+    request: { headers: Host, params: z.object({ id: z.uuid() }) },
+    responses: json(
+      z.object({
+        cart: ShopperCart,
+        /** Items that went in (some with fewer than ordered), and items no longer sold. */
+        added: z.number().int(),
+        skipped: z.number().int(),
+      }),
+      'The cart',
+    ),
+  }),
   addAddress: r({
     method: 'post',
     path: '/account/addresses',
@@ -368,6 +387,20 @@ export function registerAccount(app: OpenAPIHono<AppEnv>): void {
   app.openapi(R.accountOrders, (async (c: Context<AppEnv>) => {
     c.header('Cache-Control', 'no-store');
     return c.json(await asShopper(c, (tx, userId) => shopperOrders(tx, userId)), 200);
+  }) as never);
+  app.openapi(R.reorder, (async (c: Context<AppEnv>) => {
+    await limiterFor(c).check('cart:ip', shopperIp(c));
+    const locale = c.req.query('locale') === 'en' ? 'en' : 'bn';
+    const orderId = c.req.param('id') ?? '';
+    const change = await asShopper(c, (tx, userId) =>
+      reorderToCart(tx, cookie(c, CART_COOKIE), { userId, orderId }, locale),
+    );
+    setCartCookies(c, change.token, change.cart.itemCount);
+    c.header('Cache-Control', 'no-store');
+    return c.json(
+      { cart: toShopperCart(change.cart), added: change.added, skipped: change.skipped },
+      200,
+    );
   }) as never);
   app.openapi(R.addAddress, (async (c: Context<AppEnv>) => {
     const input = await c.req.json();

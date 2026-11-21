@@ -17,11 +17,11 @@ const heading = ctx.text(section.heading);
 {collections.length > 0 && (
   <section class="section" aria-labelledby={`s-${section.id}`}>
     <h2 id={`s-${section.id}`}>{heading}</h2>
-    <ul class="carousel" role="list">
+    <ul class="tiles scroll" role="list">
       {collections.map((c) => (
         <li>
           <a class="tile" href={href(ctx.link, { kind: 'collection', slug: c.slug })}>
-            <div class="tile-media" style="aspect-ratio: var(--card-ratio)">{c.image && <Img image={c.image} alt="" sizes="(min-width: 900px) 23vw, 44vw" />}</div>
+            <div class="tile-media" style="aspect-ratio: var(--card-ratio)">{c.image && <Img image={c.image} alt="" sizes="(min-width: 900px) 12vw, 40vw" />}</div>
             <span>{c.name}</span>
           </a>
         </li>

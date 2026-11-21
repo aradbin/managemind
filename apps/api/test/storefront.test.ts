@@ -14,7 +14,7 @@ import {
 import { connect } from '@managemind/db/testing';
 import { permissionsOf } from '@managemind/shared';
 import { signPreviewToken } from '@managemind/shared/storefront';
-import { productTag, storeTag } from '@managemind/shared/storefront/cache';
+import { legalTag, productTag, storeTag } from '@managemind/shared/storefront/cache';
 import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { createApp } from '../src/app';
@@ -103,9 +103,12 @@ describe('store pages', () => {
     const body: Json = await res.json();
     expect(body.page.product.title).toBe('A product');
     expect(body.layout.store).toMatchObject({ slug: a.slug, defaultLocale: 'bn' });
+    // The footer's ways to pay: cash on delivery, no gateway set up.
+    expect(body.layout.shop.pay).toEqual({ cod: true, online: false });
     expect(body.redirect).toBeNull();
     expect(res.headers.get('x-cache-tags')).toBe(
-      `${storeTag(a.id)},${productTag(a.id, productId)}`,
+      // The legal tag: delivery, COD and returns show beside the buy buttons.
+      `${storeTag(a.id)},${legalTag(a.id)},${productTag(a.id, productId)}`,
     );
     expect(res.headers.get('cache-control')).toBe('public, max-age=60');
     const tag = res.headers.get('etag') as string;
@@ -157,6 +160,19 @@ describe('store pages', () => {
     expect(((await page.json()) as Json).page.title).toBe('আমাদের কথা');
     const layout: Json = await (await get('/v1/store/pages/layout', a.host)).json();
     expect(layout.layout.pages.map((p: Json) => p.slug)).toContain('about');
+  });
+
+  it('serves the cart and checkout shell with what the store promises', async () => {
+    const res = await get('/v1/store/pages/shop', a.host);
+    expect(res.status).toBe(200);
+    const body: Json = await res.json();
+    expect(body.layout.store.slug).toBe(a.slug);
+    expect(body.page).toMatchObject({
+      cod: true,
+      returns: { windowDays: 7 },
+      zones: expect.any(Array),
+    });
+    expect(res.headers.get('x-cache-tags')).toBe(`${storeTag(a.id)},${legalTag(a.id)}`);
   });
 
   it('limits search misses to 30 a minute per shopper', async () => {

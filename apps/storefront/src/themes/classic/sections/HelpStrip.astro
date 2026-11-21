@@ -1,0 +1,43 @@
+---
+// "Need help choosing?" (design/storefront-redesign: Main, HomePhone): a dark
+// strip with the store's WhatsApp and phone. The numbers come from the chat
+// settings and the store profile; with neither, the strip isn't shown.
+import { formatPhone } from '@managemind/shared';
+import { type ThemeSection, whatsappLink } from '@managemind/shared/storefront';
+import type { PageContext } from '../../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+  section: Extract<ThemeSection, { type: 'help_strip' }>;
+}
+const { ctx, section } = Astro.props;
+const { t, layout, d } = ctx;
+const chat = layout.storefront.chat;
+const whatsapp = chat.show !== 'none' ? (chat.whatsapp ?? null) : null;
+const phone = layout.store.profile.contactPhone ?? null;
+const heading = ctx.text(section.heading);
+const text = ctx.text(section.text);
+---
+
+{(whatsapp || phone) && (
+  <section class="section help-strip" aria-labelledby={heading ? `s-${section.id}` : undefined}>
+    <div class="help-text">
+      {heading && <h2 id={`s-${section.id}`}>{heading}</h2>}
+      {text && <p>{text}</p>}
+    </div>
+    <div class="help-buttons">
+      {whatsapp && (
+        <a class="button light" href={whatsappLink(whatsapp, ctx.text(chat.greeting) || undefined)} target="_blank" rel="noopener">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" /></svg>
+          {t('help.whatsapp')}
+        </a>
+      )}
+      {phone && (
+        <a class="button outline" href={`tel:${phone}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>
+          {t('help.call', { phone: formatPhone(phone, d.numerals) })}
+        </a>
+      )}
+    </div>
+  </section>
+)}

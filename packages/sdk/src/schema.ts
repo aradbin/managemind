@@ -184,6 +184,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/pages/shop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The layout and what the store promises (delivery, cash on delivery, returns), for the cart and checkout */
+        get: {
+            parameters: {
+                query?: {
+                    locale?: "bn" | "en";
+                };
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The page, or a redirect */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+                /** @description Not modified (If-None-Match) */
+                304: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not found; the layout is still there for the 404 page */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StorePage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/pages/home": {
         parameters: {
             query?: never;
@@ -1974,6 +2030,50 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/account/orders/{id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Order again: the order’s items back into the cart, at today’s prices */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cart: components["schemas"]["ShopperCart"];
+                            added: number;
+                            skipped: number;
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -6152,11 +6252,99 @@ export interface paths {
                             slides: {
                                 /** Format: uuid */
                                 mediaId: string | null;
+                                eyebrow?: {
+                                    bn?: string;
+                                    en?: string;
+                                };
                                 heading: {
                                     bn?: string;
                                     en?: string;
                                 };
                                 subheading: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                button: {
+                                    label: {
+                                        bn?: string;
+                                        en?: string;
+                                    };
+                                    link: {
+                                        /** @enum {string} */
+                                        type: "category";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "collection";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "product";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "page";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "search";
+                                        q: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "url";
+                                        /** Format: uri */
+                                        url: string;
+                                    };
+                                } | null;
+                                secondaryButton?: {
+                                    label: {
+                                        bn?: string;
+                                        en?: string;
+                                    };
+                                    link: {
+                                        /** @enum {string} */
+                                        type: "category";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "collection";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "product";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "page";
+                                        /** Format: uuid */
+                                        id: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "search";
+                                        q: string;
+                                    } | {
+                                        /** @enum {string} */
+                                        type: "url";
+                                        /** Format: uri */
+                                        url: string;
+                                    };
+                                } | null;
+                            }[];
+                            tiles?: {
+                                /** Format: uuid */
+                                mediaId: string | null;
+                                heading: {
+                                    bn?: string;
+                                    en?: string;
+                                };
+                                text: {
                                     bn?: string;
                                     en?: string;
                                 };
@@ -6220,6 +6408,10 @@ export interface paths {
                             type: "product_grid";
                             id: string;
                             heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            subheading?: {
                                 bn?: string;
                                 en?: string;
                             };
@@ -6308,6 +6500,26 @@ export interface paths {
                                     en?: string;
                                 };
                             }[];
+                        } | {
+                            /** @enum {string} */
+                            type: "help_strip";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
+                            text: {
+                                bn?: string;
+                                en?: string;
+                            };
+                        } | {
+                            /** @enum {string} */
+                            type: "recently_viewed";
+                            id: string;
+                            heading: {
+                                bn?: string;
+                                en?: string;
+                            };
                         })[];
                         pages: {
                             product: {
@@ -18264,11 +18476,99 @@ export interface components {
                 slides: {
                     /** Format: uuid */
                     mediaId: string | null;
+                    eyebrow?: {
+                        bn?: string;
+                        en?: string;
+                    };
                     heading: {
                         bn?: string;
                         en?: string;
                     };
                     subheading: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    button: {
+                        label: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        link: {
+                            /** @enum {string} */
+                            type: "category";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "collection";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "product";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "page";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "search";
+                            q: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "url";
+                            /** Format: uri */
+                            url: string;
+                        };
+                    } | null;
+                    secondaryButton?: {
+                        label: {
+                            bn?: string;
+                            en?: string;
+                        };
+                        link: {
+                            /** @enum {string} */
+                            type: "category";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "collection";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "product";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "page";
+                            /** Format: uuid */
+                            id: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "search";
+                            q: string;
+                        } | {
+                            /** @enum {string} */
+                            type: "url";
+                            /** Format: uri */
+                            url: string;
+                        };
+                    } | null;
+                }[];
+                tiles?: {
+                    /** Format: uuid */
+                    mediaId: string | null;
+                    heading: {
+                        bn?: string;
+                        en?: string;
+                    };
+                    text: {
                         bn?: string;
                         en?: string;
                     };
@@ -18332,6 +18632,10 @@ export interface components {
                 type: "product_grid";
                 id: string;
                 heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                subheading?: {
                     bn?: string;
                     en?: string;
                 };
@@ -18420,6 +18724,26 @@ export interface components {
                         en?: string;
                     };
                 }[];
+            } | {
+                /** @enum {string} */
+                type: "help_strip";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
+                text: {
+                    bn?: string;
+                    en?: string;
+                };
+            } | {
+                /** @enum {string} */
+                type: "recently_viewed";
+                id: string;
+                heading: {
+                    bn?: string;
+                    en?: string;
+                };
             })[];
             pages: {
                 product: {

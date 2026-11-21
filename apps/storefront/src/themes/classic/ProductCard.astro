@@ -1,46 +1,75 @@
 ---
+// The product card of the redesign (design/storefront-redesign: ProductCard):
+// photo with the discount or sold-out badge, a two-line title, the options
+// line ("4 sizes · 3 colours", kept empty on products without options so a
+// row's prices and buttons line up), the price, then the action:
+// - one variant: Add to cart, which adds it here (scripts/card.ts);
+// - several: Choose options, a link to the product page;
+// - sold out: none.
+// Desktop shows the action as a full-width button; phones as a round cart
+// button on the photo's corner. It is one element either way. What it shows
+// comes from lib/card.ts, which Recently viewed's cards (scripts/recent.ts)
+// share; keep the markup of both the same.
 import type { ProductCard } from '@managemind/core';
-import { price, priceRange } from '../../lib/format';
+import { cardView } from '../../lib/card';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
+import Icon from './Icon.astro';
 import Img from './Img.astro';
 
 interface Props {
   ctx: PageContext;
   product: ProductCard;
   eager?: boolean;
+  /** Choose options opens the quick-add picker (listing and search pages) instead of the product page. */
+  quick?: boolean;
 }
-const { ctx, product, eager = false } = Astro.props;
-const { t, d, theme } = ctx;
-const card = theme.tokens.card;
-const onSale =
-  card.showCompareAt &&
-  product.compareAt !== null &&
-  product.priceMin !== null &&
-  product.compareAt > product.priceMin;
-const ranged =
-  product.priceMax !== null && product.priceMin !== null && product.priceMax !== product.priceMin;
+const { ctx, product, eager = false, quick = false } = Astro.props;
+const { t } = ctx;
+const view = cardView(ctx, product);
 ---
 
-<a class="card" href={href(ctx.link, { kind: 'product', slug: product.slug })}>
+<article class="card">
   <div class="card-media">
     {product.image && (
-      <Img image={product.image} alt={product.title} sizes="(min-width: 1000px) 25vw, (min-width: 640px) 33vw, 50vw" eager={eager} />
+      <Img image={product.image} alt="" sizes="(min-width: 1000px) 25vw, (min-width: 640px) 33vw, 50vw" eager={eager} />
     )}
-    {!product.available ? <span class="badge out">{t('product.outOfStock')}</span> : onSale && <span class="badge">{t('product.sale')}</span>}
+    {view.soldOut && <span class="badge out">{t('product.outOfStock')}</span>}
+    {view.off && <span class="badge">{view.off}</span>}
   </div>
-  <div class="card-body">
-    {card.showBrand && product.brand && <p class="card-brand">{product.brand}</p>}
-    <h3 class="card-title">{product.title}</h3>
-    {product.priceMin !== null && (
-      <p class="price" style="margin:0">
-        <span class={onSale ? 'sale' : undefined}>
-          {ranged ? t('product.from', { price: price(product.priceMin, d) }) : priceRange(product.priceMin, product.priceMax, d)}
-        </span>
-        {onSale && product.compareAt !== null && (
-          <s class="compare"><span class="visually-hidden">{t('product.regular')}: </span>{price(product.compareAt, d)}</s>
-        )}
-      </p>
-    )}
+  <div class="card-text">
+    {view.brand && <p class="card-brand">{view.brand}</p>}
+    <h3 class="card-title"><a href={view.href}>{view.title}</a></h3>
   </div>
-</a>
+  <p class="card-options" aria-hidden={view.options ? undefined : 'true'}>
+    {view.dots.map((c) => <span class="dot" style={`background:${c}`} />)}
+    {view.options}
+  </p>
+  {view.price && (
+    <p class="price">
+      <span class={view.sale ? 'sale' : undefined}>{view.price}</span>
+      {view.compare && (
+        <s class="compare"><span class="visually-hidden">{t('product.regular')}: </span>{view.compare}</s>
+      )}
+    </p>
+  )}
+  {view.action === 'add' && (
+    <div class="card-action" data-card-add={view.variantId} data-name={view.title} data-price={view.amount} data-adding={t('cart.adding')} data-error={t('cart.error')}>
+      <button type="button" class="card-button" aria-label={t('card.addAria', { product: view.title })}>
+        <Icon name="cart" size={18} stroke={2} /><span class="card-label">{t('cart.add')}</span>
+      </button>
+      <a class="card-button card-added" href={href(ctx.link, { kind: 'cart' })} role="status" hidden>
+        <Icon name="check" size={16} stroke={2.25} /><span class="card-label">{t('card.added')}</span>
+      </a>
+    </div>
+  )}
+  {view.action === null && <div class="card-action none" />}
+  {view.action === 'choose' && (
+    <div class="card-action">
+      <a class="card-button" href={view.href} aria-label={t('card.chooseAria', { product: view.title })} data-quick={quick ? product.slug : undefined} aria-haspopup={quick ? 'dialog' : undefined}>
+        <Icon name="cart" size={18} stroke={2} /><span class="card-label">{t('card.choose')}</span>
+      </a>
+    </div>
+  )}
+</article>
+<script src="./scripts/card.ts"></script>

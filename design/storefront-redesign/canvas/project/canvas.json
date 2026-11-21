@@ -375,6 +375,13 @@
       "title": "Account · desktop · Bangla",
       "expand": "fill",
       "is_interactive": true
+    },
+    "StatesBn.dc.html": {
+      "x": 3340,
+      "y": 30280,
+      "w": 390,
+      "h": 2000,
+      "title": "Loading and error states · phone · Bangla"
     }
   },
   "order": [
@@ -421,7 +428,8 @@
     "PhoneHeader.dc.html",
     "PhoneFooter.dc.html",
     "PhoneTabBar.dc.html",
-    "States.dc.html"
+    "States.dc.html",
+    "StatesBn.dc.html"
   ],
   "notes": {
     "rowHome": {
@@ -478,7 +486,7 @@
       "y": 29980,
       "text": "Shared components and states",
       "kind": "title1",
-      "maxW": 3260
+      "maxW": 3730
     },
     "rowAccount": {
       "x": 0,

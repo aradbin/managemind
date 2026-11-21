@@ -206,6 +206,72 @@ export async function addToCart(
   return { token: created, cart: await cartView(tx, cart, { settings }) };
 }
 
+/**
+ * "Order again" from the account (DECISIONS.md, "What to build next"): an
+ * earlier order's items go back into the cart, at today's prices. Only the
+ * signed-in shopper's own orders; items no longer sold are left out, and an
+ * item short of stock or over the per-item limit goes in with what can be.
+ */
+export async function reorderToCart(
+  tx: TenantTx,
+  token: string | null,
+  input: { userId: string; orderId: string },
+  locale: Locale,
+): Promise<CartChange & { added: number; skipped: number }> {
+  const { rows } = await tx.db.execute<{ variantId: string; quantity: number }>(sql`
+    select l.variant_id as "variantId", l.quantity::int as quantity
+      from store.order_lines l join store.orders o on o.id = l.order_id
+     where o.id = ${input.orderId} and o.shopper_user_id = ${input.userId}
+     order by l.position`);
+  if (!rows.length) throw new AppError('not_found');
+  let current = token;
+  let created: string | null = null;
+  let view: CartView | null = null;
+  let added = 0;
+  let skipped = 0;
+  const tryAdd = async (variantId: string, quantity: number) => {
+    const change = await addToCart(tx, current, { variantId, quantity }, locale);
+    if (change.token) created = current = change.token;
+    view = change.cart;
+  };
+  for (const line of rows) {
+    try {
+      await tryAdd(line.variantId, line.quantity);
+      added++;
+    } catch (e) {
+      if (!(e instanceof AppError)) throw e;
+      // Short of stock or over the limit: as many as can go.
+      const ext = (e.extensions ?? {}) as {
+        lines?: { available: number }[];
+        maxQuantity?: number;
+      };
+      const inCart =
+        (view as CartView | null)?.quote.lines.find((l) => l.variantId === line.variantId)
+          ?.quantity ?? 0;
+      const room =
+        e.code === 'insufficient_stock'
+          ? (ext.lines?.[0]?.available ?? 0) - inCart
+          : e.code === 'limit_exceeded' && ext.maxQuantity !== undefined
+            ? ext.maxQuantity - inCart
+            : 0;
+      const fewer = Math.min(line.quantity, room);
+      if (fewer > 0) {
+        try {
+          await tryAdd(line.variantId, fewer);
+          added++;
+          continue;
+        } catch (again) {
+          if (!(again instanceof AppError)) throw again;
+        }
+      }
+      skipped++;
+    }
+  }
+  const cart = (view as CartView | null) ?? (await getCart(tx, current));
+  if (!cart) throw new AppError('not_found', { detail: 'None of these items is sold now' });
+  return { token: created, cart, added, skipped };
+}
+
 async function requireCart(tx: TenantTx, token: string | null): Promise<CartRow> {
   const cart = await cartByToken(tx, token, { forUpdate: true });
   if (!cart) throw new AppError('not_found', { detail: 'No cart' });

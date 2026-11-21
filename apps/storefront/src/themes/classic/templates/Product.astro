@@ -1,14 +1,28 @@
 ---
+// The product page (phase-3-plan §3.5), in the redesign
+// (design/storefront-redesign: Product, ProductPhone): the gallery beside
+// the buying column on desktop and above it on phones; brand, title and SKU;
+// the price with what the sale saves; the option pickers; quantity, Add to
+// cart and Buy now; Order on WhatsApp; delivery charges and times, cash on
+// delivery and returns from the store's settings; then About this product
+// beside Specifications, You may also like and Recently viewed. Phones get a
+// pinned buy bar once the in-page buttons scroll away, and desktops a
+// mini-cart panel after Add to cart (scripts/product.ts). Without scripts
+// everything shows, with the first available variant.
 import type { ProductPageData, StoreSpecification } from '@managemind/core';
 import { renderRichText, richTextToPlainText } from '@managemind/shared/rich-text';
 import { messengerLink, whatsappLink } from '@managemind/shared/storefront';
+import { cardView, productAsCard } from '../../../lib/card';
 import { number, price } from '../../../lib/format';
 import { absolute, alternates, href } from '../../../lib/links';
 import type { PageContext } from '../../../lib/page';
 import { breadcrumbLd, type Head, productLd } from '../../../lib/seo';
+import { COLOUR_KEYS, swatch } from '../../../lib/swatches';
+import Icon from '../Icon.astro';
 import Img from '../Img.astro';
 import Layout from '../Layout.astro';
 import ProductList from '../ProductList.astro';
+import RecentlyViewed from '../sections/RecentlyViewed.astro';
 
 interface Props {
   ctx: PageContext;
@@ -16,8 +30,8 @@ interface Props {
   noindex: boolean;
 }
 const { ctx, data, noindex } = Astro.props;
-const { product, related } = data;
-const { t, d, theme, layout } = ctx;
+const { product, related, facts } = data;
+const { t, d, theme, layout, locale } = ctx;
 const url = absolute(ctx.link, href(ctx.link, { kind: 'product', slug: product.slug }));
 const langs = alternates(
   ctx.link,
@@ -35,6 +49,13 @@ const minPrice = Math.min(...prices);
 const maxPrice = Math.max(...prices);
 const imageIndex = (mediaId: string | null) =>
   mediaId ? product.media.findIndex((m) => m.id === mediaId) : -1;
+const saving = (now: number, was: number | null) =>
+  was !== null && was > now
+    ? t('product.save', {
+        amount: price(was - now, d),
+        percent: Math.round(((was - now) / was) * 100),
+      })
+    : null;
 const variantData = product.variants.map((v) => ({
   id: v.id,
   values: v.optionValueIds,
@@ -42,6 +63,7 @@ const variantData = product.variants.map((v) => ({
   price: price(v.price, d),
   compare:
     v.compareAtPrice !== null && v.compareAtPrice > v.price ? price(v.compareAtPrice, d) : null,
+  save: saving(v.price, v.compareAtPrice),
   available: v.available,
   sku: v.sku,
   image: imageIndex(v.imageMediaId),
@@ -51,6 +73,17 @@ const startCompare =
   start && start.compareAtPrice !== null && start.compareAtPrice > start.price
     ? start.compareAtPrice
     : null;
+const startSave = start ? saving(start.price, start.compareAtPrice) : null;
+// A choice that can't be bought with the starting variant's other choices.
+const gone = (optionIndex: number, valueId: string) =>
+  !product.variants.some(
+    (v) =>
+      v.available &&
+      v.optionValueIds.includes(valueId) &&
+      (start?.optionValueIds ?? []).every(
+        (id, i) => i === optionIndex || v.optionValueIds.includes(id),
+      ),
+  );
 
 const description = product.description ? renderRichText(product.description) : '';
 const plain =
@@ -94,9 +127,34 @@ const greeting = ctx.text(chat.greeting);
 const orderText = t('chat.productGreeting', { greeting, product: product.title, url }).trim();
 const showOrder = chat.show !== 'none' && Boolean(chat.whatsapp || chat.messenger);
 const count = product.media.length;
+const category = product.breadcrumbs.at(-1);
+const returnsPage = layout.pages.find((p) => p.kind === 'returns');
+const zoneText = (z: (typeof facts.zones)[number]) =>
+  [z.estimate?.[locale], price(z.fee, d)].filter(Boolean).join(' · ');
+// This product's card, which the browser keeps for Recently viewed (scripts/recent.ts).
+const recentItem = {
+  store: layout.store.slug,
+  locale: ctx.locale,
+  view: cardView(ctx, productAsCard(product)),
+};
+const shop = {
+  locale,
+  add: t('cart.add'),
+  adding: t('cart.adding'),
+  soldOut: t('cart.soldOut'),
+  error: t('cart.error'),
+  added: t('product.addedCount', { count: '{count}' }),
+  subtotal: {
+    one: t('mini.subtotal', { count: 1 }),
+    other: t('mini.subtotal', { count: '{count}' }),
+  },
+  checkout: href(ctx.link, { kind: 'checkout' }),
+  cart: href(ctx.link, { kind: 'cart' }),
+  numerals: d.numerals,
+};
 ---
 
-<Layout ctx={ctx} head={head} languageHref={languageHref} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
+<Layout ctx={ctx} head={head} languageHref={languageHref} tab={false} back={category ? href(ctx.link, { kind: 'category', slug: category.slug }) : href(ctx.link, { kind: 'home' })} product={{ id: product.id, title: product.title, price: start?.price ?? minPrice, url }}>
   <nav class="crumbs" aria-label={t('breadcrumb.label')}>
     <ol>
       {crumbs.map((c) => <li><a href={c.href}>{c.name}</a></li>)}
@@ -104,35 +162,44 @@ const count = product.media.length;
     </ol>
   </nav>
   <div class="product" data-product>
-    <section aria-label={t('product.images')} data-gallery>
+    <section class="gallery" aria-label={t('product.images')} data-gallery>
       {count > 0 ? (
         <>
-          <ul class="gallery-main" role="list" data-gallery-track>
-            {product.media.map((m, i) => (
-              <li aria-label={count > 1 ? t('product.image', { n: i + 1, count }) : undefined}>
-                <Img image={m} alt={product.title} sizes="(min-width: 900px) 55vw, 100vw" eager={i === 0} />
-              </li>
-            ))}
-          </ul>
-          {count > 1 && (
-            <ul class="thumbs" role="list">
+          <div class="gallery-frame">
+            <ul class="gallery-main" role="list" data-gallery-track>
               {product.media.map((m, i) => (
-                <li>
-                  <button type="button" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} aria-label={t('product.image', { n: i + 1, count })}>
-                    <Img image={m} alt="" sizes="64px" />
-                  </button>
+                <li aria-label={count > 1 ? t('product.image', { n: i + 1, count }) : undefined}>
+                  <Img image={m} alt={product.title} sizes="(min-width: 900px) 50vw, 100vw" eager={i === 0} />
                 </li>
               ))}
             </ul>
+            {count > 1 && <span class="gallery-count" aria-hidden="true" data-gallery-count>{number(1, d)} / {number(count, d)}</span>}
+          </div>
+          {count > 1 && (
+            <>
+              <ol class="gallery-dots" aria-hidden="true">
+                {product.media.map((_, i) => <li data-dot={i} class={i === 0 ? 'on' : undefined} />)}
+              </ol>
+              <ul class="thumbs" role="list">
+                {product.media.map((m, i) => (
+                  <li>
+                    <button type="button" data-thumb={i} aria-current={i === 0 ? 'true' : 'false'} aria-label={t('product.image', { n: i + 1, count })}>
+                      <Img image={m} alt="" sizes="120px" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
           )}
         </>
       ) : (
-        <div class="card-media" style="border-radius: var(--radius)"></div>
+        <div class="gallery-frame empty" />
       )}
     </section>
-    <div>
-      {product.brand && <p class="card-brand">{product.brand}</p>}
+    <div class="product-info">
+      {product.brand && <p class="product-brand">{product.brand}</p>}
       <h1>{product.title}</h1>
+      {anySku && <p class="product-sku" data-sku-row hidden={!start?.sku}>{t('product.sku')} <span data-sku>{start?.sku ?? ''}</span></p>}
       <p class="product-price">
         <span class={`price${startCompare ? ' sale' : ''}`} data-price>
           {product.variants.length > 1 && minPrice !== maxPrice && !product.options.length ? t('product.from', { price: price(minPrice, d) }) : price(start?.price ?? minPrice, d)}
@@ -140,58 +207,118 @@ const count = product.media.length;
         <s class="compare" data-compare hidden={!startCompare}>
           <span class="visually-hidden">{t('product.regular')}: </span><span data-compare-value>{startCompare ? price(startCompare, d) : ''}</span>
         </s>
+        <span class="save" data-save hidden={!startSave}>{startSave ?? ''}</span>
       </p>
-      <p class={`stock${start?.available ? '' : ' out'}`} data-stock data-in={t('product.inStock')} data-out={t('product.outOfStock')} data-none={t('product.unavailable')} role="status">
-        {start?.available ? t('product.inStock') : t('product.outOfStock')}
+      <p class={`stock${start?.available ? '' : ' out'}`} data-stock data-in={t('product.ready')} data-out={t('product.outOfStock')} data-none={t('product.unavailable')} role="status">
+        {start?.available ? t('product.ready') : t('product.outOfStock')}
       </p>
       {product.options.length > 0 && (
         <form class="options" data-variant-picker>
-          {product.options.map((option) => (
-            <fieldset>
-              <legend>{option.name}</legend>
-              <div class="choices">
-                {option.values.map((value) => (
-                  <label>
-                    <input type="radio" name={option.id} value={value.id} checked={start?.optionValueIds.includes(value.id)} />
-                    <span>{value.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          ))}
+          {product.options.map((option, oi) => {
+            const colour = COLOUR_KEYS.has(option.name.normalize('NFC').trim().toLowerCase());
+            const chosen = option.values.find((v) => start?.optionValueIds.includes(v.id));
+            return (
+              <fieldset>
+                <legend><strong>{option.name}:</strong> <span data-chosen>{chosen?.label ?? ''}</span></legend>
+                <div class={colour ? 'choices swatches' : 'choices'}>
+                  {option.values.map((value) => {
+                    const dot = colour ? swatch(value.label.normalize('NFC').trim().toLowerCase()) : null;
+                    return (
+                      <label class={gone(oi, value.id) ? 'gone' : undefined}>
+                        <input type="radio" name={option.id} value={value.id} checked={start?.optionValueIds.includes(value.id)} />
+                        {dot ? (
+                          <span class="swatch" title={value.label}><span class="visually-hidden">{value.label}</span><span class="swatch-colour" style={`background:${dot}`} /></span>
+                        ) : (
+                          <span>{value.label}</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            );
+          })}
         </form>
       )}
-      <div class="buy" data-buy data-locale={ctx.locale} data-variant={start?.available ? start.id : ''} data-product-name={product.title} data-adding={t('cart.adding')} data-add={t('cart.add')} data-sold-out={t('cart.soldOut')}>
-        <button type="button" class="button wide" data-add-to-cart disabled={!start?.available}>{start?.available ? t('cart.add') : t('cart.soldOut')}</button>
-        <p class="added" data-added role="status" hidden>
-          <span>{t('cart.added')}</span> <a href={href(ctx.link, { kind: 'cart' })}>{t('cart.view')}</a>
-        </p>
-        <p class="line-problem" data-add-error data-message={t('cart.error')} role="alert"></p>
-      </div>
-      {showOrder && (
-        <div>
-          <p style="margin:16px 0 0">{t('product.order')}</p>
-          <div class="order">
-            {chat.whatsapp && <a class="button" href={whatsappLink(chat.whatsapp, orderText)} target="_blank" rel="noopener">{t('chat.whatsapp')}</a>}
-            {chat.messenger && <a class="button secondary" href={messengerLink(chat.messenger, orderText)} target="_blank" rel="noopener">{t('chat.messenger')}</a>}
+      <div class="buy" data-buy data-variant={start?.available ? start.id : ''} data-product-name={product.title} data-shop={JSON.stringify(shop)}>
+        <div class="quantity">
+          <label for="quantity">{t('product.quantity')}</label>
+          <div class="qty-stepper">
+            <button type="button" data-step="-1" aria-label={t('product.decrease')}>−</button>
+            <input id="quantity" type="number" inputmode="numeric" min="1" max="99" value="1" data-quantity />
+            <button type="button" data-step="1" aria-label={t('product.increase')}>+</button>
           </div>
         </div>
+        <button type="button" class="button add" data-add-to-cart disabled={!start?.available}>{start?.available ? t('cart.add') : t('cart.soldOut')}</button>
+        <button type="button" class="button outline-primary buy-now" data-buy-now hidden={!start?.available}>{t('product.buyNow')}</button>
+        <p class="line-problem" data-add-error role="alert"></p>
+      </div>
+      {showOrder && (
+        <div class="order">
+          {chat.whatsapp && (
+            <a class="button order-wa" href={whatsappLink(chat.whatsapp, orderText)} target="_blank" rel="noopener">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z" /></svg>
+              {t('product.orderWhatsapp')}
+            </a>
+          )}
+          {chat.messenger && <a class="button outline-primary" href={messengerLink(chat.messenger, orderText)} target="_blank" rel="noopener">{t('product.orderMessenger')}</a>}
+        </div>
+      )}
+      {(facts.zones.length > 0 || facts.cod || facts.returns.shopperRequests) && (
+        <ul class="facts" role="list">
+          {facts.zones.length > 0 && (
+            <li>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /></svg>
+              <div>
+                <h2>{t('product.delivery')}</h2>
+                <dl>
+                  {facts.zones.map((z) => <div><dt>{z.name[locale]}</dt><dd>{zoneText(z)}</dd></div>)}
+                </dl>
+              </div>
+            </li>
+          )}
+          {facts.cod && (
+            <li>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18v12H3zM3 10h18M7 15h3" /></svg>
+              <div>
+                <h2>{t('product.cod')}</h2>
+                <p>{t('product.codText')}</p>
+              </div>
+            </li>
+          )}
+          {facts.returns.shopperRequests && (
+            <li>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4" /></svg>
+              <div>
+                <h2>{t('product.returns')}</h2>
+                <p>
+                  {t('product.returnsText', { count: facts.returns.windowDays })}
+                  {returnsPage && <> <a href={href(ctx.link, { kind: 'page', slug: returnsPage.slug })}>{t('product.returnPolicy')}</a></>}
+                </p>
+              </div>
+            </li>
+          )}
+        </ul>
       )}
       <p class="share">
         {t('share.label')}{' '}
         <a href={`https://wa.me/?text=${encodeURIComponent(`${product.title} ${url}`)}`} target="_blank" rel="noopener">{t('share.whatsapp')}</a>{' · '}
         <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener">{t('share.facebook')}</a>
       </p>
-      {anySku && <p class="count" data-sku-row hidden={!start?.sku}>{t('product.sku')}: <span data-sku>{start?.sku ?? ''}</span></p>}
+    </div>
+  </div>
+
+  {(description || specs.length > 0) && (
+    <div class="product-more">
       {description && (
-        <section class="rich" aria-labelledby="desc">
-          <h2 id="desc">{t('product.description')}</h2>
-          <Fragment set:html={description} />
-        </section>
+        <details class="more-block" open data-keep-open>
+          <summary><h2>{t('product.about')}</h2></summary>
+          <div class="rich"><Fragment set:html={description} /></div>
+        </details>
       )}
       {specs.length > 0 && (
-        <section aria-labelledby="specs">
-          <h2 id="specs">{t('product.specifications')}</h2>
+        <details class="more-block" data-specs>
+          <summary><h2>{t('product.specifications')}</h2></summary>
           {theme.pages.product.specifications === 'table' ? (
             <table class="specs">
               <tbody>
@@ -203,16 +330,59 @@ const count = product.media.length;
               {specs.map((s) => <div><dt>{s.name}</dt><dd>{specValue(s)}</dd></div>)}
             </dl>
           )}
-        </section>
+        </details>
       )}
+      <script is:inline>
+        // Desktop shows both blocks open; phones start with Specifications folded.
+        (function(){if(matchMedia('(min-width: 900px)').matches)document.querySelectorAll('[data-specs]').forEach(function(d){d.open=true;});})();
+      </script>
     </div>
-  </div>
+  )}
+
   {related.length > 0 && (
     <section class="section" aria-labelledby="related">
-      <h2 id="related">{t('product.related')}</h2>
-      <ProductList ctx={ctx} products={related} layout="carousel" />
+      <div class="section-head">
+        <h2 id="related">{t('product.related')}</h2>
+        {category && <a href={href(ctx.link, { kind: 'category', slug: category.slug })}>{t('product.seeMore', { category: category.name })}</a>}
+      </div>
+      <ProductList ctx={ctx} products={related.slice(0, 4)} />
     </section>
   )}
+  <RecentlyViewed ctx={ctx} section={{ type: 'recently_viewed', id: 'recent', heading: {} }} except={product.id} />
+
+  <div class="buy-bar" data-buy-bar hidden>
+    <button type="button" class="button" data-bar-add disabled={!start?.available}>
+      <span data-bar-label>{start?.available ? t('cart.add') : t('cart.soldOut')}</span>
+      <small data-bar-price>{price(start?.price ?? minPrice, d)}</small>
+    </button>
+    <button type="button" class="button outline-primary" data-bar-buy hidden={!start?.available}>{t('product.buyNow')}</button>
+  </div>
+  <p class="added-toast" role="status" data-added-toast hidden>
+    <span><Icon name="check" size={18} stroke={2.5} /><span data-toast-text></span></span>
+    <a href={href(ctx.link, { kind: 'cart' })}>{t('cart.view')}</a>
+  </p>
+  <dialog class="mini-cart" aria-labelledby="mini-title" data-mini-cart>
+    <div class="mini-head">
+      <h2 id="mini-title"><Icon name="check" size={20} stroke={2.25} />{t('mini.title')}</h2>
+      <button type="button" class="qa-close" data-mini-close aria-label={t('quick.close')}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <div class="mini-line">
+      <span class="mini-image" data-mini-image></span>
+      <span class="mini-text"><strong data-mini-name></strong><span data-mini-options></span><strong data-mini-total></strong></span>
+    </div>
+    <div class="mini-totals">
+      <p><span data-mini-count></span><span data-mini-subtotal></span></p>
+      <p class="muted small">{t('mini.delivery')}</p>
+    </div>
+    <div class="mini-actions">
+      <a class="button" href={href(ctx.link, { kind: 'checkout' })}>{t('mini.checkout')}</a>
+      <a class="button outline-primary" href={href(ctx.link, { kind: 'cart' })}>{t('cart.view')}</a>
+      <button type="button" class="link-button" data-mini-close>{t('mini.continue')}</button>
+    </div>
+  </dialog>
+  <script type="application/json" id="mm-recent-item" set:html={JSON.stringify(recentItem).replace(/</g, '\\u003c')} />
   <script type="application/json" id="mm-variants" set:html={JSON.stringify(variantData).replace(/</g, '\\u003c')} />
   <script src="../scripts/product.ts"></script>
 </Layout>

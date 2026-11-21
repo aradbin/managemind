@@ -1,0 +1,28 @@
+---
+// Checkout's footer: the legal pages and the store's phone only.
+import { formatPhone } from '@managemind/shared';
+import type { PageKind } from '@managemind/shared/storefront';
+import { number } from '../../lib/format';
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+
+interface Props {
+  ctx: PageContext;
+}
+const { ctx } = Astro.props;
+const { t, layout, d } = ctx;
+const LEGAL: readonly PageKind[] = ['terms', 'privacy', 'returns'];
+const pages = LEGAL.flatMap((kind) => layout.pages.filter((p) => p.kind === kind));
+const phone = layout.store.profile.contactPhone;
+const year = number(new Date().getUTCFullYear(), d).replace(/[,،]/g, '');
+---
+
+<footer class="minimal-footer">
+  <div class="wrap">
+    <p>{t('footer.rights', { year, store: layout.store.name })}</p>
+    <ul role="list">
+      {pages.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
+      {phone && <li><a href={`tel:${phone}`}>{t('nav.help', { phone: formatPhone(phone, d.numerals) })}</a></li>}
+    </ul>
+  </div>
+</footer>

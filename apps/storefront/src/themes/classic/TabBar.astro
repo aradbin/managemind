@@ -1,0 +1,36 @@
+---
+// The phone's bottom bar (design/storefront-redesign: PhoneTabBar): Home,
+// Categories, Cart and Account, pinned to the bottom of the screen on phones.
+// Product, cart and checkout pages leave it out for their own pinned bars.
+// Categories opens the header's menu; without scripts it jumps to the
+// footer's category list.
+import { href } from '../../lib/links';
+import type { PageContext } from '../../lib/page';
+import Icon from './Icon.astro';
+
+export type Tab = 'home' | 'categories' | 'cart' | 'account' | null;
+
+interface Props {
+  ctx: PageContext;
+  /** The tab the page belongs to; null for pages that belong to none. */
+  current: Tab;
+}
+const { ctx, current } = Astro.props;
+const { t, layout, d } = ctx;
+const here = (tab: Tab) => (tab === current ? 'page' : undefined);
+---
+
+<nav class="tabbar" aria-label={t('nav.tabs')}>
+  <a href={href(ctx.link, { kind: 'home' })} aria-current={here('home')}><Icon name="home" size={22} />{t('nav.home')}</a>
+  <a href="#footer-shop" data-open-menu aria-current={here('categories')}><Icon name="grid" size={22} />{t('nav.categories')}</a>
+  <a href={href(ctx.link, { kind: 'cart' })} aria-current={here('cart')}>
+    <span class="cart-icon">
+      <Icon name="cart" size={22} />
+      <span class="cart-count" data-cart-count data-bengali={d.numerals === 'bengali' ? '' : undefined} hidden></span>
+    </span>
+    {t('nav.cart')}
+  </a>
+  {layout.shop.accounts && (
+    <a href={href(ctx.link, { kind: 'account' })} aria-current={here('account')}><Icon name="account" size={22} />{t('nav.account')}</a>
+  )}
+</nav>

@@ -122,6 +122,8 @@ export const productTranslations = store.table(
     productId: uuid().notNull(),
     locale: locale(),
     title: text().notNull(),
+    /** The title's sound key, for Bangla and Banglish search (app.search_key, migration 0052). */
+    searchKey: text().generatedAlwaysAs(sql`app.search_key(title)`),
     slug: text().notNull(),
     /** ProseMirror JSON, validated against the whitelist (shared/catalog/rich-text-schema.ts). */
     description: jsonb(),
@@ -754,6 +756,8 @@ export const productTags = store.table(
     productId: uuid().notNull(),
     /** Normalized by shared normalizeTag. */
     tag: text().notNull(),
+    /** The tag's sound key (app.search_key, migration 0052). */
+    searchKey: text().generatedAlwaysAs(sql`app.search_key(tag)`),
   },
   (t) => [
     tenantPolicy(t),

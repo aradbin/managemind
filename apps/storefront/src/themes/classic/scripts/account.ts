@@ -2,7 +2,8 @@
 // the shopper's details, the orders placed while signed in and saved
 // addresses. Everything goes through /api/account and /api/auth on the
 // store's own host; the session cookie never leaves /api.
-import { api, config, digits, el, fill, money, ShopError, t } from './shop';
+import { type AreaField, type GeoFile, loadGeo, placeName, setupAreaField } from './area-field';
+import { api, config, digits, el, fill, money, ShopError, setCount, t } from './shop';
 import { type Check, mountTurnstile } from './turnstile';
 
 interface Address {
@@ -21,16 +22,12 @@ interface Account {
   addresses: Address[];
 }
 interface Order {
+  id: string;
   displayNumber: string;
   status: string;
   total: number;
   itemCount: number;
   placedAt: string;
-}
-interface GeoFile {
-  d: [number, string, string][];
-  s: [number, number, string, string][];
-  a: [number, number, string, string][];
 }
 
 const cfg = config();
@@ -45,8 +42,6 @@ const switcher = document.querySelector<HTMLButtonElement>('[data-switch-signin]
 const otherButton = document.querySelector<HTMLButtonElement>('[data-other-email]');
 const PHONE = /^(?:\+?88)?0?1[3-9]\d{8}$/;
 const latin = (s: string) => s.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
-const name = (n: [unknown, ...unknown[]]) =>
-  String(cfg.locale === 'bn' ? n[n.length - 2] : n[n.length - 1]);
 let email = '';
 /** Sign-in by email code, or by a code to the phone where the store has SMS (phase-5a-plan §3.14). */
 let mode: 'email' | 'phone' = 'email';
@@ -57,6 +52,7 @@ const toE164 = (s: string) =>
     .replace(/[\s\-.()]/g, '')
     .replace(/^(?:\+?88)?0?/, '')}`;
 let geo: GeoFile | null = null;
+let areaField: AreaField | null = null;
 let check: Check | undefined;
 
 function show(message: string) {
@@ -194,106 +190,256 @@ function renderOrders(orders: Order[]) {
   const box = document.querySelector<HTMLElement>('[data-orders]');
   if (!box) return;
   if (!orders.length) return fill(box, el('p', { class: 'muted', text: t('account.noOrders') }));
+  // Each order opens tracking (design/storefront-redesign: Account).
   fill(
     box,
     el(
       'ul',
-      { class: 'orders' },
+      { class: 'orders', role: 'list' },
       ...orders.map((o) =>
         el(
           'li',
           {},
-          el('strong', { text: digits(o.displayNumber) }),
-          ' ',
-          el('span', { text: t(`status.${o.status}`) }),
-          el('br'),
-          el('span', {
-            class: 'muted small',
-            text: t('account.ordered', { date: date(o.placedAt), count: o.itemCount }),
-          }),
-          ' · ',
-          el('span', { text: money(o.total) }),
+          el(
+            'a',
+            { class: 'order-link', href: cfg.links.track },
+            el(
+              'span',
+              { class: 'order-text' },
+              el('strong', { text: t('track.orderNumber', { number: o.displayNumber }) }),
+              el('span', {
+                class: 'hint',
+                text: t('account.ordered', { date: date(o.placedAt), count: o.itemCount }),
+              }),
+            ),
+            el('span', { class: `status-chip ${o.status}`, text: t(`status.${o.status}`) }),
+            el('strong', { class: 'order-total', text: money(o.total) }),
+          ),
+          reorderButton(o),
         ),
       ),
     ),
   );
 }
 
+/**
+ * Order again (DECISIONS.md, "What to build next"): the order's items go
+ * back into the cart at today's prices; the shopper sees how many went in,
+ * and which are no longer sold, with View cart.
+ */
+function reorderButton(o: Order): HTMLElement {
+  const button = el('button', {
+    type: 'button',
+    class: 'button secondary',
+    'aria-label': t('account.reorderLabel', { number: o.displayNumber }),
+    text: t('account.reorder'),
+  });
+  const status = el('p', { class: 'reorder-status', role: 'status' });
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const r = await api<{ cart: { itemCount: number }; added: number; skipped: number }>(
+        `/account/orders/${o.id}/reorder`,
+        { method: 'POST', body: {} },
+      );
+      setCount(r.cart.itemCount);
+      fill(
+        status,
+        [
+          r.added ? t('account.reordered', { count: r.added }) : '',
+          r.skipped ? t('account.reorderSkipped', { count: r.skipped }) : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        ' ',
+        r.added ? el('a', { href: cfg.links.cart, text: t('cart.view') }) : null,
+      );
+    } catch (err) {
+      status.textContent =
+        err instanceof ShopError && err.status === 404
+          ? t('account.reorderSkipped', { count: o.itemCount })
+          : t('cart.error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return el('div', { class: 'order-again' }, button, status);
+}
+
+/** Desktop's side menu and the phone's tabs: one panel at a time. */
+let tabsReady = false;
+function setupTabs() {
+  if (tabsReady) return;
+  tabsReady = true;
+  const tabs = [...document.querySelectorAll<HTMLAnchorElement>('[data-tab]')];
+  const show = (name: string) => {
+    for (const tab of tabs) {
+      if (tab.dataset.tab === name) tab.setAttribute('aria-current', 'true');
+      else tab.removeAttribute('aria-current');
+    }
+    for (const panel of document.querySelectorAll<HTMLElement>('[data-panel]')) {
+      panel.hidden = panel.dataset.panel !== name;
+    }
+  };
+  for (const tab of tabs) {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      show(tab.dataset.tab ?? 'orders');
+    });
+  }
+  show(
+    location.hash.slice(1) === 'addresses' || location.hash.slice(1) === 'details'
+      ? location.hash.slice(1)
+      : 'orders',
+  );
+}
+
 function placeText(a: Address) {
   const area = geo?.a.find((x) => x[0] === a.areaId);
   const district = geo?.s.find((x) => x[0] === a.districtId);
-  return [a.line, area && name(area), district && name(district)].filter(Boolean).join(', ');
+  return [area && placeName(area), district && placeName(district)].filter(Boolean).join(', ');
 }
 
+const undoBar = document.querySelector<HTMLElement>('[data-undo]');
+const addressForm = document.querySelector<HTMLFormElement>('[data-address]');
+
+/** The address just deleted, with Undo, which saves it again. */
+function offerUndo(a: Address | null) {
+  if (!undoBar) return;
+  if (!a) return fill(undoBar);
+  const undo = el('button', { type: 'button', text: t('account.undo') });
+  undo.addEventListener('click', async () => {
+    undo.disabled = true;
+    try {
+      await api('/account/addresses', {
+        body: {
+          name: a.name,
+          phone: a.phone,
+          divisionId: a.divisionId,
+          districtId: a.districtId,
+          areaId: a.areaId,
+          line: a.line,
+          ...(a.label ? { label: a.label } : {}),
+          isDefault: a.isDefault,
+        },
+      });
+      fill(undoBar);
+      await load();
+    } catch (err) {
+      undo.disabled = false;
+      show(problem(err));
+    }
+  });
+  fill(undoBar, el('span', { text: t('account.deleted') }), undo);
+}
+
+/** The add form, opened from the dashed card; the card comes back on Cancel or Save. */
+function openForm(open: boolean) {
+  if (!addressForm) return;
+  addressForm.hidden = !open;
+  const card = document.querySelector<HTMLElement>('[data-add-card]');
+  if (card) card.hidden = open;
+  if (open) {
+    offerUndo(null);
+    byId<HTMLInputElement>('ad-name')?.focus();
+  } else {
+    addressForm.reset();
+    areaField?.clear();
+    for (const id of ['ad-name', 'ad-phone', 'ad-line']) fieldError(id, '');
+    areaError('');
+  }
+}
+
+/**
+ * Saved addresses as cards (design/storefront-redesign: Account): the label
+ * and Default, the name and number, the address; Make default and Delete,
+ * which offers Undo. A dashed card opens the form for another.
+ */
 function renderAddresses(addresses: Address[]) {
   const list = document.querySelector<HTMLElement>('[data-addresses]');
   if (!list) return;
-  if (!addresses.length)
-    return fill(list, el('li', { class: 'muted', text: t('account.noAddresses') }));
+  const cards = addresses.map((a) => {
+    const label = a.label ?? a.name;
+    const remove = el('button', {
+      type: 'button',
+      class: 'link-button danger',
+      'aria-label': t('account.deleteLabel', { label }),
+      text: t('account.delete'),
+    });
+    remove.addEventListener('click', async () => {
+      remove.disabled = true;
+      try {
+        await api(`/account/addresses/${a.id}`, { method: 'DELETE' });
+        offerUndo(a);
+        await load();
+      } catch (err) {
+        remove.disabled = false;
+        show(problem(err));
+      }
+    });
+    const makeDefault = a.isDefault
+      ? null
+      : el('button', { type: 'button', class: 'link-button', text: t('account.makeDefaultShort') });
+    makeDefault?.addEventListener('click', async () => {
+      offerUndo(null);
+      try {
+        await api(`/account/addresses/${a.id}`, { method: 'PATCH', body: { isDefault: true } });
+        await load();
+      } catch (err) {
+        show(problem(err));
+      }
+    });
+    return el(
+      'li',
+      { class: a.isDefault ? 'address-card is-default' : 'address-card' },
+      el(
+        'p',
+        { class: 'address-title' },
+        el('strong', { text: label }),
+        a.isDefault ? el('span', { class: 'default-badge', text: t('account.default') }) : null,
+      ),
+      el('p', { text: `${a.name} · ${digits(localPhone(a.phone))}` }),
+      el('p', { text: a.line }),
+      el('p', { class: 'muted', text: placeText(a) }),
+      el('p', { class: 'address-card-actions' }, makeDefault, remove),
+    );
+  });
+  const add = el(
+    'button',
+    { type: 'button', class: 'add-card' },
+    el('span', { 'aria-hidden': 'true', text: '+' }),
+    t('account.addAddress'),
+  );
+  add.addEventListener('click', () => openForm(true));
   fill(
     list,
-    ...addresses.map((a) => {
-      const remove = el('button', {
-        type: 'button',
-        class: 'link-button',
-        text: t('account.delete'),
-      });
-      remove.addEventListener('click', async () => {
-        try {
-          await api(`/account/addresses/${a.id}`, { method: 'DELETE' });
-          await load();
-        } catch (err) {
-          show(problem(err));
-        }
-      });
-      return el(
-        'li',
-        {},
-        el('strong', { text: a.label ?? a.name }),
-        a.isDefault
-          ? el('span', { class: 'muted small', text: ` (${t('account.default')})` })
-          : null,
-        el('br'),
-        `${a.name} · ${digits(a.phone.replace(/^\+88/, ''))}`,
-        el('br'),
-        placeText(a),
-        el('br'),
-        remove,
-      );
-    }),
+    ...cards,
+    el('li', { 'data-add-card': true, hidden: addressForm ? !addressForm.hidden : false }, add),
   );
+  const none = document.querySelector<HTMLElement>('[data-no-addresses]');
+  if (none) none.hidden = addresses.length > 0;
 }
 
-async function setupPlaceSelects() {
-  geo = (await (await fetch(cfg.geo ?? '/geo/bd.json')).json()) as GeoFile;
-  const division = byId<HTMLSelectElement>('ad-division');
-  const district = byId<HTMLSelectElement>('ad-district');
-  const area = byId<HTMLSelectElement>('ad-area');
-  if (!division || !district || !area || !geo) return;
-  const g = geo;
-  const fillSelect = (select: HTMLSelectElement, rows: [number, ...unknown[]][]) => {
-    const sorted = [...rows].sort((a, b) => name(a).localeCompare(name(b), cfg.locale));
-    fill(
-      select,
-      el('option', { value: '', text: t('checkout.choose') }),
-      ...sorted.map((r) => el('option', { value: String(r[0]), text: name(r) })),
-    );
-    select.disabled = rows.length === 0;
-  };
-  fillSelect(division, g.d);
-  division.addEventListener('change', () => {
-    fillSelect(
-      district,
-      g.s.filter((s) => s[1] === Number(division.value)),
-    );
-    fillSelect(area, []);
-  });
-  district.addEventListener('change', () =>
-    fillSelect(
-      area,
-      g.a.filter((a) => a[1] === Number(district.value)),
-    ),
-  );
+/** 01712-345678, as numbers are written on the forms. */
+function localPhone(e164: string) {
+  const local = e164.replace(/^\+?88/, '');
+  return /^01\d{9}$/.test(local) ? `${local.slice(0, 5)}-${local.slice(5)}` : local;
+}
+
+function areaError(message: string) {
+  byId('ad-area-q')?.setAttribute('aria-invalid', message ? 'true' : 'false');
+  const error = byId('ad-area-e');
+  if (error) error.textContent = message;
+  return !message;
+}
+
+async function setupAddressForm() {
+  geo = await loadGeo();
+  const root = byId('ad-area-field');
+  if (root) areaField = setupAreaField(root, geo, () => areaError(''));
+  addressForm
+    ?.querySelector('[data-address-cancel]')
+    ?.addEventListener('click', () => openForm(false));
 }
 
 const profileForm = document.querySelector<HTMLFormElement>('[data-profile]');
@@ -315,7 +461,6 @@ profileForm?.addEventListener('submit', async (e) => {
   }
 });
 
-const addressForm = document.querySelector<HTMLFormElement>('[data-address]');
 addressForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = new FormData(addressForm);
@@ -324,12 +469,14 @@ addressForm?.addEventListener('submit', async (e) => {
   const checks = [
     fieldError('ad-name', value('name') ? '' : t('checkout.required')),
     fieldError('ad-phone', PHONE.test(phone) ? '' : t('checkout.badPhone')),
-    fieldError('ad-division', value('divisionId') ? '' : t('checkout.required')),
-    fieldError('ad-district', value('districtId') ? '' : t('checkout.required')),
-    fieldError('ad-area', value('areaId') ? '' : t('checkout.required')),
+    areaError(value('areaId') ? '' : t('checkout.areaPick')),
     fieldError('ad-line', value('line') ? '' : t('checkout.required')),
   ];
-  if (checks.includes(false)) return;
+  if (checks.includes(false)) {
+    const first = addressForm.querySelector<HTMLElement>('[aria-invalid=true]');
+    (first?.id === 'ad-area-q' ? areaField?.focusTarget() : first)?.focus();
+    return;
+  }
   try {
     await api('/account/addresses', {
       body: {
@@ -343,7 +490,7 @@ addressForm?.addEventListener('submit', async (e) => {
         isDefault: data.get('isDefault') === 'on',
       },
     });
-    addressForm.reset();
+    openForm(false);
     await load();
   } catch (err) {
     show(problem(err));
@@ -376,12 +523,18 @@ async function load() {
   const who = account.profile.email.endsWith('@phone.invalid')
     ? digits(`0${account.profile.email.slice(3, 13)}`)
     : account.profile.email;
-  if (hello) hello.textContent = t('account.hello', { email: who });
+  if (hello) {
+    hello.textContent = t('account.hello', { email: who });
+    hello.hidden = false;
+  }
+  const signOut = document.querySelector<HTMLElement>('[data-sign-out]');
+  if (signOut) signOut.hidden = false;
+  setupTabs();
   const nameInput = byId<HTMLInputElement>('a-name');
   const phoneInput = byId<HTMLInputElement>('a-phone');
   if (nameInput) nameInput.value = account.profile.name;
   if (phoneInput) phoneInput.value = account.profile.phone?.replace(/^\+88/, '') ?? '';
-  if (!geo) await setupPlaceSelects().catch(() => undefined);
+  if (!geo) await setupAddressForm().catch(() => undefined);
   renderAddresses(account.addresses);
   renderOrders(await api<Order[]>('/account/orders').catch(() => []));
 }

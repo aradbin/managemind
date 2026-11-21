@@ -8,15 +8,19 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  addToCart,
   archiveProduct,
   brandAttributeId,
   bulkUpdateVariants,
+  cancelOrder,
   createCategory,
   createCollection,
   createProduct,
   createTenant,
+  didYouMean,
   type Lang,
   listPublishedProducts,
+  placeOrder,
   publishedCategoryBySlug,
   publishedCollectionBySlug,
   publishedProduct,
@@ -25,8 +29,10 @@ import {
   relatedProducts,
   sell,
   setAttributeValues,
+  setCartArea,
   setCollectionProducts,
   setProductOptions,
+  shopperActor,
   systemActor,
   type TenantTx,
   updateAttribute,
@@ -271,6 +277,98 @@ describe('listings', () => {
     );
   });
 
+  it('sorts by units sold, leaving out cancelled orders', async () => {
+    const variantOf = async (productId: string) =>
+      (
+        await run((tx) =>
+          tx.db.execute<{ id: string }>(
+            sql`select id from store.variants where product_id = ${productId} limit 1`,
+          ),
+        )
+      ).rows[0]?.id as string;
+    const buy = async (productId: string, quantity: number) => {
+      const variantId = await variantOf(productId);
+      const added = await run((tx) => addToCart(tx, null, { variantId, quantity }, 'bn'));
+      const token = added.token;
+      const cart = await run((tx) => setCartArea(tx, token, { areaId: 513 }));
+      return run((tx) =>
+        placeOrder(tx, shopperActor(), {
+          channel: 'storefront',
+          source: 'website',
+          cartToken: token,
+          contact: { name: 'Karim', phone: '+8801700000777' },
+          address: { divisionId: 6, districtId: 47, areaId: 513, line: 'House 9' },
+          payment: { kind: 'cod' },
+          expectedTotal: cart.quote.totals.total,
+          locale: 'bn',
+        }),
+      );
+    };
+    await buy(middle, 2);
+    await buy(dear, 1);
+    const big = await buy(cheap, 5);
+    await run((tx) => cancelOrder(tx, owner, big.id, { reason: 'test' }));
+    expect((await list('sort=best_selling')).items.map((i) => i.id)).toEqual([middle, dear, cheap]);
+  });
+
+  it('keeps values no product has under the other filters, counted 0', async () => {
+    // Only the middle product (ইয়েলো, নীল) is in this price range, so আড়ং
+    // counts 0 but stays, ticked, to be unticked.
+    const facets = (await list('a.brand=আড়ং&min=600&max=1000')).facets;
+    expect(facets?.groups.find((g) => g.key === 'brand')?.values).toEqual([
+      { key: 'আড়ং', label: 'আড়ং', count: 0, selected: true },
+      { key: 'ইয়েলো', label: 'ইয়েলো', count: 1, selected: false },
+    ]);
+    // One colour left to choose filters nothing: the group goes.
+    expect(facets?.groups.find((g) => g.type === 'option')).toBeUndefined();
+  });
+
+  it('gives each card its only variant and its options', async () => {
+    const card = (await list()).items.find((i) => i.id === cheap);
+    expect(card?.variantId).toEqual(expect.any(String));
+    expect(card?.options).toEqual([{ name: 'রং', keys: ['colour', 'রং'], values: ['লাল'] }]);
+    const two = await product('দুই সাইজ', { categoryIds: [category] }, 20_000);
+    await run((tx) =>
+      setProductOptions(tx, owner, two.id, [
+        {
+          name: { bn: 'সাইজ', en: 'Size' },
+          values: [{ label: { bn: 'এম', en: 'M' } }, { label: { bn: 'এল', en: 'L' } }],
+        },
+      ]),
+    );
+    const twoCard = (await list()).items.find((i) => i.id === two.id);
+    expect(twoCard).toMatchObject({
+      variantId: null,
+      options: [{ name: 'সাইজ', keys: ['size', 'সাইজ'], values: ['m', 'l'] }],
+    });
+    await run((tx) => archiveProduct(tx, owner, two.id));
+  });
+
+  it('filters to products on sale, and counts price ranges, stock and sales', async () => {
+    const variantId = (await list()).items.find((i) => i.id === middle)?.variantId as string;
+    await run((tx) => updateVariant(tx, owner, variantId, { compareAtPrice: 120_000 }));
+    expect((await list('sale=1')).items.map((i) => i.id)).toEqual([middle]);
+    const all = await list();
+    expect(all.facets).toMatchObject({ inStock: 3, onSale: 1 });
+    // Prices of 500, 1,000 and 3,000 taka: steps of 250.
+    expect(all.facets?.priceRanges).toEqual([
+      { max: 250, count: 0, selected: false },
+      { min: 250, max: 500, count: 1, selected: false },
+      { min: 500, max: 1000, count: 2, selected: false },
+      { min: 1000, count: 2, selected: false },
+    ]);
+    // The ranges ignore the price filter, the other counts don't.
+    const chosen = await list('min=1000');
+    expect(chosen.facets?.priceRanges.map((r) => [r.count, r.selected])).toEqual([
+      [0, false],
+      [1, false],
+      [2, false],
+      [2, true],
+    ]);
+    expect(chosen.facets).toMatchObject({ inStock: 2, onSale: 1 });
+    await run((tx) => updateVariant(tx, owner, variantId, { compareAtPrice: null }));
+  });
+
   it('filters to products in stock', async () => {
     const tracked = await product('স্টক জামা', { categoryIds: [category] }, 70_000);
     expect((await list('stock=1')).items.map((i) => i.id)).not.toContain(tracked.id);
@@ -363,6 +461,27 @@ describe('search', () => {
     expect(await ids(sku.slice(0, 8).toLowerCase())).toContain(saree.id);
     expect(await ids('শাড়ি')).not.toContain(draft.id);
     expect(await ids('কম্পিউটার')).toEqual([]);
+  });
+
+  it('finds a Bangla title from Banglish, however it is spelled', async () => {
+    const korai = await product('লোহার কড়াই');
+    const peyaj = await product('দেশি পেঁয়াজ');
+    const ids = async (q: string) => (await search(q)).items.map((i) => i.id);
+    for (const q of ['korai', 'karai', 'kadai', 'kodai', 'lohar korai', 'লোহার কড়াই'])
+      expect(await ids(q), q).toContain(korai.id);
+    for (const q of ['peyaj', 'piaj', 'peaj', 'deshi piyaj', 'পিঁয়াজ'])
+      expect(await ids(q), q).toContain(peyaj.id);
+    // Two letters must be a whole word: "ko" is not the start of everything with k.
+    expect(await ids('ko')).not.toContain(korai.id);
+    expect(await ids('chal')).not.toContain(korai.id);
+  });
+
+  it('offers the store’s closest word when nothing is found', async () => {
+    await product('জামদানি শাড়ি');
+    const suggest = (q: string) => run((tx) => didYouMean(tx, bn, q));
+    expect((await search('jamdanee sharee')).total).toBeGreaterThan(0);
+    expect(await suggest('জামদনি')).toBe('জামদানি');
+    expect(await suggest('কম্পিউটার')).toBeNull();
   });
 
   it('caps results at 48', async () => {

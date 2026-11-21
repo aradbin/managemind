@@ -16,82 +16,124 @@ a{color:#1f4e8c}a:hover{color:#173c6d}
 :focus-visible{outline:3px solid #1f4e8c;outline-offset:2px;box-shadow:0 0 0 2px #ffffff}
 </style>
 </helmet>
-<div style="width: 390px; height: 2000px; overflow: hidden; display: flex; flex-direction: column; gap: 28px; padding: 20px 16px; box-sizing: border-box; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; font-size: 15px; line-height: 1.5">
+<div lang="{{lang}}" style="width: 390px; height: 2000px; overflow: hidden; display: flex; flex-direction: column; gap: 28px; padding: 20px 16px; box-sizing: border-box; font-family: 'Hind Siliguri', system-ui, sans-serif; color: #1a1f29; background: #f4f6f9; font-size: 15px; line-height: {{lineHeight}}">
 
 <section aria-labelledby="st-1" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-1" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Product list loading</h2>
+<h2 id="st-1" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l1}}</h2>
 <div role="status" aria-busy="true" style="background: #ffffff; border-radius: 12px; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px">
-<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Loading products</span>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">{{t.loading}}</span>
 <div aria-hidden="true" style="display: flex; flex-direction: column; gap: 8px"><span style="aspect-ratio: 1 / 1; border-radius: 8px; background: #e9edf2"></span><span style="height: 12px; width: 90%; border-radius: 6px; background: #e9edf2"></span><span style="height: 12px; width: 60%; border-radius: 6px; background: #e9edf2"></span><span style="height: 16px; width: 40%; border-radius: 6px; background: #dfe4eb"></span></div>
 <div aria-hidden="true" style="display: flex; flex-direction: column; gap: 8px"><span style="aspect-ratio: 1 / 1; border-radius: 8px; background: #e9edf2"></span><span style="height: 12px; width: 85%; border-radius: 6px; background: #e9edf2"></span><span style="height: 12px; width: 50%; border-radius: 6px; background: #e9edf2"></span><span style="height: 16px; width: 35%; border-radius: 6px; background: #dfe4eb"></span></div>
 </div>
 </section>
 
 <section aria-labelledby="st-2" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-2" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Adding to cart</h2>
+<h2 id="st-2" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l2}}</h2>
 <div style="background: #ffffff; border-radius: 12px; padding: 16px; display: flex; gap: 8px">
-<span style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #8a93a3; font-weight: 700; display: flex; align-items: center; justify-content: center; box-sizing: border-box">Buy now</span>
-<button type="button" aria-busy="true" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.85"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Adding…</button>
+<span style="flex: 1 1 0; height: 52px; border-radius: 8px; border: 1.5px solid #c5ccd8; color: #8a93a3; font-weight: 700; display: flex; align-items: center; justify-content: center; box-sizing: border-box">{{t.buyNow}}</span>
+<button type="button" aria-busy="true" style="flex: 1.3 1 0; height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.85"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>{{t.adding}}</button>
 </div>
 </section>
 
 <section aria-labelledby="st-3" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-3" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Placing the order</h2>
+<h2 id="st-3" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l3}}</h2>
 <div style="background: #ffffff; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
-<span style="display: flex; justify-content: space-between; align-items: baseline"><span style="color: #3c4350; font-size: 14px">Pay on delivery</span><strong style="font-size: 20px">৳2,490</strong></span>
-<button type="button" aria-busy="true" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.85"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>Placing your order…</button>
-<span style="font-size: 13px; color: #545b69; text-align: center">Please keep this page open.</span>
+<span style="display: flex; justify-content: space-between; align-items: baseline"><span style="color: #3c4350; font-size: 14px">{{t.payOnDelivery}}</span><strong style="font-size: 20px">{{total}}</strong></span>
+<button type="button" aria-busy="true" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; opacity: 0.85"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>{{t.placing}}</button>
+<span style="font-size: 13px; color: #545b69; text-align: center">{{t.keepOpen}}</span>
 </div>
 </section>
 
 <section aria-labelledby="st-4" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-4" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Page could not load</h2>
+<h2 id="st-4" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l4}}</h2>
 <div role="alert" style="background: #ffffff; border-radius: 12px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
 <span style="width: 56px; height: 56px; border-radius: 50%; background: #f4f6f9; color: #545b69; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0M12 19h.01M3 3l18 18"></path></svg></span>
-<strong style="font-size: 18px">We couldn’t load this page</strong>
-<span style="color: #3c4350; font-size: 14px">Check your internet connection and try again. Your cart is saved.</span>
-<button type="button" style="height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">Try again</button>
+<strong style="font-size: 18px">{{t.noLoad}}</strong>
+<span style="color: #3c4350; font-size: 14px">{{t.noLoadText}}</span>
+<button type="button" style="height: 48px; padding: 0 28px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-weight: 700; cursor: pointer">{{t.retry}}</button>
 </div>
 </section>
 
 <section aria-labelledby="st-5" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-5" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Stock changed before checkout</h2>
+<h2 id="st-5" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l5}}</h2>
 <div style="background: #ffffff; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
 <div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fff4dd; border: 1.5px solid #b45309; color: #1a1f29; font-size: 14px; display: flex; gap: 10px; align-items: flex-start">
 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18h.01"></path></svg>
-<span><strong style="font-weight: 600">Only 1 left of Stainless steel water bottle.</strong> We changed your quantity from 2 to 1. Your total is now ৳1,900.</span>
+<span><strong style="font-weight: 600">{{t.onlyLeft}}</strong> {{t.qtyChanged}}</span>
 </div>
 <div style="display: flex; gap: 12px; align-items: center">
 <span style="width: 56px; height: 56px; flex: none; border-radius: 8px; background: #e6f4ef"></span>
-<span style="flex: 1 1 auto; display: flex; flex-direction: column; font-size: 14px"><span>Stainless steel water bottle</span><span style="color: #545b69">1 litre · Qty 1</span></span>
-<span style="font-weight: 700">৳590</span>
+<span style="flex: 1 1 auto; display: flex; flex-direction: column; font-size: 14px"><span>{{t.bottle}}</span><span style="color: #545b69">{{t.bottleLine}}</span></span>
+<span style="font-weight: 700">{{bottlePrice}}</span>
 </div>
 </div>
 </section>
 
 <section aria-labelledby="st-6" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-6" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Online payment failed</h2>
+<h2 id="st-6" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l6}}</h2>
 <div style="background: #ffffff; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
-<div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-size: 14px; font-weight: 600">The payment didn’t go through. You can try again.</div>
-<span style="font-size: 14px; color: #3c4350">Order [number] is saved. To pay online: ৳2,490. Unpaid orders are cancelled after an hour.</span>
-<button type="button" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">Pay ৳2,490 now</button>
-<button type="button" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">Pay cash on delivery instead</button>
+<div role="alert" style="padding: 12px 14px; border-radius: 8px; background: #fdf1ef; border: 1.5px solid #b42318; color: #8f1c13; font-size: 14px; font-weight: 600">{{t.payFailed}}</div>
+<span style="font-size: 14px; color: #3c4350">{{t.saved}}</span>
+<button type="button" style="height: 52px; border: 0; border-radius: 8px; background: {{primary}}; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">{{t.payNow}}</button>
+<button type="button" style="height: 48px; border: 1.5px solid #c5ccd8; border-radius: 8px; background: #ffffff; color: #1a1f29; font: inherit; font-weight: 600; cursor: pointer">{{t.codInstead}}</button>
 </div>
 </section>
 
 <section aria-labelledby="st-7" style="display: flex; flex-direction: column; gap: 8px">
-<h2 id="st-7" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #545b69">Payment cancelled by the shopper</h2>
+<h2 id="st-7" style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: {{labelSpacing}}; text-transform: uppercase; color: #545b69">{{t.l7}}</h2>
 <div role="status" style="background: #ffffff; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
-<span style="padding: 12px 14px; border-radius: 8px; background: #e8f0fa; font-size: 14px">You cancelled the payment. You can pay whenever you are ready.</span>
-<button type="button" style="height: 48px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 700; cursor: pointer">Pay ৳2,490 now</button>
+<span style="padding: 12px 14px; border-radius: 8px; background: #e8f0fa; font-size: 14px">{{t.payCancelled}}</span>
+<button type="button" style="height: 48px; border: 1.5px solid {{primary}}; border-radius: 8px; background: #ffffff; color: {{primary}}; font: inherit; font-weight: 700; cursor: pointer">{{t.payNow}}</button>
 </div>
 </section>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"$preview":{"width":390,"height":2000}}'>
+<script type="text/x-dc" data-dc-script data-props='{"primary":{"editor":"color","default":"#1f4e8c","options":["#1f4e8c","#1b6e3a","#8b1e3f","#1a1f29"]},"bn":{"editor":"boolean","default":false},"$preview":{"width":390,"height":2000}}'>
+// The copy comes from the storefront's own strings (apps/storefront/src/i18n.ts)
+// wherever one exists: cart.adding, checkout.placing, checkout.payOnDelivery,
+// product.buyNow, cart.insufficient, pay.failed, pay.due, pay.now, pay.cancelled.
 class Component extends DCLogic {
   renderVals() {
-    return { primary: this.props.primary ?? '#1f4e8c' };
+    var bn = !!this.props.bn;
+    var num = function (n) { var s = n.toLocaleString('en-US'); return bn ? s.replace(/\d/g, function (d) { return '০১২৩৪৫৬৭৮৯'[d]; }) : s; };
+    var fmt = function (n) { return '৳' + num(n); };
+    var t = bn ? {
+      l1: 'পণ্যের তালিকা লোড হচ্ছে', l2: 'কার্টে যোগ হচ্ছে', l3: 'অর্ডার দেওয়া হচ্ছে', l4: 'পাতা লোড হয়নি',
+      l5: 'চেকআউটের আগে স্টক বদলেছে', l6: 'অনলাইন পরিশোধ হয়নি', l7: 'ক্রেতা পরিশোধ বাতিল করেছেন',
+      loading: 'পণ্য লোড হচ্ছে', buyNow: 'এখনই কিনুন', adding: 'যোগ হচ্ছে…',
+      payOnDelivery: 'ডেলিভারিতে দেবেন', placing: 'অর্ডার হচ্ছে…', keepOpen: 'অনুগ্রহ করে পাতাটি খোলা রাখুন।',
+      noLoad: 'পাতাটি লোড করা যায়নি', noLoadText: 'ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন। আপনার কার্ট সেভ করা আছে।', retry: 'আবার চেষ্টা করুন',
+      onlyLeft: 'স্টেইনলেস স্টিলের পানির বোতল মাত্র ' + num(1) + 'টি বাকি।',
+      qtyChanged: 'আপনার পরিমাণ ' + num(2) + ' থেকে ' + num(1) + ' করা হয়েছে। এখন মোট ' + fmt(1900) + '।',
+      bottle: 'স্টেইনলেস স্টিলের পানির বোতল', bottleLine: num(1) + ' লিটার · পরিমাণ ' + num(1),
+      payFailed: 'পরিশোধ হয়নি। আবার চেষ্টা করতে পারেন।',
+      saved: 'অর্ডার [নম্বর] সেভ হয়েছে। অনলাইনে দিতে হবে: ' + fmt(2490) + '। এক ঘণ্টার মধ্যে পরিশোধ না হলে অর্ডার বাতিল হয়।',
+      payNow: 'এখন ' + fmt(2490) + ' পরিশোধ করুন', codInstead: 'বরং ক্যাশ অন ডেলিভারিতে দিন',
+      payCancelled: 'আপনি পরিশোধ বাতিল করেছেন। যখন খুশি পরিশোধ করতে পারবেন।'
+    } : {
+      l1: 'Product list loading', l2: 'Adding to cart', l3: 'Placing the order', l4: 'Page could not load',
+      l5: 'Stock changed before checkout', l6: 'Online payment failed', l7: 'Payment cancelled by the shopper',
+      loading: 'Loading products', buyNow: 'Buy now', adding: 'Adding…',
+      payOnDelivery: 'Pay on delivery', placing: 'Placing your order…', keepOpen: 'Please keep this page open.',
+      noLoad: 'We couldn’t load this page', noLoadText: 'Check your internet connection and try again. Your cart is saved.', retry: 'Try again',
+      onlyLeft: 'Only 1 left of Stainless steel water bottle.',
+      qtyChanged: 'We changed your quantity from 2 to 1. Your total is now ' + fmt(1900) + '.',
+      bottle: 'Stainless steel water bottle', bottleLine: '1 litre · Qty 1',
+      payFailed: 'The payment didn’t go through. You can try again.',
+      saved: 'Order [number] is saved. To pay online: ' + fmt(2490) + '. Unpaid orders are cancelled after an hour.',
+      payNow: 'Pay ' + fmt(2490) + ' now', codInstead: 'Pay cash on delivery instead',
+      payCancelled: 'You cancelled the payment. You can pay whenever you are ready.'
+    };
+    return {
+      primary: this.props.primary ?? '#1f4e8c',
+      t: t,
+      lang: bn ? 'bn' : 'en',
+      // Bangla needs taller lines for its vowel signs; spaced capitals are a Latin habit.
+      lineHeight: bn ? '1.6' : '1.5',
+      labelSpacing: bn ? '0' : '0.06em',
+      total: fmt(2490),
+      bottlePrice: fmt(590)
+    };
   }
 }
 </script>

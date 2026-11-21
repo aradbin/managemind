@@ -14,6 +14,7 @@ import {
   productPage,
   resolveHost,
   searchPage,
+  shopFacts,
   sitemapPart,
   staticPage,
   storeLayout,
@@ -24,7 +25,7 @@ import { createDb } from '@managemind/db';
 import { AppError } from '@managemind/shared';
 import type { Locale } from '@managemind/shared/i18n';
 import { verifyPreviewToken } from '@managemind/shared/storefront';
-import { cacheTagHeader } from '@managemind/shared/storefront/cache';
+import { cacheTagHeader, legalTag } from '@managemind/shared/storefront/cache';
 import { parseListingQuery } from '@managemind/shared/storefront/listing';
 import { parseStorePath, SITEMAP_PARTS, type StoreRoute } from '@managemind/shared/storefront/urls';
 import { captureException } from '@sentry/cloudflare';
@@ -81,6 +82,14 @@ export const STORE_PAGE_ROUTES = {
     method: 'get',
     path: '/v1/store/pages/layout',
     summary: 'The layout alone, for not-found pages',
+    request: { headers: Host, query: LocaleQuery },
+    responses: pageResponses,
+  }),
+  shop: r({
+    method: 'get',
+    path: '/v1/store/pages/shop',
+    summary:
+      'The layout and what the store promises (delivery, cash on delivery, returns), for the cart and checkout',
     request: { headers: Host, query: LocaleQuery },
     responses: pageResponses,
   }),
@@ -230,7 +239,7 @@ async function render(
   c: Context<AppEnv>,
   tx: TenantTx,
   locale: Locale | null,
-  route: StoreRoute | { kind: 'layout' },
+  route: StoreRoute | { kind: 'layout' } | { kind: 'shop' },
   params: URLSearchParams,
   which: Which,
 ): Promise<Response> {
@@ -239,6 +248,9 @@ async function render(
   let result: PageResult<unknown> | null = null;
   switch (route.kind) {
     case 'layout':
+      break;
+    case 'shop':
+      result = { data: { found: await shopFacts(tx) }, tags: [legalTag(tx.tenantId)] };
       break;
     case 'home':
       result = await homePage(tx, lang, layout.data.theme);
@@ -298,10 +310,12 @@ const slugOf = (raw: string) => raw.normalize('NFC').toLowerCase();
 export function registerStorePages(app: OpenAPIHono<AppEnv>): void {
   const R = STORE_PAGE_ROUTES;
   const page =
-    (route: (c: Context<AppEnv>) => StoreRoute | { kind: 'layout' }) => (c: Context<AppEnv>) =>
+    (route: (c: Context<AppEnv>) => StoreRoute | { kind: 'layout' } | { kind: 'shop' }) =>
+    (c: Context<AppEnv>) =>
       inHostStore(c, (tx) => render(c, tx, localeOf(c), route(c), searchParams(c), 'published'));
 
   app.openapi(R.layout, page(() => ({ kind: 'layout' })) as never);
+  app.openapi(R.shop, page(() => ({ kind: 'shop' })) as never);
   app.openapi(R.home, page(() => ({ kind: 'home' })) as never);
   app.openapi(
     R.product,

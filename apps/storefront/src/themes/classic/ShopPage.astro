@@ -2,12 +2,15 @@
 // A shopper page's frame (phase-4-plan §3.16): a cached shell with no
 // personal data, noindex, whose script fills it from /api/*. It carries the
 // messages and links its script needs, in the page's language.
+import type { ShopFacts } from '@managemind/core';
+import { formatPhone } from '@managemind/shared';
 import { geoFilePath } from '@managemind/shared/geo/version';
 import { type ShellKind, storePath } from '@managemind/shared/storefront/urls';
-import type { StoreMessageKey } from '../../i18n';
+import { bn, en, type StoreMessageKey } from '../../i18n';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
 import Layout from './Layout.astro';
+import type { Tab } from './TabBar.astro';
 
 interface Props {
   ctx: PageContext;
@@ -15,8 +18,19 @@ interface Props {
   title: string;
   /** The messages the page's script uses. */
   keys: StoreMessageKey[];
+  /** The cart and checkout: what the store promises (delivery, COD, returns). */
+  facts?: ShopFacts | null;
+  /** checkout and done (thank-you): their own header and footer, with no site navigation. */
+  chrome?: 'full' | 'checkout' | 'done';
 }
-const { ctx, kind, title, keys } = Astro.props;
+const { ctx, kind, title, keys, facts = null, chrome = 'full' } = Astro.props;
+// Cart and checkout pages have their own pinned bars, so no bottom bar.
+const tab: Tab | false =
+  kind === 'cart' || kind === 'checkout' || kind === 'metaCheckout'
+    ? false
+    : kind === 'account'
+      ? 'account'
+      : null;
 const { t, locale, defaultLocale } = ctx;
 const other = locale === 'bn' ? 'en' : 'bn';
 const terms = ctx.layout.pages.find((p) => p.kind === 'terms');
@@ -24,7 +38,13 @@ const shop = {
   locale,
   numerals: ctx.d.numerals,
   prefix: locale === defaultLocale ? '' : `/${locale}`,
-  msg: Object.fromEntries(keys.map((k) => [k, t(k)])),
+  // Plural messages go as both forms: the script picks one by the count.
+  msg: Object.fromEntries(
+    keys.map((k) => {
+      const raw = (locale === 'bn' ? bn : en)[k];
+      return [k, typeof raw === 'string' ? t(k) : { one: raw.one, other: raw.other }];
+    }),
+  ),
   links: {
     home: href(ctx.link, { kind: 'home' }),
     cart: href(ctx.link, { kind: 'cart' }),
@@ -41,10 +61,27 @@ const shop = {
       ? (ctx.layout.storefront.chat.whatsapp ?? null)
       : null,
   geo: geoFilePath(),
+  phone: ctx.layout.store.profile.contactPhone
+    ? formatPhone(ctx.layout.store.profile.contactPhone, ctx.d.numerals)
+    : null,
+  tel: ctx.layout.store.profile.contactPhone ?? null,
+  // Delivery zones in the page's language, cash on delivery, online payment and returns.
+  facts: facts
+    ? {
+        zones: facts.zones.map((z) => ({
+          name: z.name[locale],
+          fee: z.fee,
+          estimate: z.estimate?.[locale] ?? null,
+        })),
+        cod: facts.cod,
+        online: facts.online,
+        returnDays: facts.returns.shopperRequests ? facts.returns.windowDays : null,
+      }
+    : null,
 };
 ---
 
-<Layout ctx={ctx} head={{ title: `${title} | ${ctx.layout.store.name}`, canonical: null, alternates: [], noindex: true }} languageHref={storePath({ kind }, other, defaultLocale)}>
+<Layout ctx={ctx} head={{ title: `${title} | ${ctx.layout.store.name}`, canonical: null, alternates: [], noindex: true }} languageHref={storePath({ kind }, other, defaultLocale)} tab={tab} chrome={chrome}>
   <slot />
   <script type="application/json" id="mm-shop" set:html={JSON.stringify(shop).replace(/</g, '\\u003c')} />
 </Layout>

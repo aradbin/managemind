@@ -1,44 +1,111 @@
 ---
 import type { StoreCategory } from '@managemind/core';
+// The site header of the redesign (design/storefront-redesign: SiteHeader and
+// PhoneHeader). One header serves both sizes, so the page has one search form
+// and one menu:
+// - desktop: the dark top bar (announcement, Track order, Help, language), the
+//   store name, the search field, Account and Cart, then All categories and
+//   the top-level categories;
+// - phone: the announcement, then menu, store name, language and cart, with
+//   the search field under them. Account sits in the phone's bottom bar.
+import { formatPhone } from '@managemind/shared';
 import { href } from '../../lib/links';
 import type { PageContext } from '../../lib/page';
+import Icon from './Icon.astro';
 import Img from './Img.astro';
 
 interface Props {
   ctx: PageContext;
   /** This page in the other language. */
   languageHref: string;
+  /** Phones: a back arrow to here in place of the menu. */
+  back?: string | undefined;
 }
-const { ctx, languageHref } = Astro.props;
-const { layout, t, locale } = ctx;
+const { ctx, languageHref, back } = Astro.props;
+const { layout, t, locale, d } = ctx;
 const other = locale === 'bn' ? 'en' : 'bn';
+const otherName = other === 'bn' ? 'বাংলা' : 'English';
 const logo = ctx.image(ctx.theme.tokens.logoMediaId);
 const roots = layout.categories.filter((c) => c.parentId === null);
 const children = (id: string): StoreCategory[] =>
   layout.categories.filter((c) => c.parentId === id);
 const query = ctx.url.pathname.endsWith('/search') ? (ctx.url.searchParams.get('q') ?? '') : '';
+const phone = layout.store.profile.contactPhone;
+
+const announcement = ctx.theme.announcement;
+const announcementText = announcement ? ctx.text(announcement.text) : '';
+const announcementHref = announcement ? ctx.themeLink(announcement.link) : null;
+const holiday = layout.storefront.holiday;
+const holidayText = holiday ? ctx.text(holiday.message) : '';
 ---
 
+<div class:list={['topbar', { 'no-note': !announcementText }]} id="mm-topbar">
+  <div class="wrap topbar-row">
+    <div class="topbar-note">
+      {holiday && holidayText && (
+        <p id="mm-holiday" role="note" hidden data-start={holiday.startsAt} data-end={holiday.endsAt}>{holidayText}</p>
+      )}
+      {announcementText && (
+        <p id="mm-announcement">
+          {announcementHref ? <a href={announcementHref}>{announcementText}</a> : announcementText}
+        </p>
+      )}
+    </div>
+    <ul class="topbar-links" role="list">
+      <li><a href={href(ctx.link, { kind: 'track' })}>{t('nav.trackOrder')}</a></li>
+      {phone && <li><a href={`tel:${phone}`}>{t('nav.help', { phone: formatPhone(phone, d.numerals) })}</a></li>}
+      <li><a class="lang" href={languageHref} hreflang={other} lang={other}>{otherName}</a></li>
+    </ul>
+  </div>
+</div>
+{holiday && (
+  <script is:inline>
+    (function(){var h=document.getElementById('mm-holiday');if(!h)return;var n=Date.now();if(n>=Date.parse(h.dataset.start)&&n<Date.parse(h.dataset.end)){h.hidden=false;document.getElementById('mm-topbar').classList.remove('no-note');var a=document.getElementById('mm-announcement');if(a)a.hidden=true;}})();
+  </script>
+)}
 <header class="site-header">
-  <div class="wrap header-row">
+  <div class="wrap header-grid">
+    {back && (
+      <a class="header-back" href={back} aria-label={t('nav.back')}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </a>
+    )}
     <a class="brand" href={href(ctx.link, { kind: 'home' })}>
-      {logo ? <Img image={logo} alt={layout.store.name} sizes="160px" eager /> : <span>{layout.store.name}</span>}
+      {logo ? <Img image={logo} alt={layout.store.name} sizes="200px" eager /> : <span>{layout.store.name}</span>}
     </a>
-    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get">
+    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get" data-suggest-form>
       <label class="visually-hidden" for="q">{t('search.label')}</label>
-      <input id="q" name="q" type="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" />
-      <button type="submit">{t('search.submit')}</button>
+      <input id="q" name="q" type="search" enterkeyhint="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="q-suggest" aria-expanded="false" />
+      <button type="submit"><Icon name="search" size={20} />{t('search.submit')}</button>
+      <div class="suggest" id="q-suggest" role="listbox" aria-label={t('search.suggestions')} hidden data-categories={JSON.stringify(layout.categories.map((c) => ({ name: c.name, href: href(ctx.link, { kind: 'category', slug: c.slug }) })))} data-heading={t('nav.categories')} data-all={t('search.seeAll', { q: '{q}' })} data-search={href(ctx.link, { kind: 'search' })}></div>
     </form>
+    <a class="lang lang-phone" href={languageHref} hreflang={other} lang={other}>{otherName}</a>
+    {layout.shop.accounts && (
+      <a class="header-link account-link" href={href(ctx.link, { kind: 'account' })}>
+        <Icon name="account" size={22} />
+        <span>{t('nav.account')}</span>
+      </a>
+    )}
+    <a class="header-link cart-link" href={href(ctx.link, { kind: 'cart' })}>
+      <span class="cart-icon">
+        <Icon name="cart" size={24} />
+        <span class="cart-count" data-cart-count data-bengali={d.numerals === 'bengali' ? '' : undefined} hidden></span>
+      </span>
+      <span class="cart-label">{t('nav.cart')}</span>
+    </a>
     {roots.length > 0 && (
-      <details class="menu">
-        <summary>{t('nav.menu')}</summary>
+      <details class:list={['menu', { 'has-back': back }]} id="site-menu">
+        <summary>
+          <Icon name="menu" size={22} />
+          <span class="menu-label">{t('nav.allCategories')}</span>
+        </summary>
         <nav class="menu-panel" aria-label={t('nav.categories')}>
-          <ul>
+          <ul role="list">
             {roots.map((c) => (
               <li>
-                <a href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a>
+                <a class="menu-root" href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a>
                 {children(c.id).length > 0 && (
-                  <ul>
+                  <ul role="list">
                     {children(c.id).map((k) => (
                       <li><a href={href(ctx.link, { kind: 'category', slug: k.slug })}>{k.name}</a></li>
                     ))}
@@ -50,17 +117,52 @@ const query = ctx.url.pathname.endsWith('/search') ? (ctx.url.searchParams.get('
         </nav>
       </details>
     )}
-    <a class="lang" href={languageHref} hreflang={other} lang={other}>{other === 'bn' ? 'বাংলা' : 'English'}</a>
-    {layout.shop.accounts && <a class="account-link" href={href(ctx.link, { kind: 'account' })}>{t('nav.account')}</a>}
-    <a class="cart-link" href={href(ctx.link, { kind: 'cart' })}>
-      <span class="visually-hidden">{t('nav.cart')}</span>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 4h2l2.4 11h11.2L21 7H7"/><circle cx="10" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg>
-      <span class="cart-count" data-cart-count data-bengali={ctx.d.numerals === 'bengali' ? '' : undefined} hidden></span>
-    </a>
+    {roots.length > 0 && (
+      <nav class="cat-links" aria-label={t('nav.categories')}>
+        <ul role="list">
+          {roots.map((c) => <li><a href={href(ctx.link, { kind: 'category', slug: c.slug })}>{c.name}</a></li>)}
+        </ul>
+      </nav>
+    )}
   </div>
 </header>
+<!-- Pinned once the full header scrolls away (design/storefront-redesign: the
+     slim bar): a separate fixed bar, so nothing on the page jumps. -->
+<div class="pinned-bar" data-pinned hidden>
+  <div class="wrap pinned-row">
+    {back && (
+      <a class="header-back pinned-back" href={back} aria-label={t('nav.back')}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </a>
+    )}
+    <a class="brand pinned-brand" href={href(ctx.link, { kind: 'home' })}>{layout.store.name}</a>
+    {roots.length > 0 && (
+      <button type="button" class:list={['pinned-menu', { 'with-back': back }]} data-open-menu aria-label={t('nav.allCategories')}><Icon name="menu" size={22} /></button>
+    )}
+    <form class="search" role="search" action={href(ctx.link, { kind: 'search' })} method="get">
+      <label class="visually-hidden" for="q2">{t('search.label')}</label>
+      <input id="q2" name="q" type="search" enterkeyhint="search" value={query} placeholder={t('search.placeholder')} maxlength="100" autocomplete="off" />
+      <button type="submit" aria-label={t('search.submit')}><Icon name="search" size={20} /><span class="pinned-search-label">{t('search.submit')}</span></button>
+    </form>
+    {layout.shop.accounts && (
+      <a class="header-link pinned-account" href={href(ctx.link, { kind: 'account' })} aria-label={t('nav.account')}><Icon name="account" size={22} /></a>
+    )}
+    <a class="header-link cart-link" href={href(ctx.link, { kind: 'cart' })}>
+      <span class="cart-icon">
+        <Icon name="cart" size={24} />
+        <span class="cart-count" data-cart-count data-bengali={d.numerals === 'bengali' ? '' : undefined} hidden></span>
+      </span>
+      <span class="cart-label">{t('nav.cart')}</span>
+    </a>
+  </div>
+</div>
+<script src="./scripts/header.ts"></script>
 <script is:inline>
   // The count comes from a cookie the API keeps (phase-4-plan §3.4), so the
-  // cached page shows it with no API call.
-  (function(){var m=/(?:^|;\s*)mm_cart_n=(\d+)/.exec(document.cookie);var n=m?+m[1]:0;if(!n)return;var b=document.querySelector('[data-cart-count]');if(b){b.textContent=b.hasAttribute('data-bengali')?String(n).replace(/\d/g,function(d){return '০১২৩৪৫৬৭৮৯'[d]}):String(n);b.hidden=false;}})();
+  // cached page shows it with no API call. The menu closes on Escape and on a
+  // click outside it, and the bottom bar's Categories opens it.
+  (function(){var m=/(?:^|;\s*)mm_cart_n=(\d+)/.exec(document.cookie);var n=m?+m[1]:0;if(n){document.querySelectorAll('[data-cart-count]').forEach(function(b){b.textContent=b.hasAttribute('data-bengali')?String(n).replace(/\d/g,function(d){return '০১২৩৪৫৬৭৮৯'[d]}):String(n);b.hidden=false;});}
+  var menu=document.getElementById('site-menu');if(!menu)return;
+  document.addEventListener('click',function(e){if(menu.open&&!menu.contains(e.target))menu.open=false;var o=e.target.closest&&e.target.closest('[data-open-menu]');if(o){e.preventDefault();menu.open=true;scrollTo({top:0});menu.querySelector('summary').focus();}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&menu.open){menu.open=false;menu.querySelector('summary').focus();}});})();
 </script>
