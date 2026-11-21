@@ -1,6 +1,6 @@
 // The cart's lines and totals as DOM (phase-4-plan §3.16), shared by the
 // cart page and checkout's summary. Text only, never HTML.
-import { add, el, imageUrl, type Localized, money, pick, t } from './shop';
+import { add, api, el, imageUrl, type Localized, money, pick, t } from './shop';
 
 export interface CartLine {
   variantId: string;
@@ -76,6 +76,8 @@ export function totals(
     totalLabel?: string;
     /** The cart, before an area is chosen: no total while delivery is unknown. */
     totalOnlyWithZone?: boolean;
+    /** The delivery row with no zone, in place of "from ৳60" (checkout: "Not available"). */
+    noZoneDelivery?: string;
   } = {},
 ): HTMLElement {
   const tt = cart.totals;
@@ -92,9 +94,11 @@ export function totals(
     ? fee === 0 && tt.deliveryFee > 0
       ? t('cart.free')
       : money(fee)
-    : cart.deliveryFrom !== null && !options.totalOnlyWithZone
-      ? t('cart.deliveryFrom', { price: money(cart.deliveryFrom) })
-      : (options.deliveryHint ?? '');
+    : options.noZoneDelivery
+      ? options.noZoneDelivery
+      : cart.deliveryFrom !== null && !options.totalOnlyWithZone
+        ? t('cart.deliveryFrom', { price: money(cart.deliveryFrom) })
+        : (options.deliveryHint ?? '');
   add(list, row(t('cart.delivery'), delivery));
   if (tt.vatTotal > 0 && !tt.vatIncluded) add(list, row(t('cart.vat'), money(tt.vatTotal)));
   if (tt.rounding !== 0) add(list, row(t('cart.rounding'), money(tt.rounding)));
@@ -127,6 +131,76 @@ export function totals(
       ),
       box.firstChild,
     );
+  }
+  return box;
+}
+
+/**
+ * The promo code: a field and Apply, or the applied code with Remove. The
+ * cart page's is its own form; checkout's sits inside the checkout form, so
+ * there it is a group that applies on Enter.
+ */
+export function codeForm(
+  cart: Cart,
+  change: (run: () => Promise<Cart>, status: HTMLElement) => void,
+  options: { nested?: boolean } = {},
+): HTMLElement {
+  const status = el('p', { class: 'small', role: 'status' });
+  if (cart.code) {
+    const s = cart.code.status;
+    status.textContent =
+      s === 'applied'
+        ? t('cart.codeApplied', { code: cart.code.code })
+        : t(
+            `cart.code.${['not_found', 'inactive', 'used_up', 'min_subtotal', 'better_offer'].includes(s) ? s : 'other'}`,
+          );
+    const remove = el('button', { type: 'button', class: 'link', text: t('cart.removeCode') });
+    remove.addEventListener('click', () =>
+      change(() => api<Cart>('/cart/code', { method: 'DELETE' }), status),
+    );
+    return el(
+      'div',
+      { class: 'coupon' },
+      el('p', { class: 'code-chip', text: cart.code.code }),
+      remove,
+      status,
+    );
+  }
+  const input = el('input', {
+    id: 'coupon',
+    name: options.nested ? undefined : 'code',
+    maxlength: '32',
+    autocomplete: 'off',
+    autocapitalize: 'characters',
+  });
+  const apply = () => {
+    const code = input.value.trim();
+    if (code) change(() => api<Cart>('/cart/code', { method: 'PUT', body: { code } }), status);
+  };
+  const button = el('button', {
+    type: options.nested ? 'button' : 'submit',
+    class: 'button secondary',
+    text: t('cart.apply'),
+  });
+  const box = el(
+    options.nested ? 'div' : 'form',
+    { class: 'coupon' },
+    el('label', { for: 'coupon', text: t('cart.code') }),
+    el('div', { class: 'inline' }, input, button),
+    status,
+  );
+  if (options.nested) {
+    button.addEventListener('click', apply);
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      apply();
+    });
+  } else {
+    box.addEventListener('submit', (e) => {
+      e.preventDefault();
+      apply();
+    });
   }
   return box;
 }

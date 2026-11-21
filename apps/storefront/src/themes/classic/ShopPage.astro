@@ -64,6 +64,7 @@ const shop = {
   phone: ctx.layout.store.profile.contactPhone
     ? formatPhone(ctx.layout.store.profile.contactPhone, ctx.d.numerals)
     : null,
+  tel: ctx.layout.store.profile.contactPhone ?? null,
   // Delivery zones in the page's language, cash on delivery, online payment and returns.
   facts: facts
     ? {

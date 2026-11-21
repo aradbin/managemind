@@ -209,6 +209,89 @@ test('the cart and checkout', async ({ page }) => {
   });
 });
 
+// The states the store or the server can put checkout in
+// (design/storefront-redesign: Checkout's scenarios). The demo stores stay
+// open and serve everywhere for the other tests, so the API's answers are
+// stood in for here; the answers themselves are tested in the API's suite.
+test('checkout when the store or the server says no', async ({ page }) => {
+  await openStore(page, 'demo-fashion', '/categories/sarees');
+  const add = page.getByRole('button', { name: /^Add .+ to cart$/ }).first();
+  await add.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await add.click();
+  await expect(page.getByRole('status').filter({ hasText: 'Added · View cart' })).toBeVisible();
+  await page.goto(`${STOREFRONT}/checkout`);
+  await page.locator('#c-phone').fill('01711000123');
+  await page.locator('#c-name').fill('Test Shopper');
+  await page.locator('#c-line').fill('House 1, Road 2');
+  const orders = '**/api/checkout/orders*';
+
+  await test.step('an area the store does not serve, as soon as it is picked', async () => {
+    await page.route('**/api/cart/area*', async (route) => {
+      const res = await route.fetch();
+      await route.fulfill({ response: res, json: { ...(await res.json()), zone: null } });
+    });
+    await pickArea(page, { name: 'Dhanm', id: 513 });
+    await expect(page.locator('#c-area-e')).toHaveText('The store doesn’t deliver to this area.');
+    await expect(page.locator('[data-delivery-note]')).toContainText(
+      'Ask the store whether they can deliver here',
+    );
+    await page.unroute('**/api/cart/area*');
+    await page.getByRole('button', { name: 'Change' }).click();
+    await pickArea(page, { name: 'Dhanm', id: 513 });
+    await expect(page.locator('[data-delivery-note]')).toContainText('Delivery in about');
+    await expect(page.locator('#c-area-e')).toBeEmpty();
+  });
+
+  await test.step('prices changed: the new total, the line marked', async () => {
+    await page.route(orders, (r) => r.fulfill({ status: 409, json: { code: 'price_changed' } }));
+    await page.route('**/api/cart?*', async (route) => {
+      const res = await route.fetch();
+      const cart = await res.json();
+      cart.lines[0].unitPrice += 5000;
+      await route.fulfill({ response: res, json: cart });
+    });
+    await page.getByRole('button', { name: 'Place order' }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Prices changed' })).toBeFocused();
+    await expect(page.getByText(/^Was ৳[\d,]+, now ৳[\d,]+$/)).toBeVisible();
+    await page.unroute('**/api/cart?*');
+    await page.unroute(orders);
+  });
+
+  await test.step('the phone code: a dialog that confirms by itself', async () => {
+    await page.route(orders, (r) => r.fulfill({ status: 403, json: { code: 'otp_required' } }));
+    await page.route('**/api/checkout/otp?*', (r) => r.fulfill({ json: { sent: true } }));
+    await page.route('**/api/checkout/otp/verify*', (r) =>
+      r.fulfill({ json: { otpToken: 'token' } }),
+    );
+    await page.getByRole('button', { name: 'Place order' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Confirm your mobile number' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('01711-000123')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /^Send a new code in 0:4\d$/ })).toBeDisabled();
+    await expectAccessible(page, 'checkout asking for the phone code');
+    await page.unroute(orders);
+    // The order goes again with the token; this time the store has paused.
+    let token: unknown;
+    await page.route(orders, (r) => {
+      token = r.request().postDataJSON().otpToken;
+      return r.fulfill({ status: 503, json: { code: 'checkout_paused' } });
+    });
+    await dialog.getByLabel('6-digit code').pressSequentially('123456');
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => token).toBe('token');
+  });
+
+  await test.step('the store paused: the form gives way to a panel', async () => {
+    await expect(
+      page.getByRole('heading', { name: 'The store is not taking orders right now.' }),
+    ).toBeVisible();
+    await expect(page.locator('[data-checkout]')).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Back to cart' }).last()).toBeVisible();
+    await expectAccessible(page, 'checkout paused');
+    await page.unroute(orders);
+  });
+});
+
 test('the slim bar pinned on scroll, and search suggestions', async ({ page }) => {
   await openStore(page, 'demo-fashion', '/categories/sarees');
   const pinned = page.locator('[data-pinned]');

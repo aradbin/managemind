@@ -6,7 +6,7 @@
 // or a reload sends the same key and never makes two orders. Online payment
 // (phase-5a-plan §3.3, §3.4) goes on to SSLCommerz once the order is saved.
 import { attributionForCheckout } from './attribution';
-import { type Cart, lineName, problemText, totals } from './cart-view';
+import { type Cart, codeForm, lineName, problemText, totals } from './cart-view';
 import {
   api,
   config,
@@ -77,12 +77,133 @@ const name = (n: [unknown, ...unknown[]]) =>
 let cart: Cart | null = null;
 let check: Check | undefined;
 
-function show(message: string, kind: 'error' | 'info' = 'error') {
+/** WhatsApp and Call links to the store, those it has. */
+function contactLinks(text = ''): HTMLAnchorElement[] {
+  const links: HTMLAnchorElement[] = [];
+  if (cfg.whatsapp) {
+    const query = text ? `?text=${encodeURIComponent(text)}` : '';
+    links.push(
+      el('a', {
+        href: `https://wa.me/${cfg.whatsapp.replace(/\D/g, '')}${query}`,
+        target: '_blank',
+        rel: 'noopener',
+        text: t('help.whatsapp'),
+      }),
+    );
+  }
+  if (cfg.tel && cfg.phone) {
+    links.push(el('a', { href: `tel:${cfg.tel}`, text: t('checkout.call', { phone: cfg.phone }) }));
+  }
+  return links;
+}
+
+/**
+ * The notice above the form (design/storefront-redesign: Checkout's
+ * scenarios): a problem, a price change or a payment the store asks for,
+ * with the store's WhatsApp and phone when the shopper has to ask them.
+ * Focus moves to it, so it is read out.
+ */
+function show(message: string, kind: 'error' | 'info' | 'warn' = 'error', contact = false) {
   if (!notice) return;
-  notice.textContent = message;
+  const text = notice.querySelector('[data-notice-text]');
+  const links = notice.querySelector<HTMLElement>('[data-notice-links]');
+  if (text) text.textContent = message;
   notice.dataset.kind = kind;
+  notice.setAttribute('role', kind === 'error' ? 'alert' : 'status');
   notice.hidden = !message;
-  if (message) notice.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (links) {
+    const found = contact ? contactLinks() : [];
+    fill(links, ...found);
+    links.hidden = !found.length;
+  }
+  if (message) {
+    notice.focus({ preventScroll: true });
+    notice.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
+
+/**
+ * In the form's place when the store can't take this order
+ * (design/storefront-redesign: "the form is replaced by a panel"): the store
+ * is paused, there is no way to pay, or the cart is empty.
+ */
+function block(kind: 'paused' | 'nopay' | 'empty' | 'error', message = '') {
+  const panel = document.querySelector<HTMLElement>('[data-block]');
+  if (!panel) return;
+  if (form) form.hidden = true;
+  const sign = (d: string, size = 26, round = true) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    for (const [k, v] of Object.entries({
+      width: String(size),
+      height: String(size),
+      viewBox: '0 0 24 24',
+      fill: 'none',
+      stroke: 'currentColor',
+      'stroke-width': '2',
+      'stroke-linecap': 'round',
+      'stroke-linejoin': 'round',
+      'aria-hidden': 'true',
+    }))
+      svg.setAttribute(k, v);
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+    return round ? el('span', { class: 'block-sign' }, svg) : svg;
+  };
+  const back = el('a', {
+    class: 'button outline',
+    href: cfg.links.cart,
+    text: t('checkout.backToCart'),
+  });
+  const whatsapp = cfg.whatsapp
+    ? el(
+        'a',
+        {
+          class: 'button whatsapp',
+          href: `https://wa.me/${cfg.whatsapp.replace(/\D/g, '')}`,
+          target: '_blank',
+          rel: 'noopener',
+        },
+        sign('M4 20l1.3-3.9A8 8 0 1 1 8 19z', 20, false),
+        t('checkout.whatsapp'),
+      )
+    : null;
+  panel.dataset.kind = kind;
+  if (kind === 'empty') {
+    fill(
+      panel,
+      sign('M3 4h2l2.4 11h11.2L21 7H7M10 20h.01M17 20h.01'),
+      el('h2', { text: t('cart.empty') }),
+      el('p', { text: t('cart.emptyText') }),
+      el(
+        'p',
+        { class: 'block-actions' },
+        el('a', { class: 'button', href: cfg.links.home, text: t('cart.start') }),
+      ),
+    );
+  } else if (kind === 'error') {
+    fill(
+      panel,
+      sign('M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16.5v.5'),
+      el('h2', { text: t('cart.error') }),
+      el('p', { class: 'block-actions' }, back),
+    );
+  } else {
+    fill(
+      panel,
+      sign(
+        kind === 'paused'
+          ? 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM10 9v6M14 9v6'
+          : 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16.5v.5',
+      ),
+      el('h2', { text: kind === 'paused' ? t('checkout.paused') : t('checkout.codUnavailable') }),
+      message ? el('blockquote', { text: message }) : null,
+      el('p', { text: kind === 'paused' ? t('checkout.pausedNext') : t('checkout.noPayNext') }),
+      el('p', { class: 'block-actions' }, whatsapp, back),
+    );
+  }
+  panel.hidden = false;
+  scrollTo({ top: 0 });
 }
 
 const foldLabel = document.querySelector<HTMLElement>('[data-fold-label]');
@@ -104,8 +225,78 @@ function payRow() {
   payAmount.textContent = money(method === 'cod_with_advance' ? fee : cart.totals.total);
 }
 
+/** Lines whose price changed when the order was placed: the price the shopper had seen. */
+const priceWas = new Map<string, number>();
+/** The chosen area has no delivery zone (design/storefront-redesign: "Area not served"). */
+let unserved = false;
+let busy = false;
+
+/** A change to the cart from checkout (the promo code): redraw from its answer. */
+async function change(run: () => Promise<Cart>, status: HTMLElement) {
+  if (busy) return;
+  busy = true;
+  try {
+    renderSummary(await run());
+  } catch (e) {
+    status.textContent =
+      e instanceof ShopError && e.code === 'promotion_unavailable'
+        ? t('cart.code.not_found')
+        : t('cart.error');
+  } finally {
+    busy = false;
+  }
+}
+
+/**
+ * The box under the address: every zone's charge before an area is chosen,
+ * the chosen zone's charge and time after, and what to do next when the
+ * store doesn't deliver there.
+ */
+function deliveryBox(c: Cart) {
+  const note = document.querySelector<HTMLElement>('[data-delivery-note]');
+  const text = document.querySelector<HTMLElement>('[data-delivery-text]');
+  if (!note || !text) return;
+  note.classList.toggle('unserved', unserved);
+  if (unserved) {
+    const links = contactLinks();
+    fill(
+      text,
+      el('strong', { text: t('checkout.askDelivery') }),
+      ...links.flatMap((a) => [' ', a]),
+    );
+    note.hidden = false;
+    return;
+  }
+  if (c.zone) {
+    const fee = Math.max(0, c.totals.deliveryFee - c.totals.deliveryDiscount);
+    const estimate = pick(c.zone.estimate);
+    fill(
+      text,
+      [
+        pick(c.zone.name),
+        fee === 0 && c.totals.deliveryFee > 0 ? t('cart.free') : money(fee),
+        estimate ? t('checkout.estimate', { estimate }) : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    );
+    note.hidden = false;
+    return;
+  }
+  const zones = (cfg.facts?.zones ?? [])
+    .map((z) => `${z.name}: ${money(z.fee)}${z.estimate ? ` (${z.estimate})` : ''}`)
+    .join(', ');
+  fill(text, zones ? t('cart.deliveryNote', { zones }) : '');
+  note.hidden = !zones;
+}
+
 function renderSummary(c: Cart) {
   cart = c;
+  unserved = c.areaId !== null && !c.zone && c.lines.length > 0;
+  if (unserved) fieldError('areaId', t('checkout.noDelivery'));
+  else if (document.getElementById('c-area-e')?.textContent === t('checkout.noDelivery'))
+    fieldError('areaId', '');
+  deliveryBox(c);
   if (!summary) return;
   const lines = el(
     'ul',
@@ -134,6 +325,15 @@ function renderSummary(c: Cart) {
             : null,
           el('span', { class: 'visually-hidden', text: ` × ${digits(String(l.quantity))}` }),
           problemText(l) ? el('span', { class: 'line-problem', text: problemText(l) ?? '' }) : null,
+          priceWas.has(l.variantId) && priceWas.get(l.variantId) !== l.unitPrice
+            ? el('span', {
+                class: 'was-now',
+                text: t('checkout.wasNow', {
+                  was: money(priceWas.get(l.variantId) ?? 0),
+                  now: money(l.unitPrice),
+                }),
+              })
+            : null,
         ),
         el('span', { class: 'mini-total', text: money(l.total) }),
       );
@@ -143,10 +343,16 @@ function renderSummary(c: Cart) {
     deliveryHint: t('checkout.chooseArea'),
     subtotalLabel: t('cart.subtotalCount', { count: c.itemCount }),
     ...(c.zone ? {} : { totalLabel: t('checkout.totalBefore') }),
+    ...(unserved ? { noZoneDelivery: t('checkout.notAvailable') } : {}),
   });
-  const parts: (Node | null)[] = [lines, box];
-  const estimate = c.zone ? pick(c.zone.estimate) : '';
-  if (estimate) parts.push(el('p', { class: 'hint', text: t('checkout.estimate', { estimate }) }));
+  // The promo code, as on the cart page (design/storefront-redesign: Checkout).
+  const promo = el(
+    'details',
+    { class: 'promo', open: Boolean(c.code) },
+    el('summary', { text: t('cart.promo') }),
+    codeForm(c, (run, status) => void change(run, status), { nested: true }),
+  );
+  const parts: (Node | null)[] = [lines, promo, box];
   if (!c.ready) parts.push(el('p', { class: 'line-problem', text: t('cart.fix') }));
   fill(summary, ...parts.filter((p): p is Node => p !== null));
   if (place) place.disabled = !c.ready;
@@ -241,6 +447,8 @@ async function setupAddress() {
     close();
     fieldError('areaId', '');
     if (!send) return;
+    // Until the cart answers for the new area, the old one's "not served" is gone.
+    unserved = false;
     try {
       renderSummary(await api<Cart>('/cart/area', { method: 'PUT', body: { areaId } }));
     } catch {
@@ -323,7 +531,10 @@ async function setupAddress() {
   });
   choosePlace = (areaId: number) => void pickArea(areaId, false);
   // A cart that already has an area (a reload): choose it again.
-  if (cart?.areaId) choosePlace(cart.areaId);
+  if (cart?.areaId) {
+    choosePlace(cart.areaId);
+    renderSummary(cart);
+  }
 }
 
 /**
@@ -462,8 +673,8 @@ function collect(): Record<string, unknown> | null {
     }
   }
   const areaId = Number(value('areaId'));
-  fieldError('areaId', areaId ? '' : t('checkout.areaPick'));
-  if (!areaId) ok = false;
+  fieldError('areaId', !areaId ? t('checkout.areaPick') : unserved ? t('checkout.noDelivery') : '');
+  if (!areaId || unserved) ok = false;
   const divisionId = Number(value('divisionId'));
   const districtId = Number(value('districtId'));
   const line = need('line');
@@ -597,28 +808,47 @@ let otpToken: string | undefined;
 
 /**
  * Texts a code to the order's phone and checks it; then the order is placed
- * again with the token. Shown only when checkout answers `otp_required`.
+ * again with the token. Shown only when checkout answers `otp_required`
+ * (design/storefront-redesign: "Phone code"): a dialog, a bottom sheet on
+ * phones, that confirms by itself once all 6 digits are in, and lets a new
+ * code go only after 45 seconds, as the store allows only a few an hour.
  */
 function askForCode(phone: string) {
-  if (!form || form.querySelector('[data-otp]')) return;
-  const status = el('p', { class: 'muted small', role: 'status' });
-  const input = el('input', {
-    id: 'c-otp',
-    inputmode: 'numeric',
-    autocomplete: 'one-time-code',
-    maxlength: '6',
-    pattern: '[0-9]{6}',
-  });
-  const verify = el('button', { type: 'button', class: 'button', text: t('checkout.otpVerify') });
-  const resend = el('button', { type: 'button', class: 'link', text: t('checkout.otpResend') });
-  const box = el(
-    'div',
-    { class: 'field', 'data-otp': true },
-    el('label', { for: 'c-otp', text: t('checkout.otpLabel') }),
-    input,
-    status,
-    el('p', {}, verify, ' ', resend),
-  );
+  const dialog = document.querySelector<HTMLDialogElement>('[data-otp]');
+  const input = document.getElementById('c-otp') as HTMLInputElement | null;
+  const status = dialog?.querySelector<HTMLElement>('[data-otp-status]');
+  const verify = dialog?.querySelector<HTMLButtonElement>('[data-otp-verify]');
+  const resend = dialog?.querySelector<HTMLButtonElement>('[data-otp-resend]');
+  const shown = dialog?.querySelector('[data-otp-phone]');
+  if (!dialog || !input || !status || !verify || !resend) return;
+  // 01712-345678, as the number is written on the form's example.
+  const local = latin(phone).replace(/^\+?88/, '');
+  if (shown)
+    shown.textContent = digits(
+      /^01\d{9}$/.test(local) ? `${local.slice(0, 5)}-${local.slice(5)}` : phone,
+    );
+  input.value = '';
+  const say = (text: string, kind: 'ok' | 'error' = 'error') => {
+    status.textContent = text;
+    status.dataset.kind = kind;
+    input.setAttribute('aria-invalid', String(Boolean(text) && kind === 'error'));
+  };
+  say('');
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const wait = (seconds: number) => {
+    clearInterval(timer);
+    let left = seconds;
+    const tick = () => {
+      resend.disabled = left > 0;
+      resend.textContent =
+        left > 0
+          ? t('checkout.otpWait', { time: digits(`0:${String(left).padStart(2, '0')}`) })
+          : t('checkout.otpResend');
+      if (left-- <= 0) clearInterval(timer);
+    };
+    tick();
+    timer = setInterval(tick, 1000);
+  };
   const sendCode = async () => {
     resend.disabled = true;
     try {
@@ -627,48 +857,83 @@ function askForCode(phone: string) {
       await api('/checkout/otp', {
         body: { phone, ...(turnstileToken ? { turnstileToken } : {}) },
       });
-      status.textContent = t('checkout.otpSent');
+      say(t('checkout.otpSent'), 'ok');
+      wait(45);
     } catch (err) {
-      status.textContent =
+      say(
         err instanceof ShopError && err.code === 'rate_limited'
           ? t('checkout.otpTooMany')
-          : t('cart.error');
-    } finally {
-      resend.disabled = false;
+          : t('cart.error'),
+      );
+      wait(err instanceof ShopError && err.code === 'rate_limited' ? 45 : 0);
     }
   };
-  verify.addEventListener('click', async () => {
-    const code = input.value.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d))).trim();
-    if (!/^\d{6}$/.test(code)) {
-      status.textContent = t('checkout.otpWrong');
-      return;
-    }
+  let checking = false;
+  const confirm = async () => {
+    const code = latin(input.value).replace(/\D/g, '');
+    if (code.length !== 6) return say(t('checkout.otpWrong'));
+    if (checking) return;
+    checking = true;
     verify.disabled = true;
     try {
       const done = await api<{ otpToken: string }>('/checkout/otp/verify', {
         body: { phone, code },
       });
       otpToken = done.otpToken;
-      box.remove();
+      clearInterval(timer);
+      dialog.close();
       form?.requestSubmit();
     } catch (err) {
       const reason =
         err instanceof ShopError
           ? (err.body.errors as { code: string }[] | undefined)?.[0]?.code
           : '';
-      status.textContent =
+      say(
         reason === 'locked' || reason === 'expired'
           ? t('checkout.otpExpired')
-          : t('checkout.otpWrong');
+          : t('checkout.otpWrong'),
+      );
+      input.select();
     } finally {
+      checking = false;
       verify.disabled = false;
     }
-  });
-  resend.addEventListener('click', sendCode);
-  place?.insertAdjacentElement('beforebegin', box);
+  };
+  // The handlers are set once; each opening sends to the number on the form.
+  if (!dialog.dataset.ready) {
+    dialog.dataset.ready = '1';
+    input.addEventListener('input', () => {
+      const code = latin(input.value).replace(/\D/g, '').slice(0, 6);
+      if (code !== input.value) input.value = code;
+      if (input.getAttribute('aria-invalid') === 'true') say('');
+      if (code.length === 6) void current.confirm();
+    });
+    verify.addEventListener('click', () => void current.confirm());
+    resend.addEventListener('click', () => void current.sendCode());
+    dialog.querySelector('[data-otp-close]')?.addEventListener('click', () => dialog.close());
+    dialog.querySelector('[data-otp-change]')?.addEventListener('click', () => {
+      dialog.close();
+      const field = document.getElementById('c-phone') as HTMLInputElement | null;
+      field?.focus();
+      field?.select();
+    });
+    dialog.addEventListener('close', () => clearInterval(current.timer()));
+  }
+  current = { confirm, sendCode, timer: () => timer };
+  dialog.showModal();
   input.focus();
   void sendCode();
 }
+/** The open dialog's actions: the handlers are bound once, the phone changes per opening. */
+let current: {
+  confirm: () => Promise<void>;
+  sendCode: () => Promise<void>;
+  timer: () => ReturnType<typeof setInterval> | undefined;
+} = {
+  confirm: async () => {},
+  sendCode: async () => {},
+  timer: () => undefined,
+};
 
 async function submit(e: SubmitEvent) {
   e.preventDefault();
@@ -726,10 +991,21 @@ async function submit(e: SubmitEvent) {
     const b = err.body;
     switch (err.code) {
       case 'price_changed': {
-        // The new totals: the shopper sees them before trying again.
+        // The new totals, each changed line marked with the price seen before:
+        // the shopper checks them before trying again.
+        const seen = new Map((cart?.lines ?? []).map((l) => [l.variantId, l.unitPrice]));
         const fresh = await api<Cart>('/cart').catch(() => null);
-        if (fresh) renderSummary(fresh);
-        return show(t('checkout.priceChanged'), 'info');
+        if (fresh) {
+          for (const l of fresh.lines) {
+            const was = seen.get(l.variantId);
+            if (was !== undefined && was !== l.unitPrice && !priceWas.has(l.variantId))
+              priceWas.set(l.variantId, was);
+          }
+          renderSummary(fresh);
+        }
+        const fold = document.querySelector<HTMLDetailsElement>('[data-summary-fold]');
+        if (fold) fold.open = true;
+        return show(t('checkout.priceChanged'), 'warn');
       }
       case 'insufficient_stock':
       case 'cart_invalid': {
@@ -738,22 +1014,32 @@ async function submit(e: SubmitEvent) {
         return show(t('checkout.stock'));
       }
       case 'checkout_paused':
-        return show(t('checkout.paused'));
+        return block('paused');
       case 'otp_required':
         // The store asks this phone for a code by SMS first (§3.14).
-        askForCode((body.contact as { phone: string }).phone);
-        return show(t('checkout.otpNeeded'), 'info');
-      case 'cod_unavailable':
+        return askForCode((body.contact as { phone: string }).phone);
+      case 'cod_unavailable': {
         // This phone (or every phone) pays the delivery charge first (§3.4).
         if (b.reason === 'advance_required') {
           offer('cod', false);
           offer('cod_with_advance', true);
           choose('cod_with_advance');
+          payRow();
           return show(t('checkout.advanceRequired'), 'info');
         }
-        return show(t('checkout.codUnavailable'));
+        // Cash on delivery is out for this order: online, if the store takes it.
+        const online = form?.querySelector<HTMLElement>('[data-pay="online"]');
+        if (online && !online.hidden) {
+          offer('cod', false);
+          offer('cod_with_advance', false);
+          choose('online');
+          payRow();
+          return show(t('checkout.codUnavailable'), 'info', true);
+        }
+        return block('nopay');
+      }
       case 'rate_limited':
-        return show(t('checkout.limited'));
+        return show(t('checkout.limited'), 'error', true);
       case 'validation_failed': {
         const fields = (b.errors as { path: string }[] | undefined) ?? [];
         for (const f of fields) {
@@ -773,19 +1059,10 @@ async function submit(e: SubmitEvent) {
   }
 }
 
-/** The delivery note under the address, and the promises under Place order. */
+/** The promises under Place order. */
 function showFacts() {
   const facts = cfg.facts;
   if (!facts) return;
-  const zones = facts.zones
-    .map((z) => `${z.name}: ${money(z.fee)}${z.estimate ? ` (${z.estimate})` : ''}`)
-    .join(', ');
-  const note = document.querySelector<HTMLElement>('[data-delivery-note]');
-  const text = document.querySelector<HTMLElement>('[data-delivery-text]');
-  if (note && text && zones) {
-    text.textContent = t('cart.deliveryNote', { zones });
-    note.hidden = false;
-  }
   const trust = document.querySelector<HTMLElement>('[data-trust]');
   if (!trust) return;
   const items = [
@@ -806,30 +1083,21 @@ async function start() {
   try {
     state = await api<CheckoutState>('/checkout');
   } catch {
-    return show(t('cart.error'));
+    return block('error');
   }
   setCount(state.cart.itemCount);
-  if (!state.cart.lines.length) {
-    show(t('cart.empty'), 'info');
-    notice?.insertAdjacentElement(
-      'afterend',
-      el('p', {}, el('a', { class: 'button', href: cfg.links.home, text: t('cart.continue') })),
-    );
-    return;
-  }
-  if (state.holiday.active) {
-    return show(pick(state.holiday.message) || t('checkout.paused'), 'info');
-  }
+  if (!state.cart.lines.length) return block('empty');
+  if (state.holiday.active) return block('paused', pick(state.holiday.message));
   const online = state.online.enabled;
-  if (!state.cod.enabled && !online) return show(t('checkout.codUnavailable'), 'info');
+  if (!state.cod.enabled && !online) return block('nopay');
   // The choices the store offers: COD, online, and the delivery charge online.
   offer('online', online);
   offer('cod_with_advance', online && state.cod.enabled && state.online.advance !== 'never');
   offer('cod', state.cod.enabled && !(online && state.online.advance === 'always'));
   if (!state.cod.enabled) choose('online');
   else if (online && state.online.advance === 'always') choose('cod_with_advance');
-  renderSummary(state.cart);
   form.hidden = false;
+  renderSummary(state.cart);
   await setupAddress().catch(() => show(t('cart.error')));
   if (state.account) setupAccount(state.account);
   else if (state.accounts && cfg.links.account) {

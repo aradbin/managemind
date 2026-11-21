@@ -1,7 +1,15 @@
 // The cart page (phase-4-plan §3.16): lines with quantity steppers, the
 // coupon field, applied offers, free-delivery progress and totals. Every
 // change goes to /api/cart and redraws from its answer.
-import { type Cart, type CartLine, lineImage, lineName, problemText, totals } from './cart-view';
+import {
+  type Cart,
+  type CartLine,
+  codeForm,
+  lineImage,
+  lineName,
+  problemText,
+  totals,
+} from './cart-view';
 import { add, api, config, el, fill, money, pick, ShopError, setCount, t } from './shop';
 
 const root = document.querySelector<HTMLElement>('[data-cart]');
@@ -176,55 +184,6 @@ function lineView(l: CartLine): HTMLElement {
   );
 }
 
-function codeForm(cart: Cart): HTMLElement {
-  const status = el('p', { class: 'small', role: 'status' });
-  if (cart.code) {
-    const s = cart.code.status;
-    status.textContent =
-      s === 'applied'
-        ? t('cart.codeApplied', { code: cart.code.code })
-        : t(
-            `cart.code.${['not_found', 'inactive', 'used_up', 'min_subtotal', 'better_offer'].includes(s) ? s : 'other'}`,
-          );
-    const remove = el('button', { type: 'button', class: 'link', text: t('cart.removeCode') });
-    remove.addEventListener('click', () =>
-      change(() => api<Cart>('/cart/code', { method: 'DELETE' }), status),
-    );
-    return el(
-      'div',
-      { class: 'coupon' },
-      el('p', { class: 'code-chip', text: cart.code.code }),
-      remove,
-      status,
-    );
-  }
-  const input = el('input', {
-    id: 'coupon',
-    name: 'code',
-    maxlength: '32',
-    autocomplete: 'off',
-    autocapitalize: 'characters',
-  });
-  const form = el(
-    'form',
-    { class: 'coupon' },
-    el('label', { for: 'coupon', text: t('cart.code') }),
-    el(
-      'div',
-      { class: 'inline' },
-      input,
-      el('button', { type: 'submit', class: 'button secondary', text: t('cart.apply') }),
-    ),
-    status,
-  );
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const code = input.value.trim();
-    if (code) void change(() => api<Cart>('/cart/code', { method: 'PUT', body: { code } }), status);
-  });
-  return form;
-}
-
 const facts = config().facts ?? null;
 
 /** "Inside Dhaka: ৳60 (1–2 days), Outside Dhaka: ৳120 (3–5 days)". */
@@ -288,7 +247,7 @@ function render(cart: Cart) {
     'details',
     { class: 'promo', open: Boolean(cart.code) },
     el('summary', { text: t('cart.promo') }),
-    codeForm(cart),
+    codeForm(cart, (run, status) => void change(run, status)),
   );
   const note = zonesText()
     ? el(

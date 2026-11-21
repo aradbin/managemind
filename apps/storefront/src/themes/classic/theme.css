@@ -17,6 +17,8 @@ html {
   --c-border: color-mix(in srgb, var(--c-text) 13%, var(--c-surface));
   --c-success: #1d6b3a;
   --c-success-bg: #e7f4ec;
+  --c-warn: #92400e;
+  --c-warn-bg: #fdf3e3;
   --shadow-pop: 0 12px 32px rgb(26 31 41 / 0.14);
 }
 /* Hidden means hidden, whatever display a class sets (the checkout form is a grid). */
@@ -4084,6 +4086,247 @@ body.minimal:has(.place-box) {
   body.minimal:has(.place-box) {
     padding-bottom: 0;
   }
+}
+/* When the store or server says no (design/storefront-redesign: Checkout's
+   scenarios): a notice above the form, the form replaced by a panel, the
+   phone-code dialog, the changed prices, the area the store doesn't serve. */
+.checkout-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 -16px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--c-sale) 7%, var(--c-background));
+  border: 1.5px solid var(--c-sale);
+  font-size: 0.9375rem;
+}
+.checkout-notice > svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--c-sale);
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.checkout-notice > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.checkout-notice[data-kind="warn"] {
+  background: var(--c-warn-bg);
+  border-color: var(--c-warn);
+}
+.checkout-notice[data-kind="warn"] > svg {
+  color: var(--c-warn);
+}
+.checkout-notice[data-kind="info"] {
+  background: color-mix(in srgb, var(--c-primary) 7%, var(--c-background));
+  border-color: var(--c-primary);
+}
+.checkout-notice[data-kind="info"] > svg {
+  color: var(--c-primary);
+}
+.notice-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.notice-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+}
+.checkout-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0 -16px;
+  padding: 24px 16px;
+  background: var(--c-background);
+  border-top: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--c-border);
+}
+.checkout-block h2 {
+  margin: 0;
+  font-size: 1.1875rem;
+}
+.checkout-block p {
+  margin: 0;
+}
+.block-sign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+.checkout-block blockquote {
+  align-self: stretch;
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 4px solid var(--c-border);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--c-surface);
+}
+.block-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-self: stretch;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.block-actions .button {
+  min-height: 48px;
+}
+.button.whatsapp {
+  background: var(--c-success);
+  color: #fff;
+}
+.checkout-block[data-kind="empty"] {
+  align-items: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+.checkout-block[data-kind="empty"] .block-sign {
+  width: 72px;
+  height: 72px;
+  background: var(--c-surface);
+  color: var(--c-muted);
+}
+.checkout-block[data-kind="empty"] .block-actions {
+  align-self: center;
+}
+@media (min-width: 900px) {
+  .checkout-notice {
+    margin: 0;
+    border-radius: var(--radius);
+  }
+  .checkout-block {
+    max-width: 706px;
+    margin: 0;
+    padding: 32px;
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg);
+  }
+  .block-actions {
+    flex-direction: row;
+    align-self: flex-start;
+  }
+}
+/* A dialog, a bottom sheet on phones (the phone code). */
+.sheet-dialog {
+  width: 100%;
+  max-width: 100%;
+  max-height: 92vh;
+  margin: auto 0 0;
+  padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--c-background);
+  color: var(--c-text);
+  box-shadow: 0 16px 40px rgb(26 31 41 / 0.25);
+}
+.sheet-dialog::backdrop {
+  background: rgb(26 31 41 / 0.5);
+}
+.sheet-dialog > p {
+  margin: 0 0 14px;
+}
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.sheet-head h2 {
+  margin: 0;
+  font-size: 1.1875rem;
+}
+.sheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.otp-to {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+}
+.otp-to .link {
+  min-height: 44px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.otp-status {
+  margin: 6px 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--c-sale);
+}
+.otp-status[data-kind="ok"] {
+  color: var(--c-success);
+}
+.otp-status:empty {
+  display: none;
+}
+.otp-resend.link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.otp-resend.link:disabled {
+  color: var(--c-muted);
+  cursor: default;
+}
+@media (min-width: 900px) {
+  .sheet-dialog {
+    width: 440px;
+    margin: auto;
+    padding: 24px;
+    border-radius: var(--radius-lg);
+  }
+}
+.was-now {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.delivery-note.unserved {
+  background: color-mix(in srgb, var(--c-sale) 7%, var(--c-background));
+  color: color-mix(in srgb, var(--c-sale) 75%, var(--c-text));
+}
+.delivery-note.unserved svg {
+  color: var(--c-sale);
+}
+.delivery-note.unserved a {
+  color: inherit;
+  font-weight: 600;
+}
+.checkout .promo {
+  margin: 4px 0 8px;
 }
 /* The thank-you page (design/storefront-redesign: Thanks, ThanksPhone). */
 .help-link {

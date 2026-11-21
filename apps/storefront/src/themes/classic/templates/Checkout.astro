@@ -85,15 +85,47 @@ const keys: StoreMessageKey[] = [
   'checkout.terms',
   'cart.deliveryNote',
   'cart.subtotalCount',
+  'cart.emptyText',
+  'cart.start',
+  'cart.promo',
+  'cart.code',
+  'cart.apply',
+  'cart.removeCode',
+  'cart.codeApplied',
+  'cart.code.not_found',
+  'cart.code.inactive',
+  'cart.code.used_up',
+  'cart.code.min_subtotal',
+  'cart.code.better_offer',
+  'cart.code.other',
+  'help.whatsapp',
+  'checkout.otpTitle',
+  'checkout.otpSentTo',
+  'checkout.changeNumber',
+  'checkout.otpAuto',
+  'checkout.otpWait',
+  'checkout.close',
+  'checkout.pausedNext',
+  'checkout.noPayNext',
+  'checkout.whatsapp',
+  'checkout.call',
+  'checkout.askDelivery',
+  'checkout.notAvailable',
+  'checkout.wasNow',
 ];
 ---
 
 <ShopPage ctx={ctx} facts={facts} kind="checkout" title={t('checkout.title')} keys={keys} chrome="checkout">
   <h1>{t('checkout.title')}</h1>
   <noscript><p>{t('cart.noscript')}</p></noscript>
-  <p class="notice" data-notice role="alert" hidden></p>
+  {/* When the store can't take this order (paused, no way to pay) or the cart is empty: the form's place. */}
+  <section class="checkout-block" data-block hidden></section>
   <form class="checkout" data-checkout novalidate hidden>
     <div class="checkout-main">
+      <div class="checkout-notice" data-notice tabindex="-1" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.5" /></svg>
+        <span><strong data-notice-text></strong><span class="notice-links" data-notice-links hidden></span></span>
+      </div>
       <div class="error-summary" data-error-summary role="alert" tabindex="-1" hidden>
         <h2>{t('checkout.errorsTitle')}</h2>
         <ul data-error-list></ul>
@@ -195,6 +227,25 @@ const keys: StoreMessageKey[] = [
       </div>
     </aside>
   </form>
+  {/* The store asks this phone for a code by SMS first (phase-5a-plan §3.14): a dialog, a bottom sheet on phones. */}
+  <dialog class="sheet-dialog otp-dialog" data-otp aria-labelledby="otp-title">
+    <div class="sheet-head">
+      <h2 id="otp-title">{t('checkout.otpTitle')}</h2>
+      <button type="button" class="sheet-close" data-otp-close aria-label={t('checkout.close')}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+      </button>
+    </div>
+    <p>{t('checkout.otpNeeded')}</p>
+    <p class="otp-to">{t('checkout.otpSentTo')} <strong data-otp-phone></strong> <button type="button" class="link" data-otp-change>{t('checkout.changeNumber')}</button></p>
+    <div class="field">
+      <label for="c-otp">{t('checkout.otpLabel')}</label>
+      <input id="c-otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="c-otp-h c-otp-s" />
+      <p class="hint" id="c-otp-h">{t('checkout.otpAuto')}</p>
+      <p class="otp-status" id="c-otp-s" role="status" data-otp-status></p>
+    </div>
+    <button type="button" class="button wide" data-otp-verify>{t('checkout.otpVerify')}</button>
+    <button type="button" class="link otp-resend" data-otp-resend disabled></button>
+  </dialog>
   <script is:inline>
     // Desktop shows the order summary beside the form; phones start with it folded.
     (function(){var d=document.querySelector('[data-summary-fold]');if(d&&matchMedia('(min-width: 900px)').matches)d.open=true;})();

@@ -28,6 +28,8 @@ export interface ShopConfig {
   facts?: ShopFactsView | null;
   /** The store's phone, formatted, for "Questions? …". */
   phone?: string | null;
+  /** The same phone as dialled, for tel: links. */
+  tel?: string | null;
 }
 
 export interface ShopFactsView {
