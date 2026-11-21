@@ -140,7 +140,7 @@ const page = body?.page;
     }
     case 'search': {
       const p = page as SearchPage;
-      return <theme.Listing ctx={ctx} route={route} title="" listing={p.listing} query={p.query} noindex />;
+      return <theme.Listing ctx={ctx} route={route} title="" listing={p.listing} query={p.query} suggestion={p.suggestion ?? null} noindex />;
     }
     case 'page':
       return <theme.StaticPage ctx={ctx} page={page as StorePage} noindex={noindex} />;

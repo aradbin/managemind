@@ -324,4 +324,18 @@ test('searching the Bangla demo store with another spelling', async ({ page }) =
 
   await page.goto(`${STOREFRONT}/search?q=${encodeURIComponent('কফি')}`);
   await expect(page.getByRole('link', { name: 'ইনস্ট্যান্ট কফি', exact: true })).toBeVisible();
+
+  // Banglish: the same product typed in Latin letters, however spelled.
+  for (const q of ['sileti cha', 'shileti cha pata']) {
+    await page.goto(`${STOREFRONT}/search?q=${encodeURIComponent(q)}`);
+    await expect(page.getByRole('link', { name: 'সিলেটি চা পাতা', exact: true })).toBeVisible();
+  }
+  // Nothing found: the store's own spelling, offered.
+  await page.goto(`${STOREFRONT}/search?q=${encodeURIComponent('ইনস্টেন্ট কফি')}`);
+  await page.getByRole('link', { name: 'ইনস্ট্যান্ট কফি', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('ইনস্ট্যান্ট কফি');
+  // The header suggests a category from Banglish too.
+  const field = page.getByRole('banner').getByRole('combobox');
+  await field.fill('chal');
+  await expect(page.getByRole('option', { name: 'চাল ও ডাল' })).toBeVisible();
 });

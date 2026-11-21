@@ -9,6 +9,7 @@ import type { RichTextDoc } from '@managemind/shared/rich-text';
 import {
   LISTING_LIMITS,
   type ListingQuery,
+  parseListingQuery,
   priceRanges,
 } from '@managemind/shared/storefront/listing';
 import { type SQL, sql } from 'drizzle-orm';
@@ -238,23 +239,36 @@ const categoryTree = (categoryId: SQL) => sql`(
 
 const escapeLike = (text: string) => text.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-/** Search matches on titles (either language), tags and SKUs, on the normalized text (§3.7). */
+/**
+ * Search matches on titles (either language), tags and SKUs, on the
+ * normalized text (§3.7), and on the sound key (migration 0052, kept with
+ * each title and tag by migration 0053), so a query
+ * in Latin letters finds a Bangla title ("korai", "kadai": কড়াই) and a
+ * Bangla one spelled another way finds it too.
+ */
 function searchMatch(q: string): SQL {
   const like = `%${escapeLike(q)}%`;
   return sql`(
     exists (select 1 from store.product_translations st where st.product_id = p.id
              and (app.search_text(st.title) %> app.search_text(${q})
-                  or app.search_text(st.title) like app.search_text(${like})))
+                  or app.search_text(st.title) like app.search_text(${like})
+                  or app.search_key_matches(st.search_key, app.search_key(${q}))))
     or exists (select 1 from store.product_tags sg where sg.product_id = p.id
              and (app.search_text(sg.tag) %> app.search_text(${q})
-                  or app.search_text(sg.tag) like app.search_text(${like})))
+                  or app.search_text(sg.tag) like app.search_text(${like})
+                  or app.search_key_matches(sg.search_key, app.search_key(${q}))))
     or exists (select 1 from store.variants sv where sv.product_id = p.id and sv.archived_at is null
              and lower(sv.sku) like ${`${escapeLike(q.toLowerCase())}%`}))`;
 }
 
-/** Relevance of a search result: the best title match, an exact SKU first. */
+/**
+ * Relevance of a search result: the best title match, an exact SKU first;
+ * a match by sound only counts a little less than one by spelling.
+ */
 const searchRank = (q: string) => sql`greatest(
-  coalesce((select max(word_similarity(app.search_text(${q}), app.search_text(st.title)))
+  coalesce((select max(greatest(
+                word_similarity(app.search_text(${q}), app.search_text(st.title)),
+                0.8 * word_similarity(app.search_key(${q}), st.search_key)))
               from store.product_translations st where st.product_id = p.id), 0),
   case when exists (select 1 from store.variants sv where sv.product_id = p.id
                      and sv.archived_at is null and lower(sv.sku) = ${q.toLowerCase()}) then 2 else 0 end)`;
@@ -430,6 +444,55 @@ export async function listPublishedProducts(
             scope.type === 'search',
           ),
   };
+}
+
+/**
+ * "Did you mean" for a search that found nothing (DECISIONS.md, "What to
+ * build next"): each word of the query that no product has is swapped for
+ * the closest word of the store's own titles and tags, by spelling or by
+ * sound. Offered only when the new query finds something.
+ */
+export async function didYouMean(tx: TenantTx, lang: Lang, q: string): Promise<string | null> {
+  const words = q.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+  if (!words.length) return null;
+  const out: string[] = [];
+  let changed = false;
+  for (const word of words) {
+    const { rows } = await tx.db.execute<{ word: string; score: number; same: boolean }>(sql`
+      with vocab as (
+        select distinct w from (
+          -- Not [:punct:]: it takes in Bangla's virama and would cut words.
+          select regexp_split_to_table(lower(st.title), '[[:space:],.;:!?()/"“”‘’|+&-]+') as w
+            from store.product_translations st join store.products p on p.id = st.product_id
+           where p.status = 'active'
+          union all
+          select lower(sg.tag) from store.product_tags sg join store.products p on p.id = sg.product_id
+           where p.status = 'active') x
+         where length(w) >= 2)
+      select w as word,
+             greatest(similarity(app.search_text(w), app.search_text(${word})),
+                      similarity(app.search_key(w), app.search_key(${word})))::float as score,
+             app.search_text(w) = app.search_text(${word}) as same
+        from vocab
+       -- A word in the query's own script first: Bangla for Bangla.
+       order by score desc, (w ~ '[\u0980-\u09FF]') = (${word} ~ '[\u0980-\u09FF]') desc, length(w)
+       limit 1`);
+    const best = rows[0];
+    if (best && !best.same && best.score >= 0.35) {
+      out.push(best.word);
+      changed = true;
+    } else out.push(word);
+  }
+  if (!changed) return null;
+  const suggestion = out.join(' ');
+  const found = await listPublishedProducts(
+    tx,
+    lang,
+    { type: 'search', q: suggestion },
+    parseListingQuery(new URLSearchParams({ q: suggestion }), 'search'),
+    { pageSize: 1, facets: false },
+  );
+  return found.total > 0 ? suggestion : null;
 }
 
 type FacetRow = {

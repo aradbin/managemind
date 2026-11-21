@@ -17,7 +17,12 @@ import type { ListingQuery } from '@managemind/shared/storefront/listing';
 export type { HomeData, Listing, ProductPageData, StoreLayout, StorePage };
 export type CategoryPage = ListingPageData<StoreCategory>;
 export type CollectionPage = ListingPageData<StoreCollection>;
-export type SearchPage = { listing: Listing | null; query: ListingQuery };
+export type SearchPage = {
+  listing: Listing | null;
+  query: ListingQuery;
+  /** "Did you mean": only on a search that found nothing (an older API sends none). */
+  suggestion?: string | null;
+};
 
 export interface PageResponse<T> {
   layout: StoreLayout;

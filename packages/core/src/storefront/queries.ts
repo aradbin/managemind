@@ -26,6 +26,7 @@ import {
   storePageLinks,
 } from '../catalog/pages';
 import {
+  didYouMean,
   imageJson,
   type Lang,
   type Listing,
@@ -345,11 +346,18 @@ export async function searchPage(
   tx: TenantTx,
   lang: Lang,
   query: ListingQuery,
-): Promise<PageResult<{ listing: Listing | null; query: ListingQuery }>> {
+): Promise<
+  PageResult<{ listing: Listing | null; query: ListingQuery; suggestion: string | null }>
+> {
   if (!query.q)
-    return { data: { listing: null, query }, tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)] };
+    return {
+      data: { listing: null, query, suggestion: null },
+      tags: [storeTag(tx.tenantId), listsTag(tx.tenantId)],
+    };
   const listing = await listPublishedProducts(tx, lang, { type: 'search', q: query.q }, query);
-  return { data: { listing, query }, tags: listingTags(tx.tenantId, listing) };
+  // Nothing found: "Did you mean" from the store's own words.
+  const suggestion = listing.total === 0 ? await didYouMean(tx, lang, query.q) : null;
+  return { data: { listing, query, suggestion }, tags: listingTags(tx.tenantId, listing) };
 }
 
 export async function staticPage(

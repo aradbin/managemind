@@ -169,7 +169,7 @@ What is left from the boards and the list above, weighed by what it changes for 
 
 **Do next** (a big gain for small work):
 - **Expected delivery date on tracking** (item 14). *Built.* "When will it arrive?" is likely the store's most common call; a date range answers it. The zone's days plus the date the parcel was booked are enough.
-- **Bangla and Banglish search** (item 4). A search with no results is a lost sale, more than missing suggestions.
+- **Bangla and Banglish search** (item 4). *Built (ADR 0035).* A search with no results is a lost sale, more than missing suggestions.
 - **Ways to pay in the footer.** *Built.* Cash on delivery and bKash or Nagad, shown on every page, build trust before the cart.
 - **Best selling sort** (item 2). *Built.* The best guide for a first visit; sales counts come from orders.
 - **Reorder from the account** (new). *Built.* Grocery shoppers buy the same things each week: one tap fills the cart again.

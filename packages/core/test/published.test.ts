@@ -17,6 +17,7 @@ import {
   createCollection,
   createProduct,
   createTenant,
+  didYouMean,
   type Lang,
   listPublishedProducts,
   placeOrder,
@@ -460,6 +461,27 @@ describe('search', () => {
     expect(await ids(sku.slice(0, 8).toLowerCase())).toContain(saree.id);
     expect(await ids('শাড়ি')).not.toContain(draft.id);
     expect(await ids('কম্পিউটার')).toEqual([]);
+  });
+
+  it('finds a Bangla title from Banglish, however it is spelled', async () => {
+    const korai = await product('লোহার কড়াই');
+    const peyaj = await product('দেশি পেঁয়াজ');
+    const ids = async (q: string) => (await search(q)).items.map((i) => i.id);
+    for (const q of ['korai', 'karai', 'kadai', 'kodai', 'lohar korai', 'লোহার কড়াই'])
+      expect(await ids(q), q).toContain(korai.id);
+    for (const q of ['peyaj', 'piaj', 'peaj', 'deshi piyaj', 'পিঁয়াজ'])
+      expect(await ids(q), q).toContain(peyaj.id);
+    // Two letters must be a whole word: "ko" is not the start of everything with k.
+    expect(await ids('ko')).not.toContain(korai.id);
+    expect(await ids('chal')).not.toContain(korai.id);
+  });
+
+  it('offers the store’s closest word when nothing is found', async () => {
+    await product('জামদানি শাড়ি');
+    const suggest = (q: string) => run((tx) => didYouMean(tx, bn, q));
+    expect((await search('jamdanee sharee')).total).toBeGreaterThan(0);
+    expect(await suggest('জামদনি')).toBe('জামদানি');
+    expect(await suggest('কম্পিউটার')).toBeNull();
   });
 
   it('caps results at 48', async () => {

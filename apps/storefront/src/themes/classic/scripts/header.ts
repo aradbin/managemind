@@ -2,8 +2,10 @@
 // - the slim bar pinned to the top once the full header scrolls away (a
 //   separate fixed bar, so nothing on the page jumps);
 // - suggestions under the search field: the store's categories that match,
-//   then "See all results". Matching products need a cached suggestions
-//   endpoint (DECISIONS.md, "Needs platform work" 5).
+//   by spelling or by sound (Banglish "chal" finds "চাল ও ডাল", as search
+//   does), then "See all results". Matching products need a cached
+//   suggestions endpoint (DECISIONS.md, "Needs platform work" 5).
+import { searchKey, searchKeyMatches } from '@managemind/shared/storefront/search-key';
 
 const header = document.querySelector<HTMLElement>('.site-header');
 const pinned = document.querySelector<HTMLElement>('[data-pinned]');
@@ -33,7 +35,9 @@ if (header && pinned) {
 const input = document.getElementById('q') as HTMLInputElement | null;
 const box = document.getElementById('q-suggest');
 if (input && box) {
-  const categories = JSON.parse(box.dataset.categories ?? '[]') as { name: string; href: string }[];
+  const categories = (
+    JSON.parse(box.dataset.categories ?? '[]') as { name: string; href: string }[]
+  ).map((c) => ({ ...c, key: searchKey(c.name) }));
   const fold = (s: string) => s.normalize('NFC').toLowerCase().trim();
   let options: HTMLAnchorElement[] = [];
   let active = -1;
@@ -64,8 +68,9 @@ if (input && box) {
     while (box.firstChild) box.removeChild(box.firstChild);
     options = [];
     if (q.length < 2) return close();
+    const qKey = searchKey(q);
     const matches = categories
-      .filter((c) => fold(c.name).includes(q))
+      .filter((c) => fold(c.name).includes(q) || searchKeyMatches(c.key, qKey))
       .sort((a, b) => Number(!fold(a.name).startsWith(q)) - Number(!fold(b.name).startsWith(q)))
       .slice(0, 5);
     if (matches.length) {
@@ -111,5 +116,3 @@ if (input && box) {
   box.addEventListener('mousedown', (e) => e.preventDefault());
   input.addEventListener('blur', close);
 }
-
-export {};

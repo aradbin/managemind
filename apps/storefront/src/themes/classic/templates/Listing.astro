@@ -41,6 +41,8 @@ interface Props {
   category?: StoreCategory | null;
   listing: Listing | null;
   query: ListingQuery;
+  /** Search that found nothing: the store's closest words ("Did you mean"). */
+  suggestion?: string | null;
   noindex: boolean;
 }
 const {
@@ -52,6 +54,7 @@ const {
   category = null,
   listing,
   query,
+  suggestion = null,
   noindex,
 } = Astro.props;
 const { t, d, layout } = ctx;
@@ -201,6 +204,11 @@ const roots = layout.categories.filter((c) => c.parentId === null);
   {search && !query.q && <p>{t('search.empty')}</p>}
   {search && query.q && listing && total === 0 && !filtered && (
     <div class="no-results">
+      {suggestion && (
+        <p class="did-you-mean">
+          {t('search.didYouMean')} <a href={`${href(ctx.link, { kind: 'search' })}?q=${encodeURIComponent(suggestion)}`}>{suggestion}</a>
+        </p>
+      )}
       <ul>
         <li>{t('search.tipSpelling')}</li>
         <li>{t('search.tipWords')}</li>

@@ -110,6 +110,15 @@ DECISIONS.md, "What to build next", weighs what is left by what it changes for s
 - **Order again** in the account: `POST /v1/store/account/orders/{id}/reorder` puts the signed-in shopper's own order's items back in the cart at today's prices; items no longer sold are left out, and one short of stock or over the per-item limit goes in with what can. The order card says how many went in, and which are no longer sold, with View cart. (The cart schema moved to `store/cart-schema.ts`, as the account and commerce routes import each other.)
 - **Fixed on the way:** account order cards showed the raw key "track.orderNumber" (the page didn't pass the message) and "1 items"; on phones the date wrapped into a narrow column.
 
+## Bangla and Banglish search
+
+- **A sound key** (`app.search_key`, migration 0052): any title, tag or query, in Bangla or Latin letters, becomes a rough key of its sounds. Latin spellings of one sound fold together (ch, kh, sh, ph, bh, ng, ee, oo, ck, x, v, z, q), Bangla letters map to the same Latin ones, a and o are left out on both sides (অ, আ and ও are spelled every way in Banglish), e and i are one, and doubled letters count once. ড় and ঢ়, written r or d, give both keys. So কড়াই, korai, karai, kadai and kodai meet, as do পেঁয়াজ, peyaj and piaj, শাড়ি, shari and saree, and ঘি and ghee.
+- **Matching:** every word of the query's key must start a word of a title's or tag's key; a word of one or two letters must be the whole word, so "cha" (চা) doesn't match চাল. This is added to the spelling match search already had, which still ranks first: a match by sound only scores 0.8 of one by spelling.
+- **Stored keys** (migration 0053): `search_key` is a generated column on product titles and tags, so a search doesn't work out the key of every title (about 34 µs each). If `app.search_key` changes, a migration must recompute the columns, as stored generated columns only change when their row does.
+- **Did you mean:** when a search finds nothing, each word no product has is swapped for the closest word in the store's own titles and tags, by spelling or by sound, in the query's script first ("ইনস্টেন্ট কফি" → "ইনস্ট্যান্ট কফি", "musur" → "মসুর"), and offered only when that finds something.
+- **The header's suggestions** match categories by sound too ("chal" suggests চাল ও ডাল), with a browser copy of the key (`shared/storefront/search-key.ts`); a core test checks it gives what the database gives.
+- **Left for later:** names that differ, not spellings (হিলসা, "hilsa"); English words with a silent e ("cake" against কেক); synonyms a store would set (জামা, "shirt"). Popular searches need records of what shoppers search for.
+
 ## Consequences
 
 - **Where step 1 differs from the boards**, until a later step or a platform change:

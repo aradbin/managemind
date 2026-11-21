@@ -67,6 +67,41 @@ describe('Bangla search', () => {
     expect(await same('শাড়ি', 'শাড়া')).toBe(false);
   });
 
+  it('gives Bangla and its Banglish spellings one sound key in app.search_key()', async () => {
+    const key = async (text: string) =>
+      (await client.query<{ k: string }>('select app.search_key($1) as k', [text])).rows[0]?.k;
+    for (const [bangla, ...latin] of [
+      ['মসুর ডাল', 'mosur dal', 'moshur daal'],
+      ['পেঁয়াজ', 'peyaj', 'piaj'],
+      ['ইলিশ মাছ', 'ilish mach', 'ilish maach'],
+      ['ঘি', 'ghee'],
+      ['জামদানি', 'jamdani'],
+    ] as const) {
+      for (const spelling of latin) expect(await key(spelling), spelling).toBe(await key(bangla));
+    }
+    // ড় is written r or d: the key has both.
+    expect(await key('কড়াই')).toBe('kri kdi');
+    expect(await key('korai')).toBe('kri');
+    expect(await key('kadai')).toBe('kdi');
+    expect(await key('নন-স্টিক')).toBe(await key('non stick'));
+  });
+
+  it('matches every word of a query key at the start of a title key word', async () => {
+    const matches = async (title: string, q: string) =>
+      (
+        await client.query<{ m: boolean }>(
+          'select app.search_key_matches(app.search_key($1), app.search_key($2)) as m',
+          [title, q],
+        )
+      ).rows[0]?.m;
+    expect(await matches('লাল নন-স্টিক কড়াই', 'kadai')).toBe(true);
+    expect(await matches('লাল নন-স্টিক কড়াই', 'korai lal')).toBe(true);
+    expect(await matches('লাল নন-স্টিক কড়াই', 'korai nil')).toBe(false);
+    // A one- or two-letter word must be the whole word.
+    expect(await matches('চাল', 'cha')).toBe(false);
+    expect(await matches('চা পাতা', 'cha')).toBe(true);
+  });
+
   it('finds a spelling variant through the trigram index operator', async () => {
     const { rows } = await client.query<{ hit: boolean }>(
       "select app.search_text('শাড়ী') <% app.search_text('লাল জামদানি শাড়ি') as hit",

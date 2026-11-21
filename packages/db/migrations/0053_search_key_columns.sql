@@ -1,0 +1,2 @@
+ALTER TABLE "store"."product_tags" ADD COLUMN "search_key" text GENERATED ALWAYS AS (app.search_key(tag)) STORED;--> statement-breakpoint
+ALTER TABLE "store"."product_translations" ADD COLUMN "search_key" text GENERATED ALWAYS AS (app.search_key(title)) STORED;
