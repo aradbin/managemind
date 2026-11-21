@@ -331,6 +331,7 @@ function facetFilters(query: ListingQuery): SQL[] {
 async function orderSql(tx: TenantTx, scope: ListingScope, query: ListingQuery): Promise<SQL> {
   const newest = sql`p.created_at desc, p.id desc`;
   if (query.sort === 'newest') return newest;
+  if (query.sort === 'best_selling') return sql`coalesce(sold.units, 0) desc, ${newest}`;
   if (query.sort === 'price_asc') return sql`p.price_min asc nulls last, p.id`;
   if (query.sort === 'price_desc') return sql`p.price_min desc nulls last, p.id`;
   // Featured: the scope's own order.
@@ -380,13 +381,23 @@ export async function listPublishedProducts(
   const base = [...unpriced, ...priceWithin(query)];
   const where = sql.join([...base, ...facetFilters(query)], sql` and `);
   const order = await orderSql(tx, scope, query);
+  // Best selling: units in orders of the last 90 days that weren't
+  // cancelled, summed once for the store and joined (DECISIONS.md).
+  const sold =
+    query.sort === 'best_selling'
+      ? sql`left join (
+          select ol.product_id, sum(ol.quantity)::int as units
+            from store.order_lines ol join store.orders o on o.id = ol.order_id
+           where o.status <> 'cancelled' and o.placed_at > now() - interval '90 days'
+           group by ol.product_id) sold on sold.product_id = p.id`
+      : sql``;
   const limit = Math.max(0, Math.min(pageSize, cap - offset));
 
   const { rows } =
     limit > 0
       ? await tx.db.execute<{ card: RawCard; total: number }>(sql`
           select ${cardJson(lang)} as card, count(*) over ()::int as total
-            from store.products p ${translationJoins(lang)}
+            from store.products p ${translationJoins(lang)} ${sold}
            where ${where}
            order by ${order}
            limit ${limit} offset ${offset}`)

@@ -5,7 +5,13 @@
 import { normalizeKey } from '../catalog/text';
 import type { RouteKind } from './urls';
 
-export const LISTING_SORTS = ['featured', 'newest', 'price_asc', 'price_desc'] as const;
+export const LISTING_SORTS = [
+  'featured',
+  'best_selling',
+  'newest',
+  'price_asc',
+  'price_desc',
+] as const;
 export type ListingSort = (typeof LISTING_SORTS)[number];
 
 export const LISTING_LIMITS = {

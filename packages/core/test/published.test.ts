@@ -8,15 +8,18 @@ import type pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type Actor,
+  addToCart,
   archiveProduct,
   brandAttributeId,
   bulkUpdateVariants,
+  cancelOrder,
   createCategory,
   createCollection,
   createProduct,
   createTenant,
   type Lang,
   listPublishedProducts,
+  placeOrder,
   publishedCategoryBySlug,
   publishedCollectionBySlug,
   publishedProduct,
@@ -25,8 +28,10 @@ import {
   relatedProducts,
   sell,
   setAttributeValues,
+  setCartArea,
   setCollectionProducts,
   setProductOptions,
+  shopperActor,
   systemActor,
   type TenantTx,
   updateAttribute,
@@ -269,6 +274,40 @@ describe('listings', () => {
         ['নীল', 1],
       ]),
     );
+  });
+
+  it('sorts by units sold, leaving out cancelled orders', async () => {
+    const variantOf = async (productId: string) =>
+      (
+        await run((tx) =>
+          tx.db.execute<{ id: string }>(
+            sql`select id from store.variants where product_id = ${productId} limit 1`,
+          ),
+        )
+      ).rows[0]?.id as string;
+    const buy = async (productId: string, quantity: number) => {
+      const variantId = await variantOf(productId);
+      const added = await run((tx) => addToCart(tx, null, { variantId, quantity }, 'bn'));
+      const token = added.token;
+      const cart = await run((tx) => setCartArea(tx, token, { areaId: 513 }));
+      return run((tx) =>
+        placeOrder(tx, shopperActor(), {
+          channel: 'storefront',
+          source: 'website',
+          cartToken: token,
+          contact: { name: 'Karim', phone: '+8801700000777' },
+          address: { divisionId: 6, districtId: 47, areaId: 513, line: 'House 9' },
+          payment: { kind: 'cod' },
+          expectedTotal: cart.quote.totals.total,
+          locale: 'bn',
+        }),
+      );
+    };
+    await buy(middle, 2);
+    await buy(dear, 1);
+    const big = await buy(cheap, 5);
+    await run((tx) => cancelOrder(tx, owner, big.id, { reason: 'test' }));
+    expect((await list('sort=best_selling')).items.map((i) => i.id)).toEqual([middle, dear, cheap]);
   });
 
   it('keeps values no product has under the other filters, counted 0', async () => {
