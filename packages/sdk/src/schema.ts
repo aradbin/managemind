@@ -2036,6 +2036,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/account/orders/{id}/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Order again: the order’s items back into the cart, at today’s prices */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    "x-forwarded-host": string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The cart */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cart: components["schemas"]["ShopperCart"];
+                            added: number;
+                            skipped: number;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/account/addresses": {
         parameters: {
             query?: never;

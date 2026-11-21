@@ -491,7 +491,17 @@ export const en = {
   'account.orders': 'Your orders',
   'account.noOrders':
     'No orders yet. Orders placed as a guest aren’t here: track them with their number.',
-  'account.ordered': '{date} · {count} items',
+  'account.ordered': { one: '{date} · {count} item', other: '{date} · {count} items' },
+  'account.reorder': 'Order again',
+  'account.reorderLabel': 'Order again: order {number}',
+  'account.reordered': {
+    one: '{count} item added to your cart.',
+    other: '{count} items added to your cart.',
+  },
+  'account.reorderSkipped': {
+    one: '{count} item is no longer sold.',
+    other: '{count} items are no longer sold.',
+  },
   'account.addresses': 'Saved addresses',
   'account.noAddresses': 'No saved addresses yet.',
   'account.addAddress': 'Add an address',
@@ -985,7 +995,17 @@ export const bn: Record<StoreMessageKey, Message> = {
   'account.orders': 'আপনার অর্ডার',
   'account.noOrders':
     'এখনো কোনো অর্ডার নেই। অতিথি হিসেবে দেওয়া অর্ডার এখানে নেই: নম্বর দিয়ে সেগুলো ট্র্যাক করুন।',
-  'account.ordered': '{date} · {count}টি পণ্য',
+  'account.ordered': { one: '{date} · {count}টি পণ্য', other: '{date} · {count}টি পণ্য' },
+  'account.reorder': 'আবার অর্ডার করুন',
+  'account.reorderLabel': 'আবার অর্ডার করুন: অর্ডার {number}',
+  'account.reordered': {
+    one: '{count}টি পণ্য কার্টে যোগ হয়েছে।',
+    other: '{count}টি পণ্য কার্টে যোগ হয়েছে।',
+  },
+  'account.reorderSkipped': {
+    one: '{count}টি পণ্য আর বিক্রি হয় না।',
+    other: '{count}টি পণ্য আর বিক্রি হয় না।',
+  },
   'account.addresses': 'সেভ করা ঠিকানা',
   'account.noAddresses': 'এখনো কোনো ঠিকানা সেভ করা নেই।',
   'account.addAddress': 'ঠিকানা যোগ করুন',

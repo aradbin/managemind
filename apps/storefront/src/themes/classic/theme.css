@@ -4780,23 +4780,45 @@ body.minimal:has(.place-box) {
   list-style: none;
 }
 /* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
-.orders a {
+.orders > li {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+}
+.orders > li:has(.order-link:hover) {
+  border-color: var(--c-muted);
+}
+.order-link {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  padding: 16px 20px;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-lg);
+  padding: 16px 20px 10px;
   color: var(--c-text);
   text-decoration: none;
 }
+.order-again {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 0 20px 14px;
+}
 /* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
-.orders a:hover {
-  border-color: var(--c-muted);
+.order-again .button {
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+}
+.reorder-status {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.reorder-status:empty {
+  display: none;
 }
 .order-text {
-  flex: 1;
+  /* Phones: the status and total wrap under the number and date. */
+  flex: 1 1 14rem;
   display: flex;
   flex-direction: column;
   min-width: 0;

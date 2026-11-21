@@ -102,6 +102,14 @@ The canvas is large, and much of it needs new data (offer tiles, the area search
 
 DECISIONS.md, "What to build next", weighs what is left by what it changes for shoppers. Next: the expected delivery date on tracking, ways to pay in the footer, a best selling sort and Reorder from the account, then Bangla and Banglish search. Reviews, products in search suggestions, a deals link and the grocery and fashion presets come later; the delivery charge in the area list, cart suggestions, sign-up from the thank-you page and popular searches are not planned.
 
+## The first four of "Do next"
+
+- **Expected delivery date on tracking:** the shopper's order view gets `expectedDelivery` (Bangladesh dates) and `deliveredAt`. Zones keep their time as the text the store wrote, so the days are read from it (`orders/delivery-estimate.ts`: "1–2 days", "২-৩ দিন", "3 to 5 days", "24 hours", weeks), counted from the parcel's booking, else the confirmation. No date before the store confirms, once delivered or cancelled, when the text gives no days, or once the last date has passed. If stores' texts turn out too loose to read, zones should get days as numbers.
+- **Ways to pay in the footer:** the layout's `shop.pay` (cash on delivery from the settings; online when an SSLCommerz gateway is set up, the cart's own check), shown as chips: Cash on delivery, and bKash, Nagad, Card and Bank with online payment. Saving or removing the SSLCommerz credentials now purges the store's pages, which also fixes the cart's and product pages' promises staying stale.
+- **Best selling sort:** units in orders of the last 90 days that weren't cancelled, summed once per listing query and joined; ties keep the newest first.
+- **Order again** in the account: `POST /v1/store/account/orders/{id}/reorder` puts the signed-in shopper's own order's items back in the cart at today's prices; items no longer sold are left out, and one short of stock or over the per-item limit goes in with what can. The order card says how many went in, and which are no longer sold, with View cart. (The cart schema moved to `store/cart-schema.ts`, as the account and commerce routes import each other.)
+- **Fixed on the way:** account order cards showed the raw key "track.orderNumber" (the page didn't pass the message) and "1 items"; on phones the date wrapped into a narrow column.
+
 ## Consequences
 
 - **Where step 1 differs from the boards**, until a later step or a platform change:

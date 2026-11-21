@@ -3,7 +3,7 @@
 // addresses. Everything goes through /api/account and /api/auth on the
 // store's own host; the session cookie never leaves /api.
 import { type AreaField, type GeoFile, loadGeo, placeName, setupAreaField } from './area-field';
-import { api, config, digits, el, fill, money, ShopError, t } from './shop';
+import { api, config, digits, el, fill, money, ShopError, setCount, t } from './shop';
 import { type Check, mountTurnstile } from './turnstile';
 
 interface Address {
@@ -22,6 +22,7 @@ interface Account {
   addresses: Address[];
 }
 interface Order {
+  id: string;
   displayNumber: string;
   status: string;
   total: number;
@@ -201,7 +202,7 @@ function renderOrders(orders: Order[]) {
           {},
           el(
             'a',
-            { href: cfg.links.track },
+            { class: 'order-link', href: cfg.links.track },
             el(
               'span',
               { class: 'order-text' },
@@ -214,10 +215,55 @@ function renderOrders(orders: Order[]) {
             el('span', { class: `status-chip ${o.status}`, text: t(`status.${o.status}`) }),
             el('strong', { class: 'order-total', text: money(o.total) }),
           ),
+          reorderButton(o),
         ),
       ),
     ),
   );
+}
+
+/**
+ * Order again (DECISIONS.md, "What to build next"): the order's items go
+ * back into the cart at today's prices; the shopper sees how many went in,
+ * and which are no longer sold, with View cart.
+ */
+function reorderButton(o: Order): HTMLElement {
+  const button = el('button', {
+    type: 'button',
+    class: 'button secondary',
+    'aria-label': t('account.reorderLabel', { number: o.displayNumber }),
+    text: t('account.reorder'),
+  });
+  const status = el('p', { class: 'reorder-status', role: 'status' });
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      const r = await api<{ cart: { itemCount: number }; added: number; skipped: number }>(
+        `/account/orders/${o.id}/reorder`,
+        { method: 'POST', body: {} },
+      );
+      setCount(r.cart.itemCount);
+      fill(
+        status,
+        [
+          r.added ? t('account.reordered', { count: r.added }) : '',
+          r.skipped ? t('account.reorderSkipped', { count: r.skipped }) : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+        ' ',
+        r.added ? el('a', { href: cfg.links.cart, text: t('cart.view') }) : null,
+      );
+    } catch (err) {
+      status.textContent =
+        err instanceof ShopError && err.status === 404
+          ? t('account.reorderSkipped', { count: o.itemCount })
+          : t('cart.error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+  return el('div', { class: 'order-again' }, button, status);
 }
 
 /** Desktop's side menu and the phone's tabs: one panel at a time. */
