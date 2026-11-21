@@ -103,6 +103,8 @@ describe('store pages', () => {
     const body: Json = await res.json();
     expect(body.page.product.title).toBe('A product');
     expect(body.layout.store).toMatchObject({ slug: a.slug, defaultLocale: 'bn' });
+    // The footer's ways to pay: cash on delivery, no gateway set up.
+    expect(body.layout.shop.pay).toEqual({ cod: true, online: false });
     expect(body.redirect).toBeNull();
     expect(res.headers.get('x-cache-tags')).toBe(
       // The legal tag: delivery, COD and returns show beside the buy buttons.

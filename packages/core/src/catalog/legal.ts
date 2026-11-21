@@ -27,6 +27,21 @@ async function storeSettings(tx: TenantTx) {
   return { name: store?.name ?? '', settings: tenantSettings.parse(store?.settings ?? {}) };
 }
 
+/** Whether the store has an online payment gateway (SSLCommerz) set up. */
+export async function takesOnlinePayment(tx: TenantTx): Promise<boolean> {
+  const [gateway] = await tx.db
+    .select({ kind: schema.providerCredentials.kind })
+    .from(schema.providerCredentials)
+    .where(
+      and(
+        eq(schema.providerCredentials.tenantId, tx.tenantId),
+        eq(schema.providerCredentials.kind, 'sslcommerz'),
+      ),
+    )
+    .limit(1);
+  return Boolean(gateway);
+}
+
 export async function shopFacts(
   tx: TenantTx,
   loaded?: Awaited<ReturnType<typeof storeSettings>>,
@@ -38,16 +53,6 @@ export async function shopFacts(
     .from(z)
     .where(and(eq(z.tenantId, tx.tenantId), eq(z.active, true)))
     .orderBy(asc(z.position));
-  const [gateway] = await tx.db
-    .select({ kind: schema.providerCredentials.kind })
-    .from(schema.providerCredentials)
-    .where(
-      and(
-        eq(schema.providerCredentials.tenantId, tx.tenantId),
-        eq(schema.providerCredentials.kind, 'sslcommerz'),
-      ),
-    )
-    .limit(1);
   const estimate = (e: unknown) => {
     const v = e as Partial<Record<Locale, string>> | null;
     return v?.bn || v?.en ? { bn: v.bn ?? v.en ?? '', en: v.en ?? v.bn ?? '' } : null;
@@ -68,7 +73,7 @@ export async function shopFacts(
       };
     }),
     cod: settings.cod.enabled,
-    online: Boolean(gateway),
+    online: await takesOnlinePayment(tx),
   };
 }
 

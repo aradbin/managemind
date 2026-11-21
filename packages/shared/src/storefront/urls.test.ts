@@ -239,6 +239,8 @@ describe('cache tags', () => {
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['returns'] }))).toEqual([legalTag(t)]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['recovery'] }))).toEqual([legalTag(t)]);
     expect(purgeTagsFor(ev('delivery.zones.changed'))).toEqual([legalTag(t)]);
+    expect(purgeTagsFor(ev('credentials.changed', { kind: 'sslcommerz' }))).toEqual([storeTag(t)]);
+    expect(purgeTagsFor(ev('credentials.changed', { kind: 'sms' }))).toEqual([]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['tax'] }))).toEqual([]);
     expect(purgeTagsFor(ev('tenant.updated', { fields: ['profile'] }))).toEqual([storeTag(t)]);
     expect(

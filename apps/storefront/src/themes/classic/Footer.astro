@@ -1,7 +1,8 @@
 ---
 // The site footer of the redesign (design/storefront-redesign: SiteFooter and
 // PhoneFooter): the store name and contact, Shop (the top-level categories),
-// Help (tracking, the account and the store's own pages), the business details
+// Help (tracking, the account and the store's own pages), the ways to pay,
+// the business details
 // the guidelines ask for, then the legal pages, cookie settings and the
 // language link along the bottom.
 import { formatPhone } from '@managemind/shared';
@@ -35,6 +36,13 @@ const LEGAL: readonly PageKind[] = ['terms', 'privacy'];
 const legal = layout.pages.filter((p) => LEGAL.includes(p.kind));
 const help = layout.pages.filter((p) => !LEGAL.includes(p.kind));
 const roots = layout.categories.filter((c) => c.parentId === null).slice(0, 8);
+// Ways to pay (design/storefront-redesign: SiteFooter): cash on delivery, and
+// what SSLCommerz takes when the store has it.
+const pay = layout.shop.pay ?? { cod: false, online: false };
+const ways = [
+  ...(pay.cod ? (['footer.cod'] as const) : []),
+  ...(pay.online ? (['footer.bkash', 'footer.nagad', 'footer.card', 'footer.bank'] as const) : []),
+];
 ---
 
 <footer class="site-footer">
@@ -63,6 +71,14 @@ const roots = layout.categories.filter((c) => c.parentId === null).slice(0, 8);
         {help.map((p) => <li><a href={href(ctx.link, { kind: 'page', slug: p.slug })}>{p.title}</a></li>)}
       </ul>
     </nav>
+    {ways.length > 0 && (
+      <section class="footer-pay" aria-labelledby="footer-pay">
+        <h2 id="footer-pay">{t('footer.waysToPay')}</h2>
+        <ul role="list" class="pay-chips">
+          {ways.map((key) => <li>{t(key)}</li>)}
+        </ul>
+      </section>
+    )}
     {business.length > 0 && (
       <section aria-labelledby="footer-business">
         <h2 id="footer-business">{t('footer.business')}</h2>

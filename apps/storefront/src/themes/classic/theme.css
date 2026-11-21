@@ -2899,6 +2899,26 @@ body:has(.buy-bar) {
 .footer-store {
   grid-column: 1 / -1;
 }
+.footer-pay {
+  grid-column: 1 / -1;
+}
+.pay-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* biome-ignore lint/style/noDescendingSpecificity: different parts of the page; never both match */
+.pay-chips li {
+  padding: 3px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-background);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
 .site-footer h2 {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -2999,7 +3019,8 @@ body:has(.buy-bar) {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 32px;
   }
-  .footer-store {
+  .footer-store,
+  .footer-pay {
     grid-column: auto;
   }
   .site-footer .footer-name {

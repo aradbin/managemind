@@ -18,7 +18,7 @@ import {
 import { type ListingQuery, parseListingQuery } from '@managemind/shared/storefront/listing';
 import type { SitemapPart } from '@managemind/shared/storefront/urls';
 import { eq, sql } from 'drizzle-orm';
-import { type ShopFacts, shopFacts } from '../catalog/legal';
+import { type ShopFacts, shopFacts, takesOnlinePayment } from '../catalog/legal';
 import {
   publishedPageBySlug,
   type StorePage,
@@ -76,7 +76,13 @@ export interface StoreLayout {
   storefront: StorefrontSettings;
   numerals: 'bengali' | 'latin' | null;
   /** What the shopper pages need to know (phase-4-plan §3.16). */
-  shop: { accounts: boolean; termsCheckbox: boolean; email: 'optional' | 'required' | 'hidden' };
+  shop: {
+    accounts: boolean;
+    termsCheckbox: boolean;
+    email: 'optional' | 'required' | 'hidden';
+    /** The ways to pay, for the footer: cash on delivery, and online (SSLCommerz: cards, bKash, Nagad, bank). */
+    pay: { cod: boolean; online: boolean };
+  };
   /**
    * Whether the browser pixel reports purchases. Not when the store reports
    * them to Meta from the server once confirmed (phase-9-plan §3.1.6, Q5).
@@ -155,6 +161,7 @@ export async function storeLayout(
         accounts: row.settings.checkout.accounts,
         termsCheckbox: row.settings.checkout.termsCheckbox,
         email: row.settings.checkout.email,
+        pay: { cod: row.settings.cod.enabled, online: await takesOnlinePayment(tx) },
       },
       pixelPurchase: row.settings.meta.purchaseAt === 'placed',
     },

@@ -109,6 +109,9 @@ export function purgeTagsFor(event: PurgeEvent): string[] {
     }
     case 'delivery.zones.changed':
       return [legalTag(t)];
+    // The footer's ways to pay, and the cart's and product pages' promises.
+    case 'credentials.changed':
+      return payload.kind === 'sslcommerz' ? [storeTag(t)] : [];
     case 'catalog.category.changed':
     case 'catalog.collection.changed':
     case 'catalog.attribute.changed':
