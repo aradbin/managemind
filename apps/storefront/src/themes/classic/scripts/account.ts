@@ -352,7 +352,7 @@ function renderAddresses(addresses: Address[]) {
         el('strong', { text: label }),
         a.isDefault ? el('span', { class: 'default-badge', text: t('account.default') }) : null,
       ),
-      el('p', { text: `${a.name} · ${digits(a.phone.replace(/^\+88/, ''))}` }),
+      el('p', { text: `${a.name} · ${digits(localPhone(a.phone))}` }),
       el('p', { text: a.line }),
       el('p', { class: 'muted', text: placeText(a) }),
       el('p', { class: 'address-card-actions' }, makeDefault, remove),
@@ -372,6 +372,12 @@ function renderAddresses(addresses: Address[]) {
   );
   const none = document.querySelector<HTMLElement>('[data-no-addresses]');
   if (none) none.hidden = addresses.length > 0;
+}
+
+/** 01712-345678, as numbers are written on the forms. */
+function localPhone(e164: string) {
+  const local = e164.replace(/^\+?88/, '');
+  return /^01\d{9}$/.test(local) ? `${local.slice(0, 5)}-${local.slice(5)}` : local;
 }
 
 function areaError(message: string) {
