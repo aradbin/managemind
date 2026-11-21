@@ -114,6 +114,7 @@ What the redesign canvas decided, why, and what the storefront still needs befor
 
 **States**
 - Loading skeleton, "Adding…", "Placing your order…", page failed to load, stock changed before checkout, online payment failed or cancelled (using the store's existing payment messages).
+- In Bangla too (`StatesBn`): the storefront's own Bangla strings where they exist; the section labels drop the letter spacing, which breaks up Bangla conjuncts.
 
 ## Photo guidelines (for the admin)
 
@@ -165,4 +166,3 @@ New, needs building in the theme:
 ## Still to design
 
 - The grocery and fashion presets in the new layout.
-- A Bangla version of the loading and error states board.

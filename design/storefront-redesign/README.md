@@ -25,7 +25,7 @@ The storefront is built to these boards in steps; the order, and where each step
 | Thank-you page | `Thanks` | `ThanksPhone` | `ThanksPhoneBn` | `ThanksBn` |
 | Order tracking | `Track` | `TrackPhone` | `TrackPhoneBn` | `TrackBn` |
 | Account | `Account` | `AccountPhone` | `AccountPhoneBn` | `AccountBn` |
-| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` | | |
+| Shared components and states | `SiteHeader`, `SiteFooter`, `ProductCard`, `QuickAdd` | `PhoneHeader`, `PhoneFooter`, `PhoneTabBar`, `States` | `StatesBn` | |
 
 Every Bangla board is generated, and so is the script of the desktop listing, search, checkout, thank-you, tracking and account boards: edit the English board (the phone board, for a shared script), then run `node design/storefront-redesign/build-boards.mjs`.
 
@@ -39,7 +39,7 @@ Each board is a Design Component page:
 - `{{name}}` holes filled from `renderVals()` in the `<script type="text/x-dc" data-dc-script>` block at the bottom: dotted lookups only, no expressions;
 - `<sc-for list="{{items}}" as="item">` for lists, `<sc-if value="{{flag}}">` for branches, `onClick="{{handler}}"` for events;
 - `<dc-import name="ProductCard" item="{{p}}" on-add="{{addOne}}">` mounts `ProductCard.dc.html`; kebab-case attributes arrive as camelCase props;
-- `data-props` on the script tag declares the canvas tweaks: `primary` (the theme's primary colour) on every board, `bn` (Bangla copy) on every page and shared component, `scenario` on the checkout, tracking and account boards, and `payment` on the thank-you boards.
+- `data-props` on the script tag declares the canvas tweaks: `primary` (the theme's primary colour) on every board, `bn` (Bangla copy) on every page, shared component and the states board, `scenario` on the checkout, tracking and account boards, and `payment` on the thank-you boards.
 
 Each board's copy lives in its script: a `T0` table of `[English, Bangla]` pairs for the fixed text in the markup (shown through `{{t.key}}`), and a `TR` table that translates text in the sample data (`tr('Cookware')`). Numbers and prices go through `num()` / `fmt()`, which switch to Bengali digits.
 
